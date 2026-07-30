@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "page": {
+    "magic": "MSPG",
+    "headerSize": 64,
+    "payloadChecksumOffset": 56,
+    "headerChecksumOffset": 60,
+    "byteOrder": "little-endian"
+  },
+  "superblock": {
+    "magic": "MSQLSB01",
+    "slotSize": 4096,
+    "headerSize": 128,
+    "checksumOffset": 72,
+    "copies": 2
+  },
+  "pagedFile": {
+    "slotAOffset": 0,
+    "slotBOffset": 4096,
+    "dataOffset": 8192
+  }
+}

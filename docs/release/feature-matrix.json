@@ -1,0 +1,10 @@
+{
+  "matrixVersion": 1,
+  "version": "1.0.0",
+  "storage": ["paged files", "CRC-32C", "WAL", "crash recovery", "B+ tree", "overflow LOB"],
+  "sql": ["DDL", "DML", "DCL", "transactions", "joins", "aggregates", "views", "CTE", "window functions", "triggers", "sequences"],
+  "operations": ["client/server", "TLS 1.3 sidecar", "backup/restore", "PITR", "hot standby", "check", "migration", "vacuum"],
+  "nativePlatform": "Windows x64",
+  "databaseFormatVersion": 1,
+  "wireProtocolVersion": 1
+}

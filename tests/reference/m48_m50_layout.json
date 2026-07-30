@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "walDurableMarker": {
+    "magic": "MSWDL001",
+    "version": 1,
+    "size": 32,
+    "lsnOffset": 16,
+    "checksumOffset": 24
+  },
+  "release": {
+    "productVersion": "1.0.0",
+    "milestone": "M50",
+    "databaseFormatVersion": 1,
+    "wireProtocolVersion": 1,
+    "platform": "windows-x64"
+  },
+  "acceptance": {
+    "phaseCount": 106,
+    "finalLine": "MiniSQL 1.0.0 test suite: SUCCESS"
+  }
+}

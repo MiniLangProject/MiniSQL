@@ -1,0 +1,244 @@
+package minisql.protocol.messages
+
+import minisql.common.endian as endian
+import minisql.protocol.constants as constants
+
+const INVALID_ARGUMENT = 9001
+const CORRUPT_DATA = 9004
+
+struct Message
+  messageType
+  flags
+  requestId
+  payload
+end struct
+
+struct Response
+  status
+  command
+  columns
+  rows
+  affectedRows
+  message
+  errorCode
+end struct
+
+function fail(code, operation, message)
+  return error(code, "protocol.messages." + operation + ": " + message)
+end function
+
+function isMessage(value)
+  return value is Message
+end function
+
+function isResponse(value)
+  return value is Response
+end function
+
+function create(messageType, flags, requestId, payload)
+  if typeof(messageType) != "int" or not constants.knownType(messageType) then return fail(INVALID_ARGUMENT, "create", "unknown message type") end if
+  if typeof(flags) != "int" or flags < 0 or flags > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "create", "flags must fit U32") end if
+  if typeof(requestId) != "int" or requestId < 0 or requestId > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "create", "requestId must fit U32") end if
+  if typeof(payload) != "bytes" or len(payload) > constants.MAX_PAYLOAD_BYTES then return fail(INVALID_ARGUMENT, "create", "payload is invalid") end if
+  return Message(messageType, flags, requestId, bytes(payload))
+end function
+
+function hello(requestId)
+  return create(constants.TYPE_HELLO, 0, requestId, bytes("MiniSQL/1"))
+end function
+
+function query(requestId, sqlText)
+  if typeof(sqlText) != "string" or len(bytes(sqlText)) > constants.MAX_PAYLOAD_BYTES then return fail(INVALID_ARGUMENT, "query", "SQL text is invalid") end if
+  return create(constants.TYPE_QUERY, 0, requestId, bytes(sqlText))
+end function
+
+function authBegin(requestId, username)
+  if typeof(username) != "string" or len(bytes(username)) == 0 or len(bytes(username)) > 128 then return fail(INVALID_ARGUMENT, "authBegin", "username is invalid") end if
+  raw = bytes(username)
+  payload = bytes(2 + len(raw), 0)
+  endian.writeU16LE(payload, 0, len(raw))
+  copyBytes(payload, 2, raw, 0, len(raw))
+  return create(constants.TYPE_AUTH_BEGIN, 0, requestId, payload)
+end function
+
+function decodeAuthBegin(payload)
+  if typeof(payload) != "bytes" or len(payload) < 3 then return fail(CORRUPT_DATA, "decodeAuthBegin", "authentication-begin payload is truncated") end if
+  length = endian.readU16LE(payload, 0)
+  if length == 0 or length > 128 or len(payload) != 2 + length then return fail(CORRUPT_DATA, "decodeAuthBegin", "authentication username length is invalid") end if
+  username = decode(slice(payload, 2, length))
+  if typeof(username) != "string" then return fail(CORRUPT_DATA, "decodeAuthBegin", "authentication username is not UTF-8") end if
+  return username
+end function
+
+function authChallenge(requestId, iterations, salt, nonce)
+  if typeof(iterations) != "int" or iterations < 10000 or iterations > 5000000 then return fail(INVALID_ARGUMENT, "authChallenge", "iterations are invalid") end if
+  if typeof(salt) != "bytes" or len(salt) != 16 or typeof(nonce) != "bytes" or len(nonce) != 32 then return fail(INVALID_ARGUMENT, "authChallenge", "salt or nonce is invalid") end if
+  payload = bytes(52, 0)
+  endian.writeU32LE(payload, 0, iterations)
+  copyBytes(payload, 4, salt, 0, 16)
+  copyBytes(payload, 20, nonce, 0, 32)
+  return create(constants.TYPE_AUTH_CHALLENGE, 0, requestId, payload)
+end function
+
+function decodeAuthChallenge(payload)
+  if typeof(payload) != "bytes" or len(payload) != 52 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge payload size is invalid") end if
+  iterations = endian.readU32LE(payload, 0)
+  if iterations < 10000 or iterations > 5000000 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge work factor is invalid") end if
+  return [iterations, slice(payload, 4, 16), slice(payload, 20, 32)]
+end function
+
+function authProof(requestId, proof)
+  if typeof(proof) != "bytes" or len(proof) != 32 then return fail(INVALID_ARGUMENT, "authProof", "proof must be 32 bytes") end if
+  return create(constants.TYPE_AUTH_PROOF, 0, requestId, proof)
+end function
+
+function authOk(requestId, serverProof)
+  if typeof(serverProof) != "bytes" or len(serverProof) != 32 then return fail(INVALID_ARGUMENT, "authOk", "server proof must be 32 bytes") end if
+  return create(constants.TYPE_AUTH_OK, 0, requestId, serverProof)
+end function
+
+function ping(requestId)
+  return create(constants.TYPE_PING, 0, requestId, bytes(0))
+end function
+
+function closeRequest(requestId)
+  return create(constants.TYPE_CLOSE, 0, requestId, bytes(0))
+end function
+
+function commandResponse(command, affectedRows, message)
+  return Response(constants.STATUS_COMMAND, command, [], [], affectedRows, message, 0)
+end function
+
+function rowResponse(columns, rows)
+  return Response(constants.STATUS_ROWS, "SELECT", columns, rows, len(rows), "", 0)
+end function
+
+function errorResponse(code, message)
+  return Response(constants.STATUS_ERROR, "ERROR", [], [], 0, message, code)
+end function
+
+function stringBytes(value)
+  if typeof(value) != "string" then return fail(INVALID_ARGUMENT, "stringBytes", "value must be string") end if
+  return bytes(value)
+end function
+
+function fieldSize(value)
+  raw = stringBytes(value)
+  return 4 + len(raw)
+end function
+
+function writeField(output, offset, value)
+  raw = stringBytes(value)
+  endian.writeU32LE(output, offset, len(raw))
+  if len(raw) > 0 then copyBytes(output, offset + 4, raw, 0, len(raw)) end if
+  return offset + 4 + len(raw)
+end function
+
+function readField(source, offset)
+  if offset < 0 or offset > len(source) - 4 then return fail(CORRUPT_DATA, "readField", "field length is truncated") end if
+  length = endian.readU32LE(source, offset)
+  if length > constants.MAX_PAYLOAD_BYTES or offset + 4 > len(source) - length then return fail(CORRUPT_DATA, "readField", "field data is truncated") end if
+  value = decode(slice(source, offset + 4, length))
+  if typeof(value) != "string" then return fail(CORRUPT_DATA, "readField", "field is not valid UTF-8") end if
+  return [value, offset + 4 + length]
+end function
+
+function responsePayloadSize(response)
+  size = 24 + fieldSize(response.command) + fieldSize(response.message)
+  for each column in response.columns
+    size = size + fieldSize(column)
+  end for
+  for each row in response.rows
+    for each value in row
+      size = size + fieldSize(value)
+    end for
+  end for
+  return size
+end function
+
+function encodeResponse(response)
+  if response is not Response then return fail(INVALID_ARGUMENT, "encodeResponse", "response must be Response") end if
+  if typeof(response.status) != "int" or response.status < 1 or response.status > 3 then return fail(INVALID_ARGUMENT, "encodeResponse", "status is invalid") end if
+  if typeof(response.affectedRows) != "int" or response.affectedRows < 0 or response.affectedRows > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encodeResponse", "affectedRows must fit U32") end if
+  if typeof(response.errorCode) != "int" or response.errorCode < 0 or response.errorCode > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encodeResponse", "errorCode must fit U32") end if
+  if typeof(response.command) != "string" or typeof(response.message) != "string" then return fail(INVALID_ARGUMENT, "encodeResponse", "command/message must be strings") end if
+  if typeof(response.columns) != "array" or len(response.columns) > constants.MAX_COLUMNS then return fail(INVALID_ARGUMENT, "encodeResponse", "columns are invalid") end if
+  if typeof(response.rows) != "array" or len(response.rows) > constants.MAX_ROWS_PER_MESSAGE then return fail(INVALID_ARGUMENT, "encodeResponse", "rows are invalid") end if
+  for each row in response.rows
+    if typeof(row) != "array" or len(row) != len(response.columns) then return fail(INVALID_ARGUMENT, "encodeResponse", "row width mismatch") end if
+  end for
+  size = responsePayloadSize(response)
+  if size > constants.MAX_PAYLOAD_BYTES then return fail(INVALID_ARGUMENT, "encodeResponse", "response exceeds payload limit") end if
+  output = bytes(size, 0)
+  endian.writeU16LE(output, 0, response.status)
+  endian.writeU16LE(output, 2, 0)
+  endian.writeU32LE(output, 4, len(response.columns))
+  endian.writeU32LE(output, 8, len(response.rows))
+  endian.writeU32LE(output, 12, response.affectedRows)
+  endian.writeU32LE(output, 16, response.errorCode)
+  endian.writeU32LE(output, 20, 0)
+  cursor = 24
+  cursor = writeField(output, cursor, response.command)
+  cursor = writeField(output, cursor, response.message)
+  for each column in response.columns
+    cursor = writeField(output, cursor, column)
+  end for
+  for each row in response.rows
+    for each value in row
+      cursor = writeField(output, cursor, value)
+    end for
+  end for
+  return output
+end function
+
+function decodeResponse(source)
+  if typeof(source) != "bytes" or len(source) < 24 or len(source) > constants.MAX_PAYLOAD_BYTES then return fail(CORRUPT_DATA, "decodeResponse", "payload size is invalid") end if
+  status = endian.readU16LE(source, 0)
+  if status < 1 or status > 3 or endian.readU16LE(source, 2) != 0 or endian.readU32LE(source, 20) != 0 then return fail(CORRUPT_DATA, "decodeResponse", "response header is invalid") end if
+  columnCount = endian.readU32LE(source, 4)
+  rowCount = endian.readU32LE(source, 8)
+  if columnCount > constants.MAX_COLUMNS or rowCount > constants.MAX_ROWS_PER_MESSAGE then return fail(CORRUPT_DATA, "decodeResponse", "response counts exceed limits") end if
+  cursor = 24
+  commandField = readField(source, cursor)
+  command = commandField[0]
+  cursor = commandField[1]
+  messageField = readField(source, cursor)
+  message = messageField[0]
+  cursor = messageField[1]
+  columns = []
+  if columnCount > 0 then
+    for index = 0 to columnCount - 1
+      field = readField(source, cursor)
+      columns = columns + [field[0]]
+      cursor = field[1]
+    end for
+  end if
+  rows = []
+  if rowCount > 0 then
+    for rowIndex = 0 to rowCount - 1
+      row = []
+      if columnCount > 0 then
+        for columnIndex = 0 to columnCount - 1
+          field = readField(source, cursor)
+          row = row + [field[0]]
+          cursor = field[1]
+        end for
+      end if
+      rows = rows + [row]
+    end for
+  end if
+  if cursor != len(source) then return fail(CORRUPT_DATA, "decodeResponse", "trailing response bytes") end if
+  return Response(status, command, columns, rows, endian.readU32LE(source, 12), message, endian.readU32LE(source, 16))
+end function
+
+function componentName()
+  return "protocol.messages"
+end function
+
+function targetMilestone()
+  return "M18"
+end function
+
+function isImplemented()
+  return true
+end function

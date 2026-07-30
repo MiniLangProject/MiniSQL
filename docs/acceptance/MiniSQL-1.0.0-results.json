@@ -1,0 +1,595 @@
+{
+  "project": "MiniSQL",
+  "through": "M50",
+  "revision": "M48-M50R3",
+  "version": "1.0.0",
+  "status": "SUCCESS",
+  "milestones": {
+    "M0": "PASS",
+    "M1": "PASS",
+    "M2": "PASS",
+    "M3": "PASS",
+    "M4": "PASS",
+    "M5": "PASS",
+    "M6": "PASS",
+    "M7": "PASS",
+    "M8": "PASS",
+    "M9": "PASS",
+    "M10": "PASS",
+    "M11": "PASS",
+    "M12": "PASS",
+    "M13": "PASS",
+    "M14": "PASS",
+    "M15": "PASS",
+    "M16": "PASS",
+    "M17": "PASS",
+    "M18": "PASS",
+    "M19": "PASS",
+    "M20": "PASS",
+    "M21": "PASS",
+    "M22": "PASS",
+    "M23": "PASS",
+    "M24": "PASS",
+    "M25": "PASS",
+    "M26": "PASS",
+    "M27": "PASS",
+    "M28": "PASS",
+    "M29": "PASS",
+    "M30": "PASS",
+    "M31": "PASS",
+    "M32": "PASS",
+    "M33": "PASS",
+    "M34": "PASS",
+    "M35": "PASS",
+    "M36": "PASS",
+    "M37": "PASS",
+    "M38": "PASS",
+    "M39": "PASS",
+    "M40": "PASS",
+    "M41": "PASS",
+    "M42": "PASS",
+    "M43": "PASS",
+    "M44": "PASS",
+    "M45": "PASS",
+    "M46": "PASS",
+    "M47": "PASS",
+    "M48": "PASS",
+    "M49": "PASS",
+    "M50": "PASS"
+  },
+  "durationSeconds": 1601.827,
+  "platform": "win32",
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "phases": [
+    {
+      "name": "repository manifest, one-launcher contract and 71-module catalog",
+      "status": "PASS",
+      "durationSeconds": 0.071
+    },
+    {
+      "name": "configuration, accepted M0-M47 evidence and complete 1.0 documentation",
+      "status": "PASS",
+      "durationSeconds": 0.002
+    },
+    {
+      "name": "M48-M50 durable replication, hardening and release source contracts",
+      "status": "PASS",
+      "durationSeconds": 0.002
+    },
+    {
+      "name": "independent M48-M50 corpus, sidecar, compatibility and deterministic-release vectors",
+      "status": "PASS",
+      "durationSeconds": 0.375
+    },
+    {
+      "name": "compile and run application regressions",
+      "status": "PASS",
+      "durationSeconds": 84.989
+    },
+    {
+      "name": "M0 71-module regression",
+      "status": "PASS",
+      "durationSeconds": 22.667
+    },
+    {
+      "name": "M1R1 codec and module regressions",
+      "status": "PASS",
+      "durationSeconds": 25.268
+    },
+    {
+      "name": "M2 canonical varints",
+      "status": "PASS",
+      "durationSeconds": 0.651
+    },
+    {
+      "name": "M2 CRC32C and protected envelopes",
+      "status": "PASS",
+      "durationSeconds": 0.575
+    },
+    {
+      "name": "M3 random-access files and clock",
+      "status": "PASS",
+      "durationSeconds": 0.778
+    },
+    {
+      "name": "M3 durable writer/reader processes",
+      "status": "PASS",
+      "durationSeconds": 1.368
+    },
+    {
+      "name": "M3 cross-process exclusive lock",
+      "status": "PASS",
+      "durationSeconds": 2.233
+    },
+    {
+      "name": "M4 page and superblock formats",
+      "status": "PASS",
+      "durationSeconds": 1.292
+    },
+    {
+      "name": "M4 paged-file recovery and generation fallback",
+      "status": "PASS",
+      "durationSeconds": 1.312
+    },
+    {
+      "name": "M5 buffer-pool unit and failure paths",
+      "status": "PASS",
+      "durationSeconds": 1.446
+    },
+    {
+      "name": "M5 deterministic buffer-pool stress",
+      "status": "PASS",
+      "durationSeconds": 1.633
+    },
+    {
+      "name": "M5 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 24.005
+    },
+    {
+      "name": "M6 WAL format, scan and torn-tail repair",
+      "status": "PASS",
+      "durationSeconds": 1.296
+    },
+    {
+      "name": "M6 transaction commit, rollback, locks and fault injection",
+      "status": "PASS",
+      "durationSeconds": 1.657
+    },
+    {
+      "name": "M7 redundant checkpoint metadata",
+      "status": "PASS",
+      "durationSeconds": 1.923
+    },
+    {
+      "name": "M7 committed-only idempotent recovery",
+      "status": "PASS",
+      "durationSeconds": 1.935
+    },
+    {
+      "name": "M7 process termination after durable commit",
+      "status": "PASS",
+      "durationSeconds": 1.837
+    },
+    {
+      "name": "M7 process termination before commit",
+      "status": "PASS",
+      "durationSeconds": 0.048
+    },
+    {
+      "name": "M8 strict configuration loader and defaults",
+      "status": "PASS",
+      "durationSeconds": 1.068
+    },
+    {
+      "name": "M8 database directory, catalog and manager",
+      "status": "PASS",
+      "durationSeconds": 14.795
+    },
+    {
+      "name": "M9 row format and SQL NULL codec",
+      "status": "PASS",
+      "durationSeconds": 0.905
+    },
+    {
+      "name": "M9 slotted pages and heap-file workload",
+      "status": "PASS",
+      "durationSeconds": 4.963
+    },
+    {
+      "name": "M10 overflow chains, replacement and reclamation",
+      "status": "PASS",
+      "durationSeconds": 2.455
+    },
+    {
+      "name": "M10 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 24.875
+    },
+    {
+      "name": "M11 persistent B+ tree",
+      "status": "PASS",
+      "durationSeconds": 2.231
+    },
+    {
+      "name": "M12 SQL lexer, parser and AST",
+      "status": "PASS",
+      "durationSeconds": 1.863
+    },
+    {
+      "name": "M13 binder, SQL types, values and three-valued logic",
+      "status": "PASS",
+      "durationSeconds": 12.91
+    },
+    {
+      "name": "M14 transactional DDL, constraints and crash journal",
+      "status": "PASS",
+      "durationSeconds": 14.226
+    },
+    {
+      "name": "M15 transactional DML and basic SELECT",
+      "status": "PASS",
+      "durationSeconds": 21.572
+    },
+    {
+      "name": "M15 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 24.665
+    },
+    {
+      "name": "M16 joins, grouping, aggregates, sort and set operations",
+      "status": "PASS",
+      "durationSeconds": 20.168
+    },
+    {
+      "name": "M17 persisted statistics, ANALYZE, optimizer and EXPLAIN",
+      "status": "PASS",
+      "durationSeconds": 19.959
+    },
+    {
+      "name": "M18 binary protocol codec, limits and signed WinSock ABI",
+      "status": "PASS",
+      "durationSeconds": 1.094
+    },
+    {
+      "name": "M18 loopback server/client process integration",
+      "status": "PASS",
+      "durationSeconds": 22.505
+    },
+    {
+      "name": "M19 transaction savepoints and isolation-aware locks",
+      "status": "PASS",
+      "durationSeconds": 1.513
+    },
+    {
+      "name": "M19 SQL SAVEPOINT, ROLLBACK TO and RELEASE",
+      "status": "PASS",
+      "durationSeconds": 19.839
+    },
+    {
+      "name": "M20 consistency check, verified backup/restore and migration refusal",
+      "status": "PASS",
+      "durationSeconds": 21.038
+    },
+    {
+      "name": "M20 deterministic durability and performance workload",
+      "status": "PASS",
+      "durationSeconds": 34.454
+    },
+    {
+      "name": "M20 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 24.137
+    },
+    {
+      "name": "M20 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M21 security catalog, password verifier and generation fallback",
+      "status": "PASS",
+      "durationSeconds": 13.876
+    },
+    {
+      "name": "M21 DCL parser, roles and authorization",
+      "status": "PASS",
+      "durationSeconds": 20.838
+    },
+    {
+      "name": "M21 authentication protocol and session state",
+      "status": "PASS",
+      "durationSeconds": 22.462
+    },
+    {
+      "name": "M21 authenticated loopback server/client process integration",
+      "status": "PASS",
+      "durationSeconds": 24.135
+    },
+    {
+      "name": "M21 security-aware consistency check and backup/restore",
+      "status": "PASS",
+      "durationSeconds": 21.091
+    },
+    {
+      "name": "M21 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 23.878
+    },
+    {
+      "name": "M21 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M22 prepared statements and positional parameters",
+      "status": "PASS",
+      "durationSeconds": 20.645
+    },
+    {
+      "name": "M23 index maintenance, access paths and repair",
+      "status": "PASS",
+      "durationSeconds": 21.672
+    },
+    {
+      "name": "M24 ALTER TABLE and compatible schema evolution",
+      "status": "PASS",
+      "durationSeconds": 21.933
+    },
+    {
+      "name": "M25 VACUUM, REINDEX and maintenance-journal recovery",
+      "status": "PASS",
+      "durationSeconds": 23.681
+    },
+    {
+      "name": "M26 offline source-to-target page-size migration",
+      "status": "PASS",
+      "durationSeconds": 22.098
+    },
+    {
+      "name": "M26 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 23.705
+    },
+    {
+      "name": "M26 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M27 shared lock manager, waits and deadlock detection",
+      "status": "PASS",
+      "durationSeconds": 19.374
+    },
+    {
+      "name": "M27 concurrent server/client process integration",
+      "status": "PASS",
+      "durationSeconds": 23.666
+    },
+    {
+      "name": "M28 no-echo byte-secret and authentication hardening",
+      "status": "PASS",
+      "durationSeconds": 23.688
+    },
+    {
+      "name": "M29 AES-GCM frame protection and remote-bind policy",
+      "status": "PASS",
+      "durationSeconds": 1.565
+    },
+    {
+      "name": "M29 authenticated encrypted concurrent process integration",
+      "status": "PASS",
+      "durationSeconds": 23.834
+    },
+    {
+      "name": "M30 durable audit chain and grant dependency revocation",
+      "status": "PASS",
+      "durationSeconds": 21.157
+    },
+    {
+      "name": "M31 WAL archive, exact-LSN PITR and standby lifecycle",
+      "status": "PASS",
+      "durationSeconds": 24.468
+    },
+    {
+      "name": "M31 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 27.293
+    },
+    {
+      "name": "M31 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M32 operational database initialization and secret bootstrap helpers",
+      "status": "PASS",
+      "durationSeconds": 24.491
+    },
+    {
+      "name": "M32 public minisqld/minisql bounded script integration",
+      "status": "PASS",
+      "durationSeconds": 0.605
+    },
+    {
+      "name": "M32 persistent public daemon and one-shot client lifecycle",
+      "status": "PASS",
+      "durationSeconds": 0.969
+    },
+    {
+      "name": "M32 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M33 SQL-aware statement scanner and shell framing",
+      "status": "PASS",
+      "durationSeconds": 24.856
+    },
+    {
+      "name": "M33 public multiline script and final-statement integration",
+      "status": "PASS",
+      "durationSeconds": 0.557
+    },
+    {
+      "name": "M34 catalog introspection commands",
+      "status": "PASS",
+      "durationSeconds": 22.295
+    },
+    {
+      "name": "M35 scalar CASE, CAST, COALESCE and NULLIF",
+      "status": "PASS",
+      "durationSeconds": 22.715
+    },
+    {
+      "name": "M36 IN/BETWEEN/truth predicates and OFFSET/FETCH",
+      "status": "PASS",
+      "durationSeconds": 20.557
+    },
+    {
+      "name": "M37 RIGHT and FULL OUTER JOIN",
+      "status": "PASS",
+      "durationSeconds": 22.729
+    },
+    {
+      "name": "M37 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 26.218
+    },
+    {
+      "name": "M37 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M38 DML RETURNING result rows",
+      "status": "PASS",
+      "durationSeconds": 21.417
+    },
+    {
+      "name": "M39 INSERT SELECT materialization and rollback",
+      "status": "PASS",
+      "durationSeconds": 22.756
+    },
+    {
+      "name": "M40 ON CONFLICT DO NOTHING and conflict targets",
+      "status": "PASS",
+      "durationSeconds": 22.755
+    },
+    {
+      "name": "M41 ON CONFLICT DO UPDATE UPSERT",
+      "status": "PASS",
+      "durationSeconds": 21.541
+    },
+    {
+      "name": "M42 transactional TRUNCATE and identity restart",
+      "status": "PASS",
+      "durationSeconds": 21.323
+    },
+    {
+      "name": "M42 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 26.092
+    },
+    {
+      "name": "M42 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M43-M47R10 AUTO_INCREMENT and exact decimal INSERT compatibility",
+      "status": "PASS",
+      "durationSeconds": 20.989
+    },
+    {
+      "name": "M43 persisted views and non-correlated subqueries",
+      "status": "PASS",
+      "durationSeconds": 20.515
+    },
+    {
+      "name": "M44 nonrecursive CTEs and window functions",
+      "status": "PASS",
+      "durationSeconds": 21.297
+    },
+    {
+      "name": "M45 sequences, generated columns and row triggers",
+      "status": "PASS",
+      "durationSeconds": 21.826
+    },
+    {
+      "name": "M46 hash operators and external merge sort",
+      "status": "PASS",
+      "durationSeconds": 38.23
+    },
+    {
+      "name": "M47 standards-compatible TLS 1.3/X.509 sidecar integration",
+      "status": "PASS",
+      "durationSeconds": 0.92
+    },
+    {
+      "name": "M47 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 25.924
+    },
+    {
+      "name": "M47 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M48 durable live WAL export and read-only standby",
+      "status": "PASS",
+      "durationSeconds": 22.598
+    },
+    {
+      "name": "M48 continuous public hot-replication process integration",
+      "status": "PASS",
+      "durationSeconds": 2.316
+    },
+    {
+      "name": "M48 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M49 deterministic parser, wire, WAL and durable-workload hardening",
+      "status": "PASS",
+      "durationSeconds": 70.159
+    },
+    {
+      "name": "M49 committed/uncommitted crash matrix",
+      "status": "PASS",
+      "durationSeconds": 0.814
+    },
+    {
+      "name": "M49 repeated soak and performance guardrail",
+      "status": "PASS",
+      "durationSeconds": 107.356
+    },
+    {
+      "name": "M49 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    },
+    {
+      "name": "M50 release contract and compatibility freeze",
+      "status": "PASS",
+      "durationSeconds": 23.279
+    },
+    {
+      "name": "M50 deterministic Windows-x64 distribution build and verification",
+      "status": "PASS",
+      "durationSeconds": 2.615
+    },
+    {
+      "name": "M50 71-module implementation smoke",
+      "status": "PASS",
+      "durationSeconds": 27.45
+    },
+    {
+      "name": "M50 final cumulative gate",
+      "status": "PASS",
+      "durationSeconds": 0.0
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "configVersion": 1,
+  "paths": {
+    "dataRoot": "./data",
+    "temporaryRoot": "./tmp",
+    "logDirectory": "./logs"
+  },
+  "server": {
+    "bindAddress": "127.0.0.1",
+    "port": 7432,
+    "maxConnections": 32,
+    "maxStatementBytes": 1048576,
+    "maxFrameBytes": 8388608
+  },
+  "runtime": {
+    "bufferPoolBytes": 268435456,
+    "queryTimeoutMs": 30000,
+    "checkpointWalBytes": 67108864,
+    "temporaryMemoryBytes": 134217728,
+    "logLevel": "info"
+  },
+  "databaseDefaults": {
+    "pageSize": 4096,
+    "checksumAlgorithm": "crc32c",
+    "walSegmentBytes": 16777216,
+    "textEncoding": "utf-8",
+    "defaultCollation": "binary",
+    "databaseFormatVersion": 1,
+    "tableFileFormatVersion": 1,
+    "indexFileFormatVersion": 1,
+    "walFormatVersion": 1,
+    "rowFormatVersion": 1
+  },
+  "safety": {
+    "allowRemoteWithoutAuthentication": false,
+    "durability": "full",
+    "allowUnknownFormatFeatures": false
+  }
+}

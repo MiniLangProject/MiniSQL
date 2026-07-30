@@ -1,0 +1,82 @@
+package minisql.client.formatter
+
+import minisql.common.endian as endian
+import minisql.executor.executor as executor
+import minisql.protocol.constants as constants
+import minisql.protocol.messages as messages
+import minisql.sql.values as values
+
+const INVALID_ARGUMENT = 9001
+
+function fail(operation, message)
+  return error(INVALID_ARGUMENT, "client.formatter." + operation + ": " + message)
+end function
+
+function valueText(value)
+  if not values.isSqlValue(value) then return fail("valueText", "value must be SqlValue") end if
+  if value.isNull then return "NULL" end if
+  if typeof(value.value) == "string" then return value.value end if
+  if typeof(value.value) == "bytes" then return "0x" + hex(value.value) end if
+  if typeof(value.value) == "bool" then
+    if value.value then return "TRUE" end if
+    return "FALSE"
+  end if
+  if typeof(value.value) == "int" or typeof(value.value) == "float" then return "" + value.value end if
+  if endian.isInt64Words(value.value) then
+    native = try(endian.int64ToInt(value.value))
+    if typeof(native) != "error" then return "" + native end if
+    return "0x" + value.value.high + ":" + value.value.low
+  end if
+  return fail("valueText", "unsupported SQL value representation")
+end function
+
+function responseFromResult(result)
+  if not executor.isQueryResult(result) then return fail("responseFromResult", "result must be QueryResult") end if
+  if result.kind == executor.RESULT_COMMAND then return messages.commandResponse(result.command, result.affectedRows, result.message) end if
+  if result.kind != executor.RESULT_ROWS then return fail("responseFromResult", "unknown result kind") end if
+  rows = []
+  for each sourceRow in result.rows
+    row = []
+    for each value in sourceRow
+      row = row + [valueText(value)]
+    end for
+    rows = rows + [row]
+  end for
+  return messages.rowResponse(result.columns, rows)
+end function
+
+function formatResponse(response)
+  if not messages.isResponse(response) then return fail("formatResponse", "response must be Response") end if
+  if response.status == constants.STATUS_ERROR then return "ERROR " + response.errorCode + ": " + response.message end if
+  if response.status == constants.STATUS_COMMAND then return response.command + " " + response.affectedRows + " " + response.message end if
+  output = ""
+  if len(response.columns) > 0 then
+    for index = 0 to len(response.columns) - 1
+      if index > 0 then output = output + " | " end if
+      output = output + response.columns[index]
+    end for
+    output = output + "\n"
+  end if
+  for each row in response.rows
+    if len(row) > 0 then
+      for index = 0 to len(row) - 1
+        if index > 0 then output = output + " | " end if
+        output = output + row[index]
+      end for
+    end if
+    output = output + "\n"
+  end for
+  return output + "(" + len(response.rows) + " rows)"
+end function
+
+function componentName()
+  return "client.formatter"
+end function
+
+function targetMilestone()
+  return "M18"
+end function
+
+function isImplemented()
+  return true
+end function

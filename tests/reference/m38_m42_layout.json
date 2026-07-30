@@ -1,0 +1,30 @@
+{
+  "dml": {
+    "returning": [
+      "INSERT",
+      "UPDATE",
+      "DELETE"
+    ],
+    "insertSelectMaterialized": true,
+    "conflictActions": [
+      "DO NOTHING",
+      "DO UPDATE"
+    ],
+    "truncateTransactional": true,
+    "continueIdentitySupported": false
+  },
+  "formats": {
+    "changed": false
+  },
+  "acceptance": {
+    "acceptedThrough": "M38",
+    "candidateThrough": "M42",
+    "phaseCount": 87,
+    "finalLine": "MiniSQL M38-M42R1 acceptance test: SUCCESS"
+  },
+  "roadmap": {
+    "releaseFreeze": "M50",
+    "openBeforePackage": 12,
+    "remainingAfterAcceptance": 8
+  }
+}

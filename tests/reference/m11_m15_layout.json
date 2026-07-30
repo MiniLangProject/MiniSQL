@@ -1,0 +1,30 @@
+{
+  "btree": {
+    "formatVersion": 1,
+    "metadataPages": [
+      0,
+      1
+    ],
+    "metadataDataOffset": 64,
+    "leafDataOffset": 96,
+    "internalDataOffset": 88,
+    "maxKeyBytes": 256,
+    "maxValueBytes": 64
+  },
+  "sql": {
+    "maxStatementBytes": 1048576,
+    "syntaxError": 9019,
+    "bindingError": 9020,
+    "constraintViolation": 9021,
+    "duplicateKey": 9022
+  },
+  "ddl": {
+    "formatVersion": 1,
+    "prepared": 1,
+    "committed": 2
+  },
+  "acceptance": {
+    "phaseCount": 36,
+    "finalLine": "MiniSQL M11-M15R1 acceptance test: SUCCESS"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "client": {
+    "maximumScriptBytes": 1048576,
+    "statementMode": "sql-aware-semicolon",
+    "supportsMultiline": true,
+    "finalStatementMayOmitSemicolon": true,
+    "shellCommands": [
+      "\\g",
+      "\\reset",
+      "\\source",
+      "\\tables",
+      "\\describe",
+      "\\indexes"
+    ]
+  },
+  "sql": {
+    "catalogStatements": [
+      "SHOW TABLES",
+      "DESCRIBE",
+      "SHOW INDEXES"
+    ],
+    "newScalarExpressions": [
+      "CASE",
+      "CAST",
+      "COALESCE",
+      "NULLIF"
+    ],
+    "newPredicates": [
+      "IN",
+      "BETWEEN",
+      "NOT LIKE",
+      "IS TRUE",
+      "IS FALSE",
+      "IS UNKNOWN"
+    ],
+    "newRowLimitSyntax": [
+      "OFFSET",
+      "FETCH FIRST",
+      "FETCH NEXT"
+    ],
+    "newJoinTypes": [
+      "RIGHT",
+      "FULL"
+    ]
+  },
+  "formats": {
+    "changed": false
+  },
+  "acceptance": {
+    "acceptedThrough": "M36",
+    "candidateThrough": "M37",
+    "phaseCount": 80,
+    "finalLine": "MiniSQL M33-M37R1 acceptance test: SUCCESS"
+  }
+}

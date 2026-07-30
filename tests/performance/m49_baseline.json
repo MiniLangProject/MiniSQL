@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "maxHardeningRunSeconds": 600,
+  "soakIterations": 2,
+  "note": "Safety ceiling, not a cross-machine benchmark."
+}

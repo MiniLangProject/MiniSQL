@@ -1,0 +1,38 @@
+# MiniSQL runtime and build output
+/build/
+/data/
+/logs/
+/tmp/
+/standby/
+/archive/
+
+# Local configuration and secrets
+/config/minisql.json
+*.local.json
+*.key
+*.pfx
+*.p12
+
+# Compiler and release artifacts
+*.exe
+*.dll
+*.pdb
+*.obj
+*.asm
+*.zip
+*.sha256
+*.log
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

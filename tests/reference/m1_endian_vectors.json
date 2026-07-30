@@ -1,0 +1,43 @@
+{
+  "formatVersion": 2,
+  "scalarModel": {
+    "tagBits": 3,
+    "minimum": "-1152921504606846976",
+    "maximum": "1152921504606846975"
+  },
+  "vectors": [
+    {"name": "u8-max", "kind": "unsigned", "bits": 8, "endian": "little", "value": "255", "hex": "ff"},
+    {"name": "i8-negative-two", "kind": "signed", "bits": 8, "endian": "little", "value": "-2", "hex": "fe"},
+    {"name": "i8-min", "kind": "signed", "bits": 8, "endian": "little", "value": "-128", "hex": "80"},
+    {"name": "i8-max", "kind": "signed", "bits": 8, "endian": "little", "value": "127", "hex": "7f"},
+
+    {"name": "u16-le-1234", "kind": "unsigned", "bits": 16, "endian": "little", "value": "4660", "hex": "3412"},
+    {"name": "u16-be-1234", "kind": "unsigned", "bits": 16, "endian": "big", "value": "4660", "hex": "1234"},
+    {"name": "i16-le-negative-two", "kind": "signed", "bits": 16, "endian": "little", "value": "-2", "hex": "feff"},
+    {"name": "i16-be-negative-two", "kind": "signed", "bits": 16, "endian": "big", "value": "-2", "hex": "fffe"},
+    {"name": "i16-le-min", "kind": "signed", "bits": 16, "endian": "little", "value": "-32768", "hex": "0080"},
+    {"name": "i16-be-min", "kind": "signed", "bits": 16, "endian": "big", "value": "-32768", "hex": "8000"},
+    {"name": "i16-le-max", "kind": "signed", "bits": 16, "endian": "little", "value": "32767", "hex": "ff7f"},
+    {"name": "i16-be-max", "kind": "signed", "bits": 16, "endian": "big", "value": "32767", "hex": "7fff"},
+
+    {"name": "u32-le-89abcdef", "kind": "unsigned", "bits": 32, "endian": "little", "value": "2309737967", "hex": "efcdab89"},
+    {"name": "u32-be-89abcdef", "kind": "unsigned", "bits": 32, "endian": "big", "value": "2309737967", "hex": "89abcdef"},
+    {"name": "u32-le-max", "kind": "unsigned", "bits": 32, "endian": "little", "value": "4294967295", "hex": "ffffffff"},
+    {"name": "i32-le-min", "kind": "signed", "bits": 32, "endian": "little", "value": "-2147483648", "hex": "00000080"},
+    {"name": "i32-be-min", "kind": "signed", "bits": 32, "endian": "big", "value": "-2147483648", "hex": "80000000"},
+    {"name": "i32-le-max", "kind": "signed", "bits": 32, "endian": "little", "value": "2147483647", "hex": "ffffff7f"},
+    {"name": "i32-be-max", "kind": "signed", "bits": 32, "endian": "big", "value": "2147483647", "hex": "7fffffff"},
+
+    {"name": "u64-le-0123456789abcdef", "kind": "u64words", "bits": 64, "endian": "little", "high": "19088743", "low": "2309737967", "hex": "efcdab8967452301"},
+    {"name": "u64-be-0123456789abcdef", "kind": "u64words", "bits": 64, "endian": "big", "high": "19088743", "low": "2309737967", "hex": "0123456789abcdef"},
+    {"name": "u64-le-max", "kind": "u64words", "bits": 64, "endian": "little", "high": "4294967295", "low": "4294967295", "hex": "ffffffffffffffff"},
+    {"name": "u64-be-max", "kind": "u64words", "bits": 64, "endian": "big", "high": "4294967295", "low": "4294967295", "hex": "ffffffffffffffff"},
+
+    {"name": "i64-le-negative-two", "kind": "i64words", "bits": 64, "endian": "little", "high": "4294967295", "low": "4294967294", "hex": "feffffffffffffff"},
+    {"name": "i64-be-negative-two", "kind": "i64words", "bits": 64, "endian": "big", "high": "4294967295", "low": "4294967294", "hex": "fffffffffffffffe"},
+    {"name": "i64-le-min", "kind": "i64words", "bits": 64, "endian": "little", "high": "2147483648", "low": "0", "hex": "0000000000000080"},
+    {"name": "i64-be-min", "kind": "i64words", "bits": 64, "endian": "big", "high": "2147483648", "low": "0", "hex": "8000000000000000"},
+    {"name": "i64-le-max", "kind": "i64words", "bits": 64, "endian": "little", "high": "2147483647", "low": "4294967295", "hex": "ffffffffffffff7f"},
+    {"name": "i64-be-max", "kind": "i64words", "bits": 64, "endian": "big", "high": "2147483647", "low": "4294967295", "hex": "7fffffffffffffff"}
+  ]
+}

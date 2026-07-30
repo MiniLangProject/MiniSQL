@@ -1,0 +1,351 @@
+package minisql.platform.network
+
+// WinSock wrapper used by MiniSQL clients and servers. M27 adds bounded
+// non-blocking polling for a cooperative multi-session scheduler. M29 adds a
+// fail-closed binding policy: non-loopback listeners are accepted only by the
+// authenticated secure-transport server path.
+
+const NETWORK_ERROR = 9026
+const INVALID_ARGUMENT = 9001
+const AF_INET = 2
+const SOCK_STREAM = 1
+const IPPROTO_TCP = 6
+const INVALID_SOCKET = -1
+const SOCKET_ERROR = -1
+const SOCKET_ERROR_U32 = 4294967295
+const SOL_SOCKET = 0xFFFF
+const SO_REUSEADDR = 4
+const SD_BOTH = 2
+const WSA_VERSION_2_2 = 0x0202
+const SOCKADDR_IN_SIZE = 16
+const MAX_RECEIVE_BYTES = 1048576
+const WSAEWOULDBLOCK = 10035
+const WSAETIMEDOUT = 10060
+const FIONBIO = 0x8004667E
+const SO_RCVTIMEO = 0x1006
+const SO_SNDTIMEO = 0x1005
+
+extern function WSAStartup(version as int, wsaData as bytes) from "ws2_32.dll" returns i32
+extern function WSACleanup() from "ws2_32.dll" returns i32
+extern function WSAGetLastError() from "ws2_32.dll" returns i32
+extern function socket(af as int, type as int, protocol as int) from "ws2_32.dll" returns ptr
+extern function closesocket(s as ptr) from "ws2_32.dll" returns i32
+extern function connect(s as ptr, addr as bytes, addrlen as i32) from "ws2_32.dll" returns i32
+extern function bind(s as ptr, addr as bytes, addrlen as i32) from "ws2_32.dll" returns i32
+extern function listen(s as ptr, backlog as i32) from "ws2_32.dll" returns i32
+extern function accept(s as ptr, addr as ptr, addrlen as ptr) from "ws2_32.dll" returns ptr
+extern function send(s as ptr, buffer as ptr, count as i32, flags as i32) from "ws2_32.dll" returns i32
+extern function recv(s as ptr, buffer as ptr, count as i32, flags as i32) from "ws2_32.dll" returns i32
+extern function shutdown(s as ptr, how as i32) from "ws2_32.dll" returns i32
+extern function setsockopt(s as ptr, level as i32, option as i32, value as bytes, count as i32) from "ws2_32.dll" returns i32
+extern function inet_addr(address as cstr) from "ws2_32.dll" returns u32
+extern function ioctlsocket(s as ptr, command as u32, value as bytes) from "ws2_32.dll" returns i32
+extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
+
+_wsaReady = false
+
+function fail(operation, message)
+  return error(NETWORK_ERROR, "platform.network." + operation + ": " + message)
+end function
+
+function isHandle(value)
+  return typeof(value) == "int" or typeof(value) == "ptr"
+end function
+
+// WinSock C APIs return a signed 32-bit int. The native ABI writes EAX, so a
+// declaration as a 64-bit MiniLang int can expose SOCKET_ERROR as 0xFFFFFFFF
+// instead of -1. Correct i32 declarations are the primary contract; the dual
+// sentinel check keeps the failure path closed even with an older compiler.
+function isSocketErrorResult(value)
+  return value == SOCKET_ERROR or value == SOCKET_ERROR_U32
+end function
+
+function initialize()
+  global _wsaReady
+  if _wsaReady then return true end if
+  data = bytes(512, 0)
+  result = WSAStartup(WSA_VERSION_2_2, data)
+  if result != 0 then return fail("initialize", "WSAStartup failed (" + result + ")") end if
+  _wsaReady = true
+  return true
+end function
+
+function cleanup()
+  global _wsaReady
+  if not _wsaReady then return true end if
+  result = WSACleanup()
+  if result != 0 then return fail("cleanup", "WSACleanup failed (" + WSAGetLastError() + ")") end if
+  _wsaReady = false
+  return true
+end function
+
+function validatePort(port, operation)
+  if typeof(port) != "int" or port < 1 or port > 65535 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": port must be 1..65535") end if
+  return true
+end function
+
+function sockaddr(ip, port)
+  address = bytes(SOCKADDR_IN_SIZE, 0)
+  address[0] = AF_INET
+  address[1] = 0
+  address[2] = (port >> 8) & 255
+  address[3] = port & 255
+  address[4] = ip & 255
+  address[5] = (ip >> 8) & 255
+  address[6] = (ip >> 16) & 255
+  address[7] = (ip >> 24) & 255
+  return address
+end function
+
+function parseIPv4(host)
+  if typeof(host) != "string" or len(host) == 0 then return error(INVALID_ARGUMENT, "platform.network.parseIPv4: host must be string") end if
+  value = host
+  if value == "localhost" then value = "127.0.0.1" end if
+  ip = inet_addr(value)
+  if ip == 0xFFFFFFFF and value != "255.255.255.255" then return fail("parseIPv4", "invalid IPv4 address") end if
+  return ip
+end function
+
+function connectTcp(host, port)
+  initialize()
+  validatePort(port, "connectTcp")
+  ip = parseIPv4(host)
+  handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+  if handle == INVALID_SOCKET then return fail("connectTcp", "socket failed (" + WSAGetLastError() + ")") end if
+  address = sockaddr(ip, port)
+  result = connect(handle, address, len(address))
+  if result != 0 then
+    code = WSAGetLastError()
+    closesocket(handle)
+    return fail("connectTcp", "connect failed (" + code + ")")
+  end if
+  return handle
+end function
+
+function isLoopbackAddress(address)
+  return address == "127.0.0.1" or address == "localhost"
+end function
+
+function listenAddress(addressText, port, backlog, allowRemote)
+  initialize()
+  validatePort(port, "listenAddress")
+  if typeof(addressText) != "string" or len(addressText) == 0 then return error(INVALID_ARGUMENT, "platform.network.listenAddress: address must be non-empty") end if
+  if typeof(allowRemote) != "bool" then return error(INVALID_ARGUMENT, "platform.network.listenAddress: allowRemote must be bool") end if
+  if not allowRemote and not isLoopbackAddress(addressText) then return error(INVALID_ARGUMENT, "platform.network.listenAddress: remote binding requires secure transport") end if
+  if typeof(backlog) != "int" or backlog < 1 or backlog > 128 then backlog = 16 end if
+  ip = parseIPv4(addressText)
+  handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+  if handle == INVALID_SOCKET then return fail("listenAddress", "socket failed (" + WSAGetLastError() + ")") end if
+  option = bytes(4, 0)
+  option[0] = 1
+  ignored = setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, option, 4)
+  address = sockaddr(ip, port)
+  result = bind(handle, address, len(address))
+  if result != 0 then
+    code = WSAGetLastError()
+    closesocket(handle)
+    return fail("listenAddress", "bind failed (" + code + ")")
+  end if
+  result = listen(handle, backlog)
+  if result != 0 then
+    code = WSAGetLastError()
+    closesocket(handle)
+    return fail("listenAddress", "listen failed (" + code + ")")
+  end if
+  return handle
+end function
+
+function listenLoopback(port, backlog)
+  return listenAddress("127.0.0.1", port, backlog, false)
+end function
+
+function setNonBlocking(handle, enabled)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: handle must be socket") end if
+  if typeof(enabled) != "bool" then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: enabled must be bool") end if
+  mode = bytes(4, 0)
+  if enabled then mode[0] = 1 end if
+  result = ioctlsocket(handle, FIONBIO, mode)
+  if result != 0 then return fail("setNonBlocking", "ioctlsocket failed (" + WSAGetLastError() + ")") end if
+  return true
+end function
+
+function setTimeouts(handle, receiveMs, sendMs)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: handle must be socket") end if
+  if typeof(receiveMs) != "int" or receiveMs < 0 or receiveMs > 3600000 then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: receive timeout is invalid") end if
+  if typeof(sendMs) != "int" or sendMs < 0 or sendMs > 3600000 then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: send timeout is invalid") end if
+  receiveValue = bytes(4, 0)
+  sendValue = bytes(4, 0)
+  receiveValue[0] = receiveMs & 255
+  receiveValue[1] = (receiveMs >> 8) & 255
+  receiveValue[2] = (receiveMs >> 16) & 255
+  receiveValue[3] = (receiveMs >> 24) & 255
+  sendValue[0] = sendMs & 255
+  sendValue[1] = (sendMs >> 8) & 255
+  sendValue[2] = (sendMs >> 16) & 255
+  sendValue[3] = (sendMs >> 24) & 255
+  if setsockopt(handle, SOL_SOCKET, SO_RCVTIMEO, receiveValue, 4) != 0 then return fail("setTimeouts", "SO_RCVTIMEO failed (" + WSAGetLastError() + ")") end if
+  if setsockopt(handle, SOL_SOCKET, SO_SNDTIMEO, sendValue, 4) != 0 then return fail("setTimeouts", "SO_SNDTIMEO failed (" + WSAGetLastError() + ")") end if
+  return true
+end function
+
+function tryAccept(listener)
+  if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.tryAccept: listener must be socket handle") end if
+  client = accept(listener, void, void)
+  if client == INVALID_SOCKET then
+    code = WSAGetLastError()
+    if code == WSAEWOULDBLOCK then return void end if
+    return fail("tryAccept", "accept failed (" + code + ")")
+  end if
+  return client
+end function
+
+function acceptTcp(listener)
+  if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.acceptTcp: listener must be socket handle") end if
+  client = accept(listener, void, void)
+  if client == INVALID_SOCKET then return fail("acceptTcp", "accept failed (" + WSAGetLastError() + ")") end if
+  return client
+end function
+
+function copyByteRange(source, offset, count, operation)
+  if typeof(source) != "bytes" then return error(INVALID_ARGUMENT, "platform.network." + operation + ": source must be bytes") end if
+  if typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 or offset > len(source) - count then
+    return error(INVALID_ARGUMENT, "platform.network." + operation + ": byte range is invalid")
+  end if
+  if offset == 0 and count == len(source) then return source end if
+  output = bytes(count, 0)
+  if count > 0 then copyBytes(output, 0, source, offset, count) end if
+  return output
+end function
+
+function bytePointer(source, offset, count, operation)
+  if typeof(source) != "bytes" then return error(INVALID_ARGUMENT, "platform.network." + operation + ": buffer must be bytes") end if
+  if typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 or offset > len(source) - count then
+    return error(INVALID_ARGUMENT, "platform.network." + operation + ": byte range is invalid")
+  end if
+  if count == 0 then return 0 end if
+  pointer = nativeBytesPtr(source)
+  if pointer == 0 then return fail(operation, "native byte pointer is unavailable") end if
+  return pointer + offset
+end function
+
+function sendAll(handle, data)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.sendAll: handle must be socket") end if
+  if typeof(data) == "string" then data = bytes(data) end if
+  if typeof(data) != "bytes" then return error(INVALID_ARGUMENT, "platform.network.sendAll: data must be bytes or string") end if
+  dataLength = len(data)
+  if dataLength == 0 then return 0 end if
+  basePointer = try(bytePointer(data, 0, dataLength, "sendAll"))
+  if typeof(basePointer) == "error" then return basePointer end if
+  total = 0
+  waits = 0
+  while total < dataLength
+    remaining = dataLength - total
+    written = send(handle, basePointer + total, remaining, 0)
+    if isSocketErrorResult(written) then
+      code = WSAGetLastError()
+      if code == WSAEWOULDBLOCK then
+        waits = waits + 1
+        if waits > 30000 then return fail("sendAll", "send timed out") end if
+        Sleep(1)
+        continue
+      end if
+      return fail("sendAll", "send failed (" + code + ")")
+    end if
+    if written <= 0 then return fail("sendAll", "connection closed during send") end if
+    if written > remaining then return fail("sendAll", "send returned more bytes than requested") end if
+    total = total + written
+    waits = 0
+  end while
+  return total
+end function
+
+function receive(handle, maximum)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receive: handle must be socket") end if
+  if typeof(maximum) != "int" or maximum < 0 or maximum > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receive: invalid maximum") end if
+  if maximum == 0 then return bytes(0) end if
+  buffer = bytes(maximum, 0)
+  pointer = try(bytePointer(buffer, 0, maximum, "receive"))
+  if typeof(pointer) == "error" then return pointer end if
+  count = recv(handle, pointer, maximum, 0)
+  if count == 0 then return bytes(0) end if
+  if isSocketErrorResult(count) then return fail("receive", "recv failed (" + WSAGetLastError() + ")") end if
+  if count < 0 or count > maximum then return fail("receive", "recv returned invalid byte count " + count + " for maximum " + maximum) end if
+  if count == maximum then return buffer end if
+  return copyByteRange(buffer, 0, count, "receive")
+end function
+
+function receiveAvailableInto(handle, target, offset, maximum)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveAvailableInto: handle must be socket") end if
+  if typeof(target) != "bytes" then return error(INVALID_ARGUMENT, "platform.network.receiveAvailableInto: target must be bytes") end if
+  if typeof(offset) != "int" or typeof(maximum) != "int" or offset < 0 or maximum < 1 or maximum > MAX_RECEIVE_BYTES or offset > len(target) - maximum then
+    return error(INVALID_ARGUMENT, "platform.network.receiveAvailableInto: target range is invalid")
+  end if
+  pointer = try(bytePointer(target, offset, maximum, "receiveAvailableInto"))
+  if typeof(pointer) == "error" then return pointer end if
+  count = recv(handle, pointer, maximum, 0)
+  if count == 0 then return 0 end if
+  if isSocketErrorResult(count) then
+    code = WSAGetLastError()
+    if code == WSAEWOULDBLOCK then return void end if
+    return fail("receiveAvailableInto", "recv failed (" + code + ")")
+  end if
+  if count < 0 or count > maximum then return fail("receiveAvailableInto", "recv returned invalid byte count " + count + " for maximum " + maximum) end if
+  return count
+end function
+
+function receiveAvailable(handle, maximum)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveAvailable: handle must be socket") end if
+  if typeof(maximum) != "int" or maximum < 1 or maximum > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receiveAvailable: invalid maximum") end if
+  buffer = bytes(maximum, 0)
+  count = try(receiveAvailableInto(handle, buffer, 0, maximum))
+  if typeof(count) == "error" then return count end if
+  if count is void then return void end if
+  if count == 0 then return bytes(0) end if
+  if count == maximum then return buffer end if
+  return copyByteRange(buffer, 0, count, "receiveAvailable")
+end function
+
+function sleepMilliseconds(milliseconds)
+  if typeof(milliseconds) != "int" or milliseconds < 0 or milliseconds > 60000 then return error(INVALID_ARGUMENT, "platform.network.sleepMilliseconds: invalid delay") end if
+  Sleep(milliseconds)
+  return true
+end function
+
+function receiveExact(handle, count)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveExact: handle must be socket") end if
+  if typeof(count) != "int" or count < 0 or count > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receiveExact: invalid count") end if
+  output = bytes(count, 0)
+  if count == 0 then return output end if
+  basePointer = try(bytePointer(output, 0, count, "receiveExact"))
+  if typeof(basePointer) == "error" then return basePointer end if
+  cursor = 0
+  while cursor < count
+    remaining = count - cursor
+    received = recv(handle, basePointer + cursor, remaining, 0)
+    if received == 0 then return fail("receiveExact", "connection closed before frame completed") end if
+    if isSocketErrorResult(received) then return fail("receiveExact", "recv failed (" + WSAGetLastError() + ")") end if
+    if received < 0 or received > remaining then return fail("receiveExact", "recv returned invalid byte count " + received + " for remaining " + remaining) end if
+    cursor = cursor + received
+  end while
+  return output
+end function
+
+function close(handle)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.close: handle must be socket") end if
+  ignored = shutdown(handle, SD_BOTH)
+  result = closesocket(handle)
+  if result != 0 then return fail("close", "closesocket failed (" + WSAGetLastError() + ")") end if
+  return true
+end function
+
+function componentName()
+  return "platform.network"
+end function
+
+function targetMilestone()
+  return "M18"
+end function
+
+function isImplemented()
+  return true
+end function

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "schemaExtension": {
+    "magic": "MSEXT001",
+    "formatVersion": 1,
+    "envelopeKind": 43,
+    "path": "catalog/schema.extensions"
+  },
+  "sortSpill": {
+    "magic": "MSSPILL1",
+    "formatVersion": 1,
+    "headerSize": 16,
+    "executionThresholdRows": 128,
+    "maximumRunBytes": 268435456
+  },
+  "tlsSidecar": {
+    "minimumVersion": "TLSv1.3",
+    "maximumVersion": "TLSv1.3",
+    "serverPlaintextLeg": "loopback-only",
+    "clientPlaintextLeg": "loopback-only",
+    "hostnameVerification": true,
+    "serverCertificateVerification": "required",
+    "mutualTls": false
+  },
+  "sqlCompatibility": {
+    "autoIncrementKeywords": [
+      "AUTO_INCREMENT",
+      "AUTOINCREMENT"
+    ],
+    "identityAlias": "GENERATED ALWAYS AS IDENTITY",
+    "decimalPrecision": 10,
+    "decimalScale": 2,
+    "acceptedScaledValues": {
+      "3.3": 330,
+      "3": 300,
+      "-4.75": -475,
+      "1.25e2": 12500,
+      "3.300": 330
+    },
+    "rejectedValues": [
+      "3.333",
+      "123456789.01"
+    ],
+    "acceptedApproximateValues": {
+      "3.3": 3.3,
+      "4.4": 4.4,
+      "1.25e2": 125.0,
+      "1.25e-2": 0.0125
+    }
+  }
+}

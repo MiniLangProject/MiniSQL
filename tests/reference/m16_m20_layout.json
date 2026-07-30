@@ -1,0 +1,25 @@
+{
+  "statistics": {
+    "magic": "MSSTAT01",
+    "version": 1,
+    "kind": 50
+  },
+  "wire": {
+    "magic": "MSQL",
+    "version": 1,
+    "headerBytes": 32,
+    "maxPayloadBytes": 1048576
+  },
+  "backup": {
+    "magic": "MSBKP001",
+    "version": 1,
+    "kind": 60,
+    "maxFiles": 4096,
+    "maxFileBytes": 67108864,
+    "maxTotalBytes": 268435456
+  },
+  "acceptance": {
+    "phaseCount": 45,
+    "finalLine": "MiniSQL M16-M20R1 acceptance test: SUCCESS"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "server": {
+    "unlimitedRequestBudget": 0,
+    "defaultMaximumClients": 32,
+    "loopbackAddress": "127.0.0.1"
+  },
+  "client": {
+    "maximumScriptBytes": 1048576,
+    "statementMode": "one-per-line"
+  },
+  "acceptance": {
+    "phaseCount": 72,
+    "finalLine": "MiniSQL M32 acceptance test: SUCCESS"
+  }
+}

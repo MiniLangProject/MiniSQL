@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "path": "src/minisql/common/version.ml",
+      "package": "minisql.common.version",
+      "component": "common.version",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/common/errors.ml",
+      "package": "minisql.common.errors",
+      "component": "common.errors",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/common/limits.ml",
+      "package": "minisql.common.limits",
+      "component": "common.limits",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/common/endian.ml",
+      "package": "minisql.common.endian",
+      "component": "common.endian",
+      "targetMilestone": "M1"
+    },
+    {
+      "path": "src/minisql/common/varint.ml",
+      "package": "minisql.common.varint",
+      "component": "common.varint",
+      "targetMilestone": "M2"
+    },
+    {
+      "path": "src/minisql/common/crc32c.ml",
+      "package": "minisql.common.crc32c",
+      "component": "common.crc32c",
+      "targetMilestone": "M2"
+    },
+    {
+      "path": "src/minisql/common/uuid.ml",
+      "package": "minisql.common.uuid",
+      "component": "common.uuid",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/common/diagnostics.ml",
+      "package": "minisql.common.diagnostics",
+      "component": "common.diagnostics",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/config/model.ml",
+      "package": "minisql.config.model",
+      "component": "config.model",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/config/loader.ml",
+      "package": "minisql.config.loader",
+      "component": "config.loader",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/config/validation.ml",
+      "package": "minisql.config.validation",
+      "component": "config.validation",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/platform/file.ml",
+      "package": "minisql.platform.file",
+      "component": "platform.file",
+      "targetMilestone": "M3"
+    },
+    {
+      "path": "src/minisql/platform/file_win32.ml",
+      "package": "minisql.platform.file_win32",
+      "component": "platform.file_win32",
+      "targetMilestone": "M3"
+    },
+    {
+      "path": "src/minisql/platform/lock.ml",
+      "package": "minisql.platform.lock",
+      "component": "platform.lock",
+      "targetMilestone": "M3"
+    },
+    {
+      "path": "src/minisql/platform/clock.ml",
+      "package": "minisql.platform.clock",
+      "component": "platform.clock",
+      "targetMilestone": "M3"
+    },
+    {
+      "path": "src/minisql/platform/network.ml",
+      "package": "minisql.platform.network",
+      "component": "platform.network",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/storage/page.ml",
+      "package": "minisql.storage.page",
+      "component": "storage.page",
+      "targetMilestone": "M4"
+    },
+    {
+      "path": "src/minisql/storage/superblock.ml",
+      "package": "minisql.storage.superblock",
+      "component": "storage.superblock",
+      "targetMilestone": "M4"
+    },
+    {
+      "path": "src/minisql/storage/paged_file.ml",
+      "package": "minisql.storage.paged_file",
+      "component": "storage.paged_file",
+      "targetMilestone": "M4"
+    },
+    {
+      "path": "src/minisql/storage/buffer_pool.ml",
+      "package": "minisql.storage.buffer_pool",
+      "component": "storage.buffer_pool",
+      "targetMilestone": "M5"
+    },
+    {
+      "path": "src/minisql/storage/slotted_page.ml",
+      "package": "minisql.storage.slotted_page",
+      "component": "storage.slotted_page",
+      "targetMilestone": "M9"
+    },
+    {
+      "path": "src/minisql/storage/row_codec.ml",
+      "package": "minisql.storage.row_codec",
+      "component": "storage.row_codec",
+      "targetMilestone": "M9"
+    },
+    {
+      "path": "src/minisql/storage/heap_file.ml",
+      "package": "minisql.storage.heap_file",
+      "component": "storage.heap_file",
+      "targetMilestone": "M9"
+    },
+    {
+      "path": "src/minisql/storage/overflow.ml",
+      "package": "minisql.storage.overflow",
+      "component": "storage.overflow",
+      "targetMilestone": "M10"
+    },
+    {
+      "path": "src/minisql/storage/btree.ml",
+      "package": "minisql.storage.btree",
+      "component": "storage.btree",
+      "targetMilestone": "M11"
+    },
+    {
+      "path": "src/minisql/storage/checksum.ml",
+      "package": "minisql.storage.checksum",
+      "component": "storage.checksum",
+      "targetMilestone": "M2"
+    },
+    {
+      "path": "src/minisql/transaction/transaction.ml",
+      "package": "minisql.transaction.transaction",
+      "component": "transaction.transaction",
+      "targetMilestone": "M6"
+    },
+    {
+      "path": "src/minisql/transaction/wal.ml",
+      "package": "minisql.transaction.wal",
+      "component": "transaction.wal",
+      "targetMilestone": "M6"
+    },
+    {
+      "path": "src/minisql/transaction/checkpoint.ml",
+      "package": "minisql.transaction.checkpoint",
+      "component": "transaction.checkpoint",
+      "targetMilestone": "M7"
+    },
+    {
+      "path": "src/minisql/transaction/recovery.ml",
+      "package": "minisql.transaction.recovery",
+      "component": "transaction.recovery",
+      "targetMilestone": "M7"
+    },
+    {
+      "path": "src/minisql/transaction/lock_manager.ml",
+      "package": "minisql.transaction.lock_manager",
+      "component": "transaction.lock_manager",
+      "targetMilestone": "M6"
+    },
+    {
+      "path": "src/minisql/catalog/catalog.ml",
+      "package": "minisql.catalog.catalog",
+      "component": "catalog.catalog",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/catalog/metadata.ml",
+      "package": "minisql.catalog.metadata",
+      "component": "catalog.metadata",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/catalog/statistics.ml",
+      "package": "minisql.catalog.statistics",
+      "component": "catalog.statistics",
+      "targetMilestone": "M17"
+    },
+    {
+      "path": "src/minisql/catalog/schema_history.ml",
+      "package": "minisql.catalog.schema_history",
+      "component": "catalog.schema_history",
+      "targetMilestone": "M14"
+    },
+    {
+      "path": "src/minisql/sql/token.ml",
+      "package": "minisql.sql.token",
+      "component": "sql.token",
+      "targetMilestone": "M12"
+    },
+    {
+      "path": "src/minisql/sql/lexer.ml",
+      "package": "minisql.sql.lexer",
+      "component": "sql.lexer",
+      "targetMilestone": "M12"
+    },
+    {
+      "path": "src/minisql/sql/ast.ml",
+      "package": "minisql.sql.ast",
+      "component": "sql.ast",
+      "targetMilestone": "M12"
+    },
+    {
+      "path": "src/minisql/sql/parser.ml",
+      "package": "minisql.sql.parser",
+      "component": "sql.parser",
+      "targetMilestone": "M12"
+    },
+    {
+      "path": "src/minisql/sql/binder.ml",
+      "package": "minisql.sql.binder",
+      "component": "sql.binder",
+      "targetMilestone": "M13"
+    },
+    {
+      "path": "src/minisql/sql/types.ml",
+      "package": "minisql.sql.types",
+      "component": "sql.types",
+      "targetMilestone": "M13"
+    },
+    {
+      "path": "src/minisql/sql/values.ml",
+      "package": "minisql.sql.values",
+      "component": "sql.values",
+      "targetMilestone": "M13"
+    },
+    {
+      "path": "src/minisql/sql/expressions.ml",
+      "package": "minisql.sql.expressions",
+      "component": "sql.expressions",
+      "targetMilestone": "M13"
+    },
+    {
+      "path": "src/minisql/sql/dialect.ml",
+      "package": "minisql.sql.dialect",
+      "component": "sql.dialect",
+      "targetMilestone": "M12"
+    },
+    {
+      "path": "src/minisql/planner/logical_plan.ml",
+      "package": "minisql.planner.logical_plan",
+      "component": "planner.logical_plan",
+      "targetMilestone": "M16"
+    },
+    {
+      "path": "src/minisql/planner/rewrites.ml",
+      "package": "minisql.planner.rewrites",
+      "component": "planner.rewrites",
+      "targetMilestone": "M17"
+    },
+    {
+      "path": "src/minisql/planner/cost.ml",
+      "package": "minisql.planner.cost",
+      "component": "planner.cost",
+      "targetMilestone": "M17"
+    },
+    {
+      "path": "src/minisql/planner/physical_plan.ml",
+      "package": "minisql.planner.physical_plan",
+      "component": "planner.physical_plan",
+      "targetMilestone": "M16"
+    },
+    {
+      "path": "src/minisql/planner/optimizer.ml",
+      "package": "minisql.planner.optimizer",
+      "component": "planner.optimizer",
+      "targetMilestone": "M17"
+    },
+    {
+      "path": "src/minisql/executor/executor.ml",
+      "package": "minisql.executor.executor",
+      "component": "executor.executor",
+      "targetMilestone": "M15"
+    },
+    {
+      "path": "src/minisql/executor/scan.ml",
+      "package": "minisql.executor.scan",
+      "component": "executor.scan",
+      "targetMilestone": "M15"
+    },
+    {
+      "path": "src/minisql/executor/filter.ml",
+      "package": "minisql.executor.filter",
+      "component": "executor.filter",
+      "targetMilestone": "M15"
+    },
+    {
+      "path": "src/minisql/executor/projection.ml",
+      "package": "minisql.executor.projection",
+      "component": "executor.projection",
+      "targetMilestone": "M15"
+    },
+    {
+      "path": "src/minisql/executor/join.ml",
+      "package": "minisql.executor.join",
+      "component": "executor.join",
+      "targetMilestone": "M16"
+    },
+    {
+      "path": "src/minisql/executor/aggregate.ml",
+      "package": "minisql.executor.aggregate",
+      "component": "executor.aggregate",
+      "targetMilestone": "M16"
+    },
+    {
+      "path": "src/minisql/executor/sort.ml",
+      "package": "minisql.executor.sort",
+      "component": "executor.sort",
+      "targetMilestone": "M16"
+    },
+    {
+      "path": "src/minisql/executor/dml.ml",
+      "package": "minisql.executor.dml",
+      "component": "executor.dml",
+      "targetMilestone": "M15"
+    },
+    {
+      "path": "src/minisql/protocol/constants.ml",
+      "package": "minisql.protocol.constants",
+      "component": "protocol.constants",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/protocol/messages.ml",
+      "package": "minisql.protocol.messages",
+      "component": "protocol.messages",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/protocol/codec.ml",
+      "package": "minisql.protocol.codec",
+      "component": "protocol.codec",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/protocol/connection.ml",
+      "package": "minisql.protocol.connection",
+      "component": "protocol.connection",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/server/server.ml",
+      "package": "minisql.server.server",
+      "component": "server.server",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/server/session.ml",
+      "package": "minisql.server.session",
+      "component": "server.session",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/server/database_manager.ml",
+      "package": "minisql.server.database_manager",
+      "component": "server.database_manager",
+      "targetMilestone": "M8"
+    },
+    {
+      "path": "src/minisql/server/listener.ml",
+      "package": "minisql.server.listener",
+      "component": "server.listener",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/client/client.ml",
+      "package": "minisql.client.client",
+      "component": "client.client",
+      "targetMilestone": "M0"
+    },
+    {
+      "path": "src/minisql/client/console.ml",
+      "package": "minisql.client.console",
+      "component": "client.console",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/client/formatter.ml",
+      "package": "minisql.client.formatter",
+      "component": "client.formatter",
+      "targetMilestone": "M18"
+    },
+    {
+      "path": "src/minisql/tools/check.ml",
+      "package": "minisql.tools.check",
+      "component": "tools.check",
+      "targetMilestone": "M20"
+    },
+    {
+      "path": "src/minisql/tools/backup.ml",
+      "package": "minisql.tools.backup",
+      "component": "tools.backup",
+      "targetMilestone": "M20"
+    },
+    {
+      "path": "src/minisql/tools/migrate.ml",
+      "package": "minisql.tools.migrate",
+      "component": "tools.migrate",
+      "targetMilestone": "M20"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "iterations": 8,
+  "scenarios": [
+    {
+      "name": "durable-commit",
+      "writer": "write-commit",
+      "reader": "recover-commit",
+      "expected": "committed pages visible"
+    },
+    {
+      "name": "uncommitted",
+      "writer": "write-uncommitted",
+      "reader": "recover-uncommitted",
+      "expected": "uncommitted pages absent"
+    }
+  ]
+}

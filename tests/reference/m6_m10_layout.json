@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "wal": {
+    "magic": "MSQLWAL1",
+    "headerSize": 80,
+    "payloadChecksumOffset": 64,
+    "headerChecksumOffset": 68,
+    "recordTypes": {
+      "txBegin": 1,
+      "pageImage": 2,
+      "txCommit": 3,
+      "txAbort": 4,
+      "checkpointBegin": 5,
+      "checkpointEnd": 6
+    }
+  },
+  "checkpoint": {
+    "magic": "MSQLCKP1",
+    "slotSize": 256,
+    "slotAOffset": 0,
+    "slotBOffset": 256,
+    "fileSize": 512,
+    "checksumOffset": 64
+  },
+  "row": {
+    "magic": "MSRW",
+    "headerSize": 16,
+    "directoryEntrySize": 8,
+    "formatVersion": 1
+  },
+  "slottedPage": {
+    "slotSize": 8,
+    "generationBits": 16,
+    "retiredGeneration": 65535
+  },
+  "overflow": {
+    "pointerSize": 48,
+    "chainHeaderOffset": 64,
+    "chainHeaderSize": 40,
+    "dataOffset": 104,
+    "nextPageOffset": 80,
+    "chunkLengthOffset": 88,
+    "totalLengthOffset": 92,
+    "sequenceOffset": 96
+  },
+  "acceptance": {
+    "phaseCount": 30,
+    "finalLine": "MiniSQL M6-M10R3 acceptance test: SUCCESS"
+  },
+  "catalog": {
+    "databaseMetaFileId": 1,
+    "catalogFileId": 2,
+    "initialNextObjectId": 3,
+    "initialNextTransactionId": 1
+  },
+  "heap": {
+    "forwardSize": 24,
+    "maxForwardDepth": 64
+  }
+}

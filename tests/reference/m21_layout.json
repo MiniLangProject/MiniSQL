@@ -1,0 +1,35 @@
+{
+  "statistics": {
+    "magic": "MSSTAT01",
+    "version": 1,
+    "kind": 50
+  },
+  "wire": {
+    "magic": "MSQL",
+    "version": 1,
+    "headerBytes": 32,
+    "maxPayloadBytes": 1048576
+  },
+  "backup": {
+    "magic": "MSBKP001",
+    "version": 1,
+    "kind": 60
+  },
+  "security": {
+    "magic": "MSSEC001",
+    "formatVersion": 1,
+    "kind": 70,
+    "fileId": 0,
+    "generations": 2
+  },
+  "authentication": {
+    "saltBytes": 16,
+    "verifierBytes": 32,
+    "nonceBytes": 32,
+    "pbkdf2Iterations": 600000
+  },
+  "acceptance": {
+    "phaseCount": 52,
+    "finalLine": "MiniSQL M21R1 acceptance test: SUCCESS"
+  }
+}

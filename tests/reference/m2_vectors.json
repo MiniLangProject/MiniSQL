@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "unsignedVarints": [
+    {"bits": 32, "value": "0", "hex": "00"},
+    {"bits": 32, "value": "127", "hex": "7f"},
+    {"bits": 32, "value": "128", "hex": "8001"},
+    {"bits": 32, "value": "300", "hex": "ac02"},
+    {"bits": 32, "value": "4294967295", "hex": "ffffffff0f"},
+    {"bits": 64, "value": "81985529216486895", "hex": "ef9bafcdf8acd19101"},
+    {"bits": 64, "value": "18446744073709551615", "hex": "ffffffffffffffffff01"}
+  ],
+  "signedZigZagVarints": [
+    {"bits": 32, "value": "-65", "hex": "8101"},
+    {"bits": 32, "value": "-2147483648", "hex": "ffffffff0f"},
+    {"bits": 32, "value": "2147483647", "hex": "feffffff0f"},
+    {"bits": 64, "value": "-9223372036854775808", "hex": "ffffffffffffffffff01"},
+    {"bits": 64, "value": "9223372036854775807", "hex": "feffffffffffffffff01"}
+  ],
+  "crc32c": [
+    {"name": "empty", "hexInput": "", "value": "00000000"},
+    {"name": "check", "hexInput": "313233343536373839", "value": "e3069283"},
+    {"name": "abc", "hexInput": "616263", "value": "364b3fb7"},
+    {"name": "32-zero", "hexInput": "0000000000000000000000000000000000000000000000000000000000000000", "value": "8a9136aa"}
+  ]
+}

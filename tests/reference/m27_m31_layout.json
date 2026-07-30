@@ -1,0 +1,40 @@
+{
+  "scheduler": {
+    "deadlockError": 9031,
+    "lockTimeoutError": 9032,
+    "standbyNotPromotedError": 9033,
+    "maximumClients": 128
+  },
+  "secrets": {
+    "handshakeTimeoutMs": 30000,
+    "sessionIdleTimeoutMs": 300000,
+    "passwordTransport": "mutable-utf8-bytes"
+  },
+  "secureTransport": {
+    "name": "MiniSQL Secure Transport v1",
+    "tls": false,
+    "cipher": "AES-256-GCM",
+    "sequenceBytes": 8,
+    "tagBytes": 16,
+    "secureFlag": 1
+  },
+  "audit": {
+    "magic": "MSAUD001",
+    "version": 1,
+    "headerBytes": 120,
+    "hashBytes": 32,
+    "keyBytes": 32
+  },
+  "archive": {
+    "magic": "MSARC001",
+    "kind": 80,
+    "standbyMagic": "MSSTB001",
+    "standbyKind": 81,
+    "target": "exact-record-boundary-lsn"
+  },
+  "acceptance": {
+    "phaseCount": 68,
+    "finalLine": "MiniSQL M27-M31R4 acceptance test: SUCCESS",
+    "resultArchive": "build/MiniSQL_M27_M31R4_RESULTS_<timestamp>.zip"
+  }
+}

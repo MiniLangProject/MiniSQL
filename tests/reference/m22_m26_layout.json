@@ -1,0 +1,30 @@
+{
+  "prepared": {
+    "parameterTokenKind": 23,
+    "scope": "session",
+    "binding": "execute-time"
+  },
+  "maintenance": {
+    "magic": "MSMAINT1",
+    "kind": 42,
+    "formatVersion": 1,
+    "preparedStatus": 1,
+    "committedStatus": 2,
+    "path": "catalog/maintenance.pending"
+  },
+  "migration": {
+    "supportedPageSizes": [
+      4096,
+      8192,
+      16384,
+      32768
+    ],
+    "publication": "verified-source-to-target-rewrite",
+    "sourceMutable": false
+  },
+  "acceptance": {
+    "phaseCount": 59,
+    "finalLine": "MiniSQL M22-M26R1 acceptance test: SUCCESS",
+    "resultArchive": "build/MiniSQL_M22_M26R1_RESULTS_<timestamp>.zip"
+  }
+}

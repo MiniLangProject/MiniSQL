@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minisql.local/schema/config-v1.json",
+  "title": "MiniSQL global configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "configVersion",
+    "paths",
+    "server",
+    "runtime",
+    "databaseDefaults",
+    "safety"
+  ],
+  "properties": {
+    "configVersion": {
+      "const": 1
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bindAddress",
+        "port",
+        "maxConnections",
+        "maxStatementBytes",
+        "maxFrameBytes"
+      ],
+      "properties": {
+        "bindAddress": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "maxConnections": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxStatementBytes": {
+          "type": "integer",
+          "minimum": 1024
+        },
+        "maxFrameBytes": {
+          "type": "integer",
+          "minimum": 1024
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bufferPoolBytes",
+        "queryTimeoutMs",
+        "checkpointWalBytes",
+        "temporaryMemoryBytes",
+        "logLevel"
+      ],
+      "properties": {
+        "bufferPoolBytes": {
+          "type": "integer",
+          "minimum": 1048576
+        },
+        "queryTimeoutMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checkpointWalBytes": {
+          "type": "integer",
+          "minimum": 1048576
+        },
+        "temporaryMemoryBytes": {
+          "type": "integer",
+          "minimum": 1048576
+        },
+        "logLevel": {
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      }
+    },
+    "databaseDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pageSize",
+        "checksumAlgorithm",
+        "walSegmentBytes",
+        "textEncoding",
+        "defaultCollation",
+        "databaseFormatVersion",
+        "tableFileFormatVersion",
+        "indexFileFormatVersion",
+        "walFormatVersion",
+        "rowFormatVersion"
+      ],
+      "properties": {
+        "pageSize": {
+          "enum": [
+            4096,
+            8192,
+            16384,
+            32768
+          ]
+        },
+        "checksumAlgorithm": {
+          "const": "crc32c"
+        },
+        "walSegmentBytes": {
+          "type": "integer",
+          "minimum": 1048576
+        },
+        "textEncoding": {
+          "const": "utf-8"
+        },
+        "defaultCollation": {
+          "enum": [
+            "binary"
+          ]
+        },
+        "databaseFormatVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tableFileFormatVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "indexFileFormatVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "walFormatVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rowFormatVersion": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowRemoteWithoutAuthentication",
+        "durability",
+        "allowUnknownFormatFeatures"
+      ],
+      "properties": {
+        "allowRemoteWithoutAuthentication": {
+          "const": false
+        },
+        "durability": {
+          "const": "full"
+        },
+        "allowUnknownFormatFeatures": {
+          "const": false
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataRoot",
+        "temporaryRoot",
+        "logDirectory"
+      ],
+      "properties": {
+        "dataRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "temporaryRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logDirectory": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
