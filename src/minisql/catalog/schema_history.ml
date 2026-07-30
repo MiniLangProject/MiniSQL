@@ -61,6 +61,7 @@ const ACTION_CREATE_SEQUENCE = 7
 const ACTION_DROP_SEQUENCE = 8
 const ACTION_CREATE_TRIGGER = 9
 const ACTION_DROP_TRIGGER = 10
+const ACTION_DROP_INDEX = 11
 
 const SCHEMA_EXTENSION_VERSION = 1
 const TRIGGER_BEFORE = 1
@@ -708,7 +709,9 @@ end function
 function appendConstraint(preparedMetadata, tableName, tableSchemaValue, value)
   if value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE or value.kind == CONSTRAINT_INDEX then
     value.indexId = allocateId(preparedMetadata)
-    if len(value.indexName) == 0 then value.indexName = generatedConstraintName("idx", tableName, "" + value.indexId) end if
+    if len(value.indexName) == 0 then
+      if len(value.name) > 0 then value.indexName = value.name else value.indexName = generatedConstraintName("idx", tableName, "" + value.indexId) end if
+    end if
   end if
   tableSchemaValue.constraints = tableSchemaValue.constraints + [value]
   return value
@@ -799,7 +802,7 @@ function constraintFromAst(prepared, table, tableSchemaValue, source)
   expressionSql = ""
   if source.expression is not void then expressionSql = ast.formatExpression(source.expression) end if
   value = constraint(name, source.kind, source.columns, expressionSql, source.referencesTable, source.referencesColumns, source.onDelete, source.onUpdate, 0, "")
-  if source.kind == CONSTRAINT_PRIMARY_KEY or source.kind == CONSTRAINT_UNIQUE then appendConstraint(prepared.newMetadata, table.name, tableSchemaValue, value) else tableSchemaValue.constraints = tableSchemaValue.constraints + [value] end if
+  if source.kind == CONSTRAINT_PRIMARY_KEY or source.kind == CONSTRAINT_UNIQUE or source.kind == CONSTRAINT_INDEX then appendConstraint(prepared.newMetadata, table.name, tableSchemaValue, value) else tableSchemaValue.constraints = tableSchemaValue.constraints + [value] end if
   return value
 end function
 
@@ -977,7 +980,7 @@ function buildCreateTable(prepared, databasePath, bound)
     if source.expression is not void then expressionSql = ast.formatExpression(source.expression) end if
     value = constraint(name, source.kind, source.columns, expressionSql, source.referencesTable, source.referencesColumns, source.onDelete, source.onUpdate, 0, "")
     if source.kind == CONSTRAINT_PRIMARY_KEY then primaryCount = primaryCount + 1 end if
-    if source.kind == CONSTRAINT_PRIMARY_KEY or source.kind == CONSTRAINT_UNIQUE then
+    if source.kind == CONSTRAINT_PRIMARY_KEY or source.kind == CONSTRAINT_UNIQUE or source.kind == CONSTRAINT_INDEX then
       appendConstraint(prepared.newMetadata, statement.name, schema, value)
     else
       schema.constraints = schema.constraints + [value]
@@ -1057,6 +1060,40 @@ function buildCreateIndex(prepared, databasePath, bound)
   return true
 end function
 
+function buildDropIndex(prepared, databasePath, bound)
+  if bound.table is void then return true end if
+  table = catalogTableById(prepared.newCatalog, bound.table.tableId)
+  if table is void then return true end if
+  tableSchemaValue = ensurePreparedTableSchema(prepared, table)
+  found = -1
+  if len(tableSchemaValue.constraints) > 0 then
+    for index = 0 to len(tableSchemaValue.constraints) - 1
+      value = tableSchemaValue.constraints[index]
+      if value.name == bound.statement.name or value.indexName == bound.statement.name then found = index end if
+    end for
+  end if
+  if found < 0 then
+    if bound.statement.ifExists then return true end if
+    return fail(OBJECT_NOT_FOUND, "buildDropIndex", "index not found: " + bound.statement.name)
+  end if
+  removed = tableSchemaValue.constraints[found]
+  if removed.kind == CONSTRAINT_PRIMARY_KEY then return fail(UNSUPPORTED_SQL, "buildDropIndex", "DROP INDEX cannot remove PRIMARY KEY") end if
+  if removed.indexId <= 0 then return fail(OBJECT_NOT_FOUND, "buildDropIndex", "constraint is not an index: " + bound.statement.name) end if
+  if removed.kind == CONSTRAINT_UNIQUE then
+    for each schemaValue in prepared.newState.tables
+      for each dependent in schemaValue.constraints
+        if dependent.kind == CONSTRAINT_FOREIGN_KEY and dependent.referenceTable == table.name and sameStringArray(dependent.referenceColumns, removed.columns) then
+          return fail(CONSTRAINT_VIOLATION, "buildDropIndex", "index is referenced by foreign key " + dependent.name)
+        end if
+      end for
+    end for
+  end if
+  tableSchemaValue.constraints = removeAt(tableSchemaValue.constraints, found)
+  original = indexFilePath(databasePath, removed.indexId)
+  prepared.backups = prepared.backups + [BackupPlan(original, original + ".ddl.old")]
+  return true
+end function
+
 function buildDropTable(prepared, databasePath, bound)
   if bound.table is void then return true end if
   tableIndex = tableIndexByName(prepared.newCatalog, bound.table.name)
@@ -1114,6 +1151,13 @@ function stageCreateIndex(transaction, bound)
   return true
 end function
 
+function stageDropIndex(transaction, bound)
+  validateTransaction(transaction, "stageDropIndex")
+  if not binder.isBoundDropIndex(bound) then return fail(INVALID_ARGUMENT, "stageDropIndex", "bound statement must be BoundDropIndex") end if
+  transaction.actions = transaction.actions + [DdlAction(ACTION_DROP_INDEX, bound)]
+  return true
+end function
+
 function stageDropTable(transaction, bound)
   validateTransaction(transaction, "stageDropTable")
   if not binder.isBoundDropTable(bound) then return fail(INVALID_ARGUMENT, "stageDropTable", "bound statement must be BoundDropTable") end if
@@ -1136,6 +1180,8 @@ function prepare(transaction)
       buildCreateTable(prepared, transaction.database.path, action.payload)
     else if action.kind == ACTION_CREATE_INDEX then
       buildCreateIndex(prepared, transaction.database.path, action.payload)
+    else if action.kind == ACTION_DROP_INDEX then
+      buildDropIndex(prepared, transaction.database.path, action.payload)
     else if action.kind == ACTION_DROP_TABLE then
       buildDropTable(prepared, transaction.database.path, action.payload)
     else if action.kind == ACTION_ALTER_TABLE then

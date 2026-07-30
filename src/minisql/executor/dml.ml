@@ -5,7 +5,9 @@ import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
+import minisql.executor.projection as projection
 import minisql.executor.scan as scan
+import minisql.executor.sort as sort
 import minisql.sql.ast as ast
 import minisql.sql.binder as binder
 import minisql.sql.expressions as expressions
@@ -507,8 +509,31 @@ function insert(database, bound, pageTransaction)
   return result
 end function
 
+function dmlTargetRows(rows, whereExpression, orderExpressions, orderItems, limit)
+  selected = []
+  for each source in rows
+    context = expressions.rowContext(source.values)
+    if expressions.predicatePasses(whereExpression, context) then
+      orderValues = []
+      for each expression in orderExpressions
+        orderValues = orderValues + [expressions.evaluate(expression, context)]
+      end for
+      selected = selected + [projection.ProjectedRow(source, [], orderValues)]
+    end if
+  end for
+  selected = sort.sortProjected(selected, orderItems)
+  output = []
+  count = 0
+  for each item in selected
+    if limit >= 0 and count >= limit then break end if
+    output = output + [item.source]
+    count = count + 1
+  end for
+  return output
+end function
+
 function updateInner(database, bound, pageTransaction, file)
-  sourceRows = scan.scanUsing(database.path, bound.table, pageTransaction, file)
+  sourceRows = dmlTargetRows(scan.scanUsing(database.path, bound.table, pageTransaction, file), bound.whereExpression, bound.orderExpressions, bound.statement.orderBy, bound.statement.limit)
   affected = 0
   references = []
   returnedRows = []
@@ -517,7 +542,6 @@ function updateInner(database, bound, pageTransaction, file)
   rowSchema = scan.schemaForTable(bound.table)
   schema = tableSchemaState(database, bound.table)
   for each source in sourceRows
-    if expressions.predicatePasses(bound.whereExpression, expressions.rowContext(source.values)) then
       nextRow = []
       for each oldValue in source.values
         nextRow = nextRow + [oldValue]
@@ -537,7 +561,6 @@ function updateInner(database, bound, pageTransaction, file)
       newRows = newRows + [nextRow]
       affected = affected + 1
       if len(bound.returning) > 0 then returnedRows = returnedRows + [evaluateReturning(bound.returning, nextRow)] end if
-    end if
   end for
   return DmlResult(affected, references, returnedRows, oldRows, newRows)
 end function
@@ -555,18 +578,16 @@ function update(database, bound, pageTransaction)
 end function
 
 function deleteInner(database, bound, pageTransaction, file)
-  sourceRows = scan.scanUsing(database.path, bound.table, pageTransaction, file)
+  sourceRows = dmlTargetRows(scan.scanUsing(database.path, bound.table, pageTransaction, file), bound.whereExpression, bound.orderExpressions, bound.statement.orderBy, bound.statement.limit)
   affected = 0
   returnedRows = []
   oldRows = []
   for each source in sourceRows
-    if expressions.predicatePasses(bound.whereExpression, expressions.rowContext(source.values)) then
       validateDeleteReferences(database, bound.table, source.values, pageTransaction, file)
       if len(bound.returning) > 0 then returnedRows = returnedRows + [evaluateReturning(bound.returning, source.values)] end if
       stageDelete(pageTransaction, file, bound.table, source.reference)
       oldRows = oldRows + [source.values]
       affected = affected + 1
-    end if
   end for
   return DmlResult(affected, [], returnedRows, oldRows, [])
 end function

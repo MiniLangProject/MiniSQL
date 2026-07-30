@@ -14,6 +14,7 @@ struct LexerState
   line
   column
   tokens
+  mysqlMode
 end struct
 
 function fail(state, message)
@@ -84,6 +85,12 @@ function skipIgnored(state)
       while current(state) >= 0 and current(state) != 10
         advance(state)
       end while
+    else if state.mysqlMode and current(state) == 35 then
+      changed = true
+      advance(state)
+      while current(state) >= 0 and current(state) != 10
+        advance(state)
+      end while
     else if current(state) == 47 and peek(state, 1) == 42 then
       changed = true
       advance(state)
@@ -122,6 +129,37 @@ function readIdentifier(state)
   return true
 end function
 
+function readBacktickIdentifier(state)
+  startOffset = state.index
+  startLine = state.line
+  startColumn = state.column
+  advance(state)
+  output = []
+  closed = false
+  while current(state) >= 0
+    value = current(state)
+    if value == 96 then
+      if peek(state, 1) == 96 then
+        output = output + [96]
+        advance(state)
+        advance(state)
+      else
+        advance(state)
+        closed = true
+        break
+      end if
+    else
+      output = output + [value]
+      advance(state)
+    end if
+  end while
+  if not closed then return fail(state, "unterminated quoted identifier") end if
+  text = decode(bytes(output))
+  if len(text) == 0 then return fail(state, "quoted identifier must not be empty") end if
+  appendToken(state, token.TokenKind.Identifier, text, text, startOffset, startLine, startColumn, true)
+  return true
+end function
+
 function readQuotedIdentifier(state)
   startOffset = state.index
   startLine = state.line
@@ -153,6 +191,16 @@ function readQuotedIdentifier(state)
   return true
 end function
 
+function mysqlEscapeByte(value)
+  if value == 48 then return 0 end if
+  if value == 98 then return 8 end if
+  if value == 110 then return 10 end if
+  if value == 114 then return 13 end if
+  if value == 116 then return 9 end if
+  if value == 90 then return 26 end if
+  return value
+end function
+
 function readString(state)
   startOffset = state.index
   startLine = state.line
@@ -172,6 +220,44 @@ function readString(state)
         closed = true
         break
       end if
+    else if state.mysqlMode and value == 92 and peek(state, 1) >= 0 then
+      advance(state)
+      output = output + [mysqlEscapeByte(current(state))]
+      advance(state)
+    else
+      output = output + [value]
+      advance(state)
+    end if
+  end while
+  if not closed then return fail(state, "unterminated string literal") end if
+  value = decode(bytes(output))
+  appendToken(state, token.TokenKind.StringLiteral, rawText(state, startOffset, state.index), value, startOffset, startLine, startColumn, false)
+  return true
+end function
+
+function readDoubleString(state)
+  startOffset = state.index
+  startLine = state.line
+  startColumn = state.column
+  advance(state)
+  output = []
+  closed = false
+  while current(state) >= 0
+    value = current(state)
+    if value == 34 then
+      if peek(state, 1) == 34 then
+        output = output + [34]
+        advance(state)
+        advance(state)
+      else
+        advance(state)
+        closed = true
+        break
+      end if
+    else if state.mysqlMode and value == 92 and peek(state, 1) >= 0 then
+      advance(state)
+      output = output + [mysqlEscapeByte(current(state))]
+      advance(state)
     else
       output = output + [value]
       advance(state)
@@ -224,7 +310,14 @@ function symbolToken(state)
   if first == 62 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.GreaterEqual, ">=", void, startOffset, startLine, startColumn, false) end if
   if first == 60 and second == 62 then advance(state); advance(state); return token.create(token.TokenKind.NotEqual, "<>", void, startOffset, startLine, startColumn, false) end if
   if first == 33 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.NotEqual, "!=", void, startOffset, startLine, startColumn, false) end if
-  if first == 124 and second == 124 then advance(state); advance(state); return token.create(token.TokenKind.Concat, "||", void, startOffset, startLine, startColumn, false) end if
+  if state.mysqlMode and first == 33 then advance(state); return token.create(token.TokenKind.Keyword, "NOT", "NOT", startOffset, startLine, startColumn, false) end if
+  if state.mysqlMode and first == 38 and second == 38 then advance(state); advance(state); return token.create(token.TokenKind.Keyword, "AND", "AND", startOffset, startLine, startColumn, false) end if
+  if first == 124 and second == 124 then
+    advance(state)
+    advance(state)
+    if state.mysqlMode then return token.create(token.TokenKind.Keyword, "OR", "OR", startOffset, startLine, startColumn, false) end if
+    return token.create(token.TokenKind.Concat, "||", void, startOffset, startLine, startColumn, false)
+  end if
   advance(state)
   if first == 44 then return token.create(token.TokenKind.Comma, ",", void, startOffset, startLine, startColumn, false) end if
   if first == 46 then return token.create(token.TokenKind.Dot, ".", void, startOffset, startLine, startColumn, false) end if
@@ -243,17 +336,21 @@ function symbolToken(state)
   return fail(state, "unexpected byte 0x" + hex(bytes([first])))
 end function
 
-function tokenizeSql(source)
+function tokenizeWithMode(source, mysqlMode)
   if typeof(source) != "string" then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: source must be string") end if
   raw = bytes(source)
   if len(raw) > MAX_SQL_BYTES then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: SQL text exceeds 1 MiB") end if
-  state = LexerState(source, raw, 0, 1, 1, [])
+  state = LexerState(source, raw, 0, 1, 1, [], mysqlMode)
   while state.index < len(raw)
     skipIgnored(state)
     if state.index >= len(raw) then break end if
     value = current(state)
     if isIdentifierStart(value) then
       readIdentifier(state)
+    else if mysqlMode and value == 96 then
+      readBacktickIdentifier(state)
+    else if mysqlMode and value == 34 then
+      readDoubleString(state)
     else if value == 34 then
       readQuotedIdentifier(state)
     else if value == 39 then
@@ -267,6 +364,14 @@ function tokenizeSql(source)
   end while
   state.tokens = state.tokens + [token.eof(state.index, state.line, state.column)]
   return state.tokens
+end function
+
+function tokenizeSql(source)
+  return tokenizeWithMode(source, false)
+end function
+
+function tokenizeMySql(source)
+  return tokenizeWithMode(source, true)
 end function
 
 function componentName()

@@ -12,6 +12,8 @@ struct ParserState
   tokens
   index
   parameterCount
+  mysqlMode
+  mysqlConflictUpdate
 end struct
 
 function fail(state, message)
@@ -65,7 +67,7 @@ function isIdentifierToken(value)
 end function
 
 function isFunctionNameToken(value)
-  return isIdentifierToken(value) or token.isKeyword(value, "COALESCE") or token.isKeyword(value, "NULLIF") or token.isKeyword(value, "ROW_NUMBER") or token.isKeyword(value, "RANK") or token.isKeyword(value, "DENSE_RANK") or token.isKeyword(value, "NEXTVAL") or token.isKeyword(value, "CURRVAL")
+  return isIdentifierToken(value) or token.isKeyword(value, "COALESCE") or token.isKeyword(value, "IFNULL") or token.isKeyword(value, "NOW") or token.isKeyword(value, "NULLIF") or token.isKeyword(value, "ROW_NUMBER") or token.isKeyword(value, "RANK") or token.isKeyword(value, "DENSE_RANK") or token.isKeyword(value, "NEXTVAL") or token.isKeyword(value, "CURRVAL")
 end function
 
 // OLD and NEW are reserved pseudo-row qualifiers, not general identifiers.
@@ -113,6 +115,15 @@ function parseIdentifierName(state, description)
   return parseIdentifier(state, description).name
 end function
 
+function parseQualifiedIdentifierName(state, description)
+  name = parseIdentifierName(state, description)
+  if state.mysqlMode and matchKind(state, token.TokenKind.Dot) then
+    name = parseIdentifierName(state, description)
+    if matchKind(state, token.TokenKind.Dot) then name = parseIdentifierName(state, description) end if
+  end if
+  return name
+end function
+
 function parsePrincipalName(state, description)
   if matchKeyword(state, "PUBLIC") then return "public" end if
   return parseIdentifierName(state, description)
@@ -148,11 +159,18 @@ function parseTypeName(state)
   advance(state)
   name = currentToken.text
   if currentToken.kind == token.TokenKind.Identifier then name = currentToken.text end if
+  if state.mysqlMode and name == "CHARACTER" and matchKeyword(state, "VARYING") then name = "VARCHAR" end if
   if name == "DOUBLE" and matchKeyword(state, "PRECISION") then name = "DOUBLE PRECISION" end if
   length = 0
   precision = 0
   scale = 0
-  if matchKind(state, token.TokenKind.LeftParen) then
+  if state.mysqlMode and (name == "ENUM" or name == "SET") and matchKind(state, token.TokenKind.LeftParen) then
+    expectKind(state, token.TokenKind.StringLiteral, "type label")
+    while matchKind(state, token.TokenKind.Comma)
+      expectKind(state, token.TokenKind.StringLiteral, "type label")
+    end while
+    expectKind(state, token.TokenKind.RightParen, "')'")
+  else if matchKind(state, token.TokenKind.LeftParen) then
     first = parseIntegerValue(state, "type parameter")
     if matchKind(state, token.TokenKind.Comma) then
       precision = first
@@ -163,6 +181,20 @@ function parseTypeName(state)
     end if
     expectKind(state, token.TokenKind.RightParen, "')'")
   end if
+  if state.mysqlMode then
+    parsingAttributes = true
+    while parsingAttributes
+      if matchKeyword(state, "UNSIGNED") then
+        ignoredUnsigned = true
+      else if matchKeyword(state, "SIGNED") then
+        ignoredSigned = true
+      else if matchKeyword(state, "ZEROFILL") then
+        ignoredZerofill = true
+      else
+        parsingAttributes = false
+      end if
+    end while
+  end if
   return ast.typeName(name, length, precision, scale)
 end function
 
@@ -172,6 +204,26 @@ function parseReferentialAction(state)
   if matchKeyword(state, "NO") then expectKeyword(state, "ACTION"); return "NO ACTION" end if
   if matchKeyword(state, "SET") then expectKeyword(state, "NULL"); return "SET NULL" end if
   return fail(state, "expected referential action")
+end function
+
+function parseIndexColumnList(state)
+  expectKind(state, token.TokenKind.LeftParen, "'('")
+  result = [parseIdentifierName(state, "index column name")]
+  if state.mysqlMode and matchKind(state, token.TokenKind.LeftParen) then
+    ignoredPrefixLength = parseIntegerValue(state, "index prefix length")
+    expectKind(state, token.TokenKind.RightParen, "')'")
+  end if
+  if state.mysqlMode and (matchKeyword(state, "ASC") or matchKeyword(state, "DESC")) then ignoredDirection = true end if
+  while matchKind(state, token.TokenKind.Comma)
+    result = result + [parseIdentifierName(state, "index column name")]
+    if state.mysqlMode and matchKind(state, token.TokenKind.LeftParen) then
+      ignoredPrefixLength = parseIntegerValue(state, "index prefix length")
+      expectKind(state, token.TokenKind.RightParen, "')'")
+    end if
+    if state.mysqlMode and (matchKeyword(state, "ASC") or matchKeyword(state, "DESC")) then ignoredDirection = true end if
+  end while
+  expectKind(state, token.TokenKind.RightParen, "')'")
+  return result
 end function
 
 function parseColumnDefinition(state)
@@ -208,6 +260,7 @@ function parseColumnDefinition(state)
       nullableSpecified = true
     else if matchKeyword(state, "UNIQUE") then
       unique = true
+      if state.mysqlMode then ignoredKey = matchKeyword(state, "KEY") end if
     else if matchKeyword(state, "DEFAULT") then
       defaultExpression = parseExpression(state, 0)
     else if matchKeyword(state, "CHECK") then
@@ -234,8 +287,15 @@ function parseColumnDefinition(state)
         expectKind(state, token.TokenKind.LeftParen, "'('")
         generatedExpression = parseExpression(state, 0)
         expectKind(state, token.TokenKind.RightParen, "')'")
-        expectKeyword(state, "STORED")
-        generatedStored = true
+        if matchKeyword(state, "STORED") then
+          generatedStored = true
+        else if state.mysqlMode and matchKeyword(state, "VIRTUAL") then
+          generatedStored = false
+        else if state.mysqlMode then
+          generatedStored = false
+        else
+          expectKeyword(state, "STORED")
+        end if
       end if
     else if matchKeyword(state, "AUTO_INCREMENT") then
       identity = true
@@ -245,6 +305,22 @@ function parseColumnDefinition(state)
       identity = true
       nullable = false
       nullableSpecified = true
+    else if state.mysqlMode and matchKeyword(state, "COMMENT") then
+      expectKind(state, token.TokenKind.StringLiteral, "column comment")
+    else if state.mysqlMode and matchKeyword(state, "COLLATE") then
+      ignoredCollation = parseIdentifierName(state, "collation name")
+    else if state.mysqlMode and matchKeyword(state, "CHARACTER") then
+      expectKeyword(state, "SET")
+      ignoredCharacterSet = parseIdentifierName(state, "character set name")
+    else if state.mysqlMode and matchKeyword(state, "ON") then
+      expectKeyword(state, "UPDATE")
+      ignoredOnUpdate = parseExpression(state, 0)
+    else if state.mysqlMode and (matchKeyword(state, "VISIBLE") or matchKeyword(state, "INVISIBLE")) then
+      ignoredVisibility = true
+    else if state.mysqlMode and matchKeyword(state, "COLUMN_FORMAT") then
+      ignoredColumnFormat = parseIdentifierName(state, "column format")
+    else if state.mysqlMode and matchKeyword(state, "STORAGE") then
+      ignoredStorage = parseIdentifierName(state, "storage kind")
     else
       parsing = false
     end if
@@ -257,10 +333,23 @@ function parseTableConstraint(state)
   if matchKeyword(state, "CONSTRAINT") then name = parseIdentifierName(state, "constraint name") end if
   if matchKeyword(state, "PRIMARY") then
     expectKeyword(state, "KEY")
+    if state.mysqlMode then return ast.TableConstraint(ast.CONSTRAINT_PRIMARY_KEY, name, parseIndexColumnList(state), void, void, [], "NO ACTION", "NO ACTION") end if
     return ast.TableConstraint(ast.CONSTRAINT_PRIMARY_KEY, name, parseIdentifierList(state), void, void, [], "NO ACTION", "NO ACTION")
   end if
   if matchKeyword(state, "UNIQUE") then
+    if state.mysqlMode then
+      ignoredKey = matchKeyword(state, "KEY")
+      if not ignoredKey then ignoredIndex = matchKeyword(state, "INDEX") end if
+      inlineName = name
+      if not checkKind(state, token.TokenKind.LeftParen) then inlineName = parseIdentifierName(state, "index name") end if
+      return ast.TableConstraint(ast.CONSTRAINT_UNIQUE, inlineName, parseIndexColumnList(state), void, void, [], "NO ACTION", "NO ACTION")
+    end if
     return ast.TableConstraint(ast.CONSTRAINT_UNIQUE, name, parseIdentifierList(state), void, void, [], "NO ACTION", "NO ACTION")
+  end if
+  if state.mysqlMode and (matchKeyword(state, "KEY") or matchKeyword(state, "INDEX")) then
+    inlineName = name
+    if not checkKind(state, token.TokenKind.LeftParen) then inlineName = parseIdentifierName(state, "index name") end if
+    return ast.TableConstraint(ast.CONSTRAINT_INDEX, inlineName, parseIndexColumnList(state), void, void, [], "NO ACTION", "NO ACTION")
   end if
   if matchKeyword(state, "CHECK") then
     expectKind(state, token.TokenKind.LeftParen, "'('")
@@ -291,7 +380,8 @@ function parseTableConstraint(state)
 end function
 
 function startsTableConstraint(state)
-  return checkKeyword(state, "CONSTRAINT") or checkKeyword(state, "PRIMARY") or checkKeyword(state, "UNIQUE") or checkKeyword(state, "CHECK") or checkKeyword(state, "FOREIGN")
+  if checkKeyword(state, "CONSTRAINT") or checkKeyword(state, "PRIMARY") or checkKeyword(state, "UNIQUE") or checkKeyword(state, "CHECK") or checkKeyword(state, "FOREIGN") then return true end if
+  return state.mysqlMode and (checkKeyword(state, "KEY") or checkKeyword(state, "INDEX"))
 end function
 
 function parseCreatePrincipal(state, principalKind)
@@ -305,15 +395,28 @@ function parseCreatePrincipal(state, principalKind)
   return ast.CreatePrincipalStatement(principalKind, name, password)
 end function
 
+function parseMySqlColumnPosition(state)
+  if not state.mysqlMode then return true end if
+  if matchKeyword(state, "FIRST") then return true end if
+  if matchKeyword(state, "AFTER") then
+    ignoredColumnName = parseIdentifierName(state, "column position")
+    return true
+  end if
+  return true
+end function
+
 function parseAlterTable(state)
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseQualifiedIdentifierName(state, "table name")
   if matchKeyword(state, "ADD") then
     ignoredColumn = matchKeyword(state, "COLUMN")
     if startsTableConstraint(state) then
       return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_ADD_CONSTRAINT, void, void, void, parseTableConstraint(state), void)
     end if
-    return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_ADD_COLUMN, parseColumnDefinition(state), void, void, void, void)
+    definition = parseColumnDefinition(state)
+    parseMySqlColumnPosition(state)
+    return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_ADD_COLUMN, definition, void, void, void, void)
   end if
+  if state.mysqlMode and (matchKeyword(state, "MODIFY") or matchKeyword(state, "CHANGE")) then return fail(state, "ALTER TABLE column rewrites are not supported by the mysql84 dialect") end if
   if matchKeyword(state, "RENAME") then
     if matchKeyword(state, "COLUMN") then
       oldName = parseIdentifierName(state, "old column name")
@@ -324,6 +427,10 @@ function parseAlterTable(state)
     return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_RENAME_TABLE, void, void, parseIdentifierName(state, "new table name"), void, void)
   end if
   if matchKeyword(state, "DROP") then
+    if state.mysqlMode and matchKeyword(state, "COLUMN") then return fail(state, "ALTER TABLE DROP COLUMN requires a table rewrite and is not supported by the mysql84 dialect") end if
+    if state.mysqlMode and (matchKeyword(state, "INDEX") or matchKeyword(state, "KEY")) then
+      return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_CONSTRAINT, void, void, void, void, parseIdentifierName(state, "index name"))
+    end if
     expectKeyword(state, "CONSTRAINT")
     return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_CONSTRAINT, void, void, void, void, parseIdentifierName(state, "constraint name"))
   end if
@@ -423,10 +530,71 @@ function parseRevoke(state)
   return ast.RevokePrivilegeStatement(privileges, objectType, objectName, granteeName, cascade)
 end function
 
+function consumeMySqlOptionAtom(state, description)
+  if checkKind(state, token.TokenKind.StringLiteral) or checkKind(state, token.TokenKind.IntegerLiteral) or checkKind(state, token.TokenKind.FloatLiteral) or isIdentifierToken(current(state)) then
+    advance(state)
+    return true
+  end if
+  return fail(state, "expected " + description)
+end function
+
+function consumeMySqlOptionValue(state)
+  if matchKind(state, token.TokenKind.LeftParen) then
+    depth = 1
+    while depth > 0
+      if atEnd(state) then return fail(state, "unterminated table option") end if
+      if matchKind(state, token.TokenKind.LeftParen) then
+        depth = depth + 1
+      else if matchKind(state, token.TokenKind.RightParen) then
+        depth = depth - 1
+      else
+        advance(state)
+      end if
+    end while
+    return true
+  end if
+  return consumeMySqlOptionAtom(state, "table option value")
+end function
+
+function consumeMySqlNamedOption(state)
+  if matchKind(state, token.TokenKind.Equal) then return consumeMySqlOptionValue(state) end if
+  if not checkKind(state, token.TokenKind.Semicolon) and not atEnd(state) then return consumeMySqlOptionValue(state) end if
+  return true
+end function
+
+function parseMySqlTableOptions(state)
+  if not state.mysqlMode then return true end if
+  while not atEnd(state) and not checkKind(state, token.TokenKind.Semicolon)
+    ignoredComma = matchKind(state, token.TokenKind.Comma)
+    if matchKeyword(state, "DEFAULT") then
+      if matchKeyword(state, "CHARACTER") then
+        expectKeyword(state, "SET")
+        consumeMySqlNamedOption(state)
+      else if matchKeyword(state, "CHARSET") then
+        consumeMySqlNamedOption(state)
+      else if matchKeyword(state, "COLLATE") then
+        consumeMySqlNamedOption(state)
+      else
+        consumeMySqlNamedOption(state)
+      end if
+    else if matchKeyword(state, "CHARACTER") then
+      expectKeyword(state, "SET")
+      consumeMySqlNamedOption(state)
+    else if matchKeyword(state, "ENGINE") or matchKeyword(state, "CHARSET") or matchKeyword(state, "COLLATE") or matchKeyword(state, "COMMENT") or matchKeyword(state, "AUTO_INCREMENT") or matchKeyword(state, "ROW_FORMAT") then
+      consumeMySqlNamedOption(state)
+    else
+      if not isIdentifierToken(current(state)) then return fail(state, "unsupported MySQL table option") end if
+      advance(state)
+      consumeMySqlNamedOption(state)
+    end if
+  end while
+  return true
+end function
+
 function parseCreateTable(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
-  name = parseIdentifierName(state, "table name")
+  name = parseQualifiedIdentifierName(state, "table name")
   expectKind(state, token.TokenKind.LeftParen, "'('")
   columns = []
   constraints = []
@@ -442,6 +610,7 @@ function parseCreateTable(state)
   end while
   expectKind(state, token.TokenKind.RightParen, "')'")
   if len(columns) == 0 then return fail(state, "CREATE TABLE requires at least one column") end if
+  parseMySqlTableOptions(state)
   return ast.CreateTableStatement(name, columns, constraints, ifNotExists)
 end function
 
@@ -450,13 +619,13 @@ function parseCreateIndex(state, unique)
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
   name = parseIdentifierName(state, "index name")
   expectKeyword(state, "ON")
-  tableName = parseIdentifierName(state, "table name")
-  columns = parseIdentifierList(state)
+  tableName = parseQualifiedIdentifierName(state, "table name")
+  columns = parseIndexColumnList(state)
   return ast.CreateIndexStatement(name, tableName, columns, unique, ifNotExists)
 end function
 
 function parseCreateView(state, replace)
-  name = parseIdentifierName(state, "view name")
+  name = parseQualifiedIdentifierName(state, "view name")
   expectKeyword(state, "AS")
   query = void
   if matchKeyword(state, "WITH") then
@@ -548,11 +717,23 @@ function parseDrop(state)
     if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
     return ast.DropPrincipalStatement(principalKind, parsePrincipalName(state, "principal name"), ifExists)
   end if
+  if matchKeyword(state, "INDEX") then
+    ifExists = false
+    if state.mysqlMode and matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
+    name = parseIdentifierName(state, "index name")
+    expectKeyword(state, "ON")
+    tableName = parseQualifiedIdentifierName(state, "table name")
+    if state.mysqlMode then
+      if matchKeyword(state, "ALGORITHM") then consumeMySqlNamedOption(state) end if
+      if matchKeyword(state, "LOCK") then consumeMySqlNamedOption(state) end if
+    end if
+    return ast.DropIndexStatement(name, tableName, ifExists)
+  end if
   objectKind = "TABLE"
   if matchKeyword(state, "VIEW") then objectKind = "VIEW" else if matchKeyword(state, "SEQUENCE") then objectKind = "SEQUENCE" else if matchKeyword(state, "TRIGGER") then objectKind = "TRIGGER" else expectKeyword(state, "TABLE") end if
   ifExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
-  name = parseIdentifierName(state, "object name")
+  name = parseQualifiedIdentifierName(state, "object name")
   if objectKind == "VIEW" then return ast.DropViewStatement(name, ifExists) end if
   if objectKind == "SEQUENCE" then return ast.DropSequenceStatement(name, ifExists) end if
   if objectKind == "TRIGGER" then return ast.DropTriggerStatement(name, ifExists) end if
@@ -581,14 +762,61 @@ function parseAssignments(state)
   return assignments
 end function
 
+function parseMySqlPriorityModifiers(state)
+  if not state.mysqlMode then return true end if
+  parsing = true
+  while parsing
+    if matchKeyword(state, "LOW_PRIORITY") then
+      ignoredLowPriority = true
+    else if matchKeyword(state, "HIGH_PRIORITY") then
+      ignoredHighPriority = true
+    else if matchKeyword(state, "DELAYED") then
+      ignoredDelayed = true
+    else
+      parsing = false
+    end if
+  end while
+  return true
+end function
+
+function parseMySqlDeleteModifiers(state)
+  if not state.mysqlMode then return false end if
+  ignored = false
+  parsing = true
+  while parsing
+    if matchKeyword(state, "LOW_PRIORITY") then
+      ignored = true
+    else if matchKeyword(state, "QUICK") then
+      ignored = true
+    else if matchKeyword(state, "IGNORE") then
+      ignored = true
+    else
+      parsing = false
+    end if
+  end while
+  return ignored
+end function
+
 function parseInsert(state)
+  parseMySqlPriorityModifiers(state)
+  insertIgnore = false
+  if state.mysqlMode and matchKeyword(state, "IGNORE") then insertIgnore = true end if
   expectKeyword(state, "INTO")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseQualifiedIdentifierName(state, "table name")
   columns = []
   if checkKind(state, token.TokenKind.LeftParen) then columns = parseIdentifierList(state) end if
   rows = []
   sourceQuery = void
-  if matchKeyword(state, "VALUES") then
+  if state.mysqlMode and matchKeyword(state, "SET") then
+    if len(columns) > 0 then return fail(state, "INSERT SET cannot also specify a column list") end if
+    assignments = parseAssignments(state)
+    rowValues = []
+    for each assignment in assignments
+      columns = columns + [assignment.column]
+      rowValues = rowValues + [assignment.expression]
+    end for
+    rows = [rowValues]
+  else if matchKeyword(state, "VALUES") or (state.mysqlMode and matchKeyword(state, "VALUE")) then
     parsingRows = true
     while parsingRows
       expectKind(state, token.TokenKind.LeftParen, "'('")
@@ -609,43 +837,79 @@ function parseInsert(state)
   conflictAction = ast.CONFLICT_NONE
   conflictAssignments = []
   conflictWhere = void
+  mysqlDuplicateKeyUpdate = false
   if matchKeyword(state, "ON") then
-    expectKeyword(state, "CONFLICT")
-    if checkKind(state, token.TokenKind.LeftParen) then conflictTarget = parseIdentifierList(state) end if
-    expectKeyword(state, "DO")
-    if matchKeyword(state, "NOTHING") then
-      conflictAction = ast.CONFLICT_DO_NOTHING
-    else
+    if state.mysqlMode and matchKeyword(state, "DUPLICATE") then
+      expectKeyword(state, "KEY")
       expectKeyword(state, "UPDATE")
-      expectKeyword(state, "SET")
       conflictAction = ast.CONFLICT_DO_UPDATE
+      mysqlDuplicateKeyUpdate = true
+      state.mysqlConflictUpdate = true
       conflictAssignments = parseAssignments(state)
-      if matchKeyword(state, "WHERE") then conflictWhere = parseExpression(state, 0) end if
+      state.mysqlConflictUpdate = false
+    else
+      expectKeyword(state, "CONFLICT")
+      if checkKind(state, token.TokenKind.LeftParen) then conflictTarget = parseIdentifierList(state) end if
+      expectKeyword(state, "DO")
+      if matchKeyword(state, "NOTHING") then
+        conflictAction = ast.CONFLICT_DO_NOTHING
+      else
+        expectKeyword(state, "UPDATE")
+        expectKeyword(state, "SET")
+        conflictAction = ast.CONFLICT_DO_UPDATE
+        conflictAssignments = parseAssignments(state)
+        if matchKeyword(state, "WHERE") then conflictWhere = parseExpression(state, 0) end if
+      end if
     end if
   end if
-  return ast.InsertStatement(tableName, columns, rows, sourceQuery, conflictTarget, conflictAction, conflictAssignments, conflictWhere, parseReturning(state))
+  if insertIgnore and conflictAction == ast.CONFLICT_NONE then conflictAction = ast.CONFLICT_DO_NOTHING end if
+  return ast.InsertStatement(tableName, columns, rows, sourceQuery, conflictTarget, conflictAction, conflictAssignments, conflictWhere, parseReturning(state), mysqlDuplicateKeyUpdate)
 end function
 
 function parseUpdate(state)
-  tableName = parseIdentifierName(state, "table name")
+  parseMySqlPriorityModifiers(state)
+  ignoredUpdateIgnore = false
+  if state.mysqlMode and matchKeyword(state, "IGNORE") then ignoredUpdateIgnore = true end if
+  tableName = parseQualifiedIdentifierName(state, "table name")
   expectKeyword(state, "SET")
   assignments = parseAssignments(state)
   whereExpression = void
   if matchKeyword(state, "WHERE") then whereExpression = parseExpression(state, 0) end if
-  return ast.UpdateStatement(tableName, assignments, whereExpression, parseReturning(state))
+  orderBy = []
+  limit = -1
+  if state.mysqlMode and matchKeyword(state, "ORDER") then
+    expectKeyword(state, "BY")
+    orderBy = [parseOrderItem(state)]
+    while matchKind(state, token.TokenKind.Comma)
+      orderBy = orderBy + [parseOrderItem(state)]
+    end while
+  end if
+  if state.mysqlMode and matchKeyword(state, "LIMIT") then limit = parseIntegerValue(state, "LIMIT") end if
+  return ast.UpdateStatement(tableName, assignments, whereExpression, orderBy, limit, parseReturning(state))
 end function
 
 function parseDelete(state)
+  parseMySqlDeleteModifiers(state)
   expectKeyword(state, "FROM")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseQualifiedIdentifierName(state, "table name")
   whereExpression = void
   if matchKeyword(state, "WHERE") then whereExpression = parseExpression(state, 0) end if
-  return ast.DeleteStatement(tableName, whereExpression, parseReturning(state))
+  orderBy = []
+  limit = -1
+  if state.mysqlMode and matchKeyword(state, "ORDER") then
+    expectKeyword(state, "BY")
+    orderBy = [parseOrderItem(state)]
+    while matchKind(state, token.TokenKind.Comma)
+      orderBy = orderBy + [parseOrderItem(state)]
+    end while
+  end if
+  if state.mysqlMode and matchKeyword(state, "LIMIT") then limit = parseIntegerValue(state, "LIMIT") end if
+  return ast.DeleteStatement(tableName, whereExpression, orderBy, limit, parseReturning(state))
 end function
 
 function parseTruncate(state)
   ignoredTable = matchKeyword(state, "TABLE")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseQualifiedIdentifierName(state, "table name")
   restartIdentity = true
   if matchKeyword(state, "RESTART") then
     expectKeyword(state, "IDENTITY")
@@ -661,13 +925,13 @@ function parseShow(state)
   if matchKeyword(state, "TABLES") then return ast.ShowTablesStatement(1) end if
   if matchKeyword(state, "INDEXES") then
     if not matchKeyword(state, "FROM") then expectKeyword(state, "ON") end if
-    return ast.ShowIndexesStatement(parseIdentifierName(state, "table name"))
+    return ast.ShowIndexesStatement(parseQualifiedIdentifierName(state, "table name"))
   end if
   return fail(state, "expected TABLES or INDEXES after SHOW")
 end function
 
 function parseDescribe(state)
-  return ast.DescribeTableStatement(parseIdentifierName(state, "table name"))
+  return ast.DescribeTableStatement(parseQualifiedIdentifierName(state, "table name"))
 end function
 
 function parseSelectItem(state)
@@ -708,8 +972,23 @@ function parseTableAlias(state)
   return alias
 end function
 
-function parseJoinClause(state)
+function visibleSourceName(tableName, alias)
+  if alias is not void then return alias end if
+  return tableName
+end function
+
+function usingCondition(leftName, rightName, columns)
+  condition = void
+  for each columnName in columns
+    comparison = ast.binaryExpression("=", ast.columnExpression(leftName, columnName), ast.columnExpression(rightName, columnName))
+    if condition is void then condition = comparison else condition = ast.binaryExpression("AND", condition, comparison) end if
+  end for
+  return condition
+end function
+
+function parseJoinClause(state, leftName)
   joinType = ast.JOIN_INNER
+  if state.mysqlMode and matchKeyword(state, "NATURAL") then return fail(state, "NATURAL JOIN is not supported by the mysql84 dialect") end if
   if matchKeyword(state, "INNER") then
     expectKeyword(state, "JOIN")
     joinType = ast.JOIN_INNER
@@ -722,6 +1001,7 @@ function parseJoinClause(state)
     expectKeyword(state, "JOIN")
     joinType = ast.JOIN_RIGHT
   else if matchKeyword(state, "FULL") then
+    if state.mysqlMode then return fail(state, "FULL OUTER JOIN is not supported by the mysql84 dialect") end if
     ignoredOuter = matchKeyword(state, "OUTER")
     expectKeyword(state, "JOIN")
     joinType = ast.JOIN_FULL
@@ -731,18 +1011,22 @@ function parseJoinClause(state)
   else
     expectKeyword(state, "JOIN")
   end if
-  tableName = parseIdentifierName(state, "joined table name")
+  tableName = parseQualifiedIdentifierName(state, "joined table name")
   tableAlias = parseTableAlias(state)
   condition = void
   if joinType != ast.JOIN_CROSS then
-    expectKeyword(state, "ON")
-    condition = parseExpression(state, 0)
+    if state.mysqlMode and matchKeyword(state, "USING") then
+      condition = usingCondition(leftName, visibleSourceName(tableName, tableAlias), parseIdentifierList(state))
+    else
+      expectKeyword(state, "ON")
+      condition = parseExpression(state, 0)
+    end if
   end if
   return ast.JoinClause(joinType, tableName, tableAlias, condition)
 end function
 
 function startsJoin(state)
-  return checkKeyword(state, "JOIN") or checkKeyword(state, "INNER") or checkKeyword(state, "LEFT") or checkKeyword(state, "RIGHT") or checkKeyword(state, "FULL") or checkKeyword(state, "CROSS")
+  return checkKeyword(state, "JOIN") or checkKeyword(state, "INNER") or checkKeyword(state, "LEFT") or checkKeyword(state, "RIGHT") or checkKeyword(state, "FULL") or checkKeyword(state, "CROSS") or (state.mysqlMode and checkKeyword(state, "NATURAL"))
 end function
 
 function parseSelectCore(state)
@@ -755,10 +1039,13 @@ function parseSelectCore(state)
   tableAlias = void
   joins = []
   if matchKeyword(state, "FROM") then
-    tableName = parseIdentifierName(state, "table name")
+    tableName = parseQualifiedIdentifierName(state, "table name")
     tableAlias = parseTableAlias(state)
+    leftName = visibleSourceName(tableName, tableAlias)
     while startsJoin(state)
-      joins = joins + [parseJoinClause(state)]
+      joinClause = parseJoinClause(state, leftName)
+      joins = joins + [joinClause]
+      leftName = visibleSourceName(joinClause.tableName, joinClause.tableAlias)
     end while
   end if
   whereExpression = void
@@ -803,6 +1090,10 @@ function parseSelect(state)
   limit = -1
   offset = 0
   if matchKeyword(state, "LIMIT") then limit = parseIntegerValue(state, "LIMIT") end if
+  if state.mysqlMode and limit >= 0 and matchKind(state, token.TokenKind.Comma) then
+    offset = limit
+    limit = parseIntegerValue(state, "LIMIT row count")
+  end if
   if matchKeyword(state, "OFFSET") then
     offset = parseIntegerValue(state, "OFFSET")
     if checkKeyword(state, "ROW") or checkKeyword(state, "ROWS") then advance(state) end if
@@ -1035,6 +1326,12 @@ function parsePrimary(state)
   if matchKeyword(state, "FALSE") then return ast.booleanLiteral(false) end if
   if matchKeyword(state, "CURRENT_TIMESTAMP") then return ast.currentTimestampLiteral() end if
   if matchKind(state, token.TokenKind.Star) then return ast.starExpression(void) end if
+  if state.mysqlMode and state.mysqlConflictUpdate and matchKeyword(state, "VALUES") then
+    expectKind(state, token.TokenKind.LeftParen, "'('")
+    columnName = parseIdentifierName(state, "VALUES column name")
+    expectKind(state, token.TokenKind.RightParen, "')'")
+    return ast.columnExpression("excluded", columnName)
+  end if
   if matchKind(state, token.TokenKind.LeftParen) then
     if matchKeyword(state, "WITH") then
       query = parseWithSelect(state)
@@ -1096,7 +1393,12 @@ function parsePrimary(state)
     first = parseIdentifierName(state, "identifier")
     if matchKind(state, token.TokenKind.Dot) then
       if matchKind(state, token.TokenKind.Star) then return ast.starExpression(first) end if
-      return ast.columnExpression(first, parseIdentifierName(state, "column name"))
+      second = parseIdentifierName(state, "column name")
+      if state.mysqlMode and matchKind(state, token.TokenKind.Dot) then
+        if matchKind(state, token.TokenKind.Star) then return ast.starExpression(second) end if
+        return ast.columnExpression(second, parseIdentifierName(state, "column name"))
+      end if
+      return ast.columnExpression(first, second)
     end if
     return ast.columnExpression(void, first)
   end if
@@ -1180,9 +1482,9 @@ function parseExpression(state, minimumPrecedence)
   return left
 end function
 
-function parseTokens(tokens)
+function parseTokensWithMode(tokens, mysqlMode)
   if typeof(tokens) != "array" or len(tokens) == 0 then return error(INVALID_ARGUMENT, "sql.parser.parseTokens: tokens must be a non-empty array") end if
-  state = ParserState(tokens, 0, 0)
+  state = ParserState(tokens, 0, 0, mysqlMode, false)
   statements = []
   while not atEnd(state)
     while matchKind(state, token.TokenKind.Semicolon)
@@ -1197,13 +1499,21 @@ function parseTokens(tokens)
   return statements
 end function
 
+function parseTokens(tokens)
+  return parseTokensWithMode(tokens, false)
+end function
+
 function parseSql(source)
   return parseTokens(lexer.tokenizeSql(source))
 end function
 
+function parseMySql(source)
+  return parseTokensWithMode(lexer.tokenizeMySql(source), true)
+end function
+
 function parseExpressionText(source)
   tokens = lexer.tokenizeSql(source)
-  state = ParserState(tokens, 0, 0)
+  state = ParserState(tokens, 0, 0, false, false)
   expression = parseExpression(state, 0)
   while matchKind(state, token.TokenKind.Semicolon)
   end while

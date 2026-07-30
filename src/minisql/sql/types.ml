@@ -1,6 +1,7 @@
 package minisql.sql.types
 
 import minisql.sql.ast as ast
+import minisql.sql.dialect as dialect
 
 const INVALID_ARGUMENT = 9001
 const TYPE_MISMATCH = 9017
@@ -90,12 +91,25 @@ end function
 
 function fromTypeName(typeName, nullable)
   if not ast.isTypeName(typeName) then return fail(INVALID_ARGUMENT, "fromTypeName", "typeName must be AST TypeName") end if
-  name = typeName.name
+  name = dialect.asciiUpper(typeName.name)
   if name == "BOOL" then name = "BOOLEAN" end if
+  if name == "TINYINT" then name = "SMALLINT" end if
+  if name == "MEDIUMINT" then name = "INTEGER" end if
   if name == "INT" then name = "INTEGER" end if
   if name == "FLOAT" then name = "DOUBLE" end if
   if name == "NUMERIC" then name = "DECIMAL" end if
   if name == "DOUBLE PRECISION" then name = "DOUBLE" end if
+  if name == "DATETIME" then name = "TIMESTAMP" end if
+  if name == "YEAR" then name = "INTEGER" end if
+  if name == "JSON" then name = "TEXT" end if
+  if name == "ENUM" then name = "TEXT" end if
+  if name == "SET" then name = "TEXT" end if
+  if name == "TINYTEXT" then name = "TEXT" end if
+  if name == "MEDIUMTEXT" then name = "TEXT" end if
+  if name == "LONGTEXT" then name = "TEXT" end if
+  if name == "TINYBLOB" then name = "BLOB" end if
+  if name == "MEDIUMBLOB" then name = "BLOB" end if
+  if name == "LONGBLOB" then name = "BLOB" end if
   kind = SqlTypeKind.Unknown
   if name == "BOOLEAN" then kind = SqlTypeKind.Boolean end if
   if name == "SMALLINT" then kind = SqlTypeKind.SmallInt end if

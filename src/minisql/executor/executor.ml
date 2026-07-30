@@ -337,7 +337,7 @@ function substituteStatement(statement, parameters)
     end for
     conflictWhere = void
     if statement.conflictWhere is not void then conflictWhere = substituteExpression(statement.conflictWhere, parameters) end if
-    return ast.InsertStatement(statement.tableName, statement.columns, rows, sourceQuery, statement.conflictTarget, statement.conflictAction, conflictAssignments, conflictWhere, substituteReturning(statement.returning, parameters))
+    return ast.InsertStatement(statement.tableName, statement.columns, rows, sourceQuery, statement.conflictTarget, statement.conflictAction, conflictAssignments, conflictWhere, substituteReturning(statement.returning, parameters), statement.mysqlDuplicateKeyUpdate)
   end if
   if ast.isUpdateStatement(statement) then
     assignments = []
@@ -346,12 +346,20 @@ function substituteStatement(statement, parameters)
     end for
     whereExpression = void
     if statement.whereExpression is not void then whereExpression = substituteExpression(statement.whereExpression, parameters) end if
-    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, substituteReturning(statement.returning, parameters))
+    orderBy = []
+    for each value in statement.orderBy
+      orderBy = orderBy + [ast.OrderItem(substituteExpression(value.expression, parameters), value.descending, value.nullsFirst, value.nullsSpecified)]
+    end for
+    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, orderBy, statement.limit, substituteReturning(statement.returning, parameters))
   end if
   if ast.isDeleteStatement(statement) then
     whereExpression = void
     if statement.whereExpression is not void then whereExpression = substituteExpression(statement.whereExpression, parameters) end if
-    return ast.DeleteStatement(statement.tableName, whereExpression, substituteReturning(statement.returning, parameters))
+    orderBy = []
+    for each value in statement.orderBy
+      orderBy = orderBy + [ast.OrderItem(substituteExpression(value.expression, parameters), value.descending, value.nullsFirst, value.nullsSpecified)]
+    end for
+    return ast.DeleteStatement(statement.tableName, whereExpression, orderBy, statement.limit, substituteReturning(statement.returning, parameters))
   end if
   return fail(UNSUPPORTED_SQL, "substituteStatement", "prepared statement type is unsupported")
 end function
@@ -494,7 +502,7 @@ function materializeDmlStatement(engine, statement, pageTransaction)
     for each item in statement.returning
       returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
     end for
-    return ast.InsertStatement(statement.tableName, statement.columns, rows, sourceQuery, statement.conflictTarget, statement.conflictAction, assignments, conflictWhere, returning)
+    return ast.InsertStatement(statement.tableName, statement.columns, rows, sourceQuery, statement.conflictTarget, statement.conflictAction, assignments, conflictWhere, returning, statement.mysqlDuplicateKeyUpdate)
   end if
   if ast.isUpdateStatement(statement) then
     assignments = []
@@ -507,7 +515,11 @@ function materializeDmlStatement(engine, statement, pageTransaction)
     for each item in statement.returning
       returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
     end for
-    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, returning)
+    orderBy = []
+    for each value in statement.orderBy
+      orderBy = orderBy + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction), value.descending, value.nullsFirst, value.nullsSpecified)]
+    end for
+    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, orderBy, statement.limit, returning)
   end if
   if ast.isDeleteStatement(statement) then
     whereExpression = void
@@ -516,7 +528,11 @@ function materializeDmlStatement(engine, statement, pageTransaction)
     for each item in statement.returning
       returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
     end for
-    return ast.DeleteStatement(statement.tableName, whereExpression, returning)
+    orderBy = []
+    for each value in statement.orderBy
+      orderBy = orderBy + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction), value.descending, value.nullsFirst, value.nullsSpecified)]
+    end for
+    return ast.DeleteStatement(statement.tableName, whereExpression, orderBy, statement.limit, returning)
   end if
   return statement
 end function
@@ -615,6 +631,7 @@ end function
 function stageDdl(ddlTransaction, bound)
   if binder.isBoundCreateTable(bound) then schema_history.stageCreateTable(ddlTransaction, bound); return "CREATE TABLE" end if
   if binder.isBoundCreateIndex(bound) then schema_history.stageCreateIndex(ddlTransaction, bound); return "CREATE INDEX" end if
+  if binder.isBoundDropIndex(bound) then schema_history.stageDropIndex(ddlTransaction, bound); return "DROP INDEX" end if
   if binder.isBoundDropTable(bound) then schema_history.stageDropTable(ddlTransaction, bound); return "DROP TABLE" end if
   if binder.isBoundAlterTable(bound) then schema_history.stageAlterTable(ddlTransaction, bound); return "ALTER TABLE" end if
   return fail(BINDING_ERROR, "stageDdl", "unsupported bound DDL statement")
@@ -718,7 +735,7 @@ function replaceTriggerStatement(statement, table, oldRow, newRow)
     end for
     conflictWhere = void
     if statement.conflictWhere is not void then conflictWhere = replaceTriggerExpression(statement.conflictWhere, table, oldRow, newRow) end if
-    return ast.InsertStatement(statement.tableName, statement.columns, rows, void, statement.conflictTarget, statement.conflictAction, assignments, conflictWhere, replaceTriggerReturning(statement.returning, table, oldRow, newRow))
+    return ast.InsertStatement(statement.tableName, statement.columns, rows, void, statement.conflictTarget, statement.conflictAction, assignments, conflictWhere, replaceTriggerReturning(statement.returning, table, oldRow, newRow), statement.mysqlDuplicateKeyUpdate)
   end if
   if ast.isUpdateStatement(statement) then
     assignments = []
@@ -727,12 +744,12 @@ function replaceTriggerStatement(statement, table, oldRow, newRow)
     end for
     whereExpression = void
     if statement.whereExpression is not void then whereExpression = replaceTriggerExpression(statement.whereExpression, table, oldRow, newRow) end if
-    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, replaceTriggerReturning(statement.returning, table, oldRow, newRow))
+    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, statement.orderBy, statement.limit, replaceTriggerReturning(statement.returning, table, oldRow, newRow))
   end if
   if ast.isDeleteStatement(statement) then
     whereExpression = void
     if statement.whereExpression is not void then whereExpression = replaceTriggerExpression(statement.whereExpression, table, oldRow, newRow) end if
-    return ast.DeleteStatement(statement.tableName, whereExpression, replaceTriggerReturning(statement.returning, table, oldRow, newRow))
+    return ast.DeleteStatement(statement.tableName, whereExpression, statement.orderBy, statement.limit, replaceTriggerReturning(statement.returning, table, oldRow, newRow))
   end if
   return fail(UNSUPPORTED_SQL, "replaceTriggerStatement", "trigger body must be INSERT, UPDATE or DELETE")
 end function
@@ -1404,6 +1421,7 @@ function authorizeStatement(engine, statement)
   end if
   if ast.isDropTriggerStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeDropTrigger") end if
   if ast.isCreateIndexStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_INDEX, "authorizeCreateIndex"); return true end if
+  if ast.isDropIndexStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_INDEX, "authorizeDropIndex"); return true end if
   if ast.isDropTableStatement(statement) then requireTablePrivilegeByName(engine, statement.name, metadata.PRIVILEGE_DROP, "authorizeDropTable"); return true end if
   if ast.isAlterTableStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_ALTER, "authorizeAlterTable"); return true end if
   if ast.isAnalyzeStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_MAINTAIN, "authorizeAnalyze") end if
@@ -1666,7 +1684,7 @@ function executeStatementInner(engine, statement)
   if ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) then return executeViewDdl(engine, statement) end if
   if ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) then return executeSequenceDdl(engine, statement) end if
   if ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) then return executeTriggerDdl(engine, statement) end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) then return executeDdl(engine, statement) end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) then return executeDdl(engine, statement) end if
   if ast.isVacuumStatement(statement) then return executeVacuum(engine, statement) end if
   if ast.isReindexStatement(statement) then return executeReindex(engine, statement) end if
   if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isTruncateStatement(statement) then return executeDml(engine, statement) end if
@@ -1750,7 +1768,7 @@ end function
 function statementUsesWriteLock(statement)
   if ast.isSelectStatement(statement) and selectUsesNextval(statement) then return true end if
   if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isTruncateStatement(statement) then return true end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) then return true end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) then return true end if
   if ast.isDclStatement(statement) or ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return true end if
   return false
 end function
@@ -1779,6 +1797,7 @@ function auditAction(statement)
   if ast.isTruncateStatement(statement) then return "TRUNCATE" end if
   if ast.isCreateTableStatement(statement) then return "CREATE TABLE" end if
   if ast.isCreateIndexStatement(statement) then return "CREATE INDEX" end if
+  if ast.isDropIndexStatement(statement) then return "DROP INDEX" end if
   if ast.isDropTableStatement(statement) then return "DROP TABLE" end if
   if ast.isAlterTableStatement(statement) then return "ALTER TABLE" end if
   if ast.isCreateViewStatement(statement) then return "CREATE VIEW" end if
@@ -1815,7 +1834,7 @@ end function
 
 function auditEventType(statement)
   if ast.isDclStatement(statement) then return diagnostics.AUDIT_DCL end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
   if ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return diagnostics.AUDIT_MAINTENANCE end if
   return 0
 end function
@@ -1881,14 +1900,23 @@ function executeStatement(engine, statement)
   return result
 end function
 
-function executeSql(engine, sqlText)
+function executeStatements(engine, statements)
   validateOpen(engine, "executeSql")
-  statements = parser.parseSql(sqlText)
   results = []
   for each statement in statements
     results = results + [executeStatement(engine, statement)]
   end for
   return results
+end function
+
+function executeSql(engine, sqlText)
+  validateOpen(engine, "executeSql")
+  return executeStatements(engine, parser.parseSql(sqlText))
+end function
+
+function executeMySql(engine, sqlText)
+  validateOpen(engine, "executeMySql")
+  return executeStatements(engine, parser.parseMySql(sqlText))
 end function
 
 

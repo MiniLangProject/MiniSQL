@@ -87,6 +87,7 @@ struct BoundUpdate
   assignments
   whereExpression
   returning
+  orderExpressions
 end struct
 
 struct BoundDelete
@@ -94,6 +95,7 @@ struct BoundDelete
   table
   whereExpression
   returning
+  orderExpressions
 end struct
 
 struct BoundTruncate
@@ -107,6 +109,11 @@ struct BoundCreateTable
 end struct
 
 struct BoundCreateIndex
+  statement
+  table
+end struct
+
+struct BoundDropIndex
   statement
   table
 end struct
@@ -172,6 +179,10 @@ end function
 
 function isBoundCreateIndex(value)
   return value is BoundCreateIndex
+end function
+
+function isBoundDropIndex(value)
+  return value is BoundDropIndex
 end function
 
 function isBoundDropTable(value)
@@ -390,8 +401,9 @@ end function
 
 function bindScalarFunction(expression, sources, allowAggregates)
   name = expression.name
-  if name == "COALESCE" then
-    if len(expression.arguments) < 1 then return fail(BINDING_ERROR, "bindScalarFunction", "COALESCE requires at least one argument") end if
+  if name == "COALESCE" or name == "IFNULL" then
+    if name == "COALESCE" and len(expression.arguments) < 1 then return fail(BINDING_ERROR, "bindScalarFunction", "COALESCE requires at least one argument") end if
+    if name == "IFNULL" and len(expression.arguments) != 2 then return fail(BINDING_ERROR, "bindScalarFunction", "IFNULL requires exactly two arguments") end if
     arguments = []
     resultType = void
     hasConcrete = false
@@ -409,6 +421,10 @@ function bindScalarFunction(expression, sources, allowAggregates)
     end for
     resultType = resultTypeWithNullability(resultType, nullable)
     return expressions.scalar(name, arguments, resultType)
+  end if
+  if name == "NOW" then
+    if len(expression.arguments) != 0 then return fail(BINDING_ERROR, "bindScalarFunction", "NOW takes no arguments") end if
+    return expressions.scalar(name, [], types.create(types.SqlTypeKind.Timestamp, 0, 6, 0, false))
   end if
   if name == "NULLIF" then
     if len(expression.arguments) != 2 then return fail(BINDING_ERROR, "bindScalarFunction", "NULLIF requires exactly two arguments") end if
@@ -487,7 +503,7 @@ function bindExpressionInternal(expression, sources, allowAggregates)
     return expressions.window(name, arguments, partitions, orders, descending, nullsFirst, nullsSpecified, resultType)
   end if
   if ast.isFunctionExpression(expression) then
-    if expression.name == "COALESCE" or expression.name == "NULLIF" then return bindScalarFunction(expression, sources, allowAggregates) end if
+    if expression.name == "COALESCE" or expression.name == "IFNULL" or expression.name == "NOW" or expression.name == "NULLIF" then return bindScalarFunction(expression, sources, allowAggregates) end if
     if not allowAggregates then return fail(BINDING_ERROR, "bindExpression", "aggregate is not allowed in this clause") end if
     return bindAggregate(expression, sources)
   end if
@@ -1031,7 +1047,7 @@ function bindInsert(statement, database)
   if statement.conflictAction != ast.CONFLICT_NONE then
     selectedConstraint = conflictConstraint(database, table, statement.conflictTarget)
     if statement.conflictAction == ast.CONFLICT_DO_UPDATE then
-      if selectedConstraint is void then return fail(BINDING_ERROR, "bindInsert", "ON CONFLICT DO UPDATE requires a PRIMARY KEY or UNIQUE conflict target") end if
+      if selectedConstraint is void and not statement.mysqlDuplicateKeyUpdate then return fail(BINDING_ERROR, "bindInsert", "ON CONFLICT DO UPDATE requires a PRIMARY KEY or UNIQUE conflict target") end if
       sources = conflictBindingSources(table)
       conflictAssignments = bindConflictAssignments(statement, table, sources)
       if len(conflictAssignments) == 0 then return fail(BINDING_ERROR, "bindInsert", "ON CONFLICT DO UPDATE requires at least one assignment") end if
@@ -1058,13 +1074,21 @@ function bindUpdate(statement, database)
     assignments = assignments + [BoundAssignment(index, bound)]
     indexes = indexes + [index]
   end for
-  return BoundUpdate(statement, table, assignments, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table))
+  orderExpressions = []
+  for each item in statement.orderBy
+    orderExpressions = orderExpressions + [bindExpression(item.expression, table, void)]
+  end for
+  return BoundUpdate(statement, table, assignments, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table), orderExpressions)
 end function
 
 function bindDelete(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindDelete", "table not found: " + statement.tableName) end if
-  return BoundDelete(statement, table, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table))
+  orderExpressions = []
+  for each item in statement.orderBy
+    orderExpressions = orderExpressions + [bindExpression(item.expression, table, void)]
+  end for
+  return BoundDelete(statement, table, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table), orderExpressions)
 end function
 
 function bindTruncate(statement, database)
@@ -1135,6 +1159,12 @@ function bindCreateIndex(statement, database)
     if findColumnIndex(table, columnName) < 0 then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "unknown index column " + columnName) end if
   end for
   return BoundCreateIndex(statement, table)
+end function
+
+function bindDropIndex(statement, database)
+  table = catalog.findTable(database, statement.tableName)
+  if table is void and not statement.ifExists then return fail(OBJECT_NOT_FOUND, "bindDropIndex", "table not found: " + statement.tableName) end if
+  return BoundDropIndex(statement, table)
 end function
 
 function bindDropTable(statement, database)
@@ -1236,6 +1266,7 @@ function bindStatement(statement, database)
   if ast.isTruncateStatement(statement) then return bindTruncate(statement, database) end if
   if ast.isCreateTableStatement(statement) then return bindCreateTable(statement, database) end if
   if ast.isCreateIndexStatement(statement) then return bindCreateIndex(statement, database) end if
+  if ast.isDropIndexStatement(statement) then return bindDropIndex(statement, database) end if
   if ast.isDropTableStatement(statement) then return bindDropTable(statement, database) end if
   if ast.isAlterTableStatement(statement) then return bindAlterTable(statement, database) end if
   return fail(BINDING_ERROR, "bindStatement", "statement does not require or support binding")

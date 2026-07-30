@@ -146,7 +146,13 @@ $Targets = @(
   @{ Input = "src\tests\m48_hot_replication.ml"; Output = "minisql-m48-hot-replication.exe" },
   @{ Input = "src\tests\m49_hardening.ml"; Output = "minisql-m49-hardening.exe" },
   @{ Input = "src\tests\m50_release_contract.ml"; Output = "minisql-m50-release-contract.exe" },
-  @{ Input = "src\tests\m50_all_modules.ml"; Output = "minisql-m50-modules.exe" }
+  @{ Input = "src\tests\m50_all_modules.ml"; Output = "minisql-m50-modules.exe" },
+  @{ Input = "src\tests\m51_mysql84_compat.ml"; Output = "minisql-m51-mysql84-compat.exe" },
+  @{ Input = "src\tests\m52_mysql84_ddl.ml"; Output = "minisql-m52-mysql84-ddl.exe" },
+  @{ Input = "src\tests\m53_mysql84_dml.ml"; Output = "minisql-m53-mysql84-dml.exe" },
+  @{ Input = "src\tests\m54_mysql84_select.ml"; Output = "minisql-m54-mysql84-select.exe" },
+  @{ Input = "src\tests\m55_mysql84_alter_table.ml"; Output = "minisql-m55-mysql84-alter-table.exe" },
+  @{ Input = "src\tests\m56_mysql84_dml_modifiers.ml"; Output = "minisql-m56-mysql84-dml-modifiers.exe" }
 )
 
 if ($AppsOnly) {

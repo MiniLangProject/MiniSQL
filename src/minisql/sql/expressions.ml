@@ -1,5 +1,6 @@
 package minisql.sql.expressions
 
+import minisql.common.endian as endian
 import minisql.sql.types as types
 import minisql.sql.values as values
 
@@ -535,13 +536,14 @@ function evaluateCase(expression, context)
 end function
 
 function evaluateScalar(expression, context)
-  if expression.name == "COALESCE" then
+  if expression.name == "COALESCE" or expression.name == "IFNULL" then
     for each argument in expression.arguments
       value = evaluate(argument, context)
       if not value.isNull then return values.convert(value, expression.typeInfo) end if
     end for
     return values.nullValue(expression.typeInfo.kind)
   end if
+  if expression.name == "NOW" then return values.of(types.SqlTypeKind.Timestamp, endian.int64FromInt(0)) end if
   if expression.name == "NULLIF" then
     left = evaluate(expression.arguments[0], context)
     if left.isNull then return values.nullValue(expression.typeInfo.kind) end if

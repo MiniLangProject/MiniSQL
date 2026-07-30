@@ -34,6 +34,7 @@ const CONSTRAINT_PRIMARY_KEY = 1
 const CONSTRAINT_UNIQUE = 2
 const CONSTRAINT_CHECK = 3
 const CONSTRAINT_FOREIGN_KEY = 4
+const CONSTRAINT_INDEX = 5
 
 const JOIN_INNER = 1
 const JOIN_LEFT = 2
@@ -268,6 +269,12 @@ struct CreateIndexStatement
   ifNotExists
 end struct
 
+struct DropIndexStatement
+  name
+  tableName
+  ifExists
+end struct
+
 struct DropTableStatement
   name
   ifExists
@@ -334,18 +341,23 @@ struct InsertStatement
   conflictAssignments
   conflictWhere
   returning
+  mysqlDuplicateKeyUpdate
 end struct
 
 struct UpdateStatement
   tableName
   assignments
   whereExpression
+  orderBy
+  limit
   returning
 end struct
 
 struct DeleteStatement
   tableName
   whereExpression
+  orderBy
+  limit
   returning
 end struct
 
@@ -704,6 +716,10 @@ function isCreateIndexStatement(value)
   return value is CreateIndexStatement
 end function
 
+function isDropIndexStatement(value)
+  return value is DropIndexStatement
+end function
+
 function isDropTableStatement(value)
   return value is DropTableStatement
 end function
@@ -857,7 +873,7 @@ function isMetadataStatement(value)
 end function
 
 function isStatement(value)
-  return value is CreateTableStatement or value is CreateIndexStatement or value is DropTableStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
+  return value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
 end function
 
 function expressionKind(value)
@@ -1102,6 +1118,23 @@ function formatStatement(statement)
       end for
       output = output + ")"
     end for
+    if statement.conflictAction == CONFLICT_DO_NOTHING then output = output + " ON CONFLICT DO NOTHING" end if
+    if statement.conflictAction == CONFLICT_DO_UPDATE then
+      output = output + " ON CONFLICT"
+      if len(statement.conflictTarget) > 0 then
+        output = output + " ("
+        for index = 0 to len(statement.conflictTarget) - 1
+          if index > 0 then output = output + ", " end if
+          output = output + statement.conflictTarget[index]
+        end for
+        output = output + ")"
+      end if
+      output = output + " DO UPDATE SET "
+      for index = 0 to len(statement.conflictAssignments) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + statement.conflictAssignments[index].column + " = " + formatExpression(statement.conflictAssignments[index].expression)
+      end for
+    end if
     return output
   end if
   if statement is UpdateStatement then
@@ -1111,11 +1144,27 @@ function formatStatement(statement)
       output = output + statement.assignments[index].column + " = " + formatExpression(statement.assignments[index].expression)
     end for
     if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
+    if len(statement.orderBy) > 0 then
+      output = output + " ORDER BY "
+      for index = 0 to len(statement.orderBy) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatOrderItem(statement.orderBy[index])
+      end for
+    end if
+    if statement.limit >= 0 then output = output + " LIMIT " + statement.limit end if
     return output
   end if
   if statement is DeleteStatement then
     output = "DELETE FROM " + statement.tableName
     if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
+    if len(statement.orderBy) > 0 then
+      output = output + " ORDER BY "
+      for index = 0 to len(statement.orderBy) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatOrderItem(statement.orderBy[index])
+      end for
+    end if
+    if statement.limit >= 0 then output = output + " LIMIT " + statement.limit end if
     return output
   end if
   return error(9001, "sql.ast.formatStatement: unsupported statement")
