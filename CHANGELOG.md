@@ -6,6 +6,9 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-20
 
+- fixed the native compiler's Windows-x64 `input()` ABI path so allocator calls
+  cannot clobber the interactive line length and exhaust the 4 GiB MiniLang heap
+  on the first shell command; added compiler-level and MiniSQL shell regressions;
 - replaced the one-page catalog and security snapshots with checksummed,
   crash-safe multi-page generations; removed the 1 MiB schema/statistics caps,
   16-bit security collection counts, and small-backup file/count ceilings while

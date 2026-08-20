@@ -533,6 +533,7 @@
     "src/tests/m31_all_modules.ml",
     "src/tests/m31_archive_pitr.ml",
     "src/tests/m32_operational_cli.ml",
+    "src/tests/m33_interactive_input.ml",
     "src/tests/m33_sql_batch.ml",
     "src/tests/m34_catalog_introspection.ml",
     "src/tests/m35_scalar_expressions.ml",

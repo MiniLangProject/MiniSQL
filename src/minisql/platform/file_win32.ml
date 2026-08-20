@@ -29,6 +29,8 @@ const FILE_BEGIN = 0
 const LOCKFILE_FAIL_IMMEDIATELY = 0x00000001
 const LOCKFILE_EXCLUSIVE_LOCK = 0x00000002
 const ERROR_LOCK_VIOLATION = 33
+const ERROR_ACCESS_DENIED = 5
+const ERROR_SHARING_VIOLATION = 32
 const ERROR_FILE_NOT_FOUND = 2
 const ERROR_PATH_NOT_FOUND = 3
 const ERROR_ALREADY_EXISTS = 183
@@ -36,6 +38,8 @@ const INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
 const FILE_ATTRIBUTE_DIRECTORY = 0x00000010
 const MOVEFILE_REPLACE_EXISTING = 0x00000001
 const MOVEFILE_WRITE_THROUGH = 0x00000008
+const MOVE_RETRY_ATTEMPTS = 40
+const MOVE_RETRY_DELAY_MS = 25
 
 // Opens or creates a Win32 file and returns its native handle or INVALID_HANDLE_VALUE.
 extern function CreateFileW(path as wstr, desiredAccess as u32, shareMode as u32, security as ptr, creationDisposition as u32, flagsAndAttributes as u32, templateFile as ptr) from "kernel32.dll" symbol "CreateFileW" returns ptr
@@ -69,6 +73,8 @@ extern function RemoveDirectoryW(path as wstr) from "kernel32.dll" symbol "Remov
 extern function MoveFileExW(source as wstr, destination as wstr, flags as u32) from "kernel32.dll" symbol "MoveFileExW" returns bool
 // Returns the calling thread's most recent Win32 error code.
 extern function GetLastError() from "kernel32.dll" symbol "GetLastError" returns u32
+// Suspends the calling thread for the requested number of milliseconds.
+extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
 
 // Creates the module's structured error with operation context.
 // Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
@@ -274,17 +280,33 @@ function synchronized removeDirectory(path)
   return lastError("removeDirectory")
 end function
 
-// Atomically renames a path while protecting all compiler-managed path buffers.
-// Inputs identify source, destination, and replacement policy; Win32 errors propagate.
-function synchronized movePath(source, destination, replaceExisting)
+// Performs one atomic rename attempt while protecting compiler-managed UTF-16
+// path buffers. Returns zero on success or the captured Win32 error code.
+// Inputs: `source`, `destination`, and native move flags.
+function synchronized movePathAttempt(source, destination, flags)
+  if MoveFileExW(source, destination, flags) then return 0 end if
+  return GetLastError()
+end function
+
+// Atomically renames a path and absorbs only short-lived Windows scanner locks.
+// Access-denied and sharing-violation errors are retried for at most one second;
+// invalid paths and permanent permission failures remain immediately visible.
+// Inputs identify source, destination, and replacement policy.
+function movePath(source, destination, replaceExisting)
   if typeof(source) != "string" or len(source) == 0 or typeof(destination) != "string" or len(destination) == 0 then
     return fail(INVALID_ARGUMENT, "movePath", "source and destination must be non-empty")
   end if
   if typeof(replaceExisting) != "bool" then return fail(INVALID_ARGUMENT, "movePath", "replaceExisting must be bool") end if
   flags = MOVEFILE_WRITE_THROUGH
   if replaceExisting then flags = flags | MOVEFILE_REPLACE_EXISTING end if
-  if not MoveFileExW(source, destination, flags) then return lastError("movePath") end if
-  return true
+  lastCode = 0
+  for attempt = 0 to MOVE_RETRY_ATTEMPTS
+    lastCode = movePathAttempt(source, destination, flags)
+    if lastCode == 0 then return true end if
+    if lastCode != ERROR_ACCESS_DENIED and lastCode != ERROR_SHARING_VIOLATION then return fail(IO_FAILURE, "movePath", "Win32 error " + lastCode) end if
+    if attempt < MOVE_RETRY_ATTEMPTS then Sleep(MOVE_RETRY_DELAY_MS) end if
+  end for
+  return fail(IO_FAILURE, "movePath", "Win32 error " + lastCode)
 end function
 
 // Returns the stable diagnostic name of this component.

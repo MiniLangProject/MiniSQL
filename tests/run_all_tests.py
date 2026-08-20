@@ -174,6 +174,26 @@ def run_simple(compiler: Path, source: str, output: str, expected: str, verbose:
     """Compiles one later-milestone test and requires its exact success banner."""
     base.compile_run_test(compiler, source, output, expected, verbose, args or [], timeout=timeout)
 
+def run_m33_client_input(compiler: Path, verbose: bool) -> None:
+    """Runs scanner coverage and the native stdin ABI path used by the interactive shell."""
+    run_simple(compiler, "src/tests/m33_sql_batch.ml", "minisql-m33-sql-batch.exe",
+               "MiniSQL M33 SQL-aware client input tests: SUCCESS", verbose, timeout=2400)
+    executable = base.compile_target(compiler, "src/tests/m33_interactive_input.ml",
+                                     "minisql-m33-interactive-input.exe", verbose)
+    result = base.run_command(
+        base.executable_command(executable),
+        log_name="minisql-m33-interactive-input.exe.default.run.log",
+        verbose=verbose,
+        timeout=240.0,
+        input_text="show tables;\n",
+    )
+    expected = "MiniSQL M33 interactive input tests: SUCCESS"
+    if result.returncode != 0 or base.normalized(result.stdout) != expected or base.normalized(result.stderr):
+        raise AcceptanceFailure(
+            f"M33 native interactive input regression failed: rc={result.returncode} "
+            f"stdout={base.normalized(result.stdout)!r} stderr={base.normalized(result.stderr)!r}"
+        )
+
 def data_root(name: str) -> Path:
     """Returns an isolated generated data directory for one named integration scenario."""
     root = DATA_DIR / name; base.clean_path(root); root.mkdir(parents=True, exist_ok=True); return root
@@ -1647,7 +1667,7 @@ def main() -> int:
             ("M32 public minisqld/minisql bounded script integration", lambda: run_m32_public_script(args.verbose)),
             ("M32 persistent public daemon and one-shot client lifecycle", lambda: run_m32_persistent_daemon(args.verbose)),
             ("M32 final cumulative gate", lambda: None),
-            ("M33 SQL-aware statement scanner and shell framing", lambda: run_simple(compiler,"src/tests/m33_sql_batch.ml","minisql-m33-sql-batch.exe","MiniSQL M33 SQL-aware client input tests: SUCCESS",args.verbose,timeout=2400)),
+            ("M33 SQL-aware statement scanner and shell framing", lambda: run_m33_client_input(compiler,args.verbose)),
             ("M33 public multiline script and final-statement integration", lambda: run_m33_public_multiline_script(args.verbose)),
             ("M34 catalog introspection commands", lambda: run_simple(compiler,"src/tests/m34_catalog_introspection.ml","minisql-m34-catalog-introspection.exe","MiniSQL M34 catalog introspection tests: SUCCESS",args.verbose,[str(data_root('m34-root'))],2400)),
             ("M35 scalar CASE, CAST, COALESCE and NULLIF", lambda: run_simple(compiler,"src/tests/m35_scalar_expressions.ml","minisql-m35-scalar-expressions.exe","MiniSQL M35 scalar expression tests: SUCCESS",args.verbose,[str(data_root('m35-root'))],2400)),

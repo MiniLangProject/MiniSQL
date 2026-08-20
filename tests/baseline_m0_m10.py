@@ -149,8 +149,9 @@ def run_command(
     log_name: str,
     verbose: bool,
     timeout: float = 240.0,
+    input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    """Runs a subprocess under a timeout, captures its streams and enforces the requested result contract."""
+    """Runs a subprocess with optional stdin, captures its streams and enforces the requested result contract."""
     try:
         result = subprocess.run(
             command,
@@ -158,6 +159,7 @@ def run_command(
             text=True,
             encoding="utf-8",
             errors="replace",
+            input=input_text,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
