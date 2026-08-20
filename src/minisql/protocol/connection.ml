@@ -1,5 +1,9 @@
 package minisql.protocol.connection
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.platform.network as network
 import minisql.common.uuid as uuid
 import minisql.common.endian as endian
@@ -13,51 +17,90 @@ const CORRUPT_DATA = 9004
 const SECURE_TRANSPORT = 9030
 const POLL_RECEIVE_BYTES = 65536
 
+// Owns framed-protocol state for one TCP socket. Receive buffering permits
+// fragmented and coalesced frames; secure sequence counters must advance exactly
+// once per authenticated frame to prevent replay or reordering.
 struct Connection
+  // Native socket handle owned until `close`.
   socket
+  // Prevents operations and duplicate cleanup after close.
   closed
+  // Unconsumed bytes that may contain partial or multiple frames.
   receiveBuffer
+  // Fixed-capacity buffer reused by nonblocking receives.
   receiveScratch
+  // Records a clean zero-byte receive from the peer.
   peerClosed
+  // Requires every subsequent payload to use authenticated transport protection.
   secure
+  // 256-bit key for outbound authenticated encryption.
   sendKey
+  // 256-bit key for inbound authenticated decryption.
   receiveKey
+  // Sequence number bound into the next outbound secure frame.
   sendSequence
+  // Only sequence number accepted for the next inbound secure frame.
   receiveSequence
 end struct
 
+// Groups the poll result state and preserves the field relationships documented below.
 struct PollResult
+  // Stores the message associated with this value.
   message
+  // Indicates whether the closed condition is active.
   closed
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function fail(code, operation, message)
   return error(code, "protocol.connection." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the connection condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isConnection(value)
   return value is Connection
 end function
 
+// Creates create using the supplied inputs.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function create(socketHandle)
   if not network.isHandle(socketHandle) then return fail(INVALID_ARGUMENT, "create", "socket handle is invalid") end if
   return Connection(socketHandle, false, bytes(0), bytes(POLL_RECEIVE_BYTES, 0), false, false, void, void, 0, 0)
 end function
 
+// Connects address using the supplied inputs.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function connectAddress(address, port)
   return create(network.connectTcp(address, port))
 end function
 
+// Connects loopback using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function connectLoopback(port)
   return connectAddress("127.0.0.1", port)
 end function
 
+// Validates open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function validateOpen(connection, operation)
   if connection is not Connection then return fail(INVALID_ARGUMENT, operation, "connection must be Connection") end if
   if connection.closed then return fail(CLOSED_HANDLE, operation, "connection is closed") end if
   return true
 end function
 
+// Implements copy range for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function copyRange(source, offset, count, operation)
   copied = try(network.copyByteRange(source, offset, count, operation))
   if typeof(copied) == "error" then return copied end if
@@ -65,6 +108,10 @@ function copyRange(source, offset, count, operation)
   return copied
 end function
 
+// Appends receive scratch using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function appendReceiveScratch(connection, count)
   if typeof(count) != "int" or count < 0 or count > len(connection.receiveScratch) then return fail(CORRUPT_DATA, "appendReceiveScratch", "received byte count is invalid") end if
   previousLength = len(connection.receiveBuffer)
@@ -80,6 +127,10 @@ function appendReceiveScratch(connection, count)
   return true
 end function
 
+// Implements extract buffered message for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state and perform I/O through its dependencies.
 function extractBufferedMessage(connection)
   bufferedLength = len(connection.receiveBuffer)
   if bufferedLength < constants.HEADER_BYTES then return void end if
@@ -104,6 +155,10 @@ function extractBufferedMessage(connection)
 end function
 
 
+// Implements enable secure for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function enableSecure(connection, sendKey, receiveKey)
   validateOpen(connection, "enableSecure")
   if typeof(sendKey) != "bytes" or len(sendKey) != 32 or typeof(receiveKey) != "bytes" or len(receiveKey) != 32 then return fail(INVALID_ARGUMENT, "enableSecure", "transport keys must be 32 bytes") end if
@@ -116,11 +171,17 @@ function enableSecure(connection, sendKey, receiveKey)
   return true
 end function
 
+// Implements secure active for this module.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function secureActive(connection)
   validateOpen(connection, "secureActive")
   return connection.secure
 end function
 
+// Implements protect message for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function protectMessage(connection, message)
   if not connection.secure then return message end if
   if len(message.payload) > constants.MAX_SECURE_PLAINTEXT_BYTES then return fail(INVALID_ARGUMENT, "protectMessage", "secure plaintext exceeds limit") end if
@@ -141,6 +202,10 @@ function protectMessage(connection, message)
   return messages.create(message.messageType, protectedFlags, message.requestId, payload)
 end function
 
+// Implements unprotect message for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state and perform I/O through its dependencies.
 function unprotectMessage(connection, message)
   secureFlag = (message.flags & constants.FLAG_SECURE) != 0
   if not connection.secure then
@@ -165,20 +230,32 @@ function unprotectMessage(connection, message)
   return messages.create(message.messageType, message.flags & ~constants.FLAG_SECURE, message.requestId, plaintext)
 end function
 
+// Decodes inbound using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decodeInbound(connection, frame)
   return unprotectMessage(connection, codec.decodeMessage(frame))
 end function
 
+// Returns whether the supplied value satisfies the poll result condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isPollResult(value)
   return value is PollResult
 end function
 
+// Creates non blocking using the supplied inputs.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function makeNonBlocking(connection)
   validateOpen(connection, "makeNonBlocking")
   network.setNonBlocking(connection.socket, true)
   return true
 end function
 
+// Attempts one nonblocking framed receive.
+// Returns PollResult when a complete frame or clean EOF is available, void when
+// more bytes are needed, or an error for malformed/truncated/transport input.
 function pollMessage(connection)
   validateOpen(connection, "pollMessage")
   buffered = try(extractBufferedMessage(connection))
@@ -199,6 +276,9 @@ function pollMessage(connection)
   return extractBufferedMessage(connection)
 end function
 
+// Sends message using the supplied inputs.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function sendMessage(connection, message)
   validateOpen(connection, "sendMessage")
   outbound = protectMessage(connection, message)
@@ -207,6 +287,9 @@ function sendMessage(connection, message)
   return len(encoded)
 end function
 
+// Receives message using the supplied inputs.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function receiveMessage(connection)
   validateOpen(connection, "receiveMessage")
   headerBytes = network.receiveExact(connection.socket, constants.HEADER_BYTES)
@@ -219,6 +302,10 @@ function receiveMessage(connection)
   return decodeInbound(connection, frame)
 end function
 
+// Closes close using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function close(connection)
   validateOpen(connection, "close")
   network.close(connection.socket)
@@ -233,14 +320,23 @@ function close(connection)
   return true
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "protocol.connection"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

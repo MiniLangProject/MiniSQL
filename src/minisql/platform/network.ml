@@ -1,7 +1,10 @@
 package minisql.platform.network
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 // WinSock wrapper used by MiniSQL clients and servers. M27 adds bounded
-// non-blocking polling for a cooperative multi-session scheduler. M29 adds a
+// non-blocking polling, now owned by native per-connection workers. M29 adds a
 // fail-closed binding policy: non-loopback listeners are accepted only by the
 // authenticated secure-transport server path.
 
@@ -25,29 +28,49 @@ const FIONBIO = 0x8004667E
 const SO_RCVTIMEO = 0x1006
 const SO_SNDTIMEO = 0x1005
 
+// Initializes WinSock for `version`, filling `wsaData` and returning its status code.
 extern function WSAStartup(version as int, wsaData as bytes) from "ws2_32.dll" returns i32
+// Releases one process-wide WinSock initialization reference and returns its status.
 extern function WSACleanup() from "ws2_32.dll" returns i32
+// Returns the calling thread's most recent WinSock error code.
 extern function WSAGetLastError() from "ws2_32.dll" returns i32
+// Creates a socket for the requested address family, type, and protocol.
 extern function socket(af as int, type as int, protocol as int) from "ws2_32.dll" returns ptr
+// Closes socket `s` and returns the raw WinSock status code.
 extern function closesocket(s as ptr) from "ws2_32.dll" returns i32
+// Connects socket `s` to the encoded address and returns the raw WinSock status.
 extern function connect(s as ptr, addr as bytes, addrlen as i32) from "ws2_32.dll" returns i32
+// Binds socket `s` to the encoded local address and returns the raw status.
 extern function bind(s as ptr, addr as bytes, addrlen as i32) from "ws2_32.dll" returns i32
+// Enables connection acceptance with the requested backlog and returns raw status.
 extern function listen(s as ptr, backlog as i32) from "ws2_32.dll" returns i32
+// Accepts one pending connection and returns its socket or INVALID_SOCKET.
 extern function accept(s as ptr, addr as ptr, addrlen as ptr) from "ws2_32.dll" returns ptr
+// Sends up to `count` bytes from `buffer` and returns the transferred count or error.
 extern function send(s as ptr, buffer as ptr, count as i32, flags as i32) from "ws2_32.dll" returns i32
+// Receives up to `count` bytes into `buffer` and returns count, EOF, or error.
 extern function recv(s as ptr, buffer as ptr, count as i32, flags as i32) from "ws2_32.dll" returns i32
+// Disables the selected socket direction and returns the raw WinSock status.
 extern function shutdown(s as ptr, how as i32) from "ws2_32.dll" returns i32
+// Sets one socket option from the supplied byte representation and returns raw status.
 extern function setsockopt(s as ptr, level as i32, option as i32, value as bytes, count as i32) from "ws2_32.dll" returns i32
+// Converts a dotted-decimal IPv4 C string to its network-order numeric address.
 extern function inet_addr(address as cstr) from "ws2_32.dll" returns u32
+// Applies a socket control command using the mutable value buffer and returns raw status.
 extern function ioctlsocket(s as ptr, command as u32, value as bytes) from "ws2_32.dll" returns i32
+// Suspends the current native thread for at least the requested milliseconds.
 extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
 
 _wsaReady = false
 
+// Creates the module's structured error with operation context.
+// Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(operation, message)
   return error(NETWORK_ERROR, "platform.network." + operation + ": " + message)
 end function
 
+// Evaluates whether the supplied input satisfies the handle predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isHandle(value)
   return typeof(value) == "int" or typeof(value) == "ptr"
 end function
@@ -56,10 +79,14 @@ end function
 // declaration as a 64-bit MiniLang int can expose SOCKET_ERROR as 0xFFFFFFFF
 // instead of -1. Correct i32 declarations are the primary contract; the dual
 // sentinel check keeps the failure path closed even with an older compiler.
+// Evaluates whether the supplied input satisfies the socket error result predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isSocketErrorResult(value)
   return value == SOCKET_ERROR or value == SOCKET_ERROR_U32
 end function
 
+// Initializes the requested value.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function initialize()
   global _wsaReady
   if _wsaReady then return true end if
@@ -70,6 +97,8 @@ function initialize()
   return true
 end function
 
+// Performs the cleanup operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cleanup()
   global _wsaReady
   if not _wsaReady then return true end if
@@ -79,11 +108,15 @@ function cleanup()
   return true
 end function
 
+// Validates the port.
+// Inputs: `port`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePort(port, operation)
   if typeof(port) != "int" or port < 1 or port > 65535 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": port must be 1..65535") end if
   return true
 end function
 
+// Performs the sockaddr operation for this module.
+// Inputs: `ip`, `port`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function sockaddr(ip, port)
   address = bytes(SOCKADDR_IN_SIZE, 0)
   address[0] = AF_INET
@@ -97,6 +130,8 @@ function sockaddr(ip, port)
   return address
 end function
 
+// Parses the ipv4.
+// Inputs: `host`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function parseIPv4(host)
   if typeof(host) != "string" or len(host) == 0 then return error(INVALID_ARGUMENT, "platform.network.parseIPv4: host must be string") end if
   value = host
@@ -106,6 +141,8 @@ function parseIPv4(host)
   return ip
 end function
 
+// Performs the connect tcp operation for this module.
+// Inputs: `host`, `port`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function connectTcp(host, port)
   initialize()
   validatePort(port, "connectTcp")
@@ -122,10 +159,14 @@ function connectTcp(host, port)
   return handle
 end function
 
+// Evaluates whether the supplied input satisfies the loopback address predicate.
+// Inputs: `address`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isLoopbackAddress(address)
   return address == "127.0.0.1" or address == "localhost"
 end function
 
+// Performs the listen address operation for this module.
+// Inputs: `addressText`, `port`, `backlog`, `allowRemote`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function listenAddress(addressText, port, backlog, allowRemote)
   initialize()
   validatePort(port, "listenAddress")
@@ -155,10 +196,14 @@ function listenAddress(addressText, port, backlog, allowRemote)
   return handle
 end function
 
+// Performs the listen loopback operation for this module.
+// Inputs: `port`, `backlog`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function listenLoopback(port, backlog)
   return listenAddress("127.0.0.1", port, backlog, false)
 end function
 
+// Updates the non blocking.
+// Inputs: `handle`, `enabled`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function setNonBlocking(handle, enabled)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: handle must be socket") end if
   if typeof(enabled) != "bool" then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: enabled must be bool") end if
@@ -169,6 +214,8 @@ function setNonBlocking(handle, enabled)
   return true
 end function
 
+// Updates the timeouts.
+// Inputs: `handle`, `receiveMs`, `sendMs`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function setTimeouts(handle, receiveMs, sendMs)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: handle must be socket") end if
   if typeof(receiveMs) != "int" or receiveMs < 0 or receiveMs > 3600000 then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: receive timeout is invalid") end if
@@ -188,6 +235,8 @@ function setTimeouts(handle, receiveMs, sendMs)
   return true
 end function
 
+// Performs the try accept operation for this module.
+// Inputs: `listener`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function tryAccept(listener)
   if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.tryAccept: listener must be socket handle") end if
   client = accept(listener, void, void)
@@ -199,6 +248,8 @@ function tryAccept(listener)
   return client
 end function
 
+// Performs the accept tcp operation for this module.
+// Inputs: `listener`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function acceptTcp(listener)
   if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.acceptTcp: listener must be socket handle") end if
   client = accept(listener, void, void)
@@ -206,6 +257,8 @@ function acceptTcp(listener)
   return client
 end function
 
+// Copies the byte range.
+// Inputs: `source`, `offset`, `count`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function copyByteRange(source, offset, count, operation)
   if typeof(source) != "bytes" then return error(INVALID_ARGUMENT, "platform.network." + operation + ": source must be bytes") end if
   if typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 or offset > len(source) - count then
@@ -217,6 +270,8 @@ function copyByteRange(source, offset, count, operation)
   return output
 end function
 
+// Performs the byte pointer operation for this module.
+// Inputs: `source`, `offset`, `count`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytePointer(source, offset, count, operation)
   if typeof(source) != "bytes" then return error(INVALID_ARGUMENT, "platform.network." + operation + ": buffer must be bytes") end if
   if typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 or offset > len(source) - count then
@@ -228,6 +283,8 @@ function bytePointer(source, offset, count, operation)
   return pointer + offset
 end function
 
+// Performs the send all operation for this module.
+// Inputs: `handle`, `data`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function sendAll(handle, data)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.sendAll: handle must be socket") end if
   if typeof(data) == "string" then data = bytes(data) end if
@@ -259,6 +316,8 @@ function sendAll(handle, data)
   return total
 end function
 
+// Performs the receive operation for this module.
+// Inputs: `handle`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function receive(handle, maximum)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receive: handle must be socket") end if
   if typeof(maximum) != "int" or maximum < 0 or maximum > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receive: invalid maximum") end if
@@ -274,6 +333,8 @@ function receive(handle, maximum)
   return copyByteRange(buffer, 0, count, "receive")
 end function
 
+// Performs the receive available into operation for this module.
+// Inputs: `handle`, `target`, `offset`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function receiveAvailableInto(handle, target, offset, maximum)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveAvailableInto: handle must be socket") end if
   if typeof(target) != "bytes" then return error(INVALID_ARGUMENT, "platform.network.receiveAvailableInto: target must be bytes") end if
@@ -293,6 +354,8 @@ function receiveAvailableInto(handle, target, offset, maximum)
   return count
 end function
 
+// Performs the receive available operation for this module.
+// Inputs: `handle`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function receiveAvailable(handle, maximum)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveAvailable: handle must be socket") end if
   if typeof(maximum) != "int" or maximum < 1 or maximum > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receiveAvailable: invalid maximum") end if
@@ -305,12 +368,16 @@ function receiveAvailable(handle, maximum)
   return copyByteRange(buffer, 0, count, "receiveAvailable")
 end function
 
+// Performs the sleep milliseconds operation for this module.
+// Inputs: `milliseconds`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function sleepMilliseconds(milliseconds)
   if typeof(milliseconds) != "int" or milliseconds < 0 or milliseconds > 60000 then return error(INVALID_ARGUMENT, "platform.network.sleepMilliseconds: invalid delay") end if
   Sleep(milliseconds)
   return true
 end function
 
+// Performs the receive exact operation for this module.
+// Inputs: `handle`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function receiveExact(handle, count)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.receiveExact: handle must be socket") end if
   if typeof(count) != "int" or count < 0 or count > MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.network.receiveExact: invalid count") end if
@@ -330,6 +397,8 @@ function receiveExact(handle, count)
   return output
 end function
 
+// Closes the requested value.
+// Inputs: `handle`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(handle)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.close: handle must be socket") end if
   ignored = shutdown(handle, SD_BOTH)
@@ -338,14 +407,20 @@ function close(handle)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "platform.network"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M18"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

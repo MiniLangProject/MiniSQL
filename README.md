@@ -4,10 +4,11 @@ MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 applications.
 
-The frozen M0-M50 plan is complete. The final Windows run passed all
-**106/106 cumulative phases**, including crash recovery, concurrent clients,
-TLS integration, replication, fuzzing, soak tests, and deterministic release
-packaging. The accepted source revision is `M48-M50R3`.
+The frozen M0-M50 plan is complete. A clean Windows run on 2026-08-20 passed
+all **106/106 cumulative phases**, including crash recovery, genuinely parallel
+same-database reads, concurrent clients, TLS integration, replication, fuzzing,
+soak tests, and deterministic release packaging. The accepted source revision
+is `M48-M50R3`.
 
 > MiniSQL is an independently developed database engine. Version 1.0 has a
 > substantial project-specific test suite, but it has not received an
@@ -29,8 +30,31 @@ packaging. The accepted source revision is `M48-M50R3`.
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
   TLS 1.3/X.509 sidecar, audit chain, WAL shipping, and read-only hot standby;
+- native per-connection concurrency through a bounded MiniLang thread pool, with
+  parallel network/framing work, parallel read-only query plans on one database,
+  and exclusive, writer-prioritized mutation execution;
 - deterministic 106-phase cumulative test suite and reproducible Windows-x64
   release packaging.
+
+## Concurrency model
+
+`minisqld` accepts connections on one dedicated acceptor and dispatches each
+connection to a bounded native MiniLang thread pool. A worker owns its socket,
+framing buffers and SQL session for the connection lifetime, so a slow client
+does not block unrelated clients.
+
+Each open database owns a writer-prioritized readers/writer execution gate.
+Read-only `SELECT`, `EXPLAIN` and metadata operations may execute concurrently
+on independent shared-locked file handles. DML, DDL, DCL, maintenance,
+sequence-consuming queries and session mutations execute exclusively. Waiting
+writers close the reader turnstile to prevent writer starvation. The logical
+lock graph has a separate mutex and retains its transaction timeout and
+deadlock-detection semantics.
+
+This is real parallel query execution for independent reads, not only parallel
+socket handling. The M27 acceptance scenario starts two connections, executes
+100 indexed queries per connection and requires a measured overlap greater than
+one. The design intentionally retains a single physical writer per database.
 
 ## Requirements
 
@@ -172,6 +196,7 @@ never be used in production.
 
 ## License
 
-This repository snapshot intentionally does not select an open-source license.
-Add the license you want before publishing the project for third-party reuse.
-Without a license, normal copyright rules apply.
+MiniSQL is distributed under the Apache License 2.0. See [`LICENSE`](LICENSE)
+and [`NOTICE.md`](NOTICE.md). Every MiniLang, Python and PowerShell source file
+contains an Apache-2.0 header; public APIs, data structures, invariants and
+non-obvious algorithms are documented in English alongside the implementation.

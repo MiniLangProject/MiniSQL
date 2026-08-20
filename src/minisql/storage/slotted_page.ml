@@ -1,4 +1,7 @@
 package minisql.storage.slotted_page
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.storage.page as page
@@ -21,29 +24,44 @@ const SLOT_FLAG_FORWARD_ROOT = 2
 const SLOT_FLAG_FORWARD_INTERNAL = 3
 const SLOT_FLAG_MOVED = 4
 
+// Defines the slot entry record used by this module.
 struct SlotEntry
+  // Data offset field of the slot entry.
   dataOffset
+  // Data length field of the slot entry.
   dataLength
+  // Flags field of the slot entry.
   flags
+  // Generation field of the slot entry.
   generation
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.slotted_page." + operation + ": " + message)
 end function
 
+// Creates the requested value.
+// Inputs: `pageSize`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(pageSize, fileId, pageNumber)
   return page.create(pageSize, page.TYPE_HEAP, fileId, pageNumber)
 end function
 
+// Performs the slot offset operation for this module.
+// Inputs: `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function slotOffset(slotId)
   return page.HEADER_SIZE + slotId * SLOT_SIZE
 end function
 
+// Performs the valid flags operation for this module.
+// Inputs: `flags`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function validFlags(flags)
   return flags == SLOT_FLAG_LIVE or flags == SLOT_FLAG_DELETED or flags == SLOT_FLAG_FORWARD_ROOT or flags == SLOT_FLAG_FORWARD_INTERNAL or flags == SLOT_FLAG_MOVED
 end function
 
+// Performs the next generation operation for this module.
+// Inputs: `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function nextGeneration(generation)
   if typeof(generation) != "int" or generation < 0 or generation > 65535 then return fail(CORRUPT_DATA, "nextGeneration", "generation is outside U16") end if
   // Generation values never wrap. A slot deleted at generation 65535 is
@@ -53,6 +71,8 @@ function nextGeneration(generation)
   return generation + 1
 end function
 
+// Performs the raw entry operation for this module.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function rawEntry(pageBytes, slotId)
   offset = slotOffset(slotId)
   return SlotEntry(
@@ -63,6 +83,8 @@ function rawEntry(pageBytes, slotId)
   )
 end function
 
+// Writes the entry.
+// Inputs: `pageBytes`, `slotId`, `entry`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeEntry(pageBytes, slotId, entry)
   if entry is not SlotEntry then return fail(INVALID_ARGUMENT, "writeEntry", "entry must be SlotEntry") end if
   offset = slotOffset(slotId)
@@ -73,6 +95,8 @@ function writeEntry(pageBytes, slotId, entry)
   return true
 end function
 
+// Validates the slot.
+// Inputs: `header`, `slotId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateSlot(header, slotId, operation)
   if typeof(slotId) != "int" or slotId < 0 or slotId >= header.itemCount then
     return fail(ROW_NOT_FOUND, operation, "slot does not exist")
@@ -80,6 +104,8 @@ function validateSlot(header, slotId, operation)
   return true
 end function
 
+// Validates the requested value.
+// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validate(pageBytes, operation)
   header = page.verify(pageBytes)
   if header.pageType != page.TYPE_HEAP and header.pageType != page.TYPE_CATALOG then
@@ -115,10 +141,14 @@ function validate(pageBytes, operation)
   return header
 end function
 
+// Performs the slot count operation for this module.
+// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function slotCount(pageBytes)
   return validate(pageBytes, "slotCount").itemCount
 end function
 
+// Performs the live slot count operation for this module.
+// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function liveSlotCount(pageBytes)
   header = validate(pageBytes, "liveSlotCount")
   count = 0
@@ -130,30 +160,42 @@ function liveSlotCount(pageBytes)
   return count
 end function
 
+// Performs the entry operation for this module.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function entry(pageBytes, slotId)
   header = validate(pageBytes, "entry")
   validateSlot(header, slotId, "entry")
   return rawEntry(pageBytes, slotId)
 end function
 
+// Performs the entry flags operation for this module.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function entryFlags(pageBytes, slotId)
   return entry(pageBytes, slotId).flags
 end function
 
+// Performs the entry generation operation for this module.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function entryGeneration(pageBytes, slotId)
   return entry(pageBytes, slotId).generation
 end function
 
+// Evaluates whether the supplied input satisfies the deleted predicate.
+// Inputs: `pageBytes`, `slotId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isDeleted(pageBytes, slotId)
   return entryFlags(pageBytes, slotId) == SLOT_FLAG_DELETED
 end function
 
+// Reads the requested value.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function read(pageBytes, slotId)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "read", "slot is deleted") end if
   return slice(pageBytes, current.dataOffset, current.dataLength)
 end function
 
+// Reads the generation.
+// Inputs: `pageBytes`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readGeneration(pageBytes, slotId, generation)
   if typeof(generation) != "int" or generation <= 0 or generation > 65535 then return fail(INVALID_ARGUMENT, "readGeneration", "generation must be a positive U16") end if
   current = entry(pageBytes, slotId)
@@ -162,11 +204,15 @@ function readGeneration(pageBytes, slotId, generation)
   return slice(pageBytes, current.dataOffset, current.dataLength)
 end function
 
+// Releases the bytes.
+// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function freeBytes(pageBytes)
   header = validate(pageBytes, "freeBytes")
   return header.freeEnd - header.freeStart
 end function
 
+// Finds the deleted.
+// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findDeleted(pageBytes, header)
   if header.itemCount == 0 then return -1 end if
   for slotId = 0 to header.itemCount - 1
@@ -180,6 +226,8 @@ end function
 
 // Rebuilds a compact copy. replacementSlot=-1 means pure compaction. Mutation
 // of pageBytes happens only after the complete replacement page was validated.
+// Performs the rebuild operation for this module.
+// Inputs: `pageBytes`, `replacementSlot`, `replacement`, `replacementFlags`, `deleteReplacement`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function rebuild(pageBytes, replacementSlot, replacement, replacementFlags, deleteReplacement)
   header = validate(pageBytes, "rebuild")
   if typeof(replacementSlot) != "int" or replacementSlot < -1 or replacementSlot >= header.itemCount then return fail(INVALID_ARGUMENT, "rebuild", "invalid replacement slot") end if
@@ -235,10 +283,14 @@ function rebuild(pageBytes, replacementSlot, replacement, replacementFlags, dele
   return outputHeader
 end function
 
+// Performs the compact operation for this module.
+// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function compact(pageBytes)
   return rebuild(pageBytes, -1, bytes(), SLOT_FLAG_LIVE, false)
 end function
 
+// Inserts the with flags.
+// Inputs: `pageBytes`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function insertWithFlags(pageBytes, recordBytes, slotFlags)
   validate(pageBytes, "insertWithFlags")
   if typeof(recordBytes) != "bytes" or len(recordBytes) == 0 or len(recordBytes) > 65535 then return fail(INVALID_ARGUMENT, "insertWithFlags", "record must contain 1..65535 bytes") end if
@@ -271,10 +323,14 @@ function insertWithFlags(pageBytes, recordBytes, slotFlags)
   return slotId
 end function
 
+// Inserts the requested value.
+// Inputs: `pageBytes`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function insert(pageBytes, recordBytes)
   return insertWithFlags(pageBytes, recordBytes, SLOT_FLAG_LIVE)
 end function
 
+// Updates the with flags.
+// Inputs: `pageBytes`, `slotId`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function updateWithFlags(pageBytes, slotId, recordBytes, slotFlags)
   header = validate(pageBytes, "updateWithFlags")
   validateSlot(header, slotId, "updateWithFlags")
@@ -288,18 +344,24 @@ function updateWithFlags(pageBytes, slotId, recordBytes, slotFlags)
   return true
 end function
 
+// Updates the requested value.
+// Inputs: `pageBytes`, `slotId`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function update(pageBytes, slotId, recordBytes)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "update", "slot is deleted") end if
   return updateWithFlags(pageBytes, slotId, recordBytes, current.flags)
 end function
 
+// Updates the flags.
+// Inputs: `pageBytes`, `slotId`, `slotFlags`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function setFlags(pageBytes, slotId, slotFlags)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "setFlags", "slot is deleted") end if
   return updateWithFlags(pageBytes, slotId, read(pageBytes, slotId), slotFlags)
 end function
 
+// Removes the requested value.
+// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function remove(pageBytes, slotId)
   header = validate(pageBytes, "remove")
   validateSlot(header, slotId, "remove")
@@ -311,14 +373,20 @@ function remove(pageBytes, slotId)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.slotted_page"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M9"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

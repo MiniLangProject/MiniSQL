@@ -1,4 +1,7 @@
 package minisql.catalog.schema_history
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
@@ -69,218 +72,359 @@ const TRIGGER_INSERT = 1
 const TRIGGER_UPDATE = 2
 const TRIGGER_DELETE = 3
 
+// Defines the column rule record used by this module.
 struct ColumnRule
+  // Column name field of the column rule.
   columnName
+  // Default sql field of the column rule.
   defaultSql
+  // Identity field of the column rule.
   identity
 end struct
 
+// Defines the constraint definition record used by this module.
 struct ConstraintDefinition
+  // Name field of the constraint definition.
   name
+  // Kind field of the constraint definition.
   kind
+  // Columns field of the constraint definition.
   columns
+  // Expression sql field of the constraint definition.
   expressionSql
+  // Reference table field of the constraint definition.
   referenceTable
+  // Reference columns field of the constraint definition.
   referenceColumns
+  // On delete field of the constraint definition.
   onDelete
+  // On update field of the constraint definition.
   onUpdate
+  // Index id field of the constraint definition.
   indexId
+  // Index name field of the constraint definition.
   indexName
 end struct
 
+// Defines the table schema record used by this module.
 struct TableSchema
+  // Table id field of the table schema.
   tableId
+  // Schema version field of the table schema.
   schemaVersion
+  // Column rules field of the table schema.
   columnRules
+  // Constraints field of the table schema.
   constraints
 end struct
 
+// Defines the view definition record used by this module.
 struct ViewDefinition
+  // View id field of the view definition.
   viewId
+  // Name field of the view definition.
   name
+  // Sql text field of the view definition.
   sqlText
+  // Column names field of the view definition.
   columnNames
 end struct
 
+// Defines the sequence definition record used by this module.
 struct SequenceDefinition
+  // Sequence id field of the sequence definition.
   sequenceId
+  // Name field of the sequence definition.
   name
+  // Start value field of the sequence definition.
   startValue
+  // Increment value field of the sequence definition.
   incrementValue
+  // Minimum value field of the sequence definition.
   minimumValue
+  // Maximum value field of the sequence definition.
   maximumValue
+  // Last value field of the sequence definition.
   lastValue
+  // Has value field of the sequence definition.
   hasValue
+  // Cycle field of the sequence definition.
   cycle
+  // Owned table id field of the sequence definition.
   ownedTableId
+  // Owned column name field of the sequence definition.
   ownedColumnName
 end struct
 
+// Defines the generated column definition record used by this module.
 struct GeneratedColumnDefinition
+  // Table id field of the generated column definition.
   tableId
+  // Column name field of the generated column definition.
   columnName
+  // Expression sql field of the generated column definition.
   expressionSql
+  // Stored field of the generated column definition.
   stored
 end struct
 
+// Defines the trigger definition record used by this module.
 struct TriggerDefinition
+  // Trigger id field of the trigger definition.
   triggerId
+  // Name field of the trigger definition.
   name
+  // Table id field of the trigger definition.
   tableId
+  // Timing field of the trigger definition.
   timing
+  // Event type field of the trigger definition.
   eventType
+  // Target column field of the trigger definition.
   targetColumn
+  // Expression sql field of the trigger definition.
   expressionSql
+  // Enabled field of the trigger definition.
   enabled
 end struct
 
+// Defines the schema state record used by this module.
 struct SchemaState
+  // Database id field of the schema state.
   databaseId
+  // Generation field of the schema state.
   generation
+  // Tables field of the schema state.
   tables
+  // Views field of the schema state.
   views
+  // Sequences field of the schema state.
   sequences
+  // Generated columns field of the schema state.
   generatedColumns
+  // Triggers field of the schema state.
   triggers
 end struct
 
+// Defines the ddl action record used by this module.
 struct DdlAction
+  // Kind field of the ddl action.
   kind
+  // Payload field of the ddl action.
   payload
 end struct
 
+// Defines the ddl transaction record used by this module.
 struct DdlTransaction
+  // Database field of the ddl transaction.
   database
+  // State field of the ddl transaction.
   state
+  // Actions field of the ddl transaction.
   actions
+  // Active field of the ddl transaction.
   active
 end struct
 
+// Defines the create file plan record used by this module.
 struct CreateFilePlan
+  // Temporary path field of the create file plan.
   temporaryPath
+  // Final path field of the create file plan.
   finalPath
+  // File kind field of the create file plan.
   fileKind
+  // File id field of the create file plan.
   fileId
+  // Unique field of the create file plan.
   unique
 end struct
 
+// Defines the backup plan record used by this module.
 struct BackupPlan
+  // Original path field of the backup plan.
   originalPath
+  // Backup path field of the backup plan.
   backupPath
 end struct
 
+// Defines the prepared ddl record used by this module.
 struct PreparedDdl
+  // New metadata field of the prepared ddl.
   newMetadata
+  // New catalog field of the prepared ddl.
   newCatalog
+  // New state field of the prepared ddl.
   newState
+  // Create files field of the prepared ddl.
   createFiles
+  // Backups field of the prepared ddl.
   backups
 end struct
 
+// Defines the ddl journal record used by this module.
 struct DdlJournal
+  // Status field of the ddl journal.
   status
+  // Schema existed field of the ddl journal.
   schemaExisted
+  // Old meta field of the ddl journal.
   oldMeta
+  // Old catalog field of the ddl journal.
   oldCatalog
+  // Old schema field of the ddl journal.
   oldSchema
+  // Temporary paths field of the ddl journal.
   temporaryPaths
+  // Final paths field of the ddl journal.
   finalPaths
+  // Backup originals field of the ddl journal.
   backupOriginals
+  // Backup paths field of the ddl journal.
   backupPaths
 end struct
 
+// Defines the maintenance journal record used by this module.
 struct MaintenanceJournal
+  // Status field of the maintenance journal.
   status
+  // Original path field of the maintenance journal.
   originalPath
+  // Temporary path field of the maintenance journal.
   temporaryPath
+  // Backup path field of the maintenance journal.
   backupPath
 end struct
 
+// Defines the decoded string record used by this module.
 struct DecodedString
+  // Value field of the decoded string.
   value
+  // Next offset field of the decoded string.
   nextOffset
 end struct
 
 // Generic cursor result used by the schema-extension decoder. Keeping each
 // record decoder in its own function avoids a large lexical block with many
 // temporary locals retaining and later clearing the shared payload reference.
+// Defines the decoded extension entry record used by this module.
 struct DecodedExtensionEntry
+  // Value field of the decoded extension entry.
   value
+  // Next offset field of the decoded extension entry.
   nextOffset
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "catalog.schema_history." + operation + ": " + message)
 end function
 
+// Returns a fresh copy of the schema-history magic bytes.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function schemaMagic()
   return bytes("MSSCHEM1")
 end function
 
+// Returns a fresh copy of the DDL-journal magic bytes.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function journalMagic()
   return bytes("MSDDLJ01")
 end function
 
+// Returns a fresh copy of the maintenance-journal magic bytes.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function maintenanceMagic()
   return bytes("MSMAINT1")
 end function
 
+// Performs the extension magic operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function extensionMagic()
   return bytes("MSEXT001")
 end function
 
+// Performs the schema path operation for this module.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function schemaPath(databasePath)
   return catalog.joinPath(catalog.joinPath(databasePath, "catalog"), "schema.history")
 end function
 
+// Performs the journal path operation for this module.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function journalPath(databasePath)
   return catalog.joinPath(catalog.joinPath(databasePath, "catalog"), "ddl.pending")
 end function
 
+// Performs the maintenance path operation for this module.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function maintenancePath(databasePath)
   return catalog.joinPath(catalog.joinPath(databasePath, "catalog"), "maintenance.pending")
 end function
 
+// Performs the extension path operation for this module.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function extensionPath(databasePath)
   return catalog.joinPath(catalog.joinPath(databasePath, "catalog"), "schema.extensions")
 end function
 
+// Performs the index file path operation for this module.
+// Inputs: `databasePath`, `indexId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function indexFilePath(databasePath, indexId)
   return catalog.joinPath(catalog.joinPath(databasePath, "indexes"), "i" + indexId + ".idx")
 end function
 
+// Evaluates whether the supplied input satisfies the schema state predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isSchemaState(value)
   return value is SchemaState
 end function
 
+// Evaluates whether the supplied input satisfies the constraint definition predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isConstraintDefinition(value)
   return value is ConstraintDefinition
 end function
 
+// Evaluates whether the supplied input satisfies the table schema predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isTableSchema(value)
   return value is TableSchema
 end function
 
+// Evaluates whether the supplied input satisfies the ddl transaction predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isDdlTransaction(value)
   return value is DdlTransaction
 end function
 
+// Evaluates whether the supplied input satisfies the view definition predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isViewDefinition(value)
   return value is ViewDefinition
 end function
 
+// Evaluates whether the supplied input satisfies the sequence definition predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isSequenceDefinition(value)
   return value is SequenceDefinition
 end function
 
+// Evaluates whether the supplied input satisfies the generated column definition predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isGeneratedColumnDefinition(value)
   return value is GeneratedColumnDefinition
 end function
 
+// Evaluates whether the supplied input satisfies the trigger definition predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isTriggerDefinition(value)
   return value is TriggerDefinition
 end function
 
+// Performs the bytes equal operation for this module.
+// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -290,6 +434,8 @@ function bytesEqual(left, right)
   return true
 end function
 
+// Copies the exact.
+// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count <= 0 then return true end if
   for index = 0 to count - 1
@@ -298,6 +444,8 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
+// Reads the whole.
+// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readWhole(path)
   file = file_api.openRead(path)
   length = file_api.size(file)
@@ -308,6 +456,8 @@ function readWhole(path)
   return output
 end function
 
+// Writes the whole.
+// Inputs: `path`, `data`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeWhole(path, data)
   if typeof(data) != "bytes" then return fail(INVALID_ARGUMENT, "writeWhole", "data must be bytes") end if
   file = file_api.create(path)
@@ -318,6 +468,8 @@ function writeWhole(path, data)
   return true
 end function
 
+// Writes the atomic.
+// Inputs: `path`, `data`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeAtomic(path, data)
   temporary = path + ".new"
   if file_api.pathExists(temporary) then file_api.deletePath(temporary) end if
@@ -326,12 +478,16 @@ function writeAtomic(path, data)
   return true
 end function
 
+// Performs the string size operation for this module.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stringSize(value)
   if value is void then return 4 end if
   if typeof(value) != "string" then return fail(INVALID_ARGUMENT, "stringSize", "value must be string or void") end if
   return 4 + len(bytes(value))
 end function
 
+// Writes the string.
+// Inputs: `output`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeString(output, offset, value)
   data = bytes()
   if value is not void then data = bytes(value) end if
@@ -340,6 +496,8 @@ function writeString(output, offset, value)
   return offset + 4 + len(data)
 end function
 
+// Reads the string.
+// Inputs: `source`, `offset`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readString(source, offset, operation)
   if offset < 0 or offset > len(source) - 4 then return fail(CORRUPT_DATA, operation, "string length exceeds payload") end if
   length = endian.readU32LE(source, offset)
@@ -349,6 +507,8 @@ function readString(source, offset, operation)
   return DecodedString(value, offset + 4 + length)
 end function
 
+// Performs the string array size operation for this module.
+// Inputs: `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stringArraySize(values)
   if typeof(values) != "array" then return fail(INVALID_ARGUMENT, "stringArraySize", "values must be array") end if
   total = 4
@@ -358,6 +518,8 @@ function stringArraySize(values)
   return total
 end function
 
+// Writes the string array.
+// Inputs: `output`, `offset`, `values`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeStringArray(output, offset, values)
   endian.writeU32LE(output, offset, len(values))
   offset = offset + 4
@@ -367,6 +529,8 @@ function writeStringArray(output, offset, values)
   return offset
 end function
 
+// Reads the string array.
+// Inputs: `source`, `offset`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readStringArray(source, offset, operation)
   if offset < 0 or offset > len(source) - 4 then return fail(CORRUPT_DATA, operation, "array count exceeds payload") end if
   count = endian.readU32LE(source, offset)
@@ -382,6 +546,8 @@ function readStringArray(source, offset, operation)
   return [output, offset]
 end function
 
+// Creates the state.
+// Inputs: `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createState(databaseId)
   if typeof(databaseId) != "bytes" or len(databaseId) != 16 then return fail(INVALID_ARGUMENT, "createState", "databaseId must be 16 bytes") end if
 
@@ -398,11 +564,15 @@ function createState(databaseId)
   return SchemaState(databaseIdCopy, 1, tables, views, sequences, generatedColumns, triggers)
 end function
 
+// Performs the view definition operation for this module.
+// Inputs: `viewId`, `name`, `sqlText`, `columnNames`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function viewDefinition(viewId, name, sqlText, columnNames)
   if typeof(viewId) != "int" or viewId < 0 or typeof(name) != "string" or len(name) == 0 or typeof(sqlText) != "string" or len(sqlText) == 0 or typeof(columnNames) != "array" then return fail(INVALID_ARGUMENT, "viewDefinition", "invalid view definition") end if
   return ViewDefinition(viewId, name, sqlText, columnNames)
 end function
 
+// Performs the sequence definition operation for this module.
+// Inputs: `sequenceId`, `name`, `startValue`, `incrementValue`, `minimumValue`, `maximumValue`, `lastValue`, `hasValue`, `cycle`, `ownedTableId`, `ownedColumnName`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function sequenceDefinition(sequenceId, name, startValue, incrementValue, minimumValue, maximumValue, lastValue, hasValue, cycle, ownedTableId, ownedColumnName)
   if typeof(sequenceId) != "int" or sequenceId < 0 or typeof(name) != "string" or len(name) == 0 then return fail(INVALID_ARGUMENT, "sequenceDefinition", "invalid sequence identity") end if
   endian.validateInt64Words(startValue, "catalog.schema_history.sequenceDefinition.startValue")
@@ -415,21 +585,29 @@ function sequenceDefinition(sequenceId, name, startValue, incrementValue, minimu
   return SequenceDefinition(sequenceId, name, startValue, incrementValue, minimumValue, maximumValue, lastValue, hasValue, cycle, ownedTableId, ownedColumnName)
 end function
 
+// Performs the generated column definition operation for this module.
+// Inputs: `tableId`, `columnName`, `expressionSql`, `stored`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function generatedColumnDefinition(tableId, columnName, expressionSql, stored)
   if typeof(tableId) != "int" or tableId < 0 or typeof(columnName) != "string" or len(columnName) == 0 or typeof(expressionSql) != "string" or len(expressionSql) == 0 or typeof(stored) != "bool" then return fail(INVALID_ARGUMENT, "generatedColumnDefinition", "invalid generated column") end if
   return GeneratedColumnDefinition(tableId, columnName, expressionSql, stored)
 end function
 
+// Performs the trigger definition operation for this module.
+// Inputs: `triggerId`, `name`, `tableId`, `timing`, `eventType`, `targetColumn`, `expressionSql`, `enabled`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function triggerDefinition(triggerId, name, tableId, timing, eventType, targetColumn, expressionSql, enabled)
   if typeof(triggerId) != "int" or triggerId < 0 or typeof(name) != "string" or len(name) == 0 or typeof(tableId) != "int" or tableId < 0 or (timing != TRIGGER_BEFORE and timing != TRIGGER_AFTER) or (eventType < TRIGGER_INSERT or eventType > TRIGGER_DELETE) or typeof(targetColumn) != "string" or typeof(expressionSql) != "string" or typeof(enabled) != "bool" then return fail(INVALID_ARGUMENT, "triggerDefinition", "invalid trigger") end if
   return TriggerDefinition(triggerId, name, tableId, timing, eventType, targetColumn, expressionSql, enabled)
 end function
 
+// Performs the column rule operation for this module.
+// Inputs: `columnName`, `defaultSql`, `identity`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function columnRule(columnName, defaultSql, identity)
   if typeof(columnName) != "string" or len(columnName) == 0 or (defaultSql is not void and typeof(defaultSql) != "string") or typeof(identity) != "bool" then return fail(INVALID_ARGUMENT, "columnRule", "invalid column rule") end if
   return ColumnRule(columnName, defaultSql, identity)
 end function
 
+// Performs the constraint operation for this module.
+// Inputs: `name`, `kind`, `columns`, `expressionSql`, `referenceTable`, `referenceColumns`, `onDelete`, `onUpdate`, `indexId`, `indexName`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function constraint(name, kind, columns, expressionSql, referenceTable, referenceColumns, onDelete, onUpdate, indexId, indexName)
   if name is void then name = "" end if
   if expressionSql is void then expressionSql = "" end if
@@ -441,19 +619,27 @@ function constraint(name, kind, columns, expressionSql, referenceTable, referenc
   return ConstraintDefinition(name, kind, columns, expressionSql, referenceTable, referenceColumns, onDelete, onUpdate, indexId, indexName)
 end function
 
+// Performs the table schema operation for this module.
+// Inputs: `tableId`, `schemaVersion`, `columnRules`, `constraints`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function tableSchema(tableId, schemaVersion, columnRules, constraints)
   if typeof(tableId) != "int" or tableId < 0 or typeof(schemaVersion) != "int" or schemaVersion <= 0 or typeof(columnRules) != "array" or typeof(constraints) != "array" then return fail(INVALID_ARGUMENT, "tableSchema", "invalid table schema") end if
   return TableSchema(tableId, schemaVersion, columnRules, constraints)
 end function
 
+// Encodes the d rule size.
+// Inputs: `rule`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodedRuleSize(rule)
   return 4 + stringSize(rule.columnName) + stringSize(rule.defaultSql)
 end function
 
+// Encodes the d constraint size.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodedConstraintSize(value)
   return 24 + stringSize(value.name) + stringArraySize(value.columns) + stringSize(value.expressionSql) + stringSize(value.referenceTable) + stringArraySize(value.referenceColumns) + stringSize(value.onDelete) + stringSize(value.onUpdate) + stringSize(value.indexName)
 end function
 
+// Encodes the d table size.
+// Inputs: `table`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodedTableSize(table)
   total = 24
   for each rule in table.columnRules
@@ -465,6 +651,8 @@ function encodedTableSize(table)
   return total
 end function
 
+// Encodes the requested value.
+// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encode(state)
   if state is not SchemaState then return fail(INVALID_ARGUMENT, "encode", "state must be SchemaState") end if
   total = 32
@@ -515,12 +703,16 @@ function encode(state)
   return checksum.encodeEnvelope(schemaMagic(), FORMAT_VERSION, SCHEMA_KIND, 0, payload)
 end function
 
+// Decodes the native.
+// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeNative(words, operation, name)
   endian.validateUInt64Words(words, "catalog.schema_history." + operation + "." + name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
+// Decodes the state.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeState(encoded)
   envelope = checksum.decodeEnvelope(encoded, schemaMagic(), FORMAT_VERSION, SCHEMA_KIND)
   payload = envelope.payload
@@ -584,16 +776,22 @@ end function
 
 // Keep the qualified public API schema_history.decode(...), while all internal
 // calls use an unambiguous helper. MiniLang also has a builtin decode(bytes).
+// Decodes the requested value.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decode(encoded)
   return decodeState(encoded)
 end function
 
+// Persists the requested value.
+// Inputs: `databasePath`, `state`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function save(databasePath, state)
   writeAtomic(schemaPath(databasePath), encode(state))
   saveExtensions(databasePath, state)
   return true
 end function
 
+// Loads the or create.
+// Inputs: `databasePath`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function loadOrCreate(databasePath, databaseId)
   path = schemaPath(databasePath)
   if not file_api.fileExists(path) then
@@ -607,6 +805,8 @@ function loadOrCreate(databasePath, databaseId)
   return state
 end function
 
+// Finds the table schema.
+// Inputs: `state`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findTableSchema(state, tableId)
   if state is not SchemaState then return fail(INVALID_ARGUMENT, "findTableSchema", "state must be SchemaState") end if
   for each table in state.tables
@@ -615,6 +815,8 @@ function findTableSchema(state, tableId)
   return void
 end function
 
+// Finds the constraint.
+// Inputs: `tableSchemaValue`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findConstraint(tableSchemaValue, name)
   if tableSchemaValue is not TableSchema then return fail(INVALID_ARGUMENT, "findConstraint", "tableSchema must be TableSchema") end if
   for each value in tableSchemaValue.constraints
@@ -623,14 +825,20 @@ function findConstraint(tableSchemaValue, name)
   return void
 end function
 
+// Clones the metadata.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cloneMetadata(value)
   return metadata.decodeDatabase(metadata.encodeDatabase(value))
 end function
 
+// Clones the catalog.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cloneCatalog(value)
   return metadata.decodeCatalog(metadata.encodeCatalog(value))
 end function
 
+// Clones the state.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cloneState(value)
   cloned = decodeState(encode(value))
   extension = decodeExtensions(encodeExtensions(value), value.databaseId)
@@ -641,6 +849,8 @@ function cloneState(value)
   return cloned
 end function
 
+// Removes the at.
+// Inputs: `values`, `index`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function removeAt(values, index)
   output = []
   if len(values) > 1 then
@@ -651,6 +861,8 @@ function removeAt(values, index)
   return output
 end function
 
+// Performs the table index by name operation for this module.
+// Inputs: `catalogState`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function tableIndexByName(catalogState, name)
   if len(catalogState.tables) > 0 then
     for index = 0 to len(catalogState.tables) - 1
@@ -660,6 +872,8 @@ function tableIndexByName(catalogState, name)
   return -1
 end function
 
+// Performs the table schema index operation for this module.
+// Inputs: `state`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function tableSchemaIndex(state, tableId)
   if len(state.tables) > 0 then
     for index = 0 to len(state.tables) - 1
@@ -669,6 +883,8 @@ function tableSchemaIndex(state, tableId)
   return -1
 end function
 
+// Allocates the id.
+// Inputs: `preparedMetadata`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function allocateId(preparedMetadata)
   value = preparedMetadata.nextObjectId
   if value >= endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "allocateId", "object ID space exhausted") end if
@@ -676,10 +892,14 @@ function allocateId(preparedMetadata)
   return value
 end function
 
+// Performs the generated constraint name operation for this module.
+// Inputs: `prefix`, `tableName`, `suffix`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function generatedConstraintName(prefix, tableName, suffix)
   return prefix + "_" + tableName + "_" + suffix
 end function
 
+// Performs the column exists operation for this module.
+// Inputs: `table`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function columnExists(table, name)
   for each column in table.columns
     if column.name == name then return true end if
@@ -687,6 +907,8 @@ function columnExists(table, name)
   return false
 end function
 
+// Performs the unique constraint for columns operation for this module.
+// Inputs: `tableSchemaValue`, `columns`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function uniqueConstraintForColumns(tableSchemaValue, columns)
   if tableSchemaValue is void then return false end if
   for each value in tableSchemaValue.constraints
@@ -705,6 +927,8 @@ function uniqueConstraintForColumns(tableSchemaValue, columns)
   return false
 end function
 
+// Appends the constraint.
+// Inputs: `preparedMetadata`, `tableName`, `tableSchemaValue`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function appendConstraint(preparedMetadata, tableName, tableSchemaValue, value)
   if value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE or value.kind == CONSTRAINT_INDEX then
     value.indexId = allocateId(preparedMetadata)
@@ -714,6 +938,8 @@ function appendConstraint(preparedMetadata, tableName, tableSchemaValue, value)
   return value
 end function
 
+// Performs the catalog table by id operation for this module.
+// Inputs: `catalogState`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function catalogTableById(catalogState, tableId)
   for each table in catalogState.tables
     if table.tableId == tableId then return table end if
@@ -721,6 +947,8 @@ function catalogTableById(catalogState, tableId)
   return void
 end function
 
+// Performs the column index by name operation for this module.
+// Inputs: `table`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function columnIndexByName(table, name)
   if len(table.columns) > 0 then
     for index = 0 to len(table.columns) - 1
@@ -730,6 +958,8 @@ function columnIndexByName(table, name)
   return -1
 end function
 
+// Performs the string array replace operation for this module.
+// Inputs: `values`, `oldValue`, `newValue`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stringArrayReplace(values, oldValue, newValue)
   output = []
   for each value in values
@@ -738,6 +968,8 @@ function stringArrayReplace(values, oldValue, newValue)
   return output
 end function
 
+// Performs the rename expression operation for this module.
+// Inputs: `expression`, `oldName`, `newName`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function renameExpression(expression, oldName, newName)
   if ast.isColumnExpression(expression) then
     if expression.qualifier is void and expression.name == oldName then return ast.columnExpression(void, newName) end if
@@ -757,11 +989,15 @@ function renameExpression(expression, oldName, newName)
   return expression
 end function
 
+// Performs the rename expression sql operation for this module.
+// Inputs: `sqlText`, `oldName`, `newName`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function renameExpressionSql(sqlText, oldName, newName)
   if typeof(sqlText) != "string" or len(sqlText) == 0 then return sqlText end if
   return ast.formatExpression(renameExpression(parser.parseExpressionText(sqlText), oldName, newName))
 end function
 
+// Compares the string array.
+// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function sameStringArray(left, right)
   if typeof(left) != "array" or typeof(right) != "array" or len(left) != len(right) then return false end if
   if len(left) > 0 then
@@ -772,6 +1008,8 @@ function sameStringArray(left, right)
   return true
 end function
 
+// Performs the constraint name exists operation for this module.
+// Inputs: `tableSchemaValue`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function constraintNameExists(tableSchemaValue, name)
   for each value in tableSchemaValue.constraints
     if value.name == name or (len(value.indexName) > 0 and value.indexName == name) then return true end if
@@ -779,6 +1017,8 @@ function constraintNameExists(tableSchemaValue, name)
   return false
 end function
 
+// Ensures the prepared table schema.
+// Inputs: `prepared`, `table`. Returns success after all invariants hold; violations are reported as structured errors.
 function ensurePreparedTableSchema(prepared, table)
   schemaIndex = tableSchemaIndex(prepared.newState, table.tableId)
   if schemaIndex < 0 then
@@ -792,6 +1032,8 @@ function ensurePreparedTableSchema(prepared, table)
   return prepared.newState.tables[schemaIndex]
 end function
 
+// Performs the constraint from ast operation for this module.
+// Inputs: `prepared`, `table`, `tableSchemaValue`, `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function constraintFromAst(prepared, table, tableSchemaValue, source)
   name = source.name
   if name is void or len(name) == 0 then name = generatedConstraintName("constraint", table.name, "" + (len(tableSchemaValue.constraints) + 1)) end if
@@ -803,6 +1045,8 @@ function constraintFromAst(prepared, table, tableSchemaValue, source)
   return value
 end function
 
+// Builds the alter table.
+// Inputs: `prepared`, `databasePath`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildAlterTable(prepared, databasePath, bound)
   statement = bound.statement
   table = catalogTableById(prepared.newCatalog, bound.table.tableId)
@@ -926,6 +1170,8 @@ function buildAlterTable(prepared, databasePath, bound)
   return fail(UNSUPPORTED_SQL, "buildAlterTable", "unsupported ALTER TABLE action")
 end function
 
+// Builds the create table.
+// Inputs: `prepared`, `databasePath`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildCreateTable(prepared, databasePath, bound)
   statement = bound.statement
   if tableIndexByName(prepared.newCatalog, statement.name) >= 0 then
@@ -1032,6 +1278,8 @@ function buildCreateTable(prepared, databasePath, bound)
   return true
 end function
 
+// Builds the create index.
+// Inputs: `prepared`, `databasePath`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildCreateIndex(prepared, databasePath, bound)
   if bound.table is void then return fail(OBJECT_NOT_FOUND, "buildCreateIndex", "table does not exist") end if
   tableIndex = tableIndexByName(prepared.newCatalog, bound.table.name)
@@ -1057,6 +1305,8 @@ function buildCreateIndex(prepared, databasePath, bound)
   return true
 end function
 
+// Builds the drop table.
+// Inputs: `prepared`, `databasePath`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildDropTable(prepared, databasePath, bound)
   if bound.table is void then return true end if
   tableIndex = tableIndexByName(prepared.newCatalog, bound.table.name)
@@ -1088,18 +1338,24 @@ function buildDropTable(prepared, databasePath, bound)
   return true
 end function
 
+// Begins the requested value.
+// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function begin(database)
   if not catalog.isDatabaseHandle(database) then return fail(INVALID_ARGUMENT, "begin", "database must be DatabaseHandle") end if
   if database.closed then return fail(CLOSED_HANDLE, "begin", "database is closed") end if
   return DdlTransaction(database, loadOrCreate(database.path, database.metadata.databaseId), [], true)
 end function
 
+// Validates the transaction.
+// Inputs: `transaction`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateTransaction(transaction, operation)
   if transaction is not DdlTransaction then return fail(INVALID_ARGUMENT, operation, "transaction must be DdlTransaction") end if
   if not transaction.active then return fail(DDL_STATE, operation, "DDL transaction is not active") end if
   return true
 end function
 
+// Performs the stage create table operation for this module.
+// Inputs: `transaction`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stageCreateTable(transaction, bound)
   validateTransaction(transaction, "stageCreateTable")
   if not binder.isBoundCreateTable(bound) then return fail(INVALID_ARGUMENT, "stageCreateTable", "bound statement must be BoundCreateTable") end if
@@ -1107,6 +1363,8 @@ function stageCreateTable(transaction, bound)
   return true
 end function
 
+// Performs the stage create index operation for this module.
+// Inputs: `transaction`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stageCreateIndex(transaction, bound)
   validateTransaction(transaction, "stageCreateIndex")
   if not binder.isBoundCreateIndex(bound) then return fail(INVALID_ARGUMENT, "stageCreateIndex", "bound statement must be BoundCreateIndex") end if
@@ -1114,6 +1372,8 @@ function stageCreateIndex(transaction, bound)
   return true
 end function
 
+// Performs the stage drop table operation for this module.
+// Inputs: `transaction`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stageDropTable(transaction, bound)
   validateTransaction(transaction, "stageDropTable")
   if not binder.isBoundDropTable(bound) then return fail(INVALID_ARGUMENT, "stageDropTable", "bound statement must be BoundDropTable") end if
@@ -1121,6 +1381,8 @@ function stageDropTable(transaction, bound)
   return true
 end function
 
+// Performs the stage alter table operation for this module.
+// Inputs: `transaction`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stageAlterTable(transaction, bound)
   validateTransaction(transaction, "stageAlterTable")
   if not binder.isBoundAlterTable(bound) then return fail(INVALID_ARGUMENT, "stageAlterTable", "bound statement must be BoundAlterTable") end if
@@ -1128,6 +1390,8 @@ function stageAlterTable(transaction, bound)
   return true
 end function
 
+// Performs the prepare operation for this module.
+// Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function prepare(transaction)
   validateTransaction(transaction, "prepare")
   prepared = PreparedDdl(cloneMetadata(transaction.database.metadata), cloneCatalog(transaction.database.catalog), cloneState(transaction.state), [], [])
@@ -1149,6 +1413,8 @@ function prepare(transaction)
   return prepared
 end function
 
+// Performs the journal array size operation for this module.
+// Inputs: `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function journalArraySize(values)
   total = 4
   for each value in values
@@ -1157,6 +1423,8 @@ function journalArraySize(values)
   return total
 end function
 
+// Encodes the journal.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeJournal(value)
   total = 40 + len(value.oldMeta) + len(value.oldCatalog) + len(value.oldSchema)
   total = total + journalArraySize(value.temporaryPaths) + journalArraySize(value.finalPaths) + journalArraySize(value.backupOriginals) + journalArraySize(value.backupPaths)
@@ -1183,6 +1451,8 @@ function encodeJournal(value)
   return checksum.encodeEnvelope(journalMagic(), FORMAT_VERSION, JOURNAL_KIND, 0, payload)
 end function
 
+// Decodes the journal.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeJournal(encoded)
   envelope = checksum.decodeEnvelope(encoded, journalMagic(), FORMAT_VERSION, JOURNAL_KIND)
   payload = envelope.payload
@@ -1210,15 +1480,21 @@ function decodeJournal(encoded)
   return DdlJournal(status, schemaFlag == 1, oldMeta, oldCatalog, oldSchema, temporaryPaths, finalPaths, originals, backups)
 end function
 
+// Writes the journal.
+// Inputs: `databasePath`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeJournal(databasePath, value)
   writeAtomic(journalPath(databasePath), encodeJournal(value))
   return true
 end function
 
+// Evaluates whether the supplied input satisfies the maintenance journal predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isMaintenanceJournal(value)
   return value is MaintenanceJournal
 end function
 
+// Encodes the maintenance.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeMaintenance(value)
   if value is not MaintenanceJournal then return fail(INVALID_ARGUMENT, "encodeMaintenance", "value must be MaintenanceJournal") end if
   if value.status != MAINTENANCE_PREPARED and value.status != MAINTENANCE_COMMITTED then return fail(INVALID_ARGUMENT, "encodeMaintenance", "invalid status") end if
@@ -1234,6 +1510,8 @@ function encodeMaintenance(value)
   return checksum.encodeEnvelope(maintenanceMagic(), FORMAT_VERSION, MAINTENANCE_KIND, 0, payload)
 end function
 
+// Decodes the maintenance.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeMaintenance(encoded)
   envelope = checksum.decodeEnvelope(encoded, maintenanceMagic(), FORMAT_VERSION, MAINTENANCE_KIND)
   payload = envelope.payload
@@ -1247,11 +1525,15 @@ function decodeMaintenance(encoded)
   return MaintenanceJournal(status, first.value, second.value, third.value)
 end function
 
+// Writes the maintenance.
+// Inputs: `databasePath`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeMaintenance(databasePath, value)
   writeAtomic(maintenancePath(databasePath), encodeMaintenance(value))
   return true
 end function
 
+// Begins the maintenance.
+// Inputs: `databasePath`, `originalPath`, `temporaryPath`, `backupPath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function beginMaintenance(databasePath, originalPath, temporaryPath, backupPath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 or typeof(originalPath) != "string" or len(originalPath) == 0 or typeof(temporaryPath) != "string" or len(temporaryPath) == 0 or typeof(backupPath) != "string" or len(backupPath) == 0 then return fail(INVALID_ARGUMENT, "beginMaintenance", "paths must be non-empty strings") end if
   value = MaintenanceJournal(MAINTENANCE_PREPARED, originalPath, temporaryPath, backupPath)
@@ -1259,6 +1541,8 @@ function beginMaintenance(databasePath, originalPath, temporaryPath, backupPath)
   return value
 end function
 
+// Marks the maintenance committed.
+// Inputs: `databasePath`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function markMaintenanceCommitted(databasePath, value)
   if value is not MaintenanceJournal then return fail(INVALID_ARGUMENT, "markMaintenanceCommitted", "value must be MaintenanceJournal") end if
   value.status = MAINTENANCE_COMMITTED
@@ -1266,6 +1550,8 @@ function markMaintenanceCommitted(databasePath, value)
   return true
 end function
 
+// Performs the finish maintenance operation for this module.
+// Inputs: `databasePath`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function finishMaintenance(databasePath, value)
   if value is not MaintenanceJournal then return fail(INVALID_ARGUMENT, "finishMaintenance", "value must be MaintenanceJournal") end if
   deleteIfExists(value.temporaryPath)
@@ -1274,6 +1560,8 @@ function finishMaintenance(databasePath, value)
   return true
 end function
 
+// Recovers the maintenance.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function recoverMaintenance(databasePath)
   path = maintenancePath(databasePath)
   if not file_api.fileExists(path) then return true end if
@@ -1301,11 +1589,15 @@ function recoverMaintenance(databasePath)
   return true
 end function
 
+// Deletes the if exists.
+// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function deleteIfExists(path)
   if file_api.pathExists(path) then file_api.deletePath(path) end if
   return true
 end function
 
+// Recovers the pending.
+// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function recoverPending(databasePath)
   path = journalPath(databasePath)
   if not file_api.fileExists(path) then return true end if
@@ -1344,6 +1636,8 @@ function recoverPending(databasePath)
   return true
 end function
 
+// Creates the planned files.
+// Inputs: `transaction`, `prepared`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createPlannedFiles(transaction, prepared)
   for each plan in prepared.createFiles
     deleteIfExists(plan.temporaryPath)
@@ -1358,6 +1652,8 @@ function createPlannedFiles(transaction, prepared)
   return true
 end function
 
+// Performs the publish file moves operation for this module.
+// Inputs: `prepared`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function publishFileMoves(prepared)
   for each plan in prepared.createFiles
     if file_api.pathExists(plan.finalPath) then return fail(OBJECT_EXISTS, "publishFileMoves", "target already exists: " + plan.finalPath) end if
@@ -1370,6 +1666,8 @@ function publishFileMoves(prepared)
   return true
 end function
 
+// Performs the cleanup committed operation for this module.
+// Inputs: `prepared`, `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cleanupCommitted(prepared, databasePath)
   for each plan in prepared.backups
     deleteIfExists(plan.backupPath)
@@ -1381,6 +1679,8 @@ function cleanupCommitted(prepared, databasePath)
   return true
 end function
 
+// Commits the internal.
+// Inputs: `transaction`, `stopPhase`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function commitInternal(transaction, stopPhase)
   validateTransaction(transaction, "commit")
   if typeof(stopPhase) != "int" or stopPhase < 0 or stopPhase > 3 then return fail(INVALID_ARGUMENT, "commit", "invalid stop phase") end if
@@ -1444,16 +1744,22 @@ function commitInternal(transaction, stopPhase)
   return true
 end function
 
+// Commits the requested value.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function commit(transaction)
   return commitInternal(transaction, 0)
 end function
 
+// Commits the stopping after.
+// Inputs: `transaction`, `phase`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function commitStoppingAfter(transaction, phase)
   // Test-only crash-injection seam. The caller exits without normal cleanup and
   // the next database_manager.open invokes recoverPending().
   return commitInternal(transaction, phase)
 end function
 
+// Rolls back the requested value.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function rollback(transaction)
   validateTransaction(transaction, "rollback")
   transaction.actions = []
@@ -1461,6 +1767,8 @@ function rollback(transaction)
   return true
 end function
 
+// Performs the constraints for operation for this module.
+// Inputs: `databasePath`, `databaseId`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function constraintsFor(databasePath, databaseId, tableId)
   state = loadOrCreate(databasePath, databaseId)
   table = findTableSchema(state, tableId)
@@ -1472,6 +1780,8 @@ end function
 // M43-M45 schema extension sidecar
 // ---------------------------------------------------------------------------
 
+// Performs the extension record size operation for this module.
+// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function extensionRecordSize(state)
   total = 48
   for each view in state.views
@@ -1489,6 +1799,8 @@ function extensionRecordSize(state)
   return total
 end function
 
+// Encodes the extensions.
+// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeExtensions(state)
   if state is not SchemaState then return fail(INVALID_ARGUMENT, "encodeExtensions", "state must be SchemaState") end if
   if typeof(state.databaseId) != "bytes" or len(state.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encodeExtensions", "state databaseId must be 16 bytes") end if
@@ -1567,6 +1879,8 @@ function encodeExtensions(state)
   return checksum.encodeEnvelope(extensionMagic(), SCHEMA_EXTENSION_VERSION, EXTENSION_KIND, 0, payload)
 end function
 
+// Appends the extension value.
+// Inputs: `values`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function appendExtensionValue(values, value)
   if typeof(values) != "array" then return fail(INVALID_ARGUMENT, "appendExtensionValue", "values must be array") end if
   count = len(values)
@@ -1580,6 +1894,8 @@ function appendExtensionValue(values, value)
   return output
 end function
 
+// Decodes the view extension entry.
+// Inputs: `payload`, `offset`, `payloadLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeViewExtensionEntry(payload, offset, payloadLength)
   if offset < 0 or offset > payloadLength - 8 then return fail(CORRUPT_DATA, "decodeExtensions", "view header exceeds payload") end if
   viewId = decodeNative(endian.readU64LE(payload, offset), "decodeExtensions", "viewId")
@@ -1592,6 +1908,8 @@ function decodeViewExtensionEntry(payload, offset, payloadLength)
   return DecodedExtensionEntry(value, nextOffset)
 end function
 
+// Decodes the sequence extension entry.
+// Inputs: `payload`, `offset`, `payloadLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeSequenceExtensionEntry(payload, offset, payloadLength)
   if offset < 0 or offset > payloadLength - 60 then return fail(CORRUPT_DATA, "decodeExtensions", "sequence header exceeds payload") end if
   sequenceId = decodeNative(endian.readU64LE(payload, offset), "decodeExtensions", "sequenceId")
@@ -1609,6 +1927,8 @@ function decodeSequenceExtensionEntry(payload, offset, payloadLength)
   return DecodedExtensionEntry(value, ownedValue.nextOffset)
 end function
 
+// Decodes the generated extension entry.
+// Inputs: `payload`, `offset`, `payloadLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeGeneratedExtensionEntry(payload, offset, payloadLength)
   if offset < 0 or offset > payloadLength - 12 then return fail(CORRUPT_DATA, "decodeExtensions", "generated-column header exceeds payload") end if
   tableId = decodeNative(endian.readU64LE(payload, offset), "decodeExtensions", "generatedTableId")
@@ -1620,6 +1940,8 @@ function decodeGeneratedExtensionEntry(payload, offset, payloadLength)
   return DecodedExtensionEntry(value, sqlValue.nextOffset)
 end function
 
+// Decodes the trigger extension entry.
+// Inputs: `payload`, `offset`, `payloadLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeTriggerExtensionEntry(payload, offset, payloadLength)
   if offset < 0 or offset > payloadLength - 24 then return fail(CORRUPT_DATA, "decodeExtensions", "trigger header exceeds payload") end if
   triggerId = decodeNative(endian.readU64LE(payload, offset), "decodeExtensions", "triggerId")
@@ -1635,6 +1957,8 @@ function decodeTriggerExtensionEntry(payload, offset, payloadLength)
   return DecodedExtensionEntry(value, sqlValue.nextOffset)
 end function
 
+// Decodes the extensions.
+// Inputs: `encoded`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeExtensions(encoded, databaseId)
   if typeof(databaseId) != "bytes" or len(databaseId) != 16 then return fail(INVALID_ARGUMENT, "decodeExtensions", "databaseId must be 16 bytes") end if
 
@@ -1700,10 +2024,14 @@ function decodeExtensions(encoded, databaseId)
   return state
 end function
 
+// Persists the extensions.
+// Inputs: `databasePath`, `state`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function saveExtensions(databasePath, state)
   return writeAtomic(extensionPath(databasePath), encodeExtensions(state))
 end function
 
+// Loads the extensions into.
+// Inputs: `databasePath`, `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function loadExtensionsInto(databasePath, state)
   path = extensionPath(databasePath)
   if not file_api.fileExists(path) then return state end if
@@ -1716,6 +2044,8 @@ function loadExtensionsInto(databasePath, state)
   return state
 end function
 
+// Performs the next extension id operation for this module.
+// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function nextExtensionId(state)
   maximum = 0
   for each view in state.views
@@ -1730,6 +2060,8 @@ function nextExtensionId(state)
   return maximum + 1
 end function
 
+// Finds the view.
+// Inputs: `state`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findView(state, name)
   for each view in state.views
     if view.name == name then return view end if
@@ -1737,6 +2069,8 @@ function findView(state, name)
   return void
 end function
 
+// Performs the put view operation for this module.
+// Inputs: `databasePath`, `databaseId`, `name`, `sqlText`, `columnNames`, `replace`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function putView(databasePath, databaseId, name, sqlText, columnNames, replace)
   state = loadOrCreate(databasePath, databaseId)
   existingIndex = -1
@@ -1753,6 +2087,8 @@ function putView(databasePath, databaseId, name, sqlText, columnNames, replace)
   return value
 end function
 
+// Drops the view.
+// Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function dropView(databasePath, databaseId, name, ifExists)
   state = loadOrCreate(databasePath, databaseId)
   index = -1
@@ -1771,6 +2107,8 @@ function dropView(databasePath, databaseId, name, ifExists)
   return true
 end function
 
+// Finds the sequence.
+// Inputs: `state`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findSequence(state, name)
   for each sequence in state.sequences
     if sequence.name == name then return sequence end if
@@ -1778,6 +2116,8 @@ function findSequence(state, name)
   return void
 end function
 
+// Performs the put sequence operation for this module.
+// Inputs: `databasePath`, `databaseId`, `name`, `startValue`, `incrementValue`, `minimumValue`, `maximumValue`, `cycle`, `ifNotExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function putSequence(databasePath, databaseId, name, startValue, incrementValue, minimumValue, maximumValue, cycle, ifNotExists)
   state = loadOrCreate(databasePath, databaseId)
   existing = findSequence(state, name)
@@ -1792,6 +2132,8 @@ function putSequence(databasePath, databaseId, name, startValue, incrementValue,
   return value
 end function
 
+// Drops the sequence.
+// Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function dropSequence(databasePath, databaseId, name, ifExists)
   state = loadOrCreate(databasePath, databaseId)
   index = -1
@@ -1810,6 +2152,8 @@ function dropSequence(databasePath, databaseId, name, ifExists)
   return true
 end function
 
+// Performs the next sequence operation for this module.
+// Inputs: `databasePath`, `databaseId`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function nextSequence(databasePath, databaseId, name)
   state = loadOrCreate(databasePath, databaseId)
   sequence = findSequence(state, name)
@@ -1829,6 +2173,8 @@ function nextSequence(databasePath, databaseId, name)
   return sequence.lastValue
 end function
 
+// Performs the generated for table operation for this module.
+// Inputs: `state`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function generatedForTable(state, tableId)
   output = []
   for each generated in state.generatedColumns
@@ -1837,6 +2183,8 @@ function generatedForTable(state, tableId)
   return output
 end function
 
+// Performs the triggers for table operation for this module.
+// Inputs: `state`, `tableId`, `eventType`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function triggersForTable(state, tableId, eventType)
   output = []
   for each trigger in state.triggers
@@ -1845,6 +2193,8 @@ function triggersForTable(state, tableId, eventType)
   return output
 end function
 
+// Performs the put trigger operation for this module.
+// Inputs: `databasePath`, `databaseId`, `name`, `tableId`, `timing`, `eventType`, `targetColumn`, `expressionSql`, `ifNotExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function putTrigger(databasePath, databaseId, name, tableId, timing, eventType, targetColumn, expressionSql, ifNotExists)
   state = loadOrCreate(databasePath, databaseId)
   for each existing in state.triggers
@@ -1860,6 +2210,8 @@ function putTrigger(databasePath, databaseId, name, tableId, timing, eventType, 
   return value
 end function
 
+// Drops the trigger.
+// Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function dropTrigger(databasePath, databaseId, name, ifExists)
   state = loadOrCreate(databasePath, databaseId)
   index = -1
@@ -1878,14 +2230,20 @@ function dropTrigger(databasePath, databaseId, name, ifExists)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "catalog.schema_history"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M14"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

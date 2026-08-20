@@ -9,6 +9,12 @@
 * CTEs are nonrecursive and subqueries are non-correlated.
 * Trigger bodies contain one supported DML statement and have bounded recursion.
 * DCL is autocommit-only.
+* Connections, framing, SQL parsing and read-only query plans are threaded.
+  Multiple reads can execute against one database simultaneously; mutations,
+  maintenance, sequence consumption and session-state changes are serialized by
+  a writer-prioritized per-database gate. There is still only one active physical
+  writer per database. Long-running readers can delay a waiting writer until the
+  current reader set completes; new readers do not bypass that writer.
 * There is no automatic distributed failover or cross-database transaction.
 
 These are explicit scope limits, not silent fallbacks.

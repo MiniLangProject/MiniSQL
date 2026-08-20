@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.schema_history as schema_history
 import minisql.catalog.statistics as statistics
@@ -9,11 +13,13 @@ import minisql.server.database_manager as database_manager
 import minisql.storage.paged_file as paged_file
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Builds a deterministic repeated-character string used to force storage and maintenance boundary conditions.
 function repeatText(character, count)
   output = ""
   if count > 0 then
@@ -24,6 +30,7 @@ function repeatText(character, count)
   return output
 end function
 
+// Opens a table file read-only, captures its page count, and closes it so maintenance size changes can be compared safely.
 function tablePages(databasePath, table)
   file = paged_file.open(catalog.tableFilePath(databasePath, table.tableId))
   count = file.pageCount
@@ -31,6 +38,7 @@ function tablePages(databasePath, table)
   return count
 end function
 
+// Writes and flushes a complete text fixture, ensuring subsequent loader checks observe durable contents.
 function writeText(path, text)
   handle = file_api.createDurable(path)
   encoded = bytes(text)
@@ -41,6 +49,7 @@ function writeText(path, text)
   return true
 end function
 
+// Reads an entire text fixture and closes the handle before returning decoded contents.
 function readText(path)
   handle = file_api.openRead(path)
   length = file_api.size(handle)
@@ -50,6 +59,7 @@ function readText(path)
   return decode(encoded)
 end function
 
+// Runs the maintenance test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M25 maintenance tests: FAIL (missing data root)"

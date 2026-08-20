@@ -1,17 +1,24 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
 import minisql.server.database_manager as database_manager
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   return executor.executeSql(engine, sqlText)[0]
 end function
 
+// Extracts the host integer from the SQL 64-bit wrapper used in result assertions.
 function int64(value)
   return endian.int64ToInt(value.value)
 end function
 
+// Runs the cte windows test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M44 CTE and window tests: FAIL args"; return 2 end if
   state = testkit.create()

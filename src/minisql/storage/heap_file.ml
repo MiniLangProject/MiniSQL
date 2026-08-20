@@ -1,4 +1,7 @@
 package minisql.storage.heap_file
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.storage.page as page
@@ -19,37 +22,58 @@ const STALE_REFERENCE = 9018
 const FORWARD_SIZE = 24
 const MAX_FORWARD_DEPTH = 64
 
+// Defines the row id record used by this module.
 struct RowId
+  // Page number field of the row id.
   pageNumber
+  // Slot id field of the row id.
   slotId
+  // Generation field of the row id.
   generation
 end struct
 
+// Defines the heap row record used by this module.
 struct HeapRow
+  // Identifier field of the heap row.
   identifier
+  // Value field of the heap row.
   value
 end struct
 
+// Defines the resolved row record used by this module.
 struct ResolvedRow
+  // Leaf field of the resolved row.
   leaf
+  // Value field of the resolved row.
   value
+  // Flags field of the resolved row.
   flags
+  // Chain field of the resolved row.
   chain
 end struct
 
+// Defines the heap file record used by this module.
 struct HeapFile
+  // Paged file field of the heap file.
   pagedFile
+  // Closed field of the heap file.
   closed
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.heap_file." + operation + ": " + message)
 end function
 
+// Performs the forwarding magic operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function forwardingMagic()
   return bytes("MSFW")
 end function
 
+// Performs the bytes equal operation for this module.
+// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -59,6 +83,8 @@ function bytesEqual(left, right)
   return true
 end function
 
+// Performs the row id operation for this module.
+// Inputs: `pageNumber`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function rowId(pageNumber, slotId, generation)
   if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "rowId", "pageNumber must be non-negative") end if
   if typeof(slotId) != "int" or slotId < 0 or slotId > 65535 then return fail(INVALID_ARGUMENT, "rowId", "slotId must fit U16") end if
@@ -66,11 +92,15 @@ function rowId(pageNumber, slotId, generation)
   return RowId(pageNumber, slotId, generation)
 end function
 
+// Compares the row id.
+// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function sameRowId(left, right)
   if left is not RowId or right is not RowId then return false end if
   return left.pageNumber == right.pageNumber and left.slotId == right.slotId and left.generation == right.generation
 end function
 
+// Performs the contains row id operation for this module.
+// Inputs: `values`, `sought`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function containsRowId(values, sought)
   for each value in values
     if sameRowId(value, sought) then return true end if
@@ -78,6 +108,8 @@ function containsRowId(values, sought)
   return false
 end function
 
+// Encodes the forward.
+// Inputs: `target`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeForward(target)
   if target is not RowId then return fail(INVALID_ARGUMENT, "encodeForward", "target must be RowId") end if
   checked = rowId(target.pageNumber, target.slotId, target.generation)
@@ -92,6 +124,8 @@ function encodeForward(target)
   return output
 end function
 
+// Decodes the forward.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeForward(value)
   if typeof(value) != "bytes" or len(value) != FORWARD_SIZE then return fail(CORRUPT_DATA, "decodeForward", "forwarding record has the wrong size") end if
   if not bytesEqual(slice(value, 0, 4), forwardingMagic()) then return fail(CORRUPT_DATA, "decodeForward", "forwarding magic mismatch") end if
@@ -101,17 +135,23 @@ function decodeForward(value)
   return rowId(endian.uint64ToInt(pageWords), endian.readU32LE(value, 16), endian.readU16LE(value, 20))
 end function
 
+// Creates the requested value.
+// Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(path, pageSize, fileId, databaseId)
   file = paged_file.create(path, pageSize, superblock.FILE_TYPE_TABLE, fileId, databaseId)
   return HeapFile(file, false)
 end function
 
+// Opens the requested value.
+// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function open(path)
   file = paged_file.open(path)
   if file.fileType != superblock.FILE_TYPE_TABLE then paged_file.close(file); return fail(CORRUPT_DATA, "open", "file is not a table") end if
   return HeapFile(file, false)
 end function
 
+// Validates the open.
+// Inputs: `heap`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateOpen(heap, operation)
   if heap is not HeapFile then return fail(INVALID_ARGUMENT, operation, "heap must be HeapFile") end if
   if heap.closed then return fail(CLOSED_HANDLE, operation, "heap is closed") end if
@@ -119,12 +159,16 @@ function validateOpen(heap, operation)
   return true
 end function
 
+// Validates the identifier.
+// Inputs: `identifier`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateIdentifier(identifier, operation)
   if identifier is not RowId then return fail(INVALID_ARGUMENT, operation, "identifier must be RowId") end if
   rowId(identifier.pageNumber, identifier.slotId, identifier.generation)
   return true
 end function
 
+// Loads the slot.
+// Inputs: `heap`, `identifier`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function loadSlot(heap, identifier, operation)
   validateIdentifier(identifier, operation)
   if identifier.pageNumber >= heap.pagedFile.pageCount then return fail(ROW_NOT_FOUND, operation, "page does not exist") end if
@@ -137,6 +181,8 @@ function loadSlot(heap, identifier, operation)
   return [pageBytes, current, value]
 end function
 
+// Performs the resolve operation for this module.
+// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function resolve(heap, identifier)
   validateOpen(heap, "resolve")
   validateIdentifier(identifier, "resolve")
@@ -161,6 +207,8 @@ function resolve(heap, identifier)
   end while
 end function
 
+// Inserts the with flags.
+// Inputs: `heap`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function insertWithFlags(heap, recordBytes, slotFlags)
   validateOpen(heap, "insertWithFlags")
   if typeof(recordBytes) != "bytes" or len(recordBytes) == 0 then return fail(INVALID_ARGUMENT, "insertWithFlags", "record must be non-empty bytes") end if
@@ -190,14 +238,20 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   return rowId(pageNumber, slotId, generation)
 end function
 
+// Inserts the requested value.
+// Inputs: `heap`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function insert(heap, recordBytes)
   return insertWithFlags(heap, recordBytes, slotted.SLOT_FLAG_LIVE)
 end function
 
+// Reads the requested value.
+// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function read(heap, identifier)
   return resolve(heap, identifier).value
 end function
 
+// Updates the requested value.
+// Inputs: `heap`, `identifier`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function update(heap, identifier, recordBytes)
   validateOpen(heap, "update")
   validateIdentifier(identifier, "update")
@@ -230,6 +284,8 @@ function update(heap, identifier, recordBytes)
   return identifier
 end function
 
+// Removes the requested value.
+// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function remove(heap, identifier)
   validateOpen(heap, "remove")
   validateIdentifier(identifier, "remove")
@@ -266,6 +322,8 @@ function remove(heap, identifier)
   return true
 end function
 
+// Scans the requested value.
+// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function scan(heap)
   validateOpen(heap, "scan")
   rows = []
@@ -288,10 +346,14 @@ function scan(heap)
   return rows
 end function
 
+// Counts the requested value.
+// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function count(heap)
   return len(scan(heap))
 end function
 
+// Closes the requested value.
+// Inputs: `heap`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(heap)
   validateOpen(heap, "close")
   paged_file.close(heap.pagedFile)
@@ -299,14 +361,20 @@ function close(heap)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.heap_file"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M9"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

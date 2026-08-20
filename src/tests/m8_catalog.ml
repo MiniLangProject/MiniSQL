@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.common.uuid as uuid
 import minisql.config.loader as loader
@@ -6,6 +10,7 @@ import minisql.server.database_manager as database_manager
 import minisql.transaction.transaction as transaction
 import tests.support.testkit as testkit
 
+// Copies the source file in bounded chunks and flushes the destination, providing a durable fixture for corruption tests.
 function copyFile(sourcePath, destinationPath)
   source = file_api.openRead(sourcePath)
   length = file_api.size(source)
@@ -19,6 +24,7 @@ function copyFile(sourcePath, destinationPath)
   return true
 end function
 
+// Runs the catalog test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 2 then
     print "MiniSQL M8 database/catalog tests: FAIL (missing paths)"

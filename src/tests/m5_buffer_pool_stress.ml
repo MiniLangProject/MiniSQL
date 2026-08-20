@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.storage.buffer_pool as buffer_pool
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import tests.support.testkit as test
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   value = bytes(16, 0)
   for index = 0 to 15
@@ -12,6 +17,7 @@ function databaseId()
   return value
 end function
 
+// Runs the buffer pool stress test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
   if len(args) != 1 then

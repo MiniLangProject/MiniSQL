@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.version as m00_common_version
 import minisql.common.errors as m01_common_errors
 import minisql.common.limits as m02_common_limits
@@ -70,6 +74,7 @@ import minisql.tools.check as m68_tools_check
 import minisql.tools.backup as m69_tools_backup
 import minisql.tools.migrate as m70_tools_migrate
 
+// Records a labeled scalar comparison and returns one when the values differ so the caller can accumulate failures.
 function check(actual, expected, label)
   if actual != expected then
     print "M15 module smoke mismatch: " + label + " expected=" + expected + " actual=" + actual
@@ -78,6 +83,7 @@ function check(actual, expected, label)
   return 0
 end function
 
+// Records a labeled Boolean invariant and returns one when it is not satisfied.
 function checkBool(actual, expected, label)
   if actual != expected then
     print "M15 module smoke mismatch: " + label
@@ -86,6 +92,7 @@ function checkBool(actual, expected, label)
   return 0
 end function
 
+// Runs the module linkage and exported component identity test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   failures = 0
   failures = failures + check(m00_common_version.componentName(), "common.version", "common.version component")

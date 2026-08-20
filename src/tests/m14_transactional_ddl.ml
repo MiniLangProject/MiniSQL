@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.schema_history as schema_history
 import minisql.config.model as config_model
@@ -9,15 +13,18 @@ import minisql.storage.btree as btree
 import minisql.storage.paged_file as paged_file
 import tests.support.testkit as testkit
 
+// Parses SQL and returns its first statement, relying on callers to provide a non-empty statement list.
 function firstStatement(sqlText)
   parsed = parser.parseSql(sqlText)
   return parsed[0]
 end function
 
+// Parses and binds exactly one SQL statement against the supplied catalog, returning the bound statement or the binder error.
 function bindOne(database, sqlText)
   return binder.bindStatement(firstStatement(sqlText), database)
 end function
 
+// Finds a schema index by exact name and returns void when no matching index exists.
 function findNamedIndex(tableSchemaValue, name)
   for each value in tableSchemaValue.constraints
     if value.indexName == name or value.name == name then return value end if
@@ -25,6 +32,7 @@ function findNamedIndex(tableSchemaValue, name)
   return void
 end function
 
+// Runs the transactional ddl test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M14 transactional DDL tests: FAIL (missing data root)"

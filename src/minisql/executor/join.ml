@@ -1,5 +1,9 @@
 package minisql.executor.join
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 import minisql.executor.scan as scan
 import minisql.sql.ast as ast
@@ -15,20 +19,32 @@ const INVALID_ARGUMENT = 9001
 const HASH_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
 
+// Stores one build-side row in a hash-bucket collision chain.
 struct HashJoinEntry
+  // Non-NULL equality key retained for collision verification.
   key
+  // Right/build-side row associated with the key.
   row
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "executor.join." + operation + ": " + message)
 end function
 
+// Implements combine for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function combine(left, right)
   if not scan.isScannedRow(left) or not scan.isScannedRow(right) then return fail(INVALID_ARGUMENT, "combine", "rows must be ScannedRow") end if
   return scan.ScannedRow([left.reference, right.reference], left.values + right.values)
 end function
 
+// Implements null values for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nullValues(table)
   output = []
   for each column in table.columns
@@ -37,6 +53,10 @@ function nullValues(table)
   return output
 end function
 
+// Implements null values for types for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nullValuesForTypes(typeInfos)
   if typeof(typeInfos) != "array" then return fail(INVALID_ARGUMENT, "nullValuesForTypes", "types must be array") end if
   output = []
@@ -47,11 +67,18 @@ function nullValuesForTypes(typeInfos)
   return output
 end function
 
+// Implements condition passes for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function conditionPasses(condition, row)
   if condition is void then return true end if
   return expressions.predicatePasses(condition, expressions.rowContext(row.values))
 end function
 
+// Implements hash bytes for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hashBytes(input, seed)
   if typeof(input) != "bytes" or typeof(seed) != "int" then return fail(INVALID_ARGUMENT, "hashBytes", "invalid hash input") end if
   result = seed & HASH_MASK
@@ -63,6 +90,10 @@ function hashBytes(input, seed)
   return result
 end function
 
+// Implements hash value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hashValue(value)
   if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "hashValue", "value must be SqlValue") end if
   if value.isNull then return 0 end if
@@ -96,6 +127,10 @@ function hashValue(value)
   return hashBytes(bytes("" + value.value), result)
 end function
 
+// Implements equality columns for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function equalityColumns(boundJoin)
   if typeof(boundJoin) != "struct" or not expressions.isBoundExpression(boundJoin.condition) then return void end if
   condition = boundJoin.condition
@@ -110,6 +145,10 @@ function equalityColumns(boundJoin)
   return void
 end function
 
+// Returns whether the supplied value satisfies the hash condition.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function canHash(boundJoin)
   if typeof(boundJoin) != "struct" then return false end if
   if boundJoin.joinType != ast.JOIN_INNER and boundJoin.joinType != ast.JOIN_LEFT then return false end if
@@ -121,6 +160,9 @@ function canHash(boundJoin)
   return types.sameBase(boundJoin.condition.left.typeInfo, boundJoin.condition.right.typeInfo)
 end function
 
+// Executes an INNER or LEFT equi-join with a right-side hash table.
+// NULL keys never match, full value comparison resolves collisions, and the
+// original predicate is rechecked before emission. Unsupported shapes fall back.
 function applyHash(leftRows, rightRows, boundJoin)
   if not canHash(boundJoin) then return apply(leftRows, rightRows, boundJoin) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHash", "row inputs must be arrays") end if
@@ -168,6 +210,9 @@ function applyHash(leftRows, rightRows, boundJoin)
   return output
 end function
 
+// Executes the semantic nested-loop fallback for every supported join type.
+// Tracks matched right rows for RIGHT/FULL padding and emits typed NULL padding
+// for unmatched outer rows. Returns rows in deterministic left-major order.
 function apply(leftRows, rightRows, boundJoin)
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "apply", "row inputs must be arrays") end if
   if typeof(boundJoin) != "struct" then return fail(INVALID_ARGUMENT, "apply", "join must be bound") end if
@@ -206,14 +251,23 @@ function apply(leftRows, rightRows, boundJoin)
   return output
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.join"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M16"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

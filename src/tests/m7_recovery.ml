@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.platform.file as file_api
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
@@ -7,15 +11,18 @@ import minisql.transaction.transaction as tx
 import minisql.transaction.wal as wal
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
   return true
 end function
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   return fromHex("102132435465768798a9bacbdcedfe0f")
 end function
 
+// Creates and reseals a deterministic page image whose marker byte identifies the intended recovery or transaction state.
 function makePage(pageSize, fileId, pageNumber, marker)
   result = page.create(pageSize, page.TYPE_GENERIC, fileId, pageNumber)
   result[page.HEADER_SIZE] = marker
@@ -23,6 +30,7 @@ function makePage(pageSize, fileId, pageNumber, marker)
   return result
 end function
 
+// Runs the recovery test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 2 then
     print "MiniSQL M7 recovery tests: FAIL (missing paths)"

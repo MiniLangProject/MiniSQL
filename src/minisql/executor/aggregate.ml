@@ -1,5 +1,9 @@
 package minisql.executor.aggregate
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 import minisql.executor.projection as projection
 import minisql.executor.scan as scan
@@ -18,20 +22,32 @@ const BINDING_ERROR = 9020
 const HASH_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
 
+// Owns one SQL grouping key and all input rows assigned to that key.
 struct AggregateGroup
+  // Evaluated GROUP BY values; NULL values compare equal for grouping.
   keyValues
+  // Input rows in stable scan order for aggregate evaluation.
   rows
 end struct
 
+// Maps a collision-chain key to an index in the stable `groups` array.
 struct HashGroupEntry
+  // Full key retained to resolve hash collisions using SQL grouping equality.
   keyValues
+  // Index of the corresponding AggregateGroup.
   groupIndex
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "executor.aggregate." + operation + ": " + message)
 end function
 
+// Implements hash bytes for this module.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hashBytes(input, seed)
   result = seed & HASH_MASK
   if len(input) > 0 then
@@ -42,6 +58,10 @@ function hashBytes(input, seed)
   return result
 end function
 
+// Implements hash value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hashValue(value)
   if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "hashValue", "value must be SqlValue") end if
   if value.isNull then return 0 end if
@@ -74,6 +94,9 @@ function hashValue(value)
   return hashBytes(bytes("" + value.value), result)
 end function
 
+// Implements hash values for this module.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hashValues(input)
   result = 2166136261 & HASH_MASK
   for each value in input
@@ -82,11 +105,17 @@ function hashValues(input)
   return result
 end function
 
+// Implements same value for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sameValue(left, right)
   if left.isNull or right.isNull then return left.isNull and right.isNull end if
   return values.compareNonNull(left, right) == 0
 end function
 
+// Implements same values for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sameValues(left, right)
   if len(left) != len(right) then return false end if
   if len(left) > 0 then
@@ -97,6 +126,9 @@ function sameValues(left, right)
   return true
 end function
 
+// Implements distinct values for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function distinctValues(input)
   output = []
   for each candidate in input
@@ -109,10 +141,17 @@ function distinctValues(input)
   return output
 end function
 
+// Evaluates argument using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function evaluateArgument(expression, row)
   return expressions.evaluate(expression, expressions.rowContext(row.values))
 end function
 
+// Implements aggregate value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function aggregateValue(expression, rows)
   if not expressions.isBoundAggregate(expression) then return fail(INVALID_ARGUMENT, "aggregateValue", "expression must be aggregate") end if
   candidates = []
@@ -149,6 +188,9 @@ function aggregateValue(expression, rows)
   return fail(BINDING_ERROR, "aggregateValue", "unknown aggregate " + expression.name)
 end function
 
+// Evaluates group using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function evaluateGroup(expression, rows, representative)
   if expressions.isBoundAggregate(expression) then return aggregateValue(expression, rows) end if
   if not expressions.containsAggregate(expression) then return expressions.evaluate(expression, representative) end if
@@ -256,6 +298,9 @@ function evaluateGroup(expression, rows, representative)
   return fail(BINDING_ERROR, "evaluateGroup", "unsupported grouped expression")
 end function
 
+// Evaluates list using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function evaluateList(boundExpressions, rows, representative)
   output = []
   for each expression in boundExpressions
@@ -264,6 +309,9 @@ function evaluateList(boundExpressions, rows, representative)
   return output
 end function
 
+// Partitions rows with a fixed-bucket hash table and explicit collision chains.
+// Full-key comparison preserves SQL NULL/equality semantics; the separate groups
+// array preserves first-key encounter order. Empty global aggregation yields one group.
 function groupRows(rows, groupExpressions, aggregateQuery)
   if not aggregateQuery then return fail(INVALID_ARGUMENT, "groupRows", "query is not aggregate") end if
   groups = []
@@ -295,6 +343,10 @@ function groupRows(rows, groupExpressions, aggregateQuery)
   return groups
 end function
 
+// Implements project for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function project(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "project", "rows must be array") end if
   groups = groupRows(rows, groupExpressions, true)
@@ -315,6 +367,9 @@ function project(rows, selectExpressions, groupExpressions, havingExpression, or
   return output
 end function
 
+// Finds matching using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findMatching(rows, candidate, used)
   if len(rows) == 0 then return -1 end if
   for index = 0 to len(rows) - 1
@@ -323,6 +378,10 @@ function findMatching(rows, candidate, used)
   return -1
 end function
 
+// Implements set operation for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function setOperation(leftRows, rightRows, operator, all)
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" or typeof(operator) != "int" or typeof(all) != "bool" then return fail(INVALID_ARGUMENT, "setOperation", "invalid arguments") end if
   if operator == ast.SET_UNION then
@@ -358,14 +417,23 @@ function setOperation(leftRows, rightRows, operator, all)
   return output
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.aggregate"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M16"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

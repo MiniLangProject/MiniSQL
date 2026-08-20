@@ -1,17 +1,24 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.transaction.checkpoint as checkpoint
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
   return true
 end function
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   return fromHex("00112233445566778899aabbccddeeff")
 end function
 
+// Runs the checkpoint test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M7 checkpoint tests: FAIL (missing path)"

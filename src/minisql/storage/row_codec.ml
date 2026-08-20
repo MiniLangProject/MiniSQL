@@ -1,4 +1,7 @@
 package minisql.storage.row_codec
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 
@@ -35,44 +38,68 @@ const TYPE_TIMESTAMP = 16
 const FLAG_NULL = 1
 const FLAG_EXTERNAL = 2
 
+// Defines the sql null record used by this module.
 struct SqlNull
+  // Marker field of the sql null.
   marker
 end struct
 
+// Defines the column spec record used by this module.
 struct ColumnSpec
+  // Type code field of the column spec.
   typeCode
+  // Nullable field of the column spec.
   nullable
+  // Max length field of the column spec.
   maxLength
+  // Precision field of the column spec.
   precision
+  // Scale field of the column spec.
   scale
 end struct
 
+// Defines the row schema record used by this module.
 struct RowSchema
+  // Version field of the row schema.
   version
+  // Columns field of the row schema.
   columns
 end struct
 
+// Defines the row data record used by this module.
 struct RowData
+  // Schema version field of the row data.
   schemaVersion
+  // Values field of the row data.
   values
 end struct
 
+// Defines the external value record used by this module.
 struct ExternalValue
+  // Encoded pointer field of the external value.
   encodedPointer
 end struct
 
+// Evaluates whether the supplied input satisfies the external value predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isExternalValue(value)
   return value is ExternalValue
 end function
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.row_codec." + operation + ": " + message)
 end function
 
+// Performs the magic bytes operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSRW")
 end function
 
+// Performs the bytes equal operation for this module.
+// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -82,30 +109,44 @@ function bytesEqual(left, right)
   return true
 end function
 
+// Performs the null value operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function nullValue()
   return SqlNull(1)
 end function
 
+// Evaluates whether the supplied input satisfies the null predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isNull(value)
   return value is SqlNull
 end function
 
+// Performs the valid type operation for this module.
+// Inputs: `typeCode`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function validType(typeCode)
   return typeof(typeCode) == "int" and typeCode >= TYPE_BOOLEAN and typeCode <= TYPE_TIMESTAMP
 end function
 
+// Evaluates whether the supplied input satisfies the text type predicate.
+// Inputs: `typeCode`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isTextType(typeCode)
   return typeCode == TYPE_CHAR or typeCode == TYPE_VARCHAR or typeCode == TYPE_TEXT
 end function
 
+// Evaluates whether the supplied input satisfies the binary type predicate.
+// Inputs: `typeCode`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isBinaryType(typeCode)
   return typeCode == TYPE_BINARY or typeCode == TYPE_VARBINARY or typeCode == TYPE_BLOB
 end function
 
+// Evaluates whether the supplied input satisfies the external type predicate.
+// Inputs: `typeCode`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isExternalType(typeCode)
   return typeCode == TYPE_TEXT or typeCode == TYPE_BLOB
 end function
 
+// Performs the column operation for this module.
+// Inputs: `typeCode`, `nullable`, `maxLength`, `precision`, `scale`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function column(typeCode, nullable, maxLength, precision, scale)
   if not validType(typeCode) then return fail(INVALID_ARGUMENT, "column", "unknown type code") end if
   if typeof(nullable) != "bool" then return fail(INVALID_ARGUMENT, "column", "nullable must be bool") end if
@@ -116,6 +157,8 @@ function column(typeCode, nullable, maxLength, precision, scale)
   return ColumnSpec(typeCode, nullable, maxLength, precision, scale)
 end function
 
+// Performs the schema operation for this module.
+// Inputs: `version`, `columns`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function schema(version, columns)
   if typeof(version) != "int" or version <= 0 or version > 65535 then return fail(INVALID_ARGUMENT, "schema", "version must fit positive U16") end if
   if typeof(columns) != "array" or len(columns) == 0 or len(columns) > 4095 then return fail(INVALID_ARGUMENT, "schema", "columns must contain 1..4095 entries") end if
@@ -125,6 +168,8 @@ function schema(version, columns)
   return RowSchema(version, columns)
 end function
 
+// Encodes the text.
+// Inputs: `spec`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeText(spec, value)
   if typeof(value) != "string" then return fail(TYPE_MISMATCH, "encodeText", "text type requires string") end if
   encoded = bytes(value)
@@ -138,6 +183,8 @@ function encodeText(spec, value)
   return encoded
 end function
 
+// Encodes the binary.
+// Inputs: `spec`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeBinary(spec, value)
   if typeof(value) != "bytes" then return fail(TYPE_MISMATCH, "encodeBinary", "binary type requires bytes") end if
   if spec.typeCode == TYPE_BINARY and len(value) != spec.maxLength then return fail(TYPE_MISMATCH, "encodeBinary", "BINARY requires exactly maxLength bytes") end if
@@ -145,6 +192,8 @@ function encodeBinary(spec, value)
   return bytes(value)
 end function
 
+// Encodes the scalar.
+// Inputs: `spec`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeScalar(spec, value)
   if spec.typeCode == TYPE_BOOLEAN then
     if typeof(value) != "bool" then return fail(TYPE_MISMATCH, "encodeScalar", "BOOLEAN requires bool") end if
@@ -181,6 +230,8 @@ function encodeScalar(spec, value)
   return fail(UNSUPPORTED_FORMAT, "encodeScalar", "unsupported type code")
 end function
 
+// Decodes the text.
+// Inputs: `spec`, `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeText(spec, encoded)
   if spec.typeCode == TYPE_CHAR and len(encoded) != spec.maxLength then return fail(CORRUPT_DATA, "decodeText", "CHAR length mismatch") end if
   if spec.maxLength > 0 and len(encoded) > spec.maxLength then return fail(CORRUPT_DATA, "decodeText", "text exceeds declared maximum") end if
@@ -189,12 +240,16 @@ function decodeText(spec, encoded)
   return value
 end function
 
+// Decodes the binary.
+// Inputs: `spec`, `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeBinary(spec, encoded)
   if spec.typeCode == TYPE_BINARY and len(encoded) != spec.maxLength then return fail(CORRUPT_DATA, "decodeBinary", "BINARY length mismatch") end if
   if spec.maxLength > 0 and len(encoded) > spec.maxLength then return fail(CORRUPT_DATA, "decodeBinary", "binary value exceeds declared maximum") end if
   return bytes(encoded)
 end function
 
+// Decodes the scalar.
+// Inputs: `spec`, `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeScalar(spec, encoded)
   if spec.typeCode == TYPE_BOOLEAN then
     if len(encoded) != 1 or (encoded[0] != 0 and encoded[0] != 1) then return fail(CORRUPT_DATA, "decodeScalar", "invalid BOOLEAN") end if
@@ -224,6 +279,8 @@ function decodeScalar(spec, encoded)
   return fail(UNSUPPORTED_FORMAT, "decodeScalar", "unsupported type code")
 end function
 
+// Encodes the requested value.
+// Inputs: `rowSchema`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encode(rowSchema, values)
   if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, "encode", "rowSchema must be RowSchema") end if
   if typeof(values) != "array" or len(values) != len(rowSchema.columns) then return fail(INVALID_ARGUMENT, "encode", "value count does not match schema") end if
@@ -284,10 +341,14 @@ function encode(rowSchema, values)
   return output
 end function
 
+// Encodes the row.
+// Inputs: `rowSchema`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeRow(rowSchema, values)
   return encode(rowSchema, values)
 end function
 
+// Decodes the row.
+// Inputs: `rowSchema`, `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeRow(rowSchema, encoded)
   if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, "decodeRow", "rowSchema must be RowSchema") end if
   if typeof(encoded) != "bytes" or len(encoded) < HEADER_SIZE then return fail(CORRUPT_DATA, "decodeRow", "row is shorter than header") end if
@@ -345,6 +406,8 @@ function decodeRow(rowSchema, encoded)
   return RowData(schemaVersion, values)
 end function
 
+// Decodes the compatible.
+// Inputs: `rowSchema`, `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeCompatible(rowSchema, encoded)
   if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, "decodeCompatible", "rowSchema must be RowSchema") end if
   if typeof(encoded) != "bytes" or len(encoded) < HEADER_SIZE then return fail(CORRUPT_DATA, "decodeCompatible", "row is shorter than header") end if
@@ -398,19 +461,27 @@ function decodeCompatible(rowSchema, encoded)
   return RowData(schemaVersion, output)
 end function
 
+// Performs the external operation for this module.
+// Inputs: `encodedPointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function external(encodedPointer)
   if typeof(encodedPointer) != "bytes" or len(encodedPointer) == 0 then return fail(INVALID_ARGUMENT, "external", "pointer must be non-empty bytes") end if
   return ExternalValue(bytes(encodedPointer))
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.row_codec"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M9"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

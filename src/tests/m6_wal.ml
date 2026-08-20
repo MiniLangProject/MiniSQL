@@ -1,14 +1,20 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.storage.page as page
 import minisql.transaction.wal as wal
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   result = try(file_api.deletePath(path))
   return true
 end function
 
+// Creates and reseals a deterministic page image whose marker byte identifies the intended recovery or transaction state.
 function makePage(fileId, pageNumber, fill)
   value = page.create(4096, page.TYPE_GENERIC, fileId, pageNumber)
   for index = page.HEADER_SIZE to len(value) - 1
@@ -18,6 +24,7 @@ function makePage(fileId, pageNumber, fill)
   return value
 end function
 
+// Runs the wal test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M6 WAL tests: FAIL (missing path)"

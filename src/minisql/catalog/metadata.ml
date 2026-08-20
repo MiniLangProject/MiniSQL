@@ -1,7 +1,14 @@
 package minisql.catalog.metadata
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.storage.checksum as checksum
+
+// Versioned catalog metadata codecs. Decoders validate kind, version, bounds,
+// and checksum envelopes before constructing in-memory database, table, or
+// authorization records.
 
 const INVALID_ARGUMENT = 9001
 const UNSUPPORTED_FORMAT = 9003
@@ -12,68 +19,112 @@ const CATALOG_FORMAT_VERSION = 1
 const DATABASE_KIND = 1
 const CATALOG_KIND = 2
 
+// Defines the database metadata record used by this module.
 struct DatabaseMetadata
+  // Name field of the database metadata.
   name
+  // Database id field of the database metadata.
   databaseId
+  // Page size field of the database metadata.
   pageSize
+  // Wal segment bytes field of the database metadata.
   walSegmentBytes
+  // Database format version field of the database metadata.
   databaseFormatVersion
+  // Table file format version field of the database metadata.
   tableFileFormatVersion
+  // Index file format version field of the database metadata.
   indexFileFormatVersion
+  // Wal format version field of the database metadata.
   walFormatVersion
+  // Row format version field of the database metadata.
   rowFormatVersion
+  // Next object id field of the database metadata.
   nextObjectId
+  // Next transaction id field of the database metadata.
   nextTransactionId
+  // Checkpoint lsn field of the database metadata.
   checkpointLsn
 end struct
 
+// Defines the column metadata record used by this module.
 struct ColumnMetadata
+  // Column id field of the column metadata.
   columnId
+  // Name field of the column metadata.
   name
+  // Type code field of the column metadata.
   typeCode
+  // Nullable field of the column metadata.
   nullable
+  // Max length field of the column metadata.
   maxLength
+  // Precision field of the column metadata.
   precision
+  // Scale field of the column metadata.
   scale
 end struct
 
+// Defines the table metadata record used by this module.
 struct TableMetadata
+  // Table id field of the table metadata.
   tableId
+  // Name field of the table metadata.
   name
+  // Schema version field of the table metadata.
   schemaVersion
+  // Columns field of the table metadata.
   columns
 end struct
 
+// Defines the catalog state record used by this module.
 struct CatalogState
+  // Database id field of the catalog state.
   databaseId
+  // Next object id field of the catalog state.
   nextObjectId
+  // Tables field of the catalog state.
   tables
 end struct
 
+// Evaluates whether the supplied input satisfies the table metadata predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isTableMetadata(value)
   return value is TableMetadata
 end function
 
+// Evaluates whether the supplied input satisfies the catalog state predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isCatalogState(value)
   return value is CatalogState
 end function
 
+// Evaluates whether the supplied input satisfies the column metadata predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isColumnMetadata(value)
   return value is ColumnMetadata
 end function
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "catalog.metadata." + operation + ": " + message)
 end function
 
+// Performs the database magic operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function databaseMagic()
   return bytes("MSDBM001")
 end function
 
+// Performs the catalog magic operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function catalogMagic()
   return bytes("MSCAT001")
 end function
 
+// Copies the exact.
+// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -82,6 +133,8 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
+// Validates the id.
+// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateId(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -89,6 +142,8 @@ function validateId(value, operation, name)
   return true
 end function
 
+// Validates the name.
+// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateName(value, operation, name)
   if typeof(value) != "string" or len(value) == 0 or len(bytes(value)) > 255 then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-empty UTF-8 string of at most 255 bytes")
@@ -96,11 +151,15 @@ function validateName(value, operation, name)
   return true
 end function
 
+// Validates the database id.
+// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateDatabaseId(value, operation)
   if typeof(value) != "bytes" or len(value) != 16 then return fail(INVALID_ARGUMENT, operation, "databaseId must be 16 bytes") end if
   return true
 end function
 
+// Creates the database.
+// Inputs: `name`, `databaseId`, `pageSize`, `walSegmentBytes`, `databaseFormatVersion`, `tableFileFormatVersion`, `indexFileFormatVersion`, `walFormatVersion`, `rowFormatVersion`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createDatabase(name, databaseId, pageSize, walSegmentBytes, databaseFormatVersion, tableFileFormatVersion, indexFileFormatVersion, walFormatVersion, rowFormatVersion)
   validateName(name, "createDatabase", "name")
   validateDatabaseId(databaseId, "createDatabase")
@@ -112,6 +171,8 @@ function createDatabase(name, databaseId, pageSize, walSegmentBytes, databaseFor
   return DatabaseMetadata(name, bytes(databaseId), pageSize, walSegmentBytes, databaseFormatVersion, tableFileFormatVersion, indexFileFormatVersion, walFormatVersion, rowFormatVersion, 3, 1, 0)
 end function
 
+// Encodes the database.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeDatabase(value)
   if value is not DatabaseMetadata then return fail(INVALID_ARGUMENT, "encodeDatabase", "value must be DatabaseMetadata") end if
   checked = createDatabase(value.name, value.databaseId, value.pageSize, value.walSegmentBytes, value.databaseFormatVersion, value.tableFileFormatVersion, value.indexFileFormatVersion, value.walFormatVersion, value.rowFormatVersion)
@@ -141,11 +202,15 @@ function encodeDatabase(value)
   return checksum.encodeEnvelope(databaseMagic(), DATABASE_FORMAT_VERSION, DATABASE_KIND, 0, payload)
 end function
 
+// Decodes the native.
+// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
+// Decodes the database.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeDatabase(encoded)
   envelope = checksum.decodeEnvelope(encoded, databaseMagic(), DATABASE_FORMAT_VERSION, DATABASE_KIND)
   payload = envelope.payload
@@ -171,6 +236,8 @@ function decodeDatabase(encoded)
   return metadata
 end function
 
+// Creates the column.
+// Inputs: `columnId`, `name`, `typeCode`, `nullable`, `maxLength`, `precision`, `scale`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createColumn(columnId, name, typeCode, nullable, maxLength, precision, scale)
   validateId(columnId, "createColumn", "columnId")
   validateName(name, "createColumn", "name")
@@ -183,6 +250,8 @@ function createColumn(columnId, name, typeCode, nullable, maxLength, precision, 
   return ColumnMetadata(columnId, name, typeCode, nullable, maxLength, precision, scale)
 end function
 
+// Creates the table.
+// Inputs: `tableId`, `name`, `schemaVersion`, `columns`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createTable(tableId, name, schemaVersion, columns)
   validateId(tableId, "createTable", "tableId")
   validateName(name, "createTable", "name")
@@ -194,12 +263,16 @@ function createTable(tableId, name, schemaVersion, columns)
   return TableMetadata(tableId, name, schemaVersion, columns)
 end function
 
+// Creates the catalog.
+// Inputs: `databaseId`, `nextObjectId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createCatalog(databaseId, nextObjectId)
   validateDatabaseId(databaseId, "createCatalog")
   validateId(nextObjectId, "createCatalog", "nextObjectId")
   return CatalogState(bytes(databaseId), nextObjectId, [])
 end function
 
+// Encodes the d table size.
+// Inputs: `table`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodedTableSize(table)
   size = 24 + len(bytes(table.name))
   for each column in table.columns
@@ -208,6 +281,8 @@ function encodedTableSize(table)
   return size
 end function
 
+// Encodes the catalog.
+// Inputs: `catalog`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeCatalog(catalog)
   if catalog is not CatalogState then return fail(INVALID_ARGUMENT, "encodeCatalog", "value must be CatalogState") end if
   validateDatabaseId(catalog.databaseId, "encodeCatalog")
@@ -253,6 +328,8 @@ function encodeCatalog(catalog)
   return checksum.encodeEnvelope(catalogMagic(), CATALOG_FORMAT_VERSION, CATALOG_KIND, 0, payload)
 end function
 
+// Performs the require range operation for this module.
+// Inputs: `payload`, `offset`, `count`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function requireRange(payload, offset, count, operation)
   if offset < 0 or count < 0 or offset > len(payload) or count > len(payload) - offset then
     return fail(CORRUPT_DATA, operation, "catalog entry exceeds payload")
@@ -260,6 +337,8 @@ function requireRange(payload, offset, count, operation)
   return true
 end function
 
+// Decodes the catalog.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeCatalog(encoded)
   envelope = checksum.decodeEnvelope(encoded, catalogMagic(), CATALOG_FORMAT_VERSION, CATALOG_KIND)
   payload = envelope.payload
@@ -340,64 +419,106 @@ const PRIVILEGE_GRANT_BYTES = 40
 const SECURITY_HEADER_BYTES = 40
 const MAX_SECURITY_ENTRIES = 2048
 
+// Defines the principal metadata record used by this module.
 struct PrincipalMetadata
+  // Principal id field of the principal metadata.
   principalId
+  // Name field of the principal metadata.
   name
+  // Principal kind field of the principal metadata.
   principalKind
+  // Enabled field of the principal metadata.
   enabled
+  // Can login field of the principal metadata.
   canLogin
+  // Superuser field of the principal metadata.
   superuser
+  // Builtin field of the principal metadata.
   builtin
+  // Salt field of the principal metadata.
   salt
+  // Iterations field of the principal metadata.
   iterations
+  // Verifier field of the principal metadata.
   verifier
 end struct
 
+// Defines the role membership record used by this module.
 struct RoleMembership
+  // Role id field of the role membership.
   roleId
+  // Member id field of the role membership.
   memberId
+  // Grantor id field of the role membership.
   grantorId
+  // Admin option field of the role membership.
   adminOption
 end struct
 
+// Defines the privilege grant record used by this module.
 struct PrivilegeGrant
+  // Grantee id field of the privilege grant.
   granteeId
+  // Grantor id field of the privilege grant.
   grantorId
+  // Object type field of the privilege grant.
   objectType
+  // Object id field of the privilege grant.
   objectId
+  // Privilege field of the privilege grant.
   privilege
+  // Grant option field of the privilege grant.
   grantOption
 end struct
 
+// Defines the security state record used by this module.
 struct SecurityState
+  // Database id field of the security state.
   databaseId
+  // Generation field of the security state.
   generation
+  // Next principal id field of the security state.
   nextPrincipalId
+  // Principals field of the security state.
   principals
+  // Memberships field of the security state.
   memberships
+  // Grants field of the security state.
   grants
 end struct
 
+// Performs the security magic operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function securityMagic()
   return bytes("MSSEC001")
 end function
 
+// Evaluates whether the supplied input satisfies the principal metadata predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isPrincipalMetadata(value)
   return value is PrincipalMetadata
 end function
 
+// Evaluates whether the supplied input satisfies the role membership predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isRoleMembership(value)
   return value is RoleMembership
 end function
 
+// Evaluates whether the supplied input satisfies the privilege grant predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isPrivilegeGrant(value)
   return value is PrivilegeGrant
 end function
 
+// Evaluates whether the supplied input satisfies the security state predicate.
+// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isSecurityState(value)
   return value is SecurityState
 end function
 
+// Validates the security name.
+// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateSecurityName(value, operation)
   if typeof(value) != "string" or len(bytes(value)) == 0 or len(bytes(value)) > 128 then
     return fail(INVALID_ARGUMENT, operation, "principal name must contain 1..128 UTF-8 bytes")
@@ -411,6 +532,8 @@ function validateSecurityName(value, operation)
   return true
 end function
 
+// Creates the principal.
+// Inputs: `principalId`, `name`, `principalKind`, `enabled`, `canLogin`, `superuser`, `builtin`, `salt`, `iterations`, `verifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createPrincipal(principalId, name, principalKind, enabled, canLogin, superuser, builtin, salt, iterations, verifier)
   validateId(principalId, "createPrincipal", "principalId")
   validateSecurityName(name, "createPrincipal")
@@ -437,6 +560,8 @@ function createPrincipal(principalId, name, principalKind, enabled, canLogin, su
   return PrincipalMetadata(principalId, name, principalKind, enabled, canLogin, superuser, builtin, bytes(salt), iterations, bytes(verifier))
 end function
 
+// Creates the role membership.
+// Inputs: `roleId`, `memberId`, `grantorId`, `adminOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createRoleMembership(roleId, memberId, grantorId, adminOption)
   validateId(roleId, "createRoleMembership", "roleId")
   validateId(memberId, "createRoleMembership", "memberId")
@@ -446,10 +571,14 @@ function createRoleMembership(roleId, memberId, grantorId, adminOption)
   return RoleMembership(roleId, memberId, grantorId, adminOption)
 end function
 
+// Performs the valid object type operation for this module.
+// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function validObjectType(value)
   return value == OBJECT_DATABASE or value == OBJECT_TABLE
 end function
 
+// Performs the valid privilege operation for this module.
+// Inputs: `objectType`, `privilege`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function validPrivilege(objectType, privilege)
   if objectType == OBJECT_DATABASE then
     return privilege == PRIVILEGE_CONNECT or privilege == PRIVILEGE_CREATE or privilege == PRIVILEGE_MAINTAIN or privilege == PRIVILEGE_ADMIN
@@ -460,6 +589,8 @@ function validPrivilege(objectType, privilege)
   return false
 end function
 
+// Creates the privilege grant.
+// Inputs: `granteeId`, `grantorId`, `objectType`, `objectId`, `privilege`, `grantOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createPrivilegeGrant(granteeId, grantorId, objectType, objectId, privilege, grantOption)
   validateId(granteeId, "createPrivilegeGrant", "granteeId")
   validateId(grantorId, "createPrivilegeGrant", "grantorId")
@@ -471,6 +602,8 @@ function createPrivilegeGrant(granteeId, grantorId, objectType, objectId, privil
   return PrivilegeGrant(granteeId, grantorId, objectType, objectId, privilege, grantOption)
 end function
 
+// Creates the security.
+// Inputs: `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createSecurity(databaseId)
   validateDatabaseId(databaseId, "createSecurity")
   administrator = createPrincipal(PRINCIPAL_ADMIN_ID, "admin", PRINCIPAL_USER, true, true, true, true, bytes(0), 0, bytes(0))
@@ -478,10 +611,14 @@ function createSecurity(databaseId)
   return SecurityState(bytes(databaseId), 1, 3, [administrator, publicRole], [], [])
 end function
 
+// Performs the principal encoded size operation for this module.
+// Inputs: `principal`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function principalEncodedSize(principal)
   return PRINCIPAL_HEADER_BYTES + len(bytes(principal.name)) + len(principal.salt) + len(principal.verifier)
 end function
 
+// Encodes the security.
+// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodeSecurity(state)
   if state is not SecurityState then return fail(INVALID_ARGUMENT, "encodeSecurity", "state must be SecurityState") end if
   validateDatabaseId(state.databaseId, "encodeSecurity")
@@ -558,6 +695,8 @@ function encodeSecurity(state)
   return checksum.encodeEnvelope(securityMagic(), SECURITY_FORMAT_VERSION, SECURITY_KIND, 0, payload)
 end function
 
+// Decodes the security.
+// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeSecurity(encoded)
   envelope = checksum.decodeEnvelope(encoded, securityMagic(), SECURITY_FORMAT_VERSION, SECURITY_KIND)
   payload = envelope.payload
@@ -629,14 +768,20 @@ function decodeSecurity(encoded)
   return state
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "catalog.metadata"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M8"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

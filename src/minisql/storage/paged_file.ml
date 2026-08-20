@@ -1,4 +1,7 @@
 package minisql.storage.paged_file
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.common.limits as limits
@@ -21,24 +24,40 @@ const SLOT_A_OFFSET = 0
 const SLOT_B_OFFSET = 4096
 const DATA_OFFSET = 8192
 
+// Defines the paged file record used by this module.
 struct PagedFile
+  // Path field of the paged file.
   path
+  // File field of the paged file.
   file
+  // Page size field of the paged file.
   pageSize
+  // File type field of the paged file.
   fileType
+  // File id field of the paged file.
   fileId
+  // Database id field of the paged file.
   databaseId
+  // Page count field of the paged file.
   pageCount
+  // Generation field of the paged file.
   generation
+  // Active slot field of the paged file.
   activeSlot
+  // Feature flags field of the paged file.
   featureFlags
+  // Closed field of the paged file.
   closed
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.paged_file." + operation + ": " + message)
 end function
 
+// Validates the database id.
+// Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateDatabaseId(databaseId, operation)
   if typeof(databaseId) != "bytes" or len(databaseId) != superblock.DATABASE_ID_SIZE then
     return fail(INVALID_ARGUMENT, operation, "databaseId must be exactly 16 bytes")
@@ -46,6 +65,8 @@ function validateDatabaseId(databaseId, operation)
   return true
 end function
 
+// Validates the native id.
+// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateNativeId(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -53,18 +74,24 @@ function validateNativeId(value, operation, name)
   return true
 end function
 
+// Validates the open.
+// Inputs: `pagedFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateOpen(pagedFile, operation)
   if pagedFile is not PagedFile then return fail(INVALID_ARGUMENT, operation, "value must be PagedFile") end if
   if pagedFile.closed then return fail(CLOSED_HANDLE, operation, "paged file is closed") end if
   return true
 end function
 
+// Performs the slot offset operation for this module.
+// Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function slotOffset(slot)
   if slot == SLOT_A then return SLOT_A_OFFSET end if
   if slot == SLOT_B then return SLOT_B_OFFSET end if
   return fail(INVALID_ARGUMENT, "slotOffset", "slot must be 0 or 1")
 end function
 
+// Performs the max page count for operation for this module.
+// Inputs: `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function maxPageCountFor(pageSize)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     return fail(INVALID_ARGUMENT, "maxPageCountFor", "unsupported page size")
@@ -76,6 +103,8 @@ function maxPageCountFor(pageSize)
   return available >> 15
 end function
 
+// Performs the page offset operation for this module.
+// Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pageOffset(pagedFile, pageNumber)
   validateOpen(pagedFile, "pageOffset")
   validateNativeId(pageNumber, "pageOffset", "pageNumber")
@@ -85,6 +114,8 @@ function pageOffset(pagedFile, pageNumber)
   return DATA_OFFSET + pageNumber * pagedFile.pageSize
 end function
 
+// Commits the ted size.
+// Inputs: `pageSize`, `pageCount`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function committedSize(pageSize, pageCount)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     return fail(INVALID_ARGUMENT, "committedSize", "unsupported page size")
@@ -96,6 +127,8 @@ function committedSize(pageSize, pageCount)
   return DATA_OFFSET + pageCount * pageSize
 end function
 
+// Performs the metadata for operation for this module.
+// Inputs: `pagedFile`, `generation`, `pageCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function metadataFor(pagedFile, generation, pageCount)
   return superblock.create(
     superblock.FORMAT_VERSION,
@@ -109,12 +142,16 @@ function metadataFor(pagedFile, generation, pageCount)
   )
 end function
 
+// Writes the slot.
+// Inputs: `file`, `slot`, `metadata`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writeSlot(file, slot, metadata)
   encoded = superblock.encode(metadata)
   file_api.writeAt(file, slotOffset(slot), encoded, 0, len(encoded))
   return true
 end function
 
+// Commits the metadata.
+// Inputs: `pagedFile`, `newPageCount`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function commitMetadata(pagedFile, newPageCount)
   validateOpen(pagedFile, "commitMetadata")
   validateNativeId(newPageCount, "commitMetadata", "newPageCount")
@@ -130,6 +167,8 @@ function commitMetadata(pagedFile, newPageCount)
   return true
 end function
 
+// Creates the requested value.
+// Inputs: `path`, `pageSize`, `fileType`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(path, pageSize, fileType, fileId, databaseId)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "create", "path must be non-empty") end if
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
@@ -173,12 +212,16 @@ function create(path, pageSize, fileType, fileId, databaseId)
   return result
 end function
 
+// Reads the slot.
+// Inputs: `file`, `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readSlot(file, slot)
   data = bytes(superblock.SLOT_SIZE, 0)
   file_api.readExactAt(file, slotOffset(slot), data, 0, len(data))
   return superblock.decode(data)
 end function
 
+// Performs the choose metadata operation for this module.
+// Inputs: `firstResult`, `secondResult`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function chooseMetadata(firstResult, secondResult)
   firstValid = typeof(firstResult) != "error"
   secondValid = typeof(secondResult) != "error"
@@ -202,6 +245,8 @@ function chooseMetadata(firstResult, secondResult)
   return [secondResult, SLOT_B]
 end function
 
+// Opens the requested value.
+// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function open(path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   file = file_api.openReadWrite(path, false)
@@ -251,6 +296,57 @@ function open(path)
   )
 end function
 
+// Read plans use independent handles with compatible shared byte-range locks.
+// The database writer gate guarantees that no in-process mutation overlaps;
+// the lock still rejects a lock-aware writer from another owner.
+// Opens the read only.
+// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+function openReadOnly(path)
+  if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "openReadOnly", "path must be non-empty") end if
+  file = file_api.openRead(path)
+  lockResult = try(file_lock.acquireShared(file, true))
+  if typeof(lockResult) == "error" then
+    file_api.close(file)
+    return lockResult
+  end if
+  actualSize = file_api.size(file)
+  if actualSize < DATA_OFFSET then
+    file_api.close(file)
+    return fail(CORRUPT_DATA, "openReadOnly", "file is shorter than the metadata region")
+  end if
+
+  first = try(readSlot(file, SLOT_A))
+  second = try(readSlot(file, SLOT_B))
+  selected = try(chooseMetadata(first, second))
+  if typeof(selected) == "error" then
+    file_api.close(file)
+    return selected
+  end if
+  metadata = selected[0]
+  activeSlot = selected[1]
+  requiredSize = committedSize(metadata.pageSize, metadata.pageCount)
+  if actualSize != requiredSize then
+    file_api.close(file)
+    return fail(CORRUPT_DATA, "openReadOnly", "file size does not match committed page count")
+  end if
+
+  return PagedFile(
+    path,
+    file,
+    metadata.pageSize,
+    metadata.fileType,
+    metadata.fileId,
+    bytes(metadata.databaseId),
+    metadata.pageCount,
+    metadata.generation,
+    activeSlot,
+    metadata.featureFlags,
+    false
+  )
+end function
+
+// Validates the page identity.
+// Inputs: `pagedFile`, `pageBytes`, `expectedPageNumber`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePageIdentity(pagedFile, pageBytes, expectedPageNumber, operation)
   validateOpen(pagedFile, operation)
   if typeof(pageBytes) != "bytes" or len(pageBytes) != pagedFile.pageSize then
@@ -266,6 +362,8 @@ function validatePageIdentity(pagedFile, pageBytes, expectedPageNumber, operatio
   return header
 end function
 
+// Reads the page.
+// Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readPage(pagedFile, pageNumber)
   validateOpen(pagedFile, "readPage")
   validateNativeId(pageNumber, "readPage", "pageNumber")
@@ -276,6 +374,8 @@ function readPage(pagedFile, pageNumber)
   return output
 end function
 
+// Appends the page.
+// Inputs: `pagedFile`, `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function appendPage(pagedFile, pageBytes)
   validateOpen(pagedFile, "appendPage")
   pageNumber = pagedFile.pageCount
@@ -287,6 +387,8 @@ function appendPage(pagedFile, pageBytes)
   return pageNumber
 end function
 
+// Allocates the page.
+// Inputs: `pagedFile`, `pageType`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function allocatePage(pagedFile, pageType)
   validateOpen(pagedFile, "allocatePage")
   pageNumber = pagedFile.pageCount
@@ -295,6 +397,8 @@ function allocatePage(pagedFile, pageType)
   return pageNumber
 end function
 
+// Writes the page.
+// Inputs: `pagedFile`, `pageNumber`, `pageBytes`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function writePage(pagedFile, pageNumber, pageBytes)
   validateOpen(pagedFile, "writePage")
   validateNativeId(pageNumber, "writePage", "pageNumber")
@@ -304,11 +408,15 @@ function writePage(pagedFile, pageNumber, pageBytes)
   return true
 end function
 
+// Flushes the requested value.
+// Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function flush(pagedFile)
   validateOpen(pagedFile, "flush")
   return file_api.flush(pagedFile.file)
 end function
 
+// Closes the requested value.
+// Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(pagedFile)
   validateOpen(pagedFile, "close")
   file_api.flush(pagedFile.file)
@@ -322,6 +430,8 @@ end function
 // make Windows reject overlapping reads with ERROR_LOCK_VIOLATION (33).
 // Transactional DDL uses this to capture durable before-images without
 // weakening the paged-file single-owner lock contract.
+// Performs the snapshot durable bytes operation for this module.
+// Inputs: `pagedFile`, `maxBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function snapshotDurableBytes(pagedFile, maxBytes)
   validateOpen(pagedFile, "snapshotDurableBytes")
   if typeof(maxBytes) != "int" or maxBytes < 0 or maxBytes > endian.MAX_MINILANG_INT then
@@ -339,14 +449,20 @@ function snapshotDurableBytes(pagedFile, maxBytes)
   return output
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.paged_file"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M4"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

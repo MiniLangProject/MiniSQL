@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
@@ -9,11 +13,13 @@ import minisql.sql.parser as parser
 import minisql.transaction.wal as wal
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Returns the fixed malformed-SQL corpus used to verify parser termination and stable error handling.
 function parserCorpus()
   return [
     "SELECT 1", "SELECT 3.3", "SELECT 'semi;colon'", "SELECT CASE WHEN 1 = 1 THEN 2 ELSE 3 END",
@@ -33,6 +39,7 @@ function parserCorpus()
   ]
 end function
 
+// Runs the hardening test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M49 hardening tests: FAIL (missing data root)"
@@ -40,6 +47,8 @@ function main(args)
   end if
 
   state = testkit.create()
+  // The fixed corpus mixes valid, incomplete, and malformed grammar forms. The
+  // invariant is controlled termination: either an AST array or a typed error.
   corpus = parserCorpus()
   for each sqlText in corpus
     parsed = try(parser.parseSql(sqlText))
@@ -59,6 +68,8 @@ function main(args)
     testkit.record(state, typeof(mutatedParsed) == "array" or typeof(mutatedParsed) == "error", "deterministic SQL mutation outcome is controlled")
   end for
 
+  // Single-bit mutation across every serialized frame and WAL position checks
+  // complete checksum coverage rather than a few hand-picked header fields.
   message = messages.query(77, "SELECT 49 AS milestone")
   frame = protocol_codec.encodeMessage(message)
   for offset = 0 to len(frame) - 1
@@ -77,6 +88,8 @@ function main(args)
     testkit.record(state, typeof(decodedWal) == "error", "WAL corruption rejected")
   end for
 
+  // Run a mixed transactional workload large enough to cross executor/storage
+  // paths, assert bounded completion, and verify the final count after reopen.
   managed = database_manager.create(args[0], "m49_hardening", config_model.defaultDatabaseSettings(4096))
   databasePath = managed.path
   engine = executor.attach(managed)
@@ -107,6 +120,8 @@ function main(args)
   testkit.equal(state, endian.int64ToInt(reopenedCount.rows[0][0].value), expected, "hardening workload survives restart")
   executor.close(reopened)
 
+  // Runtime counters remain queryable after an explicit collection and retain
+  // the fundamental reserved >= committed heap relationship.
   gc_collect()
   testkit.record(state, heap_count() >= 0, "heap live-object counter remains available")
   testkit.record(state, heap_bytes_committed() > 0, "heap committed-byte counter remains available")

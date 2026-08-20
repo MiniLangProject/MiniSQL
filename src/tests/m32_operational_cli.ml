@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.client.console as console
 import minisql.common.uuid as uuid
@@ -8,6 +12,7 @@ import minisql.server.listener as listener
 import minisql.server.session as session
 import tests.support.testkit as testkit
 
+// Returns true only when every byte in the supplied secret buffer has been cleared.
 function allZero(value)
   if typeof(value) != "bytes" then return false end if
   for each current in value
@@ -16,6 +21,7 @@ function allZero(value)
   return true
 end function
 
+// Runs the operational cli test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M32 operational helper tests: FAIL args"; return 2 end if
   state = testkit.create()

@@ -1,29 +1,39 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.platform.file as file_api
 import minisql.storage.btree as btree
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
   return true
 end function
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   return fromHex("0123456789abcdeffedcba9876543210")
 end function
 
+// Formats a small non-negative integer as a two-character decimal suffix for deterministic keys.
 function twoDigits(value)
   if value < 10 then return "0" + value end if
   return "" + value
 end function
 
+// Builds the fixed-width sortable B-tree key for a numeric fixture value.
 function key(value)
   return bytes("key-" + twoDigits(value))
 end function
 
+// Builds the deterministic B-tree payload associated with a fixture key.
 function payload(value)
   return bytes("row-" + twoDigits(value))
 end function
 
+// Runs the btree test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M11 B+ tree tests: FAIL (missing path)"

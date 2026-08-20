@@ -1,7 +1,12 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.storage.row_codec as rows
 import tests.support.testkit as testkit
 
+// Runs the row codec test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = testkit.create()
   schema = rows.schema(7, [

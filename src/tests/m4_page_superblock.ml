@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
 import minisql.storage.page as page
@@ -5,6 +9,7 @@ import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import tests.support.testkit as test
 
+// Builds a deterministic database identifier from the supplied seed for isolated file fixtures.
 function makeDatabaseId()
   value = bytes(16, 0)
   for index = 0 to 15
@@ -13,6 +18,7 @@ function makeDatabaseId()
   return value
 end function
 
+// Runs the page superblock test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
 

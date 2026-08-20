@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Cumulative MiniSQL M0-M10R3 acceptance runner.
 
 The root PowerShell launcher is the only user-facing test entry point. This internal
@@ -38,10 +53,12 @@ FINAL_FAILURE = "MiniSQL M6-M10R3 acceptance test: FAIL"
 
 
 class AcceptanceFailure(RuntimeError):
+    """Signals a deterministic acceptance-contract violation."""
     pass
 
 
 def load_json(path: Path) -> Any:
+    """Loads and decodes a UTF-8 JSON document from the supplied path."""
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
@@ -49,10 +66,12 @@ def load_json(path: Path) -> Any:
 
 
 def normalized(text: str) -> str:
+    """Normalizes line endings and surrounding whitespace for stable output comparison."""
     return text.replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
 def resolve_compiler(requested: str | None) -> Path:
+    """Resolves the requested or conventionally located MiniLang compiler to an absolute path."""
     candidates: list[Path] = []
     if requested:
         candidates.append(Path(requested))
@@ -79,12 +98,17 @@ def resolve_compiler(requested: str | None) -> Path:
 
 
 def compiler_command(compiler: Path, source: Path, output: Path) -> list[str]:
+    """Builds the compiler command line, including project and compiler-library include roots."""
     prefix = [sys.executable, str(compiler)] if compiler.suffix.lower() == ".py" else [str(compiler)]
-    return prefix + [
+    command = prefix + [
         str(source),
         str(output),
         "-I",
         str(ROOT / "src"),
+    ]
+    if (compiler.parent / "std").is_dir():
+        command.extend(["-I", str(compiler.parent)])
+    return command + [
         "--keep-going",
         "--max-errors",
         "50",
@@ -92,6 +116,7 @@ def compiler_command(compiler: Path, source: Path, output: Path) -> list[str]:
 
 
 def executable_command(exe: Path, *args: str) -> list[str]:
+    """Builds a platform-correct command for a native executable and its arguments."""
     if os.name == "nt":
         return [str(exe), *args]
     wine = shutil.which("wine") or shutil.which("wine64")
@@ -101,6 +126,7 @@ def executable_command(exe: Path, *args: str) -> list[str]:
 
 
 def write_log(name: str, command: list[str], returncode: int, stdout: str, stderr: str) -> None:
+    """Persists one subprocess command, exit code and captured streams for later diagnosis."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     (LOG_DIR / name).write_text(
         "command: "
@@ -124,6 +150,7 @@ def run_command(
     verbose: bool,
     timeout: float = 240.0,
 ) -> subprocess.CompletedProcess[str]:
+    """Runs a subprocess under a timeout, captures its streams and enforces the requested result contract."""
     try:
         result = subprocess.run(
             command,
@@ -158,6 +185,7 @@ def run_command(
 
 
 def validate_pe(path: Path) -> None:
+    """Validates that a compiler output is a nonempty Windows PE executable rather than a placeholder."""
     if not path.is_file() or path.stat().st_size < 512:
         raise AcceptanceFailure(f"Compiler did not create a plausible executable: {path.name}")
     image = path.read_bytes()
@@ -176,6 +204,7 @@ def validate_pe(path: Path) -> None:
 
 
 def compile_target(compiler: Path, source_rel: str, output_name: str, verbose: bool) -> Path:
+    """Compiles one MiniLang entry point and returns the verified native executable path."""
     source = ROOT / source_rel
     output = BUILD_ROOT / output_name
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -199,6 +228,7 @@ def run_exact(
     suffix: str = "default",
     timeout: float = 240.0,
 ) -> None:
+    """Executes a native test and requires an exact normalized stdout value and zero exit status."""
     result = run_command(
         executable_command(exe, *args),
         log_name=f"{exe.name}.{suffix}.run.log",
@@ -222,6 +252,7 @@ def run_exit_zero(
     suffix: str,
     timeout: float = 240.0,
 ) -> None:
+    """Executes a native test and requires successful termination, optionally checking output text."""
     result = run_command(
         executable_command(exe, *args),
         log_name=f"{exe.name}.{suffix}.run.log",
@@ -243,17 +274,20 @@ def compile_run_test(
     args: list[str] | None = None,
     timeout: float = 240.0,
 ) -> Path:
+    """Compiles one MiniLang test entry point and executes it against the supplied acceptance data."""
     exe = compile_target(compiler, source, output, verbose)
     run_exact(exe, args or [], expected, verbose, timeout=timeout)
     return exe
 
 
 def ensure_runtime_directories() -> None:
+    """Creates the generated directories required by the acceptance runner."""
     for relative in ("build", "data", "logs", "tmp"):
         (ROOT / relative).mkdir(parents=True, exist_ok=True)
 
 
 def clean_path(path: Path) -> None:
+    """Removes one generated file or directory without following unrelated paths."""
     if path.is_dir():
         shutil.rmtree(path)
     elif path.exists():
@@ -261,12 +295,14 @@ def clean_path(path: Path) -> None:
 
 
 def clean_data() -> None:
+    """Recreates the acceptance data directory so a run starts from empty durable state."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     for path in list(DATA_DIR.iterdir()):
         clean_path(path)
 
 
 def mask_non_code(text: str) -> str:
+    """Masks strings and comments while preserving positions for source-contract scanning."""
     out: list[str] = []
     state = "code"
     i = 0
@@ -314,12 +350,14 @@ def mask_non_code(text: str) -> str:
 
 
 def expected_implemented(target: str) -> bool:
+    """Reports whether a manifest target must expose a completed implementation marker."""
     if not re.fullmatch(r"M\d+", target):
         raise AcceptanceFailure(f"Invalid target milestone {target!r}")
     return int(target[1:]) <= 10
 
 
 def validate_repository(manifest: dict[str, Any]) -> None:
+    """Validates the tracked repository inventory, package layout, headers and launcher contract."""
     expected = {
         "manifestVersion": 1,
         "project": "MiniSQL",
@@ -408,7 +446,14 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         seen_components.add(component)
         source = ROOT / rel
         text = source.read_text(encoding="utf-8")
-        first_code = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        first_code = next(
+            (
+                line.strip()
+                for line in text.splitlines()
+                if line.strip() and not line.strip().startswith("//")
+            ),
+            "",
+        )
         if first_code != f"package {package}":
             raise AcceptanceFailure(f"Package/path mismatch in {rel}")
         if f'return "{component}"' not in text:
@@ -456,6 +501,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
 
 def validate_config_and_docs() -> None:
+    """Validates frozen configuration defaults and required English documentation contracts."""
     config = load_json(ROOT / "config" / "minisql.example.json")
     schema = load_json(ROOT / "config" / "config.schema.json")
     if config.get("configVersion") != 1:
@@ -510,6 +556,7 @@ def validate_config_and_docs() -> None:
 
 
 def require_phrases(rel: str, phrases: list[str]) -> None:
+    """Requires every supplied source-contract phrase to occur in one repository file."""
     text = (ROOT / rel).read_text(encoding="utf-8")
     for phrase in phrases:
         if phrase not in text:
@@ -517,6 +564,7 @@ def require_phrases(rel: str, phrases: list[str]) -> None:
 
 
 def validate_source_contracts() -> None:
+    """Checks milestone-specific implementation contracts without executing native code."""
     version = (ROOT / "src/minisql/common/version.ml").read_text(encoding="utf-8")
     for phrase in ('PRODUCT_VERSION = "0.10.0-m10"', 'MILESTONE = "M10"', 'REVISION = "M6-M10"'):
         if phrase not in version:
@@ -701,6 +749,7 @@ def validate_source_contracts() -> None:
 
 
 def uleb(value: int) -> str:
+    """Encodes a nonnegative integer as canonical unsigned LEB128 bytes represented in hexadecimal."""
     out = bytearray()
     while True:
         byte = value & 0x7F
@@ -713,6 +762,7 @@ def uleb(value: int) -> str:
 
 
 def crc32c_python(data: bytes) -> int:
+    """Computes the reference CRC-32C value used to cross-check native codec vectors."""
     crc = 0xFFFFFFFF
     for byte in data:
         crc ^= byte
@@ -722,6 +772,7 @@ def crc32c_python(data: bytes) -> int:
 
 
 def validate_reference_vectors() -> None:
+    """Validates independent binary, parser and security reference vectors."""
     vectors = load_json(ROOT / "tests/reference/m2_vectors.json")
     for item in vectors.get("unsignedVarints", []):
         value = int(item["value"])
@@ -765,6 +816,7 @@ def validate_reference_vectors() -> None:
 
 
 def compile_and_run_apps(compiler: Path, manifest: dict[str, Any], verbose: bool) -> None:
+    """Compiles public applications and executes their regression smoke scenarios."""
     for entry in manifest["entryPoints"]:
         exe = compile_target(compiler, entry["source"], entry["output"], verbose)
         run_exact(exe, ["--version"], entry["version"], verbose, "version")
@@ -772,10 +824,12 @@ def compile_and_run_apps(compiler: Path, manifest: dict[str, Any], verbose: bool
 
 
 def run_m0(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M0 all-module identity regression."""
     compile_run_test(compiler, "src/tests/m0_all_modules.ml", "minisql-m0-modules.exe", "MiniSQL M0 module smoke test: SUCCESS (71 modules)", verbose)
 
 
 def run_m1(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M1 integer-model, endian and round-trip regressions."""
     programs = [
         ("src/tests/m1_all_modules.ml", "minisql-m1r1-modules.exe", "MiniSQL M1R1 module smoke test: SUCCESS (71 modules)"),
         ("src/tests/m1_int64_model.ml", "minisql-m1r1-int64-model.exe", "MiniSQL M1R1 tagged-int and I64 model tests: SUCCESS"),
@@ -788,20 +842,24 @@ def run_m1(compiler: Path, verbose: bool) -> None:
 
 
 def run_m2_varint(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M2 varint acceptance scenario."""
     compile_run_test(compiler, "src/tests/m2_varint.ml", "minisql-m2-varint.exe", "MiniSQL M2 varint tests: SUCCESS", verbose)
 
 
 def run_m2_crc(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M2 crc acceptance scenario."""
     compile_run_test(compiler, "src/tests/m2_crc_envelope.ml", "minisql-m2-crc-envelope.exe", "MiniSQL M2 CRC32C and envelope tests: SUCCESS", verbose)
 
 
 def run_m3_file(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M3 file acceptance scenario."""
     path = DATA_DIR / "m3-random-access.bin"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m3_file.ml", "minisql-m3-file.exe", "MiniSQL M3 random-access file tests: SUCCESS", verbose, [str(path)])
 
 
 def run_m3_durable(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M3 durable acceptance scenario."""
     path = DATA_DIR / "m3-durable.bin"
     clean_path(path)
     writer = compile_target(compiler, "src/tests/m3_durable_writer.ml", "minisql-m3-durable-writer.exe", verbose)
@@ -811,6 +869,7 @@ def run_m3_durable(compiler: Path, verbose: bool) -> None:
 
 
 def run_m3_lock(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M3 lock acceptance scenario."""
     worker = compile_target(compiler, "src/tests/m3_lock_worker.ml", "minisql-m3-lock-worker.exe", verbose)
     lock_path = DATA_DIR / "m3-exclusive-lock.bin"
     ready_path = DATA_DIR / "m3-exclusive-lock.ready"
@@ -850,10 +909,12 @@ def run_m3_lock(compiler: Path, verbose: bool) -> None:
 
 
 def run_m4_page(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M4 page acceptance scenario."""
     compile_run_test(compiler, "src/tests/m4_page_superblock.ml", "minisql-m4-page-superblock.exe", "MiniSQL M4 page and superblock tests: SUCCESS", verbose)
 
 
 def run_m4_paged(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M4 paged acceptance scenario."""
     paths = [DATA_DIR / f"m4-{name}.bin" for name in ("main", "fallback", "corrupt", "8192")]
     for path in paths:
         clean_path(path)
@@ -869,40 +930,47 @@ def run_m4_paged(compiler: Path, verbose: bool) -> None:
 
 
 def run_m5_pool(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M5 pool acceptance scenario."""
     path = DATA_DIR / "m5-buffer-pool.bin"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m5_buffer_pool.ml", "minisql-m5-buffer-pool.exe", "MiniSQL M5 buffer-pool tests: SUCCESS", verbose, [str(path)], timeout=360.0)
 
 
 def run_m5_stress(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M5 stress acceptance scenario."""
     path = DATA_DIR / "m5-buffer-pool-stress.bin"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m5_buffer_pool_stress.ml", "minisql-m5-buffer-pool-stress.exe", "MiniSQL M5 buffer-pool stress tests: SUCCESS", verbose, [str(path)], timeout=480.0)
 
 
 def run_m5_modules(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M5 modules acceptance scenario."""
     compile_run_test(compiler, "src/tests/m5_all_modules.ml", "minisql-m5-modules.exe", "MiniSQL M5 module smoke test: SUCCESS (71 modules)", verbose)
 
 
 def run_m6_wal(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M6 wal acceptance scenario."""
     path = DATA_DIR / "m6-wal.log"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m6_wal.ml", "minisql-m6-wal.exe", "MiniSQL M6 WAL tests: SUCCESS", verbose, [str(path)], timeout=360.0)
 
 
 def run_m6_transaction(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M6 transaction acceptance scenario."""
     path = DATA_DIR / "m6-transaction-wal.log"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m6_transaction.ml", "minisql-m6-transaction.exe", "MiniSQL M6 transaction tests: SUCCESS", verbose, [str(path)], timeout=360.0)
 
 
 def run_m7_checkpoint(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M7 checkpoint acceptance scenario."""
     path = DATA_DIR / "m7-checkpoint.meta"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m7_checkpoint.ml", "minisql-m7-checkpoint.exe", "MiniSQL M7 checkpoint tests: SUCCESS", verbose, [str(path)], timeout=360.0)
 
 
 def run_m7_recovery(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M7 recovery acceptance scenario."""
     data_path = DATA_DIR / "m7-recovery-table.bin"
     wal_path = DATA_DIR / "m7-recovery-wal.log"
     clean_path(data_path)
@@ -911,6 +979,7 @@ def run_m7_recovery(compiler: Path, verbose: bool) -> None:
 
 
 def run_m7_crash_committed(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M7 crash committed acceptance scenario."""
     worker = compile_target(compiler, "src/tests/m7_crash_worker.ml", "minisql-m7-crash-worker.exe", verbose)
     data_path = DATA_DIR / "m7-crash-committed-table.bin"
     wal_path = DATA_DIR / "m7-crash-committed-wal.log"
@@ -923,6 +992,7 @@ def run_m7_crash_committed(compiler: Path, verbose: bool) -> None:
 
 
 def run_m7_crash_uncommitted(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M7 crash uncommitted acceptance scenario."""
     worker = BUILD_ROOT / "minisql-m7-crash-worker.exe"
     if not worker.is_file():
         worker = compile_target(compiler, "src/tests/m7_crash_worker.ml", "minisql-m7-crash-worker.exe", verbose)
@@ -935,6 +1005,7 @@ def run_m7_crash_uncommitted(compiler: Path, verbose: bool) -> None:
 
 
 def run_m8_config(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M8 config acceptance scenario."""
     invalid = DATA_DIR / "m8-invalid.json"
     clean_path(invalid)
     compile_run_test(
@@ -949,6 +1020,7 @@ def run_m8_config(compiler: Path, verbose: bool) -> None:
 
 
 def run_m8_catalog(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M8 catalog acceptance scenario."""
     root = DATA_DIR / "m8-databases"
     clean_path(root)
     root.mkdir(parents=True, exist_ok=True)
@@ -964,26 +1036,31 @@ def run_m8_catalog(compiler: Path, verbose: bool) -> None:
 
 
 def run_m9_row(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M9 row acceptance scenario."""
     compile_run_test(compiler, "src/tests/m9_row_codec.ml", "minisql-m9-row-codec.exe", "MiniSQL M9 row-codec tests: SUCCESS", verbose, timeout=360.0)
 
 
 def run_m9_heap(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M9 heap acceptance scenario."""
     path = DATA_DIR / "m9-heap.tbl"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m9_heap_file.ml", "minisql-m9-heap-file.exe", "MiniSQL M9 heap-file tests: SUCCESS", verbose, [str(path)], timeout=900.0)
 
 
 def run_m10_overflow(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M10 overflow acceptance scenario."""
     path = DATA_DIR / "m10-overflow.tbl"
     clean_path(path)
     compile_run_test(compiler, "src/tests/m10_overflow.ml", "minisql-m10-overflow.exe", "MiniSQL M10 overflow tests: SUCCESS", verbose, [str(path)], timeout=1200.0)
 
 
 def run_m10_modules(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M10 modules acceptance scenario."""
     compile_run_test(compiler, "src/tests/m10_all_modules.ml", "minisql-m10-modules.exe", "MiniSQL M10 module smoke test: SUCCESS (71 modules)", verbose, timeout=360.0)
 
 
 def run_phase(index: int, total: int, name: str, action: Callable[[], None], phases: list[dict[str, Any]]) -> None:
+    """Runs one named acceptance phase, records duration/status and propagates failures."""
     print(f"[{index:02d}/{total:02d}] {name}")
     started = time.perf_counter()
     try:
@@ -998,6 +1075,7 @@ def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
     # M0-M5 are hard-coded accepted. M6 was accepted by the R2 evidence but is
     # still recomputed from this run so a regression cannot be hidden. Later
     # milestones report the most precise status reached by the cumulative run.
+    """Reduces phase results into the frozen per-milestone PASS/FAIL status map."""
     result = {f"M{i}": "PASS" for i in range(0, 6)}
     by_name = {phase["name"]: phase["status"] for phase in phases}
     groups = {
@@ -1040,6 +1118,7 @@ def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
 
 
 def write_results(status: str, phases: list[dict[str, Any]], started: float, failure: str | None) -> None:
+    """Writes the machine-readable cumulative result report using stable schema fields."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     payload: dict[str, Any] = {
         "project": "MiniSQL",
@@ -1059,6 +1138,7 @@ def write_results(status: str, phases: list[dict[str, Any]], started: float, fai
 
 
 def package_results() -> Path:
+    """Packages reports and logs into the timestamped acceptance evidence archive."""
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     archive = ROOT / "build" / f"MiniSQL_M6_M10R3_RESULTS_{timestamp}.zip"
     archive.parent.mkdir(parents=True, exist_ok=True)
@@ -1075,6 +1155,7 @@ def package_results() -> Path:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parses and returns the acceptance runner command-line arguments."""
     parser = argparse.ArgumentParser(description="Run cumulative MiniSQL M0-M10R3 acceptance tests")
     parser.add_argument("--compiler", help="Path to mlc_win64.py or a compiler executable")
     parser.add_argument("--static-only", action="store_true", help="Validate source package without accepting milestones")
@@ -1084,6 +1165,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parse_args()
     started = time.perf_counter()
     phases: list[dict[str, Any]] = []

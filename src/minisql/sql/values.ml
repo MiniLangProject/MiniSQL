@@ -1,5 +1,9 @@
 package minisql.sql.values
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 import minisql.sql.ast as ast
 import minisql.sql.types as types
@@ -11,60 +15,104 @@ const BINDING_ERROR = 9020
 const CONSTRAINT_VIOLATION = 9021
 const U32_BASE = 4294967296
 
+// Groups the SQL value state and preserves the field relationships documented below.
 struct SqlValue
+  // Stores the type kind associated with this value.
   typeKind
+  // Indicates whether the is null condition is active.
   isNull
+  // Stores the value associated with this value.
   value
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "sql.values." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the SQL value condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSqlValue(value)
   return value is SqlValue
 end function
 
+// Implements null value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nullValue(typeKind)
   if typeof(typeKind) != "int" then return fail(INVALID_ARGUMENT, "nullValue", "typeKind must be int") end if
   return SqlValue(typeKind, true, void)
 end function
 
+// Implements of for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function of(typeKind, value)
   if typeof(typeKind) != "int" then return fail(INVALID_ARGUMENT, "of", "typeKind must be int") end if
   if value is void then return fail(INVALID_ARGUMENT, "of", "MiniLang void is not SQL NULL") end if
   return SqlValue(typeKind, false, value)
 end function
 
+// Implements boolean for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function boolean(value)
   if typeof(value) != "bool" then return fail(TYPE_MISMATCH, "boolean", "value must be bool") end if
   return of(types.SqlTypeKind.Boolean, value)
 end function
 
+// Implements integer for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function integer(value)
   if typeof(value) != "int" then return fail(TYPE_MISMATCH, "integer", "value must be int") end if
   return of(types.SqlTypeKind.Integer, value)
 end function
 
+// Implements double value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function doubleValue(value)
   if typeof(value) != "int" and typeof(value) != "float" then return fail(TYPE_MISMATCH, "doubleValue", "value must be numeric") end if
   return of(types.SqlTypeKind.Double, value)
 end function
 
+// Implements text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function text(value)
   if typeof(value) != "string" then return fail(TYPE_MISMATCH, "text", "value must be string") end if
   return of(types.SqlTypeKind.Text, value)
 end function
 
+// Implements binary for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function binary(value)
   if typeof(value) != "bytes" then return fail(TYPE_MISMATCH, "binary", "value must be bytes") end if
   return of(types.SqlTypeKind.Blob, bytes(value))
 end function
 
+// Returns whether the supplied value satisfies the null condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isNull(value)
   return value is SqlValue and value.isNull
 end function
 
+// Implements unsigned magnitude to signed for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function unsignedMagnitudeToSigned(high, low, negative)
   if not negative then return endian.makeInt64(high, low) end if
   invertedLow = endian.MAX_U32 - low
@@ -78,6 +126,10 @@ function unsignedMagnitudeToSigned(high, low, negative)
   return endian.makeInt64(invertedHigh, invertedLow)
 end function
 
+// Parses int64 using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function parseInt64(textValue)
   if typeof(textValue) != "string" or len(textValue) == 0 then return fail(BINDING_ERROR, "parseInt64", "integer literal is empty") end if
   raw = bytes(textValue)
@@ -107,6 +159,10 @@ function parseInt64(textValue)
   return unsignedMagnitudeToSigned(high, low, negative)
 end function
 
+// Implements literal integer for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function literalInteger(textValue)
   words = parseInt64(textValue)
   native = try(endian.int64ToInt(words))
@@ -114,6 +170,10 @@ function literalInteger(textValue)
   return of(types.SqlTypeKind.BigInt, words)
 end function
 
+// Implements floating text part for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function floatingTextPart(raw, startOffset, endOffset, operation)
   if typeof(raw) != "bytes" or typeof(startOffset) != "int" or typeof(endOffset) != "int" then
     return fail(INVALID_ARGUMENT, operation, "invalid floating text range")
@@ -133,6 +193,10 @@ end function
 // an optional exponent and apply it explicitly. This keeps ordinary spellings on
 // the compiler's well-tested conversion path while supporting forms such as
 // 1.25e2, 1E-3 and a leading plus sign.
+// Implements floating number from text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function floatingNumberFromText(textValue)
   if typeof(textValue) != "string" or len(textValue) == 0 then
     return fail(BINDING_ERROR, "floatingNumberFromText", "floating literal must be non-empty text")
@@ -213,6 +277,10 @@ function floatingNumberFromText(textValue)
   return result
 end function
 
+// Implements literal float for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function literalFloat(textValue)
   if typeof(textValue) != "string" then return fail(BINDING_ERROR, "literalFloat", "literal must be string") end if
   value = floatingNumberFromText(textValue)
@@ -220,6 +288,10 @@ function literalFloat(textValue)
 end function
 
 
+// Implements decimal power10 for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decimalPower10(exponent)
   if typeof(exponent) != "int" or exponent < 0 or exponent > 18 then return fail(INVALID_ARGUMENT, "decimalPower10", "exponent must be 0..18") end if
   result = 1
@@ -235,6 +307,10 @@ end function
 // row format. No binary floating-point arithmetic, rounding or truncation is
 // used. Values with more non-zero fractional digits than the declared scale
 // are rejected instead of silently changing the user's input.
+// Implements decimal words from text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decimalWordsFromText(textValue, precision, scale)
   if typeof(textValue) != "string" or len(textValue) == 0 then return fail(TYPE_MISMATCH, "decimalWordsFromText", "decimal text must be non-empty") end if
   if typeof(precision) != "int" or typeof(scale) != "int" or precision < 1 or precision > 18 or scale < 0 or scale > precision then
@@ -335,10 +411,17 @@ function decimalWordsFromText(textValue, precision, scale)
   return endian.int64FromInt(magnitude)
 end function
 
+// Implements decimal literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decimalLiteral(textValue, precision, scale)
   return of(types.SqlTypeKind.Decimal, decimalWordsFromText(textValue, precision, scale))
 end function
 
+// Implements decimal words from value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decimalWordsFromValue(value, target)
   if value is not SqlValue or not types.isSqlType(target) or target.kind != types.SqlTypeKind.Decimal then return fail(INVALID_ARGUMENT, "decimalWordsFromValue", "invalid DECIMAL conversion arguments") end if
   if value.typeKind == types.SqlTypeKind.Decimal then
@@ -363,6 +446,10 @@ function decimalWordsFromValue(value, target)
   return fail(TYPE_MISMATCH, "decimalWordsFromValue", "DECIMAL target requires a numeric value")
 end function
 
+// Implements from literal for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fromLiteral(expression)
   if not ast.isLiteralExpression(expression) then return fail(INVALID_ARGUMENT, "fromLiteral", "expression must be literal") end if
   if expression.literalKind == ast.LITERAL_NULL then return nullValue(types.SqlTypeKind.Unknown) end if
@@ -380,6 +467,9 @@ function fromLiteral(expression)
   return fail(BINDING_ERROR, "fromLiteral", "unknown literal kind")
 end function
 
+// Implements int64 compare for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function int64Compare(left, right)
   if not endian.isInt64Words(left) or not endian.isInt64Words(right) then return fail(TYPE_MISMATCH, "int64Compare", "values must be Int64Words") end if
   leftNegative = endian.int64IsNegative(left)
@@ -393,6 +483,10 @@ function int64Compare(left, right)
   return 0
 end function
 
+// Implements as int64 for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function asInt64(value)
   if value is not SqlValue or value.isNull then return fail(TYPE_MISMATCH, "asInt64", "value must be non-NULL SqlValue") end if
   if endian.isInt64Words(value.value) then return value.value end if
@@ -400,6 +494,10 @@ function asInt64(value)
   return fail(TYPE_MISMATCH, "asInt64", "value is not integral")
 end function
 
+// Implements as number for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function asNumber(value)
   if value is not SqlValue or value.isNull then return fail(TYPE_MISMATCH, "asNumber", "value must be non-NULL SqlValue") end if
   if typeof(value.value) == "int" or typeof(value.value) == "float" then return value.value end if
@@ -408,6 +506,10 @@ function asNumber(value)
   return native
 end function
 
+// Compares non null using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function compareNonNull(left, right)
   if left is not SqlValue or right is not SqlValue or left.isNull or right.isNull then return fail(TYPE_MISMATCH, "compareNonNull", "values must be non-NULL") end if
   if types.isNumericKind(left.typeKind) and types.isNumericKind(right.typeKind) then
@@ -452,6 +554,10 @@ function compareNonNull(left, right)
   return fail(TYPE_MISMATCH, "compareNonNull", "values are not comparable")
 end function
 
+// Implements truth for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function truth(value)
   if value is not SqlValue or value.typeKind != types.SqlTypeKind.Boolean then return fail(TYPE_MISMATCH, "truth", "value must be BOOLEAN") end if
   if value.isNull then return -1 end if
@@ -459,11 +565,17 @@ function truth(value)
   return 0
 end function
 
+// Implements from truth for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fromTruth(value)
   if value < 0 then return nullValue(types.SqlTypeKind.Boolean) end if
   return boolean(value != 0)
 end function
 
+// Implements logical not for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function logicalNot(value)
   truthValue = truth(value)
   if truthValue < 0 then return fromTruth(-1) end if
@@ -471,6 +583,9 @@ function logicalNot(value)
   return fromTruth(0)
 end function
 
+// Implements logical and for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function logicalAnd(left, right)
   leftTruth = truth(left)
   rightTruth = truth(right)
@@ -479,6 +594,9 @@ function logicalAnd(left, right)
   return fromTruth(1)
 end function
 
+// Implements logical or for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function logicalOr(left, right)
   leftTruth = truth(left)
   rightTruth = truth(right)
@@ -487,6 +605,10 @@ function logicalOr(left, right)
   return fromTruth(0)
 end function
 
+// Converts convert using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function convert(value, target)
   if value is not SqlValue or not types.isSqlType(target) then return fail(INVALID_ARGUMENT, "convert", "invalid conversion arguments") end if
   if value.isNull then
@@ -543,6 +665,10 @@ function convert(value, target)
   return fail(TYPE_MISMATCH, "convert", "unsupported conversion")
 end function
 
+// Implements upper ascii for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function upperAscii(value)
   if typeof(value) != "string" then return fail(INVALID_ARGUMENT, "upperAscii", "value must be string") end if
   source = bytes(value)
@@ -557,6 +683,10 @@ function upperAscii(value)
   return decode(output)
 end function
 
+// Casts cast using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function cast(value, target)
   // CAST is intentionally broader than assignment conversion. It still rejects
   // lossy overflow and malformed input instead of silently truncating data.
@@ -593,25 +723,41 @@ function cast(value, target)
   return convert(value, target)
 end function
 
+// Implements to storage for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function toStorage(value)
   if value is not SqlValue then return fail(INVALID_ARGUMENT, "toStorage", "value must be SqlValue") end if
   if value.isNull then return row_codec.nullValue() end if
   return value.value
 end function
 
+// Implements from storage for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fromStorage(typeKind, raw)
   if row_codec.isNull(raw) then return nullValue(typeKind) end if
   return of(typeKind, raw)
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.values"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M13"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

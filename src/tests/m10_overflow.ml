@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.storage.overflow as overflow
@@ -7,15 +11,18 @@ import minisql.storage.row_codec as rows
 import minisql.storage.superblock as superblock
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
   return true
 end function
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   return fromHex("13579bdf2468ace00123456789abcdef")
 end function
 
+// Builds a deterministic byte payload of the requested length and seed for overflow-chain validation.
 function makeValue(length, seed)
   result = bytes(length, 0)
   if length > 0 then
@@ -26,6 +33,7 @@ function makeValue(length, seed)
   return result
 end function
 
+// Builds deterministic ASCII text of the requested length for overflow boundary tests.
 function makeAsciiText(length)
   raw = bytes(length, 0)
   if length > 0 then
@@ -36,6 +44,7 @@ function makeAsciiText(length)
   return decode(raw)
 end function
 
+// Runs the overflow test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M10 overflow tests: FAIL (missing path)"

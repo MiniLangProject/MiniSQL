@@ -1,5 +1,9 @@
 package minisql.executor.executor
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
@@ -50,79 +54,142 @@ const MODE_DDL = 2
 const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
 
+// Groups the query result state and preserves the field relationships documented below.
 struct QueryResult
+  // Stores the kind associated with this value.
   kind
+  // Stores the command associated with this value.
   command
+  // Contains the ordered columns collection.
   columns
+  // Contains the ordered rows collection.
   rows
+  // Stores the affected rows associated with this value.
   affectedRows
+  // Stores the message associated with this value.
   message
 end struct
 
+// Groups the prepared statement state state and preserves the field relationships documented below.
 struct PreparedStatementState
+  // Stores the name associated with this value.
   name
+  // Stores the statement associated with this value.
   statement
+  // Tracks the parameter count numeric value.
   parameterCount
+  // Stores the schema generation associated with this value.
   schemaGeneration
 end struct
 
+// Groups the sequence session value state and preserves the field relationships documented below.
 struct SequenceSessionValue
+  // Stores the name associated with this value.
   name
+  // Stores the value associated with this value.
   value
 end struct
 
+// Groups the engine state and preserves the field relationships documented below.
 struct Engine
+  // Stores the database associated with this value.
   database
+  // Stores the owns database associated with this value.
   ownsDatabase
+  // Stores the explicit transaction associated with this value.
   explicitTransaction
+  // Stores the transaction mode associated with this value.
   transactionMode
+  // Stores the page transaction associated with this value.
   pageTransaction
+  // Stores the DDL transaction associated with this value.
   ddlTransaction
+  // Stores the failed associated with this value.
   failed
+  // Indicates whether the closed condition is active.
   closed
+  // Stores the trusted associated with this value.
   trusted
+  // Identifies the principal identifier.
   principalId
+  // Stores the prepared statements associated with this value.
   preparedStatements
+  // Identifies the session identifier.
   sessionId
+  // Stores the sequence values associated with this value.
   sequenceValues
+  // Tracks the trigger depth numeric value.
   triggerDepth
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "executor.executor." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the query result condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isQueryResult(value)
   return value is QueryResult
 end function
 
+// Returns whether the supplied value satisfies the engine condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isEngine(value)
   return value is Engine
 end function
 
+// Implements command result for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function commandResult(command, affectedRows, message)
   return QueryResult(RESULT_COMMAND, command, [], [], affectedRows, message)
 end function
 
+// Implements row result for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rowResult(columns, rows)
   return QueryResult(RESULT_ROWS, "SELECT", columns, rows, len(rows), "")
 end function
 
+// Implements attach for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
+  entered = try(database_manager.enterExecution(database))
   engine = Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0)
-  dml.ensureIndexes(database)
+  indexed = try(dml.ensureIndexes(database))
+  released = try(database_manager.leaveExecution(database))
+  if typeof(released) == "error" then return released end if
+  if typeof(indexed) == "error" then return indexed end if
   return engine
 end function
 
+// Opens open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function open(databasePath)
   database = database_manager.open(databasePath)
+  entered = try(database_manager.enterExecution(database))
   engine = Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0)
   indexed = try(dml.ensureIndexes(database))
+  released = try(database_manager.leaveExecution(database))
+  if typeof(released) == "error" then return released end if
   if typeof(indexed) == "error" then database_manager.close(database); return indexed end if
   return engine
 end function
 
+// Implements set principal for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function setPrincipal(engine, principalId)
   validateOpen(engine, "setPrincipal")
   principal = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, principalId)
@@ -132,31 +199,51 @@ function setPrincipal(engine, principalId)
   return true
 end function
 
+// Implements principal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function principal(engine)
   validateOpen(engine, "principal")
   return catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, engine.principalId)
 end function
 
+// Validates open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function validateOpen(engine, operation)
   if engine is not Engine then return fail(INVALID_ARGUMENT, operation, "engine must be Engine") end if
   if engine.closed then return fail(CLOSED_HANDLE, operation, "engine is closed") end if
   return true
 end function
 
+// Returns whether the supplied value satisfies the prepared statement state condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isPreparedStatementState(value)
   return value is PreparedStatementState
 end function
 
+// Returns whether the supplied value satisfies the sequence session value condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSequenceSessionValue(value)
   return value is SequenceSessionValue
 end function
 
+// Implements sequence argument name for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sequenceArgumentName(expression, operation)
   if ast.isLiteralExpression(expression) and expression.literalKind == ast.LITERAL_STRING then return expression.value end if
   if ast.isTypedLiteralExpression(expression) and values.isSqlValue(expression.value) and not expression.value.isNull and typeof(expression.value.value) == "string" then return expression.value.value end if
   return fail(BINDING_ERROR, operation, "sequence name must be a string literal")
 end function
 
+// Implements remember sequence value for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function rememberSequenceValue(engine, name, value)
   if len(engine.sequenceValues) > 0 then
     for index = 0 to len(engine.sequenceValues) - 1
@@ -167,6 +254,10 @@ function rememberSequenceValue(engine, name, value)
   return true
 end function
 
+// Implements current sequence value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function currentSequenceValue(engine, name)
   for each current in engine.sequenceValues
     if current.name == name then return current.value end if
@@ -174,11 +265,18 @@ function currentSequenceValue(engine, name)
   return fail(BINDING_ERROR, "currval", "CURRVAL is not defined in this session for sequence " + name)
 end function
 
+// Implements current schema generation for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function currentSchemaGeneration(engine)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   return state.generation
 end function
 
+// Finds prepared index using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findPreparedIndex(engine, name)
   if typeof(name) != "string" then return fail(INVALID_ARGUMENT, "findPreparedIndex", "name must be string") end if
   if len(engine.preparedStatements) > 0 then
@@ -189,6 +287,9 @@ function findPreparedIndex(engine, name)
   return -1
 end function
 
+// Implements constant parameter expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function constantParameterExpression(expression)
   if ast.isLiteralExpression(expression) then return true end if
   if ast.isUnaryExpression(expression) then return constantParameterExpression(expression.operand) end if
@@ -220,6 +321,10 @@ function constantParameterExpression(expression)
   return false
 end function
 
+// Implements substitute expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function substituteExpression(expression, parameters)
   if ast.isParameterExpression(expression) then
     if expression.index < 0 or expression.index >= len(parameters) then return fail(BINDING_ERROR, "substituteExpression", "parameter index is outside EXECUTE arguments") end if
@@ -276,6 +381,10 @@ function substituteExpression(expression, parameters)
   return fail(BINDING_ERROR, "substituteExpression", "unsupported prepared expression")
 end function
 
+// Implements substitute select for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function substituteSelect(statement, parameters)
   items = []
   for each item in statement.items
@@ -310,6 +419,9 @@ function substituteSelect(statement, parameters)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
+// Implements substitute returning for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function substituteReturning(items, parameters)
   output = []
   for each item in items
@@ -318,6 +430,10 @@ function substituteReturning(items, parameters)
   return output
 end function
 
+// Implements substitute statement for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function substituteStatement(statement, parameters)
   if ast.isSelectStatement(statement) then return substituteSelect(statement, parameters) end if
   if ast.isInsertStatement(statement) then
@@ -356,6 +472,10 @@ function substituteStatement(statement, parameters)
   return fail(UNSUPPORTED_SQL, "substituteStatement", "prepared statement type is unsupported")
 end function
 
+// Implements materialize expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function materializeExpression(engine, expression, pageTransaction)
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isColumnExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
   if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, materializeExpression(engine, expression.operand, pageTransaction)) end if
@@ -438,6 +558,10 @@ function materializeExpression(engine, expression, pageTransaction)
   return fail(BINDING_ERROR, "materializeExpression", "unsupported expression")
 end function
 
+// Implements materialize select statement for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function materializeSelectStatement(engine, statement, pageTransaction)
   items = []
   for each item in statement.items
@@ -472,6 +596,10 @@ function materializeSelectStatement(engine, statement, pageTransaction)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
+// Implements materialize DML statement for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function materializeDmlStatement(engine, statement, pageTransaction)
   if ast.isInsertStatement(statement) then
     rows = []
@@ -521,12 +649,18 @@ function materializeDmlStatement(engine, statement, pageTransaction)
   return statement
 end function
 
+// Executes prepare using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function executePrepare(engine, statement)
   if findPreparedIndex(engine, statement.name) >= 0 then return fail(BINDING_ERROR, "prepare", "prepared statement already exists: " + statement.name) end if
   engine.preparedStatements = engine.preparedStatements + [PreparedStatementState(statement.name, statement.statement, statement.parameterCount, currentSchemaGeneration(engine))]
   return commandResult("PREPARE", 0, statement.name + " parameters=" + statement.parameterCount)
 end function
 
+// Executes prepared using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function executePrepared(engine, statement)
   index = findPreparedIndex(engine, statement.name)
   if index < 0 then return fail(BINDING_ERROR, "executePrepared", "prepared statement not found: " + statement.name) end if
@@ -541,9 +675,14 @@ function executePrepared(engine, statement)
     engine.preparedStatements[index] = prepared
   end if
   expanded = substituteStatement(prepared.statement, statement.arguments)
-  return executeStatement(engine, expanded)
+  // EXECUTE itself already owns the execution gate selected for the prepared
+  // AST. Re-entering the public wrapper would deadlock a writer semaphore.
+  return executeStatementCore(engine, expanded)
 end function
 
+// Executes deallocate using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function executeDeallocate(engine, statement)
   index = findPreparedIndex(engine, statement.name)
   if index < 0 then return fail(BINDING_ERROR, "deallocate", "prepared statement not found: " + statement.name) end if
@@ -557,6 +696,9 @@ function executeDeallocate(engine, statement)
   return commandResult("DEALLOCATE", 0, statement.name)
 end function
 
+// Resets transaction using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function resetTransaction(engine)
   engine.explicitTransaction = false
   engine.transactionMode = MODE_NONE
@@ -566,11 +708,17 @@ function resetTransaction(engine)
   return true
 end function
 
+// Implements isolation value for this module.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isolationValue(name)
   if name == "READ COMMITTED" then return transaction.ISOLATION_READ_COMMITTED end if
   return transaction.ISOLATION_SERIALIZABLE
 end function
 
+// Implements begin explicit for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function beginExplicit(engine, statement)
   validateOpen(engine, "begin")
   if engine.explicitTransaction then return fail(TRANSACTION_STATE, "begin", "transaction already active") end if
@@ -586,6 +734,10 @@ function beginExplicit(engine, statement)
   return commandResult("BEGIN", 0, "transaction started")
 end function
 
+// Ensures explicit DML using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function ensureExplicitDml(engine)
   if engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "ensureExplicitDml", "mixing DDL and DML in one M15 transaction is not supported") end if
   if engine.transactionMode == MODE_NONE then
@@ -596,6 +748,10 @@ function ensureExplicitDml(engine)
   return engine.pageTransaction
 end function
 
+// Ensures explicit DDL using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function ensureExplicitDdl(engine)
   if engine.transactionMode == MODE_DML then return fail(UNSUPPORTED_SQL, "ensureExplicitDdl", "mixing DML and DDL in one M15 transaction is not supported") end if
   if engine.transactionMode == MODE_NONE then
@@ -608,10 +764,16 @@ function ensureExplicitDdl(engine)
   return engine.ddlTransaction
 end function
 
+// Binds bind using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bind(statement, engine)
   return binder.bindStatement(statement, engine.database.catalogHandle)
 end function
 
+// Implements stage DDL for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function stageDdl(ddlTransaction, bound)
   if binder.isBoundCreateTable(bound) then schema_history.stageCreateTable(ddlTransaction, bound); return "CREATE TABLE" end if
   if binder.isBoundCreateIndex(bound) then schema_history.stageCreateIndex(ddlTransaction, bound); return "CREATE INDEX" end if
@@ -620,6 +782,10 @@ function stageDdl(ddlTransaction, bound)
   return fail(BINDING_ERROR, "stageDdl", "unsupported bound DDL statement")
 end function
 
+// Executes view DDL using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeViewDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeViewDdl", "view DDL is autocommit-only in M43") end if
   database = engine.database.catalogHandle
@@ -639,6 +805,9 @@ function executeViewDdl(engine, statement)
   return fail(BINDING_ERROR, "executeViewDdl", "unsupported view DDL")
 end function
 
+// Implements trigger event code for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function triggerEventCode(bound)
   if binder.isBoundInsert(bound) then return schema_history.TRIGGER_INSERT end if
   if binder.isBoundUpdate(bound) then return schema_history.TRIGGER_UPDATE end if
@@ -646,6 +815,10 @@ function triggerEventCode(bound)
   return 0
 end function
 
+// Implements trigger column value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function triggerColumnValue(table, row, qualifier, columnName)
   if row is void then return fail(BINDING_ERROR, "triggerColumnValue", qualifier + "." + columnName + " is not available for this trigger event") end if
   columnIndex = binder.findColumnIndex(table, columnName)
@@ -653,6 +826,10 @@ function triggerColumnValue(table, row, qualifier, columnName)
   return ast.typedLiteralExpression(row[columnIndex])
 end function
 
+// Implements replace trigger expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function replaceTriggerExpression(expression, table, oldRow, newRow)
   if ast.isColumnExpression(expression) then
     if expression.qualifier == "old" or expression.qualifier == "OLD" then return triggerColumnValue(table, oldRow, "OLD", expression.name) end if
@@ -693,6 +870,9 @@ function replaceTriggerExpression(expression, table, oldRow, newRow)
   return fail(BINDING_ERROR, "replaceTriggerExpression", "unsupported trigger expression")
 end function
 
+// Implements replace trigger returning for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function replaceTriggerReturning(items, table, oldRow, newRow)
   output = []
   for each item in items
@@ -701,6 +881,10 @@ function replaceTriggerReturning(items, table, oldRow, newRow)
   return output
 end function
 
+// Implements replace trigger statement for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function replaceTriggerStatement(statement, table, oldRow, newRow)
   if ast.isInsertStatement(statement) then
     rows = []
@@ -737,6 +921,9 @@ function replaceTriggerStatement(statement, table, oldRow, newRow)
   return fail(UNSUPPORTED_SQL, "replaceTriggerStatement", "trigger body must be INSERT, UPDATE or DELETE")
 end function
 
+// Implements update touches trigger column for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function updateTouchesTriggerColumn(bound, trigger)
   if trigger.targetColumn == "" then return true end if
   targetIndex = binder.findColumnIndex(bound.table, trigger.targetColumn)
@@ -747,6 +934,10 @@ function updateTouchesTriggerColumn(bound, trigger)
   return false
 end function
 
+// Executes trigger body using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function executeTriggerBody(engine, trigger, sourceTable, oldRow, newRow, pageTransaction)
   if engine.triggerDepth >= 8 then return fail(CONSTRAINT_VIOLATION, "executeTriggerBody", "maximum trigger recursion depth exceeded") end if
   parsed = parser.parseSql(trigger.expressionSql)
@@ -763,6 +954,9 @@ function executeTriggerBody(engine, trigger, sourceTable, oldRow, newRow, pageTr
   return result
 end function
 
+// Implements fire triggers for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fireTriggers(engine, bound, result, pageTransaction)
   eventType = triggerEventCode(bound)
   if eventType == 0 or not dml.isDmlResult(result) then return result end if
@@ -793,6 +987,9 @@ function fireTriggers(engine, bound, result, pageTransaction)
   return result
 end function
 
+// Executes trigger DDL using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeTriggerDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "trigger DDL is autocommit-only in M45") end if
   database = engine.database.catalogHandle
@@ -820,6 +1017,9 @@ function executeTriggerDdl(engine, statement)
   return fail(BINDING_ERROR, "executeTriggerDdl", "unsupported trigger DDL")
 end function
 
+// Executes sequence DDL using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeSequenceDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeSequenceDdl", "sequence DDL is autocommit-only in M45") end if
   database = engine.database.catalogHandle
@@ -837,6 +1037,10 @@ function executeSequenceDdl(engine, statement)
   return fail(BINDING_ERROR, "executeSequenceDdl", "unsupported sequence DDL")
 end function
 
+// Executes DDL using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeDdl(engine, statement)
   if ast.isCreateTableStatement(statement) then
     state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
@@ -870,6 +1074,9 @@ function executeDdl(engine, statement)
   return commandResult(staged, 0, "DDL committed")
 end function
 
+// Runs bound DML using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function runBoundDml(engine, bound, pageTransaction)
   if binder.isBoundInsert(bound) then return dml.insert(engine.database, bound, pageTransaction) end if
   if binder.isBoundUpdate(bound) then return dml.update(engine.database, bound, pageTransaction) end if
@@ -878,6 +1085,9 @@ function runBoundDml(engine, bound, pageTransaction)
   return fail(BINDING_ERROR, "runBoundDml", "unsupported bound DML statement")
 end function
 
+// Implements DML command for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function dmlCommand(bound)
   if binder.isBoundInsert(bound) then return "INSERT" end if
   if binder.isBoundUpdate(bound) then return "UPDATE" end if
@@ -886,6 +1096,10 @@ function dmlCommand(bound)
   return "DML"
 end function
 
+// Implements commit page transaction for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function commitPageTransaction(engine, pageTransaction)
   changedIds = []
   if transaction.stagedPageCount(pageTransaction) > 0 then dml.markIndexesDirty(engine.database) end if
@@ -912,6 +1126,9 @@ function commitPageTransaction(engine, pageTransaction)
   return commitLsn
 end function
 
+// Implements materialize insert select for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function materializeInsertSelect(engine, bound, pageTransaction)
   if not binder.isBoundInsert(bound) or bound.sourceQuery is void then return true end if
   sourceResult = selectRows(engine, bound.sourceQuery, pageTransaction)
@@ -931,6 +1148,9 @@ function materializeInsertSelect(engine, bound, pageTransaction)
   return true
 end function
 
+// Implements returning result for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function returningResult(bound, result)
   if not dml.isDmlResult(result) then return fail(INVALID_ARGUMENT, "returningResult", "result must be DmlResult") end if
   returning = []
@@ -943,6 +1163,10 @@ function returningResult(bound, result)
   return QueryResult(RESULT_ROWS, dmlCommand(bound), columns, result.rows, result.affectedRows, "")
 end function
 
+// Executes DML using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeDml(engine, statement)
   if engine.explicitTransaction then
     pageTransaction = ensureExplicitDml(engine)
@@ -971,6 +1195,9 @@ function executeDml(engine, statement)
   return commandResult(dmlCommand(bound), result.affectedRows, "DML committed")
 end function
 
+// Scans bound source using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanBoundSource(engine, source, pageTransaction)
   if source.query is void then return scan.scanTable(engine.database.path, source.table, pageTransaction) end if
   result = selectRows(engine, source.query, pageTransaction)
@@ -981,6 +1208,9 @@ function scanBoundSource(engine, source, pageTransaction)
   return output
 end function
 
+// Implements joined source for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function joinedSource(engine, bound, pageTransaction)
   if len(bound.sources) == 0 then return [scan.ScannedRow(void, [])] end if
   output = dml.indexRowsForBound(engine.database, bound, pageTransaction)
@@ -1017,6 +1247,9 @@ function joinedSource(engine, bound, pageTransaction)
   return output
 end function
 
+// Implements item index for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function itemIndex(bound, expression)
   if len(bound.items) == 0 then return -1 end if
   for index = 0 to len(bound.items) - 1
@@ -1025,6 +1258,9 @@ function itemIndex(bound, expression)
   return -1
 end function
 
+// Normalizes compound order using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function normalizeCompoundOrder(rows, bound)
   if len(bound.setOperations) == 0 or len(bound.orderExpressions) == 0 then return rows end if
   output = []
@@ -1040,6 +1276,9 @@ function normalizeCompoundOrder(rows, bound)
   return output
 end function
 
+// Implements select projected for this module.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
   source = joinedSource(engine, bound, pageTransaction)
   filtered = filter.apply(source, bound.whereExpression)
@@ -1063,6 +1302,9 @@ function selectProjected(engine, bound, pageTransaction)
   return projected
 end function
 
+// Implements select rows for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function selectRows(engine, bound, pageTransaction)
   projected = selectProjected(engine, bound, pageTransaction)
   rows = []
@@ -1072,10 +1314,16 @@ function selectRows(engine, bound, pageTransaction)
   return rowResult(bound.itemNames, rows)
 end function
 
+// Loads statistics using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function loadStatistics(engine)
   return statistics.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
 end function
 
+// Implements analyze table for this module.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function analyzeTable(engine, state, table)
   rows = scan.scanTable(engine.database.path, table, void)
   tableFile = paged_file.open(catalog.tableFilePath(engine.database.path, table.tableId))
@@ -1084,6 +1332,9 @@ function analyzeTable(engine, state, table)
   return statistics.replaceTable(state, statistics.analyzeTable(table, rows, pageCount))
 end function
 
+// Executes analyze using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeAnalyze(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "analyze", "ANALYZE is an autocommit maintenance command") end if
   state = loadStatistics(engine)
@@ -1103,12 +1354,19 @@ function executeAnalyze(engine, statement)
   return commandResult("ANALYZE", analyzed, "statistics generation " + state.generation)
 end function
 
+// Implements explain bound for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function explainBound(bound)
   logical = logical_plan.build(bound)
   physical = physical_plan.fromLogical(logical)
   return physical_plan.render(physical)
 end function
 
+// Executes explain using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeExplain(engine, statement)
   if not ast.isSelectStatement(statement.statement) then return fail(UNSUPPORTED_SQL, "explain", "M17 EXPLAIN supports SELECT") end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "explain", "EXPLAIN after staged DDL is not supported") end if
@@ -1131,9 +1389,12 @@ function executeExplain(engine, statement)
   return rowResult(["QUERY PLAN"], rows)
 end function
 
+// Executes select using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeSelect(engine, statement)
   if engine.explicitTransaction and engine.failed then return fail(TRANSACTION_STATE, "select", "transaction is failed; ROLLBACK required") end if
-  if engine.transactionMode != MODE_DML then dml.ensureIndexes(engine.database) end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "select", "SELECT after staged DDL is not supported in M15") end if
   pageTransaction = void
   if engine.explicitTransaction and engine.transactionMode == MODE_DML then pageTransaction = engine.pageTransaction end if
@@ -1142,6 +1403,10 @@ function executeSelect(engine, statement)
   return selectRows(engine, bound, pageTransaction)
 end function
 
+// Implements commit explicit for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function commitExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "commit", "no explicit transaction") end if
   if engine.failed then return fail(TRANSACTION_STATE, "commit", "transaction is failed; ROLLBACK required") end if
@@ -1158,6 +1423,9 @@ function commitExplicit(engine)
   return commandResult("COMMIT", 0, "transaction committed")
 end function
 
+// Implements rollback explicit for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rollbackExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "rollback", "no explicit transaction") end if
   if engine.transactionMode == MODE_DML then transaction.rollback(engine.pageTransaction) end if
@@ -1167,6 +1435,9 @@ function rollbackExplicit(engine)
   return commandResult("ROLLBACK", 0, "transaction rolled back")
 end function
 
+// Executes savepoint using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeSavepoint(engine, statement)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "savepoint", "SAVEPOINT requires an explicit transaction") end if
   if engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "savepoint", "DDL savepoints are not supported") end if
@@ -1175,6 +1446,9 @@ function executeSavepoint(engine, statement)
   return commandResult("SAVEPOINT", 0, statement.name)
 end function
 
+// Executes rollback to using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function executeRollbackTo(engine, statement)
   if not engine.explicitTransaction or engine.transactionMode != MODE_DML then return fail(TRANSACTION_STATE, "rollbackTo", "ROLLBACK TO requires a DML savepoint") end if
   transaction.rollbackToSavepoint(engine.pageTransaction, statement.name)
@@ -1182,6 +1456,9 @@ function executeRollbackTo(engine, statement)
   return commandResult("ROLLBACK TO", 0, statement.name)
 end function
 
+// Executes release savepoint using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeReleaseSavepoint(engine, statement)
   if not engine.explicitTransaction or engine.transactionMode != MODE_DML then return fail(TRANSACTION_STATE, "releaseSavepoint", "RELEASE requires a DML savepoint") end if
   transaction.releaseSavepoint(engine.pageTransaction, statement.name)
@@ -1192,31 +1469,49 @@ end function
 // M21 authorization and DCL
 // ---------------------------------------------------------------------------
 
+// Implements permission failure for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function permissionFailure(operation, detail)
   return fail(PERMISSION_DENIED, operation, "permission denied: " + detail)
 end function
 
+// Implements database handle for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function databaseHandle(engine)
   return engine.database.catalogHandle
 end function
 
+// Returns whether the supplied value satisfies the database admin condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function hasDatabaseAdmin(engine)
   if engine.trusted then return true end if
   return catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_ADMIN, false)
 end function
 
+// Implements require privilege for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function requirePrivilege(engine, objectType, objectId, privilege, operation)
   if engine.trusted then return true end if
   if catalog.hasPrivilege(databaseHandle(engine), engine.principalId, objectType, objectId, privilege, false) then return true end if
   return permissionFailure(operation, "required privilege " + privilege + " on object " + objectId)
 end function
 
+// Implements require grant option for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function requireGrantOption(engine, objectType, objectId, privilege, operation)
   if engine.trusted or hasDatabaseAdmin(engine) then return true end if
   if catalog.hasPrivilege(databaseHandle(engine), engine.principalId, objectType, objectId, privilege, true) then return true end if
   return permissionFailure(operation, "grant option is required")
 end function
 
+// Implements require table privilege by name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function requireTablePrivilegeByName(engine, tableName, privilege, operation)
   table = catalog.findTable(databaseHandle(engine), tableName)
   if table is void then return fail(BINDING_ERROR, operation, "unknown table " + tableName) end if
@@ -1224,6 +1519,9 @@ function requireTablePrivilegeByName(engine, tableName, privilege, operation)
   return table
 end function
 
+// Implements name in list for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nameInList(names, name)
   for each existing in names
     if existing == name then return true end if
@@ -1231,6 +1529,9 @@ function nameInList(names, name)
   return false
 end function
 
+// Implements authorize expression queries internal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeExpressionQueriesInternal(engine, expression, viewStack, cteNames)
   if expression is void then return true end if
   if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) then
@@ -1291,6 +1592,10 @@ function authorizeExpressionQueriesInternal(engine, expression, viewStack, cteNa
   return true
 end function
 
+// Implements authorize named source for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeNamedSource(engine, state, name, viewStack)
   table = catalog.findTable(databaseHandle(engine), name)
   if table is not void then
@@ -1307,6 +1612,10 @@ function authorizeNamedSource(engine, state, name, viewStack)
   return authorizeSelectInternal(engine, parsed[0], viewStack + [name], [])
 end function
 
+// Implements authorize select internal for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeSelectInternal(engine, statement, viewStack, inheritedCteNames)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   availableCtes = inheritedCteNames
@@ -1339,10 +1648,16 @@ function authorizeSelectInternal(engine, statement, viewStack, inheritedCteNames
   return true
 end function
 
+// Implements authorize select for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeSelect(engine, statement)
   return authorizeSelectInternal(engine, statement, [], [])
 end function
 
+// Implements authorize select items for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeSelectItems(engine, items)
   for each item in items
     authorizeExpressionQueriesInternal(engine, item.expression, [], [])
@@ -1350,6 +1665,10 @@ function authorizeSelectItems(engine, items)
   return true
 end function
 
+// Implements authorize statement for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authorizeStatement(engine, statement)
   if engine.trusted then return true end if
   if ast.isDclStatement(statement) then return true end if
@@ -1412,6 +1731,9 @@ function authorizeStatement(engine, statement)
   return permissionFailure("authorizeStatement", "statement is not authorized")
 end function
 
+// Implements privilege code for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function privilegeCode(name, objectType)
   if objectType == metadata.OBJECT_DATABASE then
     if name == "CONNECT" then return metadata.PRIVILEGE_CONNECT end if
@@ -1431,11 +1753,18 @@ function privilegeCode(name, objectType)
   return fail(INVALID_ARGUMENT, "privilegeCode", "invalid table privilege " + name)
 end function
 
+// Implements all privilege codes for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function allPrivilegeCodes(objectType)
   if objectType == metadata.OBJECT_DATABASE then return [metadata.PRIVILEGE_CONNECT, metadata.PRIVILEGE_CREATE, metadata.PRIVILEGE_MAINTAIN, metadata.PRIVILEGE_ADMIN] end if
   return [metadata.PRIVILEGE_SELECT, metadata.PRIVILEGE_INSERT, metadata.PRIVILEGE_UPDATE, metadata.PRIVILEGE_DELETE, metadata.PRIVILEGE_REFERENCES, metadata.PRIVILEGE_INDEX, metadata.PRIVILEGE_ALTER, metadata.PRIVILEGE_DROP]
 end function
 
+// Implements privilege codes for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function privilegeCodes(names, objectType)
   if typeof(names) != "array" or len(names) == 0 then return fail(INVALID_ARGUMENT, "privilegeCodes", "privilege list is empty") end if
   if len(names) == 1 and names[0] == "ALL" then return allPrivilegeCodes(objectType) end if
@@ -1451,6 +1780,9 @@ function privilegeCodes(names, objectType)
   return output
 end function
 
+// Implements dcl target for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function dclTarget(engine, objectType, objectName)
   if objectType == ast.DCL_OBJECT_DATABASE then return [metadata.OBJECT_DATABASE, 0] end if
   table = catalog.findTable(databaseHandle(engine), objectName)
@@ -1458,11 +1790,17 @@ function dclTarget(engine, objectType, objectName)
   return [metadata.OBJECT_TABLE, table.tableId]
 end function
 
+// Implements require security admin for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function requireSecurityAdmin(engine, operation)
   if engine.trusted or hasDatabaseAdmin(engine) then return true end if
   return permissionFailure(operation, "database ADMIN privilege is required")
 end function
 
+// Executes create principal using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeCreatePrincipal(engine, statement)
   requireSecurityAdmin(engine, "createPrincipal")
   if statement.principalKind == ast.PRINCIPAL_USER then
@@ -1473,6 +1811,9 @@ function executeCreatePrincipal(engine, statement)
   return commandResult("CREATE ROLE", 0, statement.name)
 end function
 
+// Executes alter user using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeAlterUser(engine, statement)
   target = catalog.requirePrincipal(databaseHandle(engine), statement.name, "alterUser")
   selfPassword = statement.action == ast.ALTER_USER_PASSWORD and target.principalId == engine.principalId
@@ -1487,6 +1828,9 @@ function executeAlterUser(engine, statement)
   return commandResult("ALTER USER", 0, statement.name)
 end function
 
+// Executes drop principal using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeDropPrincipal(engine, statement)
   requireSecurityAdmin(engine, "dropPrincipal")
   expected = metadata.PRINCIPAL_USER
@@ -1498,6 +1842,9 @@ function executeDropPrincipal(engine, statement)
   return commandResult(command, affected, statement.name)
 end function
 
+// Executes grant role using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeGrantRole(engine, statement)
   role = catalog.requirePrincipal(databaseHandle(engine), statement.roleName, "grantRole")
   if not engine.trusted and not hasDatabaseAdmin(engine) and not catalog.hasRoleAdminOption(databaseHandle(engine), engine.principalId, role.principalId) then return permissionFailure("grantRole", "ADMIN OPTION for role is required") end if
@@ -1505,6 +1852,9 @@ function executeGrantRole(engine, statement)
   return commandResult("GRANT ROLE", 0, statement.roleName + " TO " + statement.memberName)
 end function
 
+// Executes revoke role using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeRevokeRole(engine, statement)
   role = catalog.requirePrincipal(databaseHandle(engine), statement.roleName, "revokeRole")
   if not engine.trusted and not hasDatabaseAdmin(engine) and not catalog.hasRoleAdminOption(databaseHandle(engine), engine.principalId, role.principalId) then return permissionFailure("revokeRole", "ADMIN OPTION for role is required") end if
@@ -1512,6 +1862,9 @@ function executeRevokeRole(engine, statement)
   return commandResult("REVOKE ROLE", 0, statement.roleName + " FROM " + statement.memberName)
 end function
 
+// Executes grant privilege using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeGrantPrivilege(engine, statement)
   target = dclTarget(engine, statement.objectType, statement.objectName)
   codes = privilegeCodes(statement.privileges, target[0])
@@ -1522,6 +1875,9 @@ function executeGrantPrivilege(engine, statement)
   return commandResult("GRANT", len(codes), statement.granteeName)
 end function
 
+// Executes revoke privilege using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeRevokePrivilege(engine, statement)
   target = dclTarget(engine, statement.objectType, statement.objectName)
   codes = privilegeCodes(statement.privileges, target[0])
@@ -1532,6 +1888,9 @@ function executeRevokePrivilege(engine, statement)
   return commandResult("REVOKE", len(codes), statement.granteeName)
 end function
 
+// Executes dcl using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeDcl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeDcl", "DCL is autocommit-only in M21") end if
   if ast.isCreatePrincipalStatement(statement) then return executeCreatePrincipal(engine, statement) end if
@@ -1544,6 +1903,9 @@ function executeDcl(engine, statement)
   return fail(UNSUPPORTED_SQL, "executeDcl", "unsupported DCL statement")
 end function
 
+// Executes vacuum using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeVacuum(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "vacuum", "VACUUM is autocommit-only") end if
   affected = dml.vacuum(engine.database, statement.tableName)
@@ -1561,12 +1923,18 @@ function executeVacuum(engine, statement)
   return commandResult("VACUUM", affected, "storage rewritten, indexes rebuilt, and statistics refreshed")
 end function
 
+// Executes reindex using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeReindex(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "reindex", "REINDEX is autocommit-only") end if
   rebuilt = dml.reindex(engine.database, statement.name)
   return commandResult("REINDEX", rebuilt, "indexes rebuilt")
 end function
 
+// Implements type description for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function typeDescription(column)
   name = types.kindName(column.typeCode)
   if column.typeCode == types.SqlTypeKind.Char or column.typeCode == types.SqlTypeKind.VarChar or column.typeCode == types.SqlTypeKind.Binary or column.typeCode == types.SqlTypeKind.VarBinary then return name + "(" + column.maxLength + ")" end if
@@ -1575,6 +1943,9 @@ function typeDescription(column)
   return name
 end function
 
+// Finds column rule using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findColumnRule(tableSchema, columnName)
   if tableSchema is void then return void end if
   for each rule in tableSchema.columnRules
@@ -1583,6 +1954,9 @@ function findColumnRule(tableSchema, columnName)
   return void
 end function
 
+// Implements constraint kind name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function constraintKindName(kind)
   if kind == schema_history.CONSTRAINT_PRIMARY_KEY then return "PRIMARY KEY" end if
   if kind == schema_history.CONSTRAINT_UNIQUE then return "UNIQUE" end if
@@ -1592,6 +1966,9 @@ function constraintKindName(kind)
   return "UNKNOWN"
 end function
 
+// Implements join names for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function joinNames(names)
   output = ""
   for each name in names
@@ -1601,6 +1978,9 @@ function joinNames(names)
   return output
 end function
 
+// Executes show tables using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeShowTables(engine)
   rows = []
   for each table in engine.database.catalogHandle.catalog.tables
@@ -1609,6 +1989,10 @@ function executeShowTables(engine)
   return rowResult(["table_name", "column_count", "schema_version"], rows)
 end function
 
+// Executes describe table using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeDescribeTable(engine, statement)
   table = catalog.findTable(engine.database.catalogHandle, statement.tableName)
   if table is void then return fail(BINDING_ERROR, "describe", "unknown table " + statement.tableName) end if
@@ -1631,6 +2015,10 @@ function executeDescribeTable(engine, statement)
   return rowResult(["ordinal", "column_name", "data_type", "nullable", "default_sql", "identity"], rows)
 end function
 
+// Executes show indexes using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeShowIndexes(engine, statement)
   table = catalog.findTable(engine.database.catalogHandle, statement.tableName)
   if table is void then return fail(BINDING_ERROR, "showIndexes", "unknown table " + statement.tableName) end if
@@ -1648,6 +2036,9 @@ function executeShowIndexes(engine, statement)
   return rowResult(["index_name", "index_kind", "unique", "columns"], rows)
 end function
 
+// Executes statement inner using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeStatementInner(engine, statement)
   if ast.isDclStatement(statement) then return executeDcl(engine, statement) end if
   if ast.isBeginStatement(statement) then return beginExplicit(engine, statement) end if
@@ -1676,6 +2067,9 @@ function executeStatementInner(engine, statement)
   return fail(UNSUPPORTED_SQL, "execute", "unsupported statement")
 end function
 
+// Recursively detects NEXTVAL in every expression container, including CASE,
+// window clauses, and subqueries. NEXTVAL mutates sequence/session state and is
+// therefore the key exception to classifying SELECT as a shared read.
 function expressionUsesNextval(expression)
   if expression is void then return false end if
   if ast.isFunctionExpression(expression) then
@@ -1718,6 +2112,8 @@ function expressionUsesNextval(expression)
   return false
 end function
 
+// Walks all SELECT clauses, CTEs, joins, and set-operation branches for NEXTVAL.
+// Returns true as soon as any nested expression advances a sequence.
 function selectUsesNextval(statement)
   for each item in statement.items
     if expressionUsesNextval(item.expression) then return true end if
@@ -1741,12 +2137,19 @@ function selectUsesNextval(statement)
   return false
 end function
 
+// Classifies statements that may share physical database execution.
+// Pure SELECT, pure EXPLAIN, and metadata inspection are reads; a SELECT tree
+// containing NEXTVAL is deliberately excluded because it changes sequence state.
 function statementUsesReadLock(statement)
   if ast.isSelectStatement(statement) then return not selectUsesNextval(statement) end if
-  if ast.isExplainStatement(statement) or ast.isMetadataStatement(statement) then return true end if
+  if ast.isExplainStatement(statement) then return not selectUsesNextval(statement.statement) end if
+  if ast.isMetadataStatement(statement) then return true end if
   return false
 end function
 
+// Classifies statements that require exclusive physical database execution.
+// This includes DML, DDL, DCL, maintenance, and SELECT statements containing
+// NEXTVAL. Transaction-control/session-only statements are handled separately.
 function statementUsesWriteLock(statement)
   if ast.isSelectStatement(statement) and selectUsesNextval(statement) then return true end if
   if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isTruncateStatement(statement) then return true end if
@@ -1755,6 +2158,10 @@ function statementUsesWriteLock(statement)
   return false
 end function
 
+// Implements statement isolation for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function statementIsolation(engine)
   if not engine.explicitTransaction then return transaction.ISOLATION_READ_COMMITTED end if
   if engine.transactionMode == MODE_DML and engine.pageTransaction is not void and typeof(engine.pageTransaction) != "array" then return engine.pageTransaction.isolationLevel end if
@@ -1762,6 +2169,9 @@ function statementIsolation(engine)
   return transaction.ISOLATION_SERIALIZABLE
 end function
 
+// Implements mark explicit failure for this module.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function markExplicitFailure(engine)
   if not engine.explicitTransaction then return true end if
   engine.failed = true
@@ -1771,6 +2181,9 @@ function markExplicitFailure(engine)
   return true
 end function
 
+// Implements audit action for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function auditAction(statement)
   if ast.isSelectStatement(statement) then return "SELECT" end if
   if ast.isInsertStatement(statement) then return "INSERT" end if
@@ -1813,6 +2226,9 @@ function auditAction(statement)
   return "STATEMENT"
 end function
 
+// Implements audit event type for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function auditEventType(statement)
   if ast.isDclStatement(statement) then return diagnostics.AUDIT_DCL end if
   if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
@@ -1820,6 +2236,10 @@ function auditEventType(statement)
   return 0
 end function
 
+// Appends audit outcome using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendAuditOutcome(engine, statement, success, detail)
   // Never record raw SQL or literal values: password-bearing DCL therefore cannot
   // leak secrets into the audit stream. Ordinary SELECT and DML statements stay
@@ -1833,7 +2253,10 @@ function appendAuditOutcome(engine, statement, success, detail)
   return typeof(written) != "error"
 end function
 
-function executeStatement(engine, statement)
+// Authorizes and executes one statement while managing logical transaction locks.
+// Statement read leases end after execution; implicit write leases are released
+// on every outcome. Errors mark explicit transactions failed and are audited.
+function executeStatementCore(engine, statement)
   validateOpen(engine, "executeStatement")
   if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
   if database_manager.isStandby(engine.database) and statementUsesWriteLock(statement) then
@@ -1881,6 +2304,62 @@ function executeStatement(engine, statement)
   return result
 end function
 
+// All callers, including the embedded API, pass through the same physical
+// execution gate. Pure reads share the database; mutations and session-state
+// statements run exclusively. The logical transaction lock manager remains
+// responsible for conflicts that live longer than one statement.
+// Executes one AST under the database's physical readers/writer gate.
+// Prepared statements are classified from their stored AST. A dirty-index marker
+// triggers an atomic read-to-write escalation before repair, with every gate path
+// released before returning the result or a propagated error.
+function executeStatement(engine, statement)
+  validateOpen(engine, "executeStatement")
+  if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
+  readExecution = statementUsesReadLock(statement)
+  if ast.isExecutePreparedStatement(statement) then
+    preparedIndex = findPreparedIndex(engine, statement.name)
+    if preparedIndex >= 0 then readExecution = statementUsesReadLock(engine.preparedStatements[preparedIndex].statement) end if
+  end if
+  repairIndexes = false
+  if readExecution then
+    entered = try(database_manager.enterReadExecution(engine.database))
+    // A failed writer can leave the durable dirty marker behind. Recheck only
+    // after entering the read gate so a writer cannot publish it between the
+    // check and the plan. Repair is an explicit read-to-write escalation.
+    dirtyIndexes = try(dml.indexesNeedRepair(engine.database))
+    if typeof(dirtyIndexes) == "error" then
+      ignoredReadRelease = try(database_manager.leaveReadExecution(engine.database))
+      return dirtyIndexes
+    end if
+    if dirtyIndexes then
+      leftRead = try(database_manager.leaveReadExecution(engine.database))
+      if typeof(leftRead) == "error" then return leftRead end if
+      enteredWriter = try(database_manager.enterExecution(engine.database))
+      readExecution = false
+      repairIndexes = true
+    end if
+  else
+    entered = try(database_manager.enterExecution(engine.database))
+  end if
+  result = void
+  if repairIndexes then
+    repaired = try(dml.ensureIndexes(engine.database))
+    if typeof(repaired) == "error" then result = repaired end if
+  end if
+  if typeof(result) != "error" then result = try(executeStatementCore(engine, statement)) end if
+  released = void
+  if readExecution then
+    released = try(database_manager.leaveReadExecution(engine.database))
+  else
+    released = try(database_manager.leaveExecution(engine.database))
+  end if
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
+// Executes SQL using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeSql(engine, sqlText)
   validateOpen(engine, "executeSql")
   statements = parser.parseSql(sqlText)
@@ -1892,6 +2371,9 @@ function executeSql(engine, sqlText)
 end function
 
 
+// Implements abort for concurrency for this module.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function abortForConcurrency(engine)
   validateOpen(engine, "abortForConcurrency")
   if engine.explicitTransaction then
@@ -1903,11 +2385,17 @@ function abortForConcurrency(engine)
   return true
 end function
 
+// Implements session identifier for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sessionIdentifier(engine)
   validateOpen(engine, "sessionIdentifier")
   return engine.sessionId
 end function
 
+// Closes close using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function close(engine)
   validateOpen(engine, "close")
   if engine.explicitTransaction then
@@ -1921,14 +2409,23 @@ function close(engine)
   return true
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.executor"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
@@ -7,16 +11,19 @@ import minisql.tools.backup as backup
 import minisql.transaction.wal as wal
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Executes the replication count query and converts its SQL integer wrapper to the host integer used by assertions.
 function countRows(engine)
   result = executeOne(engine, "SELECT COUNT(*) FROM replicated_item")
   return endian.int64ToInt(result.rows[0][0].value)
 end function
 
+// Runs the hot replication test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M48 hot replication tests: FAIL (missing data root)"
@@ -35,6 +42,8 @@ function main(args)
   initialArchive = backup.archiveInit(primaryPath, archivePath)
   testkit.equal(state, initialArchive.generation, 1, "base archive generation")
 
+  // Export only WAL bytes covered by the primary's durable marker while the
+  // primary remains open; a live archive must advance both generation and LSN.
   primary = executor.open(primaryPath)
   executeOne(primary, "INSERT INTO replicated_item(id, value) VALUES (1, 'first')")
   firstLive = backup.archiveWalLive(primaryPath, archivePath)
@@ -43,6 +52,8 @@ function main(args)
   walPath = file_api.joinPath(file_api.joinPath(primaryPath, "wal"), "wal.log")
   testkit.equal(state, wal.readDurableMarker(walPath), firstLive.latestEndLsn, "live archive stops at durable marker")
 
+  // Materialization creates a read-only standby at the first live boundary.
+  // Its visible row count and write rejection jointly validate standby mode.
   standbyPath = file_api.joinPath(args[0], "m48-standby")
   materialized = backup.materializeStandby(archivePath, standbyPath)
   testkit.equal(state, materialized.appliedLsn, firstLive.latestEndLsn, "standby materialized at live LSN")
@@ -55,6 +66,8 @@ function main(args)
   executor.close(standby)
   database_manager.close(standbyManaged)
 
+  // A later live export must refresh the existing standby monotonically; after
+  // reopening, both committed rows must be visible at the new applied LSN.
   executeOne(primary, "INSERT INTO replicated_item(id, value) VALUES (2, 'second')")
   secondLive = backup.archiveWalLive(primaryPath, archivePath)
   testkit.record(state, secondLive.generation > firstLive.generation, "second live export advances generation")

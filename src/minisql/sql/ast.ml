@@ -1,5 +1,9 @@
 package minisql.sql.ast
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 // Syntax tree for the MiniSQL SQL front end. The AST contains no catalog
 // references and can therefore be produced without opening a database. Binding,
 // type checking and planning are separate operations.
@@ -63,502 +67,849 @@ const ALTER_TABLE_RENAME_TABLE = 3
 const ALTER_TABLE_ADD_CONSTRAINT = 4
 const ALTER_TABLE_DROP_CONSTRAINT = 5
 
+// Groups the identifier state and preserves the field relationships documented below.
 struct Identifier
+  // Stores the name associated with this value.
   name
+  // Indicates whether the quoted condition is active.
   quoted
 end struct
 
+// Groups the type name state and preserves the field relationships documented below.
 struct TypeName
+  // Stores the name associated with this value.
   name
+  // Tracks the length numeric value.
   length
+  // Stores the precision associated with this value.
   precision
+  // Stores the scale associated with this value.
   scale
 end struct
 
+// Groups the literal expression state and preserves the field relationships documented below.
 struct LiteralExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the literal kind associated with this value.
   literalKind
+  // Stores the value associated with this value.
   value
 end struct
 
+// Groups the column expression state and preserves the field relationships documented below.
 struct ColumnExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the qualifier associated with this value.
   qualifier
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the star expression state and preserves the field relationships documented below.
 struct StarExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the qualifier associated with this value.
   qualifier
 end struct
 
+// Groups the unary expression state and preserves the field relationships documented below.
 struct UnaryExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operator associated with this value.
   operator
+  // Stores the operand associated with this value.
   operand
 end struct
 
+// Groups the binary expression state and preserves the field relationships documented below.
 struct BinaryExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operator associated with this value.
   operator
+  // Stores the left associated with this value.
   left
+  // Stores the right associated with this value.
   right
 end struct
 
+// Groups the is null expression state and preserves the field relationships documented below.
 struct IsNullExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Indicates whether the negated condition is active.
   negated
 end struct
 
+// Groups the function expression state and preserves the field relationships documented below.
 struct FunctionExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the name associated with this value.
   name
+  // Contains the ordered arguments collection.
   arguments
+  // Indicates whether the distinct condition is active.
   distinct
 end struct
 
+// Groups the parameter expression state and preserves the field relationships documented below.
 struct ParameterExpression
+  // Stores the kind associated with this value.
   kind
+  // Tracks the index numeric value.
   index
 end struct
 
+// Groups the case branch state and preserves the field relationships documented below.
 struct CaseBranch
+  // Stores the condition associated with this value.
   condition
+  // Stores the result associated with this value.
   result
 end struct
 
+// Groups the case expression state and preserves the field relationships documented below.
 struct CaseExpression
+  // Stores the kind associated with this value.
   kind
+  // Contains the ordered branches collection.
   branches
+  // Stores the else expression associated with this value.
   elseExpression
 end struct
 
+// Groups the cast expression state and preserves the field relationships documented below.
 struct CastExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Stores the target type associated with this value.
   targetType
 end struct
 
+// Groups the in expression state and preserves the field relationships documented below.
 struct InExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Contains the ordered values collection.
   values
+  // Indicates whether the negated condition is active.
   negated
 end struct
 
+// Groups the between expression state and preserves the field relationships documented below.
 struct BetweenExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Stores the lower associated with this value.
   lower
+  // Stores the upper associated with this value.
   upper
+  // Indicates whether the negated condition is active.
   negated
 end struct
 
+// Groups the truth test expression state and preserves the field relationships documented below.
 struct TruthTestExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Stores the expected associated with this value.
   expected
+  // Indicates whether the negated condition is active.
   negated
 end struct
 
 // Internal typed literals preserve a fully decoded SqlValue while the executor
 // materializes non-correlated subqueries and sequence calls before binding.
+// Groups the typed literal expression state and preserves the field relationships documented below.
 struct TypedLiteralExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the value associated with this value.
   value
 end struct
 
+// Groups the subquery expression state and preserves the field relationships documented below.
 struct SubqueryExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the query associated with this value.
   query
 end struct
 
+// Groups the exists expression state and preserves the field relationships documented below.
 struct ExistsExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the query associated with this value.
   query
 end struct
 
+// Groups the in subquery expression state and preserves the field relationships documented below.
 struct InSubqueryExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the operand associated with this value.
   operand
+  // Stores the query associated with this value.
   query
+  // Indicates whether the negated condition is active.
   negated
 end struct
 
+// Groups the window expression state and preserves the field relationships documented below.
 struct WindowExpression
+  // Stores the kind associated with this value.
   kind
+  // Stores the name associated with this value.
   name
+  // Contains the ordered arguments collection.
   arguments
+  // Stores the partition by associated with this value.
   partitionBy
+  // Contains the ordered order by collection.
   orderBy
 end struct
 
+// Groups the column definition state and preserves the field relationships documented below.
 struct ColumnDefinition
+  // Stores the name associated with this value.
   name
+  // Stores the type name associated with this value.
   typeName
+  // Indicates whether the nullable condition is active.
   nullable
+  // Indicates whether the nullable specified condition is active.
   nullableSpecified
+  // Indicates whether the primary key condition is active.
   primaryKey
+  // Indicates whether the unique condition is active.
   unique
+  // Stores the default expression associated with this value.
   defaultExpression
+  // Stores the check expression associated with this value.
   checkExpression
+  // Stores the references table associated with this value.
   referencesTable
+  // Stores the references columns associated with this value.
   referencesColumns
+  // Stores the on delete associated with this value.
   onDelete
+  // Stores the on update associated with this value.
   onUpdate
+  // Stores the identity associated with this value.
   identity
+  // Stores the generated expression associated with this value.
   generatedExpression
+  // Stores the generated stored associated with this value.
   generatedStored
 end struct
 
+// Groups the table constraint state and preserves the field relationships documented below.
 struct TableConstraint
+  // Stores the kind associated with this value.
   kind
+  // Stores the name associated with this value.
   name
+  // Contains the ordered columns collection.
   columns
+  // Stores the expression associated with this value.
   expression
+  // Stores the references table associated with this value.
   referencesTable
+  // Stores the references columns associated with this value.
   referencesColumns
+  // Stores the on delete associated with this value.
   onDelete
+  // Stores the on update associated with this value.
   onUpdate
 end struct
 
+// Groups the select item state and preserves the field relationships documented below.
 struct SelectItem
+  // Stores the expression associated with this value.
   expression
+  // Stores the alias associated with this value.
   alias
 end struct
 
+// Groups the order item state and preserves the field relationships documented below.
 struct OrderItem
+  // Stores the expression associated with this value.
   expression
+  // Stores the descending associated with this value.
   descending
+  // Stores the nulls first associated with this value.
   nullsFirst
+  // Stores the nulls specified associated with this value.
   nullsSpecified
 end struct
 
+// Groups the join clause state and preserves the field relationships documented below.
 struct JoinClause
+  // Stores the join type associated with this value.
   joinType
+  // Stores the table name associated with this value.
   tableName
+  // Stores the table alias associated with this value.
   tableAlias
+  // Stores the condition associated with this value.
   condition
 end struct
 
+// Groups the set operation state and preserves the field relationships documented below.
 struct SetOperation
+  // Stores the operator associated with this value.
   operator
+  // Stores the all associated with this value.
   all
+  // Stores the query associated with this value.
   query
 end struct
 
+// Groups the assignment state and preserves the field relationships documented below.
 struct Assignment
+  // Stores the column associated with this value.
   column
+  // Stores the expression associated with this value.
   expression
 end struct
 
+// Groups the create table statement state and preserves the field relationships documented below.
 struct CreateTableStatement
+  // Stores the name associated with this value.
   name
+  // Contains the ordered columns collection.
   columns
+  // Contains the ordered constraints collection.
   constraints
+  // Stores the if not exists associated with this value.
   ifNotExists
 end struct
 
+// Groups the create index statement state and preserves the field relationships documented below.
 struct CreateIndexStatement
+  // Stores the name associated with this value.
   name
+  // Stores the table name associated with this value.
   tableName
+  // Contains the ordered columns collection.
   columns
+  // Indicates whether the unique condition is active.
   unique
+  // Stores the if not exists associated with this value.
   ifNotExists
 end struct
 
+// Groups the drop table statement state and preserves the field relationships documented below.
 struct DropTableStatement
+  // Stores the name associated with this value.
   name
+  // Stores the if exists associated with this value.
   ifExists
 end struct
 
+// Groups the create view statement state and preserves the field relationships documented below.
 struct CreateViewStatement
+  // Stores the name associated with this value.
   name
+  // Stores the query associated with this value.
   query
+  // Stores the replace associated with this value.
   replace
 end struct
 
+// Groups the drop view statement state and preserves the field relationships documented below.
 struct DropViewStatement
+  // Stores the name associated with this value.
   name
+  // Stores the if exists associated with this value.
   ifExists
 end struct
 
+// Groups the create sequence statement state and preserves the field relationships documented below.
 struct CreateSequenceStatement
+  // Stores the name associated with this value.
   name
+  // Stores the start value associated with this value.
   startValue
+  // Stores the increment value associated with this value.
   incrementValue
+  // Tracks the minimum value numeric value.
   minimumValue
+  // Tracks the maximum value numeric value.
   maximumValue
+  // Stores the cycle associated with this value.
   cycle
+  // Stores the if not exists associated with this value.
   ifNotExists
 end struct
 
+// Groups the drop sequence statement state and preserves the field relationships documented below.
 struct DropSequenceStatement
+  // Stores the name associated with this value.
   name
+  // Stores the if exists associated with this value.
   ifExists
 end struct
 
+// Groups the create trigger statement state and preserves the field relationships documented below.
 struct CreateTriggerStatement
+  // Stores the name associated with this value.
   name
+  // Stores the timing associated with this value.
   timing
+  // Stores the event type associated with this value.
   eventType
+  // Stores the table name associated with this value.
   tableName
+  // Stores the target column associated with this value.
   targetColumn
+  // Stores the body associated with this value.
   body
+  // Stores the if not exists associated with this value.
   ifNotExists
 end struct
 
+// Groups the drop trigger statement state and preserves the field relationships documented below.
 struct DropTriggerStatement
+  // Stores the name associated with this value.
   name
+  // Stores the if exists associated with this value.
   ifExists
 end struct
 
+// Groups the alter table statement state and preserves the field relationships documented below.
 struct AlterTableStatement
+  // Stores the table name associated with this value.
   tableName
+  // Stores the action associated with this value.
   action
+  // Stores the column definition associated with this value.
   columnDefinition
+  // Stores the old name associated with this value.
   oldName
+  // Stores the new name associated with this value.
   newName
+  // Stores the constraint associated with this value.
   constraint
+  // Stores the constraint name associated with this value.
   constraintName
 end struct
 
+// Groups the insert statement state and preserves the field relationships documented below.
 struct InsertStatement
+  // Stores the table name associated with this value.
   tableName
+  // Contains the ordered columns collection.
   columns
+  // Contains the ordered rows collection.
   rows
+  // Stores the source query associated with this value.
   sourceQuery
+  // Stores the conflict target associated with this value.
   conflictTarget
+  // Stores the conflict action associated with this value.
   conflictAction
+  // Stores the conflict assignments associated with this value.
   conflictAssignments
+  // Stores the conflict where associated with this value.
   conflictWhere
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the update statement state and preserves the field relationships documented below.
 struct UpdateStatement
+  // Stores the table name associated with this value.
   tableName
+  // Contains the ordered assignments collection.
   assignments
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the delete statement state and preserves the field relationships documented below.
 struct DeleteStatement
+  // Stores the table name associated with this value.
   tableName
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the truncate statement state and preserves the field relationships documented below.
 struct TruncateStatement
+  // Stores the table name associated with this value.
   tableName
+  // Stores the restart identity associated with this value.
   restartIdentity
 end struct
 
+// Groups the common table expression state and preserves the field relationships documented below.
 struct CommonTableExpression
+  // Stores the name associated with this value.
   name
+  // Stores the query associated with this value.
   query
+  // Stores the column names associated with this value.
   columnNames
 end struct
 
+// Groups the select statement state and preserves the field relationships documented below.
 struct SelectStatement
+  // Indicates whether the distinct condition is active.
   distinct
+  // Tracks the items numeric value.
   items
+  // Stores the table name associated with this value.
   tableName
+  // Stores the table alias associated with this value.
   tableAlias
+  // Contains the ordered joins collection.
   joins
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the group by associated with this value.
   groupBy
+  // Stores the having expression associated with this value.
   havingExpression
+  // Stores the set operations associated with this value.
   setOperations
+  // Contains the ordered order by collection.
   orderBy
+  // Tracks the limit numeric value.
   limit
+  // Tracks the offset numeric value.
   offset
+  // Stores the ctes associated with this value.
   ctes
 end struct
 
+// Groups the begin statement state and preserves the field relationships documented below.
 struct BeginStatement
+  // Stores the read only associated with this value.
   readOnly
+  // Indicates whether the isolation level condition is active.
   isolationLevel
 end struct
 
+// Groups the commit statement state and preserves the field relationships documented below.
 struct CommitStatement
+  // Stores the marker associated with this value.
   marker
 end struct
 
+// Groups the rollback statement state and preserves the field relationships documented below.
 struct RollbackStatement
+  // Stores the marker associated with this value.
   marker
 end struct
 
+// Groups the savepoint statement state and preserves the field relationships documented below.
 struct SavepointStatement
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the rollback to statement state and preserves the field relationships documented below.
 struct RollbackToStatement
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the release savepoint statement state and preserves the field relationships documented below.
 struct ReleaseSavepointStatement
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the create principal statement state and preserves the field relationships documented below.
 struct CreatePrincipalStatement
+  // Stores the principal kind associated with this value.
   principalKind
+  // Stores the name associated with this value.
   name
+  // Stores the password associated with this value.
   password
 end struct
 
+// Groups the alter user statement state and preserves the field relationships documented below.
 struct AlterUserStatement
+  // Stores the name associated with this value.
   name
+  // Stores the action associated with this value.
   action
+  // Stores the password associated with this value.
   password
 end struct
 
+// Groups the drop principal statement state and preserves the field relationships documented below.
 struct DropPrincipalStatement
+  // Stores the principal kind associated with this value.
   principalKind
+  // Stores the name associated with this value.
   name
+  // Stores the if exists associated with this value.
   ifExists
 end struct
 
+// Groups the grant role statement state and preserves the field relationships documented below.
 struct GrantRoleStatement
+  // Stores the role name associated with this value.
   roleName
+  // Stores the member name associated with this value.
   memberName
+  // Stores the admin option associated with this value.
   adminOption
 end struct
 
+// Groups the revoke role statement state and preserves the field relationships documented below.
 struct RevokeRoleStatement
+  // Stores the role name associated with this value.
   roleName
+  // Stores the member name associated with this value.
   memberName
+  // Stores the cascade associated with this value.
   cascade
 end struct
 
+// Groups the grant privilege statement state and preserves the field relationships documented below.
 struct GrantPrivilegeStatement
+  // Contains the ordered privileges collection.
   privileges
+  // Stores the object type associated with this value.
   objectType
+  // Stores the object name associated with this value.
   objectName
+  // Stores the grantee name associated with this value.
   granteeName
+  // Stores the grant option associated with this value.
   grantOption
 end struct
 
+// Groups the revoke privilege statement state and preserves the field relationships documented below.
 struct RevokePrivilegeStatement
+  // Contains the ordered privileges collection.
   privileges
+  // Stores the object type associated with this value.
   objectType
+  // Stores the object name associated with this value.
   objectName
+  // Stores the grantee name associated with this value.
   granteeName
+  // Stores the cascade associated with this value.
   cascade
 end struct
 
+// Groups the analyze statement state and preserves the field relationships documented below.
 struct AnalyzeStatement
+  // Stores the table name associated with this value.
   tableName
 end struct
 
+// Groups the explain statement state and preserves the field relationships documented below.
 struct ExplainStatement
+  // Stores the analyze associated with this value.
   analyze
+  // Stores the statement associated with this value.
   statement
 end struct
 
+// Groups the prepare statement state and preserves the field relationships documented below.
 struct PrepareStatement
+  // Stores the name associated with this value.
   name
+  // Stores the statement associated with this value.
   statement
+  // Tracks the parameter count numeric value.
   parameterCount
 end struct
 
+// Groups the execute prepared statement state and preserves the field relationships documented below.
 struct ExecutePreparedStatement
+  // Stores the name associated with this value.
   name
+  // Contains the ordered arguments collection.
   arguments
 end struct
 
+// Groups the deallocate statement state and preserves the field relationships documented below.
 struct DeallocateStatement
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the vacuum statement state and preserves the field relationships documented below.
 struct VacuumStatement
+  // Stores the table name associated with this value.
   tableName
 end struct
 
+// Groups the reindex statement state and preserves the field relationships documented below.
 struct ReindexStatement
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the show tables statement state and preserves the field relationships documented below.
 struct ShowTablesStatement
+  // Stores the marker associated with this value.
   marker
 end struct
 
+// Groups the describe table statement state and preserves the field relationships documented below.
 struct DescribeTableStatement
+  // Stores the table name associated with this value.
   tableName
 end struct
 
+// Groups the show indexes statement state and preserves the field relationships documented below.
 struct ShowIndexesStatement
+  // Stores the table name associated with this value.
   tableName
 end struct
 
+// Implements identifier for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function identifier(name, quoted)
   if typeof(name) != "string" or len(name) == 0 or typeof(quoted) != "bool" then return error(9001, "sql.ast.identifier: invalid identifier") end if
   return Identifier(name, quoted)
 end function
 
+// Implements type name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function typeName(name, length, precision, scale)
   return TypeName(name, length, precision, scale)
 end function
 
+// Implements null literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nullLiteral()
   return LiteralExpression(EXPR_LITERAL, LITERAL_NULL, void)
 end function
 
+// Implements boolean literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function booleanLiteral(value)
   return LiteralExpression(EXPR_LITERAL, LITERAL_BOOLEAN, value)
 end function
 
+// Implements integer literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function integerLiteral(value)
   return LiteralExpression(EXPR_LITERAL, LITERAL_INTEGER, value)
 end function
 
+// Implements float literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function floatLiteral(value)
   return LiteralExpression(EXPR_LITERAL, LITERAL_FLOAT, value)
 end function
 
+// Implements string literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function stringLiteral(value)
   return LiteralExpression(EXPR_LITERAL, LITERAL_STRING, value)
 end function
 
+// Implements current timestamp literal for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function currentTimestampLiteral()
   return LiteralExpression(EXPR_LITERAL, LITERAL_CURRENT_TIMESTAMP, void)
 end function
 
+// Implements column expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function columnExpression(qualifier, name)
   return ColumnExpression(EXPR_COLUMN, qualifier, name)
 end function
 
+// Implements star expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function starExpression(qualifier)
   return StarExpression(EXPR_STAR, qualifier)
 end function
 
+// Implements unary expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function unaryExpression(operator, operand)
   return UnaryExpression(EXPR_UNARY, operator, operand)
 end function
 
+// Implements binary expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function binaryExpression(operator, left, right)
   return BinaryExpression(EXPR_BINARY, operator, left, right)
 end function
 
+// Returns whether the supplied value satisfies the null expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isNullExpression(operand, negated)
   return IsNullExpression(EXPR_IS_NULL, operand, negated)
 end function
 
+// Implements function expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function functionExpression(name, arguments, distinct)
   if typeof(name) != "string" or len(name) == 0 or typeof(arguments) != "array" or typeof(distinct) != "bool" then return error(9001, "sql.ast.functionExpression: invalid function") end if
   return FunctionExpression(EXPR_FUNCTION, name, arguments, distinct)
 end function
 
+// Implements parameter expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function parameterExpression(index)
   if typeof(index) != "int" or index < 0 then return error(9001, "sql.ast.parameterExpression: invalid index") end if
   return ParameterExpression(EXPR_PARAMETER, index)
 end function
 
+// Implements case branch for this module.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function caseBranch(condition, result)
   if not isExpression(condition) or not isExpression(result) then return error(9001, "sql.ast.caseBranch: invalid branch") end if
   return CaseBranch(condition, result)
 end function
 
+// Implements case expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function caseExpression(branches, elseExpression)
   if typeof(branches) != "array" or len(branches) == 0 then return error(9001, "sql.ast.caseExpression: branches must be non-empty") end if
   for each branch in branches
@@ -568,11 +919,19 @@ function caseExpression(branches, elseExpression)
   return CaseExpression(EXPR_CASE, branches, elseExpression)
 end function
 
+// Casts expression using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function castExpression(operand, targetType)
   if not isExpression(operand) or targetType is not TypeName then return error(9001, "sql.ast.castExpression: invalid CAST") end if
   return CastExpression(EXPR_CAST, operand, targetType)
 end function
 
+// Implements in expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function inExpression(operand, candidates, negated)
   if not isExpression(operand) or typeof(candidates) != "array" or len(candidates) == 0 or typeof(negated) != "bool" then return error(9001, "sql.ast.inExpression: invalid IN predicate") end if
   for each candidate in candidates
@@ -581,290 +940,507 @@ function inExpression(operand, candidates, negated)
   return InExpression(EXPR_IN, operand, candidates, negated)
 end function
 
+// Implements between expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function betweenExpression(operand, lower, upper, negated)
   if not isExpression(operand) or not isExpression(lower) or not isExpression(upper) or typeof(negated) != "bool" then return error(9001, "sql.ast.betweenExpression: invalid BETWEEN predicate") end if
   return BetweenExpression(EXPR_BETWEEN, operand, lower, upper, negated)
 end function
 
+// Implements truth test expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function truthTestExpression(operand, expected, negated)
   if not isExpression(operand) or typeof(expected) != "string" or typeof(negated) != "bool" then return error(9001, "sql.ast.truthTestExpression: invalid truth test") end if
   return TruthTestExpression(EXPR_TRUTH_TEST, operand, expected, negated)
 end function
 
+// Implements typed literal expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function typedLiteralExpression(value)
   if typeof(value) != "struct" then return error(9001, "sql.ast.typedLiteralExpression: value must be SqlValue") end if
   return TypedLiteralExpression(EXPR_TYPED_LITERAL, value)
 end function
 
+// Implements subquery expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function subqueryExpression(query)
   if query is not SelectStatement then return error(9001, "sql.ast.subqueryExpression: query must be SELECT") end if
   return SubqueryExpression(EXPR_SUBQUERY, query)
 end function
 
+// Implements exists expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function existsExpression(query)
   if query is not SelectStatement then return error(9001, "sql.ast.existsExpression: query must be SELECT") end if
   return ExistsExpression(EXPR_EXISTS, query)
 end function
 
+// Implements in subquery expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function inSubqueryExpression(operand, query, negated)
   if not isExpression(operand) or query is not SelectStatement or typeof(negated) != "bool" then return error(9001, "sql.ast.inSubqueryExpression: invalid IN subquery") end if
   return InSubqueryExpression(EXPR_IN_SUBQUERY, operand, query, negated)
 end function
 
+// Implements window expression for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function windowExpression(name, arguments, partitionBy, orderBy)
   if typeof(name) != "string" or len(name) == 0 or typeof(arguments) != "array" or typeof(partitionBy) != "array" or typeof(orderBy) != "array" then return error(9001, "sql.ast.windowExpression: invalid window expression") end if
   return WindowExpression(EXPR_WINDOW, name, arguments, partitionBy, orderBy)
 end function
 
+// Returns whether the supplied value satisfies the column expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isColumnExpression(value)
   return value is ColumnExpression
 end function
 
+// Returns whether the supplied value satisfies the star expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isStarExpression(value)
   return value is StarExpression
 end function
 
+// Returns whether the supplied value satisfies the unary expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isUnaryExpression(value)
   return value is UnaryExpression
 end function
 
+// Returns whether the supplied value satisfies the binary expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBinaryExpression(value)
   return value is BinaryExpression
 end function
 
+// Returns whether the supplied value satisfies the is null expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isIsNullExpression(value)
   return value is IsNullExpression
 end function
 
+// Returns whether the supplied value satisfies the function expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isFunctionExpression(value)
   return value is FunctionExpression
 end function
 
+// Returns whether the supplied value satisfies the parameter expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isParameterExpression(value)
   return value is ParameterExpression
 end function
 
+// Returns whether the supplied value satisfies the case expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCaseExpression(value)
   return value is CaseExpression
 end function
 
+// Returns whether the supplied value satisfies the cast expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCastExpression(value)
   return value is CastExpression
 end function
 
+// Returns whether the supplied value satisfies the in expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isInExpression(value)
   return value is InExpression
 end function
 
+// Returns whether the supplied value satisfies the between expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBetweenExpression(value)
   return value is BetweenExpression
 end function
 
+// Returns whether the supplied value satisfies the truth test expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isTruthTestExpression(value)
   return value is TruthTestExpression
 end function
 
+// Returns whether the supplied value satisfies the typed literal expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isTypedLiteralExpression(value)
   return value is TypedLiteralExpression
 end function
 
+// Returns whether the supplied value satisfies the subquery expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSubqueryExpression(value)
   return value is SubqueryExpression
 end function
 
+// Returns whether the supplied value satisfies the exists expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isExistsExpression(value)
   return value is ExistsExpression
 end function
 
+// Returns whether the supplied value satisfies the in subquery expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isInSubqueryExpression(value)
   return value is InSubqueryExpression
 end function
 
+// Returns whether the supplied value satisfies the window expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isWindowExpression(value)
   return value is WindowExpression
 end function
 
+// Returns whether the supplied value satisfies the literal expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isLiteralExpression(value)
   return value is LiteralExpression
 end function
 
+// Returns whether the supplied value satisfies the type name condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isTypeName(value)
   return value is TypeName
 end function
 
+// Returns whether the supplied value satisfies the expression condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isExpression(value)
   return value is LiteralExpression or value is ColumnExpression or value is StarExpression or value is UnaryExpression or value is BinaryExpression or value is IsNullExpression or value is FunctionExpression or value is ParameterExpression or value is CaseExpression or value is CastExpression or value is InExpression or value is BetweenExpression or value is TruthTestExpression or value is TypedLiteralExpression or value is SubqueryExpression or value is ExistsExpression or value is InSubqueryExpression or value is WindowExpression
 end function
 
+// Returns whether the supplied value satisfies the create table statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreateTableStatement(value)
   return value is CreateTableStatement
 end function
 
+// Returns whether the supplied value satisfies the create index statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreateIndexStatement(value)
   return value is CreateIndexStatement
 end function
 
+// Returns whether the supplied value satisfies the drop table statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDropTableStatement(value)
   return value is DropTableStatement
 end function
 
+// Returns whether the supplied value satisfies the create view statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreateViewStatement(value)
   return value is CreateViewStatement
 end function
 
+// Returns whether the supplied value satisfies the drop view statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDropViewStatement(value)
   return value is DropViewStatement
 end function
 
+// Returns whether the supplied value satisfies the create sequence statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreateSequenceStatement(value)
   return value is CreateSequenceStatement
 end function
 
+// Returns whether the supplied value satisfies the drop sequence statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDropSequenceStatement(value)
   return value is DropSequenceStatement
 end function
 
+// Returns whether the supplied value satisfies the create trigger statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreateTriggerStatement(value)
   return value is CreateTriggerStatement
 end function
 
+// Returns whether the supplied value satisfies the drop trigger statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDropTriggerStatement(value)
   return value is DropTriggerStatement
 end function
 
+// Returns whether the supplied value satisfies the alter table statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isAlterTableStatement(value)
   return value is AlterTableStatement
 end function
 
+// Returns whether the supplied value satisfies the insert statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isInsertStatement(value)
   return value is InsertStatement
 end function
 
+// Returns whether the supplied value satisfies the update statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isUpdateStatement(value)
   return value is UpdateStatement
 end function
 
+// Returns whether the supplied value satisfies the delete statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDeleteStatement(value)
   return value is DeleteStatement
 end function
 
+// Returns whether the supplied value satisfies the truncate statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isTruncateStatement(value)
   return value is TruncateStatement
 end function
 
+// Returns whether the supplied value satisfies the select statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSelectStatement(value)
   return value is SelectStatement
 end function
 
+// Returns whether the supplied value satisfies the begin statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBeginStatement(value)
   return value is BeginStatement
 end function
 
+// Returns whether the supplied value satisfies the commit statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCommitStatement(value)
   return value is CommitStatement
 end function
 
+// Returns whether the supplied value satisfies the rollback statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isRollbackStatement(value)
   return value is RollbackStatement
 end function
 
+// Returns whether the supplied value satisfies the savepoint statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSavepointStatement(value)
   return value is SavepointStatement
 end function
 
+// Returns whether the supplied value satisfies the rollback to statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isRollbackToStatement(value)
   return value is RollbackToStatement
 end function
 
+// Returns whether the supplied value satisfies the release savepoint statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isReleaseSavepointStatement(value)
   return value is ReleaseSavepointStatement
 end function
 
+// Returns whether the supplied value satisfies the create principal statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isCreatePrincipalStatement(value)
   return value is CreatePrincipalStatement
 end function
 
+// Returns whether the supplied value satisfies the alter user statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isAlterUserStatement(value)
   return value is AlterUserStatement
 end function
 
+// Returns whether the supplied value satisfies the drop principal statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDropPrincipalStatement(value)
   return value is DropPrincipalStatement
 end function
 
+// Returns whether the supplied value satisfies the grant role statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isGrantRoleStatement(value)
   return value is GrantRoleStatement
 end function
 
+// Returns whether the supplied value satisfies the revoke role statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isRevokeRoleStatement(value)
   return value is RevokeRoleStatement
 end function
 
+// Returns whether the supplied value satisfies the grant privilege statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isGrantPrivilegeStatement(value)
   return value is GrantPrivilegeStatement
 end function
 
+// Returns whether the supplied value satisfies the revoke privilege statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isRevokePrivilegeStatement(value)
   return value is RevokePrivilegeStatement
 end function
 
+// Returns whether the supplied value satisfies the dcl statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDclStatement(value)
   return value is CreatePrincipalStatement or value is AlterUserStatement or value is DropPrincipalStatement or value is GrantRoleStatement or value is RevokeRoleStatement or value is GrantPrivilegeStatement or value is RevokePrivilegeStatement
 end function
 
+// Returns whether the supplied value satisfies the analyze statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isAnalyzeStatement(value)
   return value is AnalyzeStatement
 end function
 
+// Returns whether the supplied value satisfies the explain statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isExplainStatement(value)
   return value is ExplainStatement
 end function
 
+// Returns whether the supplied value satisfies the prepare statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isPrepareStatement(value)
   return value is PrepareStatement
 end function
 
+// Returns whether the supplied value satisfies the execute prepared statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isExecutePreparedStatement(value)
   return value is ExecutePreparedStatement
 end function
 
+// Returns whether the supplied value satisfies the deallocate statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDeallocateStatement(value)
   return value is DeallocateStatement
 end function
 
+// Returns whether the supplied value satisfies the vacuum statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isVacuumStatement(value)
   return value is VacuumStatement
 end function
 
+// Returns whether the supplied value satisfies the reindex statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isReindexStatement(value)
   return value is ReindexStatement
 end function
 
+// Returns whether the supplied value satisfies the show tables statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isShowTablesStatement(value)
   return value is ShowTablesStatement
 end function
 
+// Returns whether the supplied value satisfies the describe table statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDescribeTableStatement(value)
   return value is DescribeTableStatement
 end function
 
+// Returns whether the supplied value satisfies the show indexes statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isShowIndexesStatement(value)
   return value is ShowIndexesStatement
 end function
 
+// Returns whether the supplied value satisfies the metadata statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isMetadataStatement(value)
   return value is ShowTablesStatement or value is DescribeTableStatement or value is ShowIndexesStatement
 end function
 
+// Returns whether the supplied value satisfies the statement condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isStatement(value)
   return value is CreateTableStatement or value is CreateIndexStatement or value is DropTableStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
 end function
 
+// Implements expression kind for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function expressionKind(value)
   if not isExpression(value) then return 0 end if
   return value.kind
 end function
 
+// Implements quote string for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function quoteString(value)
   raw = bytes(value)
   output = "'"
@@ -881,6 +1457,10 @@ function quoteString(value)
   return output + "'"
 end function
 
+// Formats type name using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatTypeName(value)
   if value is not TypeName then return error(9001, "sql.ast.formatTypeName: value must be TypeName") end if
   output = value.name
@@ -893,6 +1473,9 @@ function formatTypeName(value)
   return output
 end function
 
+// Formats function using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatFunction(expression)
   output = expression.name + "("
   if expression.distinct then output = output + "DISTINCT " end if
@@ -905,6 +1488,10 @@ function formatFunction(expression)
   return output + ")"
 end function
 
+// Formats expression using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatExpression(expression)
   if expression is LiteralExpression then
     if expression.literalKind == LITERAL_NULL then return "NULL" end if
@@ -999,12 +1586,19 @@ function formatExpression(expression)
   return error(9001, "sql.ast.formatExpression: value is not an expression")
 end function
 
+// Formats select item using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatSelectItem(item)
   output = formatExpression(item.expression)
   if item.alias is not void then output = output + " AS " + item.alias end if
   return output
 end function
 
+// Formats order item using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatOrderItem(item)
   output = formatExpression(item.expression)
   if item.descending then output = output + " DESC" else output = output + " ASC" end if
@@ -1014,6 +1608,10 @@ function formatOrderItem(item)
   return output
 end function
 
+// Formats select using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatSelect(statement)
   if statement is not SelectStatement then return error(9001, "sql.ast.formatSelect: statement must be SELECT") end if
   output = ""
@@ -1077,6 +1675,10 @@ function formatSelect(statement)
   return output
 end function
 
+// Formats statement using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatStatement(statement)
   if statement is SelectStatement then return formatSelect(statement) end if
   if statement is InsertStatement then
@@ -1121,14 +1723,23 @@ function formatStatement(statement)
   return error(9001, "sql.ast.formatStatement: unsupported statement")
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.ast"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M12"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

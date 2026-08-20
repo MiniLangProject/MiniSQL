@@ -40,6 +40,18 @@ A contribution is ready for review when:
 
 ## Style
 
+- Retain the Apache-2.0 copyright/SPDX header in every MiniLang, Python and
+  PowerShell source file.
+- Keep `package ...` as physical line 1 in importable MiniLang modules and place
+  the license header immediately after it; the current compiler discovers
+  imported package identities before normal comment skipping. Executable
+  entry-point files without a package keep the header at the top.
+- Document every function, method, structure, enumeration and member in English.
+  Describe contracts, ownership, side effects, errors and invariants where they
+  matter; do not merely paraphrase individual statements.
+- Explain non-obvious algorithms at the decision or invariant they depend on,
+  especially storage layouts, recovery ordering, lock transitions, parser state,
+  query planning and concurrent ownership.
 - Keep MiniLang packages aligned with their paths.
 - Preserve the existing two-space MiniLang indentation.
 - Prefer explicit validation and structured MiniSQL errors over unchecked

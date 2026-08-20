@@ -1,12 +1,18 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
 import minisql.server.database_manager as database_manager
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   return executor.executeSql(engine, sqlText)[0]
 end function
 
+// Returns the first catalog row whose selected column renders to the requested text, or void when absent.
 function findRow(rows, columnIndex, textValue)
   if len(rows) == 0 then return -1 end if
   for index = 0 to len(rows) - 1
@@ -15,6 +21,7 @@ function findRow(rows, columnIndex, textValue)
   return -1
 end function
 
+// Runs the catalog introspection test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M34 catalog introspection tests: FAIL args"; return 2 end if
   state = testkit.create()

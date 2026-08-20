@@ -1,5 +1,9 @@
 package minisql.sql.binder
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
@@ -17,171 +21,295 @@ const BINDING_ERROR = 9020
 const CONSTRAINT_VIOLATION = 9021
 const UNSUPPORTED_SQL = 9025
 
+// Groups the bound source state and preserves the field relationships documented below.
 struct BoundSource
+  // Stores the table associated with this value.
   table
+  // Stores the alias associated with this value.
   alias
+  // Tracks the offset numeric value.
   offset
+  // Stores the query associated with this value.
   query
 end struct
 
+// Groups the bound named query state and preserves the field relationships documented below.
 struct BoundNamedQuery
+  // Stores the name associated with this value.
   name
+  // Stores the query associated with this value.
   query
+  // Stores the table associated with this value.
   table
 end struct
 
+// Groups the bound join state and preserves the field relationships documented below.
 struct BoundJoin
+  // Stores the join type associated with this value.
   joinType
+  // Stores the source associated with this value.
   source
+  // Stores the condition associated with this value.
   condition
+  // Stores the left types associated with this value.
   leftTypes
 end struct
 
+// Groups the bound set operation state and preserves the field relationships documented below.
 struct BoundSetOperation
+  // Stores the operator associated with this value.
   operator
+  // Stores the all associated with this value.
   all
+  // Stores the query associated with this value.
   query
 end struct
 
+// Groups the bound select state and preserves the field relationships documented below.
 struct BoundSelect
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
+  // Contains the ordered sources collection.
   sources
+  // Contains the ordered joins collection.
   joins
+  // Tracks the items numeric value.
   items
+  // Stores the item names associated with this value.
   itemNames
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the group expressions associated with this value.
   groupExpressions
+  // Stores the having expression associated with this value.
   havingExpression
+  // Contains the ordered order expressions collection.
   orderExpressions
+  // Stores the set operations associated with this value.
   setOperations
+  // Stores the aggregate query associated with this value.
   aggregateQuery
+  // Stores the window query associated with this value.
   windowQuery
 end struct
 
+// Groups the bound returning item state and preserves the field relationships documented below.
 struct BoundReturningItem
+  // Stores the expression associated with this value.
   expression
+  // Stores the name associated with this value.
   name
 end struct
 
+// Groups the bound insert state and preserves the field relationships documented below.
 struct BoundInsert
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
+  // Stores the column indexes associated with this value.
   columnIndexes
+  // Contains the ordered rows collection.
   rows
+  // Stores the source query associated with this value.
   sourceQuery
+  // Stores the conflict constraint associated with this value.
   conflictConstraint
+  // Stores the conflict assignments associated with this value.
   conflictAssignments
+  // Stores the conflict where associated with this value.
   conflictWhere
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the bound assignment state and preserves the field relationships documented below.
 struct BoundAssignment
+  // Tracks the column index numeric value.
   columnIndex
+  // Stores the expression associated with this value.
   expression
 end struct
 
+// Groups the bound update state and preserves the field relationships documented below.
 struct BoundUpdate
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
+  // Contains the ordered assignments collection.
   assignments
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the bound delete state and preserves the field relationships documented below.
 struct BoundDelete
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
+  // Stores the where expression associated with this value.
   whereExpression
+  // Stores the returning associated with this value.
   returning
 end struct
 
+// Groups the bound truncate state and preserves the field relationships documented below.
 struct BoundTruncate
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
 end struct
 
+// Groups the bound create table state and preserves the field relationships documented below.
 struct BoundCreateTable
+  // Stores the statement associated with this value.
   statement
+  // Stores the column types associated with this value.
   columnTypes
 end struct
 
+// Groups the bound create index state and preserves the field relationships documented below.
 struct BoundCreateIndex
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
 end struct
 
+// Groups the bound drop table state and preserves the field relationships documented below.
 struct BoundDropTable
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
 end struct
 
+// Groups the bound alter table state and preserves the field relationships documented below.
 struct BoundAlterTable
+  // Stores the statement associated with this value.
   statement
+  // Stores the table associated with this value.
   table
+  // Stores the column type associated with this value.
   columnType
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "sql.binder." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the bound source condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundSource(value)
   return value is BoundSource
 end function
 
+// Returns whether the supplied value satisfies the bound named query condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundNamedQuery(value)
   return value is BoundNamedQuery
 end function
 
+// Returns whether the supplied value satisfies the bound join condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundJoin(value)
   return value is BoundJoin
 end function
 
+// Returns whether the supplied value satisfies the bound set operation condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundSetOperation(value)
   return value is BoundSetOperation
 end function
 
+// Returns whether the supplied value satisfies the bound select condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundSelect(value)
   return value is BoundSelect
 end function
 
+// Returns whether the supplied value satisfies the bound returning item condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundReturningItem(value)
   return value is BoundReturningItem
 end function
 
+// Returns whether the supplied value satisfies the bound insert condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundInsert(value)
   return value is BoundInsert
 end function
 
+// Returns whether the supplied value satisfies the bound update condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundUpdate(value)
   return value is BoundUpdate
 end function
 
+// Returns whether the supplied value satisfies the bound delete condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundDelete(value)
   return value is BoundDelete
 end function
 
+// Returns whether the supplied value satisfies the bound truncate condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundTruncate(value)
   return value is BoundTruncate
 end function
 
+// Returns whether the supplied value satisfies the bound create table condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundCreateTable(value)
   return value is BoundCreateTable
 end function
 
+// Returns whether the supplied value satisfies the bound create index condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundCreateIndex(value)
   return value is BoundCreateIndex
 end function
 
+// Returns whether the supplied value satisfies the bound drop table condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundDropTable(value)
   return value is BoundDropTable
 end function
 
+// Returns whether the supplied value satisfies the bound alter table condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isBoundAlterTable(value)
   return value is BoundAlterTable
 end function
 
+// Finds column index using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findColumnIndex(table, name)
   if table is void then return -1 end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "findColumnIndex", "table must be TableMetadata") end if
@@ -194,12 +322,18 @@ function findColumnIndex(table, name)
   return -1
 end function
 
+// Finds column using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findColumn(table, name)
   index = findColumnIndex(table, name)
   if index < 0 then return void end if
   return table.columns[index]
 end function
 
+// Implements literal type for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function literalType(value)
   nullable = value.isNull
   if value.typeKind == types.SqlTypeKind.Unknown then return types.create(types.SqlTypeKind.Integer, 0, 0, 0, true) end if
@@ -207,6 +341,9 @@ function literalType(value)
   return types.create(value.typeKind, 0, 0, 0, nullable)
 end function
 
+// Binds literal using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindLiteral(expression)
   if expression.literalKind == ast.LITERAL_CURRENT_TIMESTAMP then
     typeInfo = types.create(types.SqlTypeKind.Timestamp, 0, 6, 0, false)
@@ -216,11 +353,18 @@ function bindLiteral(expression)
   return expressions.literal(value, literalType(value))
 end function
 
+// Implements source visible name for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sourceVisibleName(source)
   if source.alias is not void then return source.alias end if
   return source.table.name
 end function
 
+// Implements source width for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sourceWidth(sources)
   width = 0
   for each source in sources
@@ -229,6 +373,10 @@ function sourceWidth(sources)
   return width
 end function
 
+// Appends source using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendSource(sources, table, alias)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "appendSource", "table must be TableMetadata") end if
   visible = table.name
@@ -239,6 +387,10 @@ function appendSource(sources, table, alias)
   return sources + [BoundSource(table, alias, sourceWidth(sources), void)]
 end function
 
+// Implements named query index for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function namedQueryIndex(availableQueries, name)
   if typeof(availableQueries) != "array" or typeof(name) != "string" then return -1 end if
   if len(availableQueries) > 0 then
@@ -249,6 +401,9 @@ function namedQueryIndex(availableQueries, name)
   return -1
 end function
 
+// Implements names contain for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function namesContain(names, value)
   for each name in names
     if name == value then return true end if
@@ -256,6 +411,10 @@ function namesContain(names, value)
   return false
 end function
 
+// Implements table for query for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function tableForQuery(name, bound, explicitNames)
   if typeof(name) != "string" or not isBoundSelect(bound) or typeof(explicitNames) != "array" then return fail(INVALID_ARGUMENT, "tableForQuery", "invalid query source") end if
   if len(explicitNames) > 0 and len(explicitNames) != len(bound.items) then return fail(BINDING_ERROR, "tableForQuery", "query column alias count mismatch for " + name) end if
@@ -275,6 +434,10 @@ function tableForQuery(name, bound, explicitNames)
   return metadata.createTable(0, name, 1, columns)
 end function
 
+// Appends named source using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendNamedSource(sources, named, alias)
   if not isBoundNamedQuery(named) then return fail(INVALID_ARGUMENT, "appendNamedSource", "named must be BoundNamedQuery") end if
   visible = named.name
@@ -285,12 +448,18 @@ function appendNamedSource(sources, named, alias)
   return sources + [BoundSource(named.table, alias, sourceWidth(sources), named.query)]
 end function
 
+// Parses single select using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function parseSingleSelect(sqlText, operation)
   statements = parser.parseSql(sqlText)
   if len(statements) != 1 or not ast.isSelectStatement(statements[0]) then return fail(BINDING_ERROR, operation, "stored view SQL must contain exactly one SELECT") end if
   return statements[0]
 end function
 
+// Implements resolve named query for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function resolveNamedQuery(database, name, availableQueries, viewStack)
   index = namedQueryIndex(availableQueries, name)
   if index >= 0 then return availableQueries[index] end if
@@ -303,6 +472,10 @@ function resolveNamedQuery(database, name, availableQueries, viewStack)
   return BoundNamedQuery(name, bound, tableForQuery(name, bound, view.columnNames))
 end function
 
+// Appends resolved source using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendResolvedSource(sources, database, name, alias, availableQueries, viewStack)
   table = catalog.findTable(database, name)
   if table is not void then return appendSource(sources, table, alias) end if
@@ -311,6 +484,10 @@ function appendResolvedSource(sources, database, name, alias, availableQueries, 
   return appendNamedSource(sources, named, alias)
 end function
 
+// Finds bound column using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findBoundColumn(sources, expression)
   if typeof(sources) != "array" or not ast.isColumnExpression(expression) then return fail(INVALID_ARGUMENT, "findBoundColumn", "invalid arguments") end if
   matchSource = void
@@ -336,29 +513,48 @@ function findBoundColumn(sources, expression)
   return [matchSource.offset + matchIndex, matchSource.table.columns[matchIndex]]
 end function
 
+// Binds column sources using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindColumnSources(expression, sources)
   located = findBoundColumn(sources, expression)
   return expressions.column(located[0], types.fromColumn(located[1]))
 end function
 
+// Ensures boolean using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function ensureBoolean(expression, operation)
   if not expressions.isBoundExpression(expression) then return fail(INVALID_ARGUMENT, operation, "expression must be bound") end if
   if expression.typeInfo.kind != types.SqlTypeKind.Boolean then return fail(TYPE_MISMATCH, operation, "expression must be BOOLEAN") end if
   return expression
 end function
 
+// Returns whether the supplied value satisfies the null bound literal condition.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isNullBoundLiteral(expression)
   return expressions.isBoundLiteral(expression) and expression.literal is not void and expression.literal.isNull
 end function
 
+// Returns whether the supplied value satisfies the aggregate name condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isAggregateName(name)
   return name == "COUNT" or name == "SUM" or name == "AVG" or name == "MIN" or name == "MAX"
 end function
 
+// Implements result type with nullability for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function resultTypeWithNullability(typeInfo, nullable)
   return types.create(typeInfo.kind, typeInfo.length, typeInfo.precision, typeInfo.scale, nullable)
 end function
 
+// Implements merge concrete types for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function mergeConcreteTypes(left, right)
   if types.isNumeric(left) and types.isNumeric(right) then return types.commonNumeric(left, right) end if
   if types.isTextKind(left.kind) and types.isTextKind(right.kind) then return types.create(types.SqlTypeKind.Text, 0, 0, 0, left.nullable or right.nullable) end if
@@ -375,6 +571,10 @@ function mergeConcreteTypes(left, right)
   return fail(TYPE_MISMATCH, "mergeConcreteTypes", "CASE/COALESCE result types are incompatible")
 end function
 
+// Implements merge result type for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function mergeResultType(currentType, hasConcrete, nextExpression)
   if isNullBoundLiteral(nextExpression) then
     if currentType is void then currentType = types.create(types.SqlTypeKind.Integer, 0, 0, 0, true) else currentType = resultTypeWithNullability(currentType, true) end if
@@ -388,6 +588,9 @@ function mergeResultType(currentType, hasConcrete, nextExpression)
   return [mergeConcreteTypes(currentType, nextExpression.typeInfo), true]
 end function
 
+// Binds scalar function using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindScalarFunction(expression, sources, allowAggregates)
   name = expression.name
   if name == "COALESCE" then
@@ -420,6 +623,9 @@ function bindScalarFunction(expression, sources, allowAggregates)
   return fail(BINDING_ERROR, "bindScalarFunction", "unsupported scalar function " + name)
 end function
 
+// Binds aggregate using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindAggregate(expression, sources)
   name = expression.name
   if name != "COUNT" and name != "SUM" and name != "AVG" and name != "MIN" and name != "MAX" then return fail(BINDING_ERROR, "bindAggregate", "unsupported aggregate " + name) end if
@@ -446,6 +652,10 @@ function bindAggregate(expression, sources)
   return expressions.aggregate(name, argument, expression.distinct, resultType, false)
 end function
 
+// Binds expression internal using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindExpressionInternal(expression, sources, allowAggregates)
   if ast.isTypedLiteralExpression(expression) then return expressions.literal(expression.value, literalType(expression.value)) end if
   if ast.isLiteralExpression(expression) then return bindLiteral(expression) end if
@@ -592,22 +802,36 @@ function bindExpressionInternal(expression, sources, allowAggregates)
   return fail(INVALID_ARGUMENT, "bindExpression", "value is not an AST expression")
 end function
 
+// Binds expression using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindExpression(expression, table, alias)
   sources = []
   if table is not void then sources = appendSource(sources, table, alias) end if
   return bindExpressionInternal(expression, sources, false)
 end function
 
+// Binds where using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindWhere(expression, table, alias)
   if expression is void then return void end if
   return ensureBoolean(bindExpression(expression, table, alias), "bindWhere")
 end function
 
+// Binds where sources using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindWhereSources(expression, sources, operation)
   if expression is void then return void end if
   return ensureBoolean(bindExpressionInternal(expression, sources, false), operation)
 end function
 
+// Implements grouped expression safe for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function groupedExpressionSafe(expression, groups)
   for each group in groups
     if expressions.sameBinding(expression, group) then return true end if
@@ -646,11 +870,17 @@ function groupedExpressionSafe(expression, groups)
   return false
 end function
 
+// Implements window top level safe for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function windowTopLevelSafe(expression)
   if expressions.isBoundWindow(expression) then return true end if
   return not expressions.containsWindow(expression)
 end function
 
+// Returns whether the supplied value satisfies the aggregate list condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function containsAggregateList(items)
   for each item in items
     if expressions.containsAggregate(item) then return true end if
@@ -659,6 +889,9 @@ function containsAggregateList(items)
 end function
 
 
+// Implements bound item index for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function boundItemIndex(items, expression)
   if len(items) == 0 then return -1 end if
   for index = 0 to len(items) - 1
@@ -667,6 +900,9 @@ function boundItemIndex(items, expression)
   return -1
 end function
 
+// Implements source types for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sourceTypes(sources)
   output = []
   for each source in sources
@@ -677,6 +913,10 @@ function sourceTypes(sources)
   return output
 end function
 
+// Binds select internal using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function bindSelectInternal(statement, database, inheritedQueries, viewStack)
   availableQueries = []
   for each inherited in inheritedQueries
@@ -807,10 +1047,17 @@ function bindSelectInternal(statement, database, inheritedQueries, viewStack)
   return preliminary
 end function
 
+// Binds select using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindSelect(statement, database)
   return bindSelectInternal(statement, database, [], [])
 end function
 
+// Binds returning using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindReturning(items, table)
   if typeof(items) != "array" or not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "bindReturning", "invalid arguments") end if
   output = []
@@ -837,6 +1084,10 @@ function bindReturning(items, table)
   return output
 end function
 
+// Implements same name array for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sameNameArray(left, right)
   if typeof(left) != "array" or typeof(right) != "array" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -846,6 +1097,10 @@ function sameNameArray(left, right)
   return true
 end function
 
+// Implements conflict constraint for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function conflictConstraint(database, table, target)
   if typeof(target) != "array" then return fail(INVALID_ARGUMENT, "conflictConstraint", "target must be array") end if
   if len(target) == 0 then return void end if
@@ -867,6 +1122,10 @@ function conflictConstraint(database, table, target)
   return fail(BINDING_ERROR, "conflictConstraint", "conflict target does not match a PRIMARY KEY or UNIQUE constraint")
 end function
 
+// Rewrites conflict expression using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rewriteConflictExpression(expression, targetName)
   if ast.isLiteralExpression(expression) or ast.isParameterExpression(expression) or ast.isStarExpression(expression) then return expression end if
   if ast.isColumnExpression(expression) then
@@ -906,6 +1165,9 @@ function rewriteConflictExpression(expression, targetName)
   return fail(BINDING_ERROR, "rewriteConflictExpression", "unsupported conflict expression")
 end function
 
+// Implements conflict binding sources for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function conflictBindingSources(table)
   // The synthetic EXCLUDED source must not retain the target table name.
   // findBoundColumn intentionally accepts both a visible alias and the base
@@ -916,10 +1178,16 @@ function conflictBindingSources(table)
   return appendSource(sources, excludedTable, "excluded")
 end function
 
+// Binds conflict expression using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindConflictExpression(expression, table, sources)
   return bindExpressionInternal(rewriteConflictExpression(expression, table.name), sources, false)
 end function
 
+// Binds conflict assignments using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindConflictAssignments(statement, table, sources)
   output = []
   indexes = []
@@ -938,6 +1206,9 @@ function bindConflictAssignments(statement, table, sources)
   return output
 end function
 
+// Implements resolve insert columns for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function resolveInsertColumns(statement, table)
   indexes = []
   if len(statement.columns) == 0 then
@@ -959,6 +1230,10 @@ function resolveInsertColumns(statement, table)
   return indexes
 end function
 
+// Implements decimal literal text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decimalLiteralText(expression)
   if ast.isLiteralExpression(expression) then
     if expression.literalKind == ast.LITERAL_INTEGER or expression.literalKind == ast.LITERAL_FLOAT then
@@ -974,6 +1249,10 @@ function decimalLiteralText(expression)
   return void
 end function
 
+// Binds insert value using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindInsertValue(expression, targetType)
   if not types.isSqlType(targetType) then return fail(INVALID_ARGUMENT, "bindInsertValue", "targetType must be SqlType") end if
   literalText = decimalLiteralText(expression)
@@ -991,6 +1270,10 @@ function bindInsertValue(expression, targetType)
   return bindExpression(expression, void, void)
 end function
 
+// Binds insert using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindInsert(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindInsert", "table not found: " + statement.tableName) end if
@@ -1041,6 +1324,9 @@ function bindInsert(statement, database)
   return BoundInsert(statement, table, indexes, rows, sourceQuery, selectedConstraint, conflictAssignments, conflictWhere, bindReturning(statement.returning, table))
 end function
 
+// Binds update using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindUpdate(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindUpdate", "table not found: " + statement.tableName) end if
@@ -1061,12 +1347,19 @@ function bindUpdate(statement, database)
   return BoundUpdate(statement, table, assignments, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table))
 end function
 
+// Binds delete using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindDelete(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindDelete", "table not found: " + statement.tableName) end if
   return BoundDelete(statement, table, bindWhere(statement.whereExpression, table, void), bindReturning(statement.returning, table))
 end function
 
+// Binds truncate using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindTruncate(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindTruncate", "table not found: " + statement.tableName) end if
@@ -1074,6 +1367,10 @@ function bindTruncate(statement, database)
   return BoundTruncate(statement, table)
 end function
 
+// Binds create table using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindCreateTable(statement, database)
   existing = catalog.findTable(database, statement.name)
   if existing is not void and not statement.ifNotExists then return fail(BINDING_ERROR, "bindCreateTable", "table already exists: " + statement.name) end if
@@ -1128,6 +1425,9 @@ function bindCreateTable(statement, database)
   return BoundCreateTable(statement, columnTypes)
 end function
 
+// Binds create index using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindCreateIndex(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "table not found: " + statement.tableName) end if
@@ -1137,12 +1437,18 @@ function bindCreateIndex(statement, database)
   return BoundCreateIndex(statement, table)
 end function
 
+// Binds drop table using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindDropTable(statement, database)
   table = catalog.findTable(database, statement.name)
   if table is void and not statement.ifExists then return fail(OBJECT_NOT_FOUND, "bindDropTable", "table not found: " + statement.name) end if
   return BoundDropTable(statement, table)
 end function
 
+// Implements constant schema expression for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function constantSchemaExpression(expression)
   if ast.isLiteralExpression(expression) then return expression.literalKind != ast.LITERAL_CURRENT_TIMESTAMP end if
   if ast.isUnaryExpression(expression) then return constantSchemaExpression(expression.operand) end if
@@ -1174,6 +1480,10 @@ function constantSchemaExpression(expression)
   return false
 end function
 
+// Binds alter table using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindAlterTable(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindAlterTable", "table not found: " + statement.tableName) end if
@@ -1228,6 +1538,9 @@ function bindAlterTable(statement, database)
   return BoundAlterTable(statement, table, columnType)
 end function
 
+// Binds statement using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function bindStatement(statement, database)
   if ast.isSelectStatement(statement) then return bindSelect(statement, database) end if
   if ast.isInsertStatement(statement) then return bindInsert(statement, database) end if
@@ -1241,14 +1554,23 @@ function bindStatement(statement, database)
   return fail(BINDING_ERROR, "bindStatement", "statement does not require or support binding")
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.binder"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M13"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

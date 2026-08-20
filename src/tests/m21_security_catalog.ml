@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.common.uuid as uuid
@@ -7,6 +11,7 @@ import minisql.server.database_manager as database_manager
 import minisql.storage.paged_file as paged_file
 import tests.support.testkit as testkit
 
+// Performs an exact linear membership check over the supplied values.
 function contains(values, wanted)
   for each value in values
     if value == wanted then return true end if
@@ -14,6 +19,7 @@ function contains(values, wanted)
   return false
 end function
 
+// Flips one byte at the requested file offset and flushes it to construct a deterministic on-disk corruption fixture.
 function corruptByte(path, offset)
   handle = file_api.openReadWrite(path, false)
   data = bytes(1, 0)
@@ -25,6 +31,7 @@ function corruptByte(path, offset)
   return true
 end function
 
+// Runs the security catalog test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M21 security catalog tests: FAIL (missing data root)"

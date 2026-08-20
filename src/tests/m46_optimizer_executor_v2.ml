@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.client.console as console
 import minisql.common.endian as endian
 import minisql.config.model as config_model
@@ -5,10 +9,12 @@ import minisql.executor.executor as executor
 import minisql.server.database_manager as database_manager
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   return executor.executeSql(engine, sqlText)[0]
 end function
 
+// Scans an EXPLAIN result for a row whose text begins with the requested physical-plan prefix.
 function planContains(result, prefix)
   for each row in result.rows
     if console.startsWithText(console.trimAscii(row[0].value), prefix) then return true end if
@@ -16,6 +22,7 @@ function planContains(result, prefix)
   return false
 end function
 
+// Runs the optimizer executor v2 test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M46 optimizer executor v2: FAIL args"; return 2 end if
   state = testkit.create()

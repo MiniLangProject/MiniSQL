@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
 import minisql.platform.file as file_api
@@ -7,11 +11,13 @@ import minisql.tools.check as checker
 import minisql.tools.migrate as migrate
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Flips and flushes the first byte of a file to exercise format and integrity rejection paths.
 function corruptFirstByte(path)
   handle = file_api.openReadWrite(path, false)
   value = bytes(1, 0)
@@ -23,6 +29,7 @@ function corruptFirstByte(path)
   return true
 end function
 
+// Runs the tools test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M20 maintenance tool tests: FAIL (missing data root)"

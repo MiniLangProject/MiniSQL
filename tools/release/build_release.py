@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Build and verify the deterministic MiniSQL 1.0.0 binary distribution."""
 from __future__ import annotations
 
@@ -25,25 +40,30 @@ REQUIRED_BINARIES = (
 
 
 class ReleaseError(RuntimeError):
+    """Signals that release construction or verification violated the frozen contract."""
     pass
 
 
 def sha256(data: bytes) -> str:
+    """Returns the lowercase SHA-256 digest for the supplied bytes."""
     return hashlib.sha256(data).hexdigest()
 
 
 def read(path: Path) -> bytes:
+    """Reads one required release input as bytes and rejects missing files."""
     if not path.is_file() or path.stat().st_size == 0:
         raise ReleaseError(f"required non-empty release input is missing: {path}")
     return path.read_bytes()
 
 
 def source_files(project: Path, bin_dir: Path) -> dict[str, bytes]:
+    """Collects the normalized, allow-listed files included in a binary release archive."""
     files: dict[str, bytes] = {}
     for name in REQUIRED_BINARIES:
         files[f"bin/{name}"] = read(bin_dir / name)
     mapping = {
         "README.md": project / "docs/release/README.md",
+        "LICENSE": project / "LICENSE",
         "NOTICE.md": project / "NOTICE.md",
         "CHANGELOG.md": project / "CHANGELOG.md",
         "config/minisql.example.json": project / "config/minisql.example.json",
@@ -67,6 +87,7 @@ def source_files(project: Path, bin_dir: Path) -> dict[str, bytes]:
 
 
 def manifest(files: dict[str, bytes]) -> dict[str, object]:
+    """Builds the deterministic release manifest with size and digest metadata for every file."""
     return {
         "manifestVersion": 1,
         "product": "MiniSQL",
@@ -84,11 +105,13 @@ def manifest(files: dict[str, bytes]) -> dict[str, object]:
 
 
 def checksums(files: dict[str, bytes]) -> bytes:
+    """Builds the sorted SHA-256 sidecar content for archived files."""
     lines = [f"{sha256(data)}  {path}" for path, data in sorted(files.items())]
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
 def zip_info(name: str, executable: bool = False) -> zipfile.ZipInfo:
+    """Constructs reproducible ZIP metadata with a fixed timestamp and stable permissions."""
     info = zipfile.ZipInfo(f"{ROOT_NAME}/{name}", FIXED_TIME)
     info.create_system = 3
     mode = 0o755 if executable else 0o644
@@ -98,6 +121,7 @@ def zip_info(name: str, executable: bool = False) -> zipfile.ZipInfo:
 
 
 def build(project: Path, bin_dir: Path, output: Path) -> None:
+    """Creates a deterministic release archive and verifies it before publishing its checksum."""
     files = source_files(project, bin_dir)
     manifest_bytes = (json.dumps(manifest(files), indent=2, sort_keys=True) + "\n").encode("utf-8")
     files["release-manifest.json"] = manifest_bytes
@@ -118,6 +142,7 @@ def build(project: Path, bin_dir: Path, output: Path) -> None:
 
 
 def safe_member(name: str) -> PurePosixPath:
+    """Validates an archive member as a relative traversal-free POSIX path."""
     path = PurePosixPath(name)
     if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != ROOT_NAME:
         raise ReleaseError(f"unsafe release member: {name}")
@@ -125,6 +150,7 @@ def safe_member(name: str) -> PurePosixPath:
 
 
 def verify(output: Path) -> None:
+    """Verifies release layout, hashes, metadata, executables and reproducible ordering."""
     if not output.is_file():
         raise ReleaseError(f"release archive is missing: {output}")
     with zipfile.ZipFile(output, "r") as archive:
@@ -168,6 +194,7 @@ def verify(output: Path) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
+    """Builds the command-line parser and all supported role-specific subcommands."""
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="mode", required=True)
     build_parser = sub.add_parser("build")
@@ -180,6 +207,7 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parser().parse_args(argv)
     try:
         if args.mode == "build":

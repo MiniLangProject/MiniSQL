@@ -1,5 +1,9 @@
 package minisql.planner.optimizer
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 
 import minisql.catalog.statistics as statistics
@@ -16,15 +20,25 @@ import minisql.sql.binder as binder
 
 const INVALID_ARGUMENT = 9001
 
+// Groups the optimized plan state and preserves the field relationships documented below.
 struct OptimizedPlan
+  // Stores the root associated with this value.
   root
+  // Stores the used statistics associated with this value.
   usedStatistics
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "planner.optimizer." + operation + ": " + message)
 end function
 
+// Implements integer divide for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function integerDivide(numerator, denominator)
   if typeof(numerator) != "int" or typeof(denominator) != "int" or numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
   quotient = 0
@@ -43,16 +57,26 @@ function integerDivide(numerator, denominator)
   return quotient
 end function
 
+// Returns whether the supplied value satisfies the optimized plan condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isOptimizedPlan(value)
   return value is OptimizedPlan
 end function
 
+// Implements table stats for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function tableStats(state, tableId)
   if state is void then return void end if
   if not statistics.isStatisticsCatalog(state) then return fail(INVALID_ARGUMENT, "tableStats", "statistics must be catalog or void") end if
   return statistics.findTable(state, tableId)
 end function
 
+// Scans plan using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanPlan(source, state)
   found = tableStats(state, source.table.tableId)
   rows = 1000
@@ -69,6 +93,9 @@ function scanPlan(source, state)
   return [physical_plan.PhysicalPlan(estimate.algorithm, detail, estimate.rows, estimate.total, []), estimate, used]
 end function
 
+// Implements join rows for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function joinRows(leftRows, rightRows, joinType, condition)
   if joinType == ast.JOIN_CROSS then return leftRows * rightRows end if
   estimate = integerDivide(leftRows * rightRows, 10)
@@ -78,6 +105,9 @@ function joinRows(leftRows, rightRows, joinType, condition)
   return estimate
 end function
 
+// Implements join operator for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function joinOperator(joinType)
   if joinType == ast.JOIN_LEFT then return "Left Outer Join" end if
   if joinType == ast.JOIN_RIGHT then return "Right Outer Join" end if
@@ -86,6 +116,9 @@ function joinOperator(joinType)
   return "Inner Join"
 end function
 
+// Builds the scan/join spine and its cumulative deterministic cost estimate.
+// Equality INNER/LEFT joins compare hash and nested-loop costs; unsupported join
+// shapes retain the semantic nested-loop fallback. Returns plan, cost, and stats-use flag.
 function buildBase(bound, state)
   if len(bound.sources) == 0 then
     estimate = cost.estimate(0, 1, 1, "Values")
@@ -120,6 +153,10 @@ function buildBase(bound, state)
   return [root, currentCost, used]
 end function
 
+// Lowers a bound SELECT into a costed physical operator tree.
+// Operators are added in relational order; analyzed statistics replace defaults,
+// large sorts select external merge sort, and set-operation branches recurse.
+// Returns OptimizedPlan or a structured validation/dependency error.
 function optimize(bound, state)
   if not binder.isBoundSelect(bound) then return fail(INVALID_ARGUMENT, "optimize", "bound must be BoundSelect") end if
   built = buildBase(bound, state)
@@ -173,6 +210,9 @@ function optimize(bound, state)
   return OptimizedPlan(root, used)
 end function
 
+// Implements explain for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function explain(bound, state)
   optimized = optimize(bound, state)
   lines = physical_plan.render(optimized.root)
@@ -181,14 +221,23 @@ function explain(bound, state)
   return [prefix] + lines
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "planner.optimizer"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M17"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
 import minisql.platform.file as file_api
 import minisql.server.database_manager as database_manager
 import minisql.server.listener as listener
 
+// Runs the concurrent server worker lifecycle test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 5 then print "MiniSQL M27 concurrent server worker: FAIL args"; return 2 end if
   root = args[0]

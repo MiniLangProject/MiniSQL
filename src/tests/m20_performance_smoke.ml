@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
@@ -5,11 +9,13 @@ import minisql.platform.clock as clock
 import minisql.server.database_manager as database_manager
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Runs the performance smoke test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M20 deterministic workload tests: FAIL (missing data root)"

@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.protocol.codec as codec
 import minisql.protocol.constants as constants
@@ -6,6 +10,7 @@ import minisql.platform.network as network
 import tests.support.testkit as testkit
 
 
+// Closes a socket handle when valid and suppresses cleanup errors so the original network assertion remains visible.
 function closeSocketQuiet(handle)
   if network.isHandle(handle) then
     ignored = try(network.close(handle))
@@ -13,6 +18,7 @@ function closeSocketQuiet(handle)
   return true
 end function
 
+// Exercises signed WinSock return-value handling, asserting retryable, closed, and fatal socket outcomes without misclassification.
 function testSignedWinSockResults(state, port)
   listener = void
   clientSocket = void
@@ -64,6 +70,7 @@ function testSignedWinSockResults(state, port)
   return true
 end function
 
+// Runs the protocol test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = testkit.create()
   if len(args) != 1 then
@@ -72,8 +79,11 @@ function main(args)
   end if
   port = toNumber(args[0])
   testkit.record(state, typeof(port) == "int" and port >= 1 and port <= 65535, "loopback port argument")
+  // Validate the native signed-return ABI before exercising the pure frame
+  // codec so a socket regression cannot hide behind successful serialization.
   testSignedWinSockResults(state, port)
 
+  // Round-trip the request frame and independently validate its fixed header.
   request = messages.query(42, "SELECT id, name FROM account")
   encoded = codec.encodeMessage(request)
   decoded = codec.decodeMessage(encoded)
@@ -86,6 +96,8 @@ function main(args)
   testkit.equal(state, header.payloadLength, len(request.payload), "header payload length")
   testkit.equal(state, header.messageType, constants.TYPE_QUERY, "header message type")
 
+  // Mutate each integrity/version region separately. Every damaged or
+  // incomplete outer frame must fail before its payload is consumed.
   badMagic = bytes(encoded)
   badMagic[0] = badMagic[0] ^ 1
   testkit.errorCode(state, try(codec.decodeMessage(badMagic)), 9004, "magic corruption rejected")
@@ -105,6 +117,8 @@ function main(args)
   testkit.errorCode(state, try(codec.decodeMessage(slice(encoded, 0, len(encoded) - 1))), 9004, "truncated frame rejected")
   testkit.errorCode(state, try(messages.create(constants.TYPE_QUERY, 0, 1, bytes(constants.MAX_PAYLOAD_BYTES + 1))), 9001, "oversized payload rejected")
 
+  // Response codecs must preserve row, command, and error shapes while also
+  // rejecting structural inconsistencies such as row-width mismatches.
   rows = messages.rowResponse(["id", "name"], [["1", "Ada"], ["2", "Bob"]])
   rowBytes = messages.encodeResponse(rows)
   rowDecoded = messages.decodeResponse(rowBytes)

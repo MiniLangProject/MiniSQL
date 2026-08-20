@@ -1,5 +1,9 @@
 package minisql.executor.scan
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
@@ -25,45 +29,78 @@ const CORRUPT_DATA = 9004
 const CLOSED_HANDLE = 9008
 const UNSUPPORTED_SQL = 9025
 
+// Groups the row reference state and preserves the field relationships documented below.
 struct RowReference
+  // Stores the page number associated with this value.
   pageNumber
+  // Identifies the slot identifier.
   slotId
+  // Stores the generation associated with this value.
   generation
 end struct
 
+// Groups the scanned row state and preserves the field relationships documented below.
 struct ScannedRow
+  // Stores the reference associated with this value.
   reference
+  // Contains the ordered values collection.
   values
 end struct
 
+// Groups the table reader state and preserves the field relationships documented below.
 struct TableReader
+  // Stores the filesystem database path.
   databasePath
+  // Stores the table associated with this value.
   table
+  // Contains the ordered table schema collection.
   tableSchema
+  // Stores the generated columns associated with this value.
   generatedColumns
+  // Stores the filesystem file.
   file
+  // Contains the ordered row schema collection.
   rowSchema
+  // Stores the page transaction associated with this value.
   pageTransaction
+  // Stores the filesystem owns file.
   ownsFile
+  // Indicates whether the closed condition is active.
   closed
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "executor.scan." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the row reference condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isRowReference(value)
   return value is RowReference
 end function
 
+// Returns whether the supplied value satisfies the scanned row condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isScannedRow(value)
   return value is ScannedRow
 end function
 
+// Returns whether the supplied value satisfies the table reader condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isTableReader(value)
   return value is TableReader
 end function
 
+// Appends array value using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendArrayValue(source, item, operation)
   if typeof(source) != "array" then return fail(INVALID_ARGUMENT, operation, "source must be array") end if
   result = array(len(source) + 1)
@@ -76,6 +113,9 @@ function appendArrayValue(source, item, operation)
   return result
 end function
 
+// Implements schema for table for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function schemaForTable(table)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "schemaForTable", "table must be TableMetadata") end if
   specifications = []
@@ -86,17 +126,25 @@ function schemaForTable(table)
   return row_codec.schema(table.schemaVersion, specifications)
 end function
 
+// Opens open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function open(databasePath, table, pageTransaction)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "open", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "open", "table must be TableMetadata") end if
   if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.open") end if
-  file = paged_file.open(catalog.tableFilePath(databasePath, table.tableId))
+  file = paged_file.openReadOnly(catalog.tableFilePath(databasePath, table.tableId))
   state = schema_history.loadOrCreate(databasePath, file.databaseId)
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, false)
 end function
 
+// Opens existing using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function openExisting(databasePath, file, table, pageTransaction)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openExisting", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openExisting", "table must be TableMetadata") end if
@@ -109,6 +157,10 @@ function openExisting(databasePath, file, table, pageTransaction)
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, false)
 end function
 
+// Validates open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function validateOpen(reader, operation)
   if reader is not TableReader then return fail(INVALID_ARGUMENT, operation, "reader must be TableReader") end if
   if reader.closed then return fail(CLOSED_HANDLE, operation, "reader is closed") end if
@@ -116,6 +168,10 @@ function validateOpen(reader, operation)
   return true
 end function
 
+// Implements visible page for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function visiblePage(reader, pageNumber)
   validateOpen(reader, "visiblePage")
   if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber >= reader.file.pageCount then return fail(INVALID_ARGUMENT, "visiblePage", "page number is outside table") end if
@@ -126,6 +182,9 @@ function visiblePage(reader, pageNumber)
   return paged_file.readPage(reader.file, pageNumber)
 end function
 
+// Finds column rule using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findColumnRule(reader, columnName)
   if reader.tableSchema is void then return void end if
   for each rule in reader.tableSchema.columnRules
@@ -134,6 +193,9 @@ function findColumnRule(reader, columnName)
   return void
 end function
 
+// Evaluates default using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function evaluateDefault(rule, column)
   target = types.fromColumn(column)
   if rule is void or rule.defaultSql is void then return values.convert(values.nullValue(column.typeCode), target) end if
@@ -142,6 +204,9 @@ function evaluateDefault(rule, column)
   return values.convert(expressions.evaluate(bound, expressions.rowContext([])), target)
 end function
 
+// Finds generated using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function findGenerated(reader, columnName)
   for each generated in reader.generatedColumns
     if generated.columnName == columnName then return generated end if
@@ -149,6 +214,9 @@ function findGenerated(reader, columnName)
   return void
 end function
 
+// Evaluates generated using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function evaluateGenerated(reader, generated, column, currentValues)
   expression = parser.parseExpressionText(generated.expressionSql)
   bound = binder.bindExpression(expression, reader.table, void)
@@ -156,6 +224,10 @@ function evaluateGenerated(reader, generated, column, currentValues)
   return values.convert(evaluated, types.fromColumn(column))
 end function
 
+// Implements materialize stored value for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function materializeStoredValue(reader, index, raw)
   column = reader.table.columns[index]
   if row_codec.isExternalValue(raw) then
@@ -171,6 +243,10 @@ function materializeStoredValue(reader, index, raw)
   return values.fromStorage(column.typeCode, raw)
 end function
 
+// Decodes record using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decodeRecord(reader, encoded)
   decoded = row_codec.decodeCompatible(reader.rowSchema, encoded)
   storedCount = len(decoded.values)
@@ -197,6 +273,9 @@ function decodeRecord(reader, encoded)
   return output
 end function
 
+// Implements all for this module.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function all(reader)
   validateOpen(reader, "all")
   output = []
@@ -221,6 +300,10 @@ function all(reader)
   return output
 end function
 
+// Reads reference using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readReference(reader, reference)
   validateOpen(reader, "readReference")
   if reference is not RowReference then return fail(INVALID_ARGUMENT, "readReference", "reference must be RowReference") end if
@@ -235,6 +318,10 @@ function readReference(reader, reference)
   return ScannedRow(reference, rowValues)
 end function
 
+// Reads table reference using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readTableReference(databasePath, table, pageTransaction, reference)
   reader = open(databasePath, table, pageTransaction)
   result = try(readReference(reader, reference))
@@ -244,10 +331,16 @@ function readTableReference(databasePath, table, pageTransaction, reference)
   return result
 end function
 
+// Counts count using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function count(reader)
   return len(all(reader))
 end function
 
+// Closes close using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function close(reader)
   validateOpen(reader, "close")
   if reader.ownsFile then paged_file.close(reader.file) end if
@@ -255,6 +348,10 @@ function close(reader)
   return true
 end function
 
+// Scans table using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanTable(databasePath, table, pageTransaction)
   reader = open(databasePath, table, pageTransaction)
   result = try(all(reader))
@@ -264,6 +361,10 @@ function scanTable(databasePath, table, pageTransaction)
   return result
 end function
 
+// Scans existing using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanExisting(databasePath, file, table, pageTransaction)
   reader = openExisting(databasePath, file, table, pageTransaction)
   result = try(all(reader))
@@ -273,20 +374,32 @@ function scanExisting(databasePath, file, table, pageTransaction)
   return result
 end function
 
+// Scans using using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanUsing(databasePath, table, pageTransaction, existingFile)
   if existingFile is void then return scanTable(databasePath, table, pageTransaction) end if
   if existingFile.fileId == table.tableId then return scanExisting(databasePath, existingFile, table, pageTransaction) end if
   return scanTable(databasePath, table, pageTransaction)
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.scan"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

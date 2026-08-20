@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """MiniSQL M48 continuous WAL shipping and read-only hot-standby sidecar.
 
 The primary role repeatedly exports only the WAL prefix covered by MiniSQL's
@@ -27,16 +42,19 @@ REPORT_RE = re.compile(r"generation=(\d+)\s+lsn=(\d+)")
 
 
 class ReplicaError(RuntimeError):
+    """Signals an operational or integrity failure in the replication controller."""
     pass
 
 
 def now_utc() -> str:
+    """Returns the current UTC timestamp in stable ISO-8601 form."""
     import datetime
 
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def atomic_json(path: Path | None, payload: dict[str, Any]) -> None:
+    """Publishes a JSON status document with flush-and-replace semantics."""
     if path is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -46,6 +64,7 @@ def atomic_json(path: Path | None, payload: dict[str, Any]) -> None:
 
 
 def touch_ready(path: Path | None) -> None:
+    """Atomically creates the optional readiness marker after its parent directory exists."""
     if path is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -55,10 +74,12 @@ def touch_ready(path: Path | None) -> None:
 
 
 def command_for(executable: Path, *arguments: object) -> list[str]:
+    """Builds a platform-correct command line for a native MiniSQL executable."""
     return [str(executable), *(str(value) for value in arguments)]
 
 
 def run_checked(command: Sequence[str], timeout: float = 600.0) -> subprocess.CompletedProcess[str]:
+    """Runs a subprocess with a timeout and raises ReplicaError on nonzero termination."""
     completed = subprocess.run(
         list(command),
         text=True,
@@ -79,6 +100,7 @@ def run_checked(command: Sequence[str], timeout: float = 600.0) -> subprocess.Co
 
 
 def parse_report(output: str) -> tuple[int, int]:
+    """Extracts and returns the generation and LSN from a MiniSQL archive report."""
     match = REPORT_RE.search(output)
     if match is None:
         raise ReplicaError(f"MiniSQL report does not contain generation/lsn: {output!r}")
@@ -86,11 +108,13 @@ def parse_report(output: str) -> tuple[int, int]:
 
 
 def verify_archive(backup_exe: Path, archive: Path) -> tuple[int, int]:
+    """Verifies an archive through minisql-backup and returns its generation and LSN."""
     completed = run_checked(command_for(backup_exe, "archive-verify", archive))
     return parse_report(completed.stdout)
 
 
 def wait_listening(process: subprocess.Popen[str], host: str, port: int, timeout: float) -> None:
+    """Waits until a child server accepts loopback connections or fails early."""
     deadline = time.monotonic() + timeout
     last_error: OSError | None = None
     while time.monotonic() < deadline:
@@ -110,12 +134,14 @@ def wait_listening(process: subprocess.Popen[str], host: str, port: int, timeout
 
 
 def free_port() -> int:
+    """Asks Windows for an unused loopback TCP port and returns the assigned port number."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind(("127.0.0.1", 0))
         return int(listener.getsockname()[1])
 
 
 def terminate(process: subprocess.Popen[str] | None) -> None:
+    """Requests graceful child termination, escalating to a kill after the bounded wait."""
     if process is None or process.poll() is not None:
         return
     process.terminate()
@@ -128,50 +154,71 @@ def terminate(process: subprocess.Popen[str] | None) -> None:
 
 @dataclass
 class Backend:
+    """Tracks a standby backend process and its guarded active-connection count."""
+
+    # Immutable filesystem slot containing this materialized database generation.
     slot: Path
+    # Loopback port on which the native read-only standby accepts connections.
     port: int
+    # Archive generation from which the slot was materialized.
     generation: int
+    # Highest durable WAL LSN included in this slot.
     lsn: int
+    # Owned native server process; None is used only by the proxy self-test.
     process: subprocess.Popen[str] | None
+    # Number of bridge threads currently borrowing this backend.
     active_connections: int = 0
+    # True after publication moved to a newer backend; new clients must not borrow it.
     retired: bool = False
+    # Protects the mutable connection count and retirement lifecycle.
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def acquire(self) -> None:
+        """Increments the backend connection count while holding its mutex."""
         with self.lock:
             self.active_connections += 1
 
     def release(self) -> None:
+        """Decrements the backend connection count while holding its mutex."""
         with self.lock:
             self.active_connections -= 1
 
     def idle(self) -> bool:
+        """Reports whether the backend currently owns no bridged client connections."""
         with self.lock:
             return self.active_connections == 0
 
 
 class SwitchingProxy:
+    """Routes client connections to an atomically replaceable standby backend."""
     def __init__(self, host: str, port: int, max_connections: int) -> None:
+        """Initializes proxy listener state, synchronization and backend ownership."""
         if host not in {"127.0.0.1", "localhost", "::1"}:
             raise ReplicaError("the M48 cleartext standby switch may bind only to loopback")
+        # Listener identity and the optional deterministic acceptance budget.
         self.host = host
         self.port = port
         self.max_connections = max_connections
+        # Backend publication and the served count share one short critical section.
         self._backend: Backend | None = None
         self._lock = threading.Lock()
+        # Stop/accept completion is event-driven so owner and acceptor never busy-wait.
         self._stop = threading.Event()
         self._accept_done = threading.Event()
         self._served = 0
+        # The owner retains every worker handle and joins it during close.
         self._listener: socket.socket | None = None
         self._thread: threading.Thread | None = None
         self._handlers: list[threading.Thread] = []
 
     @property
     def served(self) -> int:
+        """Returns the synchronized number of connections accepted by this proxy."""
         with self._lock:
             return self._served
 
     def set_backend(self, backend: Backend) -> Backend | None:
+        """Atomically installs a new backend and returns the previously published backend."""
         with self._lock:
             previous = self._backend
             self._backend = backend
@@ -180,6 +227,7 @@ class SwitchingProxy:
             return previous
 
     def start(self) -> None:
+        """Starts the proxy acceptor thread and waits until its listener is ready."""
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind((self.host, self.port))
@@ -190,6 +238,7 @@ class SwitchingProxy:
         self._thread.start()
 
     def _accept_loop(self) -> None:
+        """Accepts bounded client connections and starts one bridge thread for each connection."""
         assert self._listener is not None
         while not self._stop.is_set():
             if self.max_connections > 0 and self.served >= self.max_connections:
@@ -241,6 +290,7 @@ class SwitchingProxy:
                 pending = pending[sent:]
 
     def _bridge(self, client: socket.socket, backend: Backend) -> None:
+        """Bridges one client to the backend while maintaining the backend ownership count."""
         upstream: socket.socket | None = None
         pumps: list[threading.Thread] = []
         try:
@@ -280,6 +330,7 @@ class SwitchingProxy:
             backend.release()
 
     def wait_for_connections(self, timeout: float) -> None:
+        """Waits until the configured connection budget is served or the proxy fails."""
         if self.max_connections <= 0:
             return
         deadline = time.monotonic() + timeout
@@ -301,6 +352,7 @@ class SwitchingProxy:
                 raise ReplicaError("standby client connection did not finish before timeout")
 
     def close(self) -> None:
+        """Stops the proxy, closes its listener and joins all connection threads."""
         self._stop.set()
         if self._listener is not None:
             try:
@@ -314,6 +366,7 @@ class SwitchingProxy:
 
 
 def primary_role(args: argparse.Namespace) -> int:
+    """Continuously exports durable WAL prefixes and publishes primary progress status."""
     database = Path(args.database).resolve()
     archive = Path(args.archive).resolve()
     backup_exe = Path(args.backup_exe).resolve()
@@ -361,6 +414,7 @@ def materialize_backend(
     maximum_clients: int,
     timeout: float,
 ) -> Backend:
+    """Restores and starts one immutable standby slot, returning its managed backend."""
     if slot.exists():
         shutil.rmtree(slot)
     completed = run_checked(
@@ -381,6 +435,7 @@ def materialize_backend(
 
 
 def wait_backend_idle(backend: Backend, timeout: float) -> None:
+    """Waits for all clients to leave a retired backend before it is terminated."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if backend.idle():
@@ -390,6 +445,7 @@ def wait_backend_idle(backend: Backend, timeout: float) -> None:
 
 
 def standby_role(args: argparse.Namespace) -> int:
+    """Refreshes double-buffer standby slots and atomically switches new connections."""
     archive = Path(args.archive).resolve()
     slot_root = Path(args.slot_root).resolve()
     backup_exe = Path(args.backup_exe).resolve()
@@ -465,6 +521,7 @@ def standby_role(args: argparse.Namespace) -> int:
 
 
 def self_test() -> int:
+    """Exercises the switching proxy and backend lifecycle without requiring MiniSQL binaries."""
     generation, lsn = parse_report("MiniSQL WAL archive verify: SUCCESS generation=12 lsn=3456")
     if generation != 12 or lsn != 3456:
         raise ReplicaError("report parser self-test failed")
@@ -486,6 +543,7 @@ def self_test() -> int:
     backend_failure: list[BaseException] = []
 
     def echo_once() -> None:
+        """Runs the self-test echo backend for one accepted connection."""
         try:
             connection, _ = backend_listener.accept()
             with connection:
@@ -538,6 +596,7 @@ def self_test() -> int:
 
 
 def parser() -> argparse.ArgumentParser:
+    """Builds the command-line parser and all supported role-specific subcommands."""
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="mode", required=True)
 
@@ -574,6 +633,7 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parser().parse_args(argv)
     try:
         if args.mode == "self-test":

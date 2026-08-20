@@ -1,4 +1,7 @@
 package minisql.storage.buffer_pool
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.limits as limits
 import minisql.storage.page as page
@@ -12,51 +15,86 @@ const CLOSED_HANDLE = 9008
 const BUFFER_POOL_EXHAUSTED = 9009
 const PINNED_PAGE = 9010
 
+// Defines the buffer frame record used by this module.
 struct BufferFrame
+  // Valid field of the buffer frame.
   valid
+  // Path field of the buffer frame.
   path
+  // Paged file field of the buffer frame.
   pagedFile
+  // Page number field of the buffer frame.
   pageNumber
+  // Data field of the buffer frame.
   data
+  // Pin count field of the buffer frame.
   pinCount
+  // Dirty field of the buffer frame.
   dirty
+  // Referenced field of the buffer frame.
   referenced
 end struct
 
+// Defines the buffer pool record used by this module.
 struct BufferPool
+  // Capacity field of the buffer pool.
   capacity
+  // Frames field of the buffer pool.
   frames
+  // Clock hand field of the buffer pool.
   clockHand
+  // Hits field of the buffer pool.
   hits
+  // Misses field of the buffer pool.
   misses
+  // Evictions field of the buffer pool.
   evictions
+  // Dirty flushes field of the buffer pool.
   dirtyFlushes
+  // Closed field of the buffer pool.
   closed
 end struct
 
+// Defines the page guard record used by this module.
 struct PageGuard
+  // Pool field of the page guard.
   pool
+  // Frame index field of the page guard.
   frameIndex
+  // Released field of the page guard.
   released
 end struct
 
+// Defines the buffer pool stats record used by this module.
 struct BufferPoolStats
+  // Hits field of the buffer pool stats.
   hits
+  // Misses field of the buffer pool stats.
   misses
+  // Evictions field of the buffer pool stats.
   evictions
+  // Dirty flushes field of the buffer pool stats.
   dirtyFlushes
+  // Resident pages field of the buffer pool stats.
   residentPages
+  // Pinned pages field of the buffer pool stats.
   pinnedPages
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.buffer_pool." + operation + ": " + message)
 end function
 
+// Performs the empty frame operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function emptyFrame()
   return BufferFrame(false, "", void, -1, bytes(), 0, false, false)
 end function
 
+// Creates the requested value.
+// Inputs: `capacity`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(capacity)
   if typeof(capacity) != "int" or capacity <= 0 or capacity > 1048576 then
     return fail(INVALID_ARGUMENT, "create", "capacity must be an int in 1..1048576")
@@ -68,6 +106,8 @@ function create(capacity)
   return BufferPool(capacity, frames, 0, 0, 0, 0, 0, false)
 end function
 
+// Creates the for bytes.
+// Inputs: `maxBytes`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createForBytes(maxBytes, pageSize)
   if typeof(maxBytes) != "int" or maxBytes <= 0 then
     return fail(INVALID_ARGUMENT, "createForBytes", "maxBytes must be a positive int")
@@ -91,12 +131,16 @@ function createForBytes(maxBytes, pageSize)
   return create(capacity)
 end function
 
+// Validates the pool.
+// Inputs: `pool`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePool(pool, operation)
   if pool is not BufferPool then return fail(INVALID_ARGUMENT, operation, "pool must be BufferPool") end if
   if pool.closed then return fail(CLOSED_HANDLE, operation, "buffer pool is closed") end if
   return true
 end function
 
+// Validates the guard.
+// Inputs: `guard`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateGuard(guard, operation)
   if guard is not PageGuard then return fail(INVALID_ARGUMENT, operation, "guard must be PageGuard") end if
   validatePool(guard.pool, operation)
@@ -111,6 +155,8 @@ function validateGuard(guard, operation)
   return frame
 end function
 
+// Performs the frame matches file operation for this module.
+// Inputs: `frame`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function frameMatchesFile(frame, pagedFile)
   if not frame.valid then return false end if
   if frame.pagedFile.closed or frame.pagedFile.file.closed then return false end if
@@ -119,6 +165,8 @@ function frameMatchesFile(frame, pagedFile)
     frame.path == pagedFile.path
 end function
 
+// Finds the frame.
+// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findFrame(pool, pagedFile, pageNumber)
   for index = 0 to pool.capacity - 1
     frame = pool.frames[index]
@@ -127,6 +175,8 @@ function findFrame(pool, pagedFile, pageNumber)
   return -1
 end function
 
+// Flushes the frame.
+// Inputs: `pool`, `frameIndex`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function flushFrame(pool, frameIndex)
   frame = pool.frames[frameIndex]
   if not frame.valid or not frame.dirty then return false end if
@@ -138,6 +188,8 @@ function flushFrame(pool, frameIndex)
   return true
 end function
 
+// Performs the choose victim operation for this module.
+// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function chooseVictim(pool)
   for index = 0 to pool.capacity - 1
     if not pool.frames[index].valid then
@@ -163,6 +215,8 @@ function chooseVictim(pool)
   return fail(BUFFER_POOL_EXHAUSTED, "chooseVictim", "all frames are pinned")
 end function
 
+// Performs the pin operation for this module.
+// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pin(pool, pagedFile, pageNumber)
   validatePool(pool, "pin")
   paged_file.validateOpen(pagedFile, "buffer_pool.pin")
@@ -201,11 +255,15 @@ function pin(pool, pagedFile, pageNumber)
   return PageGuard(pool, victim, false)
 end function
 
+// Performs the data operation for this module.
+// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function data(guard)
   frame = validateGuard(guard, "data")
   return frame.data
 end function
 
+// Marks the dirty.
+// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function markDirty(guard)
   frame = validateGuard(guard, "markDirty")
   frame.dirty = true
@@ -213,6 +271,8 @@ function markDirty(guard)
   return true
 end function
 
+// Releases the requested value.
+// Inputs: `guard`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function release(guard)
   frame = validateGuard(guard, "release")
   frame.pinCount = frame.pinCount - 1
@@ -220,6 +280,8 @@ function release(guard)
   return true
 end function
 
+// Flushes the all.
+// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function flushAll(pool)
   validatePool(pool, "flushAll")
   flushed = 0
@@ -229,6 +291,8 @@ function flushAll(pool)
   return flushed
 end function
 
+// Performs the invalidate file operation for this module.
+// Inputs: `pool`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function invalidateFile(pool, pagedFile)
   validatePool(pool, "invalidateFile")
   paged_file.validateOpen(pagedFile, "buffer_pool.invalidateFile")
@@ -250,6 +314,8 @@ function invalidateFile(pool, pagedFile)
   return invalidated
 end function
 
+// Performs the stats operation for this module.
+// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stats(pool)
   validatePool(pool, "stats")
   resident = 0
@@ -264,6 +330,8 @@ function stats(pool)
   return BufferPoolStats(pool.hits, pool.misses, pool.evictions, pool.dirtyFlushes, resident, pinned)
 end function
 
+// Closes the requested value.
+// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(pool)
   validatePool(pool, "close")
   for index = 0 to pool.capacity - 1
@@ -277,14 +345,20 @@ function close(pool)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.buffer_pool"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M5"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.config.model as config_model
@@ -8,11 +12,13 @@ import minisql.tools.backup as backup
 import minisql.tools.check as checker
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Returns true when a backup manifest declares the required security catalog entry.
 function manifestHasSecurity(manifest)
   for each entry in manifest.entries
     if entry.relativePath == "catalog\\security.tbl" then return true end if
@@ -20,6 +26,7 @@ function manifestHasSecurity(manifest)
   return false
 end function
 
+// Runs the security tools test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M21 security backup/check tests: FAIL (missing data root)"

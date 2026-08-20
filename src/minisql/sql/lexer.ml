@@ -1,5 +1,9 @@
 package minisql.sql.lexer
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.sql.dialect as dialect
 import minisql.sql.token as token
 
@@ -7,46 +11,77 @@ const INVALID_ARGUMENT = 9001
 const SQL_SYNTAX = 9019
 const MAX_SQL_BYTES = 1048576
 
+// Groups the lexer state state and preserves the field relationships documented below.
 struct LexerState
+  // Stores the source associated with this value.
   source
+  // Stores the raw associated with this value.
   raw
+  // Tracks the index numeric value.
   index
+  // Stores the line associated with this value.
   line
+  // Stores the column associated with this value.
   column
+  // Contains the ordered tokens collection.
   tokens
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(state, message)
   return error(SQL_SYNTAX, "sql.lexer at line " + state.line + ", column " + state.column + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the whitespace condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isWhitespace(value)
   return value == 32 or value == 9 or value == 10 or value == 13 or value == 12
 end function
 
+// Returns whether the supplied value satisfies the digit condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isDigit(value)
   return value >= 48 and value <= 57
 end function
 
+// Returns whether the supplied value satisfies the identifier start condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isIdentifierStart(value)
   return (value >= 65 and value <= 90) or (value >= 97 and value <= 122) or value == 95 or value >= 128
 end function
 
+// Returns whether the supplied value satisfies the identifier part condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isIdentifierPart(value)
   return isIdentifierStart(value) or isDigit(value) or value == 36
 end function
 
+// Implements current for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function current(state)
   if state.index >= len(state.raw) then return -1 end if
   return state.raw[state.index]
 end function
 
+// Implements peek for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function peek(state, distance)
   position = state.index + distance
   if position < 0 or position >= len(state.raw) then return -1 end if
   return state.raw[position]
 end function
 
+// Advances advance using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function advance(state)
   if state.index >= len(state.raw) then return -1 end if
   value = state.raw[state.index]
@@ -60,15 +95,24 @@ function advance(state)
   return value
 end function
 
+// Implements raw text for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rawText(state, startOffset, endOffset)
   return decode(slice(state.raw, startOffset, endOffset - startOffset))
 end function
 
+// Appends token using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function appendToken(state, kind, text, value, offset, line, column, quoted)
   state.tokens = state.tokens + [token.create(kind, text, value, offset, line, column, quoted)]
   return true
 end function
 
+// Implements skip ignored for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function skipIgnored(state)
   changed = true
   while changed
@@ -104,6 +148,9 @@ function skipIgnored(state)
   return true
 end function
 
+// Reads identifier using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readIdentifier(state)
   startOffset = state.index
   startLine = state.line
@@ -122,6 +169,9 @@ function readIdentifier(state)
   return true
 end function
 
+// Reads quoted identifier using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readQuotedIdentifier(state)
   startOffset = state.index
   startLine = state.line
@@ -153,6 +203,9 @@ function readQuotedIdentifier(state)
   return true
 end function
 
+// Reads string using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readString(state)
   startOffset = state.index
   startLine = state.line
@@ -183,6 +236,9 @@ function readString(state)
   return true
 end function
 
+// Reads number using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readNumber(state)
   startOffset = state.index
   startLine = state.line
@@ -214,6 +270,9 @@ function readNumber(state)
   return true
 end function
 
+// Implements symbol token for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function symbolToken(state)
   startOffset = state.index
   startLine = state.line
@@ -243,6 +302,10 @@ function symbolToken(state)
   return fail(state, "unexpected byte 0x" + hex(bytes([first])))
 end function
 
+// Tokenizes SQL using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function tokenizeSql(source)
   if typeof(source) != "string" then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: source must be string") end if
   raw = bytes(source)
@@ -269,14 +332,23 @@ function tokenizeSql(source)
   return state.tokens
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.lexer"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M12"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

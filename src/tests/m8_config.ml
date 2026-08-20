@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.config.loader as loader
 import minisql.config.model as model
 import minisql.config.validation as validation
 import minisql.platform.file as file_api
 import tests.support.testkit as testkit
 
+// Writes and flushes a complete text fixture, ensuring subsequent loader checks observe durable contents.
 function writeText(path, text)
   handle = file_api.create(path)
   data = bytes(text)
@@ -13,6 +18,7 @@ function writeText(path, text)
   return true
 end function
 
+// Runs the config test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 2 then
     print "MiniSQL M8 configuration tests: FAIL (missing paths)"

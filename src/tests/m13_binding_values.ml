@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.metadata as metadata
 import minisql.common.endian as endian
 import minisql.sql.ast as ast
@@ -8,6 +12,7 @@ import minisql.sql.types as types
 import minisql.sql.values as values
 import tests.support.testkit as testkit
 
+// Runs the binding values test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = testkit.create()
 

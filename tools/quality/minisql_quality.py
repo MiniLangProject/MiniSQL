@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """MiniSQL M49 deterministic fuzz, crash-matrix, soak and performance gate."""
 from __future__ import annotations
 
@@ -16,10 +31,12 @@ from typing import Sequence
 
 
 class QualityError(RuntimeError):
+    """Signals a failure in a deterministic quality or durability gate."""
     pass
 
 
 def run(command: Sequence[str], timeout: float) -> subprocess.CompletedProcess[str]:
+    """Runs one quality subprocess and raises QualityError on timeout or nonzero exit."""
     completed = subprocess.run(
         list(command), text=True, encoding="utf-8", errors="replace",
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout, check=False,
@@ -33,15 +50,18 @@ def run(command: Sequence[str], timeout: float) -> subprocess.CompletedProcess[s
 
 
 def executable_command(path: Path, *args: object) -> list[str]:
+    """Builds a platform-correct command for a native executable and its arguments."""
     return [str(path), *(str(value) for value in args)]
 
 
 def corpus_digest(corpus: list[str]) -> str:
+    """Returns the stable SHA-256 digest of the ordered SQL fuzz corpus."""
     joined = "\n---\n".join(corpus).encode("utf-8")
     return hashlib.sha256(joined).hexdigest()
 
 
 def self_test(root: Path) -> int:
+    """Validates quality fixtures, their digests and the frozen deterministic RNG sequence."""
     corpus_path = root / "tests" / "fuzz" / "m49_sql_corpus.json"
     baseline_path = root / "tests" / "performance" / "m49_baseline.json"
     matrix_path = root / "tests" / "recovery" / "m49_crash_matrix.json"
@@ -67,6 +87,7 @@ def self_test(root: Path) -> int:
 
 
 def crash_matrix(worker: Path, output_root: Path, iterations: int, timeout: float) -> int:
+    """Runs committed and uncommitted crash/recovery pairs and publishes their timing report."""
     output_root.mkdir(parents=True, exist_ok=True)
     completed = 0
     cases: list[dict[str, object]] = []
@@ -116,6 +137,7 @@ def crash_matrix(worker: Path, output_root: Path, iterations: int, timeout: floa
 
 
 def soak(hardening_exe: Path, output_root: Path, iterations: int, max_seconds: float) -> int:
+    """Repeats the native hardening workload and enforces its per-run performance guardrail."""
     output_root.mkdir(parents=True, exist_ok=True)
     durations: list[float] = []
     for iteration in range(iterations):
@@ -151,6 +173,7 @@ def soak(hardening_exe: Path, output_root: Path, iterations: int, max_seconds: f
 
 
 def parser() -> argparse.ArgumentParser:
+    """Builds the command-line parser and all supported role-specific subcommands."""
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="mode", required=True)
     self_parser = sub.add_parser("self-test")
@@ -169,6 +192,7 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parser().parse_args(argv)
     try:
         if args.mode == "self-test":

@@ -1,8 +1,13 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.platform.clock as clock
 import minisql.platform.file as file_api
 import minisql.platform.lock as lock_api
 import tests.support.testkit as test
 
+// Runs the lock worker test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 4 then
     print "MiniSQL M3 lock worker: FAIL (expected mode, file, ready, milliseconds)"

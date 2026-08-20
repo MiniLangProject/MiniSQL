@@ -1,24 +1,43 @@
 package minisql.config.validation
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.limits as limits
 import minisql.config.model as model
 
 const INVALID_CONFIGURATION = 9002
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(message)
   return error(INVALID_CONFIGURATION, "config.validation.validate: " + message)
 end function
 
+// Implements positive for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function positive(value, name)
   if typeof(value) != "int" or value <= 0 then return fail(name + " must be a positive integer") end if
   return true
 end function
 
+// Implements non empty for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function nonEmpty(value, name)
   if typeof(value) != "string" or len(value) == 0 then return fail(name + " must be a non-empty string") end if
   return true
 end function
 
+// Validates validate using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function validate(config)
   if not model.isMiniSqlConfig(config) then return fail("value must be MiniSqlConfig") end if
   if not model.isPathsConfig(config.paths) or not model.isServerConfig(config.server) or not model.isRuntimeConfig(config.runtime) or not model.isDatabaseDefaults(config.databaseDefaults) or not model.isSafetyConfig(config.safety) then return fail("configuration sections have invalid types") end if
@@ -54,14 +73,23 @@ function validate(config)
   return true
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "config.validation"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M8"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -1,5 +1,9 @@
 package minisql.server.session
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.client.formatter as formatter
@@ -21,59 +25,108 @@ const AUTHENTICATION_REQUIRED = 9028
 const AUTH_HANDSHAKE_TIMEOUT_MS = 30000
 const SESSION_IDLE_TIMEOUT_MS = 300000
 
+// Groups the session state and preserves the field relationships documented below.
 struct Session
+  // Stores the engine associated with this value.
   engine
+  // Indicates whether the closed condition is active.
   closed
+  // Stores the close requested associated with this value.
   closeRequested
+  // Indicates whether the secure condition is active.
   secure
+  // Indicates whether the authenticated condition is active.
   authenticated
+  // Indicates whether the pending username condition is active.
   pendingUsername
+  // Indicates whether the pending principal identifier condition is active.
   pendingPrincipalId
+  // Indicates whether the pending nonce condition is active.
   pendingNonce
+  // Indicates whether the pending verifier condition is active.
   pendingVerifier
+  // Stores the attempts associated with this value.
   attempts
+  // Stores the transport send key associated with this value.
   transportSendKey
+  // Stores the transport receive key associated with this value.
   transportReceiveKey
+  // Stores the transport pending associated with this value.
   transportPending
+  // Stores the created at associated with this value.
   createdAt
+  // Stores the last activity associated with this value.
   lastActivity
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "server.session." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the session condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSession(value)
   return value is Session
 end function
 
+// Creates session using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function createSession(engine, secure, authenticated)
   now = clock.monotonicMilliseconds()
   return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now)
 end function
 
+// Opens open using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function open(databasePath)
   return createSession(executor.open(databasePath), false, true)
 end function
 
+// Opens secure using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openSecure(databasePath)
   return createSession(executor.open(databasePath), true, false)
 end function
 
+// Opens attached using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openAttached(database)
-  return createSession(executor.attach(database), false, true)
+  engine = try(executor.attach(database))
+  if typeof(engine) == "error" then return engine end if
+  return createSession(engine, false, true)
 end function
 
+// Opens secure attached using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openSecureAttached(database)
-  return createSession(executor.attach(database), true, false)
+  engine = try(executor.attach(database))
+  if typeof(engine) == "error" then return engine end if
+  return createSession(engine, true, false)
 end function
 
+// Implements touch for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function touch(session)
   validateOpen(session, "touch")
   session.lastActivity = clock.monotonicMilliseconds()
   return true
 end function
 
+// Returns whether the supplied value satisfies the expired condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isExpired(session)
   validateOpen(session, "isExpired")
   now = clock.monotonicMilliseconds()
@@ -81,16 +134,26 @@ function isExpired(session)
   return now - session.lastActivity >= SESSION_IDLE_TIMEOUT_MS
 end function
 
+// Implements idle timeout milliseconds for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function idleTimeoutMilliseconds()
   return SESSION_IDLE_TIMEOUT_MS
 end function
 
+// Validates open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function validateOpen(session, operation)
   if session is not Session then return fail(INVALID_ARGUMENT, operation, "session must be Session") end if
   if session.closed then return fail(CLOSED_HANDLE, operation, "session is closed") end if
   return true
 end function
 
+// Implements response message for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function responseMessage(request, response)
   payload = messages.encodeResponse(response)
   kind = constants.TYPE_RESPONSE
@@ -98,10 +161,17 @@ function responseMessage(request, response)
   return messages.create(kind, 0, request.requestId, payload)
 end function
 
+// Implements authentication error for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authenticationError(request)
   return responseMessage(request, messages.errorResponse(AUTHENTICATION_FAILED, "authentication failed"))
 end function
 
+// Implements clear pending for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
 function clearPending(session)
   if typeof(session.pendingVerifier) == "bytes" then fillBytes(session.pendingVerifier, 0, len(session.pendingVerifier), 0) end if
   if typeof(session.pendingNonce) == "bytes" then fillBytes(session.pendingNonce, 0, len(session.pendingNonce), 0) end if
@@ -112,6 +182,9 @@ function clearPending(session)
   return true
 end function
 
+// Implements fake authentication material for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fakeAuthenticationMaterial(session, username)
   seed = session.engine.database.catalogHandle.metadata.databaseId
   salt = uuid.deriveKey(seed, bytes("MiniSQL-FAKE-SALT-1|" + username), 1, uuid.PASSWORD_SALT_BYTES)
@@ -119,6 +192,9 @@ function fakeAuthenticationMaterial(session, username)
   return [uuid.DEFAULT_PBKDF2_ITERATIONS, salt, verifier]
 end function
 
+// Implements authentication backoff for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authenticationBackoff(session)
   delay = 50 * (session.attempts + 1)
   if delay > 250 then delay = 250 end if
@@ -126,6 +202,10 @@ function authenticationBackoff(session)
   return true
 end function
 
+// Handles auth begin using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function handleAuthBegin(session, request)
   if not session.secure or session.authenticated then return authenticationError(request) end if
   clearPending(session)
@@ -160,6 +240,10 @@ function handleAuthBegin(session, request)
   return response
 end function
 
+// Handles auth proof using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
 function handleAuthProof(session, request)
   if not session.secure or session.authenticated or session.pendingUsername is void then return authenticationError(request) end if
   if typeof(request.payload) != "bytes" or len(request.payload) != uuid.PASSWORD_VERIFIER_BYTES then clearPending(session); return authenticationError(request) end if
@@ -200,21 +284,47 @@ function handleAuthProof(session, request)
   return authenticationError(request)
 end function
 
+// Implements transport ready for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function transportReady(session)
   validateOpen(session, "transportReady")
   return session.transportPending
 end function
 
+// Implements session identifier for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function sessionIdentifier(session)
   validateOpen(session, "sessionIdentifier")
   return executor.sessionIdentifier(session.engine)
 end function
 
-function abortForConcurrency(session)
+// Implements abort for concurrency unlocked for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
+function abortForConcurrencyUnlocked(session)
   validateOpen(session, "abortForConcurrency")
   return executor.abortForConcurrency(session.engine)
 end function
 
+// Implements abort for concurrency for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
+function abortForConcurrency(session)
+  validateOpen(session, "abortForConcurrency")
+  if session.engine.ownsDatabase then return abortForConcurrencyUnlocked(session) end if
+  entered = try(database_manager.enterExecution(session.engine.database))
+  result = try(abortForConcurrencyUnlocked(session))
+  released = try(database_manager.leaveExecution(session.engine.database))
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
+// Implements activate transport for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function activateTransport(session, connection)
   validateOpen(session, "activateTransport")
   if not session.transportPending then return true end if
@@ -227,6 +337,10 @@ function activateTransport(session, connection)
   return true
 end function
 
+// Handles query using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function handleQuery(session, request)
   if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
   sqlText = decode(request.payload)
@@ -234,6 +348,7 @@ function handleQuery(session, request)
   parsed = try(parser.parseSql(sqlText))
   if typeof(parsed) == "error" then return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
   if len(parsed) != 1 then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
+  // The executor centrally selects the shared-reader or exclusive-writer path.
   result = try(executor.executeStatement(session.engine, parsed[0]))
   if typeof(result) == "error" then return responseMessage(request, messages.errorResponse(result.code, result.message)) end if
   converted = try(formatter.responseFromResult(result))
@@ -241,7 +356,10 @@ function handleQuery(session, request)
   return responseMessage(request, converted)
 end function
 
-function handle(session, request)
+// Handles unlocked using the supplied inputs.
+// Returns the computed value or operation status.
+// May mutate supplied state as documented by the operation name.
+function handleUnlocked(session, request)
   validateOpen(session, "handle")
   if isExpired(session) then session.closeRequested = true; return responseMessage(request, messages.errorResponse(AUTHENTICATION_FAILED, "session expired")) end if
   session.lastActivity = clock.monotonicMilliseconds()
@@ -262,7 +380,30 @@ function handle(session, request)
   return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "unsupported request type"))
 end function
 
-function close(session)
+// Handles handle using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
+function handle(session, request)
+  validateOpen(session, "handle")
+  if session.engine.ownsDatabase then return handleUnlocked(session, request) end if
+  // Frame decoding, simple protocol control messages and SQL parsing do not
+  // touch shared database state and therefore stay fully concurrent.
+  if messages.isMessage(request) and (request.messageType == constants.TYPE_HELLO or request.messageType == constants.TYPE_PING or request.messageType == constants.TYPE_CLOSE or request.messageType == constants.TYPE_QUERY) then
+    return handleUnlocked(session, request)
+  end if
+  entered = try(database_manager.enterExecution(session.engine.database))
+  result = try(handleUnlocked(session, request))
+  released = try(database_manager.leaveExecution(session.engine.database))
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
+// Closes unlocked using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state as documented by the operation name.
+function closeUnlocked(session)
   validateOpen(session, "close")
   clearPending(session)
   if typeof(session.transportSendKey) == "bytes" then uuid.wipeSecret(session.transportSendKey) end if
@@ -276,14 +417,38 @@ function close(session)
   return true
 end function
 
+// Closes close using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
+function close(session)
+  validateOpen(session, "close")
+  // A standalone session owns and closes its database, including the lock.
+  if session.engine.ownsDatabase then return closeUnlocked(session) end if
+  entered = try(database_manager.enterExecution(session.engine.database))
+  result = try(closeUnlocked(session))
+  released = try(database_manager.leaveExecution(session.engine.database))
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "server.session"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

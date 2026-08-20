@@ -1,10 +1,16 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import tests.support.testkit as test
 
+// Advances the deterministic 32-bit pseudo-random sequence used to cover endian round trips reproducibly.
 function nextU32(value)
   return (value * 1664525 + 1013904223) % 4294967296
 end function
 
+// Verifies that an endian codec touched only its requested byte range, preserving every surrounding canary byte.
 function checkCanaries(state, buffer, start, width, label)
   for index = 0 to len(buffer) - 1
     if index < start or index >= start + width then
@@ -17,6 +23,7 @@ function checkCanaries(state, buffer, start, width, label)
   test.record(state, true, label + " canaries")
 end function
 
+// Runs the endian roundtrip test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
 

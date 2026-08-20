@@ -1,7 +1,13 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.client.client as client
 import minisql.client.formatter as formatter
 import minisql.client.console as console
 
+// Prints command-line syntax for trusted, authenticated, and encrypted client modes.
+// Writes only to standard output and returns void.
 function printUsage()
   print "MiniSQL console client"
   print ""
@@ -24,11 +30,14 @@ function printUsage()
   print "  minisql.exe --secure-script <address> <port> <user> <file>"
 end function
 
+// Prints a structured client error and returns the conventional failure status.
 function printClientError(value)
   print "ERROR " + value.code + ": " + value.message
   return 1
 end function
 
+// Closes a client after an operation and converts either error to a process status.
+// Returns zero only when both the operation and close completed successfully.
 function closeAfter(active, result)
   closed = try(client.close(active))
   if typeof(result) == "error" then return printClientError(result) end if
@@ -36,6 +45,8 @@ function closeAfter(active, result)
   return 0
 end function
 
+// Sends PING, closes the connection, and prints PONG on success.
+// Returns zero on success and one for protocol, close, or negative-ping failures.
 function runPing(active)
   result = try(client.ping(active))
   closed = try(client.close(active))
@@ -46,6 +57,8 @@ function runPing(active)
   return 0
 end function
 
+// Executes and formats one SQL query before closing the connection.
+// Returns one for protocol ERROR responses or client/formatting failures.
 function runQuery(active, sqlText)
   response = try(client.query(active, sqlText))
   closed = try(client.close(active))
@@ -58,11 +71,14 @@ function runQuery(active, sqlText)
   return 0
 end function
 
+// Runs the interactive shell and always closes its client afterward.
 function runShell(active)
   result = try(console.runShell(active, "minisql> "))
   return closeAfter(active, result)
 end function
 
+// Executes a SQL script, closes the client, and reports the statement count.
+// Returns a nonzero status for script or cleanup errors.
 function runScript(active, path)
   result = try(console.runScript(active, path))
   status = closeAfter(active, result)
@@ -71,14 +87,18 @@ function runScript(active, path)
   return 0
 end function
 
+// Opens an unauthenticated loopback client for the supplied port.
 function openTrusted(port)
   return client.openLoopback(port)
 end function
 
+// Prompts for credentials and opens an authenticated connection to the address.
 function openPrompt(address, port, username)
   return console.openAuthenticatedPrompt(address, port, username)
 end function
 
+// Dispatches the public CLI modes after validating arity and numeric ports.
+// Returns zero on success, one on operational failure, or two for usage errors.
 function main(args)
   if len(args) == 1 and args[0] == "--version" then print client.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print client.m0SelfTestLine(); return 0 end if

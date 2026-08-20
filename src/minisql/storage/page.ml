@@ -1,4 +1,7 @@
 package minisql.storage.page
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
@@ -31,33 +34,54 @@ const TYPE_BTREE_LEAF = 4
 const TYPE_CATALOG = 5
 const TYPE_GENERIC = 255
 
+// Defines the page id record used by this module.
 struct PageId
+  // File id field of the page id.
   fileId
+  // Page number field of the page id.
   pageNumber
 end struct
 
+// Defines the page header record used by this module.
 struct PageHeader
+  // Version field of the page header.
   version
+  // Page type field of the page header.
   pageType
+  // Flags field of the page header.
   flags
+  // Page id field of the page header.
   pageId
+  // Page lsn field of the page header.
   pageLsn
+  // Generation field of the page header.
   generation
+  // Item count field of the page header.
   itemCount
+  // Free start field of the page header.
   freeStart
+  // Free end field of the page header.
   freeEnd
+  // Payload checksum field of the page header.
   payloadChecksum
+  // Header checksum field of the page header.
   headerChecksum
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "storage.page." + operation + ": " + message)
 end function
 
+// Performs the magic bytes operation for this module.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSPG")
 end function
 
+// Performs the bytes equal operation for this module.
+// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return false end if
   if len(left) != len(right) then return false end if
@@ -68,6 +92,8 @@ function bytesEqual(left, right)
   return true
 end function
 
+// Copies the exact.
+// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -76,6 +102,8 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
+// Validates the native id.
+// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateNativeId(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -83,6 +111,8 @@ function validateNativeId(value, operation, name)
   return true
 end function
 
+// Decodes the native id.
+// Inputs: `value`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeNativeId(value, operation, name)
   endian.validateUInt64Words(value, "storage.page." + operation + "." + name)
   if value.high > endian.MAX_SCALAR_HIGH then
@@ -91,6 +121,8 @@ function decodeNativeId(value, operation, name)
   return endian.uint64ToInt(value)
 end function
 
+// Validates the page type.
+// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePageType(value, operation)
   if typeof(value) != "int" or value < 0 or value > 65535 then
     return fail(INVALID_ARGUMENT, operation, "pageType must fit U16")
@@ -98,6 +130,8 @@ function validatePageType(value, operation)
   return true
 end function
 
+// Validates the page size.
+// Inputs: `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePageSize(pageSize, operation)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     return fail(INVALID_ARGUMENT, operation, "unsupported page size")
@@ -108,6 +142,8 @@ function validatePageSize(pageSize, operation)
   return true
 end function
 
+// Validates the page buffer.
+// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePageBuffer(pageBytes, operation)
   if typeof(pageBytes) != "bytes" then
     return fail(INVALID_ARGUMENT, operation, "page must be bytes")
@@ -116,12 +152,16 @@ function validatePageBuffer(pageBytes, operation)
   return true
 end function
 
+// Creates the page id.
+// Inputs: `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createPageId(fileId, pageNumber)
   validateNativeId(fileId, "createPageId", "fileId")
   validateNativeId(pageNumber, "createPageId", "pageNumber")
   return PageId(fileId, pageNumber)
 end function
 
+// Performs the new header operation for this module.
+// Inputs: `pageType`, `pageId`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function newHeader(pageType, pageId, pageSize)
   validatePageType(pageType, "newHeader")
   if pageId is not PageId then return fail(INVALID_ARGUMENT, "newHeader", "pageId must be PageId") end if
@@ -143,6 +183,8 @@ function newHeader(pageType, pageId, pageSize)
   )
 end function
 
+// Validates the header.
+// Inputs: `header`, `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateHeader(header, pageSize, operation)
   if header is not PageHeader then return fail(INVALID_ARGUMENT, operation, "header must be PageHeader") end if
   validatePageSize(pageSize, operation)
@@ -176,6 +218,8 @@ function validateHeader(header, pageSize, operation)
   return true
 end function
 
+// Encodes the page header.
+// Inputs: `header`, `destination`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encodePageHeader(header, destination)
   if typeof(destination) != "bytes" or len(destination) < HEADER_SIZE then
     return fail(INVALID_ARGUMENT, "encodePageHeader", "destination must contain at least 64 bytes")
@@ -202,6 +246,8 @@ function encodePageHeader(header, destination)
   return HEADER_SIZE
 end function
 
+// Decodes the page header.
+// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodePageHeader(source)
   validatePageBuffer(source, "decodePageHeader")
   if not bytesEqual(slice(source, 0, MAGIC_SIZE), magicBytes()) then
@@ -246,6 +292,8 @@ function decodePageHeader(source)
   return header
 end function
 
+// Performs the seal operation for this module.
+// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function seal(pageBytes, header)
   validatePageBuffer(pageBytes, "seal")
   validateHeader(header, len(pageBytes), "seal")
@@ -257,6 +305,8 @@ function seal(pageBytes, header)
   return header
 end function
 
+// Verifies the requested value.
+// Inputs: `pageBytes`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function verify(pageBytes)
   validatePageBuffer(pageBytes, "verify")
   header = decodePageHeader(pageBytes)
@@ -267,6 +317,8 @@ function verify(pageBytes)
   return header
 end function
 
+// Creates the requested value.
+// Inputs: `pageSize`, `pageType`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(pageSize, pageType, fileId, pageNumber)
   pageId = createPageId(fileId, pageNumber)
   header = newHeader(pageType, pageId, pageSize)
@@ -275,6 +327,8 @@ function create(pageSize, pageType, fileId, pageNumber)
   return pageBytes
 end function
 
+// Performs the reseal operation for this module.
+// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function reseal(pageBytes)
   validatePageBuffer(pageBytes, "reseal")
   header = decodePageHeader(pageBytes)
@@ -282,6 +336,8 @@ function reseal(pageBytes)
   return header
 end function
 
+// Compares the lsn.
+// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function compareLsn(left, right)
   endian.validateUInt64Words(left, "storage.page.compareLsn.left")
   endian.validateUInt64Words(right, "storage.page.compareLsn.right")
@@ -292,6 +348,8 @@ function compareLsn(left, right)
   return 0
 end function
 
+// Updates the lsn.
+// Inputs: `pageBytes`, `lsn`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function setLsn(pageBytes, lsn)
   validatePageBuffer(pageBytes, "setLsn")
   endian.validateUInt64Words(lsn, "storage.page.setLsn.lsn")
@@ -301,14 +359,20 @@ function setLsn(pageBytes, lsn)
   return header
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.page"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M4"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

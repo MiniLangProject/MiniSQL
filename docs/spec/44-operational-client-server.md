@@ -36,12 +36,14 @@ minisqld.exe --serve-authenticated <database-path> <port> [max-clients]
 ```
 
 These modes use a request budget of zero. In the server contract, zero means
-unlimited and disables the global scheduler idle exit. Individual sessions
+unlimited and disables the global threaded-acceptor idle exit. Individual sessions
 retain their existing handshake and idle timeouts. The process remains available
 until terminated by the operator or until a fatal database/network error occurs.
 
 Positive request budgets remain supported by the compatibility modes and cause
 a deterministic exit after the exact number of handled protocol requests.
+Active connections run as bounded thread-pool jobs; `max-clients` is both the
+worker bound and the live-session backpressure limit.
 
 ## Stateful client
 
@@ -54,15 +56,18 @@ Both modes open one client connection, perform one HELLO handshake, execute all
 commands on that same session and close it exactly once. Consequently explicit
 transactions, savepoints and prepared statements persist between commands.
 
-The first script grammar is intentionally deterministic:
+The script grammar is intentionally deterministic:
 
 - UTF-8 text, at most 1 MiB;
-- one complete SQL statement per line;
-- blank lines ignored;
-- lines whose trimmed form begins with `#` or `--` ignored.
+- SQL-aware statement termination with semicolons outside strings, quoted
+  identifiers and comments;
+- multiline statements and multiple statements per line;
+- blank lines and standalone comments ignored;
+- a final complete statement may omit its semicolon at end of file.
 
-The shell accepts one complete SQL statement per line and the local commands
-`\help`, `\ping`, `\q` and `\quit`.
+The shell uses the same scanner, supports continuation input and accepts the
+local commands documented by `\help`, including `\ping`, `\source`, `\reset`,
+`\q` and `\quit`.
 
 ## Public application acceptance
 

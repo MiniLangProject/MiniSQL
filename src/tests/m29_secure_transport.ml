@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.uuid as uuid
 import minisql.platform.network as network
 import minisql.protocol.connection as connection
 import minisql.protocol.messages as messages
 import tests.support.testkit as testkit
 
+// Compares two byte arrays without assuming equal types or lengths and reports whether any byte differs.
 function bytesDiffer(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return true end if
   for index = 0 to len(left) - 1
@@ -12,8 +17,11 @@ function bytesDiffer(left, right)
   return false
 end function
 
+// Runs the secure transport test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = testkit.create()
+  // Bind sequence, direction, message type, and request ID into AEAD. Changing
+  // any authenticated field or tag must make decryption fail deterministically.
   key = uuid.randomBytes(32)
   plaintext = bytes("authenticated MiniSQL frame")
   packet = uuid.transportEncrypt(key, 7, 3, 1, 42, plaintext)
@@ -28,6 +36,8 @@ function main(args)
   packet.tag[0] = packet.tag[0] ^ 1
   testkit.errorCode(state, try(uuid.transportDecrypt(key, 7, 3, 1, 42, packet.ciphertext, packet.tag)), 9027, "tag tampering rejected")
 
+  // Two connection states use opposite send/receive counters. A protected frame
+  // is accepted once, then both replay and post-activation plaintext are denied.
   sender = connection.create(1)
   receiver = connection.create(2)
   connection.enableSecure(sender, key, key)
@@ -41,6 +51,7 @@ function main(args)
   testkit.errorCode(state, try(connection.unprotectMessage(receiver, original)), 9030, "plaintext rejected after activation")
   testkit.errorCode(state, try(network.listenAddress("0.0.0.0", 7432, 1, false)), 9001, "remote bind rejected without secure server mode")
 
+  // Explicitly wipe every secret or derived byte buffer owned by this test.
   uuid.wipeSecret(key)
   uuid.wipeSecret(plaintext)
   uuid.wipeSecret(recovered)

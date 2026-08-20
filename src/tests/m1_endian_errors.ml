@@ -1,10 +1,16 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import tests.support.testkit as test
 
+// Asserts that an invalid endian operation left the destination buffer byte-for-byte unchanged.
 function expectUnchanged(state, buffer, before, label)
   test.equal(state, hex(buffer), before, label)
 end function
 
+// Runs the endian errors test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
 

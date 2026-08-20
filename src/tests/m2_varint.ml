@@ -1,7 +1,12 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.common.varint as varint
 import tests.support.testkit as test
 
+// Encodes and decodes an unsigned 32-bit value, checking the golden bytes and the consumed-length contract.
 function checkU32Golden(state, value, expectedHex, label)
   buffer = bytes(10, 0)
   next = varint.writeU32(buffer, 0, value)
@@ -13,6 +18,7 @@ function checkU32Golden(state, value, expectedHex, label)
   test.equal(state, decoded.bytesRead, next, label + " bytesRead")
 end function
 
+// Encodes and decodes an unsigned 64-bit value, checking the golden bytes and the consumed-length contract.
 function checkU64Golden(state, value, expectedHex, label)
   buffer = bytes(16, 0)
   next = varint.writeU64(buffer, 0, value)
@@ -24,6 +30,7 @@ function checkU64Golden(state, value, expectedHex, label)
   test.equal(state, decoded.bytesRead, next, label + " bytesRead")
 end function
 
+// Encodes and decodes a signed 32-bit value, checking the golden bytes and the consumed-length contract.
 function checkI32Golden(state, value, expectedHex, label)
   buffer = bytes(10, 0)
   next = varint.writeI32(buffer, 0, value)
@@ -33,6 +40,7 @@ function checkI32Golden(state, value, expectedHex, label)
   test.equal(state, decoded.value, value, label + " value")
 end function
 
+// Encodes and decodes a signed 64-bit value, checking the golden bytes and the consumed-length contract.
 function checkI64Golden(state, value, expectedHex, label)
   buffer = bytes(16, 0)
   next = varint.writeI64(buffer, 0, value)
@@ -42,6 +50,7 @@ function checkI64Golden(state, value, expectedHex, label)
   test.record(state, endian.int64Equals(decoded.value, value), label + " value")
 end function
 
+// Runs the varint test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
 

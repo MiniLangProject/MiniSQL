@@ -10,6 +10,19 @@ $compiler = "C:\Users\nilsk\Desktop\MiniLangCompilerPy\mlc_win64.py"
 .\build\bin\minisqld.exe --serve .\data\db_<uuid> 7432 32
 ```
 
+The final argument bounds native MiniLang connection workers. Each active
+client owns one thread-pool job. Read-only plans from different clients may run
+in parallel on the same database; a writer-prioritized gate keeps mutations
+exclusive. Slow clients no longer stall other connections. Choose the bound for
+the expected number of simultaneously connected clients and available memory;
+raising it increases connection and read concurrency but does not create
+multiple physical writers for one database.
+
+Read-only statements share the database gate only after parsing and
+classification. A durable dirty-index marker is repaired under the exclusive
+gate before a read proceeds. New readers stop entering once a writer is waiting,
+so a sustained read workload cannot starve DML or maintenance.
+
 In a second PowerShell window:
 
 ```powershell
@@ -86,7 +99,9 @@ python .\tools\tls\minisql_tls_proxy.py client `
 
 The client rejects untrusted certificates, hostname mismatches and protocol
 versions other than TLS 1.3. Test certificates under `tests\fixtures\tls` are
-not deployment credentials.
+not deployment credentials. The sidecar uses one blocking pump per relay
+direction after the TLS handshake; bounded modes drain every accepted relay
+before exiting, including fragmented final requests.
 
 ## Continuous read-only hot standby (M48)
 

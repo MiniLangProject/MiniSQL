@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.storage.page as page
@@ -5,15 +9,18 @@ import minisql.storage.heap_file as heap_file
 import minisql.storage.slotted_page as slotted
 import tests.support.testkit as testkit
 
+// Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
   return true
 end function
 
+// Returns the deterministic database identifier used to make on-disk test fixtures reproducible.
 function databaseId()
   return fromHex("fedcba98765432100123456789abcdef")
 end function
 
+// Builds a deterministic variable-length heap record used to validate insertion, lookup, update, and deletion.
 function makeRecord(index, length)
   result = bytes(length, 0)
   if length > 0 then
@@ -24,6 +31,7 @@ function makeRecord(index, length)
   return result
 end function
 
+// Runs the heap file test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M9 heap-file tests: FAIL (missing path)"

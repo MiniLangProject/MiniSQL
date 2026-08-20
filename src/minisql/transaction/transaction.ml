@@ -1,8 +1,15 @@
 package minisql.transaction.transaction
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.storage.page as page
 import minisql.transaction.wal as wal
+
+// Transaction state machine and page-level change tracking. Write-ahead-log
+// records become durable before changed pages are published; savepoints retain
+// enough before-image state to roll back a suffix without ending the transaction.
 
 const INVALID_ARGUMENT = 9001
 const TRANSACTION_STATE = 9011
@@ -11,69 +18,109 @@ const READ_ONLY_VIOLATION = 9012
 const ISOLATION_READ_COMMITTED = 1
 const ISOLATION_SERIALIZABLE = 2
 
+// Defines the page change record used by this module.
 struct PageChange
+  // File id field of the page change.
   fileId
+  // Page number field of the page change.
   pageNumber
+  // Page bytes field of the page change.
   pageBytes
 end struct
 
+// Defines the savepoint record used by this module.
 struct Savepoint
+  // Name field of the savepoint.
   name
+  // Changes field of the savepoint.
   changes
 end struct
 
+// Defines the transaction record used by this module.
 struct Transaction
+  // Transaction id field of the transaction.
   transactionId
+  // State field of the transaction.
   state
+  // Isolation level field of the transaction.
   isolationLevel
+  // Read only field of the transaction.
   readOnly
+  // Begin lsn field of the transaction.
   beginLsn
+  // Commit lsn field of the transaction.
   commitLsn
+  // Wal writer field of the transaction.
   walWriter
+  // Begin logged field of the transaction.
   beginLogged
+  // Changes field of the transaction.
   changes
+  // Committed changes field of the transaction.
   committedChanges
+  // Savepoints field of the transaction.
   savepoints
 end struct
 
+// Defines the transaction manager record used by this module.
 struct TransactionManager
+  // Next transaction id field of the transaction manager.
   nextTransactionId
 end struct
 
+// Defines the transaction state enumeration used by this module.
 enum TransactionState
+  // Idle variant of the transaction state.
   Idle = 0
+  // Active variant of the transaction state.
   Active = 1
+  // Failed variant of the transaction state.
   Failed = 2
+  // Committing variant of the transaction state.
   Committing = 3
+  // Committed variant of the transaction state.
   Committed = 4
+  // Aborted variant of the transaction state.
   Aborted = 5
 end enum
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "transaction.transaction." + operation + ": " + message)
 end function
 
+// Validates the id.
+// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateId(value, operation)
   if typeof(value) != "int" or value <= 0 or value > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, operation, "transactionId must be positive") end if
   return true
 end function
 
+// Validates the isolation.
+// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateIsolation(value, operation)
   if value != ISOLATION_READ_COMMITTED and value != ISOLATION_SERIALIZABLE then return fail(INVALID_ARGUMENT, operation, "unsupported isolation level") end if
   return true
 end function
 
+// Validates the transaction.
+// Inputs: `transaction`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateTransaction(transaction, operation)
   if transaction is not Transaction then return fail(INVALID_ARGUMENT, operation, "value must be Transaction") end if
   return true
 end function
 
+// Performs the require active operation for this module.
+// Inputs: `transaction`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function requireActive(transaction, operation)
   validateTransaction(transaction, operation)
   if transaction.state != TransactionState.Active then return fail(TRANSACTION_STATE, operation, "transaction is not active") end if
   return true
 end function
 
+// Begins the transaction.
+// Inputs: `transactionId`, `isolationLevel`, `readOnly`, `walWriter`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function beginTransaction(transactionId, isolationLevel, readOnly, walWriter)
   validateId(transactionId, "beginTransaction")
   validateIsolation(isolationLevel, "beginTransaction")
@@ -82,11 +129,15 @@ function beginTransaction(transactionId, isolationLevel, readOnly, walWriter)
   return Transaction(transactionId, TransactionState.Active, isolationLevel, readOnly, 0, 0, walWriter, false, [], [], [])
 end function
 
+// Creates the manager.
+// Inputs: `firstTransactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function createManager(firstTransactionId)
   validateId(firstTransactionId, "createManager")
   return TransactionManager(firstTransactionId)
 end function
 
+// Begins the managed.
+// Inputs: `manager`, `isolationLevel`, `readOnly`, `walWriter`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function beginManaged(manager, isolationLevel, readOnly, walWriter)
   if manager is not TransactionManager then return fail(INVALID_ARGUMENT, "beginManaged", "manager must be TransactionManager") end if
   id = manager.nextTransactionId
@@ -95,6 +146,8 @@ function beginManaged(manager, isolationLevel, readOnly, walWriter)
   return beginTransaction(id, isolationLevel, readOnly, walWriter)
 end function
 
+// Finds the change.
+// Inputs: `transaction`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findChange(transaction, fileId, pageNumber)
   if len(transaction.changes) == 0 then return -1 end if
   for index = 0 to len(transaction.changes) - 1
@@ -104,6 +157,8 @@ function findChange(transaction, fileId, pageNumber)
   return -1
 end function
 
+// Performs the stage page operation for this module.
+// Inputs: `transaction`, `fileId`, `pageNumber`, `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stagePage(transaction, fileId, pageNumber, pageBytes)
   requireActive(transaction, "stagePage")
   if transaction.readOnly then return fail(READ_ONLY_VIOLATION, "stagePage", "read-only transaction cannot stage pages") end if
@@ -121,11 +176,15 @@ function stagePage(transaction, fileId, pageNumber, pageBytes)
   return true
 end function
 
+// Performs the staged page count operation for this module.
+// Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stagedPageCount(transaction)
   validateTransaction(transaction, "stagedPageCount")
   return len(transaction.changes)
 end function
 
+// Reads the private page.
+// Inputs: `transaction`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readPrivatePage(transaction, fileId, pageNumber)
   validateTransaction(transaction, "readPrivatePage")
   index = findChange(transaction, fileId, pageNumber)
@@ -133,12 +192,16 @@ function readPrivatePage(transaction, fileId, pageNumber)
   return bytes(transaction.changes[index].pageBytes)
 end function
 
+// Marks the failed.
+// Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function markFailed(transaction)
   validateTransaction(transaction, "markFailed")
   transaction.state = TransactionState.Failed
   return true
 end function
 
+// Clones the changes.
+// Inputs: `changes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cloneChanges(changes)
   output = []
   for each change in changes
@@ -147,11 +210,15 @@ function cloneChanges(changes)
   return output
 end function
 
+// Validates the savepoint name.
+// Inputs: `name`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateSavepointName(name, operation)
   if typeof(name) != "string" or len(name) == 0 or len(bytes(name)) > 128 then return fail(INVALID_ARGUMENT, operation, "savepoint name must be 1..128 UTF-8 bytes") end if
   return true
 end function
 
+// Persists the point.
+// Inputs: `transaction`, `name`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function savepoint(transaction, name)
   requireActive(transaction, "savepoint")
   validateSavepointName(name, "savepoint")
@@ -159,6 +226,8 @@ function savepoint(transaction, name)
   return len(transaction.savepoints)
 end function
 
+// Finds the savepoint.
+// Inputs: `transaction`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findSavepoint(transaction, name)
   if len(transaction.savepoints) == 0 then return -1 end if
   index = len(transaction.savepoints) - 1
@@ -169,6 +238,8 @@ function findSavepoint(transaction, name)
   return -1
 end function
 
+// Rolls back the to savepoint.
+// Inputs: `transaction`, `name`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function rollbackToSavepoint(transaction, name)
   validateTransaction(transaction, "rollbackToSavepoint")
   validateSavepointName(name, "rollbackToSavepoint")
@@ -185,6 +256,8 @@ function rollbackToSavepoint(transaction, name)
   return true
 end function
 
+// Releases the savepoint.
+// Inputs: `transaction`, `name`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function releaseSavepoint(transaction, name)
   requireActive(transaction, "releaseSavepoint")
   validateSavepointName(name, "releaseSavepoint")
@@ -200,11 +273,15 @@ function releaseSavepoint(transaction, name)
   return true
 end function
 
+// Persists the point count.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function savepointCount(transaction)
   validateTransaction(transaction, "savepointCount")
   return len(transaction.savepoints)
 end function
 
+// Performs the fail commit operation for this module.
+// Inputs: `transaction`, `startLsn`, `failure`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function failCommit(transaction, startLsn, failure)
   // A low-level write may have reached only part of a WAL record. Always return
   // the append region to its pre-transaction boundary before exposing failure.
@@ -218,6 +295,8 @@ function failCommit(transaction, startLsn, failure)
   return failure
 end function
 
+// Commits the requested value.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function commit(transaction)
   requireActive(transaction, "commit")
   startLsn = transaction.walWriter.nextLsn
@@ -247,11 +326,15 @@ function commit(transaction)
   return transaction.commitLsn
 end function
 
+// Commits the ted page count.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function committedPageCount(transaction)
   validateTransaction(transaction, "committedPageCount")
   return len(transaction.committedChanges)
 end function
 
+// Commits the ted pages.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function committedPages(transaction)
   validateTransaction(transaction, "committedPages")
   if transaction.state != TransactionState.Committed then return fail(TRANSACTION_STATE, "committedPages", "transaction is not committed") end if
@@ -262,6 +345,8 @@ function committedPages(transaction)
   return result
 end function
 
+// Performs the acknowledge committed pages operation for this module.
+// Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function acknowledgeCommittedPages(transaction)
   validateTransaction(transaction, "acknowledgeCommittedPages")
   if transaction.state != TransactionState.Committed then return fail(TRANSACTION_STATE, "acknowledgeCommittedPages", "transaction is not committed") end if
@@ -269,6 +354,8 @@ function acknowledgeCommittedPages(transaction)
   return true
 end function
 
+// Performs the take committed pages operation for this module.
+// Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function takeCommittedPages(transaction)
   // Compatibility helper. Storage publication paths should prefer
   // committedPages() followed by acknowledgeCommittedPages() only after every
@@ -278,6 +365,8 @@ function takeCommittedPages(transaction)
   return result
 end function
 
+// Rolls back the requested value.
+// Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function rollback(transaction)
   validateTransaction(transaction, "rollback")
   if transaction.state == TransactionState.Committed or transaction.state == TransactionState.Aborted then return fail(TRANSACTION_STATE, "rollback", "transaction is already final") end if
@@ -292,14 +381,20 @@ function rollback(transaction)
   return true
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "transaction.transaction"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M6"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

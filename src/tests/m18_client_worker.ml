@@ -1,7 +1,12 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.client.client as client
 import minisql.protocol.constants as constants
 import tests.support.testkit as testkit
 
+// Runs the concurrent client worker protocol test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M18 client worker: FAIL (expected port)"

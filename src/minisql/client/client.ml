@@ -1,5 +1,9 @@
 package minisql.client.client
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.uuid as uuid
 import minisql.common.version as version
 import minisql.protocol.connection as connection
@@ -10,40 +14,68 @@ const INVALID_ARGUMENT = 9001
 const CLOSED_HANDLE = 9008
 const AUTHENTICATION_FAILED = 9027
 
+// Groups the client state and preserves the field relationships documented below.
 struct Client
+  // Stores the connection associated with this value.
   connection
+  // Tracks the next request identifier numeric value.
   nextRequestId
+  // Indicates whether the closed condition is active.
   closed
+  // Indicates whether the authenticated condition is active.
   authenticated
+  // Stores the username associated with this value.
   username
 end struct
 
+// Implements m0 self test line for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function m0SelfTestLine()
   return "MiniSQL client M0 self-test: SUCCESS"
 end function
 
+// Implements version line for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function versionLine()
   return version.versionLine("client")
 end function
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "client.client." + operation + ": " + message)
 end function
 
+// Implements authentication failure for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authenticationFailure(operation)
   return fail(AUTHENTICATION_FAILED, operation, "authentication failed")
 end function
 
+// Returns whether the supplied value satisfies the client condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isClient(value)
   return value is Client
 end function
 
+// Validates open using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function validateOpen(client, operation)
   if client is not Client then return fail(INVALID_ARGUMENT, operation, "client must be Client") end if
   if client.closed then return fail(CLOSED_HANDLE, operation, "client is closed") end if
   return true
 end function
 
+// Implements request for this module.
+// Returns the computed value or operation status.
+// May mutate supplied state and perform I/O through its dependencies.
 function request(client, message)
   validateOpen(client, "request")
   connection.sendMessage(client.connection, message)
@@ -53,6 +85,10 @@ function request(client, message)
   return response
 end function
 
+// Implements hello handshake for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function helloHandshake(client, operation)
   response = try(request(client, messages.hello(client.nextRequestId)))
   if typeof(response) == "error" then return response end if
@@ -63,12 +99,19 @@ function helloHandshake(client, operation)
   return true
 end function
 
+// Closes failed open using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state and perform I/O through its dependencies.
 function closeFailedOpen(client, result)
   ignored = try(connection.close(client.connection))
   client.closed = true
   return result
 end function
 
+// Opens loopback using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function openLoopback(port)
   connectionValue = connection.connectLoopback(port)
   client = Client(connectionValue, 1, false, true, "trusted-local")
@@ -77,6 +120,10 @@ function openLoopback(port)
   return client
 end function
 
+// Implements clear auth challenge for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function clearAuthChallenge(challenge)
   if typeof(challenge) != "array" or len(challenge) < 3 then return false end if
   if typeof(challenge[1]) == "bytes" then fillBytes(challenge[1], 0, len(challenge[1]), 0) end if
@@ -84,6 +131,10 @@ function clearAuthChallenge(challenge)
   return true
 end function
 
+// Opens authenticated connection using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state and perform I/O through its dependencies.
 function openAuthenticatedConnection(connectionValue, username, passwordBytes, operation)
   if typeof(username) != "string" or len(bytes(username)) == 0 or len(bytes(username)) > 128 then return fail(INVALID_ARGUMENT, operation, "username is invalid") end if
   client = Client(connectionValue, 1, false, false, username)
@@ -136,15 +187,26 @@ function openAuthenticatedConnection(connectionValue, username, passwordBytes, o
   return client
 end function
 
+// Opens authenticated address bytes using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Performs I/O through its file, transport, or storage dependencies.
 function openAuthenticatedAddressBytes(address, port, username, passwordBytes)
   if typeof(passwordBytes) != "bytes" then return fail(INVALID_ARGUMENT, "openAuthenticatedAddressBytes", "password must be bytes") end if
   return openAuthenticatedConnection(connection.connectAddress(address, port), username, passwordBytes, "openAuthenticatedAddressBytes")
 end function
 
+// Opens authenticated loopback bytes using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openAuthenticatedLoopbackBytes(port, username, passwordBytes)
   return openAuthenticatedAddressBytes("127.0.0.1", port, username, passwordBytes)
 end function
 
+// Opens authenticated address using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openAuthenticatedAddress(address, port, username, password)
   if typeof(password) != "string" then return fail(INVALID_ARGUMENT, "openAuthenticatedAddress", "password must be string") end if
   secret = bytes(password)
@@ -154,10 +216,16 @@ function openAuthenticatedAddress(address, port, username, password)
   return result
 end function
 
+// Opens authenticated loopback using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openAuthenticatedLoopback(port, username, password)
   return openAuthenticatedAddress("127.0.0.1", port, username, password)
 end function
 
+// Implements query for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function query(client, sqlText)
   validateOpen(client, "query")
   responseMessage = request(client, messages.query(client.nextRequestId, sqlText))
@@ -165,12 +233,19 @@ function query(client, sqlText)
   return messages.decodeResponse(responseMessage.payload)
 end function
 
+// Implements ping for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function ping(client)
   validateOpen(client, "ping")
   response = request(client, messages.ping(client.nextRequestId))
   return response.messageType == constants.TYPE_PONG
 end function
 
+// Closes close using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// May mutate supplied state and perform I/O through its dependencies.
 function close(client)
   validateOpen(client, "close")
   response = try(request(client, messages.closeRequest(client.nextRequestId)))
@@ -180,18 +255,30 @@ function close(client)
   return true
 end function
 
+// Runs interactive using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function runInteractive()
   return error(9000, "client.runInteractive requires database endpoint arguments; use openLoopback/query")
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "client.client"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M0"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

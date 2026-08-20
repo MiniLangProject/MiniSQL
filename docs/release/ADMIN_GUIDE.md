@@ -4,6 +4,25 @@ Create a database with `minisqld.exe --init <root> <name> [page-size]`. Start a
 loopback server with `--serve`, an authenticated server with
 `--serve-authenticated`, or a read-only standby with `--serve-standby`.
 
+The optional `max-clients` argument bounds native MiniLang thread-pool workers
+and live sessions. Each worker owns one connection, so slow clients do not stall
+other sockets. Read-only plans can execute in parallel on the same database;
+mutations remain exclusive behind a writer-prioritized gate. Size the limit for
+the expected connection count, read parallelism and available memory. Increasing
+it does not add write parallelism.
+
+The execution classifier treats ordinary read-only `SELECT`, `EXPLAIN` and
+metadata requests as shared operations. DML, DDL, DCL, explicit transaction and
+session state, maintenance, and sequence consumption are conservative exclusive
+operations. A waiting writer prevents new readers from entering. Existing
+readers finish before the writer proceeds; this bounds writer starvation without
+aborting valid reads.
+
+Each read scan owns an independent table/index handle and holds a compatible
+shared Win32 byte-range lock. Writers retain exclusive locks. If a durable index
+dirty marker appears, the reader leaves the shared gate and performs repair only
+after acquiring the exclusive gate.
+
 Format-relevant settings are copied into `db.meta` when a database is created.
 Changing global defaults never changes an existing database. A page-size change
 requires `minisql-migrate.exe --rewrite`.

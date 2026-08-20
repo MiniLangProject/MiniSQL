@@ -1,40 +1,70 @@
 package minisql.protocol.messages
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 import minisql.protocol.constants as constants
 
 const INVALID_ARGUMENT = 9001
 const CORRUPT_DATA = 9004
 
+// Groups the message state and preserves the field relationships documented below.
 struct Message
+  // Stores the message type associated with this value.
   messageType
+  // Stores the flags associated with this value.
   flags
+  // Identifies the request identifier.
   requestId
+  // Stores the payload associated with this value.
   payload
 end struct
 
+// Groups the response state and preserves the field relationships documented below.
 struct Response
+  // Stores the status associated with this value.
   status
+  // Stores the command associated with this value.
   command
+  // Contains the ordered columns collection.
   columns
+  // Contains the ordered rows collection.
   rows
+  // Stores the affected rows associated with this value.
   affectedRows
+  // Stores the message associated with this value.
   message
+  // Stores the error code associated with this value.
   errorCode
 end struct
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "protocol.messages." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the message condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isMessage(value)
   return value is Message
 end function
 
+// Returns whether the supplied value satisfies the response condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isResponse(value)
   return value is Response
 end function
 
+// Creates create using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function create(messageType, flags, requestId, payload)
   if typeof(messageType) != "int" or not constants.knownType(messageType) then return fail(INVALID_ARGUMENT, "create", "unknown message type") end if
   if typeof(flags) != "int" or flags < 0 or flags > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "create", "flags must fit U32") end if
@@ -43,15 +73,26 @@ function create(messageType, flags, requestId, payload)
   return Message(messageType, flags, requestId, bytes(payload))
 end function
 
+// Implements hello for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function hello(requestId)
   return create(constants.TYPE_HELLO, 0, requestId, bytes("MiniSQL/1"))
 end function
 
+// Implements query for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function query(requestId, sqlText)
   if typeof(sqlText) != "string" or len(bytes(sqlText)) > constants.MAX_PAYLOAD_BYTES then return fail(INVALID_ARGUMENT, "query", "SQL text is invalid") end if
   return create(constants.TYPE_QUERY, 0, requestId, bytes(sqlText))
 end function
 
+// Implements auth begin for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authBegin(requestId, username)
   if typeof(username) != "string" or len(bytes(username)) == 0 or len(bytes(username)) > 128 then return fail(INVALID_ARGUMENT, "authBegin", "username is invalid") end if
   raw = bytes(username)
@@ -61,6 +102,10 @@ function authBegin(requestId, username)
   return create(constants.TYPE_AUTH_BEGIN, 0, requestId, payload)
 end function
 
+// Decodes auth begin using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decodeAuthBegin(payload)
   if typeof(payload) != "bytes" or len(payload) < 3 then return fail(CORRUPT_DATA, "decodeAuthBegin", "authentication-begin payload is truncated") end if
   length = endian.readU16LE(payload, 0)
@@ -70,6 +115,10 @@ function decodeAuthBegin(payload)
   return username
 end function
 
+// Implements auth challenge for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authChallenge(requestId, iterations, salt, nonce)
   if typeof(iterations) != "int" or iterations < 10000 or iterations > 5000000 then return fail(INVALID_ARGUMENT, "authChallenge", "iterations are invalid") end if
   if typeof(salt) != "bytes" or len(salt) != 16 or typeof(nonce) != "bytes" or len(nonce) != 32 then return fail(INVALID_ARGUMENT, "authChallenge", "salt or nonce is invalid") end if
@@ -80,6 +129,10 @@ function authChallenge(requestId, iterations, salt, nonce)
   return create(constants.TYPE_AUTH_CHALLENGE, 0, requestId, payload)
 end function
 
+// Decodes auth challenge using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decodeAuthChallenge(payload)
   if typeof(payload) != "bytes" or len(payload) != 52 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge payload size is invalid") end if
   iterations = endian.readU32LE(payload, 0)
@@ -87,46 +140,79 @@ function decodeAuthChallenge(payload)
   return [iterations, slice(payload, 4, 16), slice(payload, 20, 32)]
 end function
 
+// Implements auth proof for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authProof(requestId, proof)
   if typeof(proof) != "bytes" or len(proof) != 32 then return fail(INVALID_ARGUMENT, "authProof", "proof must be 32 bytes") end if
   return create(constants.TYPE_AUTH_PROOF, 0, requestId, proof)
 end function
 
+// Implements auth ok for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function authOk(requestId, serverProof)
   if typeof(serverProof) != "bytes" or len(serverProof) != 32 then return fail(INVALID_ARGUMENT, "authOk", "server proof must be 32 bytes") end if
   return create(constants.TYPE_AUTH_OK, 0, requestId, serverProof)
 end function
 
+// Implements ping for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function ping(requestId)
   return create(constants.TYPE_PING, 0, requestId, bytes(0))
 end function
 
+// Closes request using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function closeRequest(requestId)
   return create(constants.TYPE_CLOSE, 0, requestId, bytes(0))
 end function
 
+// Implements command response for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function commandResponse(command, affectedRows, message)
   return Response(constants.STATUS_COMMAND, command, [], [], affectedRows, message, 0)
 end function
 
+// Implements row response for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rowResponse(columns, rows)
   return Response(constants.STATUS_ROWS, "SELECT", columns, rows, len(rows), "", 0)
 end function
 
+// Creates an error for response using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function errorResponse(code, message)
   return Response(constants.STATUS_ERROR, "ERROR", [], [], 0, message, code)
 end function
 
+// Implements string bytes for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function stringBytes(value)
   if typeof(value) != "string" then return fail(INVALID_ARGUMENT, "stringBytes", "value must be string") end if
   return bytes(value)
 end function
 
+// Implements field size for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fieldSize(value)
   raw = stringBytes(value)
   return 4 + len(raw)
 end function
 
+// Writes field using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function writeField(output, offset, value)
   raw = stringBytes(value)
   endian.writeU32LE(output, offset, len(raw))
@@ -134,6 +220,10 @@ function writeField(output, offset, value)
   return offset + 4 + len(raw)
 end function
 
+// Reads field using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readField(source, offset)
   if offset < 0 or offset > len(source) - 4 then return fail(CORRUPT_DATA, "readField", "field length is truncated") end if
   length = endian.readU32LE(source, offset)
@@ -143,6 +233,9 @@ function readField(source, offset)
   return [value, offset + 4 + length]
 end function
 
+// Implements response payload size for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function responsePayloadSize(response)
   size = 24 + fieldSize(response.command) + fieldSize(response.message)
   for each column in response.columns
@@ -156,6 +249,10 @@ function responsePayloadSize(response)
   return size
 end function
 
+// Encodes response using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function encodeResponse(response)
   if response is not Response then return fail(INVALID_ARGUMENT, "encodeResponse", "response must be Response") end if
   if typeof(response.status) != "int" or response.status < 1 or response.status > 3 then return fail(INVALID_ARGUMENT, "encodeResponse", "status is invalid") end if
@@ -191,6 +288,10 @@ function encodeResponse(response)
   return output
 end function
 
+// Decodes response using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function decodeResponse(source)
   if typeof(source) != "bytes" or len(source) < 24 or len(source) > constants.MAX_PAYLOAD_BYTES then return fail(CORRUPT_DATA, "decodeResponse", "payload size is invalid") end if
   status = endian.readU16LE(source, 0)
@@ -231,14 +332,23 @@ function decodeResponse(source)
   return Response(status, command, columns, rows, endian.readU32LE(source, 12), message, endian.readU32LE(source, 16))
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "protocol.messages"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

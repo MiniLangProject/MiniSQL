@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """MiniSQL TLS 1.3/X.509 transport terminator.
 
 The MiniSQL wire protocol remains unchanged.  This small standard-library
@@ -15,7 +30,6 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
-import selectors
 import socket
 import ssl
 import sys
@@ -27,6 +41,7 @@ BUFFER_SIZE = 64 * 1024
 
 
 def loopback_only(host: str, label: str) -> None:
+    """Rejects a host unless every resolved address is loopback, preventing plaintext exposure."""
     try:
         addresses = {info[4][0] for info in socket.getaddrinfo(host, None)}
     except OSError as exc:
@@ -42,6 +57,7 @@ def loopback_only(host: str, label: str) -> None:
 
 
 def touch_ready(path: str | None, message: str) -> None:
+    """Atomically creates the optional readiness marker after its parent directory exists."""
     if not path:
         return
     target = Path(path)
@@ -67,31 +83,64 @@ def send_fragmented(destination: socket.socket, data: bytes, chunk_size: int, de
             time.sleep(delay_seconds)
 
 
-def relay(left: socket.socket, right: socket.socket, chunk_size: int, delay_seconds: float) -> None:
-    selector = selectors.DefaultSelector()
-    selector.register(left, selectors.EVENT_READ, right)
-    selector.register(right, selectors.EVENT_READ, left)
+def relay(
+    left: socket.socket,
+    right: socket.socket,
+    chunk_size: int,
+    delay_seconds: float,
+    left_name: str = "left",
+    right_name: str = "right",
+) -> None:
+    """Runs two directional blocking pumps and closes both endpoints when either direction finishes."""
     sockets = (left, right)
+    names = {left: left_name, right: right_name}
+    forwarded = {left: 0, right: 0}
+    stopped = threading.Event()
+    reason = ["shutdown"]
+
+    def pump(source: socket.socket, destination: socket.socket) -> None:
+        """Forwards one relay direction, records byte counts and wakes the peer on completion."""
+        while not stopped.is_set():
+            try:
+                data = source.recv(BUFFER_SIZE)
+            except (ConnectionError, OSError, ssl.SSLError) as exc:
+                if not stopped.is_set():
+                    reason[0] = f"{names[source]} recv error: {exc}"
+                break
+            if not data:
+                if not stopped.is_set():
+                    reason[0] = f"{names[source]} EOF"
+                break
+            try:
+                send_fragmented(destination, data, chunk_size, delay_seconds)
+                forwarded[source] += len(data)
+            except (ConnectionError, OSError, ssl.SSLError) as exc:
+                if not stopped.is_set():
+                    reason[0] = f"{names[source]}->{names[destination]} send error: {exc}"
+                break
+        if not stopped.is_set():
+            stopped.set()
+            for item in sockets:
+                try:
+                    item.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+
+    left_to_right = threading.Thread(target=pump, args=(left, right), daemon=True)
+    right_to_left = threading.Thread(target=pump, args=(right, left), daemon=True)
     try:
-        while True:
-            events = selector.select(timeout=30.0)
-            if not events:
-                continue
-            for key, _ in events:
-                source = key.fileobj
-                destination = key.data
-                try:
-                    data = source.recv(BUFFER_SIZE)
-                except (ConnectionError, OSError, ssl.SSLError):
-                    return
-                if not data:
-                    return
-                try:
-                    send_fragmented(destination, data, chunk_size, delay_seconds)
-                except (ConnectionError, OSError, ssl.SSLError):
-                    return
+        left_to_right.start()
+        right_to_left.start()
+        left_to_right.join()
+        right_to_left.join()
     finally:
-        selector.close()
+        if os.environ.get("MINISQL_TLS_RELAY_DEBUG") == "1":
+            print(
+                f"MiniSQL TLS relay ended: {reason[0]}; "
+                f"{left_name}->{right_name}={forwarded[left]} "
+                f"{right_name}->{left_name}={forwarded[right]}",
+                flush=True,
+            )
         for item in sockets:
             try:
                 item.shutdown(socket.SHUT_RDWR)
@@ -104,6 +153,7 @@ def relay(left: socket.socket, right: socket.socket, chunk_size: int, delay_seco
 
 
 def server_context(cert: str, key: str) -> ssl.SSLContext:
+    """Creates a TLS-1.3-only server context and loads its certificate chain."""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_3
     context.maximum_version = ssl.TLSVersion.TLSv1_3
@@ -113,6 +163,7 @@ def server_context(cert: str, key: str) -> ssl.SSLContext:
 
 
 def client_context(ca: str) -> ssl.SSLContext:
+    """Creates a TLS-1.3-only client context with mandatory CA and hostname verification."""
     context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=ca)
     context.minimum_version = ssl.TLSVersion.TLSv1_3
     context.maximum_version = ssl.TLSVersion.TLSv1_3
@@ -130,6 +181,7 @@ def serve_connection(
     relay_chunk_size: int,
     relay_delay_seconds: float,
 ) -> None:
+    """Terminates one inbound TLS connection and relays it to the loopback MiniSQL backend."""
     try:
         with context.wrap_socket(raw, server_side=True) as secure:
             if secure.version() != "TLSv1.3":
@@ -137,7 +189,7 @@ def serve_connection(
             backend = socket.create_connection((backend_host, backend_port), timeout=15.0)
             backend.settimeout(None)
             print(f"MiniSQL TLS server connection: TLSv1.3 cipher={secure.cipher()[0]}", flush=True)
-            relay(secure, backend, relay_chunk_size, relay_delay_seconds)
+            relay(secure, backend, relay_chunk_size, relay_delay_seconds, "tls-client", "backend")
     except (OSError, ssl.SSLError) as exc:
         print(f"MiniSQL TLS server connection rejected: {exc}", file=sys.stderr, flush=True)
         try:
@@ -147,6 +199,7 @@ def serve_connection(
 
 
 def run_server(args: argparse.Namespace) -> int:
+    """Runs the TLS server terminator with one worker thread per accepted connection."""
     loopback_only(args.backend_host, "backend host")
     context = server_context(args.cert, args.key)
     listener = socket.socket(socket.AF_INET6 if ":" in args.listen_host else socket.AF_INET, socket.SOCK_STREAM)
@@ -182,7 +235,13 @@ def run_server(args: argparse.Namespace) -> int:
     finally:
         listener.close()
         for thread in threads:
-            thread.join(timeout=2.0)
+            if args.max_connections > 0:
+                # A bounded sidecar has promised to serve every accepted
+                # connection. Do not let process exit truncate a deliberately
+                # fragmented final relay.
+                thread.join()
+            else:
+                thread.join(timeout=2.0)
     return 0
 
 
@@ -195,13 +254,18 @@ def client_connection(
     relay_chunk_size: int,
     relay_delay_seconds: float,
 ) -> None:
+    """Accepts one local plaintext client and relays it through a verified TLS connection."""
     try:
         outbound = socket.create_connection((remote_host, remote_port), timeout=15.0)
         secure = context.wrap_socket(outbound, server_hostname=server_name)
         if secure.version() != "TLSv1.3":
             raise ssl.SSLError(f"negotiated unexpected TLS version {secure.version()!r}")
+        # create_connection's timeout is only for connect/handshake. Leaving it
+        # on the SSLSocket can turn a TLS post-handshake selector wakeup into an
+        # application-data timeout before the local client request is relayed.
+        secure.settimeout(None)
         print(f"MiniSQL TLS client connection: TLSv1.3 cipher={secure.cipher()[0]}", flush=True)
-        relay(raw, secure, relay_chunk_size, relay_delay_seconds)
+        relay(raw, secure, relay_chunk_size, relay_delay_seconds, "local-client", "tls-server")
     except (OSError, ssl.SSLError) as exc:
         print(f"MiniSQL TLS client connection failed: {exc}", file=sys.stderr, flush=True)
         try:
@@ -211,6 +275,7 @@ def client_connection(
 
 
 def run_client(args: argparse.Namespace) -> int:
+    """Runs the loopback client sidecar and drains all bounded connection workers before exit."""
     loopback_only(args.listen_host, "client proxy listen host")
     context = client_context(args.ca)
     listener = socket.socket(socket.AF_INET6 if ":" in args.listen_host else socket.AF_INET, socket.SOCK_STREAM)
@@ -247,11 +312,15 @@ def run_client(args: argparse.Namespace) -> int:
     finally:
         listener.close()
         for thread in threads:
-            thread.join(timeout=2.0)
+            if args.max_connections > 0:
+                thread.join()
+            else:
+                thread.join(timeout=2.0)
     return 0
 
 
 def run_probe(args: argparse.Namespace) -> int:
+    """Performs one verified TLS handshake and reports the negotiated protocol and cipher."""
     context = client_context(args.ca)
     try:
         with socket.create_connection((args.host, args.port), timeout=args.timeout) as raw:
@@ -266,6 +335,7 @@ def run_probe(args: argparse.Namespace) -> int:
 
 
 def parser() -> argparse.ArgumentParser:
+    """Builds the command-line parser and all supported role-specific subcommands."""
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="command", required=True)
 
@@ -308,6 +378,7 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parser().parse_args()
     if hasattr(args, "listen_port") and not 0 <= args.listen_port <= 65535:
         raise SystemExit("listener port must be in range 0..65535")

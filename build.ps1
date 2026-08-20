@@ -1,3 +1,24 @@
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at https://www.apache.org/licenses/LICENSE-2.0.
+# Software distributed under the License is provided on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+<#
+.SYNOPSIS
+Compiles MiniSQL applications and, unless requested otherwise, every native test.
+.PARAMETER Compiler
+Path to the MiniLang Python compiler; discovery is used when omitted.
+.PARAMETER Python
+Python executable used when the selected compiler is a Python script.
+.PARAMETER Clean
+Removes the existing binary output directory before compilation.
+.PARAMETER AppsOnly
+Limits compilation to the five public application entry points.
+#>
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
   [string]$Python = "python",
@@ -10,6 +31,8 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SourceRoot = Join-Path $Root "src"
 $BinDir = Join-Path $Root "build\bin"
 
+# Resolves an explicit or conventional compiler path and fails with actionable
+# setup guidance when no compiler exists. The returned path is absolute.
 function Resolve-MiniLangCompiler([string]$Requested) {
   $Candidates = @()
   if ($Requested) { $Candidates += $Requested }
@@ -30,12 +53,20 @@ function Resolve-MiniLangCompiler([string]$Requested) {
   throw "MiniLangPy compiler not found. Pass -Compiler C:\path\to\mlc_win64.py or set MINILANG_COMPILER."
 }
 
+# Compiles one MiniLang entry point, adds the project and compiler standard-library
+# include roots, and verifies both the process result and expected output file.
 function Invoke-Compile([string]$CompilerPath, [string]$InputPath, [string]$OutputPath) {
   Write-Host "Compiling $InputPath -> $OutputPath"
+  $CompilerRoot = Split-Path -Parent $CompilerPath
+  $CompilerArguments = @($InputPath, $OutputPath, "-I", $SourceRoot)
+  if (Test-Path -LiteralPath (Join-Path $CompilerRoot "std") -PathType Container) {
+    $CompilerArguments += @("-I", $CompilerRoot)
+  }
+  $CompilerArguments += @("--keep-going", "--max-errors", "100")
   if ([System.IO.Path]::GetExtension($CompilerPath) -ieq ".py") {
-    & $Python $CompilerPath $InputPath $OutputPath -I $SourceRoot --keep-going --max-errors 100
+    & $Python $CompilerPath @CompilerArguments
   } else {
-    & $CompilerPath $InputPath $OutputPath -I $SourceRoot --keep-going --max-errors 100
+    & $CompilerPath @CompilerArguments
   }
   if ($LASTEXITCODE -ne 0) {
     throw "Compilation failed for $InputPath (exit code $LASTEXITCODE)."

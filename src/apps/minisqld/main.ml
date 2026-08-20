@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.client.console as console
 import minisql.common.limits as limits
@@ -6,6 +10,9 @@ import minisql.config.model as config_model
 import minisql.server.database_manager as database_manager
 import minisql.server.server as server
 
+// Prints usage using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function printUsage()
   print "MiniSQL database server"
   print ""
@@ -27,17 +34,28 @@ function printUsage()
   print "  minisqld.exe --serve-auth-many <database-path> <port> <max-clients> [max-requests]"
 end function
 
+// Prints app error using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function printAppError(value)
   print "ERROR " + value.code + ": " + value.message
   return 1
 end function
 
+// Implements server result for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function serverResult(result)
   if typeof(result) == "error" then return printAppError(result) end if
   print "MiniSQL server completed requests=" + result
   return 0
 end function
 
+// Implements initialize database for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function initializeDatabase(dataRoot, databaseName, pageSize)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     print "ERROR 9001: page-size must be one of 4096, 8192, 16384 or 32768"
@@ -55,6 +73,10 @@ function initializeDatabase(dataRoot, databaseName, pageSize)
   return 0
 end function
 
+// Implements set user password for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function setUserPassword(databasePath, username)
   secret = try(console.readPasswordConfirmed("Password: ", "Confirm password: "))
   if typeof(secret) == "error" then return printAppError(secret) end if
@@ -69,6 +91,9 @@ function setUserPassword(databasePath, username)
   return 0
 end function
 
+// Implements announce server for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function announceServer(mode, databasePath, address, port, maximumClients, maximumRequests)
   budget = "unlimited"
   if maximumRequests > 0 then budget = "" + maximumRequests end if
@@ -83,6 +108,10 @@ function announceServer(mode, databasePath, address, port, maximumClients, maxim
   return true
 end function
 
+// Implements main for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function main(args)
   if len(args) == 1 and args[0] == "--version" then print server.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print server.m0SelfTestLine(); return 0 end if

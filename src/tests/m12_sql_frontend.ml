@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.sql.ast as ast
 import minisql.sql.lexer as lexer
 import minisql.sql.parser as parser
 import minisql.sql.token as token
 import tests.support.testkit as testkit
 
+// Runs the sql frontend test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = testkit.create()
 

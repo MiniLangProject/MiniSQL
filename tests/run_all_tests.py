@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Run the complete MiniSQL 1.0.0 M0-M50 test suite and package results."""
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -43,10 +59,12 @@ base.DATA_DIR = DATA_DIR
 
 
 class AcceptanceFailure(RuntimeError):
+    """Signals a deterministic acceptance-contract violation."""
     pass
 
 
 def load_json(path: Path) -> Any:
+    """Loads and decodes a UTF-8 JSON document from the supplied path."""
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -54,6 +72,7 @@ def load_json(path: Path) -> Any:
 
 
 def require_phrases(relative: str, phrases: list[str]) -> None:
+    """Requires every supplied source-contract phrase to occur in one repository file."""
     path = ROOT / relative
     if not path.is_file():
         raise AcceptanceFailure(f"Required file missing: {relative}")
@@ -63,22 +82,109 @@ def require_phrases(relative: str, phrases: list[str]) -> None:
             raise AcceptanceFailure(f"Required contract missing from {relative}: {phrase}")
 
 
+def first_minilang_code_line(text: str) -> str:
+    """Returns the first nonblank MiniLang line that is not a line comment."""
+    return next(
+        (line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("//")),
+        "",
+    )
+
+
+def validate_source_documentation() -> None:
+    """Enforces Apache headers and declaration documentation across every source file."""
+    source_paths = sorted(
+        path
+        for pattern in ("*.ml", "*.py", "*.ps1")
+        for path in ROOT.rglob(pattern)
+        if not any(part in {"build", "data", "logs", "tmp", ".git", "__pycache__"} for part in path.parts)
+    )
+    for path in source_paths:
+        text = path.read_text(encoding="utf-8")
+        header = "\n".join(text.splitlines()[:20])
+        relative = path.relative_to(ROOT).as_posix()
+        for marker in (
+            "Copyright 2026 MiniLangProject contributors",
+            "SPDX-License-Identifier: Apache-2.0",
+            "Apache License, Version 2.0",
+        ):
+            if marker not in header:
+                raise AcceptanceFailure(f"Missing Apache-2.0 source header in {relative}: {marker}")
+
+        if path.suffix == ".py":
+            tree = ast.parse(text, filename=str(path))
+            undocumented = [
+                node.name
+                for node in ast.walk(tree)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                and ast.get_docstring(node) is None
+            ]
+            if undocumented:
+                raise AcceptanceFailure(f"Undocumented Python declarations in {relative}: {undocumented}")
+            continue
+
+        if path.suffix == ".ps1":
+            lines = text.splitlines()
+            for index, raw in enumerate(lines):
+                if not raw.strip().lower().startswith("function "):
+                    continue
+                previous = next((lines[p].strip() for p in range(index - 1, -1, -1) if lines[p].strip()), "")
+                if not (previous.startswith("#") or previous == "#>"):
+                    raise AcceptanceFailure(
+                        f"Undocumented PowerShell function in {relative}:{index + 1}: {raw.strip()}"
+                    )
+            continue
+
+        if path.suffix != ".ml":
+            continue
+        lines = text.splitlines()
+        declaration = re.compile(r"^(?:function(?:\s+synchronized)?|extern\s+function|struct|enum)\b")
+        container_end = {"struct": "end struct", "enum": "end enum"}
+        container: str | None = None
+        for index, raw in enumerate(lines):
+            stripped = raw.strip()
+            if container is not None:
+                if stripped == container_end[container]:
+                    container = None
+                    continue
+                if stripped and not stripped.startswith("//"):
+                    previous = next((lines[p].strip() for p in range(index - 1, -1, -1) if lines[p].strip()), "")
+                    if not previous.startswith("//"):
+                        raise AcceptanceFailure(
+                            f"Undocumented {container} member in {relative}:{index + 1}: {stripped}"
+                        )
+                continue
+            if not declaration.match(stripped):
+                continue
+            previous = next((lines[p].strip() for p in range(index - 1, -1, -1) if lines[p].strip()), "")
+            if not previous.startswith("//"):
+                raise AcceptanceFailure(f"Undocumented MiniLang declaration in {relative}:{index + 1}: {stripped}")
+            if stripped.startswith("struct "):
+                container = "struct"
+            elif stripped.startswith("enum "):
+                container = "enum"
+
+
 
 def run_m11(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes persistent B+ tree correctness and recovery tests."""
     path = DATA_DIR / "m11-index.idx"; base.clean_path(path); base.clean_path(Path(str(path)+".nonunique"))
     base.compile_run_test(compiler, "src/tests/m11_btree.ml", "minisql-m11-btree.exe", "MiniSQL M11 B+ tree tests: SUCCESS", verbose, [str(path)], timeout=1200)
 
 def run_simple(compiler: Path, source: str, output: str, expected: str, verbose: bool, args: list[str] | None = None, timeout: float = 1200) -> None:
+    """Compiles one later-milestone test and requires its exact success banner."""
     base.compile_run_test(compiler, source, output, expected, verbose, args or [], timeout=timeout)
 
 def data_root(name: str) -> Path:
+    """Returns an isolated generated data directory for one named integration scenario."""
     root = DATA_DIR / name; base.clean_path(root); root.mkdir(parents=True, exist_ok=True); return root
 
 def free_port() -> int:
+    """Asks Windows for an unused loopback TCP port and returns the assigned port number."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         probe.bind(("127.0.0.1", 0)); return int(probe.getsockname()[1])
 
 def wait_ready(process: subprocess.Popen[str], ready: Path, label: str, timeout: float) -> None:
+    """Waits for a child-process readiness marker while also detecting premature process exit."""
     deadline = time.time() + timeout
     while not ready.exists() and process.poll() is None and time.time() < deadline:
         time.sleep(0.05)
@@ -88,6 +194,7 @@ def wait_ready(process: subprocess.Popen[str], ready: Path, label: str, timeout:
         raise AcceptanceFailure(f"{label} did not publish readiness marker; stdout={base.normalized(out)!r} stderr={base.normalized(err)!r}")
 
 def run_m18_network(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M18 network acceptance scenario."""
     server = base.compile_target(compiler, "src/tests/m18_server_worker.ml", "minisql-m18-server-worker.exe", verbose)
     client = base.compile_target(compiler, "src/tests/m18_client_worker.ml", "minisql-m18-client-worker.exe", verbose)
     root = data_root("m18-network"); ready = root / "server.ready"; port = free_port()
@@ -104,6 +211,7 @@ def run_m18_network(compiler: Path, verbose: bool) -> None:
         if process.poll() is None: process.kill(); process.communicate()
 
 def run_m21_network(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M21 network acceptance scenario."""
     server = base.compile_target(compiler, "src/tests/m21_auth_server_worker.ml", "minisql-m21-auth-server-worker.exe", verbose)
     client = base.compile_target(compiler, "src/tests/m21_auth_client_worker.ml", "minisql-m21-auth-client-worker.exe", verbose)
     root = data_root("m21-network"); ready = root / "server.ready"; port = free_port()
@@ -120,6 +228,7 @@ def run_m21_network(compiler: Path, verbose: bool) -> None:
         if process.poll() is None: process.kill(); process.communicate()
 
 def run_parallel_clients(executable: Path, port: int, client_ids: list[int], prefix: str, verbose: bool, timeout: float) -> None:
+    """Starts client processes concurrently, waits for all of them and validates every result."""
     processes: list[tuple[int, list[str], subprocess.Popen[str]]] = []
     for client_id in client_ids:
         command = base.executable_command(executable, str(port), str(client_id))
@@ -153,6 +262,7 @@ def run_parallel_clients(executable: Path, port: int, client_ids: list[int], pre
         raise AcceptanceFailure(f"{prefix} client failures: " + "; ".join(failures))
 
 def run_m27_network(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M27 network acceptance scenario."""
     server = base.compile_target(compiler, "src/tests/m27_server_worker.ml", "minisql-m27-server-worker.exe", verbose)
     client = base.compile_target(compiler, "src/tests/m27_client_worker.ml", "minisql-m27-client-worker.exe", verbose)
     root = data_root("m27-network"); ready = root / "server.ready"; port = free_port()
@@ -182,6 +292,7 @@ def run_m27_network(compiler: Path, verbose: bool) -> None:
             base.write_log("m27-server-worker.run.log", command, process.returncode, out, err)
 
 def run_m29_network(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes the M29 network acceptance scenario."""
     server = base.compile_target(compiler, "src/tests/m29_secure_server_worker.ml", "minisql-m29-secure-server-worker.exe", verbose)
     client = base.compile_target(compiler, "src/tests/m29_secure_client_worker.ml", "minisql-m29-secure-client-worker.exe", verbose)
     root = data_root("m29-network"); ready = root / "server.ready"; port = free_port()
@@ -211,6 +322,7 @@ def run_m29_network(compiler: Path, verbose: bool) -> None:
             base.write_log("m29-secure-server-worker.run.log", command, process.returncode, out, err)
 
 def wait_listening(process: subprocess.Popen[str], port: int, label: str, timeout: float) -> None:
+    """Waits until a child server accepts loopback connections or fails early."""
     deadline = time.monotonic() + timeout
     last_error: OSError | None = None
     while process.poll() is None and time.monotonic() < deadline:
@@ -231,6 +343,7 @@ def wait_listening(process: subprocess.Popen[str], port: int, label: str, timeou
 
 
 def public_apps() -> tuple[Path, Path]:
+    """Returns verified paths to the public server and client executables."""
     server = BUILD_ROOT / "minisqld.exe"
     client = BUILD_ROOT / "minisql.exe"
     if not server.is_file() or not client.is_file():
@@ -239,6 +352,7 @@ def public_apps() -> tuple[Path, Path]:
 
 
 def initialize_public_database(server: Path, root: Path, name: str, verbose: bool) -> Path:
+    """Creates a fresh database through the public daemon and returns its reported path."""
     command = base.executable_command(server, "--init", str(root), name, "4096")
     result = base.run_command(command, log_name=f"m32-{name}-init.run.log", verbose=verbose, timeout=900)
     output = base.normalized(result.stdout)
@@ -259,6 +373,7 @@ def initialize_public_database(server: Path, root: Path, name: str, verbose: boo
 
 
 def run_m32_public_script(verbose: bool) -> None:
+    """Compiles and executes the M32 public script acceptance scenario."""
     server, client = public_apps()
     root = data_root("m32-public-script")
     database = initialize_public_database(server, root, "public_script", verbose)
@@ -327,6 +442,7 @@ def run_m32_public_script(verbose: bool) -> None:
 
 
 def run_m32_persistent_daemon(verbose: bool) -> None:
+    """Compiles and executes the M32 persistent daemon acceptance scenario."""
     server, client = public_apps()
     root = data_root("m32-public-daemon")
     database = initialize_public_database(server, root, "public_daemon", verbose)
@@ -381,6 +497,7 @@ def run_m32_persistent_daemon(verbose: bool) -> None:
 
 
 def run_m33_public_multiline_script(verbose: bool) -> None:
+    """Compiles and executes the M33 public multiline script acceptance scenario."""
     server, client = public_apps()
     root = data_root("m33-public-multiline")
     database = initialize_public_database(server, root, "multiline_script", verbose)
@@ -462,6 +579,7 @@ def run_m33_public_multiline_script(verbose: bool) -> None:
 
 
 def run_m47_tls(verbose: bool) -> None:
+    """Compiles and executes the M47 tls acceptance scenario."""
     server, client = public_apps()
     root = data_root("m47-tls")
     database = initialize_public_database(server, root, "tls_transport", verbose)
@@ -570,6 +688,7 @@ def run_m47_tls(verbose: bool) -> None:
             base.write_log(label + ".run.log", command or list(process.args), process.returncode if process.returncode is not None else -9, out, err)
 
 def validate_repository(manifest: dict[str, Any]) -> None:
+    """Validates the tracked repository inventory, package layout, headers and launcher contract."""
     expected = {
         "manifestVersion": 1,
         "project": "MiniSQL",
@@ -655,7 +774,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
             raise AcceptanceFailure(f"Duplicate module path: {relative}")
         catalog_paths.add(relative)
         text = (ROOT / relative).read_text(encoding="utf-8")
-        first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        first = first_minilang_code_line(text)
         if first != f"package {package}":
             raise AcceptanceFailure(f"Package/path mismatch in {relative}")
         if f'return "{component}"' not in text or f'function targetMilestone()\n  return "{target}"' not in text:
@@ -677,9 +796,11 @@ def validate_repository(manifest: dict[str, Any]) -> None:
             forbidden.append(path.relative_to(ROOT).as_posix())
     if forbidden:
         raise AcceptanceFailure(f"Compiled/cache artifacts are forbidden: {forbidden}")
+    validate_source_documentation()
 
 
 def validate_config_and_docs() -> None:
+    """Validates frozen configuration defaults and required English documentation contracts."""
     load_json(ROOT / "config/minisql.example.json")
     load_json(ROOT / "config/config.schema.json")
     required = [
@@ -760,6 +881,7 @@ def validate_config_and_docs() -> None:
 
 
 def validate_source_contracts() -> None:
+    """Checks milestone-specific implementation contracts without executing native code."""
     contracts = {
         "src/minisql/common/version.ml": [
             'const PRODUCT_VERSION = "1.0.0"',
@@ -821,6 +943,44 @@ def validate_source_contracts() -> None:
         "src/minisql/server/listener.ml": [
             "function serveStandbyConcurrentLoopback",
             "database_manager.openStandby(databasePath)",
+            "import std.concurrent.thread_pool as thread_pool",
+            "function serveConcurrentClient",
+            "function reapConcurrentJobs",
+            "pool.Submit(serveConcurrentClient, task)",
+        ],
+        "src/minisql/common/uuid.ml": [
+            "function synchronized transportEncrypt",
+            "function synchronized transportDecrypt",
+        ],
+        "src/minisql/server/database_manager.ml": [
+            "import std.threading as threading",
+            "struct ExecutionGate",
+            "function enterReadExecution",
+            "function enterExecution",
+            "threading.Lock.new()",
+            "threading.Semaphore.new(1, 1)",
+        ],
+        "src/minisql/executor/executor.ml": [
+            "function executeStatementCore",
+            "database_manager.enterReadExecution(engine.database)",
+            "database_manager.enterExecution(engine.database)",
+        ],
+        "src/minisql/transaction/lock_manager.ml": [
+            "import std.threading as threading",
+            "manager.guard.acquire()",
+        ],
+        "src/minisql/platform/file_win32.ml": [
+            "function synchronized openNative",
+            "function synchronized pathAttributes",
+        ],
+        "src/minisql/storage/paged_file.ml": [
+            "function openReadOnly",
+            "file_lock.acquireShared(file, true)",
+        ],
+        "src/tests/m27_scheduler_locks.ml": [
+            "two read workers enter the database together",
+            "writer waits while readers are active",
+            "real query plans overlap in the shared reader gate",
         ],
         "src/apps/minisqld/main.ml": ["--serve-standby", "read-only-hot-standby"],
         "src/apps/minisql_backup/main.ml": ["archive-wal-live", "MiniSQL live WAL archive: SUCCESS"],
@@ -828,7 +988,9 @@ def validate_source_contracts() -> None:
             "def send_fragmented",
             "--relay-chunk-size",
             "--relay-delay-ms",
-            "relay(raw, secure, relay_chunk_size, relay_delay_seconds)",
+            'relay(raw, secure, relay_chunk_size, relay_delay_seconds, "local-client", "tls-server")',
+            "secure.settimeout(None)",
+            "left_to_right = threading.Thread",
         ],
         "tools/replication/minisql_hot_replica.py": [
             "class SwitchingProxy",
@@ -925,6 +1087,7 @@ def validate_source_contracts() -> None:
 
 
 def _run_python_static(command: list[str], description: str, timeout: float = 120.0) -> str:
+    """Runs a Python sidecar check with bytecode disabled and returns its captured stdout."""
     completed = subprocess.run(
         command,
         cwd=ROOT,
@@ -945,6 +1108,7 @@ def _run_python_static(command: list[str], description: str, timeout: float = 12
 
 
 def validate_reference_vectors() -> None:
+    """Validates independent binary, parser and security reference vectors."""
     if PHASE_COUNT != 106:
         raise AcceptanceFailure("MiniSQL 1.0.0 phase count must remain 106")
     corpus_document = load_json(ROOT / "tests/fuzz/m49_sql_corpus.json")
@@ -1016,6 +1180,7 @@ def validate_reference_vectors() -> None:
 
 
 def _wait_for_path(path: Path, process: subprocess.Popen[str], timeout: float, description: str) -> None:
+    """Waits for a generated path while treating child-process exit as an immediate failure."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if path.exists():
@@ -1031,6 +1196,7 @@ def _wait_for_path(path: Path, process: subprocess.Popen[str], timeout: float, d
 
 
 def _read_status(path: Path) -> dict[str, Any]:
+    """Loads and validates a replication-controller JSON status document."""
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -1041,6 +1207,7 @@ def _read_status(path: Path) -> dict[str, Any]:
 
 
 def _wait_for_generation(path: Path, process: subprocess.Popen[str], minimum: int, timeout: float) -> dict[str, Any]:
+    """Waits until replication status reaches at least the requested durable generation."""
     deadline = time.monotonic() + timeout
     last: dict[str, Any] | None = None
     while time.monotonic() < deadline:
@@ -1062,6 +1229,7 @@ def _wait_for_generation(path: Path, process: subprocess.Popen[str], minimum: in
 
 
 def _query_public(client: Path, port: int, sql: str, label: str, verbose: bool, expected_fragment: str | None = None) -> str:
+    """Executes SQL through the public client and validates its optional expected result fragment."""
     command = base.executable_command(client, "--query", str(port), sql)
     result = base.run_command(command, log_name=label + ".run.log", verbose=verbose, timeout=1200)
     output = base.normalized(result.stdout)
@@ -1076,6 +1244,7 @@ def _query_public(client: Path, port: int, sql: str, label: str, verbose: bool, 
 
 
 def _stop_process(process: subprocess.Popen[str] | None, label: str, command: list[str]) -> tuple[str, str]:
+    """Terminates a child process safely and returns its final captured stdout and stderr."""
     if process is None:
         return "", ""
     if process.poll() is None:
@@ -1086,6 +1255,7 @@ def _stop_process(process: subprocess.Popen[str] | None, label: str, command: li
 
 
 def run_m48_hot_process(verbose: bool) -> None:
+    """Compiles and executes the M48 hot process acceptance scenario."""
     server, client = public_apps()
     backup_exe = BUILD_ROOT / "minisql-backup.exe"
     if not backup_exe.is_file():
@@ -1221,6 +1391,7 @@ def run_m48_hot_process(verbose: bool) -> None:
 
 
 def run_m49_crash_matrix(verbose: bool) -> None:
+    """Compiles and executes the M49 crash matrix acceptance scenario."""
     worker = BUILD_ROOT / "minisql-m7-crash-worker.exe"
     if not worker.is_file():
         raise AcceptanceFailure("M7 crash worker is unavailable for the M49 matrix")
@@ -1242,6 +1413,7 @@ def run_m49_crash_matrix(verbose: bool) -> None:
 
 
 def run_m49_soak(verbose: bool) -> None:
+    """Compiles and executes the M49 soak acceptance scenario."""
     hardening = BUILD_ROOT / "minisql-m49-hardening.exe"
     if not hardening.is_file():
         raise AcceptanceFailure("M49 hardening executable is unavailable for soak")
@@ -1263,6 +1435,7 @@ def run_m49_soak(verbose: bool) -> None:
 
 
 def run_m50_release_distribution(verbose: bool) -> None:
+    """Compiles and executes the M50 release distribution acceptance scenario."""
     bin_dir = BUILD_ROOT
     for name in ("minisqld.exe", "minisql.exe", "minisql-check.exe", "minisql-backup.exe", "minisql-migrate.exe"):
         if not (bin_dir / name).is_file():
@@ -1294,6 +1467,7 @@ def run_m50_release_distribution(verbose: bool) -> None:
 
 
 def run_phase(index: int, total: int, name: str, action: Callable[[], None], phases: list[dict[str, Any]]) -> None:
+    """Runs one named acceptance phase, records duration/status and propagates failures."""
     print(f"[{index:02d}/{total:02d}] {name}")
     started = time.perf_counter()
     try:
@@ -1304,6 +1478,7 @@ def run_phase(index: int, total: int, name: str, action: Callable[[], None], pha
     phases.append({"name": name, "status": "PASS", "durationSeconds": round(time.perf_counter()-started, 3)})
 
 def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
+    """Reduces phase results into the frozen per-milestone PASS/FAIL status map."""
     result = {f"M{i}": "PASS" for i in range(48)}
     states = {phase["name"]: phase["status"] for phase in phases}
     requirements = {
@@ -1336,6 +1511,7 @@ def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
     return result
 
 def write_results(status: str, phases: list[dict[str, Any]], started: float, failure: str | None) -> None:
+    """Writes the machine-readable cumulative result report using stable schema fields."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     payload: dict[str, Any] = {
         "project": "MiniSQL",
@@ -1355,6 +1531,7 @@ def write_results(status: str, phases: list[dict[str, Any]], started: float, fai
 
 
 def package_results() -> Path:
+    """Packages reports and logs into the timestamped acceptance evidence archive."""
     archive = ROOT / "build" / f"MiniSQL_1.0.0_RESULTS_{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
     archive.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
@@ -1375,6 +1552,7 @@ def package_results() -> Path:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parses and returns the acceptance runner command-line arguments."""
     parser = argparse.ArgumentParser(description="Run the complete MiniSQL 1.0.0 M0-M50 test suite")
     parser.add_argument("--compiler")
     parser.add_argument("--static-only", action="store_true")
@@ -1384,6 +1562,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parse_args(); started = time.perf_counter(); phases: list[dict[str, Any]] = []
     base.ensure_runtime_directories(); base.clean_path(RESULTS_DIR); base.clean_path(BUILD_ROOT); DATA_DIR.mkdir(parents=True, exist_ok=True)
     try:

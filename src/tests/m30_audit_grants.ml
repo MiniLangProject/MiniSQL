@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.common.diagnostics as diagnostics
@@ -10,6 +14,7 @@ import minisql.sql.ast as ast
 import minisql.sql.parser as parser
 import tests.support.testkit as testkit
 
+// Returns true when the security state contains the exact role-to-member relationship under test.
 function containsMembership(state, roleId, memberId)
   for each item in state.memberships
     if item.roleId == roleId and item.memberId == memberId then return true end if
@@ -17,6 +22,7 @@ function containsMembership(state, roleId, memberId)
   return false
 end function
 
+// Returns true when the security state contains the exact grantee, object, and privilege tuple under test.
 function containsGrant(state, granteeId, objectType, objectId, privilege)
   for each item in state.grants
     if item.granteeId == granteeId and item.objectType == objectType and item.objectId == objectId and item.privilege == privilege then return true end if
@@ -24,6 +30,7 @@ function containsGrant(state, granteeId, objectType, objectId, privilege)
   return false
 end function
 
+// Searches a byte buffer for a complete byte-pattern occurrence without reading beyond the haystack.
 function containsBytes(haystack, needle)
   if typeof(haystack) != "bytes" or typeof(needle) != "bytes" then return false end if
   if len(needle) == 0 then return true end if
@@ -38,6 +45,7 @@ function containsBytes(haystack, needle)
   return false
 end function
 
+// Runs the audit grants test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M30 audit and grant-chain tests: FAIL args"; return 2 end if
   state = testkit.create()

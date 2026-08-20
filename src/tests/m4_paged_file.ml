@@ -1,9 +1,14 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.platform.file as file_api
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import tests.support.testkit as test
 
+// Builds a deterministic database identifier from the supplied seed for isolated file fixtures.
 function makeDatabaseId(seed)
   value = bytes(16, 0)
   for index = 0 to 15
@@ -12,6 +17,7 @@ function makeDatabaseId(seed)
   return value
 end function
 
+// Flips one byte at the requested file offset and flushes it to construct a deterministic on-disk corruption fixture.
 function corruptByte(path, offset)
   file = file_api.openReadWrite(path, false)
   value = bytes(1, 0)
@@ -22,6 +28,7 @@ function corruptByte(path, offset)
   file_api.close(file)
 end function
 
+// Runs the paged file test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   state = test.create()
   if len(args) != 4 then

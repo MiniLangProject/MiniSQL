@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.config.model as config_model
@@ -9,11 +13,13 @@ import minisql.tools.check as checker
 import minisql.tools.migrate as migrate
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Builds a deterministic repeated-character string used to force storage and maintenance boundary conditions.
 function repeatText(character, count)
   output = ""
   if count > 0 then
@@ -24,6 +30,7 @@ function repeatText(character, count)
   return output
 end function
 
+// Runs the offline migration test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
     print "MiniSQL M26 offline migration tests: FAIL (missing data root)"

@@ -1,38 +1,64 @@
 package minisql.transaction.recovery
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.transaction.wal as wal
 
+// Crash recovery reconstructs transaction status from the WAL, redoes committed
+// page images in log order, and restores before-images for incomplete work in
+// reverse order. Page LSN checks make repeated recovery idempotent.
+
 const INVALID_ARGUMENT = 9001
 const CORRUPT_DATA = 9004
 
+// Defines the recovery target record used by this module.
 struct RecoveryTarget
+  // File id field of the recovery target.
   fileId
+  // Paged file field of the recovery target.
   pagedFile
 end struct
 
+// Defines the transaction status record used by this module.
 struct TransactionStatus
+  // Transaction id field of the transaction status.
   transactionId
+  // Begun field of the transaction status.
   begun
+  // Committed field of the transaction status.
   committed
+  // Aborted field of the transaction status.
   aborted
 end struct
 
+// Defines the recovery result record used by this module.
 struct RecoveryResult
+  // Scanned records field of the recovery result.
   scannedRecords
+  // Committed transactions field of the recovery result.
   committedTransactions
+  // Pages redone field of the recovery result.
   pagesRedone
+  // Pages skipped field of the recovery result.
   pagesSkipped
+  // Valid wal bytes field of the recovery result.
   validWalBytes
+  // Truncated tail field of the recovery result.
   truncatedTail
 end struct
 
+// Creates the module's structured error with operation context.
+// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "transaction.recovery." + operation + ": " + message)
 end function
 
+// Performs the target operation for this module.
+// Inputs: `fileId`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function target(fileId, pagedFile)
   if typeof(fileId) != "int" or fileId < 0 then return fail(INVALID_ARGUMENT, "target", "fileId must be non-negative") end if
   paged_file.validateOpen(pagedFile, "recovery.target")
@@ -40,6 +66,8 @@ function target(fileId, pagedFile)
   return RecoveryTarget(fileId, pagedFile)
 end function
 
+// Finds the target.
+// Inputs: `targets`, `fileId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findTarget(targets, fileId)
   for each current in targets
     if current is not RecoveryTarget then return fail(INVALID_ARGUMENT, "findTarget", "invalid recovery target") end if
@@ -48,6 +76,8 @@ function findTarget(targets, fileId)
   return void
 end function
 
+// Finds the status.
+// Inputs: `statuses`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function findStatus(statuses, transactionId)
   if len(statuses) == 0 then return -1 end if
   for index = 0 to len(statuses) - 1
@@ -56,6 +86,8 @@ function findStatus(statuses, transactionId)
   return -1
 end function
 
+// Builds the statuses.
+// Inputs: `records`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildStatuses(records, startLsn)
   statuses = []
   for each record in records
@@ -83,12 +115,16 @@ function buildStatuses(records, startLsn)
   return statuses
 end function
 
+// Evaluates whether the supplied input satisfies the committed predicate.
+// Inputs: `statuses`, `transactionId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isCommitted(statuses, transactionId)
   index = findStatus(statuses, transactionId)
   if index < 0 then return false end if
   return statuses[index].committed and not statuses[index].aborted
 end function
 
+// Applies the page.
+// Inputs: `record`, `destination`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function applyPage(record, destination)
   image = bytes(record.payload)
   header = page.verify(image)
@@ -108,6 +144,8 @@ function applyPage(record, destination)
   return true
 end function
 
+// Recovers the scan.
+// Inputs: `scanResult`, `targets`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function recoverScan(scanResult, targets, startLsn)
   if not wal.isWalScan(scanResult) then return fail(INVALID_ARGUMENT, "recoverScan", "scanResult must be WalScan") end if
   if typeof(targets) != "array" then return fail(INVALID_ARGUMENT, "recoverScan", "targets must be array") end if
@@ -147,12 +185,16 @@ function recoverScan(scanResult, targets, startLsn)
   return RecoveryResult(len(scanResult.records), committed, redone, skipped, scanResult.validBytes, scanResult.truncatedTail)
 end function
 
+// Recovers the requested value.
+// Inputs: `log`, `targets`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function recover(log, targets, startLsn)
   wal.validateOpen(log, "recovery.recover")
   scanned = wal.scan(log, true)
   return recoverScan(scanned, targets, startLsn)
 end function
 
+// Recovers the path.
+// Inputs: `path`, `segmentBytes`, `targets`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function recoverPath(path, segmentBytes, targets, startLsn)
   log = wal.open(path, segmentBytes)
   result = try(recover(log, targets, startLsn))
@@ -161,14 +203,20 @@ function recoverPath(path, segmentBytes, targets, startLsn)
   return result
 end function
 
+// Returns the stable diagnostic name of this component.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "transaction.recovery"
 end function
 
+// Returns the milestone in which this component became available.
+// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M7"
 end function
 
+// Reports whether this component is implemented.
+// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -1,5 +1,9 @@
 package minisql.client.console
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.client.client as client
 import minisql.client.formatter as formatter
 import minisql.common.uuid as uuid
@@ -16,34 +20,60 @@ const CP_UTF8 = 65001
 const WC_ERR_INVALID_CHARS = 0x80
 const MAX_PASSWORD_UTF16_UNITS = 1024
 
+// Splits complete SQL statements from an unfinished interactive input suffix.
 struct SqlBatch
+  // Complete statements, in source order and without their delimiters.
   statements
+  // Trailing text that does not yet form a complete statement.
   remainder
 end struct
 
+// Returns the Windows standard-stream handle identified by `kind`; failure uses an invalid native handle.
 extern function GetStdHandle(kind as i32) from "kernel32.dll" symbol "GetStdHandle" returns ptr
+// Reads console-mode flags into `mode` and returns false on a Win32 error.
 extern function GetConsoleMode(handle as ptr, mode as bytes) from "kernel32.dll" symbol "GetConsoleMode" returns bool
+// Replaces console-mode flags and returns false on a Win32 error.
 extern function SetConsoleMode(handle as ptr, mode as u32) from "kernel32.dll" symbol "SetConsoleMode" returns bool
+// Reads UTF-16 console input into `buffer`, reporting the unit count through `readOut`.
 extern function ReadConsoleW(handle as ptr, buffer as bytes, count as u32, readOut as bytes, control as ptr) from "kernel32.dll" symbol "ReadConsoleW" returns bool
+// Writes UTF-16 console text and reports the unit count through `writtenOut`.
 extern function WriteConsoleW(handle as ptr, text as wstr, count as u32, writtenOut as bytes, reserved as ptr) from "kernel32.dll" symbol "WriteConsoleW" returns bool
+// Converts UTF-16 units to the requested code page; returns bytes written or zero on failure.
 extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as bytes, wideCount as i32, output as bytes, outputCount as i32, defaultChar as ptr, usedDefault as ptr) from "kernel32.dll" symbol "WideCharToMultiByte" returns i32
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function fail(code, operation, message)
   return error(code, "client.console." + operation + ": " + message)
 end function
 
+// Returns whether the supplied value satisfies the meta command condition.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isMetaCommand(text)
   return typeof(text) == "string" and len(text) > 0 and bytes(text)[0] == 92
 end function
 
+// Executes once using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeOnce(activeClient, sqlText)
   return formatter.formatResponse(client.query(activeClient, sqlText))
 end function
 
+// Implements wipe password for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function wipePassword(passwordBytes)
   return uuid.wipeSecret(passwordBytes)
 end function
 
+// Writes prompt using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function writePrompt(outputHandle, prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "writePrompt", "prompt must be string") end if
   promptBytes = bytes(prompt)
@@ -55,6 +85,10 @@ function writePrompt(outputHandle, prompt)
   return true
 end function
 
+// Implements utf16 password to UTF-8 for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function utf16PasswordToUtf8(wide, units)
   if typeof(wide) != "bytes" or typeof(units) != "int" or units < 0 or units > MAX_PASSWORD_UTF16_UNITS then return fail(INVALID_ARGUMENT, "utf16PasswordToUtf8", "invalid UTF-16 input") end if
   if units == 0 then return bytes(0) end if
@@ -66,6 +100,10 @@ function utf16PasswordToUtf8(wide, units)
   return output
 end function
 
+// Reads password using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readPassword(prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "readPassword", "prompt must be string") end if
   inputHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -104,6 +142,10 @@ function readPassword(prompt)
   return validated
 end function
 
+// Reads password confirmed using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function readPasswordConfirmed(prompt, confirmationPrompt)
   first = try(readPassword(prompt))
   if typeof(first) == "error" then return first end if
@@ -115,6 +157,10 @@ function readPasswordConfirmed(prompt, confirmationPrompt)
   return first
 end function
 
+// Opens authenticated prompt using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function openAuthenticatedPrompt(address, port, username)
   secret = try(readPassword("Password: "))
   if typeof(secret) == "error" then return secret end if
@@ -124,6 +170,10 @@ function openAuthenticatedPrompt(address, port, username)
   return active
 end function
 
+// Implements trim ascii for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function trimAscii(text)
   if typeof(text) != "string" then return fail(INVALID_ARGUMENT, "trimAscii", "text must be string") end if
   raw = bytes(text)
@@ -139,12 +189,20 @@ function trimAscii(text)
   return decode(slice(raw, first, last - first))
 end function
 
+// Implements starts with bytes for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function startsWithBytes(text, first, second)
   if typeof(text) != "string" or typeof(first) != "int" or typeof(second) != "int" then return false end if
   raw = bytes(text)
   return len(raw) >= 2 and raw[0] == first and raw[1] == second
 end function
 
+// Implements starts with text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function startsWithText(text, prefix)
   if typeof(text) != "string" or typeof(prefix) != "string" then return false end if
   raw = bytes(text)
@@ -158,6 +216,10 @@ function startsWithText(text, prefix)
   return true
 end function
 
+// Returns whether the supplied value satisfies the script comment condition.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isScriptComment(line)
   if typeof(line) != "string" or len(line) == 0 then return false end if
   raw = bytes(line)
@@ -165,6 +227,10 @@ function isScriptComment(line)
   return startsWithBytes(line, 45, 45)
 end function
 
+// Implements split lines for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function splitLines(text)
   if typeof(text) != "string" then return fail(INVALID_ARGUMENT, "splitLines", "text must be string") end if
   raw = bytes(text)
@@ -190,14 +256,24 @@ function splitLines(text)
   return lines
 end function
 
+// Returns whether the supplied value satisfies the SQL batch condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSqlBatch(value)
   return value is SqlBatch
 end function
 
+// Returns whether the supplied value satisfies the whitespace byte condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isWhitespaceByte(value)
   return value == 32 or value == 9 or value == 10 or value == 13
 end function
 
+// Implements raw text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function rawText(source, offset, count)
   if count <= 0 then return "" end if
   value = decode(slice(source, offset, count))
@@ -205,6 +281,9 @@ function rawText(source, offset, count)
   return value
 end function
 
+// Appends SQL fragment using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function appendSqlFragment(statements, source, startOffset, endOffset, hasToken)
   if not hasToken or endOffset <= startOffset then return statements end if
   text = trimAscii(rawText(source, startOffset, endOffset - startOffset))
@@ -216,6 +295,10 @@ end function
 // strings, quoted identifiers or comments as terminators. When finalInput is
 // false, an incomplete suffix is returned for the interactive continuation
 // prompt. When finalInput is true, a final statement may omit its semicolon.
+// Scans SQL batch using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function scanSqlBatch(text, finalInput)
   if typeof(text) != "string" or typeof(finalInput) != "bool" then return fail(INVALID_ARGUMENT, "scanSqlBatch", "invalid arguments") end if
   source = bytes(text)
@@ -294,10 +377,17 @@ function scanSqlBatch(text, finalInput)
   return SqlBatch(statements, remainder)
 end function
 
+// Implements split SQL statements for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function splitSqlStatements(text)
   return scanSqlBatch(text, true).statements
 end function
 
+// Prints query response using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function printQueryResponse(response)
   formatted = try(formatter.formatResponse(response))
   if typeof(formatted) == "error" then return formatted end if
@@ -305,6 +395,10 @@ function printQueryResponse(response)
   return true
 end function
 
+// Executes statements using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeStatements(activeClient, statements)
   if typeof(statements) != "array" then return fail(INVALID_ARGUMENT, "executeStatements", "statements must be array") end if
   executed = 0
@@ -319,6 +413,10 @@ function executeStatements(activeClient, statements)
   return executed
 end function
 
+// Runs script using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Performs I/O through its file, transport, or storage dependencies.
 function runScript(activeClient, path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "runScript", "path must be non-empty") end if
   content = try(file_api.readAllText(path, 1048576))
@@ -328,6 +426,10 @@ function runScript(activeClient, path)
   return executeStatements(activeClient, batch.statements)
 end function
 
+// Implements command argument for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function commandArgument(line, prefix)
   if typeof(line) != "string" or typeof(prefix) != "string" then return "" end if
   raw = bytes(line)
@@ -336,6 +438,9 @@ function commandArgument(line, prefix)
   return trimAscii(rawText(raw, len(prefixRaw), len(raw) - len(prefixRaw)))
 end function
 
+// Returns whether the supplied value satisfies the identifier byte condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isIdentifierByte(value, first)
   if value >= 65 and value <= 90 then return true end if
   if value >= 97 and value <= 122 then return true end if
@@ -343,6 +448,10 @@ function isIdentifierByte(value, first)
   return not first and value >= 48 and value <= 57
 end function
 
+// Returns whether the supplied value satisfies the safe meta identifier condition.
+// Requires arguments that satisfy the validation performed below.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isSafeMetaIdentifier(value)
   if typeof(value) != "string" or len(value) == 0 then return false end if
   raw = bytes(value)
@@ -355,6 +464,9 @@ function isSafeMetaIdentifier(value)
   return true
 end function
 
+// Prints shell help using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function printShellHelp()
   print "MiniSQL shell commands:"
   print "  \\q or \\quit          close the session"
@@ -370,6 +482,10 @@ function printShellHelp()
   return true
 end function
 
+// Executes meta using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function executeMeta(activeClient, line)
   if line == "\\ping" then
     pong = try(client.ping(activeClient))
@@ -400,6 +516,10 @@ function executeMeta(activeClient, line)
   return false
 end function
 
+// Runs shell using the supplied inputs.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function runShell(activeClient, prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "runShell", "prompt must be string") end if
   print "MiniSQL interactive client. Type \\help for help and \\q to quit."
@@ -454,14 +574,23 @@ function runShell(activeClient, prompt)
   return true
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "client.console"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function

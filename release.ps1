@@ -1,3 +1,22 @@
+# Copyright 2026 MiniLangProject contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at https://www.apache.org/licenses/LICENSE-2.0.
+# Software distributed under the License is provided on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+<#
+.SYNOPSIS
+Builds, packages and verifies the deterministic MiniSQL Windows-x64 release.
+.PARAMETER Compiler
+Path to the MiniLang Python compiler; build-time discovery is used when omitted.
+.PARAMETER Python
+Python executable used for compilation and deterministic archive generation.
+.PARAMETER Output
+Optional release archive path; defaults to build/release for version 1.0.0.
+#>
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
   [string]$Python = "python",

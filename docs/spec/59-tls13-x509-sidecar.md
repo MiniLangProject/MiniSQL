@@ -17,3 +17,11 @@ chain; files under `tests/fixtures/tls` are test-only.
 M47 authenticates the server certificate; it does not require a client X.509
 certificate and therefore does not provide mutual TLS. MiniSQL user
 authentication remains a separate protocol concern.
+
+After the handshake, the relay clears the connection timeout inherited from
+`socket.create_connection`. Two blocking directional pump threads then forward
+bytes until EOF or an error; either direction shuts down both endpoints to wake
+the peer pump. This avoids treating TLS 1.3 post-handshake messages as
+application data and prevents selector wakeups from blocking or timing out a
+fragmented request. A bounded sidecar joins every accepted connection worker
+before process exit, so its final relay is drained rather than reset.

@@ -1,3 +1,7 @@
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
+
 import minisql.common.endian as endian
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
@@ -7,11 +11,13 @@ import minisql.tools.backup as backup
 import minisql.tools.check as check
 import tests.support.testkit as testkit
 
+// Executes SQL and returns the first statement result; parse, bind, execution, and indexing failures remain observable to the test.
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
 end function
 
+// Opens a primary or standby database, reads its replicated row count, and closes all resources before returning.
 function rowCount(databasePath, standby)
   managed = void
   if standby then managed = database_manager.openStandby(databasePath) else managed = database_manager.open(databasePath) end if
@@ -23,6 +29,7 @@ function rowCount(databasePath, standby)
   return count
 end function
 
+// Opens the target database, inserts one replication fixture row, and closes the engine; SQL or storage failures propagate to the caller.
 function addRow(databasePath, id, value)
   engine = executor.open(databasePath)
   executeOne(engine, "INSERT INTO history_item(id, value) VALUES (" + id + ", '" + value + "')")
@@ -30,6 +37,7 @@ function addRow(databasePath, id, value)
   return true
 end function
 
+// Runs the archive pitr test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then print "MiniSQL M31 archive and PITR tests: FAIL args"; return 2 end if
   state = testkit.create()

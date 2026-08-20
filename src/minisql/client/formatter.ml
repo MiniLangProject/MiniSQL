@@ -1,5 +1,9 @@
 package minisql.client.formatter
 
+// Copyright 2026 MiniLangProject contributors
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0; see LICENSE for details.
+
 import minisql.common.endian as endian
 import minisql.executor.executor as executor
 import minisql.protocol.constants as constants
@@ -8,10 +12,17 @@ import minisql.sql.values as values
 
 const INVALID_ARGUMENT = 9001
 
+// Creates a structured error for fail using the supplied inputs.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "client.formatter." + operation + ": " + message)
 end function
 
+// Implements value text for this module.
+// Requires arguments that satisfy the validation performed below.
+// Returns its result or propagates a structured error from validation or a dependency.
+// Any side effects are limited to the explicitly invoked dependencies.
 function valueText(value)
   if not values.isSqlValue(value) then return fail("valueText", "value must be SqlValue") end if
   if value.isNull then return "NULL" end if
@@ -30,6 +41,9 @@ function valueText(value)
   return fail("valueText", "unsupported SQL value representation")
 end function
 
+// Implements response from result for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function responseFromResult(result)
   if not executor.isQueryResult(result) then return fail("responseFromResult", "result must be QueryResult") end if
   if result.kind == executor.RESULT_COMMAND then return messages.commandResponse(result.command, result.affectedRows, result.message) end if
@@ -45,6 +59,9 @@ function responseFromResult(result)
   return messages.rowResponse(result.columns, rows)
 end function
 
+// Formats response using the supplied inputs.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function formatResponse(response)
   if not messages.isResponse(response) then return fail("formatResponse", "response must be Response") end if
   if response.status == constants.STATUS_ERROR then return "ERROR " + response.errorCode + ": " + response.message end if
@@ -69,14 +86,23 @@ function formatResponse(response)
   return output + "(" + len(response.rows) + " rows)"
 end function
 
+// Implements component name for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "client.formatter"
 end function
 
+// Implements target milestone for this module.
+// Returns the computed value or operation status.
+// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
+// Returns whether the supplied value satisfies the implemented condition.
+// Returns the computed value or operation status.
+// Does not modify its inputs.
 function isImplemented()
   return true
 end function
