@@ -306,26 +306,26 @@ function decodeResponse(source)
   messageField = readField(source, cursor)
   message = messageField[0]
   cursor = messageField[1]
-  columns = []
+  columns = array(columnCount)
   if columnCount > 0 then
     for index = 0 to columnCount - 1
       field = readField(source, cursor)
-      columns = columns + [field[0]]
+      columns[index] = field[0]
       cursor = field[1]
     end for
   end if
-  rows = []
+  rows = array(rowCount)
   if rowCount > 0 then
     for rowIndex = 0 to rowCount - 1
-      row = []
+      row = array(columnCount)
       if columnCount > 0 then
         for columnIndex = 0 to columnCount - 1
           field = readField(source, cursor)
-          row = row + [field[0]]
+          row[columnIndex] = field[0]
           cursor = field[1]
         end for
       end if
-      rows = rows + [row]
+      rows[rowIndex] = row
     end for
   end if
   if cursor != len(source) then return fail(CORRUPT_DATA, "decodeResponse", "trailing response bytes") end if

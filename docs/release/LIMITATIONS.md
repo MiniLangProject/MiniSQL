@@ -6,6 +6,11 @@
 * Replication is asynchronous and operator-managed.
 * The external sort reduces peak memory but final query results are still
   materialized.
+* Table, column, schema-extension, statistics, and authorization metadata are
+  not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
+  finite at the storage format's integer representation, process address space,
+  and available disk; protocol frames and individual values retain defensive
+  bounds and are not schema-object-count limits.
 * CTEs are nonrecursive and subqueries are non-correlated.
 * Trigger bodies contain one supported DML statement and have bounded recursion.
 * DCL is autocommit-only.

@@ -263,6 +263,16 @@ function member(object, key)
   return fail("member", "missing configuration key " + key)
 end function
 
+// Looks up an optional object member without weakening strict unknown-key validation.
+// Inputs: `object`, `key`. Returns the JSON value or void when the key is absent.
+function optionalMember(object, key)
+  if object is not JsonValue or object.kind != JSON_OBJECT then return fail("optionalMember", "value must be JSON object") end if
+  for each pair in object.items
+    if pair.key == key then return pair.value end if
+  end for
+  return void
+end function
+
 // Implements object member for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -324,13 +334,27 @@ function toConfig(root)
   paths = objectMember(root, "paths")
   server = objectMember(root, "server")
   runtime = objectMember(root, "runtime")
+  loggingValue = optionalMember(root, "logging")
+  binlogValue = optionalMember(root, "binlog")
   defaults = objectMember(root, "databaseDefaults")
   safety = objectMember(root, "safety")
 
-  ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "databaseDefaults", "safety"], "root")
+  ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "logging", "binlog", "databaseDefaults", "safety"], "root")
   ensureOnlyKeys(paths, ["dataRoot", "temporaryRoot", "logDirectory"], "paths")
   ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes"], "server")
   ensureOnlyKeys(runtime, ["bufferPoolBytes", "queryTimeoutMs", "checkpointWalBytes", "temporaryMemoryBytes", "logLevel"], "runtime")
+  logging = model.LoggingConfig(true, true, "minisql.log", 24)
+  if loggingValue is not void then
+    if loggingValue.kind != JSON_OBJECT then return fail("toConfig", "logging must be object") end if
+    ensureOnlyKeys(loggingValue, ["stdoutEnabled", "fileEnabled", "fileName", "rotationHours"], "logging")
+    logging = model.LoggingConfig(boolMember(loggingValue, "stdoutEnabled"), boolMember(loggingValue, "fileEnabled"), stringMember(loggingValue, "fileName"), intMember(loggingValue, "rotationHours"))
+  end if
+  binlog = model.BinlogConfig(false, "minisql-bin.log")
+  if binlogValue is not void then
+    if binlogValue.kind != JSON_OBJECT then return fail("toConfig", "binlog must be object") end if
+    ensureOnlyKeys(binlogValue, ["enabled", "fileName"], "binlog")
+    binlog = model.BinlogConfig(boolMember(binlogValue, "enabled"), stringMember(binlogValue, "fileName"))
+  end if
   ensureOnlyKeys(defaults, ["pageSize", "checksumAlgorithm", "walSegmentBytes", "textEncoding", "defaultCollation", "databaseFormatVersion", "tableFileFormatVersion", "indexFileFormatVersion", "walFormatVersion", "rowFormatVersion"], "databaseDefaults")
   ensureOnlyKeys(safety, ["allowRemoteWithoutAuthentication", "durability", "allowUnknownFormatFeatures"], "safety")
 
@@ -351,6 +375,8 @@ function toConfig(root)
       intMember(runtime, "temporaryMemoryBytes"),
       stringMember(runtime, "logLevel")
     ),
+    logging,
+    binlog,
     model.DatabaseDefaults(
       intMember(defaults, "pageSize"),
       stringMember(defaults, "checksumAlgorithm"),

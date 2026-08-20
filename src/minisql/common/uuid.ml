@@ -125,9 +125,9 @@ function parseHex(text)
   return value
 end function
 
-// Performs the random bytes operation for this module.
+// Performs the random bytes operation under the common native-crypto monitor.
 // Inputs: `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function randomBytes(count)
+function synchronized randomBytes(count)
   if typeof(count) != "int" or count < 1 or count > 1048576 then return fail(INVALID_ARGUMENT, "randomBytes", "count must be 1..1048576") end if
   output = bytes(count, 0)
   status = BCryptGenRandom(void, output, count, BCRYPT_USE_SYSTEM_PREFERRED_RNG)
@@ -146,9 +146,10 @@ function openSha256Hmac()
   return handle
 end function
 
-// Performs the derive key operation for this module.
+// Performs the PBKDF2 sequence under the same process-wide monitor as all
+// other CNG calls, protecting compiler-managed native argument buffers.
 // Inputs: `secret`, `salt`, `iterations`, `outputLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function deriveKey(secret, salt, iterations, outputLength)
+function synchronized deriveKey(secret, salt, iterations, outputLength)
   if typeof(secret) != "bytes" or len(secret) == 0 or len(secret) > 4096 then return fail(INVALID_ARGUMENT, "deriveKey", "secret must contain 1..4096 bytes") end if
   if typeof(salt) != "bytes" or len(salt) == 0 or len(salt) > 4096 then return fail(INVALID_ARGUMENT, "deriveKey", "salt must contain 1..4096 bytes") end if
   if typeof(iterations) != "int" or iterations < 1 or iterations > MAX_PBKDF2_ITERATIONS then return fail(INVALID_ARGUMENT, "deriveKey", "iterations are outside the supported range") end if
@@ -285,9 +286,9 @@ function authProof(verifier, nonce, username, label)
 end function
 
 
-// Performs the sha256 operation for this module.
+// Performs the SHA-256 provider lifecycle under the native-crypto monitor.
 // Inputs: `input`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function sha256(input)
+function synchronized sha256(input)
   if typeof(input) != "bytes" then return fail(INVALID_ARGUMENT, "sha256", "input must be bytes") end if
   providerOut = bytes(8, 0)
   status = BCryptOpenAlgorithmProvider(providerOut, "SHA256", void, 0)
@@ -314,9 +315,9 @@ function sha256(input)
   return output
 end function
 
-// Performs the hmac sha256 operation for this module.
+// Performs the HMAC provider lifecycle under the native-crypto monitor.
 // Inputs: `key`, `input`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function hmacSha256(key, input)
+function synchronized hmacSha256(key, input)
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > 4096 then return fail(INVALID_ARGUMENT, "hmacSha256", "key must contain 1..4096 bytes") end if
   if typeof(input) != "bytes" then return fail(INVALID_ARGUMENT, "hmacSha256", "input must be bytes") end if
   providerOut = bytes(8, 0)
@@ -488,8 +489,8 @@ function authModeInfo(nonce, aad, tag, dataLength)
 end function
 
 // The CNG AEAD setup passes pointers into several managed temporary buffers.
-// Keep the complete native call sequence serialized across server workers so
-// those pointer-bearing authentication descriptors cannot overlap.
+// All synchronized functions share MiniLang's recursive process monitor, so
+// AES, PBKDF2, SHA, HMAC, and RNG native sequences cannot overlap.
 function synchronized transportEncrypt(key, sequence, messageType, flags, requestId, plaintext)
   if typeof(key) != "bytes" or len(key) != PASSWORD_VERIFIER_BYTES then return fail(INVALID_ARGUMENT, "transportEncrypt", "key must be 32 bytes") end if
   if typeof(plaintext) != "bytes" then return fail(INVALID_ARGUMENT, "transportEncrypt", "plaintext must be bytes") end if

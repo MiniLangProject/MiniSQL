@@ -21,7 +21,9 @@ const AUDIT_HEADER_BYTES = 120
 const AUDIT_HASH_BYTES = 32
 const AUDIT_KEY_BYTES = 32
 const MAX_AUDIT_DETAIL_BYTES = 4096
-const MAX_AUDIT_FILE_BYTES = 67108864
+// Audit v1 snapshots are processed through one U32-sized byte buffer. Keep the
+// format/API bound, but do not impose the former arbitrary 64 MiB file ceiling.
+const MAX_AUDIT_FILE_BYTES = 4294967295
 
 const AUDIT_LOGIN = 1
 const AUDIT_LOGOUT = 2

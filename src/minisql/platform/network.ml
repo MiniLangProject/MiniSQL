@@ -46,6 +46,8 @@ extern function bind(s as ptr, addr as bytes, addrlen as i32) from "ws2_32.dll" 
 extern function listen(s as ptr, backlog as i32) from "ws2_32.dll" returns i32
 // Accepts one pending connection and returns its socket or INVALID_SOCKET.
 extern function accept(s as ptr, addr as ptr, addrlen as ptr) from "ws2_32.dll" returns ptr
+// Reads the connected peer's socket address into a caller-owned sockaddr buffer.
+extern function getpeername(s as ptr, address as bytes, addressLength as bytes) from "ws2_32.dll" returns i32
 // Sends up to `count` bytes from `buffer` and returns the transferred count or error.
 extern function send(s as ptr, buffer as ptr, count as i32, flags as i32) from "ws2_32.dll" returns i32
 // Receives up to `count` bytes into `buffer` and returns count, EOF, or error.
@@ -255,6 +257,19 @@ function acceptTcp(listener)
   client = accept(listener, void, void)
   if client == INVALID_SOCKET then return fail("acceptTcp", "accept failed (" + WSAGetLastError() + ")") end if
   return client
+end function
+
+// Formats the connected IPv4 peer as `address:port` for operational logging.
+// Inputs: `handle`. Returns the peer endpoint or `unknown` when WinSock cannot expose it.
+function peerName(handle)
+  if not isHandle(handle) then return "unknown" end if
+  address = bytes(SOCKADDR_IN_SIZE, 0)
+  addressLength = bytes(4, 0)
+  addressLength[0] = SOCKADDR_IN_SIZE
+  if getpeername(handle, address, addressLength) != 0 then return "unknown" end if
+  if address[0] != AF_INET or addressLength[0] < SOCKADDR_IN_SIZE then return "unknown" end if
+  port = (address[2] << 8) | address[3]
+  return "" + address[4] + "." + address[5] + "." + address[6] + "." + address[7] + ":" + port
 end function
 
 // Copies the byte range.

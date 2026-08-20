@@ -40,7 +40,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function validate(config)
   if not model.isMiniSqlConfig(config) then return fail("value must be MiniSqlConfig") end if
-  if not model.isPathsConfig(config.paths) or not model.isServerConfig(config.server) or not model.isRuntimeConfig(config.runtime) or not model.isDatabaseDefaults(config.databaseDefaults) or not model.isSafetyConfig(config.safety) then return fail("configuration sections have invalid types") end if
+  if not model.isPathsConfig(config.paths) or not model.isServerConfig(config.server) or not model.isRuntimeConfig(config.runtime) or not model.isLoggingConfig(config.logging) or not model.isBinlogConfig(config.binlog) or not model.isDatabaseDefaults(config.databaseDefaults) or not model.isSafetyConfig(config.safety) then return fail("configuration sections have invalid types") end if
   if typeof(config.configVersion) != "int" or config.configVersion != 1 then return fail("configVersion must be 1") end if
   nonEmpty(config.paths.dataRoot, "paths.dataRoot")
   nonEmpty(config.paths.temporaryRoot, "paths.temporaryRoot")
@@ -63,7 +63,14 @@ function validate(config)
   if config.databaseDefaults.databaseFormatVersion != 1 or config.databaseDefaults.tableFileFormatVersion != 1 or config.databaseDefaults.indexFileFormatVersion != 1 or config.databaseDefaults.walFormatVersion != 1 or config.databaseDefaults.rowFormatVersion != 1 then
     return fail("all persisted format versions must be 1")
   end if
-  if config.runtime.logLevel != "trace" and config.runtime.logLevel != "debug" and config.runtime.logLevel != "info" and config.runtime.logLevel != "warn" and config.runtime.logLevel != "error" then return fail("runtime.logLevel is unsupported") end if
+  if config.runtime.logLevel != "debug" and config.runtime.logLevel != "info" and config.runtime.logLevel != "warning" and config.runtime.logLevel != "warn" and config.runtime.logLevel != "error" then return fail("runtime.logLevel must be debug, info, warning or error") end if
+  if typeof(config.logging.stdoutEnabled) != "bool" or typeof(config.logging.fileEnabled) != "bool" then return fail("logging destination flags must be boolean") end if
+  if not config.logging.stdoutEnabled and not config.logging.fileEnabled then return fail("at least one ordinary logging destination must be enabled") end if
+  nonEmpty(config.logging.fileName, "logging.fileName")
+  positive(config.logging.rotationHours, "logging.rotationHours")
+  if config.logging.rotationHours > 87600 then return fail("logging.rotationHours must not exceed ten years") end if
+  if typeof(config.binlog.enabled) != "bool" then return fail("binlog.enabled must be boolean") end if
+  nonEmpty(config.binlog.fileName, "binlog.fileName")
   if typeof(config.safety.allowRemoteWithoutAuthentication) != "bool" or typeof(config.safety.allowUnknownFormatFeatures) != "bool" then return fail("safety flags must be boolean") end if
   if config.safety.durability != "full" then return fail("safety.durability must be full") end if
   if config.server.bindAddress != "127.0.0.1" and not config.safety.allowRemoteWithoutAuthentication then

@@ -78,12 +78,56 @@
         },
         "logLevel": {
           "enum": [
-            "trace",
             "debug",
             "info",
+            "warning",
             "warn",
             "error"
           ]
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stdoutEnabled",
+        "fileEnabled",
+        "fileName",
+        "rotationHours"
+      ],
+      "properties": {
+        "stdoutEnabled": {
+          "type": "boolean"
+        },
+        "fileEnabled": {
+          "type": "boolean"
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rotationHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 87600
+        }
+      }
+    },
+    "binlog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "fileName"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

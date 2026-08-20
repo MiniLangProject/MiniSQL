@@ -3,6 +3,7 @@
 // Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
 
 import minisql.config.model as config_model
+import minisql.common.logger as logger
 import minisql.executor.executor as executor
 import minisql.platform.file as file_api
 import minisql.server.database_manager as database_manager
@@ -25,6 +26,7 @@ function main(args)
   if typeof(port) != "int" or typeof(maximumClients) != "int" or typeof(maximumRequests) != "int" then return 2 end if
 
   file_api.createDirectory(root)
+  logger.configure("debug", root, false, true, "m29-server.log", 24, false, "m29-binlog.log")
   managed = database_manager.create(root, "m29_secure_server", config_model.defaultDatabaseSettings(4096))
   path = managed.path
   admin = executor.attach(managed)
@@ -40,8 +42,9 @@ function main(args)
   // returning early, over-serving, or dropping a worker changes `handled` and
   // therefore fails the external multi-process orchestration.
   handled = try(listener.serveConcurrentWithReadyFile(path, port, maximumClients, maximumRequests, readyPath, true))
-  if typeof(handled) == "error" then print "ERROR " + handled.code + ": " + handled.message; return 1 end if
-  if handled != maximumRequests then print "MiniSQL M29 secure concurrent server worker: FAIL handled=" + handled; return 1 end if
+  if typeof(handled) == "error" then logger.close(); print "ERROR " + handled.code + ": " + handled.message; return 1 end if
+  if handled != maximumRequests then logger.close(); print "MiniSQL M29 secure concurrent server worker: FAIL handled=" + handled; return 1 end if
+  logger.close()
   print "MiniSQL M29 secure concurrent server worker: SUCCESS requests=" + handled
   return 0
 end function

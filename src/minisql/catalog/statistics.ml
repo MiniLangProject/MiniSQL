@@ -21,7 +21,6 @@ const IO_FAILURE = 9005
 
 const FORMAT_VERSION = 1
 const RECORD_KIND = 50
-const MAX_STATISTICS_BYTES = 1048576
 const TABLE_HEADER_BYTES = 32
 const COLUMN_BYTES = 32
 
@@ -252,9 +251,7 @@ function encode(state)
   if state is not StatisticsCatalog then return fail(INVALID_ARGUMENT, "encode", "state must be StatisticsCatalog") end if
   if typeof(state.databaseId) != "bytes" or len(state.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encode", "databaseId must be 16 bytes") end if
   validateNative(state.generation, "encode", "generation")
-  if len(state.tables) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many tables") end if
   size = encodedSize(state)
-  if size > MAX_STATISTICS_BYTES then return fail(INVALID_ARGUMENT, "encode", "statistics exceed size limit") end if
   payload = bytes(size, 0)
   copyBytes(payload, 0, state.databaseId, 0, 16)
   endian.writeU64LE(payload, 16, endian.uint64FromInt(state.generation))
@@ -305,10 +302,11 @@ end function
 function decodeCatalog(encoded)
   envelope = checksum.decodeEnvelope(encoded, magic(), FORMAT_VERSION, RECORD_KIND)
   payload = envelope.payload
-  if len(payload) < 32 or len(payload) > MAX_STATISTICS_BYTES then return fail(CORRUPT_DATA, "decode", "payload size is invalid") end if
+  if len(payload) < 32 then return fail(CORRUPT_DATA, "decode", "payload size is invalid") end if
   if endian.readU32LE(payload, 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved header is non-zero") end if
   state = StatisticsCatalog(slice(payload, 0, 16), decodeNative(endian.readU64LE(payload, 16), "decode", "generation"), [])
   tableCount = endian.readU32LE(payload, 24)
+  state.tables = array(tableCount)
   cursor = 32
   if tableCount > 0 then
     for tableIndex = 0 to tableCount - 1
@@ -319,21 +317,21 @@ function decodeCatalog(encoded)
     columnCount = endian.readU16LE(payload, cursor + 24)
     if endian.readU16LE(payload, cursor + 26) != 0 or endian.readU32LE(payload, cursor + 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved table fields are non-zero") end if
     cursor = cursor + TABLE_HEADER_BYTES
-      columns = []
+      columns = array(columnCount)
       if columnCount > 0 then
         for columnNumber = 0 to columnCount - 1
           if cursor > len(payload) - COLUMN_BYTES then return fail(CORRUPT_DATA, "decode", "column record is truncated") end if
           if endian.readU16LE(payload, cursor + 2) != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved column fields are non-zero") end if
-          columns = columns + [ColumnStatistics(
+          columns[columnNumber] = ColumnStatistics(
             endian.readU16LE(payload, cursor),
             decodeNative(endian.readU64LE(payload, cursor + 4), "decode", "nullCount"),
             decodeNative(endian.readU64LE(payload, cursor + 12), "decode", "distinctCount"),
             endian.readU32LE(payload, cursor + 20)
-          )]
+          )
           cursor = cursor + COLUMN_BYTES
         end for
       end if
-      state.tables = state.tables + [TableStatistics(tableId, rowCount, pageCount, columns)]
+      state.tables[tableIndex] = TableStatistics(tableId, rowCount, pageCount, columns)
     end for
   end if
   if cursor != len(payload) then return fail(CORRUPT_DATA, "decode", "trailing statistics bytes") end if
@@ -355,7 +353,6 @@ end function
 function readWhole(filePath)
   handle = file_api.openRead(filePath)
   size = file_api.size(handle)
-  if size > MAX_STATISTICS_BYTES + 128 then file_api.close(handle); return fail(CORRUPT_DATA, "readWhole", "statistics file exceeds size limit") end if
   output = bytes(size, 0)
   if size > 0 then file_api.readExactAt(handle, 0, output, 0, size) end if
   file_api.close(handle)

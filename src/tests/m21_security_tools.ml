@@ -20,10 +20,17 @@ end function
 
 // Returns true when a backup manifest declares the required security catalog entry.
 function manifestHasSecurity(manifest)
+  legacy = false
+  first = false
+  second = false
+  marker = false
   for each entry in manifest.entries
-    if entry.relativePath == "catalog\\security.tbl" then return true end if
+    if entry.relativePath == "catalog\\security.tbl" then legacy = true end if
+    if entry.relativePath == "catalog\\security.0.tbl" then first = true end if
+    if entry.relativePath == "catalog\\security.1.tbl" then second = true end if
+    if entry.relativePath == "catalog\\security.v2" then marker = true end if
   end for
-  return false
+  return legacy and first and second and marker
 end function
 
 // Runs the security tools test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.

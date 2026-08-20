@@ -9,6 +9,7 @@ import minisql.catalog.metadata as metadata
 import minisql.client.formatter as formatter
 import minisql.common.uuid as uuid
 import minisql.common.diagnostics as diagnostics
+import minisql.common.logger as logger
 import minisql.executor.executor as executor
 import minisql.platform.clock as clock
 import minisql.protocol.constants as constants
@@ -21,6 +22,7 @@ const INVALID_ARGUMENT = 9001
 const CLOSED_HANDLE = 9008
 const UNSUPPORTED_SQL = 9025
 const AUTHENTICATION_FAILED = 9027
+const IO_FAILURE = 9005
 const AUTHENTICATION_REQUIRED = 9028
 const AUTH_HANDSHAKE_TIMEOUT_MS = 30000
 const SESSION_IDLE_TIMEOUT_MS = 300000
@@ -268,6 +270,7 @@ function handleAuthProof(session, request)
     audited = try(database_manager.audit(session.engine.database, diagnostics.AUDIT_LOGIN, diagnostics.AUDIT_SUCCESS, executor.sessionIdentifier(session.engine), session.pendingPrincipalId, "login succeeded"))
     if typeof(audited) == "error" then uuid.wipeSecret(serverProof); uuid.wipeSecret(sendKey); uuid.wipeSecret(receiveKey); clearPending(session); return authenticationError(request) end if
     session.authenticated = true
+    ignoredLog = logger.info("minisql.server.session.handleAuthProof", "authenticated session=" + executor.sessionIdentifier(session.engine) + " user=" + session.pendingUsername)
     session.transportSendKey = sendKey
     session.transportReceiveKey = receiveKey
     session.transportPending = true
@@ -277,6 +280,7 @@ function handleAuthProof(session, request)
     return response
   end if
   ignoredAudit = try(database_manager.audit(session.engine.database, diagnostics.AUDIT_LOGIN, diagnostics.AUDIT_FAILURE, executor.sessionIdentifier(session.engine), session.pendingPrincipalId, "login failed"))
+  ignoredLog = logger.warning("minisql.server.session.handleAuthProof", "authentication failed session=" + executor.sessionIdentifier(session.engine) + " user=" + session.pendingUsername)
   authenticationBackoff(session)
   session.attempts = session.attempts + 1
   clearPending(session)
@@ -345,14 +349,21 @@ function handleQuery(session, request)
   if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
   sqlText = decode(request.payload)
   if typeof(sqlText) != "string" then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "query payload is not valid UTF-8")) end if
+  sessionId = executor.sessionIdentifier(session.engine)
+  if not logger.binlog("minisql.server.session.handleQuery session=" + sessionId, sqlText) then
+    ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "binlog persistence failed; statement rejected session=" + sessionId)
+    return responseMessage(request, messages.errorResponse(IO_FAILURE, "SQL binlog persistence failed; statement was not executed"))
+  end if
+  ignoredLog = logger.debug("minisql.server.session.handleQuery", "received SQL statement session=" + sessionId + " bytes=" + len(request.payload))
   parsed = try(parser.parseSql(sqlText))
-  if typeof(parsed) == "error" then return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
+  if typeof(parsed) == "error" then ignoredLog = logger.warning("minisql.server.session.handleQuery", "SQL parse failed session=" + sessionId + " code=" + parsed.code); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
   if len(parsed) != 1 then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   // The executor centrally selects the shared-reader or exclusive-writer path.
   result = try(executor.executeStatement(session.engine, parsed[0]))
-  if typeof(result) == "error" then return responseMessage(request, messages.errorResponse(result.code, result.message)) end if
+  if typeof(result) == "error" then ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message); return responseMessage(request, messages.errorResponse(result.code, result.message)) end if
   converted = try(formatter.responseFromResult(result))
   if typeof(converted) == "error" then return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
+  ignoredLog = logger.info("minisql.server.session.handleQuery", "SQL completed session=" + sessionId + " command=" + converted.command + " rows=" + converted.affectedRows)
   return responseMessage(request, converted)
 end function
 
@@ -412,6 +423,7 @@ function closeUnlocked(session)
   session.transportReceiveKey = void
   session.transportPending = false
   if session.authenticated then ignoredAudit = try(database_manager.audit(session.engine.database, diagnostics.AUDIT_LOGOUT, diagnostics.AUDIT_SUCCESS, executor.sessionIdentifier(session.engine), session.engine.principalId, "session closed")) end if
+  ignoredLog = logger.info("minisql.server.session.close", "session closed id=" + executor.sessionIdentifier(session.engine))
   executor.close(session.engine)
   session.closed = true
   return true

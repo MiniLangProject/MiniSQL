@@ -93,10 +93,9 @@ function main(args)
   fallbackPath = fallback.path
   newestGeneration = fallback.catalogHandle.security.generation
   newestSlot = (newestGeneration - 1) % 2
-  securityPath = catalog.securityFilePath(fallbackPath)
-  pageSize = fallback.catalogHandle.metadata.pageSize
+  securityPath = catalog.securityGenerationFilePath(fallbackPath, newestSlot)
   database_manager.close(fallback)
-  corruptByte(securityPath, paged_file.DATA_OFFSET + newestSlot * pageSize + 100)
+  corruptByte(securityPath, paged_file.DATA_OFFSET + 100)
   recovered = database_manager.open(fallbackPath)
   testkit.record(state, recovered.catalogHandle.security.generation == newestGeneration - 1, "newest corrupt generation falls back")
   testkit.record(state, catalog.findPrincipal(recovered.catalogHandle, "generation_two") is not void, "previous generation remains available")

@@ -25,6 +25,10 @@ Each database receives a unique directory containing at least:
 db.meta
 db.lock
 catalog/catalog.tbl
+catalog/security.tbl
+catalog/security.0.tbl
+catalog/security.1.tbl
+catalog/security.v2
 tables/
 indexes/
 wal/wal.log
@@ -43,12 +47,20 @@ MUST agree on database identity. Table files MUST agree on object ID, file type 
 size. Missing expected files, contradictory headers and files copied from another database
 MUST be rejected rather than guessed or rewritten automatically.
 
-## 20.4 Bootstrap catalog v1
+## 20.4 Scalable bootstrap catalog
 
-M8 stores database metadata, immutable format defaults, next object ID, next transaction ID,
-tables and columns in protected envelopes inside one catalog page. The one-page size limit
-is explicit. M14 will migrate logical metadata to ordinary system relations while retaining
-the bootstrap identity required to open those relations.
+The original M8 layout stored tables and columns in one protected catalog page.
+Current writers transparently migrate that payload to a checksummed multi-page
+blob. Continuation pages repeat the total byte length, page index, and page
+count; page zero is published only after all continuations are durable. Catalog
+capacity therefore grows with the paged file instead of stopping at one page.
+Readers continue to accept an original one-page database and migrate it on the
+next metadata write.
+
+Authorization metadata uses two independent multi-page generation files. The
+newest valid generation wins and the other remains a torn-write fallback. The
+`security.v2` marker prevents a published database with a missing generation
+from silently downgrading to its legacy `security.tbl` bootstrap copy.
 
 Identifier allocation is monotonic. `db.meta` is the authoritative high-water mark. A crash
 may leave harmless gaps, but an object or transaction ID MUST never move backwards and reuse

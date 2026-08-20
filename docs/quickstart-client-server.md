@@ -18,6 +18,39 @@ the expected number of simultaneously connected clients and available memory;
 raising it increases connection and read concurrency but does not create
 multiple physical writers for one database.
 
+## Configured logging and SQL binlog
+
+Start a trusted loopback server from the complete JSON configuration:
+
+```powershell
+.\build\bin\minisqld.exe --serve-config `
+  .\data\db_<uuid> .\config\minisql.example.json
+```
+
+Use `--serve-authenticated-config` for the authenticated encrypted server and
+`--serve-standby-config` for a loopback standby. The configuration controls the
+address, port, connection bound, log directory, severity threshold, stdout and
+file destinations, rolling interval, and SQL binlog.
+
+```json
+"runtime": { "logLevel": "info" },
+"logging": {
+  "stdoutEnabled": true,
+  "fileEnabled": true,
+  "fileName": "minisql.log",
+  "rotationHours": 24
+},
+"binlog": {
+  "enabled": true,
+  "fileName": "minisql-bin.log"
+}
+```
+
+Ordinary records use DEBUG, INFO, WARNING, and ERROR. SQL binlog records are
+independent of that threshold and are flushed before the statement executes.
+The binlog contains complete statement text and can therefore contain personal
+data or SQL literals that act as secrets; restrict access to the log directory.
+
 Read-only statements share the database gate only after parsing and
 classification. A durable dirty-index marker is repaired under the exclusive
 gate before a read proceeds. New readers stop entering once a writer is waiting,

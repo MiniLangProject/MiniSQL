@@ -6,6 +6,20 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-20
 
+- replaced the one-page catalog and security snapshots with checksummed,
+  crash-safe multi-page generations; removed the 1 MiB schema/statistics caps,
+  16-bit security collection counts, and small-backup file/count ceilings while
+  preserving automatic reads and migration of legacy databases;
+- eliminated quadratic client response formatting and bounded retained script
+  allocations, preventing persistent shell sessions from exhausting the
+  MiniLang heap on repeated or wide query results;
+- added a process-wide configurable logger with DEBUG/INFO/WARNING/ERROR
+  thresholds, identical stdout and rolling-file output, configurable hourly
+  rotation, and an optional independently durable SQL binlog that records every
+  valid UTF-8 statement before parsing or execution;
+- added regression coverage for multi-page catalogs, wide client results,
+  logger severity filtering and rotation, security generation recovery, and the
+  end-to-end server-session binlog hook;
 - replaced the cooperative multi-client polling loop with a bounded native
   MiniLang thread pool and one long-lived worker job per active connection;
 - added a writer-prioritized readers/writer gate per database: read-only SELECT,
@@ -14,13 +28,17 @@ and repair-candidate log from development is preserved in
 - made the logical lock graph thread-safe, initialized read-path sidecars before
   publishing a database, added compatible shared table/index file locks, and
   synchronized external-sort spill identifiers and UTF-16 path marshalling;
-- serialized the CNG AEAD native call sequence used by secure frames so
-  pointer-bearing authentication descriptors cannot overlap across workers;
+- serialized all CNG RNG, PBKDF2, SHA/HMAC and AEAD native call sequences on
+  the same recursive monitor so compiler-managed native argument buffers cannot
+  overlap across authentication and secure-frame workers;
 - made bounded TLS sidecars drain every accepted relay before process exit and
   replaced selector-based `SSLSocket` reads with directional blocking pumps, so
   post-handshake wakeups and fragmented final connections cannot reset clients;
 - taught build and acceptance commands to include the selected Python
-  compiler's standard library automatically.
+  compiler's standard library automatically;
+- fixed restart recovery after `DROP TABLE`: historical committed WAL images
+  for catalog-proven retired table IDs are skipped without weakening strict
+  missing-target validation, and recovery target lookup is now hash-based;
 - added Apache-2.0 headers to every MiniLang, Python and PowerShell source file,
   documented every declaration and non-obvious implementation invariant in
   English, and aligned the README, operator guides, concurrency specifications,

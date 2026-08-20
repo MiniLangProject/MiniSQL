@@ -4,6 +4,7 @@ package minisql.transaction.recovery
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import std.ds.hashmap as hashmap
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.transaction.wal as wal
@@ -19,8 +20,10 @@ const CORRUPT_DATA = 9004
 struct RecoveryTarget
   // File id field of the recovery target.
   fileId
-  // Paged file field of the recovery target.
+  // Open paged file that receives redo, or void for a deliberately retired file ID.
   pagedFile
+  // Distinguishes a dropped file from an accidentally omitted live recovery target.
+  retired
 end struct
 
 // Defines the transaction status record used by this module.
@@ -63,7 +66,17 @@ function target(fileId, pagedFile)
   if typeof(fileId) != "int" or fileId < 0 then return fail(INVALID_ARGUMENT, "target", "fileId must be non-negative") end if
   paged_file.validateOpen(pagedFile, "recovery.target")
   if pagedFile.fileId != fileId then return fail(INVALID_ARGUMENT, "target", "file ID mismatch") end if
-  return RecoveryTarget(fileId, pagedFile)
+  return RecoveryTarget(fileId, pagedFile, false)
+end function
+
+// Marks one durable object ID as intentionally retired so historical committed
+// WAL images for a dropped file are counted as skipped instead of treated as an
+// accidentally omitted live target. Callers must prove retirement from their
+// current durable catalog; the generic recovery entry points remain strict.
+// Inputs: `fileId`. Returns a target without an open paged file.
+function retiredTarget(fileId)
+  if typeof(fileId) != "int" or fileId < 0 then return fail(INVALID_ARGUMENT, "retiredTarget", "fileId must be non-negative") end if
+  return RecoveryTarget(fileId, void, true)
 end function
 
 // Finds the target.
@@ -150,6 +163,14 @@ function recoverScan(scanResult, targets, startLsn)
   if not wal.isWalScan(scanResult) then return fail(INVALID_ARGUMENT, "recoverScan", "scanResult must be WalScan") end if
   if typeof(targets) != "array" then return fail(INVALID_ARGUMENT, "recoverScan", "targets must be array") end if
   if typeof(startLsn) != "int" or startLsn < 0 then return fail(INVALID_ARGUMENT, "recoverScan", "startLsn must be non-negative") end if
+  // Build the immutable lookup once. Recovery cost is linear in WAL records
+  // even when a database owns thousands of live or retired table file IDs.
+  targetMap = hashmap.HashMap.new()
+  for each current in targets
+    if current is not RecoveryTarget then return fail(INVALID_ARGUMENT, "recoverScan", "invalid recovery target") end if
+    if targetMap.has(current.fileId) then return fail(INVALID_ARGUMENT, "recoverScan", "duplicate recovery target for file " + current.fileId) end if
+    targetMap.set(current.fileId, current)
+  end for
   statuses = buildStatuses(scanResult.records, startLsn)
   committed = 0
   for each status in statuses
@@ -161,18 +182,25 @@ function recoverScan(scanResult, targets, startLsn)
   for each record in scanResult.records
     if record.lsn >= startLsn and record.recordType == wal.RECORD_PAGE_IMAGE then
       if isCommitted(statuses, record.transactionId) then
-        destination = findTarget(targets, record.fileId)
+        destination = void
+        if targetMap.has(record.fileId) then destination = targetMap.get(record.fileId) end if
         if destination is void then return fail(CORRUPT_DATA, "recoverScan", "missing recovery target for file " + record.fileId) end if
-        changed = applyPage(record, destination)
-        if changed then
-          redone = redone + 1
-          already = false
-          for each existing in touched
-            if existing.fileId == destination.fileId then already = true end if
-          end for
-          if not already then touched = touched + [destination] end if
-        else
+        if destination.retired then
+          // Object IDs are never reused. Once the durable catalog proves that a
+          // file was dropped, replaying its older images would resurrect data.
           skipped = skipped + 1
+        else
+          changed = applyPage(record, destination)
+          if changed then
+            redone = redone + 1
+            already = false
+            for each existing in touched
+              if existing.fileId == destination.fileId then already = true end if
+            end for
+            if not already then touched = touched + [destination] end if
+          else
+            skipped = skipped + 1
+          end if
         end if
       else
         skipped = skipped + 1

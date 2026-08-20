@@ -5,7 +5,7 @@ MiniSQL/
 ├── config/  # configuration schema and example
 ├── docs/  # specifications, formats, ADRs, release and acceptance documentation
 ├── src/apps/  # five executable entry points
-├── src/minisql/  # 71 database-engine modules
+├── src/minisql/  # 72 database-engine modules
 ├── src/tests/  # native MiniLang regression and integration tests
 ├── tests/  # single Python orchestrator, fixtures, corpora and references
 ├── tools/  # quality, release, replication and TLS sidecars
@@ -20,7 +20,7 @@ MiniSQL/
 
 - `src/minisql/catalog/`: 4 module(s)
 - `src/minisql/client/`: 3 module(s)
-- `src/minisql/common/`: 8 module(s)
+- `src/minisql/common/`: 9 module(s)
 - `src/minisql/config/`: 3 module(s)
 - `src/minisql/executor/`: 8 module(s)
 - `src/minisql/planner/`: 5 module(s)

@@ -5,7 +5,9 @@
 import minisql.catalog.catalog as catalog
 import minisql.client.console as console
 import minisql.common.limits as limits
+import minisql.common.logger as logger
 import minisql.common.uuid as uuid
+import minisql.config.loader as config_loader
 import minisql.config.model as config_model
 import minisql.server.database_manager as database_manager
 import minisql.server.server as server
@@ -26,6 +28,9 @@ function printUsage()
   print "  minisqld.exe --serve-authenticated <database-path> <port> [max-clients]"
   print "  minisqld.exe --serve-standby <standby-path> <port> [max-clients]"
   print "  minisqld.exe --serve-secure <database-path> <address> <port> <max-clients> [max-requests]"
+  print "  minisqld.exe --serve-config <database-path> <config-file>"
+  print "  minisqld.exe --serve-authenticated-config <database-path> <config-file>"
+  print "  minisqld.exe --serve-standby-config <database-path> <config-file>"
   print ""
   print "Bounded compatibility/test servers:"
   print "  minisqld.exe --serve-one <database-path> <port> [max-requests]"
@@ -47,9 +52,49 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function serverResult(result)
-  if typeof(result) == "error" then return printAppError(result) end if
-  print "MiniSQL server completed requests=" + result
-  return 0
+  code = 0
+  if typeof(result) == "error" then
+    ignoredLog = logger.errorLog("minisql.main.serverResult", "server stopped with error code=" + result.code + " message=" + result.message)
+    code = printAppError(result)
+  else
+    ignoredLog = logger.info("minisql.main.serverResult", "server stopped requests=" + result)
+    print "MiniSQL server completed requests=" + result
+  end if
+  ignoredClose = try(logger.close())
+  return code
+end function
+
+// Applies validated configuration to the process-wide logger singleton.
+// Inputs: `config`. Returns true after stdout, rolling file, threshold and binlog settings are active.
+function configureLogger(config)
+  return logger.configure(config.runtime.logLevel, config.paths.logDirectory, config.logging.stdoutEnabled, config.logging.fileEnabled, config.logging.fileName, config.logging.rotationHours, config.binlog.enabled, config.binlog.fileName)
+end function
+
+// Starts an operational server entirely from a JSON configuration file.
+// Inputs: `mode`, `databasePath`, `configPath`. Returns the public process exit code.
+function runConfiguredServer(mode, databasePath, configPath)
+  config = try(config_loader.load(configPath))
+  if typeof(config) == "error" then return printAppError(config) end if
+  configured = try(configureLogger(config))
+  if typeof(configured) == "error" then return printAppError(configured) end if
+  ignoredLog = logger.info("minisql.main.runConfiguredServer", "starting mode=" + mode + " database=" + databasePath + " address=" + config.server.bindAddress + " port=" + config.server.port + " maxClients=" + config.server.maxConnections)
+  if mode == "authenticated" then
+    announceServer("authenticated-encrypted", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
+    return serverResult(try(server.serveSecureAddress(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)))
+  end if
+  if config.server.bindAddress != "127.0.0.1" then ignoredClose = try(logger.close()); print "ERROR 9002: trusted and standby config servers must bind 127.0.0.1"; return 1 end if
+  if mode == "standby" then
+    announceServer("read-only-hot-standby", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
+    return serverResult(try(server.serveStandbyConcurrent(databasePath, config.server.port, config.server.maxConnections, 0)))
+  end if
+  announceServer("trusted-local", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
+  return serverResult(try(server.serveConcurrent(databasePath, config.server.port, config.server.maxConnections, 0)))
+end function
+
+// Enables documented default logging for legacy explicit-argument server modes.
+// Takes no caller inputs. Returns true after the singleton is configured.
+function configureDefaultLogger()
+  return configureLogger(config_model.defaultConfig(".\\data"))
 end function
 
 // Implements initialize database for this module.
@@ -130,7 +175,16 @@ function main(args)
     return setUserPassword(args[1], args[2])
   end if
 
+  if len(args) == 3 and (args[0] == "--serve-config" or args[0] == "--serve-authenticated-config" or args[0] == "--serve-standby-config") then
+    mode = "trusted"
+    if args[0] == "--serve-authenticated-config" then mode = "authenticated" end if
+    if args[0] == "--serve-standby-config" then mode = "standby" end if
+    return runConfiguredServer(mode, args[1], args[2])
+  end if
+
   if (len(args) == 3 or len(args) == 4) and (args[0] == "--serve" or args[0] == "--serve-authenticated" or args[0] == "--serve-standby") then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
     port = toNumber(args[2])
     maximumClients = 32
     if len(args) == 4 then maximumClients = toNumber(args[3]) end if
@@ -150,6 +204,8 @@ function main(args)
   end if
 
   if (len(args) == 3 or len(args) == 4) and (args[0] == "--serve-one" or args[0] == "--serve-auth") then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
     port = toNumber(args[2])
     maximumRequests = 0
     if len(args) == 4 then maximumRequests = toNumber(args[3]) end if
@@ -166,6 +222,8 @@ function main(args)
   end if
 
   if (len(args) == 4 or len(args) == 5) and (args[0] == "--serve-many" or args[0] == "--serve-auth-many") then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
     port = toNumber(args[2])
     maximumClients = toNumber(args[3])
     maximumRequests = 0
@@ -183,6 +241,8 @@ function main(args)
   end if
 
   if (len(args) == 5 or len(args) == 6) and args[0] == "--serve-secure" then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
     port = toNumber(args[3])
     maximumClients = toNumber(args[4])
     maximumRequests = 0

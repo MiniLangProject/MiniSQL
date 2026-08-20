@@ -30,6 +30,8 @@ is `M48-M50R3`.
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
   TLS 1.3/X.509 sidecar, audit chain, WAL shipping, and read-only hot standby;
+- scalable multi-page catalog and security metadata, a thread-safe singleton
+  logger with stdout plus time-rolled files, and an optional complete SQL binlog;
 - native per-connection concurrency through a bounded MiniLang thread pool, with
   parallel network/framing work, parallel read-only query plans on one database,
   and exclusive, writer-prioritized mutation execution;
@@ -95,6 +97,17 @@ Use the reported `db_<uuid>` directory to start a local server:
 .\build\bin\minisqld.exe --serve .\data\db_<uuid> 7432 32
 ```
 
+To use the logger and SQL-binlog settings from the supplied JSON configuration:
+
+```powershell
+.\build\bin\minisqld.exe --serve-config .\data\db_<uuid> .\config\minisql.example.json
+```
+
+The default configuration writes INFO-and-higher records both to stdout and to
+`logs/minisql.log`, rolling the file every 24 hours. Set `runtime.logLevel` to
+`debug`, `info`, `warning`, or `error`; enable `binlog.enabled` to durably record
+every received SQL statement in the independent binlog.
+
 Open a stateful client in another terminal:
 
 ```powershell
@@ -158,7 +171,7 @@ build\release\MiniSQL-1.0.0-windows-x64.zip.sha256
 
 ```text
 src/apps/              executable entry points
-src/minisql/           71 database-engine modules
+src/minisql/           72 database-engine modules
 src/tests/             native MiniLang tests
 config/                example configuration and JSON schema
 docs/spec/             behavioral specifications

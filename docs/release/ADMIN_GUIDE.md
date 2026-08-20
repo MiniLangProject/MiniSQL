@@ -4,6 +4,19 @@ Create a database with `minisqld.exe --init <root> <name> [page-size]`. Start a
 loopback server with `--serve`, an authenticated server with
 `--serve-authenticated`, or a read-only standby with `--serve-standby`.
 
+For production-style operational settings, use `--serve-config <database>
+<config-file>`, `--serve-authenticated-config`, or `--serve-standby-config`.
+`runtime.logLevel` accepts `debug`, `info`, `warning`, or `error`. The `logging`
+section enables stdout and/or the same records in a file under
+`paths.logDirectory`; `rotationHours` rolls non-empty active files by elapsed
+time. The logger is one process-wide synchronized singleton, so records from
+connection workers cannot interleave at the file boundary.
+
+Enable the independent `binlog` section to flush every complete SQL statement
+before execution. Binlog capture ignores the ordinary severity threshold.
+Protect it as sensitive data because SQL literals can contain credentials,
+personal information, or application secrets.
+
 The optional `max-clients` argument bounds native MiniLang thread-pool workers
 and live sessions. Each worker owns one connection, so slow clients do not stall
 other sockets. Read-only plans can execute in parallel on the same database;

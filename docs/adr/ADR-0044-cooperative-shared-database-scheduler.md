@@ -34,10 +34,13 @@ compatible shared Win32 locks. The compiler's process-wide UTF-16 extern scratch
 buffers require a very short synchronization region around path-bearing Win32
 calls; the actual positioned reads are not inside that region.
 
-The CNG AES-GCM call sequence is synchronized process-wide because its native
-authentication descriptor contains pointers into managed temporary buffers.
-This narrow gate covers encryption/decryption only; socket polling and SQL
-parsing remain concurrent.
+All Windows CNG sequences (RNG, PBKDF2, SHA/HMAC and AES-GCM) share MiniLang's
+recursive process monitor. AES authentication descriptors contain pointers into
+managed temporary buffers, and the compiler currently also uses shared native
+argument storage for external string/pointer marshalling. Keeping the complete
+provider lifecycles in this narrow gate prevents authentication and secure-frame
+workers from corrupting one another; socket polling and SQL parsing remain
+concurrent.
 
 The acceptance contract measures real same-database executor overlap with two
 workers and 200 indexed reads in total. A test that merely establishes multiple

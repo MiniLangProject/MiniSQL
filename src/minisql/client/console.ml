@@ -404,11 +404,18 @@ function executeStatements(activeClient, statements)
   executed = 0
   for each statement in statements
     response = try(client.query(activeClient, statement))
-    if typeof(response) == "error" then return response end if
+    if typeof(response) == "error" then failure = response; response = void; gc_collect(); return failure end if
     printed = try(printQueryResponse(response))
-    if typeof(printed) == "error" then return printed end if
-    if response.status == constants.STATUS_ERROR then return fail(response.errorCode, "executeStatements", response.message) end if
+    if typeof(printed) == "error" then failure = printed; response = void; printed = void; gc_collect(); return failure end if
+    if response.status == constants.STATUS_ERROR then failure = fail(response.errorCode, "executeStatements", response.message); response = void; printed = void; gc_collect(); return failure end if
     executed = executed + 1
+    // Script and interactive sessions are intentionally long-lived. Reclaim
+    // protocol frames, decoded rows, and formatter buffers after each complete
+    // response so a large workload cannot grow the client heap toward its
+    // reserved address-space ceiling.
+    response = void
+    printed = void
+    gc_collect()
   end for
   return executed
 end function

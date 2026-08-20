@@ -66,7 +66,19 @@ function main(args)
   testkit.equal(state, paged_file.readPage(data, 0)[page.HEADER_SIZE], 2, "existing page redone")
   testkit.equal(state, paged_file.readPage(data, 1)[page.HEADER_SIZE], 3, "new page redone")
 
-  second = recovery.recover(log, [recovery.target(44, data)], 0)
+  // A dropped table keeps historical committed images in the WAL until a later
+  // checkpoint. Generic recovery remains strict, while an explicit retirement
+  // tombstone skips the image and never requires the deleted file to reappear.
+  retired = tx.beginTransaction(2003, tx.ISOLATION_SERIALIZABLE, false, log)
+  tx.stagePage(retired, 43, 0, makePage(4096, 43, 0, 9))
+  tx.commit(retired)
+  retiredScan = wal.scan(log, false)
+  testkit.errorCode(state, try(recovery.recoverScan(retiredScan, [recovery.target(44, data)], 0)), recovery.CORRUPT_DATA, "unclassified missing target remains corruption")
+  retiredResult = recovery.recoverScan(retiredScan, [recovery.target(44, data), recovery.retiredTarget(43)], 0)
+  testkit.equal(state, retiredResult.pagesRedone, 0, "retired file image is not replayed")
+  testkit.record(state, retiredResult.pagesSkipped >= 4, "retired file image is counted as skipped")
+
+  second = recovery.recover(log, [recovery.target(44, data), recovery.retiredTarget(43)], 0)
   testkit.equal(state, second.pagesRedone, 0, "redo is idempotent")
   testkit.record(state, second.pagesSkipped >= 3, "idempotent and uncommitted pages skipped")
 
@@ -75,7 +87,7 @@ function main(args)
 
   reopenedData = paged_file.open(dataPath)
   reopenedWal = wal.open(walPath, 4096)
-  third = recovery.recover(reopenedWal, [recovery.target(44, reopenedData)], 0)
+  third = recovery.recover(reopenedWal, [recovery.target(44, reopenedData), recovery.retiredTarget(43)], 0)
   testkit.equal(state, third.pagesRedone, 0, "restart recovery remains idempotent")
   testkit.equal(state, paged_file.readPage(reopenedData, 1)[page.HEADER_SIZE], 3, "recovered data persisted")
   wal.close(reopenedWal)

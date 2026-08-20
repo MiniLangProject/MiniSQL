@@ -415,6 +415,22 @@ function flush(pagedFile)
   return file_api.flush(pagedFile.file)
 end function
 
+// Shrinks the committed page range without ever advertising bytes that are not
+// durable. Publishing the smaller superblock first makes an interrupted
+// physical truncate recoverable: open() already discards an uncommitted tail.
+// Inputs: `pagedFile`, `newPageCount`. Returns true after the smaller page range and physical file length are durable.
+function truncatePages(pagedFile, newPageCount)
+  validateOpen(pagedFile, "truncatePages")
+  validateNativeId(newPageCount, "truncatePages", "newPageCount")
+  if newPageCount > pagedFile.pageCount then return fail(INVALID_ARGUMENT, "truncatePages", "new page count must not grow the file") end if
+  if newPageCount == pagedFile.pageCount then return true end if
+  file_api.flush(pagedFile.file)
+  commitMetadata(pagedFile, newPageCount)
+  file_api.truncate(pagedFile.file, committedSize(pagedFile.pageSize, newPageCount))
+  file_api.flush(pagedFile.file)
+  return true
+end function
+
 // Closes the requested value.
 // Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(pagedFile)

@@ -4,7 +4,9 @@ package minisql.catalog.catalog
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.catalog.metadata as metadata
+import std.ds.hashmap as hashmap
 import minisql.common.endian as endian
+import minisql.common.logger as logger
 import minisql.common.uuid as uuid
 import minisql.config.model as config_model
 import minisql.platform.file as file_api
@@ -28,8 +30,13 @@ const SECURITY_STATE = 9030
 const DATABASE_META_FILE_ID = 1
 const CATALOG_FILE_ID = 2
 const SECURITY_FILE_ID = 0
+const SECURITY_GENERATION_FILE_ID = 0
 const BLOB_LENGTH_OFFSET = 64
 const BLOB_DATA_OFFSET = 68
+const PAGED_BLOB_MAGIC = 0x32424C42
+const PAGED_BLOB_VERSION = 1
+const PAGED_BLOB_HEADER_OFFSET = 64
+const PAGED_BLOB_DATA_OFFSET = 104
 
 // Defines the database handle record used by this module.
 struct DatabaseHandle
@@ -41,6 +48,8 @@ struct DatabaseHandle
   catalogFile
   // Security file field of the database handle.
   securityFile
+  // Two independently durable, scalable security-catalog generations.
+  securityGenerationFiles
   // Metadata field of the database handle.
   metadata
   // Catalog field of the database handle.
@@ -91,6 +100,43 @@ end function
 // Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function securityFilePath(databasePath)
   return joinPath(joinPath(databasePath, "catalog"), "security.tbl")
+end function
+
+// Returns the scalable security generation path for slot zero or one.
+// Inputs: `databasePath`, `slot`. Returns a path inside the catalog directory.
+function securityGenerationFilePath(databasePath, slot)
+  if slot != 0 and slot != 1 then return fail(INVALID_ARGUMENT, "securityGenerationFilePath", "slot must be zero or one") end if
+  return joinPath(joinPath(databasePath, "catalog"), "security." + slot + ".tbl")
+end function
+
+// Returns the durable marker proving that scalable security generations were published.
+// Inputs: `databasePath`. Returns a path inside the catalog directory.
+function securityGenerationMarkerPath(databasePath)
+  return joinPath(joinPath(databasePath, "catalog"), "security.v2")
+end function
+
+// Creates one complete scalable security generation under its final path.
+// Inputs: `databasePath`, `slot`, `pageSize`, `databaseId`, `encoded`. Returns a closed durable file.
+function createSecurityGeneration(databasePath, slot, pageSize, databaseId, encoded)
+  destination = securityGenerationFilePath(databasePath, slot)
+  temporary = destination + ".creating"
+  if file_api.fileExists(temporary) then file_api.deletePath(temporary) end if
+  generationFile = paged_file.create(temporary, pageSize, superblock.FILE_TYPE_TABLE, SECURITY_GENERATION_FILE_ID, databaseId)
+  writePagedBlob(generationFile, encoded)
+  paged_file.close(generationFile)
+  file_api.movePath(temporary, destination, true)
+  return true
+end function
+
+// Publishes the marker only after both scalable security generations are durable.
+// Inputs: `databasePath`. Returns true after durable marker creation.
+function publishSecurityGenerationMarker(databasePath)
+  markerPath = securityGenerationMarkerPath(databasePath)
+  if file_api.fileExists(markerPath) then return true end if
+  marker = file_api.createNewDurable(markerPath)
+  file_api.flush(marker)
+  file_api.close(marker)
+  return true
 end function
 
 // Validates the name.
@@ -145,6 +191,113 @@ function readBlobPage(pagedFile, pageNumber)
   return slice(pageBytes, BLOB_DATA_OFFSET, length)
 end function
 
+// Converts a persisted unsigned 64-bit blob field to the native MiniLang range.
+// Inputs: `words`, `operation`, `name`. Returns the native value or a corruption error when the file requests an unaddressable allocation.
+function decodeBlobNative(words, operation, name)
+  if words.high > endian.MAX_SCALAR_HIGH then return fail(CORRUPT_DATA, operation, name + " exceeds the native address range") end if
+  return endian.uint64ToInt(words)
+end function
+
+// Computes the number of catalog pages required by a byte payload without a
+// fixed metadata ceiling. The persisted representation is limited only by the
+// paged-file and native address ranges.
+// Inputs: `length`, `capacity`. Returns a positive page count.
+function pagedBlobPageCount(length, capacity)
+  if typeof(length) != "int" or length < 0 or typeof(capacity) != "int" or capacity < 1 then return fail(INVALID_ARGUMENT, "pagedBlobPageCount", "invalid blob length or page capacity") end if
+  count = 1
+  remaining = length
+  while remaining > capacity
+    remaining = remaining - capacity
+    count = count + 1
+  end while
+  return count
+end function
+
+// Builds one independently checksummed page of the scalable catalog blob. Each
+// page repeats the global length and page count so swapped, stale, missing, or
+// reordered continuation pages are detected before decoding metadata.
+// Inputs: `pagedFile`, `pageNumber`, `encoded`, `pageCount`. Returns one sealed page image.
+function createPagedBlobPage(pagedFile, pageNumber, encoded, pageCount)
+  capacity = pagedFile.pageSize - PAGED_BLOB_DATA_OFFSET
+  sourceOffset = pageNumber * capacity
+  chunkLength = len(encoded) - sourceOffset
+  if chunkLength < 0 then chunkLength = 0 end if
+  if chunkLength > capacity then chunkLength = capacity end if
+  pageBytes = page.create(pagedFile.pageSize, page.TYPE_CATALOG, pagedFile.fileId, pageNumber)
+  endian.writeU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET, PAGED_BLOB_MAGIC)
+  endian.writeU16LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 4, PAGED_BLOB_VERSION)
+  endian.writeU16LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 6, 0)
+  endian.writeU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 8, endian.uint64FromInt(len(encoded)))
+  endian.writeU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 16, endian.uint64FromInt(pageNumber))
+  endian.writeU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 24, endian.uint64FromInt(pageCount))
+  endian.writeU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 32, chunkLength)
+  endian.writeU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 36, 0)
+  if chunkLength > 0 then copyBytes(pageBytes, PAGED_BLOB_DATA_OFFSET, encoded, sourceOffset, chunkLength) end if
+  page.reseal(pageBytes)
+  return pageBytes
+end function
+
+// Persists an arbitrarily large catalog snapshot across as many pages as it
+// needs. Continuations become durable before page zero publishes the new blob;
+// stale tail pages are removed only after that publication is durable.
+// Inputs: `pagedFile`, `encoded`. Returns true after a complete durable snapshot is published.
+function writePagedBlob(pagedFile, encoded)
+  if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writePagedBlob", "encoded value must be bytes") end if
+  capacity = pagedFile.pageSize - PAGED_BLOB_DATA_OFFSET
+  requiredPages = pagedBlobPageCount(len(encoded), capacity)
+  while pagedFile.pageCount < requiredPages
+    pageNumber = pagedFile.pageCount
+    placeholder = page.create(pagedFile.pageSize, page.TYPE_CATALOG, pagedFile.fileId, pageNumber)
+    paged_file.appendPage(pagedFile, placeholder)
+  end while
+  if requiredPages > 1 then
+    for pageNumber = 1 to requiredPages - 1
+      paged_file.writePage(pagedFile, pageNumber, createPagedBlobPage(pagedFile, pageNumber, encoded, requiredPages))
+    end for
+    paged_file.flush(pagedFile)
+  end if
+  paged_file.writePage(pagedFile, 0, createPagedBlobPage(pagedFile, 0, encoded, requiredPages))
+  paged_file.flush(pagedFile)
+  if pagedFile.pageCount > requiredPages then paged_file.truncatePages(pagedFile, requiredPages) end if
+  return true
+end function
+
+// Reads the scalable catalog snapshot and transparently accepts the original
+// one-page layout. This makes the first metadata update an online format
+// migration for existing databases.
+// Inputs: `pagedFile`. Returns the exact encoded catalog payload.
+function readPagedBlob(pagedFile)
+  if pagedFile.pageCount < 1 then return fail(CORRUPT_DATA, "readPagedBlob", "metadata file has no pages") end if
+  firstPage = paged_file.readPage(pagedFile, 0)
+  firstHeader = page.verify(firstPage)
+  if firstHeader.pageType != page.TYPE_CATALOG then return fail(CORRUPT_DATA, "readPagedBlob", "metadata page has wrong type") end if
+  if endian.readU32LE(firstPage, PAGED_BLOB_HEADER_OFFSET) != PAGED_BLOB_MAGIC then return readBlobPage(pagedFile, 0) end if
+
+  capacity = pagedFile.pageSize - PAGED_BLOB_DATA_OFFSET
+  totalLength = decodeBlobNative(endian.readU64LE(firstPage, PAGED_BLOB_HEADER_OFFSET + 8), "readPagedBlob", "blob length")
+  pageCount = decodeBlobNative(endian.readU64LE(firstPage, PAGED_BLOB_HEADER_OFFSET + 24), "readPagedBlob", "blob page count")
+  expectedPages = pagedBlobPageCount(totalLength, capacity)
+  if pageCount != expectedPages or pageCount < 1 or pageCount > pagedFile.pageCount then return fail(CORRUPT_DATA, "readPagedBlob", "blob page count is inconsistent") end if
+  output = bytes(totalLength, 0)
+  for pageNumber = 0 to pageCount - 1
+    pageBytes = firstPage
+    if pageNumber > 0 then pageBytes = paged_file.readPage(pagedFile, pageNumber) end if
+    header = page.verify(pageBytes)
+    if header.pageType != page.TYPE_CATALOG or endian.readU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET) != PAGED_BLOB_MAGIC or endian.readU16LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 4) != PAGED_BLOB_VERSION or endian.readU16LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 6) != 0 or endian.readU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 36) != 0 then return fail(CORRUPT_DATA, "readPagedBlob", "blob continuation header is invalid") end if
+    storedLength = decodeBlobNative(endian.readU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 8), "readPagedBlob", "blob length")
+    storedIndex = decodeBlobNative(endian.readU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 16), "readPagedBlob", "blob page index")
+    storedCount = decodeBlobNative(endian.readU64LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 24), "readPagedBlob", "blob page count")
+    chunkLength = endian.readU32LE(pageBytes, PAGED_BLOB_HEADER_OFFSET + 32)
+    outputOffset = pageNumber * capacity
+    expectedChunk = totalLength - outputOffset
+    if expectedChunk < 0 then expectedChunk = 0 end if
+    if expectedChunk > capacity then expectedChunk = capacity end if
+    if storedLength != totalLength or storedIndex != pageNumber or storedCount != pageCount or chunkLength != expectedChunk then return fail(CORRUPT_DATA, "readPagedBlob", "blob continuation does not match page zero") end if
+    if chunkLength > 0 then copyBytes(output, outputOffset, pageBytes, PAGED_BLOB_DATA_OFFSET, chunkLength) end if
+  end for
+  return output
+end function
+
 // Ensures the layout.
 // Inputs: `root`. Returns success after all invariants hold; violations are reported as structured errors.
 function ensureLayout(root)
@@ -191,7 +344,7 @@ function createDatabase(dataRoot, name, defaults)
 
   catalogPath = joinPath(joinPath(temporaryPath, "catalog"), "catalog.tbl")
   catalogFile = paged_file.create(catalogPath, defaults.pageSize, superblock.FILE_TYPE_TABLE, CATALOG_FILE_ID, databaseId)
-  writeBlobPage(catalogFile, 0, metadata.encodeCatalog(catalogState))
+  writePagedBlob(catalogFile, metadata.encodeCatalog(catalogState))
   paged_file.close(catalogFile)
 
   securityPath = securityFilePath(temporaryPath)
@@ -199,9 +352,16 @@ function createDatabase(dataRoot, name, defaults)
   currentSecurity = metadata.createSecurity(databaseId)
   previousSecurity = metadata.createSecurity(databaseId)
   previousSecurity.generation = 0
-  writeBlobPage(securityFile, 0, metadata.encodeSecurity(currentSecurity))
-  writeBlobPage(securityFile, 1, metadata.encodeSecurity(previousSecurity))
+  currentEncoded = metadata.encodeSecurity(currentSecurity)
+  previousEncoded = metadata.encodeSecurity(previousSecurity)
+  writeBlobPage(securityFile, 0, currentEncoded)
+  writeBlobPage(securityFile, 1, previousEncoded)
   paged_file.close(securityFile)
+  createSecurityGeneration(temporaryPath, 0, defaults.pageSize, databaseId, currentEncoded)
+  createSecurityGeneration(temporaryPath, 1, defaults.pageSize, databaseId, previousEncoded)
+  publishSecurityGenerationMarker(temporaryPath)
+  fillBytes(currentEncoded, 0, len(currentEncoded), 0)
+  fillBytes(previousEncoded, 0, len(previousEncoded), 0)
 
   walFile = wal.create(joinPath(joinPath(temporaryPath, "wal"), "wal.log"), defaults.walSegmentBytes)
   wal.close(walFile)
@@ -218,29 +378,21 @@ end function
 // Inputs: `databaseMetadata`, `catalogState`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateCatalogSemantics(databaseMetadata, catalogState)
   if catalogState.nextObjectId > databaseMetadata.nextObjectId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "catalog nextObjectId exceeds durable database allocator") end if
-  seenIds = []
-  seenNames = []
+  seenIds = hashmap.HashMap.new()
+  seenNames = hashmap.HashMap.new()
   for each table in catalogState.tables
     if table.tableId <= CATALOG_FILE_ID or table.tableId >= databaseMetadata.nextObjectId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "table ID is outside allocated range") end if
-    for each existingId in seenIds
-      if existingId == table.tableId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate table ID") end if
-    end for
-    for each existingName in seenNames
-      if existingName == table.name then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate table name") end if
-    end for
-    seenIds = seenIds + [table.tableId]
-    seenNames = seenNames + [table.name]
-    columnNames = []
+    if seenIds.has(table.tableId) then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate table ID") end if
+    if seenNames.has(table.name) then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate table name") end if
+    seenIds.set(table.tableId, true)
+    seenNames.set(table.name, true)
+    columnNames = hashmap.HashMap.new()
     for each column in table.columns
       if column.columnId <= table.tableId or column.columnId >= databaseMetadata.nextObjectId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "column ID is outside allocated range") end if
-      for each existingId in seenIds
-        if existingId == column.columnId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate global object ID") end if
-      end for
-      for each existingName in columnNames
-        if existingName == column.name then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate column name") end if
-      end for
-      seenIds = seenIds + [column.columnId]
-      columnNames = columnNames + [column.name]
+      if seenIds.has(column.columnId) then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate global object ID") end if
+      if columnNames.has(column.name) then return fail(CORRUPT_DATA, "validateCatalogSemantics", "duplicate column name") end if
+      seenIds.set(column.columnId, true)
+      columnNames.set(column.name, true)
     end for
   end for
   return true
@@ -282,7 +434,7 @@ function openDatabase(path)
     paged_file.close(metaFile)
     return fail(CORRUPT_DATA, "openDatabase", "catalog file identity mismatch")
   end if
-  catalogState = metadata.decodeCatalog(readBlobPage(catalogFile, 0))
+  catalogState = metadata.decodeCatalog(readPagedBlob(catalogFile))
   if not bytesEqual(catalogState.databaseId, databaseMetadata.databaseId) then
     paged_file.close(catalogFile)
     paged_file.close(metaFile)
@@ -325,16 +477,18 @@ function openDatabase(path)
     paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile)
     return fail(CORRUPT_DATA, "openDatabase", "security catalog file identity mismatch")
   end if
-  securityState = try(loadSecurityState(securityFile, databaseMetadata.databaseId))
-  if typeof(securityState) == "error" then paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile); return securityState end if
+  securityGenerationFiles = try(openSecurityGenerationFiles(path, securityFile, databaseMetadata.pageSize, databaseMetadata.databaseId))
+  if typeof(securityGenerationFiles) == "error" then paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile); return securityGenerationFiles end if
+  securityState = try(loadSecurityState(securityGenerationFiles, databaseMetadata.databaseId))
+  if typeof(securityState) == "error" then paged_file.close(securityGenerationFiles[0]); paged_file.close(securityGenerationFiles[1]); paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile); return securityState end if
   securityValid = try(validateSecuritySemantics(securityState, databaseMetadata.databaseId, catalogState.tables))
-  if typeof(securityValid) == "error" then paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile); return securityValid end if
+  if typeof(securityValid) == "error" then paged_file.close(securityGenerationFiles[0]); paged_file.close(securityGenerationFiles[1]); paged_file.close(securityFile); paged_file.close(catalogFile); paged_file.close(metaFile); return securityValid end if
 
   // db.meta is the authoritative high-water mark. A crash after publishing it
   // but before the catalog page may leave a harmless ID gap; never move the
   // allocator backwards and risk reusing an object ID.
   catalogState.nextObjectId = databaseMetadata.nextObjectId
-  return DatabaseHandle(path, metaFile, catalogFile, securityFile, databaseMetadata, catalogState, securityState, false, false)
+  return DatabaseHandle(path, metaFile, catalogFile, securityFile, securityGenerationFiles, databaseMetadata, catalogState, securityState, false, false)
 end function
 
 // Validates the open.
@@ -351,7 +505,7 @@ function persistMetadata(database)
   validateOpen(database, "persistMetadata")
   database.catalog.nextObjectId = database.metadata.nextObjectId
   writeBlobPage(database.metaFile, 0, metadata.encodeDatabase(database.metadata))
-  writeBlobPage(database.catalogFile, 0, metadata.encodeCatalog(database.catalog))
+  writePagedBlob(database.catalogFile, metadata.encodeCatalog(database.catalog))
   return true
 end function
 
@@ -395,16 +549,16 @@ function createTable(database, name, definitions)
   if nextId > endian.MAX_MINILANG_INT - neededIds then return fail(INVALID_ARGUMENT, "createTable", "object ID space is exhausted") end if
   tableId = nextId
   nextId = nextId + 1
-  columns = []
-  names = []
+  columns = array(len(definitions))
+  names = hashmap.HashMap.new()
+  columnIndex = 0
   for each definition in definitions
     if not metadata.isColumnMetadata(definition) then return fail(INVALID_ARGUMENT, "createTable", "invalid column definition") end if
-    for each existingName in names
-      if existingName == definition.name then return fail(OBJECT_EXISTS, "createTable", "duplicate column name") end if
-    end for
-    columns = columns + [metadata.createColumn(nextId, definition.name, definition.typeCode, definition.nullable, definition.maxLength, definition.precision, definition.scale)]
-    names = names + [definition.name]
+    if names.has(definition.name) then return fail(OBJECT_EXISTS, "createTable", "duplicate column name") end if
+    columns[columnIndex] = metadata.createColumn(nextId, definition.name, definition.typeCode, definition.nullable, definition.maxLength, definition.precision, definition.scale)
+    names.set(definition.name, true)
     nextId = nextId + 1
+    columnIndex = columnIndex + 1
   end for
   table = metadata.createTable(tableId, name, 1, columns)
   physicalPath = tableFilePath(database.path, tableId)
@@ -428,6 +582,7 @@ function createTable(database, name, definitions)
     ignored = try(writeBlobPage(database.metaFile, 0, metadata.encodeDatabase(database.metadata)))
     return persisted
   end if
+  ignoredLog = logger.info("minisql.catalog.catalog.createTable", "created table name=" + name + " id=" + tableId + " columns=" + len(columns))
   return table
 end function
 
@@ -446,6 +601,8 @@ end function
 // Inputs: `database`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function close(database)
   validateOpen(database, "close")
+  paged_file.close(database.securityGenerationFiles[0])
+  paged_file.close(database.securityGenerationFiles[1])
   paged_file.close(database.securityFile)
   paged_file.close(database.catalogFile)
   paged_file.close(database.metaFile)
@@ -617,11 +774,44 @@ function validateSecuritySemantics(state, databaseId, tables)
   return true
 end function
 
-// Loads the security state.
-// Inputs: `securityFile`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function loadSecurityState(securityFile, databaseId)
-  first = try(metadata.decodeSecurity(readBlobPage(securityFile, 0)))
-  second = try(metadata.decodeSecurity(readBlobPage(securityFile, 1)))
+// Opens or migrates the two independently durable scalable security snapshots.
+// The marker distinguishes a legacy database from a damaged v2 database: after
+// publication, either missing generation is corruption rather than a downgrade.
+// Inputs: `databasePath`, `legacyFile`, `pageSize`, `databaseId`. Returns two open paged files.
+function openSecurityGenerationFiles(databasePath, legacyFile, pageSize, databaseId)
+  markerExists = file_api.fileExists(securityGenerationMarkerPath(databasePath))
+  firstPath = securityGenerationFilePath(databasePath, 0)
+  secondPath = securityGenerationFilePath(databasePath, 1)
+  firstExists = file_api.fileExists(firstPath)
+  secondExists = file_api.fileExists(secondPath)
+  if markerExists and (not firstExists or not secondExists) then return fail(CORRUPT_DATA, "openSecurityGenerationFiles", "a published security generation is missing") end if
+  if not markerExists then
+    firstEncoded = readBlobPage(legacyFile, 0)
+    secondEncoded = readBlobPage(legacyFile, 1)
+    createSecurityGeneration(databasePath, 0, pageSize, databaseId, firstEncoded)
+    createSecurityGeneration(databasePath, 1, pageSize, databaseId, secondEncoded)
+    publishSecurityGenerationMarker(databasePath)
+    fillBytes(firstEncoded, 0, len(firstEncoded), 0)
+    fillBytes(secondEncoded, 0, len(secondEncoded), 0)
+  end if
+  first = try(paged_file.open(firstPath))
+  if typeof(first) == "error" then return first end if
+  second = try(paged_file.open(secondPath))
+  if typeof(second) == "error" then paged_file.close(first); return second end if
+  for each generationFile in [first, second]
+    valid = generationFile.fileType == superblock.FILE_TYPE_TABLE and generationFile.fileId == SECURITY_GENERATION_FILE_ID and generationFile.pageSize == pageSize and bytesEqual(generationFile.databaseId, databaseId) and generationFile.pageCount >= 1
+    if not valid then paged_file.close(first); paged_file.close(second); return fail(CORRUPT_DATA, "openSecurityGenerationFiles", "security generation file identity mismatch") end if
+  end for
+  return [first, second]
+end function
+
+// Loads the newest valid scalable security generation and retains the older
+// snapshot as a fallback after a torn or checksummed write failure.
+// Inputs: `securityFiles`, `databaseId`. Returns the selected security state.
+function loadSecurityState(securityFiles, databaseId)
+  if typeof(securityFiles) != "array" or len(securityFiles) != 2 then return fail(INVALID_ARGUMENT, "loadSecurityState", "two security generation files are required") end if
+  first = try(metadata.decodeSecurity(readPagedBlob(securityFiles[0])))
+  second = try(metadata.decodeSecurity(readPagedBlob(securityFiles[1])))
   firstValid = typeof(first) != "error"
   secondValid = typeof(second) != "error"
   if not firstValid and not secondValid then return fail(CORRUPT_DATA, "loadSecurityState", "both security generations are invalid") end if
@@ -693,7 +883,7 @@ function commitSecurityState(database, candidate)
   encoded = try(metadata.encodeSecurity(candidate))
   if typeof(encoded) == "error" then return encoded end if
   slot = (candidate.generation - 1) % 2
-  written = try(writeBlobPage(database.securityFile, slot, encoded))
+  written = try(writePagedBlob(database.securityGenerationFiles[slot], encoded))
   fillBytes(encoded, 0, len(encoded), 0)
   if typeof(written) == "error" then
     // A failed write/flush has an ambiguous durability outcome. Do not permit

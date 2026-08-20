@@ -5,9 +5,11 @@ package minisql.server.database_manager
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import std.threading as threading
+import std.ds.hashmap as hashmap
 import minisql.catalog.catalog as catalog
 import minisql.catalog.schema_history as schema_history
 import minisql.common.diagnostics as diagnostics
+import minisql.common.logger as logger
 import minisql.platform.file as file_api
 import minisql.platform.lock as file_lock
 import minisql.storage.paged_file as paged_file
@@ -228,6 +230,7 @@ end function
 function openInternal(path, allowStandby)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   if typeof(allowStandby) != "bool" then return fail(INVALID_ARGUMENT, "open", "allowStandby must be bool") end if
+  ignoredLog = logger.debug("minisql.server.database_manager.openInternal", "opening database path=" + path + " standbyAllowed=" + allowStandby)
   standbyMarker = file_api.fileExists(catalog.joinPath(path, "standby.state"))
   if standbyMarker and not allowStandby then return fail(STANDBY_NOT_PROMOTED, "open", "standby is not promoted") end if
   if allowStandby and not standbyMarker then return fail(INVALID_ARGUMENT, "openStandby", "standby.state is missing") end if
@@ -309,6 +312,7 @@ function openInternal(path, allowStandby)
   // M7 recovery currently targets all catalog-listed table files.
   recoveryFiles = []
   recoveryTargets = []
+  recoveryTargetIds = hashmap.HashMap.new()
   for each table in catalogHandle.catalog.tables
     tableFile = try(paged_file.open(catalog.tableFilePath(path, table.tableId)))
     if typeof(tableFile) == "error" then
@@ -322,8 +326,32 @@ function openInternal(path, allowStandby)
     end if
     recoveryFiles = recoveryFiles + [tableFile]
     recoveryTargets = recoveryTargets + [recovery.target(table.tableId, tableFile)]
+    recoveryTargetIds.set(table.tableId, true)
   end for
-  recoveryResult = try(recovery.recover(walWriter, recoveryTargets, checkpointFile.metadata.redoStartLsn))
+  // Scan once, then classify historical page images whose object IDs were
+  // allocated but are absent from the current durable catalog. Such IDs belong
+  // to dropped table files: object IDs start at three, are never reused, and all
+  // live tables were added above. Explicit retired targets prevent old WAL from
+  // resurrecting deleted data while preserving strict errors for unknown IDs.
+  recoveryScan = try(wal.scan(walWriter, true))
+  if typeof(recoveryScan) == "error" then
+    closeRecoveryFiles(recoveryFiles)
+    checkpoint.close(checkpointFile)
+    wal.close(walWriter)
+    catalog.close(catalogHandle)
+    file_lock.release(lockToken)
+    file_api.close(lockFile)
+    return recoveryScan
+  end if
+  retiredRecoveryTargets = 0
+  for each record in recoveryScan.records
+    if record.recordType == wal.RECORD_PAGE_IMAGE and not recoveryTargetIds.has(record.fileId) and record.fileId >= 3 and record.fileId < catalogHandle.metadata.nextObjectId then
+      recoveryTargets = recoveryTargets + [recovery.retiredTarget(record.fileId)]
+      recoveryTargetIds.set(record.fileId, true)
+      retiredRecoveryTargets = retiredRecoveryTargets + 1
+    end if
+  end for
+  recoveryResult = try(recovery.recoverScan(recoveryScan, recoveryTargets, checkpointFile.metadata.redoStartLsn))
   closeRecoveryFiles(recoveryFiles)
   if typeof(recoveryResult) == "error" then
     checkpoint.close(checkpointFile)
@@ -332,6 +360,9 @@ function openInternal(path, allowStandby)
     file_lock.release(lockToken)
     file_api.close(lockFile)
     return recoveryResult
+  end if
+  if retiredRecoveryTargets > 0 then
+    ignoredRetiredLog = logger.info("minisql.server.database_manager.openInternal", "recovery skipped historical WAL for retired table files=" + retiredRecoveryTargets)
   end if
 
   auditLog = try(diagnostics.openAudit(path))
@@ -353,7 +384,9 @@ function openInternal(path, allowStandby)
     file_api.close(lockFile)
     return executionGate
   end if
-  return ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, false)
+  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, false)
+  ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
+  return opened
 end function
 
 // Opens open using the supplied inputs.
@@ -377,6 +410,7 @@ function create(dataRoot, name, defaults)
   created = catalog.createDatabase(dataRoot, name, defaults)
   path = created.path
   catalog.close(created)
+  ignoredLog = logger.info("minisql.server.database_manager.create", "database created name=" + name + " path=" + path)
   return open(path)
 end function
 
@@ -521,6 +555,7 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // May mutate supplied state and perform I/O through its dependencies.
 function close(database)
+  closingPath = database.path
   entered = try(enterExecution(database))
   failure = void
   closedAudit = try(diagnostics.closeAudit(database.auditLog))
@@ -544,7 +579,8 @@ function close(database)
   gate.roomEmpty.close()
   gate.turnstile.close()
   gate.stateLock.close()
-  if typeof(failure) == "error" then return failure end if
+  if typeof(failure) == "error" then ignoredLog = logger.errorLog("minisql.server.database_manager.close", "database close failed path=" + closingPath + " message=" + failure.message); return failure end if
+  ignoredLog = logger.info("minisql.server.database_manager.close", "database closed path=" + closingPath)
   return true
 end function
 

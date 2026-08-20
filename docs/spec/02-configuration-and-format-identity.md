@@ -13,9 +13,10 @@ configuration.
 
 ### Runtime/server settings
 
-Examples: data/log/temporary roots, bind address, port, maximum connections, buffer-pool budget, query
-timeout, log level, temporary-memory limit and checkpoint trigger. These MAY be
-changed between runs, provided validation succeeds.
+Examples: data/log/temporary roots, bind address, port, maximum connections,
+buffer-pool budget, query timeout, log level, stdout/file destinations, rolling
+hours, SQL-binlog policy, temporary-memory limit and checkpoint trigger. These
+MAY be changed between runs, provided validation succeeds.
 
 ### Defaults for new databases
 

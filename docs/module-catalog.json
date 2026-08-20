@@ -50,6 +50,12 @@
       "targetMilestone": "M0"
     },
     {
+      "path": "src/minisql/common/logger.ml",
+      "package": "minisql.common.logger",
+      "component": "common.logger",
+      "targetMilestone": "M51"
+    },
+    {
       "path": "src/minisql/config/model.ml",
       "package": "minisql.config.model",
       "component": "config.model",

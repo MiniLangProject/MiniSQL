@@ -42,6 +42,27 @@ struct RuntimeConfig
   logLevel
 end struct
 
+// Defines ordinary server-log destinations and time-based file rotation.
+struct LoggingConfig
+  // Enables writing each accepted log record to standard output.
+  stdoutEnabled
+  // Enables writing the same accepted record to the active log file.
+  fileEnabled
+  // Names the active log file inside `paths.logDirectory`.
+  fileName
+  // Selects the number of elapsed hours after which the active file is rolled.
+  rotationHours
+end struct
+
+// Defines the independent SQL statement log. Binlog records bypass the
+// ordinary severity threshold so enabling it always captures every statement.
+struct BinlogConfig
+  // Enables durable SQL statement recording.
+  enabled
+  // Names the active binlog file inside `paths.logDirectory`.
+  fileName
+end struct
+
 // Groups the database defaults state and preserves the field relationships documented below.
 struct DatabaseDefaults
   // Tracks the page size numeric value.
@@ -86,6 +107,10 @@ struct MiniSqlConfig
   server
   // Stores the runtime associated with this value.
   runtime
+  // Stores ordinary logger destination and rotation settings.
+  logging
+  // Stores SQL binlog settings.
+  binlog
   // Stores the database defaults associated with this value.
   databaseDefaults
   // Stores the safety associated with this value.
@@ -111,6 +136,18 @@ end function
 // Does not modify its inputs.
 function isRuntimeConfig(value)
   return value is RuntimeConfig
+end function
+
+// Returns whether the supplied value is a logger configuration.
+// Inputs: `value`. Returns true only for `LoggingConfig` values.
+function isLoggingConfig(value)
+  return value is LoggingConfig
+end function
+
+// Returns whether the supplied value is a binlog configuration.
+// Inputs: `value`. Returns true only for `BinlogConfig` values.
+function isBinlogConfig(value)
+  return value is BinlogConfig
 end function
 
 // Returns whether the supplied value satisfies the database defaults condition.
@@ -171,6 +208,8 @@ function defaultConfig(dataRoot)
     PathsConfig(dataRoot, ".\\tmp", ".\\logs"),
     ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608),
     RuntimeConfig(268435456, 30000, 67108864, 134217728, "info"),
+    LoggingConfig(true, true, "minisql.log", 24),
+    BinlogConfig(false, "minisql-bin.log"),
     defaultDatabaseSettings(4096),
     SafetyConfig(false, "full", false)
   )

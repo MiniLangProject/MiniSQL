@@ -7,6 +7,7 @@ package minisql.server.listener
 import std.threading as threading
 import std.concurrent.thread_pool as thread_pool
 import minisql.platform.file as file_api
+import minisql.common.logger as logger
 import minisql.platform.network as network
 import minisql.platform.clock as clock
 import minisql.protocol.connection as connection
@@ -41,6 +42,8 @@ end function
 function serveListenerMode(databasePath, listener, maximumRequests, secure)
   socketHandle = try(network.acceptTcp(listener))
   if typeof(socketHandle) == "error" then network.close(listener); return socketHandle end if
+  peer = network.peerName(socketHandle)
+  ignoredLog = logger.info("minisql.server.listener.serveListenerMode", "client connected from " + peer)
   ignoredTimeout = try(network.setTimeouts(socketHandle, 60000, 60000))
   client = connection.create(socketHandle)
   active = void
@@ -65,7 +68,8 @@ function serveListenerMode(databasePath, listener, maximumRequests, secure)
   closeSession = try(session.close(active))
   closeClient = try(connection.close(client))
   closeListener = try(network.close(listener))
-  if failure is not void then return failure end if
+  ignoredLog = logger.info("minisql.server.listener.serveListenerMode", "client disconnected from " + peer + " requests=" + handled)
+  if failure is not void then ignoredLog = logger.errorLog("minisql.server.listener.serveListenerMode", "client worker failed peer=" + peer + " message=" + failure.message); return failure end if
   if typeof(closeSession) == "error" then return closeSession end if
   if typeof(closeClient) == "error" then return closeClient end if
   if typeof(closeListener) == "error" then return closeListener end if
@@ -163,6 +167,8 @@ struct ClientSlot
   waitStarted
   // Monotonic timestamp used to enforce listener idle limits.
   lastActivity
+  // Human-readable remote endpoint captured before worker ownership transfer.
+  peerEndpoint
 end struct
 
 // Closes slot using the supplied inputs.
@@ -178,6 +184,7 @@ function closeSlot(slot)
   if slot.client is not void then ignoredClient = try(connection.close(slot.client)) end if
   slot.pendingRequest = void
   slot.closed = true
+  ignoredLog = logger.info("minisql.server.listener.closeSlot", "client disconnected from " + slot.peerEndpoint + " requests=" + slot.handled)
   return true
 end function
 
@@ -338,6 +345,7 @@ function concurrentSetFailure(state, failure)
   state.stopping = true
   state.lastProgress = clock.monotonicMilliseconds()
   state.guard.release()
+  ignoredLog = logger.errorLog("minisql.server.listener.concurrentSetFailure", "concurrent server failure: " + failure.message)
   return true
 end function
 
@@ -445,6 +453,7 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
     shared = try(database_manager.open(databasePath))
   end if
   if typeof(shared) == "error" then network.close(listener); return shared end if
+  ignoredLog = logger.info("minisql.server.listener.serveConcurrentListenerMode", "database listener ready path=" + databasePath + " maxClients=" + maximumClients + " secure=" + secure + " standby=" + standby)
   nonBlocking = try(network.setNonBlocking(listener, true))
   if typeof(nonBlocking) == "error" then database_manager.close(shared); network.close(listener); return nonBlocking end if
   state = createConcurrentServerState(maximumRequests)
@@ -473,6 +482,9 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
       continue
     end if
 
+    peer = network.peerName(socketHandle)
+    ignoredLog = logger.info("minisql.server.listener.serveConcurrentListenerMode", "client connected from " + peer)
+
     client = try(connection.create(socketHandle))
     if typeof(client) == "error" then ignoredSocket = try(network.close(socketHandle)); concurrentSetFailure(state, client); break end if
     madeNonBlocking = try(connection.makeNonBlocking(client))
@@ -485,7 +497,7 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
       break
     end if
     now = clock.monotonicMilliseconds()
-    slot = ClientSlot(client, active, 0, false, void, 0, now)
+    slot = ClientSlot(client, active, 0, false, void, 0, now, peer)
     task = ConcurrentClientTask(slot, state, 5000)
     concurrentRegisterClient(state)
     job = pool.Submit(serveConcurrentClient, task)
@@ -515,6 +527,7 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
   if typeof(closedDatabase) == "error" then return closedDatabase end if
   if typeof(closedListener) == "error" then return closedListener end if
   if maximumRequests > 0 and handled < maximumRequests then return fail("serveConcurrent", "threaded server idle timeout before request budget was reached") end if
+  ignoredLog = logger.info("minisql.server.listener.serveConcurrentListenerMode", "database listener stopped requests=" + handled)
   return handled
 end function
 

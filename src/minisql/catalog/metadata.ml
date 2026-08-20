@@ -346,6 +346,7 @@ function decodeCatalog(encoded)
   if endian.readU32LE(payload, 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeCatalog", "reserved catalog field is non-zero") end if
   catalog = createCatalog(slice(payload, 0, 16), decodeNative(endian.readU64LE(payload, 16), "decodeCatalog", "nextObjectId"))
   tableCount = endian.readU32LE(payload, 24)
+  catalog.tables = array(tableCount)
   offset = 32
   if tableCount > 0 then
     for tableIndex = 0 to tableCount - 1
@@ -358,7 +359,7 @@ function decodeCatalog(encoded)
       requireRange(payload, offset + 24, nameLength, "decodeCatalog")
       tableName = decode(slice(payload, offset + 24, nameLength))
       offset = offset + 24 + nameLength
-      columns = []
+      columns = array(columnCount)
       if columnCount > 0 then
         for columnIndex = 0 to columnCount - 1
           requireRange(payload, offset, 28, "decodeCatalog")
@@ -374,11 +375,11 @@ function decodeCatalog(encoded)
           end if
           requireRange(payload, offset + 28, columnNameLength, "decodeCatalog")
           columnName = decode(slice(payload, offset + 28, columnNameLength))
-          columns = columns + [createColumn(columnId, columnName, typeCode, (flags & 1) != 0, maxLength, precision, scale)]
+          columns[columnIndex] = createColumn(columnId, columnName, typeCode, (flags & 1) != 0, maxLength, precision, scale)
           offset = offset + 28 + columnNameLength
         end for
       end if
-      catalog.tables = catalog.tables + [createTable(tableId, tableName, schemaVersion, columns)]
+      catalog.tables[tableIndex] = createTable(tableId, tableName, schemaVersion, columns)
     end for
   end if
   if offset != len(payload) then return fail(CORRUPT_DATA, "decodeCatalog", "trailing catalog bytes") end if
@@ -416,8 +417,9 @@ const PRIVILEGE_OWNER = 18
 const PRINCIPAL_HEADER_BYTES = 24
 const MEMBERSHIP_BYTES = 32
 const PRIVILEGE_GRANT_BYTES = 40
-const SECURITY_HEADER_BYTES = 40
-const MAX_SECURITY_ENTRIES = 2048
+const SECURITY_LEGACY_HEADER_BYTES = 40
+const SECURITY_HEADER_BYTES = 48
+const SECURITY_EXTENDED_COUNTS_FLAG = 1
 
 // Defines the principal metadata record used by this module.
 struct PrincipalMetadata
@@ -625,7 +627,10 @@ function encodeSecurity(state)
   validateId(state.generation, "encodeSecurity", "generation")
   validateId(state.nextPrincipalId, "encodeSecurity", "nextPrincipalId")
   if typeof(state.principals) != "array" or typeof(state.memberships) != "array" or typeof(state.grants) != "array" then return fail(INVALID_ARGUMENT, "encodeSecurity", "security collections must be arrays") end if
-  if len(state.principals) > MAX_SECURITY_ENTRIES or len(state.memberships) > MAX_SECURITY_ENTRIES or len(state.grants) > MAX_SECURITY_ENTRIES then return fail(INVALID_ARGUMENT, "encodeSecurity", "security catalog exceeds entry limit") end if
+  // The envelope stays at format version 1 for on-disk compatibility. Flag 1
+  // selects the extended header whose collection counts are U32 rather than
+  // the legacy U16 fields, removing the old 65,535-object catalog ceiling.
+  if len(state.principals) > endian.MAX_U32 or len(state.memberships) > endian.MAX_U32 or len(state.grants) > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encodeSecurity", "security collection count exceeds the U32 representation") end if
   total = SECURITY_HEADER_BYTES + len(state.memberships) * MEMBERSHIP_BYTES + len(state.grants) * PRIVILEGE_GRANT_BYTES
   for each principal in state.principals
     if principal is not PrincipalMetadata then return fail(INVALID_ARGUMENT, "encodeSecurity", "invalid principal") end if
@@ -635,10 +640,10 @@ function encodeSecurity(state)
   copyExact(payload, 0, state.databaseId, 0, 16)
   endian.writeU64LE(payload, 16, endian.uint64FromInt(state.generation))
   endian.writeU64LE(payload, 24, endian.uint64FromInt(state.nextPrincipalId))
-  endian.writeU16LE(payload, 32, len(state.principals))
-  endian.writeU16LE(payload, 34, len(state.memberships))
-  endian.writeU16LE(payload, 36, len(state.grants))
-  endian.writeU16LE(payload, 38, 0)
+  endian.writeU32LE(payload, 32, len(state.principals))
+  endian.writeU32LE(payload, 36, len(state.memberships))
+  endian.writeU32LE(payload, 40, len(state.grants))
+  endian.writeU32LE(payload, 44, 0)
   offset = SECURITY_HEADER_BYTES
   for each principal in state.principals
     validated = createPrincipal(principal.principalId, principal.name, principal.principalKind, principal.enabled, principal.canLogin, principal.superuser, principal.builtin, principal.salt, principal.iterations, principal.verifier)
@@ -692,7 +697,7 @@ function encodeSecurity(state)
     endian.writeU32LE(payload, offset + 36, 0)
     offset = offset + PRIVILEGE_GRANT_BYTES
   end for
-  return checksum.encodeEnvelope(securityMagic(), SECURITY_FORMAT_VERSION, SECURITY_KIND, 0, payload)
+  return checksum.encodeEnvelope(securityMagic(), SECURITY_FORMAT_VERSION, SECURITY_KIND, SECURITY_EXTENDED_COUNTS_FLAG, payload)
 end function
 
 // Decodes the security.
@@ -700,17 +705,29 @@ end function
 function decodeSecurity(encoded)
   envelope = checksum.decodeEnvelope(encoded, securityMagic(), SECURITY_FORMAT_VERSION, SECURITY_KIND)
   payload = envelope.payload
-  if len(payload) < SECURITY_HEADER_BYTES then return fail(CORRUPT_DATA, "decodeSecurity", "security payload too short") end if
-  if endian.readU16LE(payload, 38) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "reserved security header is non-zero") end if
+  if envelope.flags != 0 and envelope.flags != SECURITY_EXTENDED_COUNTS_FLAG then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "security envelope flags are unsupported") end if
+  headerBytes = SECURITY_LEGACY_HEADER_BYTES
+  if envelope.flags == SECURITY_EXTENDED_COUNTS_FLAG then headerBytes = SECURITY_HEADER_BYTES end if
+  if len(payload) < headerBytes then return fail(CORRUPT_DATA, "decodeSecurity", "security payload too short") end if
   databaseId = slice(payload, 0, 16)
   generation = decodeNative(endian.readU64LE(payload, 16), "decodeSecurity", "generation")
   nextPrincipalId = decodeNative(endian.readU64LE(payload, 24), "decodeSecurity", "nextPrincipalId")
   principalCount = endian.readU16LE(payload, 32)
   membershipCount = endian.readU16LE(payload, 34)
   grantCount = endian.readU16LE(payload, 36)
-  if principalCount > MAX_SECURITY_ENTRIES or membershipCount > MAX_SECURITY_ENTRIES or grantCount > MAX_SECURITY_ENTRIES then return fail(CORRUPT_DATA, "decodeSecurity", "security count exceeds limit") end if
+  if envelope.flags == SECURITY_EXTENDED_COUNTS_FLAG then
+    principalCount = endian.readU32LE(payload, 32)
+    membershipCount = endian.readU32LE(payload, 36)
+    grantCount = endian.readU32LE(payload, 40)
+    if endian.readU32LE(payload, 44) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "reserved security header is non-zero") end if
+  else
+    if endian.readU16LE(payload, 38) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "reserved security header is non-zero") end if
+  end if
   state = SecurityState(databaseId, generation, nextPrincipalId, [], [], [])
-  offset = SECURITY_HEADER_BYTES
+  state.principals = array(principalCount)
+  state.memberships = array(membershipCount)
+  state.grants = array(grantCount)
+  offset = headerBytes
   if principalCount > 0 then
     for principalIndex = 0 to principalCount - 1
       requireRange(payload, offset, PRINCIPAL_HEADER_BYTES, "decodeSecurity")
@@ -730,7 +747,7 @@ function decodeSecurity(encoded)
       salt = slice(payload, cursor, saltLength)
       cursor = cursor + saltLength
       verifier = slice(payload, cursor, verifierLength)
-      state.principals = state.principals + [createPrincipal(principalId, name, principalKind, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, salt, iterations, verifier)]
+      state.principals[principalIndex] = createPrincipal(principalId, name, principalKind, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, salt, iterations, verifier)
       offset = cursor + verifierLength
     end for
   end if
@@ -739,12 +756,12 @@ function decodeSecurity(encoded)
       requireRange(payload, offset, MEMBERSHIP_BYTES, "decodeSecurity")
       flags = endian.readU32LE(payload, offset + 24)
       if endian.readU32LE(payload, offset + 28) != 0 or (flags & 0xFFFFFFFE) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "reserved membership fields are non-zero") end if
-      state.memberships = state.memberships + [createRoleMembership(
+      state.memberships[membershipIndex] = createRoleMembership(
         decodeNative(endian.readU64LE(payload, offset), "decodeSecurity", "roleId"),
         decodeNative(endian.readU64LE(payload, offset + 8), "decodeSecurity", "memberId"),
         decodeNative(endian.readU64LE(payload, offset + 16), "decodeSecurity", "grantorId"),
         (flags & 1) != 0
-      )]
+      )
       offset = offset + MEMBERSHIP_BYTES
     end for
   end if
@@ -753,14 +770,14 @@ function decodeSecurity(encoded)
       requireRange(payload, offset, PRIVILEGE_GRANT_BYTES, "decodeSecurity")
       flags = endian.readU32LE(payload, offset + 28)
       if endian.readU32LE(payload, offset + 32) != 0 or endian.readU32LE(payload, offset + 36) != 0 or (flags & 0xFFFFFFFE) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeSecurity", "reserved grant fields are non-zero") end if
-      state.grants = state.grants + [createPrivilegeGrant(
+      state.grants[grantIndex] = createPrivilegeGrant(
         decodeNative(endian.readU64LE(payload, offset), "decodeSecurity", "granteeId"),
         decodeNative(endian.readU64LE(payload, offset + 8), "decodeSecurity", "grantorId"),
         endian.readU16LE(payload, offset + 24),
         decodeNative(endian.readU64LE(payload, offset + 16), "decodeSecurity", "objectId"),
         endian.readU16LE(payload, offset + 26),
         (flags & 1) != 0
-      )]
+      )
       offset = offset + PRIVILEGE_GRANT_BYTES
     end for
   end if

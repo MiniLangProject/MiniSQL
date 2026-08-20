@@ -4,7 +4,7 @@
   "milestone": "M50",
   "revision": "M48-M50R3",
   "version": "1.0.0",
-  "moduleCount": 71,
+  "moduleCount": 72,
   "acceptancePhaseCount": 106,
   "userFacingTestRunner": "test.ps1",
   "entryPoints": [
@@ -420,6 +420,7 @@
     "src/minisql/client/formatter.ml",
     "src/minisql/common/crc32c.ml",
     "src/minisql/common/diagnostics.ml",
+    "src/minisql/common/logger.ml",
     "src/minisql/common/endian.ml",
     "src/minisql/common/errors.ml",
     "src/minisql/common/limits.ml",

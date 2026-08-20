@@ -46,7 +46,6 @@ const JOURNAL_PREPARED = 1
 const JOURNAL_COMMITTED = 2
 const MAINTENANCE_PREPARED = 1
 const MAINTENANCE_COMMITTED = 2
-const MAX_SCHEMA_BYTES = 1048576
 
 const CONSTRAINT_PRIMARY_KEY = 1
 const CONSTRAINT_UNIQUE = 2
@@ -449,7 +448,6 @@ end function
 function readWhole(path)
   file = file_api.openRead(path)
   length = file_api.size(file)
-  if length > MAX_SCHEMA_BYTES * 4 then file_api.close(file); return fail(CORRUPT_DATA, "readWhole", "file exceeds safety limit") end if
   output = bytes(length, 0)
   if length > 0 then file_api.readExactAt(file, 0, output, 0, length) end if
   file_api.close(file)
@@ -660,7 +658,6 @@ function encode(state)
     if table is not TableSchema then return fail(INVALID_ARGUMENT, "encode", "invalid table schema") end if
     total = total + encodedTableSize(table)
   end for
-  if total > MAX_SCHEMA_BYTES then return fail(INVALID_ARGUMENT, "encode", "schema history exceeds 1 MiB") end if
   payload = bytes(total, 0)
   copyExact(payload, 0, state.databaseId, 0, 16)
   endian.writeU64LE(payload, 16, endian.uint64FromInt(state.generation))
@@ -1499,7 +1496,6 @@ function encodeMaintenance(value)
   if value is not MaintenanceJournal then return fail(INVALID_ARGUMENT, "encodeMaintenance", "value must be MaintenanceJournal") end if
   if value.status != MAINTENANCE_PREPARED and value.status != MAINTENANCE_COMMITTED then return fail(INVALID_ARGUMENT, "encodeMaintenance", "invalid status") end if
   total = 8 + stringSize(value.originalPath) + stringSize(value.temporaryPath) + stringSize(value.backupPath)
-  if total > MAX_SCHEMA_BYTES then return fail(INVALID_ARGUMENT, "encodeMaintenance", "maintenance journal is too large") end if
   payload = bytes(total, 0)
   endian.writeU32LE(payload, 0, value.status)
   endian.writeU32LE(payload, 4, 0)
@@ -1715,8 +1711,8 @@ function commitInternal(transaction, stopPhase)
   // Snapshot the two locked paged files through their existing owner handles.
   // Reopening their paths would violate the exclusive LockFileEx ranges held by
   // transaction.database.metaFile and transaction.database.catalogFile.
-  oldMeta = paged_file.snapshotDurableBytes(transaction.database.metaFile, MAX_SCHEMA_BYTES * 4)
-  oldCatalog = paged_file.snapshotDurableBytes(transaction.database.catalogFile, MAX_SCHEMA_BYTES * 4)
+  oldMeta = paged_file.snapshotDurableBytes(transaction.database.metaFile, endian.MAX_MINILANG_INT)
+  oldCatalog = paged_file.snapshotDurableBytes(transaction.database.catalogFile, endian.MAX_MINILANG_INT)
   journal = DdlJournal(JOURNAL_PREPARED, schemaExists, oldMeta, oldCatalog, oldSchema, temporaryPaths, finalPaths, backupOriginals, backupPaths)
   writeJournal(databasePath, journal)
   if stopPhase == 1 then return 1 end if
@@ -1814,7 +1810,6 @@ function encodeExtensions(state)
   databaseIdWord3 = endian.readU32LE(state.databaseId, 12)
 
   total = extensionRecordSize(state)
-  if total > MAX_SCHEMA_BYTES then return fail(INVALID_ARGUMENT, "encodeExtensions", "schema extensions exceed 1 MiB") end if
   payload = bytes(total, 0)
   endian.writeU32LE(payload, 0, databaseIdWord0)
   endian.writeU32LE(payload, 4, databaseIdWord1)

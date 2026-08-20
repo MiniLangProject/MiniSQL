@@ -5,6 +5,7 @@ package minisql.client.formatter
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.endian as endian
+import std.string_builder as string_builder
 import minisql.executor.executor as executor
 import minisql.protocol.constants as constants
 import minisql.protocol.messages as messages
@@ -48,13 +49,17 @@ function responseFromResult(result)
   if not executor.isQueryResult(result) then return fail("responseFromResult", "result must be QueryResult") end if
   if result.kind == executor.RESULT_COMMAND then return messages.commandResponse(result.command, result.affectedRows, result.message) end if
   if result.kind != executor.RESULT_ROWS then return fail("responseFromResult", "unknown result kind") end if
-  rows = []
+  rows = array(len(result.rows))
+  rowIndex = 0
   for each sourceRow in result.rows
-    row = []
+    row = array(len(sourceRow))
+    valueIndex = 0
     for each value in sourceRow
-      row = row + [valueText(value)]
+      row[valueIndex] = valueText(value)
+      valueIndex = valueIndex + 1
     end for
-    rows = rows + [row]
+    rows[rowIndex] = row
+    rowIndex = rowIndex + 1
   end for
   return messages.rowResponse(result.columns, rows)
 end function
@@ -66,24 +71,25 @@ function formatResponse(response)
   if not messages.isResponse(response) then return fail("formatResponse", "response must be Response") end if
   if response.status == constants.STATUS_ERROR then return "ERROR " + response.errorCode + ": " + response.message end if
   if response.status == constants.STATUS_COMMAND then return response.command + " " + response.affectedRows + " " + response.message end if
-  output = ""
+  builder = string_builder.StringBuilder.withCapacity(256)
   if len(response.columns) > 0 then
     for index = 0 to len(response.columns) - 1
-      if index > 0 then output = output + " | " end if
-      output = output + response.columns[index]
+      if index > 0 then builder.appendString(" | ") end if
+      builder.appendString(response.columns[index])
     end for
-    output = output + "\n"
+    builder.appendString("\n")
   end if
   for each row in response.rows
     if len(row) > 0 then
       for index = 0 to len(row) - 1
-        if index > 0 then output = output + " | " end if
-        output = output + row[index]
+        if index > 0 then builder.appendString(" | ") end if
+        builder.appendString(row[index])
       end for
     end if
-    output = output + "\n"
+    builder.appendString("\n")
   end for
-  return output + "(" + len(response.rows) + " rows)"
+  builder.appendString("(" + len(response.rows) + " rows)")
+  return builder.toString()
 end function
 
 // Implements component name for this module.

@@ -20,9 +20,10 @@ database is published to workers. Normal read plans do not rebuild indexes; a
 durable dirty marker causes the read to leave its shared gate, enter the writer
 gate, repair indexes and only then execute. External-sort spill identifiers are
 synchronized. The WAL cursor, audit stream
-and catalog mutations consequently remain writer-only. AES-GCM native calls use
-a narrow process-wide synchronization gate because their descriptors contain
-pointers to managed temporary buffers.
+and catalog mutations consequently remain writer-only. CNG RNG, PBKDF2,
+SHA/HMAC and AES-GCM provider lifecycles share a narrow process-wide
+synchronization gate because the native calls use compiler-managed argument
+buffers and AES descriptors contain pointers to managed temporary buffers.
 
 Each read scan owns its file handle and acquires a shared Win32 byte-range lock;
 table and B+ tree writers retain their exclusive locks. Only UTF-16 path

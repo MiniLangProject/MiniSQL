@@ -10,6 +10,7 @@ import minisql.common.varint as m04_common_varint
 import minisql.common.crc32c as m05_common_crc32c
 import minisql.common.uuid as m06_common_uuid
 import minisql.common.diagnostics as m07_common_diagnostics
+import minisql.common.logger as m71_common_logger
 import minisql.config.model as m08_config_model
 import minisql.config.loader as m09_config_loader
 import minisql.config.validation as m10_config_validation
@@ -119,6 +120,9 @@ function main(args)
   failures = failures + check(m07_common_diagnostics.componentName(), "common.diagnostics", "common.diagnostics component")
   failures = failures + check(m07_common_diagnostics.targetMilestone(), "M0", "common.diagnostics target")
   failures = failures + checkBool(m07_common_diagnostics.isImplemented(), "common.diagnostics implementation")
+  failures = failures + check(m71_common_logger.componentName(), "common.logger", "common.logger component")
+  failures = failures + check(m71_common_logger.targetMilestone(), "M51", "common.logger target")
+  failures = failures + checkBool(m71_common_logger.isImplemented(), "common.logger implementation")
   failures = failures + check(m08_config_model.componentName(), "config.model", "config.model component")
   failures = failures + check(m08_config_model.targetMilestone(), "M0", "config.model target")
   failures = failures + checkBool(m08_config_model.isImplemented(), "config.model implementation")
@@ -321,6 +325,6 @@ function main(args)
     print "MiniSQL M50 module smoke test: FAIL (failures=" + failures + ")"
     return 1
   end if
-  print "MiniSQL M50 module smoke test: SUCCESS (71 modules)"
+  print "MiniSQL M50 module smoke test: SUCCESS (72 modules)"
   return 0
 end function

@@ -19,6 +19,16 @@
     "temporaryMemoryBytes": 134217728,
     "logLevel": "info"
   },
+  "logging": {
+    "stdoutEnabled": true,
+    "fileEnabled": true,
+    "fileName": "minisql.log",
+    "rotationHours": 24
+  },
+  "binlog": {
+    "enabled": false,
+    "fileName": "minisql-bin.log"
+  },
   "databaseDefaults": {
     "pageSize": 4096,
     "checksumAlgorithm": "crc32c",

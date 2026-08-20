@@ -12,6 +12,7 @@ import minisql.common.diagnostics as diagnostics
 import minisql.common.endian as endian
 import minisql.common.version as version
 import minisql.platform.file as file_api
+import minisql.platform.clock as clock
 import minisql.server.database_manager as database_manager
 import minisql.storage.btree as btree
 import minisql.storage.checksum as checksum
@@ -31,9 +32,13 @@ const OBJECT_EXISTS = 9013
 const FORMAT_VERSION = 1
 const MANIFEST_KIND = 60
 const MAX_PATH_BYTES = 240
-const MAX_FILE_BYTES = 67108864
-const MAX_TOTAL_BYTES = 268435456
-const MAX_FILE_COUNT = 4096
+// Backup v1 encodes file lengths as U64 and entry counts as U32. Snapshot and
+// CRC APIs accept one U32-sized byte buffer at a time, while aggregate backup
+// size uses the native address-space domain. These guards therefore express
+// persisted/API representation limits rather than arbitrary database caps.
+const MAX_FILE_BYTES = 4294967295
+const MAX_TOTAL_BYTES = 1152921504606846975
+const MAX_FILE_COUNT = 4294967295
 
 // Groups the captured file state and preserves the field relationships documented below.
 struct CapturedFile
@@ -187,6 +192,20 @@ function ensureDirectory(path)
   return file_api.createDirectory(path)
 end function
 
+// Publishes a staged file or directory despite short-lived Windows scanner or
+// indexer handles. Each attempt is still the same atomic MoveFileEx operation;
+// permanent errors remain visible after a bounded one-second retry window.
+// Inputs: `source`, `destination`, and replacement policy. Returns true after publication.
+function movePathReliably(source, destination, replaceExisting)
+  lastResult = void
+  for attempt = 0 to 40
+    lastResult = try(file_api.movePath(source, destination, replaceExisting))
+    if typeof(lastResult) != "error" then return lastResult end if
+    if attempt < 40 then clock.sleepMilliseconds(25) end if
+  end for
+  return lastResult
+end function
+
 // Creates layout using the supplied inputs.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
@@ -299,6 +318,9 @@ function captureDatabase(database)
   files = addCapture(files, "db.meta", paged_file.snapshotDurableBytes(database.catalogHandle.metaFile, MAX_FILE_BYTES))
   files = addCapture(files, "catalog\\catalog.tbl", paged_file.snapshotDurableBytes(database.catalogHandle.catalogFile, MAX_FILE_BYTES))
   files = addCapture(files, "catalog\\security.tbl", paged_file.snapshotDurableBytes(database.catalogHandle.securityFile, MAX_FILE_BYTES))
+  files = addCapture(files, "catalog\\security.0.tbl", paged_file.snapshotDurableBytes(database.catalogHandle.securityGenerationFiles[0], MAX_FILE_BYTES))
+  files = addCapture(files, "catalog\\security.1.tbl", paged_file.snapshotDurableBytes(database.catalogHandle.securityGenerationFiles[1], MAX_FILE_BYTES))
+  files = addCapture(files, "catalog\\security.v2", file_api.readAllBytes(catalog.securityGenerationMarkerPath(database.path), MAX_FILE_BYTES))
   files = capturePath(files, database.path, "catalog\\schema.history", true)
   files = capturePath(files, database.path, "catalog\\schema.extensions", false)
   files = capturePath(files, database.path, "catalog\\statistics.tbl", false)
@@ -370,7 +392,6 @@ function encodeManifest(manifest)
     if typeof(entry.checksum) != "int" or entry.checksum < 0 or entry.checksum > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encodeManifest", "entry checksum is invalid") end if
     size = size + 20 + len(bytes(entry.relativePath))
   end for
-  if size > 1048576 then return fail(INVALID_ARGUMENT, "encodeManifest", "manifest exceeds size limit") end if
   payload = bytes(size, 0)
   copyExact(payload, 0, manifest.databaseId, 0, 16)
   endian.writeU32LE(payload, 16, manifest.pageSize)
@@ -469,7 +490,7 @@ function runOpen(database, backupPath)
   temporary = backupPath + ".new"
   writeCapturedFiles(temporary, files)
   writeWhole(file_api.joinPath(temporary, "backup.manifest"), encodeManifest(manifest))
-  file_api.movePath(temporary, backupPath, false)
+  movePathReliably(temporary, backupPath, false)
   total = verifyBackupFiles(backupPath, manifest)
   return BackupReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, backupPath)
 end function
@@ -497,7 +518,7 @@ end function
 function readManifest(backupPath)
   path = file_api.joinPath(backupPath, "backup.manifest")
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "readManifest", "backup.manifest is missing") end if
-  return decodeManifest(readWhole(path, 1048704))
+  return decodeManifest(readWhole(path, MAX_FILE_BYTES))
 end function
 
 // Implements restore for this module.
@@ -527,7 +548,7 @@ function restore(backupPath, databasePath)
     return fail(CORRUPT_DATA, "restore", "restored database identity mismatch")
   end if
   database_manager.close(database)
-  file_api.movePath(temporary, databasePath, false)
+  movePathReliably(temporary, databasePath, false)
   return RestoreReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, databasePath)
 end function
 
@@ -698,7 +719,7 @@ function replaceWholeAtomic(path, data)
   temporary = path + ".new"
   if file_api.fileExists(temporary) then file_api.deletePath(temporary) end if
   writeWhole(temporary, data)
-  file_api.movePath(temporary, path, true)
+  movePathReliably(temporary, path, true)
   return true
 end function
 
@@ -859,7 +880,7 @@ function archiveInit(databasePath, archivePath)
   writeWhole(file_api.joinPath(archiveWalDirectory(temporary), walName), walBytes)
   manifest = ArchiveManifest(bytes(metadata.databaseId), metadata.pageSize, 1, baseEnd, len(walBytes), walName, len(walBytes), crc32c.compute(walBytes))
   writeWhole(archiveManifestPath(temporary), encodeArchiveManifest(manifest))
-  file_api.movePath(temporary, archivePath, false)
+  movePathReliably(temporary, archivePath, false)
   verifyArchive(archivePath)
   return ArchiveReport(bytes(manifest.databaseId), manifest.generation, manifest.baseEndLsn, manifest.latestEndLsn, archivePath)
 end function
@@ -1002,7 +1023,7 @@ function restoreToLsn(archivePath, databasePath, targetLsn)
   ignoredAudit = try(database_manager.audit(database, diagnostics.AUDIT_RESTORE, diagnostics.AUDIT_SUCCESS, 0, 1, "point-in-time restore completed at LSN " + targetLsn))
   if not bytesEqual(database.catalogHandle.metadata.databaseId, manifest.databaseId) then database_manager.close(database); return fail(CORRUPT_DATA, "restoreToLsn", "restored database identity mismatch") end if
   database_manager.close(database)
-  file_api.movePath(stage, databasePath, false)
+  movePathReliably(stage, databasePath, false)
   return PitrReport(bytes(manifest.databaseId), targetLsn, databasePath)
 end function
 
@@ -1099,7 +1120,7 @@ function materializeStandby(archivePath, databasePath)
   restored = restoreLatest(archivePath, stage)
   state = StandbyState(bytes(manifest.databaseId), manifest.generation, manifest.latestEndLsn)
   writeStandbyState(stage, state)
-  file_api.movePath(stage, databasePath, false)
+  movePathReliably(stage, databasePath, false)
   return StandbyReport(bytes(state.databaseId), state.archiveGeneration, state.appliedLsn, databasePath)
 end function
 
