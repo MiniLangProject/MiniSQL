@@ -38,7 +38,9 @@ is `M48-M50R3`.
   parallel network/framing work, parallel read-only query plans on one database,
   and exclusive, writer-prioritized mutation execution;
 - a native Windows MiniSQL Workbench with saved aliases, TLS/pinning, object
-  browsing, SQL worksheets, bookmarks, history, detail pages, and result grids;
+  browsing, syntax-colored SQL worksheets, current/selection and whole-script
+  execution, bookmarks, history, native metadata/data grids, and safe keyed
+  row insertion, copying, editing, deletion, and refresh workflows;
 - deterministic 106-phase cumulative test suite and reproducible Windows-x64
   release packaging.
 
@@ -114,6 +116,11 @@ The default configuration writes INFO-and-higher records both to stdout and to
 `logs/minisql.log`, rolling the file every 24 hours. Set `runtime.logLevel` to
 `debug`, `info`, `warning`, or `error`; enable `binlog.enabled` to durably record
 every received SQL statement in the independent binlog.
+
+On Windows the daemon disables console QuickEdit at process start. Accidental
+mouse selection can therefore no longer suspend stdout logging and freeze new
+connection handshakes. Clients also abandon an unanswered initial handshake
+after five seconds instead of waiting indefinitely.
 
 Open a stateful client in another terminal:
 

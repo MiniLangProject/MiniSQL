@@ -47,22 +47,52 @@ The left sidebar switches between:
 - **History**: the latest 100 worksheet batches; secret-bearing account DCL is
   replaced by a redaction marker.
 
-The main area switches between the SQL worksheet and object details. Execute
-runs on a native MiniLang worker thread so window messages continue to be
-processed. Connection handshakes, object-tree refreshes, table descriptions,
+The main area switches between the SQL worksheet and object details. **Current**
+executes the explicit selection, or the complete statement containing the caret
+when no text is selected. **Run script** executes every statement in the editor
+in source order. Both paths use the quote/comment-aware SQL scanner, so semicolons
+inside strings, quoted identifiers, line comments, or block comments do not split
+a statement. Explain uses the same current/selection scope and requires exactly
+one statement.
+
+Execution runs on a native MiniLang worker thread so window messages continue to
+be processed. Connection handshakes, object-tree refreshes, table descriptions,
 and the automatic refresh after SQL execution use the same non-blocking worker
 model. Controls that read shared session state remain disabled until the active
-worker publishes its result. Each batch creates a bounded result tab with
+worker publishes its result. Each execution creates a bounded result tab with
 elapsed time, success state, columns, rows, and server messages. Select a table
 and choose **Open object** to load Summary, Columns, Indexes, Data, Row Count,
-and reconstructed DDL pages. The toolbar also exposes EXPLAIN, BEGIN, COMMIT,
-ROLLBACK, refresh, clear-results, and disconnect actions.
+and reconstructed DDL pages. Columns, indexes, preview data, and row counts are
+rendered as native report grids with real column headers, selectable rows,
+independent column widths, and horizontal/vertical scrolling rather than as
+pipe-delimited text.
 
-The SQL worksheet raises the classic Win32 edit-control limit to the native
-signed-count ceiling and transfers text through dynamically sized UTF-16
-buffers, so scripts are not truncated at the compiler FFI scratch-buffer size.
-Generated metadata SQL quotes Unicode and punctuation-bearing object names and
-doubles embedded quote characters according to MiniSQL syntax.
+The **Data** page previews at most 100 rows and provides **Add row**, **Copy
+row**, **Edit row**, **Delete row**, and **Refresh data** actions. Add, copy, and
+edit open a resizable native row editor that presents every table field in a
+review grid and edits one field at a time, so tables with many columns do not
+require an oversized fixed form. Use `<NULL>` for SQL NULL; identity and default
+fields use `<DEFAULT>` during inserts. Text is SQL-escaped, numeric and Boolean
+input is validated before submission, and every mutation runs on the existing
+background worker before the preview is reloaded. Double-clicking a Data row
+opens it for editing. Updates and deletes require a primary key or unique index;
+the workbench refuses an unsafe mutation that could target multiple rows, and
+deletion always displays a confirmation dialog.
+
+The selected SQL/Object Details workspace is part
+of the session state, so metadata completion, refreshes, and full renders cannot
+switch the user back to the worksheet. The toolbar also exposes EXPLAIN, BEGIN,
+COMMIT, ROLLBACK, refresh, clear-results, and disconnect actions.
+
+The SQL worksheet uses the system Unicode RichEdit control and highlights
+MiniSQL keywords, strings, numbers, quoted identifiers, and comments while
+preserving the caret, selection, and scroll position. Recoloring is debounced
+until 120 ms after the latest native text change. The editor raises the text
+limit to the native signed-count ceiling and transfers text through dynamically
+sized UTF-16 buffers, so scripts
+are not truncated at the compiler FFI scratch-buffer size. Generated metadata
+SQL quotes Unicode and punctuation-bearing object names and doubles embedded
+quote characters according to MiniSQL syntax.
 
 Both the connection manager and the session workbench use DPI-independent
 layout units. Native controls, Segoe UI fonts, editor panes, result grids, and

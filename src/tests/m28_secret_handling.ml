@@ -55,6 +55,7 @@ function main(args)
   end if
   converted = console.utf16PasswordToUtf8(wide, len(sampleBytes))
   testkit.record(state, uuid.constantTimeEquals(converted, sampleBytes), "UTF-16 console input converts to UTF-8 bytes")
+  testkit.record(state, try(console.disableQuickEdit()), "console QuickEdit protection accepts console or redirected input")
   uuid.wipeSecret(converted)
   uuid.wipeSecret(wide)
   uuid.wipeSecret(sampleBytes)

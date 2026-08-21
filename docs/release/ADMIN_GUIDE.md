@@ -12,6 +12,13 @@ section enables stdout and/or the same records in a file under
 time. The logger is one process-wide synchronized singleton, so records from
 connection workers cannot interleave at the file boundary.
 
+The Windows daemon disables QuickEdit before it emits operational records.
+Legacy console hosts otherwise suspend a process while selected text remains in
+mark mode (`Select`/`Auswählen` in the window title), which can stop handshakes
+at the connection log line. File destinations are written before stdout, and
+clients fail an unanswered initial handshake after five seconds. With an older
+running daemon, press `Esc` to leave mark mode before reconnecting.
+
 Enable the independent `binlog` section to flush every complete SQL statement
 before execution. Binlog capture ignores the ordinary severity threshold.
 Protect it as sensitive data because SQL literals can contain credentials,

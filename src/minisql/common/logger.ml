@@ -225,11 +225,13 @@ function synchronized write(level, component, message)
   line = "[" + levelName(level) + "] " + parts[0] + " " + component + " " + message
   rotated = try(rotateIfDue(clock.monotonicMilliseconds(), parts[1]))
   if typeof(rotated) == "error" then if loggerStdoutEnabled then print "[ERROR] " + parts[0] + " minisql.common.logger.write log rotation failed: " + rotated.message end if; return false end if
-  if loggerStdoutEnabled then print line end if
+  // Persist first so a console-host stall cannot hide the last attempted event.
+  // Operational server startup disables Windows QuickEdit to keep stdout live.
   if loggerFileEnabled then
     persisted = try(appendLine(loggerFile, line))
     if typeof(persisted) == "error" then if loggerStdoutEnabled then print "[ERROR] " + parts[0] + " minisql.common.logger.write file append failed: " + persisted.message end if; return false end if
   end if
+  if loggerStdoutEnabled then print line end if
   return true
 end function
 

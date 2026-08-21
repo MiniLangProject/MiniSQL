@@ -16,6 +16,8 @@ const IO_FAILURE = 9005
 const STD_INPUT_HANDLE = -10
 const STD_OUTPUT_HANDLE = -11
 const ENABLE_ECHO_INPUT = 4
+const ENABLE_QUICK_EDIT_MODE = 0x40
+const ENABLE_EXTENDED_FLAGS = 0x80
 const CP_UTF8 = 65001
 const WC_ERR_INVALID_CHARS = 0x80
 const MAX_PASSWORD_UTF16_UNITS = 1024
@@ -46,6 +48,21 @@ extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as b
 // Performs I/O through its file, transport, or storage dependencies.
 function fail(code, operation, message)
   return error(code, "client.console." + operation + ": " + message)
+end function
+
+// Prevents accidental mouse selection from suspending a Windows console
+// server. Redirected standard input and service processes have no console and
+// are treated as already safe; a real console-mode update reports failures.
+function disableQuickEdit()
+  inputHandle = GetStdHandle(STD_INPUT_HANDLE)
+  if inputHandle == 0 or inputHandle == -1 then return true end if
+  modeBytes = bytes(4, 0)
+  if not GetConsoleMode(inputHandle, modeBytes) then return true end if
+  currentMode = endian.readU32LE(modeBytes, 0)
+  safeMode = (currentMode | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE
+  if safeMode == currentMode then return true end if
+  if not SetConsoleMode(inputHandle, safeMode) then return fail(IO_FAILURE, "disableQuickEdit", "cannot disable Windows QuickEdit mode") end if
+  return true
 end function
 
 // Returns whether the supplied value satisfies the meta command condition.

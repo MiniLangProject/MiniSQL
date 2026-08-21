@@ -229,6 +229,39 @@ def run_m18_network(compiler: Path, verbose: bool) -> None:
     finally:
         if process.poll() is None: process.kill(); process.communicate()
 
+    # A listening endpoint that never accepts models a suspended console server.
+    # The public client must return after its HELLO deadline instead of hanging.
+    _, public_client = public_apps()
+    stalled = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    stalled.bind(("127.0.0.1", 0))
+    stalled.listen(4)
+    stalled_port = stalled.getsockname()[1]
+    stalled_command = base.executable_command(public_client, "--ping", str(stalled_port))
+    started = time.monotonic()
+    try:
+        stalled_result = base.run_command(
+            stalled_command,
+            log_name="m18-client-handshake-timeout.run.log",
+            verbose=verbose,
+            timeout=12,
+        )
+    finally:
+        stalled.close()
+    elapsed = time.monotonic() - started
+    stalled_output = base.normalized(stalled_result.stdout)
+    if (
+        stalled_result.returncode == 0
+        or elapsed < 4
+        or elapsed > 10
+        or "10060" not in stalled_output
+        or base.normalized(stalled_result.stderr)
+    ):
+        raise AcceptanceFailure(
+            "M18 client handshake deadline failed: "
+            f"rc={stalled_result.returncode} elapsed={elapsed:.2f}s "
+            f"stdout={stalled_output!r} stderr={base.normalized(stalled_result.stderr)!r}"
+        )
+
 def run_m21_network(compiler: Path, verbose: bool) -> None:
     """Compiles and executes the M21 network acceptance scenario."""
     server = base.compile_target(compiler, "src/tests/m21_auth_server_worker.ml", "minisql-m21-auth-server-worker.exe", verbose)

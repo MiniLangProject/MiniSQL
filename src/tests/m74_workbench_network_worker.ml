@@ -35,6 +35,17 @@ function awaitConnection(attempt, maximumMilliseconds)
   return error(9001, "workbench connection worker timed out")
 end function
 
+// Finds one structured detail-grid row by exact textual column value.
+function findDetailRow(grid, columnIndex, wanted)
+  if typeof(grid) != "struct" or typeof(columnIndex) != "int" or typeof(wanted) != "string" then return -1 end if
+  if len(grid.rows) > 0 then
+    for index = 0 to len(grid.rows) - 1
+      if columnIndex >= 0 and columnIndex < len(grid.rows[index]) and grid.rows[index][columnIndex] == wanted then return index end if
+    end for
+  end if
+  return -1
+end function
+
 // Exercises the complete workbench model over a real trusted-local server connection.
 function main(args)
   if len(args) != 1 then print "MiniSQL M74 workbench network worker: FAIL args"; return 2 end if
@@ -83,8 +94,8 @@ function main(args)
   ignoredDrop = try(fullclient.executeSql(active, "DROP TABLE IF EXISTS workbench_item;"))
   created = try(fullclient.executeSql(active, "CREATE TABLE workbench_item (id INTEGER PRIMARY KEY, label VARCHAR(80) NOT NULL);"))
   testkit.record(test, typeof(created) != "error" and created.success, "worksheet creates table")
-  inserted = try(fullclient.executeSql(active, "INSERT INTO workbench_item(id, label) VALUES (1, 'alpha'), (2, 'beta');"))
-  testkit.record(test, typeof(inserted) != "error" and inserted.success, "worksheet inserts rows")
+  batch = try(fullclient.executeSql(active, "INSERT INTO workbench_item(id, label) VALUES (1, 'alpha');\r\nINSERT INTO workbench_item(id, label) VALUES (2, 'beta;still-data');\r\nSELECT id, label FROM workbench_item ORDER BY id;"))
+  testkit.record(test, typeof(batch) != "error" and batch.success and batch.statementCount == 3 and batch.rowCount == 2, "worksheet executes a quote-aware multi-statement script")
   selected = try(fullclient.executeSql(active, "SELECT id, label FROM workbench_item ORDER BY id;"))
   testkit.record(test, typeof(selected) != "error" and selected.success, "worksheet selects rows")
   if typeof(selected) != "error" then testkit.equal(test, selected.rowCount, 2, "worksheet row count") end if
@@ -112,6 +123,35 @@ function main(args)
     testkit.record(test, awaitOperation(session, 30000), "asynchronous object refresh completes")
     startedDescribe = try(win32_client.startDescribe(session, "workbench_item"))
     testkit.record(test, typeof(startedDescribe) != "error" and awaitOperation(session, 30000), "asynchronous table details complete")
+    testkit.record(test, session.workspacePage == 1 and gui.tabSelectedIndex(session.window.workspaceTabs) == 1, "completed table metadata keeps the Object Details workspace active")
+    gui.tabSelect(session.window.detailTabs, 1)
+    win32_client.render(session)
+    testkit.record(test, gui.listViewRowCount(session.window.detailGrid) == 2, "Columns detail renders two native grid rows")
+    gui.tabSelect(session.window.detailTabs, 3)
+    win32_client.render(session)
+    testkit.record(test, gui.listViewRowCount(session.window.detailGrid) == 2, "Data detail renders preview rows in a native grid")
+    insertSql = try(fullclient.insertDataSql(session.state.tableDetails, ["3", "gamma"] ))
+    startedInsert = error(9001, "insert SQL generation failed")
+    if typeof(insertSql) == "string" then startedInsert = try(win32_client.startDataMutation(session, insertSql)) end if
+    insertedThroughGrid = typeof(startedInsert) != "error" and awaitOperation(session, 30000)
+    insertedRow = findDetailRow(session.state.tableDetails.contentsGrid, 0, "3")
+    testkit.record(test, insertedThroughGrid and insertedRow >= 0 and gui.listViewRowCount(session.window.detailGrid) == 3, "Data-grid insert executes asynchronously and refreshes its preview")
+    updateSql = error(9001, "inserted row unavailable")
+    if insertedRow >= 0 then updateSql = try(fullclient.updateDataSql(session.state.tableDetails, session.state.tableDetails.contentsGrid.rows[insertedRow], ["3", "gamma-updated"])) end if
+    startedUpdate = error(9001, "update SQL generation failed")
+    if typeof(updateSql) == "string" then startedUpdate = try(win32_client.startDataMutation(session, updateSql)) end if
+    updatedThroughGrid = typeof(startedUpdate) != "error" and awaitOperation(session, 30000)
+    updatedRow = findDetailRow(session.state.tableDetails.contentsGrid, 1, "gamma-updated")
+    testkit.record(test, updatedThroughGrid and updatedRow >= 0, "Data-grid update uses the original primary key and refreshes its preview")
+    deleteSql = error(9001, "updated row unavailable")
+    if updatedRow >= 0 then deleteSql = try(fullclient.deleteDataSql(session.state.tableDetails, session.state.tableDetails.contentsGrid.rows[updatedRow])) end if
+    startedDelete = error(9001, "delete SQL generation failed")
+    if typeof(deleteSql) == "string" then startedDelete = try(win32_client.startDataMutation(session, deleteSql)) end if
+    deletedThroughGrid = typeof(startedDelete) != "error" and awaitOperation(session, 30000)
+    testkit.record(test, deletedThroughGrid and findDetailRow(session.state.tableDetails.contentsGrid, 0, "3") < 0 and gui.listViewRowCount(session.window.detailGrid) == 2, "Data-grid delete removes exactly the keyed row and refreshes its preview")
+    gui.tabSelect(session.window.workspaceTabs, 0)
+    win32_client.render(session)
+    testkit.record(test, gui.tabSelectedIndex(session.window.workspaceTabs) == 1, "render restores the session-owned Object Details workspace")
     gui.tabSelect(session.window.detailTabs, 5)
     win32_client.render(session)
     detailText = try(gui.getText(session.window.detailEdit))
@@ -126,8 +166,14 @@ function main(args)
     testkit.record(test, completedSecret and clearedEditor == "" and not fullclient.textContains(session.state.queryText, asyncSecret), "asynchronous DCL clears the editor and retained state")
     startedSecretDrop = try(win32_client.startQuery(session, "DROP USER workbench_async_secret;", false))
     if typeof(startedSecretDrop) != "error" then ignoredSecretDropCompletion = awaitOperation(session, 30000) end if
-    startedQuery = try(win32_client.startQuery(session, "SELECT label FROM workbench_item ORDER BY id;", false))
-    testkit.record(test, typeof(startedQuery) != "error" and awaitOperation(session, 30000), "asynchronous worksheet query and follow-up refresh complete")
+    editorText = "SELECT 999;\r\nSELECT label FROM workbench_item ORDER BY id;"
+    gui.setText(session.window.queryEdit, editorText)
+    secondStart = fullclient.utf16Length("SELECT 999;\r\n")
+    gui.selectText(session.window.queryEdit, secondStart, secondStart)
+    currentSql = try(win32_client.editorSqlForCommand(session.window, false))
+    testkit.equal(test, currentSql, "SELECT label FROM workbench_item ORDER BY id;", "native worksheet resolves the current caret statement")
+    startedQuery = try(win32_client.startQuery(session, currentSql, false))
+    testkit.record(test, typeof(startedQuery) != "error" and awaitOperation(session, 30000), "asynchronous current-statement query and follow-up refresh complete")
     testkit.record(test, gui.isEnabled(session.window.queryEdit) and not gui.isEnabled(session.window.stopButton), "controls unlock after worker completion")
     gui.destroy(session.window.hwnd)
   end if

@@ -13,6 +13,7 @@ import minisql.protocol.messages as messages
 const INVALID_ARGUMENT = 9001
 const CLOSED_HANDLE = 9008
 const AUTHENTICATION_FAILED = 9027
+const HANDSHAKE_TIMEOUT_MS = 5000
 
 // Groups the client state and preserves the field relationships documented below.
 struct Client
@@ -90,8 +91,12 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function helloHandshake(client, operation)
+  bounded = try(connection.setTimeouts(client.connection, HANDSHAKE_TIMEOUT_MS, HANDSHAKE_TIMEOUT_MS))
+  if typeof(bounded) == "error" then return bounded end if
   response = try(request(client, messages.hello(client.nextRequestId)))
+  restored = try(connection.setTimeouts(client.connection, 0, 0))
   if typeof(response) == "error" then return response end if
+  if typeof(restored) == "error" then return restored end if
   if response.messageType != constants.TYPE_RESPONSE then return fail(INVALID_ARGUMENT, operation, "HELLO response type is invalid") end if
   helloResponse = try(messages.decodeResponse(response.payload))
   if typeof(helloResponse) == "error" then return helloResponse end if

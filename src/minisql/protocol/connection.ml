@@ -116,6 +116,13 @@ function connectLoopback(port)
   return connectAddress("127.0.0.1", port)
 end function
 
+// Applies bounded socket I/O while a caller performs a protocol phase such as
+// the initial HELLO exchange. Passing zero restores normal unbounded query I/O.
+function setTimeouts(connection, receiveMs, sendMs)
+  validateOpen(connection, "setTimeouts")
+  return network.setTimeouts(connection.socket, receiveMs, sendMs)
+end function
+
 // Validates open using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.

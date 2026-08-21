@@ -41,6 +41,7 @@ const BS_AUTOCHECKBOX = 3
 const SW_SHOW = 5
 const PM_REMOVE = 1
 const WM_SETTEXT = 0x000C
+const WM_SETREDRAW = 0x000B
 const WM_SETFONT = 0x0030
 const WM_CLOSE = 0x0010
 const WM_DESTROY = 0x0002
@@ -48,8 +49,26 @@ const WM_SIZE = 0x0005
 const WM_GETMINMAXINFO = 0x0024
 const WM_COMMAND = 0x0111
 const WM_NOTIFY = 0x004E
+const WM_LBUTTONDOWN = 0x0201
+const WM_LBUTTONUP = 0x0202
 const WM_DPICHANGED = 0x02E0
 const EM_SETLIMITTEXT = 0x00C5
+const EM_EXGETSEL = 0x0434
+const EM_EXLIMITTEXT = 0x0435
+const EM_EXSETSEL = 0x0437
+const EM_GETCHARFORMAT = 0x043A
+const EM_SETCHARFORMAT = 0x0444
+const EM_SETEVENTMASK = 0x0445
+const EM_GETSCROLLPOS = 0x04DD
+const EM_SETSCROLLPOS = 0x04DE
+const ENM_CHANGE = 1
+const SCF_SELECTION = 1
+const CFM_BOLD = 1
+const CFM_ITALIC = 2
+const CFM_COLOR = 0x40000000
+const CFE_BOLD = 1
+const CFE_ITALIC = 2
+const CHARFORMAT2W_BYTES = 116
 const MAX_EDIT_TEXT_UTF16_UNITS = 2147483646
 const BM_GETSTATE = 0x00F2
 const BM_GETCHECK = 0x00F0
@@ -101,11 +120,18 @@ const LVS_EX_DOUBLEBUFFER = 65536
 const LVM_FIRST = 0x1000
 const LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54
 const LVM_DELETEALLITEMS = LVM_FIRST + 9
+const LVM_GETITEMCOUNT = LVM_FIRST + 4
 const LVM_INSERTITEMW = LVM_FIRST + 77
 const LVM_SETITEMTEXTW = LVM_FIRST + 116
 const LVM_INSERTCOLUMNW = LVM_FIRST + 97
 const LVM_DELETECOLUMN = LVM_FIRST + 28
+const LVM_GETNEXTITEM = LVM_FIRST + 12
+const LVM_SETITEMSTATE = LVM_FIRST + 43
 const LVIF_TEXT = 1
+const LVIF_STATE = 8
+const LVIS_FOCUSED = 1
+const LVIS_SELECTED = 2
+const LVNI_SELECTED = 2
 const LVCF_FMT = 1
 const LVCF_WIDTH = 2
 const LVCF_TEXT = 4
@@ -119,6 +145,9 @@ const RDW_ALLCHILDREN = 128
 const RDW_UPDATENOW = 256
 const MB_OK = 0
 const MB_ICONINFORMATION = 64
+const MB_YESNO = 4
+const MB_ICONWARNING = 48
+const IDYES = 6
 
 const MENU_FILE_NEW = 1000
 const MENU_FILE_CLOSE = 1001
@@ -135,12 +164,21 @@ const MENU_SQL_EXECUTE = 1300
 const MENU_SQL_EXPLAIN = 1301
 const MENU_SQL_CANCEL = 1302
 const MENU_SQL_CLEAR = 1303
+const MENU_SQL_EXECUTE_SCRIPT = 1304
 const MENU_ADMIN_DATABASE = 1400
 const MENU_ADMIN_SECURITY = 1401
 const MENU_HELP_ABOUT = 1500
 const MENU_OBJECT_USE = 1600
 const MENU_OBJECT_DESCRIBE = 1601
 const MENU_OBJECT_QUERY = 1602
+
+// COLORREF palette shared by native SQL syntax rendering and its smoke tests.
+const SQL_COLOR_DEFAULT = 0x002B2B2B
+const SQL_COLOR_KEYWORD = 0x009E5A00
+const SQL_COLOR_STRING = 0x001515A3
+const SQL_COLOR_NUMBER = 0x00588609
+const SQL_COLOR_COMMENT = 0x005F7F3F
+const SQL_COLOR_QUOTED_IDENTIFIER = 0x009E4A79
 
 // Groups the native GuiEvent state used by the Windows workbench.
 struct GuiEvent
@@ -172,6 +210,7 @@ guiClassNameWide = void
 modernGuiFontDpis = []
 modernGuiFonts = []
 windowMinimums = []
+richEditLibrary = 0
 
 // Binds the native Windows CreateWindowExW API used by the GUI abstraction.
 extern function CreateWindowExW(exStyle as u32, className as wstr, windowName as wstr, style as u32, x as i32, y as i32, width as i32, height as i32, parent as ptr, menu as ptr, instance as ptr, param as ptr) from "user32.dll" symbol "CreateWindowExW" returns ptr
@@ -215,6 +254,8 @@ extern function DefWindowProcW(hwnd as ptr, message as u32, wParam as ptr, lPara
 extern function RegisterClassExW(windowClass as bytes) from "user32.dll" symbol "RegisterClassExW" returns u32
 // Binds the native Windows GetModuleHandleW API used by the GUI abstraction.
 extern function GetModuleHandleW(moduleName as ptr) from "kernel32.dll" symbol "GetModuleHandleW" returns ptr
+// Loads the system RichEdit implementation required by the colorized SQL editor.
+extern function LoadLibraryW(moduleName as wstr) from "kernel32.dll" symbol "LoadLibraryW" returns ptr
 // Binds the native Windows GetLastError API used by the GUI abstraction.
 extern function GetLastError() from "kernel32.dll" symbol "GetLastError" returns u32
 // Binds the native Windows LoadCursorW API used by the GUI abstraction.
@@ -479,6 +520,15 @@ function postCommandForTest(hwnd, controlId)
   return PostMessageW(hwnd, WM_COMMAND, controlId, 0)
 end function
 
+// Sends a native left-button click to a tab header so tests exercise WM_NOTIFY.
+function clickTabHeaderForTest(hwnd, x, y)
+  if hwnd == 0 or typeof(x) != "int" or typeof(y) != "int" or x < 0 or y < 0 then return false end if
+  packedPoint = (y << 16) | (x & 65535)
+  ignoredDown = SendMessageWInt(hwnd, WM_LBUTTONDOWN, 1, packedPoint)
+  ignoredUp = SendMessageWInt(hwnd, WM_LBUTTONUP, 0, packedPoint)
+  return true
+end function
+
 // Creates a namespaced structured error for a failed GUI operation.
 function fail(operation, message)
   return error(GUI_ERROR, "platform.win32_gui." + operation + ": " + message)
@@ -558,7 +608,7 @@ function attachWorkbenchMenuBar(hwnd)
   if mainMenu == 0 then return false end if
   fileMenu = createTopMenu(["New SQL Worksheet", "Disconnect", "Exit"], [MENU_FILE_NEW, MENU_FILE_CLOSE, MENU_FILE_EXIT])
   sessionMenu = createTopMenu(["Refresh Object Tree", "Commit Transaction", "Rollback Transaction"], [MENU_SESSION_REFRESH, MENU_SESSION_COMMIT, MENU_SESSION_ROLLBACK])
-  sqlMenu = createTopMenu(["Execute SQL", "Explain SQL", "Stop Execution", "Clear Results"], [MENU_SQL_EXECUTE, MENU_SQL_EXPLAIN, MENU_SQL_CANCEL, MENU_SQL_CLEAR])
+  sqlMenu = createTopMenu(["Execute Current / Selection", "Execute Script", "Explain Current / Selection", "Stop Execution", "Clear Results"], [MENU_SQL_EXECUTE, MENU_SQL_EXECUTE_SCRIPT, MENU_SQL_EXPLAIN, MENU_SQL_CANCEL, MENU_SQL_CLEAR])
   objectMenu = createTopMenu(["Open Table Details", "Select First 100 Rows"], [MENU_OBJECT_DESCRIBE, MENU_OBJECT_QUERY])
   helpMenu = createTopMenu(["About MiniSQL Workbench"], [MENU_HELP_ABOUT])
   if fileMenu != 0 then ignoredFile = AppendMenuWPtr(mainMenu, MF_POPUP, fileMenu, "File") end if
@@ -666,6 +716,28 @@ function createCheckBoxId(parent, controlId, text, x, y, width, height)
   return createChildId(parent, "BUTTON", text, x, y, width, height, BS_AUTOCHECKBOX | WS_TABSTOP, 0, controlId)
 end function
 
+// Loads the system RichEdit 4.1 class once for the process-wide SQL worksheet.
+function ensureRichEdit()
+  global richEditLibrary
+  if richEditLibrary != 0 then return true end if
+  richEditLibrary = LoadLibraryW("Msftedit.dll")
+  if richEditLibrary == 0 then return fail("ensureRichEdit", "Msftedit.dll could not be loaded") end if
+  return true
+end function
+
+// Creates the notifying Unicode RichEdit worksheet used for SQL highlighting.
+function createSqlEditor(parent, controlId, text, x, y, width, height)
+  loaded = try(ensureRichEdit())
+  if typeof(loaded) == "error" then return loaded end if
+  style = WS_BORDER | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
+  hwnd = try(createChildId(parent, "RICHEDIT50W", text, x, y, width, height, style, WS_EX_CLIENTEDGE, controlId))
+  if typeof(hwnd) == "error" then return hwnd end if
+  // RichEdit's extended limit retains the prior unbounded worksheet contract.
+  ignoredLimit = SendMessageWInt(hwnd, EM_EXLIMITTEXT, 0, MAX_EDIT_TEXT_UTF16_UNITS)
+  ignoredEvents = SendMessageWInt(hwnd, EM_SETEVENTMASK, 0, ENM_CHANGE)
+  return hwnd
+end function
+
 // Creates a multiline worksheet or read-only detail editor.
 function createEdit(parent, text, x, y, width, height, readOnly)
   style = WS_BORDER | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
@@ -676,6 +748,95 @@ function createEdit(parent, text, x, y, width, height, readOnly)
   // it to the Win32 signed-count ceiling leaves capacity governed by memory.
   ignoredLimit = SendMessageWInt(hwnd, EM_SETLIMITTEXT, MAX_EDIT_TEXT_UTF16_UNITS, 0)
   return hwnd
+end function
+
+// Reads the RichEdit selection as an ordered pair of UTF-16 code-unit offsets.
+function textSelection(hwnd)
+  if hwnd == 0 then return fail("textSelection", "hwnd is required") end if
+  selection = bytes(8, 0)
+  ignored = SendMessageWPtrBuffer(hwnd, EM_EXGETSEL, 0, selection)
+  return [endian.readI32LE(selection, 0), endian.readI32LE(selection, 4)]
+end function
+
+// Selects one UTF-16 range without modifying editor contents.
+function selectText(hwnd, startOffset, endOffset)
+  if hwnd == 0 or typeof(startOffset) != "int" or typeof(endOffset) != "int" or startOffset < 0 or endOffset < startOffset then return fail("selectText", "invalid RichEdit range") end if
+  selection = bytes(8, 0)
+  endian.writeI32LE(selection, 0, startOffset)
+  endian.writeI32LE(selection, 4, endOffset)
+  ignored = SendMessageWIntBuffer(hwnd, EM_EXSETSEL, 0, selection)
+  return true
+end function
+
+// Applies one CHARFORMAT2 color/effect tuple to the current native selection.
+function applyCharacterStyle(hwnd, startOffset, endOffset, color, bold, italic)
+  selected = try(selectText(hwnd, startOffset, endOffset))
+  if typeof(selected) == "error" then return selected end if
+  format = bytes(CHARFORMAT2W_BYTES, 0)
+  endian.writeU32LE(format, 0, CHARFORMAT2W_BYTES)
+  endian.writeU32LE(format, 4, CFM_COLOR | CFM_BOLD | CFM_ITALIC)
+  effects = 0
+  if bold then effects = effects | CFE_BOLD end if
+  if italic then effects = effects | CFE_ITALIC end if
+  endian.writeU32LE(format, 8, effects)
+  endian.writeU32LE(format, 20, color)
+  ignored = SendMessageWIntBuffer(hwnd, EM_SETCHARFORMAT, SCF_SELECTION, format)
+  return true
+end function
+
+// Maps one presentation token kind to the stable light-theme SQL palette.
+function applySqlSpanStyle(hwnd, span)
+  if span.kind == 1 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_KEYWORD, true, false) end if
+  if span.kind == 2 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_STRING, false, false) end if
+  if span.kind == 3 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_NUMBER, false, false) end if
+  if span.kind == 4 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_COMMENT, false, true) end if
+  if span.kind == 5 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_QUOTED_IDENTIFIER, false, false) end if
+  return true
+end function
+
+// Recolors a complete worksheet while preserving its caret/selection exactly.
+function applySqlSyntaxStyles(hwnd, spans)
+  if hwnd == 0 or typeof(spans) != "array" then return fail("applySqlSyntaxStyles", "invalid editor or spans") end if
+  original = try(textSelection(hwnd))
+  if typeof(original) == "error" then return original end if
+  scrollPosition = bytes(8, 0)
+  ignoredScrollRead = SendMessageWPtrBuffer(hwnd, EM_GETSCROLLPOS, 0, scrollPosition)
+  textUnits = GetWindowTextLengthW(hwnd)
+  if textUnits < 0 then return fail("applySqlSyntaxStyles", "editor text length is invalid") end if
+  ignoredRedrawOff = SendMessageWInt(hwnd, WM_SETREDRAW, 0, 0)
+  defaulted = try(applyCharacterStyle(hwnd, 0, textUnits, SQL_COLOR_DEFAULT, false, false))
+  if typeof(defaulted) == "error" then ignoredRestore = try(selectText(hwnd, original[0], original[1])); ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition); ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0); return defaulted end if
+  for each span in spans
+    if span.startOffset < 0 or span.endOffset < span.startOffset or span.endOffset > textUnits then
+      ignoredRestore = try(selectText(hwnd, original[0], original[1]))
+      ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition)
+      ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0)
+      return fail("applySqlSyntaxStyles", "syntax span is outside the editor text")
+    end if
+    styled = try(applySqlSpanStyle(hwnd, span))
+    if typeof(styled) == "error" then ignoredRestore = try(selectText(hwnd, original[0], original[1])); ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition); ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0); return styled end if
+  end for
+  restored = try(selectText(hwnd, original[0], original[1]))
+  ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition)
+  ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0)
+  ignoredRepaint = RedrawWindow(hwnd, void, void, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW)
+  if typeof(restored) == "error" then return restored end if
+  return true
+end function
+
+// Reads the native color and effects of one character for deterministic tests.
+function sqlEditorStyleAt(hwnd, offset)
+  if hwnd == 0 or typeof(offset) != "int" or offset < 0 or offset >= GetWindowTextLengthW(hwnd) then return fail("sqlEditorStyleAt", "offset is outside the editor") end if
+  original = try(textSelection(hwnd))
+  if typeof(original) == "error" then return original end if
+  selected = try(selectText(hwnd, offset, offset + 1))
+  if typeof(selected) == "error" then return selected end if
+  format = bytes(CHARFORMAT2W_BYTES, 0)
+  endian.writeU32LE(format, 0, CHARFORMAT2W_BYTES)
+  ignored = SendMessageWIntBuffer(hwnd, EM_GETCHARFORMAT, SCF_SELECTION, format)
+  restored = try(selectText(hwnd, original[0], original[1]))
+  if typeof(restored) == "error" then return restored end if
+  return [endian.readU32LE(format, 20), endian.readU32LE(format, 8)]
 end function
 
 // Creates a single-line editor, optionally enabling native password masking.
@@ -955,6 +1116,29 @@ function listViewAddRow(hwnd, rowIndex, values)
   return inserted
 end function
 
+// Returns the selected report-row index, or -1 when the grid has no selection.
+function listViewSelectedIndex(hwnd)
+  if hwnd == 0 then return -1 end if
+  return SendMessageWInt(hwnd, LVM_GETNEXTITEM, -1, LVNI_SELECTED)
+end function
+
+// Returns the number of report rows currently rendered in a native grid.
+function listViewRowCount(hwnd)
+  if hwnd == 0 then return 0 end if
+  return SendMessageWInt(hwnd, LVM_GETITEMCOUNT, 0, 0)
+end function
+
+// Selects and focuses one report row for deterministic keyboard and test workflows.
+function listViewSelect(hwnd, rowIndex)
+  if hwnd == 0 or typeof(rowIndex) != "int" or rowIndex < 0 then return false end if
+  item = bytes(88, 0)
+  endian.writeU32LE(item, 0, LVIF_STATE)
+  endian.writeU32LE(item, 12, LVIS_SELECTED | LVIS_FOCUSED)
+  endian.writeU32LE(item, 16, LVIS_SELECTED | LVIS_FOCUSED)
+  ignored = SendMessageWIntBuffer(hwnd, LVM_SETITEMSTATE, rowIndex, item)
+  return listViewSelectedIndex(hwnd) == rowIndex
+end function
+
 // Moves a control using physical Win32 coordinates and repaints immediately.
 function move(hwnd, x, y, width, height)
   if hwnd == 0 then return false end if
@@ -1066,6 +1250,12 @@ function showInfo(owner, title, message)
   if owner == 0 or typeof(title) != "string" or typeof(message) != "string" then return false end if
   ignored = MessageBoxW(owner, message, title, MB_OK | MB_ICONINFORMATION)
   return true
+end function
+
+// Shows an owned destructive-action warning and returns true only for an explicit Yes.
+function confirmWarning(owner, title, message)
+  if owner == 0 or typeof(title) != "string" or typeof(message) != "string" then return false end if
+  return MessageBoxW(owner, message, title, MB_YESNO | MB_ICONWARNING) == IDYES
 end function
 
 // Selects a tab page by zero-based index.

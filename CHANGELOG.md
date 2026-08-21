@@ -6,6 +6,17 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-21
 
+- upgraded the native Workbench worksheet to a Unicode RichEdit SQL editor with
+  MiniSQL keyword, literal, number, quoted-identifier, and comment highlighting;
+  added distinct current/selection and quote-aware whole-script execution paths;
+- persisted the selected SQL/Object Details workspace across asynchronous
+  metadata completion and native control rendering;
+- replaced pipe-delimited object-detail text with native Columns, Indexes,
+  Data, and Row Count grids; added a resizable row editor plus safe keyed add,
+  copy, update, delete, confirmation, validation, and automatic preview refresh;
+- prevented Windows QuickEdit selection from suspending the daemon during
+  stdout logging, persisted file records before console output, and bounded the
+  client HELLO handshake so both CLI and Workbench fail stalled endpoints;
 - completed six post-1.0 SQL expansion blocks: `DROP INDEX` and additional
   `ALTER TABLE` actions; text/numeric/temporal functions and aggregates;
   derived tables and correlated subqueries; recursive CTEs and navigation/

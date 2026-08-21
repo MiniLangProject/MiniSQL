@@ -165,6 +165,10 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function main(args)
+  // QuickEdit suspends console writers while text is selected. Disable it
+  // before operational logging so an accidental click cannot freeze every
+  // listener handshake; redirected and service input is accepted unchanged.
+  ignoredConsoleMode = try(console.disableQuickEdit())
   if len(args) == 1 and args[0] == "--version" then print server.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print server.m0SelfTestLine(); return 0 end if
 
