@@ -76,6 +76,10 @@ import minisql.client.formatter as m67_client_formatter
 import minisql.tools.check as m68_tools_check
 import minisql.tools.backup as m69_tools_backup
 import minisql.tools.migrate as m70_tools_migrate
+import minisql.platform.win32_gui as m74_platform_win32_gui
+import minisql.admin.fullclient as m75_admin_fullclient
+import minisql.admin.connection_profiles as m76_admin_connection_profiles
+import minisql.admin.win32_client as m77_admin_win32_client
 
 // Records a labeled scalar comparison and returns one when the values differ so the caller can accumulate failures.
 function check(actual, expected, label)
@@ -320,6 +324,18 @@ function main(args)
   failures = failures + check(m70_tools_migrate.componentName(), "tools.migrate", "tools.migrate component")
   failures = failures + check(m70_tools_migrate.targetMilestone(), "M20", "tools.migrate target")
   failures = failures + checkBool(m70_tools_migrate.isImplemented(), "tools.migrate implementation")
+  failures = failures + check(m74_platform_win32_gui.componentName(), "platform.win32_gui", "platform.win32_gui component")
+  failures = failures + check(m74_platform_win32_gui.targetMilestone(), "M74", "platform.win32_gui target")
+  failures = failures + checkBool(m74_platform_win32_gui.isImplemented(), "platform.win32_gui implementation")
+  failures = failures + check(m75_admin_fullclient.componentName(), "admin.fullclient", "admin.fullclient component")
+  failures = failures + check(m75_admin_fullclient.targetMilestone(), "M74", "admin.fullclient target")
+  failures = failures + checkBool(m75_admin_fullclient.isImplemented(), "admin.fullclient implementation")
+  failures = failures + check(m76_admin_connection_profiles.componentName(), "admin.connection_profiles", "admin.connection_profiles component")
+  failures = failures + check(m76_admin_connection_profiles.targetMilestone(), "M74", "admin.connection_profiles target")
+  failures = failures + checkBool(m76_admin_connection_profiles.isImplemented(), "admin.connection_profiles implementation")
+  failures = failures + check(m77_admin_win32_client.componentName(), "admin.win32_client", "admin.win32_client component")
+  failures = failures + check(m77_admin_win32_client.targetMilestone(), "M74", "admin.win32_client target")
+  failures = failures + checkBool(m77_admin_win32_client.isImplemented(), "admin.win32_client implementation")
   // Cumulative module regressions validate feature contracts, not a frozen
   // package-global release label. Exact current version output is checked by
   // the application --version tests and the current static manifest gate.
@@ -333,6 +349,6 @@ function main(args)
     print "MiniSQL M50 module smoke test: FAIL (failures=" + failures + ")"
     return 1
   end if
-  print "MiniSQL M50 module smoke test: SUCCESS (74 modules)"
+  print "MiniSQL M50 module smoke test: SUCCESS (78 modules)"
   return 0
 end function

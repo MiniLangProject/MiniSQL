@@ -35,6 +35,8 @@ is `M48-M50R3`.
 - native per-connection concurrency through a bounded MiniLang thread pool, with
   parallel network/framing work, parallel read-only query plans on one database,
   and exclusive, writer-prioritized mutation execution;
+- a native Windows MiniSQL Workbench with saved aliases, TLS/pinning, object
+  browsing, SQL worksheets, bookmarks, history, detail pages, and result grids;
 - deterministic 106-phase cumulative test suite and reproducible Windows-x64
   release packaging.
 
@@ -83,6 +85,7 @@ minisql.exe
 minisql-check.exe
 minisql-backup.exe
 minisql-migrate.exe
+minisql-admin.exe
 ```
 
 ## Quick start
@@ -115,6 +118,15 @@ Open a stateful client in another terminal:
 ```powershell
 .\build\bin\minisql.exe --shell 7432
 ```
+
+Or open the graphical MiniSQL Workbench:
+
+```powershell
+.\build\bin\minisql-admin.exe
+```
+
+See [`docs/release/WORKBENCH.md`](docs/release/WORKBENCH.md) for its
+SQuirreL-style MiniSQL workflow, aliases, native TLS, and certificate pinning.
 
 Example SQL:
 
@@ -173,7 +185,7 @@ build\release\MiniSQL-1.0.0-windows-x64.zip.sha256
 
 ```text
 src/apps/              executable entry points
-src/minisql/           74 database-engine modules
+src/minisql/           78 database-engine and workbench modules
 src/tests/             native MiniLang tests
 config/                example configuration and JSON schema
 docs/spec/             behavioral specifications

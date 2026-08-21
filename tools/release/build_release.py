@@ -36,6 +36,7 @@ REQUIRED_BINARIES = (
     "minisql-check.exe",
     "minisql-backup.exe",
     "minisql-migrate.exe",
+    "minisql-admin.exe",
 )
 
 
@@ -76,6 +77,7 @@ def source_files(project: Path, bin_dir: Path) -> dict[str, bytes]:
         "docs/REPLICATION.md": project / "docs/release/REPLICATION.md",
         "docs/LIMITATIONS.md": project / "docs/release/LIMITATIONS.md",
         "docs/UPGRADE.md": project / "docs/release/UPGRADE.md",
+        "docs/WORKBENCH.md": project / "docs/release/WORKBENCH.md",
         "docs/upgrade-matrix.json": project / "docs/release/upgrade-matrix.json",
         "docs/feature-matrix.json": project / "docs/release/feature-matrix.json",
         "tools/minisql_hot_replica.py": project / "tools/replication/minisql_hot_replica.py",

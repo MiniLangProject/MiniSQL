@@ -62,6 +62,17 @@ In a second PowerShell window:
 .\build\bin\minisql.exe --shell 7432
 ```
 
+For the native graphical client, launch:
+
+```powershell
+.\build\bin\minisql-admin.exe
+```
+
+The workbench provides MiniSQL-only connection aliases, an object tree, SQL
+worksheet, bookmarks, history, object details, result tabs, and a structured
+grid. See `docs/release/WORKBENCH.md` for trusted-local, authenticated, TLS, and
+pinned-certificate setup.
+
 Statements may span lines and are executed when a real SQL terminator `;` is
 seen. Semicolons inside strings, quoted identifiers and comments do not split
 the statement. Use `\g` to execute a non-terminated buffer.

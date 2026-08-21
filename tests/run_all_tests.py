@@ -634,6 +634,67 @@ def run_native_tls(compiler: Path, verbose: bool) -> None:
             f"stdout={output!r} stderr={base.normalized(completed.stderr)!r}"
         )
 
+
+def run_m74_workbench(compiler: Path, verbose: bool) -> None:
+    """Compiles and executes native-control, profile, and live-server workbench coverage."""
+    model = base.compile_target(
+        compiler, "src/tests/m74_workbench.ml", "minisql-m74-workbench.exe", verbose,
+    )
+    network = base.compile_target(
+        compiler,
+        "src/tests/m74_workbench_network_worker.ml",
+        "minisql-m74-workbench-network-worker.exe",
+        verbose,
+    )
+    root = data_root("m74-workbench")
+    profile_root = root / "profiles"
+    profile_root.mkdir(parents=True, exist_ok=True)
+    model_result = base.run_command(
+        base.executable_command(model, str(profile_root)),
+        log_name="m74-workbench.run.log",
+        verbose=verbose,
+        timeout=300,
+    )
+    if (
+        model_result.returncode != 0
+        or base.normalized(model_result.stdout) != "MiniSQL M74 workbench tests: SUCCESS"
+        or base.normalized(model_result.stderr)
+    ):
+        raise AcceptanceFailure(
+            "M74 workbench model failed: "
+            f"rc={model_result.returncode} stdout={base.normalized(model_result.stdout)!r} "
+            f"stderr={base.normalized(model_result.stderr)!r}"
+        )
+
+    server, _ = public_apps()
+    database = initialize_public_database(server, root / "database", "workbench", verbose)
+    port = free_port()
+    command = base.executable_command(server, "--serve", str(database), str(port), "4")
+    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        wait_listening(process, port, "m74-workbench-server", 120)
+        worker_result = base.run_command(
+            base.executable_command(network, str(port)),
+            log_name="m74-workbench-network.run.log",
+            verbose=verbose,
+            timeout=300,
+        )
+        if (
+            worker_result.returncode != 0
+            or base.normalized(worker_result.stdout) != "MiniSQL M74 workbench network worker: SUCCESS"
+            or base.normalized(worker_result.stderr)
+        ):
+            raise AcceptanceFailure(
+                "M74 workbench network integration failed: "
+                f"rc={worker_result.returncode} stdout={base.normalized(worker_result.stdout)!r} "
+                f"stderr={base.normalized(worker_result.stderr)!r}"
+            )
+    finally:
+        if process.poll() is None:
+            process.kill()
+        out, err = process.communicate(timeout=10)
+        base.write_log("m74-workbench-server.run.log", command, process.returncode or 0, out, err)
+
 def validate_repository(manifest: dict[str, Any]) -> None:
     """Validates the tracked repository inventory, package layout, headers and launcher contract."""
     expected = {
@@ -642,7 +703,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 74,
+        "moduleCount": 78,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -707,8 +768,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 74:
-        raise AcceptanceFailure("Module catalog must contain exactly 74 modules")
+    if not isinstance(modules, list) or len(modules) != 78:
+        raise AcceptanceFailure("Module catalog must contain exactly 78 modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -967,7 +1028,7 @@ def validate_source_contracts() -> None:
         "src/tests/m48_hot_replication.ml": ["MiniSQL M48 hot replication tests: SUCCESS", "archiveWalLive", "openStandby"],
         "src/tests/m49_hardening.ml": ["MiniSQL M49 hardening tests: SUCCESS", "AUTO_INCREMENT", "3.3", "deterministic SQL mutation outcome is controlled"],
         "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.0.0"'],
-        "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (74 modules)"],
+        "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (78 modules)"],
         "build.ps1": [
             "minisql-m48-hot-replication.exe",
             "minisql-m49-hardening.exe",
@@ -1096,7 +1157,7 @@ def validate_reference_vectors() -> None:
     bin_dir = static_root / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
     for index, name in enumerate((
-        "minisqld.exe", "minisql.exe", "minisql-check.exe", "minisql-backup.exe", "minisql-migrate.exe"
+        "minisqld.exe", "minisql.exe", "minisql-check.exe", "minisql-backup.exe", "minisql-migrate.exe", "minisql-admin.exe"
     )):
         payload = b"MZ" + bytes([index + 1]) * 2046
         (bin_dir / name).write_bytes(payload)
@@ -1375,7 +1436,7 @@ def run_m49_soak(verbose: bool) -> None:
 def run_m50_release_distribution(verbose: bool) -> None:
     """Compiles and executes the M50 release distribution acceptance scenario."""
     bin_dir = BUILD_ROOT
-    for name in ("minisqld.exe", "minisql.exe", "minisql-check.exe", "minisql-backup.exe", "minisql-migrate.exe"):
+    for name in ("minisqld.exe", "minisql.exe", "minisql-check.exe", "minisql-backup.exe", "minisql-migrate.exe", "minisql-admin.exe"):
         if not (bin_dir / name).is_file():
             raise AcceptanceFailure(f"Release input binary is missing: {name}")
     release_dir = RESULTS_DIR / "release"
@@ -1434,7 +1495,7 @@ def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
         "M50": [
             "M50 release contract and compatibility freeze",
             "M50 deterministic Windows-x64 distribution build and verification",
-            "M50 74-module implementation smoke",
+            "M50 78-module implementation smoke",
             "M50 final cumulative gate",
         ],
     }
@@ -1506,7 +1567,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 74-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 78-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -1617,8 +1678,8 @@ def main() -> int:
             ("M49 final cumulative gate", lambda: None),
             ("M50 release contract and compatibility freeze", lambda: run_simple(compiler,"src/tests/m50_release_contract.ml","minisql-m50-release-contract.exe","MiniSQL M50 release contract tests: SUCCESS",args.verbose,[str(data_root('m50-root'))],3600)),
             ("M50 deterministic Windows-x64 distribution build and verification", lambda: run_m50_release_distribution(args.verbose)),
-            ("M50 74-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (74 modules)",args.verbose,timeout=2400)),
-            ("M50 final cumulative gate", lambda: None),
+            ("M50 78-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (78 modules)",args.verbose,timeout=2400)),
+            ("M50 final cumulative gate", lambda: run_m74_workbench(compiler, args.verbose)),
         ]
         if len(actions) != PHASE_COUNT:
             raise AcceptanceFailure(f"Internal phase count mismatch: {len(actions)} != {PHASE_COUNT}")

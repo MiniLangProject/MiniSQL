@@ -17,7 +17,7 @@ Python executable used when the selected compiler is a Python script.
 .PARAMETER Clean
 Removes the existing binary output directory before compilation.
 .PARAMETER AppsOnly
-Limits compilation to the five public application entry points.
+Limits compilation to the six public application entry points.
 #>
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
@@ -89,6 +89,7 @@ $Targets = @(
   @{ Input = "src\apps\minisql_check\main.ml"; Output = "minisql-check.exe" },
   @{ Input = "src\apps\minisql_backup\main.ml"; Output = "minisql-backup.exe" },
   @{ Input = "src\apps\minisql_migrate\main.ml"; Output = "minisql-migrate.exe" },
+  @{ Input = "src\apps\minisql_admin\main.ml"; Output = "minisql-admin.exe" },
   @{ Input = "src\tests\m0_all_modules.ml"; Output = "minisql-m0-modules.exe" },
   @{ Input = "src\tests\m1_int64_model.ml"; Output = "minisql-m1r1-int64-model.exe" },
   @{ Input = "src\tests\m1_endian_golden.ml"; Output = "minisql-m1r1-endian-golden.exe" },
@@ -181,11 +182,13 @@ $Targets = @(
   @{ Input = "src\tests\m73_tls_policy.ml"; Output = "minisql-m73-tls-policy.exe" },
   @{ Input = "src\tests\m73_schannel_abi.ml"; Output = "minisql-m73-schannel-abi.exe" },
   @{ Input = "src\tests\m73_tls_server_worker.ml"; Output = "minisql-m73-tls-server-worker.exe" },
-  @{ Input = "src\tests\m73_tls_client_worker.ml"; Output = "minisql-m73-tls-client-worker.exe" }
+  @{ Input = "src\tests\m73_tls_client_worker.ml"; Output = "minisql-m73-tls-client-worker.exe" },
+  @{ Input = "src\tests\m74_workbench.ml"; Output = "minisql-m74-workbench.exe" },
+  @{ Input = "src\tests\m74_workbench_network_worker.ml"; Output = "minisql-m74-workbench-network-worker.exe" }
 )
 
 if ($AppsOnly) {
-  $Targets = @($Targets | Select-Object -First 5)
+  $Targets = @($Targets | Select-Object -First 6)
 }
 
 foreach ($Target in $Targets) {

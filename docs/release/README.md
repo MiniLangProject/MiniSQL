@@ -8,6 +8,7 @@ MiniLang. The distribution contains:
 * `minisql-check.exe` – offline consistency checker;
 * `minisql-backup.exe` – backup, PITR and standby tools;
 * `minisql-migrate.exe` – offline page-size rewrite;
+* `minisql-admin.exe` – native Windows MiniSQL Workbench;
 * native Windows Schannel TLS 1.3/X.509 transport;
 * a Python sidecar for continuous hot replication.
 

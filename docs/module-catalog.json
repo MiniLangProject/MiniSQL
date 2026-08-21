@@ -444,6 +444,30 @@
       "package": "minisql.tools.migrate",
       "component": "tools.migrate",
       "targetMilestone": "M20"
+    },
+    {
+      "path": "src/minisql/platform/win32_gui.ml",
+      "package": "minisql.platform.win32_gui",
+      "component": "platform.win32_gui",
+      "targetMilestone": "M74"
+    },
+    {
+      "path": "src/minisql/admin/fullclient.ml",
+      "package": "minisql.admin.fullclient",
+      "component": "admin.fullclient",
+      "targetMilestone": "M74"
+    },
+    {
+      "path": "src/minisql/admin/connection_profiles.ml",
+      "package": "minisql.admin.connection_profiles",
+      "component": "admin.connection_profiles",
+      "targetMilestone": "M74"
+    },
+    {
+      "path": "src/minisql/admin/win32_client.ml",
+      "package": "minisql.admin.win32_client",
+      "component": "admin.win32_client",
+      "targetMilestone": "M74"
     }
   ]
 }
