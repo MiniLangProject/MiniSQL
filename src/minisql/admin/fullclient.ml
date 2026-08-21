@@ -143,33 +143,18 @@ function emptyTableDetails()
   return TableDetails("", "", "", "", "", "", "")
 end function
 
-// Returns whether an ASCII byte is an identifier letter.
-function isAlpha(value)
-  return (value >= 65 and value <= 90) or (value >= 97 and value <= 122)
-end function
-
-// Returns whether an ASCII byte is a decimal digit.
-function isDigit(value)
-  return value >= 48 and value <= 57
-end function
-
-// Validates identifiers before the workbench synthesizes metadata SQL.
-function isSafeIdentifier(value)
-  if typeof(value) != "string" or len(value) == 0 or len(value) > 128 then return false end if
-  raw = bytes(value)
-  if not (isAlpha(raw[0]) or raw[0] == 95) then return false end if
-  if len(raw) > 1 then
-    for index = 1 to len(raw) - 1
-      if not (isAlpha(raw[index]) or isDigit(raw[index]) or raw[index] == 95) then return false end if
-    end for
-  end if
-  return true
-end function
-
-// Returns a validated backtick-quoted identifier.
+// Quotes any non-empty MiniSQL identifier and doubles embedded quote characters.
 function quotedIdentifier(value)
-  if not isSafeIdentifier(value) then return fail("quotedIdentifier", "identifier must contain only ASCII letters, digits, or underscore") end if
-  return "\"" + value + "\""
+  if typeof(value) != "string" or len(bytes(value)) == 0 then return fail("quotedIdentifier", "identifier must be a non-empty string") end if
+  output = bytes([34])
+  for each item in bytes(value)
+    output = output + bytes([item])
+    if item == 34 then output = output + bytes([34]) end if
+  end for
+  output = output + bytes([34])
+  quoted = decode(output)
+  if typeof(quoted) != "string" then return fail("quotedIdentifier", "identifier is not valid UTF-8") end if
+  return quoted
 end function
 
 // Performs a byte-safe substring search without relying on host helpers.
@@ -205,9 +190,19 @@ function asciiUpper(text)
   return decoded
 end function
 
-// Redacts account DCL so passwords never enter result or history state.
+// Conservatively identifies account DCL before it can enter long-lived UI state.
+function isSensitiveSql(sqlText)
+  if typeof(sqlText) != "string" then return false end if
+  // Match secret-bearing keywords independently of surrounding whitespace or
+  // comments. PASSWORD is MiniSQL's DCL spelling; IDENTIFIED covers imported
+  // MySQL-style scripts before the server rejects or accepts an extension.
+  upper = asciiUpper(sqlText)
+  return textContains(upper, "PASSWORD") or textContains(upper, "IDENTIFIED")
+end function
+
+// Redacts account DCL so passwords never enter result, history, or query state.
 function historySql(sqlText)
-  if textContains(asciiUpper(sqlText), "IDENTIFIED BY") then return "<sensitive account DCL redacted>" end if
+  if isSensitiveSql(sqlText) then return "<sensitive account DCL redacted>" end if
   return sqlText
 end function
 
@@ -301,6 +296,12 @@ function close(state)
   return client.close(state.remoteClient)
 end function
 
+// Aborts a session after cancellation invalidated its request/response stream.
+function abort(state)
+  if state is not FullClientState then return fail("abort", "state must be FullClientState") end if
+  return client.abort(state.remoteClient)
+end function
+
 // Converts a protocol response into an operation error when the server rejected SQL.
 function responseFailure(response, operation)
   if not messages.isResponse(response) then return fail(operation, "response is invalid") end if
@@ -370,7 +371,7 @@ function addResultTab(state, sqlText, view, responses, elapsedMilliseconds)
   return tab
 end function
 
-// Executes a semicolon-delimited editor batch and retains structured results.
+// Executes a semicolon-delimited editor batch and retains bounded, redacted results.
 function executeSql(state, sqlText)
   if state is not FullClientState then return fail("executeSql", "state must be FullClientState") end if
   text = try(console.trimAscii(sqlText))
@@ -395,7 +396,9 @@ function executeSql(state, sqlText)
   end for
   elapsed = clock.monotonicMilliseconds() - started
   view = QueryView(len(statements), commandCount, rowCount, success, lineJoin(lines))
-  state.queryText = text
+  // The network call needs the original SQL, but retained state must never keep
+  // account secrets alive after the request has left this stack frame.
+  state.queryText = historySql(text)
   state.queryView = view
   ignoredTab = addResultTab(state, text, view, responses, elapsed)
   if success then state.statusText = "Completed " + len(statements) + " statement(s), " + rowCount + " row(s) in " + elapsed + " ms" else state.statusText = "SQL completed with an error in " + elapsed + " ms" end if
@@ -456,7 +459,7 @@ function containsText(values, wanted)
   return false
 end function
 
-// Converts DESCRIBE metadata into a readable CREATE TABLE preview.
+// Converts validated DESCRIBE metadata into a readable CREATE TABLE preview.
 function ddlFromDescribe(tableName, response)
   quoted = try(quotedIdentifier(tableName))
   if typeof(quoted) == "error" then return "" end if
@@ -464,8 +467,13 @@ function ddlFromDescribe(tableName, response)
   if len(response.rows) > 0 then
     for index = 0 to len(response.rows) - 1
       row = response.rows[index]
+      // A malformed or version-incompatible server row must not crash the GUI
+      // and must not be interpolated into executable-looking SQL.
+      if len(row) < 6 then return "-- Invalid DESCRIBE response: expected six metadata columns." end if
+      columnName = try(quotedIdentifier(row[1]))
+      if typeof(columnName) == "error" then return "-- Invalid DESCRIBE response: unsafe column identifier." end if
       if index > 0 then output = output + ",\r\n" end if
-      line = "  \"" + row[1] + "\" " + row[2]
+      line = "  " + columnName + " " + row[2]
       if row[3] == "FALSE" then line = line + " NOT NULL" end if
       if row[4] != "NULL" then line = line + " DEFAULT " + row[4] end if
       if row[5] == "TRUE" then line = line + " AUTO_INCREMENT" end if

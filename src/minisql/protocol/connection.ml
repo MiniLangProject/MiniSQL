@@ -410,6 +410,28 @@ function close(connection)
   return true
 end function
 
+// Aborts a potentially desynchronized transport without sending TLS or protocol shutdown data.
+function abort(connection)
+  if connection is not Connection then return fail(INVALID_ARGUMENT, "abort", "connection must be Connection") end if
+  if connection.closed then return true end if
+  socketCloseResult = try(network.close(connection.socket))
+  tlsCloseResult = true
+  if connection.tls and connection.tlsContext is not void then tlsCloseResult = try(tls_schannel.closeContext(connection.tlsContext)) end if
+  if typeof(connection.sendKey) == "bytes" then uuid.wipeSecret(connection.sendKey) end if
+  if typeof(connection.receiveKey) == "bytes" then uuid.wipeSecret(connection.receiveKey) end if
+  connection.sendKey = void
+  connection.receiveKey = void
+  if typeof(connection.receiveScratch) == "bytes" then fillBytes(connection.receiveScratch, 0, len(connection.receiveScratch), 0) end if
+  connection.receiveBuffer = bytes(0)
+  connection.receiveScratch = bytes(0)
+  connection.tls = false
+  connection.tlsContext = void
+  connection.closed = true
+  if typeof(socketCloseResult) == "error" then return socketCloseResult end if
+  if typeof(tlsCloseResult) == "error" then return tlsCloseResult end if
+  return true
+end function
+
 // Implements component name for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.

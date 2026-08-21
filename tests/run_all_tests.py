@@ -354,6 +354,10 @@ def wait_listening(process: subprocess.Popen[str], port: int, label: str, timeou
     if process.poll() is None:
         process.kill()
     out, err = process.communicate(timeout=5)
+    # A caller may redirect output directly to files to avoid Windows pipe
+    # backpressure; communicate() then returns None for the redirected stream.
+    out = out or ""
+    err = err or ""
     base.write_log(f"{label}.run.log", list(process.args), process.returncode or 1, out, err)
     raise AcceptanceFailure(
         f"{label} did not listen on 127.0.0.1:{port}; last_error={last_error!r} "
@@ -670,30 +674,38 @@ def run_m74_workbench(compiler: Path, verbose: bool) -> None:
     database = initialize_public_database(server, root / "database", "workbench", verbose)
     port = free_port()
     command = base.executable_command(server, "--serve", str(database), str(port), "4")
-    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    try:
-        wait_listening(process, port, "m74-workbench-server", 120)
-        worker_result = base.run_command(
-            base.executable_command(network, str(port)),
-            log_name="m74-workbench-network.run.log",
-            verbose=verbose,
-            timeout=300,
-        )
-        if (
-            worker_result.returncode != 0
-            or base.normalized(worker_result.stdout) != "MiniSQL M74 workbench network worker: SUCCESS"
-            or base.normalized(worker_result.stderr)
-        ):
-            raise AcceptanceFailure(
-                "M74 workbench network integration failed: "
-                f"rc={worker_result.returncode} stdout={base.normalized(worker_result.stdout)!r} "
-                f"stderr={base.normalized(worker_result.stderr)!r}"
+    server_stdout_path = root / "server.stdout"
+    server_stderr_path = root / "server.stderr"
+    # Server logging is intentionally verbose. Redirect to files rather than
+    # an unread PIPE: a full Windows anonymous pipe would block logger writes
+    # and therefore prevent the server from publishing the next SQL response.
+    with server_stdout_path.open("w", encoding="utf-8") as server_stdout, server_stderr_path.open("w", encoding="utf-8") as server_stderr:
+        process = subprocess.Popen(command, cwd=ROOT, stdout=server_stdout, stderr=server_stderr, text=True)
+        try:
+            wait_listening(process, port, "m74-workbench-server", 120)
+            worker_result = base.run_command(
+                base.executable_command(network, str(port)),
+                log_name="m74-workbench-network.run.log",
+                verbose=verbose,
+                timeout=300,
             )
-    finally:
-        if process.poll() is None:
-            process.kill()
-        out, err = process.communicate(timeout=10)
-        base.write_log("m74-workbench-server.run.log", command, process.returncode or 0, out, err)
+            if (
+                worker_result.returncode != 0
+                or base.normalized(worker_result.stdout) != "MiniSQL M74 workbench network worker: SUCCESS"
+                or base.normalized(worker_result.stderr)
+            ):
+                raise AcceptanceFailure(
+                    "M74 workbench network integration failed: "
+                    f"rc={worker_result.returncode} stdout={base.normalized(worker_result.stdout)!r} "
+                    f"stderr={base.normalized(worker_result.stderr)!r}"
+                )
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=10)
+    out = server_stdout_path.read_text(encoding="utf-8", errors="replace")
+    err = server_stderr_path.read_text(encoding="utf-8", errors="replace")
+    base.write_log("m74-workbench-server.run.log", command, process.returncode or 0, out, err)
 
 def validate_repository(manifest: dict[str, Any]) -> None:
     """Validates the tracked repository inventory, package layout, headers and launcher contract."""

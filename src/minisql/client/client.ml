@@ -291,6 +291,15 @@ function close(client)
   return true
 end function
 
+// Aborts a client whose request/response framing may have been interrupted.
+function abort(client)
+  if client is not Client then return fail(INVALID_ARGUMENT, "abort", "client must be Client") end if
+  if client.closed then return true end if
+  result = try(connection.abort(client.connection))
+  client.closed = true
+  return result
+end function
+
 // Runs interactive using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.

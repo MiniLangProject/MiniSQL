@@ -49,11 +49,27 @@ The left sidebar switches between:
 
 The main area switches between the SQL worksheet and object details. Execute
 runs on a native MiniLang worker thread so window messages continue to be
-processed. Each batch creates a bounded result tab with elapsed time, success
-state, columns, rows, and server messages. Select a table and choose **Open
-object** to load Summary, Columns, Indexes, Data, Row Count, and reconstructed
-DDL pages. The toolbar also exposes EXPLAIN, BEGIN, COMMIT, ROLLBACK, refresh,
-clear-results, and disconnect actions.
+processed. Connection handshakes, object-tree refreshes, table descriptions,
+and the automatic refresh after SQL execution use the same non-blocking worker
+model. Controls that read shared session state remain disabled until the active
+worker publishes its result. Each batch creates a bounded result tab with
+elapsed time, success state, columns, rows, and server messages. Select a table
+and choose **Open object** to load Summary, Columns, Indexes, Data, Row Count,
+and reconstructed DDL pages. The toolbar also exposes EXPLAIN, BEGIN, COMMIT,
+ROLLBACK, refresh, clear-results, and disconnect actions.
+
+The SQL worksheet raises the classic Win32 edit-control limit to the native
+signed-count ceiling and transfers text through dynamically sized UTF-16
+buffers, so scripts are not truncated at the compiler FFI scratch-buffer size.
+Generated metadata SQL quotes Unicode and punctuation-bearing object names and
+doubles embedded quote characters according to MiniSQL syntax.
+
+Both the connection manager and the session workbench use DPI-independent
+layout units. Native controls, Segoe UI fonts, editor panes, result grids, and
+toolbars reflow when a window is resized, maximized, restored, or moved between
+monitors with different scaling. Minimum client sizes prevent controls from
+being clipped. Tab and Shift+Tab traverse editors and actions, while Enter
+invokes the current default action.
 
 Stopping an executing worker also disconnects that session. MiniSQL wire
 protocol v1 has no server-side statement-cancellation frame, so disconnecting
@@ -65,7 +81,9 @@ Aliases are stored atomically in
 `%APPDATA%\MiniSQL\workbench-profiles.json`. Set
 `MINISQL_ADMIN_PROFILE_PATH` to override this location. The schema stores the
 endpoint, database label, user, TLS settings, optional certificate pin, and
-trusted-local setting. It never contains a password.
+trusted-local setting. Windows profile paths and JSON fields preserve Unicode.
+The file never contains a password, and password-bearing `CREATE USER` or
+`ALTER USER` SQL is redacted from worksheet state, history, and result tabs.
 
 ## Command-line shortcuts
 

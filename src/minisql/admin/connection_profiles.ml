@@ -10,21 +10,31 @@ import minisql.platform.file as file_api
 
 const INVALID_ARGUMENT = 9001
 const MAX_PROFILE_DOCUMENT_BYTES = 16777216
+const CP_UTF8 = 65001
+const WC_ERR_INVALID_CHARS = 0x80
+const MAX_ENVIRONMENT_UTF16_UNITS = 32768
 
-// Reads a Windows environment variable into a caller-owned byte buffer.
-extern function GetEnvironmentVariableA(name as cstr, buffer as bytes, size as u32) from "kernel32.dll" symbol "GetEnvironmentVariableA" returns u32
+// Reads a Windows environment variable as UTF-16 so non-ASCII profile paths remain lossless.
+extern function GetEnvironmentVariableW(name as wstr, buffer as bytes, size as u32) from "kernel32.dll" symbol "GetEnvironmentVariableW" returns u32
+// Converts a UTF-16 environment value into the UTF-8 representation used by MiniLang strings.
+extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as bytes, wideCount as i32, output as bytes, outputCount as i32, defaultChar as ptr, usedDefault as ptr) from "kernel32.dll" symbol "WideCharToMultiByte" returns i32
 
 // Creates a namespaced profile-store error.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "admin.connection_profiles." + operation + ": " + message)
 end function
 
-// Returns one environment variable or an empty string when it is unavailable.
+// Returns one Unicode Windows environment variable as UTF-8 or an empty string when unavailable.
 function environment(name)
-  buffer = bytes(32768, 0)
-  count = GetEnvironmentVariableA(name, buffer, len(buffer))
-  if count == 0 or count >= len(buffer) then return "" end if
-  value = decode(slice(buffer, 0, count))
+  wide = bytes(MAX_ENVIRONMENT_UTF16_UNITS * 2, 0)
+  count = GetEnvironmentVariableW(name, wide, MAX_ENVIRONMENT_UTF16_UNITS)
+  if count == 0 or count >= MAX_ENVIRONMENT_UTF16_UNITS then return "" end if
+  required = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, count, void, 0, void, void)
+  if required <= 0 then return "" end if
+  output = bytes(required, 0)
+  actual = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, count, output, required, void, void)
+  if actual != required then return "" end if
+  value = decode(output)
   if typeof(value) != "string" then return "" end if
   return value
 end function
@@ -52,22 +62,29 @@ function validate(profile)
   return fullclient.createProfile(profile.name, profile.address, profile.port, profile.serverName, profile.databaseName, profile.userName, profile.tls, profile.pinSha256, profile.trustedLocal)
 end function
 
-// Escapes an ASCII profile field for deterministic JSON serialization.
+// Escapes a UTF-8 profile field while preserving every valid non-ASCII byte unchanged.
 function escape(value)
   if typeof(value) != "string" then return fail("escape", "value must be string") end if
-  output = ""
+  // JSON structural characters become two-byte escape sequences. UTF-8 bytes
+  // are copied as a unit and decoded only after the complete sequence exists,
+  // avoiding accidental decoding of an individual continuation byte.
+  output = bytes(0)
+  hexDigits = bytes("0123456789ABCDEF")
   for each item in bytes(value)
-    if item == 34 then output = output + "\\\""
-    else if item == 92 then output = output + "\\\\"
-    else if item == 10 then output = output + "\\n"
-    else if item == 13 then output = output + "\\r"
-    else if item == 9 then output = output + "\\t"
-    else if item < 32 then return fail("escape", "control characters are not supported")
-    else if item > 127 then return fail("escape", "profile fields currently require ASCII")
-    else output = output + decode(bytes([item]))
+    if item == 34 then output = output + bytes("\\\"")
+    else if item == 92 then output = output + bytes("\\\\")
+    else if item == 8 then output = output + bytes("\\b")
+    else if item == 12 then output = output + bytes("\\f")
+    else if item == 10 then output = output + bytes("\\n")
+    else if item == 13 then output = output + bytes("\\r")
+    else if item == 9 then output = output + bytes("\\t")
+    else if item < 32 then output = output + bytes("\\u00") + bytes([hexDigits[item >> 4], hexDigits[item & 15]])
+    else output = output + bytes([item])
     end if
   end for
-  return output
+  encoded = decode(output)
+  if typeof(encoded) != "string" then return fail("escape", "profile field is not valid UTF-8") end if
+  return encoded
 end function
 
 // Serializes one validated alias without a password or other secret.
@@ -99,16 +116,21 @@ end function
 // Durably replaces the alias file through a flushed temporary sibling.
 function write(path, text)
   temporary = path + ".new"
+  // A stale sibling can remain only after an interrupted older save. Removing
+  // it first makes every retry deterministic without touching the live file.
+  if file_api.fileExists(temporary) then ignoredStale = try(file_api.deletePath(temporary)) end if
   handle = try(file_api.createDurable(temporary))
   if typeof(handle) == "error" then return handle end if
   payload = bytes(text)
   result = try(file_api.writeAt(handle, 0, payload, 0, len(payload)))
-  if typeof(result) == "error" then ignoredClose = try(file_api.close(handle)); return result end if
+  if typeof(result) == "error" then ignoredClose = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(temporary)); return result end if
   flushed = try(file_api.flush(handle))
-  if typeof(flushed) == "error" then ignoredClose = try(file_api.close(handle)); return flushed end if
+  if typeof(flushed) == "error" then ignoredClose = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(temporary)); return flushed end if
   closed = try(file_api.close(handle))
-  if typeof(closed) == "error" then return closed end if
-  return file_api.movePath(temporary, path, true)
+  if typeof(closed) == "error" then ignoredDelete = try(file_api.deletePath(temporary)); return closed end if
+  published = try(file_api.movePath(temporary, path, true))
+  if typeof(published) == "error" then ignoredDelete = try(file_api.deletePath(temporary)); return published end if
+  return published
 end function
 
 // Persists aliases atomically and never serializes the connection password.

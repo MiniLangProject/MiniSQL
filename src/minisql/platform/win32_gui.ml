@@ -6,6 +6,11 @@ package minisql.platform.win32_gui
 
 import minisql.common.endian as endian
 
+// Public geometry in this module is expressed in device-independent pixels.
+// Native structure buffers below deliberately use the Windows x64 layouts,
+// while the window procedure copies only immutable event metadata into a FIFO;
+// application controllers remain the sole owners of behavioral state.
+
 const INVALID_ARGUMENT = 9001
 const GUI_ERROR = 9040
 const IO_FAILURE = 9005
@@ -40,8 +45,12 @@ const WM_SETFONT = 0x0030
 const WM_CLOSE = 0x0010
 const WM_DESTROY = 0x0002
 const WM_SIZE = 0x0005
+const WM_GETMINMAXINFO = 0x0024
 const WM_COMMAND = 0x0111
 const WM_NOTIFY = 0x004E
+const WM_DPICHANGED = 0x02E0
+const EM_SETLIMITTEXT = 0x00C5
+const MAX_EDIT_TEXT_UTF16_UNITS = 2147483646
 const BM_GETSTATE = 0x00F2
 const BM_GETCHECK = 0x00F0
 const BM_SETCHECK = 0x00F1
@@ -76,7 +85,10 @@ const TVIF_CHILDREN = 64
 const TVM_INSERTITEMW = 0x1132
 const TVM_GETNEXTITEM = 0x110A
 const TVM_GETITEMW = 0x113E
+const TVM_EXPAND = 0x1102
+const TVM_SELECTITEM = 0x110B
 const TVGN_CARET = 9
+const TVE_EXPAND = 2
 const TCM_INSERTITEMW = 0x133E
 const TCM_GETCURSEL = 0x130B
 const TCIF_TEXT = 1
@@ -99,6 +111,12 @@ const LVCF_WIDTH = 2
 const LVCF_TEXT = 4
 const LVCF_SUBITEM = 8
 const SWP_NOZORDER = 4
+const SWP_NOMOVE = 2
+const SWP_NOACTIVATE = 16
+const RDW_INVALIDATE = 1
+const RDW_ERASE = 4
+const RDW_ALLCHILDREN = 128
+const RDW_UPDATENOW = 256
 const MB_OK = 0
 const MB_ICONINFORMATION = 64
 
@@ -109,6 +127,7 @@ const MENU_ALIAS_CONNECT = 1100
 const MENU_ALIAS_NEW = 1101
 const MENU_ALIAS_EDIT = 1102
 const MENU_ALIAS_DELETE = 1103
+const MENU_ALIAS_SAVE = 1104
 const MENU_SESSION_REFRESH = 1200
 const MENU_SESSION_COMMIT = 1201
 const MENU_SESSION_ROLLBACK = 1202
@@ -137,10 +156,22 @@ struct GuiEvent
   source
 end struct
 
+// Retains a top-level window's minimum client dimensions in DPI-independent pixels.
+struct WindowMinimum
+  // Identifies the top-level window governed by this constraint.
+  hwnd
+  // Stores the minimum usable client width in DIPs.
+  width
+  // Stores the minimum usable client height in DIPs.
+  height
+end struct
+
 guiEvents = []
 guiClassRegistered = false
 guiClassNameWide = void
-modernGuiFont = 0
+modernGuiFontDpis = []
+modernGuiFonts = []
+windowMinimums = []
 
 // Binds the native Windows CreateWindowExW API used by the GUI abstraction.
 extern function CreateWindowExW(exStyle as u32, className as wstr, windowName as wstr, style as u32, x as i32, y as i32, width as i32, height as i32, parent as ptr, menu as ptr, instance as ptr, param as ptr) from "user32.dll" symbol "CreateWindowExW" returns ptr
@@ -196,14 +227,28 @@ extern function PostMessageW(hwnd as ptr, message as u32, wParam as ptr, lParam 
 extern function MoveWindow(hwnd as ptr, x as i32, y as i32, width as i32, height as i32, repaint as bool) from "user32.dll" symbol "MoveWindow" returns bool
 // Binds the native Windows GetClientRect API used by the GUI abstraction.
 extern function GetClientRect(hwnd as ptr, rectangle as bytes) from "user32.dll" symbol "GetClientRect" returns bool
+// Binds the native Windows GetWindowRect API used by geometry assertions.
+extern function GetWindowRect(hwnd as ptr, rectangle as bytes) from "user32.dll" symbol "GetWindowRect" returns bool
+// Binds the native Windows MapWindowPoints API used to express child rectangles in parent coordinates.
+extern function MapWindowPoints(fromWindow as ptr, toWindow as ptr, points as bytes, pointCount as u32) from "user32.dll" symbol "MapWindowPoints" returns i32
 // Binds the native Windows GetDpiForWindow API used by the GUI abstraction.
-extern function GetDpiForWindow(hwnd as ptr) from "user32.dll" symbol "GetDpiForWindow" returns u32
+extern function GetDpiForWindow(hwnd as ptr) from "user32.dll" symbol "GetDpiForWindow" returns i32
+// Binds the native Windows GetDpiForSystem API used before a top-level handle exists.
+extern function GetDpiForSystem() from "user32.dll" symbol "GetDpiForSystem" returns i32
 // Binds the native Windows SetProcessDpiAwarenessContext API used by the GUI abstraction.
 extern function SetProcessDpiAwarenessContext(context as ptr) from "user32.dll" symbol "SetProcessDpiAwarenessContext" returns bool
+// Binds the DPI-aware non-client size calculation used for exact client dimensions.
+extern function AdjustWindowRectExForDpi(rectangle as bytes, style as u32, hasMenu as bool, exStyle as u32, dpiValue as u32) from "user32.dll" symbol "AdjustWindowRectExForDpi" returns bool
+// Binds the native Windows SetWindowPos API used for DPI changes and deterministic test sizes.
+extern function SetWindowPos(hwnd as ptr, insertAfter as ptr, x as i32, y as i32, width as i32, height as i32, flags as u32) from "user32.dll" symbol "SetWindowPos" returns bool
+// Binds the native Windows RedrawWindow API used to erase stale resized child surfaces.
+extern function RedrawWindow(hwnd as ptr, updateRectangle as ptr, updateRegion as ptr, flags as u32) from "user32.dll" symbol "RedrawWindow" returns bool
 // Binds the native Windows MultiByteToWideChar API used by the GUI abstraction.
 extern function MultiByteToWideChar(codePage as u32, flags as u32, source as bytes, sourceCount as i32, output as bytes, outputCount as i32) from "kernel32.dll" symbol "MultiByteToWideChar" returns i32
 // Binds the native Windows RtlMoveMemory API used by the GUI abstraction.
 extern function RtlMoveMemory(destination as bytes, source as ptr, length as u64) from "kernel32.dll" symbol "RtlMoveMemory" returns void
+// Copies a modified native structure back to a pointer owned by Windows.
+extern function RtlMoveMemoryToPtr(destination as ptr, source as bytes, length as u64) from "kernel32.dll" symbol "RtlMoveMemory" returns void
 // Binds the native Windows InitCommonControlsEx API used by the GUI abstraction.
 extern function InitCommonControlsEx(configuration as bytes) from "comctl32.dll" symbol "InitCommonControlsEx" returns bool
 // Binds the native Windows PeekMessageW API used by the GUI abstraction.
@@ -214,6 +259,8 @@ extern function TranslateMessage(message as bytes) from "user32.dll" symbol "Tra
 extern function DispatchMessageW(message as bytes) from "user32.dll" symbol "DispatchMessageW" returns ptr
 // Binds the native Windows IsWindow API used by the GUI abstraction.
 extern function IsWindow(hwnd as ptr) from "user32.dll" symbol "IsWindow" returns bool
+// Binds the native Windows enabled-state query used by interaction smoke tests.
+extern function IsWindowEnabled(hwnd as ptr) from "user32.dll" symbol "IsWindowEnabled" returns bool
 // Binds the native Windows Sleep API used by the GUI abstraction.
 extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
 // Binds the native Windows WideCharToMultiByte API used by the GUI abstraction.
@@ -232,6 +279,10 @@ extern function EnableWindow(hwnd as ptr, enabled as bool) from "user32.dll" sym
 extern function SetFocus(hwnd as ptr) from "user32.dll" symbol "SetFocus" returns ptr
 // Shows a native informational dialog owned by the workbench.
 extern function MessageBoxW(hwnd as ptr, text as wstr, caption as wstr, kind as u32) from "user32.dll" symbol "MessageBoxW" returns i32
+// Returns the currently active top-level window for dialog-style keyboard routing.
+extern function GetActiveWindow() from "user32.dll" symbol "GetActiveWindow" returns ptr
+// Routes Tab, Shift+Tab, Enter, and mnemonic input among ordinary child controls.
+extern function IsDialogMessageW(hwnd as ptr, message as bytes) from "user32.dll" symbol "IsDialogMessageW" returns bool
 
 // Binds the native Windows SendMessageWPtrBuffer API used by the GUI abstraction.
 extern function SendMessageWPtrBuffer(hwnd as ptr, message as u32, wParam as ptr, lParam as bytes) from "user32.dll" symbol "SendMessageW" returns ptr
@@ -240,8 +291,7 @@ extern function SendMessageWIntBuffer(hwnd as ptr, message as u32, wParam as i32
 // Binds the native Windows SendMessageWPtr API used by the GUI abstraction.
 extern function SendMessageWPtr(hwnd as ptr, message as u32, wParam as ptr, lParam as ptr) from "user32.dll" symbol "SendMessageW" returns ptr
 
-// Implements utf16Bytes for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Encodes a MiniLang UTF-8 string as a NUL-terminated UTF-16LE Win32 buffer.
 function utf16Bytes(text)
   if typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.win32_gui.utf16Bytes: text must be string") end if
   source = bytes(text)
@@ -254,28 +304,56 @@ function utf16Bytes(text)
   return output
 end function
 
-// Implements writePointer for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Writes one non-negative native pointer into an x64 ABI structure buffer.
 function writePointer(buffer, offset, value)
   endian.writeU64LE(buffer, offset, endian.uint64FromInt(value))
   return true
 end function
 
-// Implements writeSpecialPointer for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Writes a sign-extended Win32 sentinel such as TVI_ROOT or TVI_LAST.
 function writeSpecialPointer(buffer, offset, low)
   endian.writeU64LE(buffer, offset, endian.makeUInt64(0xFFFFFFFF, low))
   return true
 end function
 
-// Implements readPointer for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Reads one pointer-sized field from an x64 ABI structure buffer.
 function readPointer(buffer, offset)
   return endian.uint64ToInt(endian.readU64LE(buffer, offset))
 end function
 
-// Implements windowProcedure for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Divides integers with truncation while preserving MiniLang's integer runtime type.
+function divideInt(numerator, denominator)
+  if typeof(numerator) != "int" or typeof(denominator) != "int" or denominator <= 0 then return 0 end if
+  if numerator < 0 then return -divideInt(-numerator, denominator) end if
+  return (numerator - (numerator % denominator)) / denominator
+end function
+
+// Scales a DPI-independent pixel value for an explicit monitor DPI.
+function scaleAtDpi(value, dpiValue)
+  if typeof(value) != "int" or typeof(dpiValue) != "int" or dpiValue < 96 then return value end if
+  if value < 0 then return -divideInt((-value) * dpiValue + 48, 96) end if
+  return divideInt(value * dpiValue + 48, 96)
+end function
+
+// Finds the minimum-client constraint registered for a top-level window.
+function windowMinimum(hwnd)
+  global windowMinimums
+  for each minimum in windowMinimums
+    if minimum.hwnd == hwnd then return minimum end if
+  end for
+  return void
+end function
+
+// Calculates a DPI-aware outer window size for the requested client area.
+function outerSizeForClient(width, height, dpiValue, hasMenu)
+  rectangle = bytes(16, 0)
+  endian.writeI32LE(rectangle, 8, scaleAtDpi(width, dpiValue))
+  endian.writeI32LE(rectangle, 12, scaleAtDpi(height, dpiValue))
+  if not AdjustWindowRectExForDpi(rectangle, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, hasMenu, 0, dpiValue) then return fail("outerSizeForClient", "AdjustWindowRectExForDpi failed") end if
+  return [endian.readI32LE(rectangle, 8) - endian.readI32LE(rectangle, 0), endian.readI32LE(rectangle, 12) - endian.readI32LE(rectangle, 4)]
+end function
+
+// Converts relevant Win32 callbacks into queued controller events and handles native sizing contracts.
 function windowProcedure(hwnd, message, wParam, lParam)
   global guiEvents
   if message == WM_COMMAND then
@@ -294,21 +372,49 @@ function windowProcedure(hwnd, message, wParam, lParam)
   end if
   if message == WM_SIZE then
     guiEvents = guiEvents + [GuiEvent(hwnd, message, lParam & 65535, (lParam >> 16) & 65535, 0)]
+    return DefWindowProcW(hwnd, message, wParam, lParam)
+  end if
+  if message == WM_DPICHANGED then
+    suggested = bytes(16, 0)
+    RtlMoveMemory(suggested, lParam, 16)
+    left = endian.readI32LE(suggested, 0)
+    top = endian.readI32LE(suggested, 4)
+    right = endian.readI32LE(suggested, 8)
+    bottom = endian.readI32LE(suggested, 12)
+    ignoredMove = SetWindowPos(hwnd, 0, left, top, right - left, bottom - top, SWP_NOZORDER | SWP_NOACTIVATE)
+    guiEvents = guiEvents + [GuiEvent(hwnd, message, wParam & 65535, (wParam >> 16) & 65535, 0)]
     return 0
   end if
+  if message == WM_GETMINMAXINFO then
+    minimum = windowMinimum(hwnd)
+    if minimum is not void then
+      dpiValue = GetDpiForWindow(hwnd)
+      if dpiValue < 96 then dpiValue = GetDpiForSystem() end if
+      if dpiValue < 96 then dpiValue = 96 end if
+      outer = try(outerSizeForClient(minimum.width, minimum.height, dpiValue, true))
+      if typeof(outer) != "error" then
+        info = bytes(40, 0)
+        RtlMoveMemory(info, lParam, 40)
+        endian.writeI32LE(info, 24, outer[0])
+        endian.writeI32LE(info, 28, outer[1])
+        RtlMoveMemoryToPtr(lParam, info, 40)
+        return 0
+      end if
+    end if
+  end if
   if message == WM_CLOSE then
-    ignored = DestroyWindow(hwnd)
+    // Route native close-button destruction through the same lifecycle helper
+    // as controller-driven closes so per-window retained state is released.
+    ignored = destroy(hwnd)
     return 0
   end if
   if message == WM_DESTROY then
-    PostQuitMessage(0)
     return 0
   end if
   return DefWindowProcW(hwnd, message, wParam, lParam)
 end function
 
-// Implements initializeCommonControls for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Initializes the common-control classes required by trees, tabs, and ListViews.
 function initializeCommonControls()
   configuration = bytes(8, 0)
   endian.writeU32LE(configuration, 0, 8)
@@ -317,8 +423,7 @@ function initializeCommonControls()
   return true
 end function
 
-// Implements ensureWindowClass for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Registers the process-wide top-level window class exactly once.
 function ensureWindowClass()
   global guiClassRegistered, guiClassNameWide
   if guiClassRegistered then return true end if
@@ -347,8 +452,7 @@ function ensureWindowClass()
   return true
 end function
 
-// Implements pollEvent for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Removes and returns the oldest controller event from the process-wide FIFO.
 function pollEvent()
   global guiEvents
   if len(guiEvents) == 0 then return void end if
@@ -363,30 +467,26 @@ function pollEvent()
   return first
 end function
 
-// Implements clearEvents for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Discards queued native events at a test or window-lifecycle boundary.
 function clearEvents()
   global guiEvents
   guiEvents = []
   return true
 end function
 
-// Implements postCommandForTest for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Posts a real WM_COMMAND to exercise the same queue path as a user action.
 function postCommandForTest(hwnd, controlId)
   return PostMessageW(hwnd, WM_COMMAND, controlId, 0)
 end function
 
-// Implements fail for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a namespaced structured error for a failed GUI operation.
 function fail(operation, message)
   return error(GUI_ERROR, "platform.win32_gui." + operation + ": " + message)
 end function
 
-// Implements wideBytesToText for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Decodes a counted UTF-16LE buffer into MiniLang's validated UTF-8 string form.
 function wideBytesToText(wide, units)
-  if typeof(wide) != "bytes" or typeof(units) != "int" or units < 0 or units > MAX_CONTROL_TEXT_UTF16_UNITS then return error(INVALID_ARGUMENT, "platform.win32_gui.wideBytesToText: invalid UTF-16 input") end if
+  if typeof(wide) != "bytes" or typeof(units) != "int" or units < 0 or units * 2 > len(wide) then return error(INVALID_ARGUMENT, "platform.win32_gui.wideBytesToText: invalid UTF-16 input") end if
   if units == 0 then return "" end if
   required = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, units, void, 0, void, void)
   if required <= 0 then return fail("wideBytesToText", "UTF-16 to UTF-8 size query failed") end if
@@ -398,13 +498,26 @@ function wideBytesToText(wide, units)
   return decoded
 end function
 
-// Implements applyDefaultFont for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Applies a cached per-DPI Segoe UI font, creating at most one GDI font per DPI.
 function applyDefaultFont(hwnd)
-  global modernGuiFont
+  global modernGuiFontDpis, modernGuiFonts
   if hwnd == 0 then return false end if
-  if modernGuiFont == 0 then modernGuiFont = CreateFontW(-16, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 5, 0, "Segoe UI") end if
-  font = modernGuiFont
+  dpiValue = GetDpiForWindow(hwnd)
+  if dpiValue < 96 then dpiValue = GetDpiForSystem() end if
+  if dpiValue < 96 then dpiValue = 96 end if
+  font = 0
+  if len(modernGuiFontDpis) > 0 then
+    for index = 0 to len(modernGuiFontDpis) - 1
+      if modernGuiFontDpis[index] == dpiValue then font = modernGuiFonts[index] end if
+    end for
+  end if
+  if font == 0 then
+    font = CreateFontW(-scaleAtDpi(16, dpiValue), 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 5, 0, "Segoe UI")
+    if font != 0 then
+      modernGuiFontDpis = modernGuiFontDpis + [dpiValue]
+      modernGuiFonts = modernGuiFonts + [font]
+    end if
+  end if
   if font == 0 then font = GetStockObject(DEFAULT_GUI_FONT) end if
   if font == 0 then return false end if
   ignored = SendMessageWPtrInt(hwnd, WM_SETFONT, font, 1)
@@ -427,9 +540,9 @@ function applyWindowChrome(hwnd)
   return true
 end function
 
-// Implements createTopMenu for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Builds one popup menu from positionally paired labels and command identifiers.
 function createTopMenu(items, identifiers)
+  if typeof(items) != "array" or typeof(identifiers) != "array" or len(items) == 0 or len(items) != len(identifiers) then return 0 end if
   menu = CreatePopupMenu()
   if menu == 0 then return menu end if
   for index = 0 to len(items) - 1
@@ -438,20 +551,17 @@ function createTopMenu(items, identifiers)
   return menu
 end function
 
-// Implements attachMenuBar for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
-function attachMenuBar(hwnd)
+// Attaches the complete MiniSQL workbench menu hierarchy to a top-level window.
+function attachWorkbenchMenuBar(hwnd)
   if hwnd == 0 then return false end if
   mainMenu = CreateMenu()
   if mainMenu == 0 then return false end if
-  fileMenu = createTopMenu(["New Connection", "Close Session", "Exit"], [MENU_FILE_NEW, MENU_FILE_CLOSE, MENU_FILE_EXIT])
-  aliasesMenu = createTopMenu(["Connect", "New Alias", "Modify Alias", "Delete Alias"], [MENU_ALIAS_CONNECT, MENU_ALIAS_NEW, MENU_ALIAS_EDIT, MENU_ALIAS_DELETE])
+  fileMenu = createTopMenu(["New SQL Worksheet", "Disconnect", "Exit"], [MENU_FILE_NEW, MENU_FILE_CLOSE, MENU_FILE_EXIT])
   sessionMenu = createTopMenu(["Refresh Object Tree", "Commit Transaction", "Rollback Transaction"], [MENU_SESSION_REFRESH, MENU_SESSION_COMMIT, MENU_SESSION_ROLLBACK])
   sqlMenu = createTopMenu(["Execute SQL", "Explain SQL", "Stop Execution", "Clear Results"], [MENU_SQL_EXECUTE, MENU_SQL_EXPLAIN, MENU_SQL_CANCEL, MENU_SQL_CLEAR])
   objectMenu = createTopMenu(["Open Table Details", "Select First 100 Rows"], [MENU_OBJECT_DESCRIBE, MENU_OBJECT_QUERY])
   helpMenu = createTopMenu(["About MiniSQL Workbench"], [MENU_HELP_ABOUT])
   if fileMenu != 0 then ignoredFile = AppendMenuWPtr(mainMenu, MF_POPUP, fileMenu, "File") end if
-  if aliasesMenu != 0 then ignoredAliases = AppendMenuWPtr(mainMenu, MF_POPUP, aliasesMenu, "Aliases") end if
   if sessionMenu != 0 then ignoredSession = AppendMenuWPtr(mainMenu, MF_POPUP, sessionMenu, "Session") end if
   if sqlMenu != 0 then ignoredSql = AppendMenuWPtr(mainMenu, MF_POPUP, sqlMenu, "SQL") end if
   if objectMenu != 0 then ignoredObject = AppendMenuWPtr(mainMenu, MF_POPUP, objectMenu, "Objects") end if
@@ -461,8 +571,23 @@ function attachMenuBar(hwnd)
   return true
 end function
 
-// Implements hiddenWindowSmoke for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Attaches the smaller alias-management menu used before a session is open.
+function attachConnectionMenuBar(hwnd)
+  if hwnd == 0 then return false end if
+  mainMenu = CreateMenu()
+  if mainMenu == 0 then return false end if
+  fileMenu = createTopMenu(["New Alias", "Exit"], [MENU_ALIAS_NEW, MENU_FILE_EXIT])
+  aliasesMenu = createTopMenu(["Connect", "New Alias", "Edit Alias", "Save Alias", "Delete Alias"], [MENU_ALIAS_CONNECT, MENU_ALIAS_NEW, MENU_ALIAS_EDIT, MENU_ALIAS_SAVE, MENU_ALIAS_DELETE])
+  helpMenu = createTopMenu(["About MiniSQL Workbench"], [MENU_HELP_ABOUT])
+  if fileMenu != 0 then ignoredFile = AppendMenuWPtr(mainMenu, MF_POPUP, fileMenu, "File") end if
+  if aliasesMenu != 0 then ignoredAliases = AppendMenuWPtr(mainMenu, MF_POPUP, aliasesMenu, "Aliases") end if
+  if helpMenu != 0 then ignoredHelp = AppendMenuWPtr(mainMenu, MF_POPUP, helpMenu, "Help") end if
+  if not SetMenu(hwnd, mainMenu) then return false end if
+  ignoredDraw = DrawMenuBar(hwnd)
+  return true
+end function
+
+// Creates and destroys a hidden top-level window to validate runtime Win32 integration.
 function hiddenWindowSmoke()
   hwnd = try(createTopLevel("MiniSQL Admin Smoke", 320, 240, false))
   if typeof(hwnd) == "error" then return hwnd end if
@@ -471,20 +596,22 @@ function hiddenWindowSmoke()
   return true
 end function
 
-// Implements createTopLevel for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a per-monitor-DPI-aware top-level window with the requested logical client size.
 function createTopLevel(title, width, height, visible)
   if typeof(title) != "string" or len(title) == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.createTopLevel: title must be non-empty") end if
   if typeof(width) != "int" or width < 320 or typeof(height) != "int" or height < 240 then return error(INVALID_ARGUMENT, "platform.win32_gui.createTopLevel: size is too small") end if
   initialized = try(ensureWindowClass())
   if typeof(initialized) == "error" then return initialized end if
+  dpiValue = GetDpiForSystem()
+  if dpiValue < 96 then dpiValue = 96 end if
+  outer = try(outerSizeForClient(width, height, dpiValue, false))
+  if typeof(outer) == "error" then return outer end if
   style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN
   if visible then style = style | WS_VISIBLE end if
-  hwnd = CreateWindowExW(0, "MiniSQLAdminWindow13", title, style, 80, 80, width, height, void, void, GetModuleHandleW(void), void)
+  hwnd = CreateWindowExW(0, "MiniSQLAdminWindow13", title, style, scaleAtDpi(80, dpiValue), scaleAtDpi(80, dpiValue), outer[0], outer[1], void, void, GetModuleHandleW(void), void)
   if hwnd == 0 then return fail("createTopLevel", "top-level window could not be created") end if
   ignoredFont = applyDefaultFont(hwnd)
   ignoredChrome = applyWindowChrome(hwnd)
-  ignoredMenu = attachMenuBar(hwnd)
   if visible then
     ignoredShow = ShowWindow(hwnd, SW_SHOW)
     ignoredUpdate = UpdateWindow(hwnd)
@@ -492,8 +619,7 @@ function createTopLevel(title, width, height, visible)
   return hwnd
 end function
 
-// Implements createChildId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a child control with an explicit command identifier and shared visual policy.
 function createChildId(parent, className, text, x, y, width, height, style, exStyle, controlId)
   if parent == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.createChild: parent is required") end if
   if typeof(className) != "string" or len(className) == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.createChild: className must be non-empty") end if
@@ -501,94 +627,85 @@ function createChildId(parent, className, text, x, y, width, height, style, exSt
   hwnd = CreateWindowExW(exStyle, className, text, childStyle, x, y, width, height, parent, controlId, GetModuleHandleW(void), void)
   if hwnd == 0 then return fail("createChild", "child " + className + " could not be created") end if
   ignoredFont = applyDefaultFont(hwnd)
-  ignoredTheme = applyControlTheme(hwnd)
+  if className == "BUTTON" or className == "SysTreeView32" or className == "SysTabControl32" or className == "SysListView32" then ignoredTheme = applyControlTheme(hwnd) end if
   return hwnd
 end function
 
-// Implements createChild for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates an anonymous child control used only for direct handle-based access.
 function createChild(parent, className, text, x, y, width, height, style, exStyle)
   return createChildId(parent, className, text, x, y, width, height, style, exStyle, 0)
 end function
 
-// Implements createLabel for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a static text label.
 function createLabel(parent, text, x, y, width, height)
   return createChild(parent, "STATIC", text, x, y, width, height, 0, 0)
 end function
 
-// Implements createGroupBox for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a visual group box around related controls.
 function createGroupBox(parent, text, x, y, width, height)
   return createChild(parent, "BUTTON", text, x, y, width, height, BS_GROUPBOX, 0)
 end function
 
-// Implements createButton for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates an anonymous push button.
 function createButton(parent, text, x, y, width, height)
   return createChild(parent, "BUTTON", text, x, y, width, height, BS_PUSHBUTTON | WS_TABSTOP, 0)
 end function
 
-// Implements createButtonId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a push button that reports its command identifier to the controller.
 function createButtonId(parent, controlId, text, x, y, width, height)
   return createChildId(parent, "BUTTON", text, x, y, width, height, BS_PUSHBUTTON | WS_TABSTOP, 0, controlId)
 end function
 
-// Implements createDefaultButtonId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates the dialog's default push button, activated by the Enter key.
 function createDefaultButtonId(parent, controlId, text, x, y, width, height)
   return createChildId(parent, "BUTTON", text, x, y, width, height, BS_DEFPUSHBUTTON | WS_TABSTOP, 0, controlId)
 end function
 
-// Implements createCheckBoxId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates an automatically toggled checkbox with a controller command identifier.
 function createCheckBoxId(parent, controlId, text, x, y, width, height)
   return createChildId(parent, "BUTTON", text, x, y, width, height, BS_AUTOCHECKBOX | WS_TABSTOP, 0, controlId)
 end function
 
-// Implements createEdit for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a multiline worksheet or read-only detail editor.
 function createEdit(parent, text, x, y, width, height, readOnly)
   style = WS_BORDER | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
   if readOnly then style = style | ES_READONLY end if
-  return createChild(parent, "EDIT", text, x, y, width, height, style, WS_EX_CLIENTEDGE)
+  hwnd = try(createChild(parent, "EDIT", text, x, y, width, height, style, WS_EX_CLIENTEDGE))
+  if typeof(hwnd) == "error" then return hwnd end if
+  // The classic EDIT default is too small for real migration scripts. Raising
+  // it to the Win32 signed-count ceiling leaves capacity governed by memory.
+  ignoredLimit = SendMessageWInt(hwnd, EM_SETLIMITTEXT, MAX_EDIT_TEXT_UTF16_UNITS, 0)
+  return hwnd
 end function
 
-// Implements createTextBoxId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a single-line editor, optionally enabling native password masking.
 function createTextBoxId(parent, controlId, text, x, y, width, height, password)
   style = WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL_SINGLE
   if password then style = style | ES_PASSWORD end if
   return createChildId(parent, "EDIT", text, x, y, width, height, style, WS_EX_CLIENTEDGE, controlId)
 end function
 
-// Implements createListBox for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates an anonymous notifying list box.
 function createListBox(parent, x, y, width, height)
   return createChild(parent, "LISTBOX", "", x, y, width, height, WS_BORDER | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL, WS_EX_CLIENTEDGE)
 end function
 
-// Implements createListBoxId for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a notifying list box with a stable controller identifier.
 function createListBoxId(parent, controlId, x, y, width, height)
   return createChildId(parent, "LISTBOX", "", x, y, width, height, WS_BORDER | WS_TABSTOP | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL, WS_EX_CLIENTEDGE, controlId)
 end function
 
-// Implements createTreeView for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates the Explorer-themed MiniSQL object tree.
 function createTreeView(parent, controlId, x, y, width, height)
   return createChildId(parent, "SysTreeView32", "", x, y, width, height, WS_BORDER | WS_TABSTOP | WS_VSCROLL | TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS, WS_EX_CLIENTEDGE, controlId)
 end function
 
-// Implements createTabControl for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates an Explorer-themed notebook tab control.
 function createTabControl(parent, controlId, x, y, width, height)
   return createChildId(parent, "SysTabControl32", "", x, y, width, height, WS_TABSTOP, 0, controlId)
 end function
 
-// Implements createListView for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Creates a double-buffered report ListView for structured query results.
 function createListView(parent, controlId, x, y, width, height)
   hwnd = try(createChildId(parent, "SysListView32", "", x, y, width, height, WS_BORDER | WS_TABSTOP | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL, WS_EX_CLIENTEDGE, controlId))
   if typeof(hwnd) == "error" then return hwnd end if
@@ -596,21 +713,23 @@ function createListView(parent, controlId, x, y, width, height)
   return hwnd
 end function
 
-// Implements setText for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Replaces control text through a dynamically sized UTF-16 buffer.
 function setText(hwnd, text)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.setText: hwnd is required") end if
   if typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.win32_gui.setText: text must be string") end if
-  if not SetWindowTextW(hwnd, text) then return fail("setText", "SetWindowTextW failed") end if
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  // The compiler's direct `wstr` FFI path uses a small shared scratch buffer;
+  // WM_SETTEXT with caller-owned bytes preserves arbitrarily large SQL text.
+  if SendMessageWPtr(hwnd, WM_SETTEXT, 0, nativeBytesPtr(wide)) == 0 then return fail("setText", "WM_SETTEXT failed") end if
   return true
 end function
 
-// Implements getText for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Reads complete Unicode control text into a validated MiniLang string.
 function getText(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.getText: hwnd is required") end if
   units = GetWindowTextLengthW(hwnd)
-  if units < 0 or units > MAX_CONTROL_TEXT_UTF16_UNITS then return fail("getText", "control text length is invalid") end if
+  if units < 0 then return fail("getText", "control text length is invalid") end if
   if units == 0 then return "" end if
   buffer = bytes((units + 1) * 2, 0)
   actual = GetWindowTextW(hwnd, buffer, units + 1)
@@ -618,8 +737,7 @@ function getText(hwnd)
   return wideBytesToText(buffer, actual)
 end function
 
-// Implements getSecretBytes for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Reads a password directly into bytes and clears both temporary UTF-16 storage and the editor.
 function getSecretBytes(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.getSecretBytes: hwnd is required") end if
   units = GetWindowTextLengthW(hwnd)
@@ -637,8 +755,7 @@ function getSecretBytes(hwnd)
   return output
 end function
 
-// Implements checkBoxSet for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Sets the native checked state without generating a click notification.
 function checkBoxSet(hwnd, checked)
   value = 0
   if checked then value = BST_CHECKED end if
@@ -646,32 +763,30 @@ function checkBoxSet(hwnd, checked)
   return true
 end function
 
-// Implements checkBoxChecked for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns whether a checkbox currently holds the checked state.
 function checkBoxChecked(hwnd)
   return SendMessageWInt(hwnd, BM_GETCHECK, 0, 0) == BST_CHECKED
 end function
 
-// Implements listReset for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Removes every item from a list box.
 function listReset(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listReset: hwnd is required") end if
   ignored = SendMessageWInt(hwnd, LB_RESETCONTENT, 0, 0)
   return true
 end function
 
-// Implements listAdd for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Appends one Unicode item to a list box and returns its index.
 function listAdd(hwnd, text)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listAdd: hwnd is required") end if
   if typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.win32_gui.listAdd: text must be string") end if
-  index = SendMessageWText(hwnd, LB_ADDSTRING, 0, text)
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  index = SendMessageWPtr(hwnd, LB_ADDSTRING, 0, nativeBytesPtr(wide))
   if index == LB_ERR then return fail("listAdd", "LB_ADDSTRING failed") end if
   return index
 end function
 
-// Implements listSelectedText for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Reads the complete Unicode text of the currently selected list-box item.
 function listSelectedText(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listSelectedText: hwnd is required") end if
   selected = SendMessageWInt(hwnd, LB_GETCURSEL, 0, 0)
@@ -691,27 +806,26 @@ function listSelectedIndex(hwnd)
   return SendMessageWInt(hwnd, LB_GETCURSEL, 0, 0)
 end function
 
-// Implements listSelect for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Selects one list-box item by zero-based index.
 function listSelect(hwnd, index)
   if hwnd == 0 or typeof(index) != "int" then return false end if
   return SendMessageWInt(hwnd, LB_SETCURSEL, index, 0) != LB_ERR
 end function
 
-// Implements treeReset for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Deletes all nodes and invalidates all prior native tree-item handles.
 function treeReset(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.treeReset: hwnd is required") end if
   ignored = SendMessageWInt(hwnd, 0x1101, 0, 0)
   return true
 end function
 
-// Implements treeInsert for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Inserts one Unicode TreeView node using the Windows x64 TVINSERTSTRUCTW layout.
 function treeInsert(hwnd, parentItem, text, hasChildren)
   if hwnd == 0 or typeof(parentItem) != "int" or typeof(text) != "string" or typeof(hasChildren) != "bool" then return error(INVALID_ARGUMENT, "platform.win32_gui.treeInsert: invalid tree item") end if
   wide = try(utf16Bytes(text))
   if typeof(wide) == "error" then return wide end if
+  // TVINSERTSTRUCTW embeds a pointer-sized parent and insertion position,
+  // followed by the x64 TVITEMW payload beginning at byte offset 16.
   insertion = bytes(80, 0)
   if parentItem == 0 then writeSpecialPointer(insertion, 0, 0xFFFF0000) else writePointer(insertion, 0, parentItem) end if
   writeSpecialPointer(insertion, 8, 0xFFFF0002)
@@ -726,8 +840,19 @@ function treeInsert(hwnd, parentItem, text, hasChildren)
   return item
 end function
 
-// Implements treeSelectedText for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Expands one tree item so a freshly rebuilt object hierarchy is immediately useful.
+function treeExpand(hwnd, item)
+  if hwnd == 0 or typeof(item) != "int" or item == 0 then return false end if
+  return SendMessageWPtr(hwnd, TVM_EXPAND, TVE_EXPAND, item) != 0
+end function
+
+// Selects one tree item without synthesizing mouse input.
+function treeSelect(hwnd, item)
+  if hwnd == 0 or typeof(item) != "int" or item == 0 then return false end if
+  return SendMessageWPtr(hwnd, TVM_SELECTITEM, TVGN_CARET, item) != 0
+end function
+
+// Reads the selected TreeView item's text through a bounded TVITEMW buffer.
 function treeSelectedText(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.treeSelectedText: hwnd is required") end if
   item = SendMessageWPtr(hwnd, TVM_GETNEXTITEM, TVGN_CARET, 0)
@@ -747,16 +872,14 @@ function treeSelectedText(hwnd)
   return wideBytesToText(wide, units)
 end function
 
-// Implements tabReset for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Removes every page label from a tab control.
 function tabReset(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.tabReset: hwnd is required") end if
   ignored = SendMessageWInt(hwnd, 0x1309, 0, 0)
   return true
 end function
 
-// Implements tabAdd for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Appends one Unicode page label using the x64 TCITEMW layout.
 function tabAdd(hwnd, text)
   if hwnd == 0 or typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.win32_gui.tabAdd: invalid tab") end if
   wide = try(utf16Bytes(text))
@@ -769,23 +892,20 @@ function tabAdd(hwnd, text)
   return index
 end function
 
-// Implements tabSelectedIndex for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns the currently selected zero-based tab index.
 function tabSelectedIndex(hwnd)
   if hwnd == 0 then return -1 end if
   return SendMessageWInt(hwnd, TCM_GETCURSEL, 0, 0)
 end function
 
-// Implements listViewReset for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Removes every result row while preserving the column schema.
 function listViewReset(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listViewReset: hwnd is required") end if
   ignored = SendMessageWInt(hwnd, LVM_DELETEALLITEMS, 0, 0)
   return true
 end function
 
-// Implements listViewResetColumns for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Deletes ListView columns from index zero until Windows reports none remain.
 function listViewResetColumns(hwnd)
   if hwnd == 0 then return false end if
   while SendMessageWInt(hwnd, LVM_DELETECOLUMN, 0, 0) != 0
@@ -793,8 +913,7 @@ function listViewResetColumns(hwnd)
   return true
 end function
 
-// Implements listViewAddColumn for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Inserts one report column using a pointer-safe x64 LVCOLUMNW buffer.
 function listViewAddColumn(hwnd, index, text, width)
   if hwnd == 0 or typeof(index) != "int" or typeof(text) != "string" or typeof(width) != "int" then return error(INVALID_ARGUMENT, "platform.win32_gui.listViewAddColumn: invalid column") end if
   wide = try(utf16Bytes(text))
@@ -810,8 +929,7 @@ function listViewAddColumn(hwnd, index, text, width)
   return result
 end function
 
-// Implements listViewAddRow for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Inserts a result row and then fills its remaining subitems in column order.
 function listViewAddRow(hwnd, rowIndex, values)
   if hwnd == 0 or typeof(rowIndex) != "int" or typeof(values) != "array" or len(values) == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listViewAddRow: invalid row") end if
   firstWide = try(utf16Bytes(values[0]))
@@ -837,15 +955,86 @@ function listViewAddRow(hwnd, rowIndex, values)
   return inserted
 end function
 
-// Implements move for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Moves a control using physical Win32 coordinates and repaints immediately.
 function move(hwnd, x, y, width, height)
   if hwnd == 0 then return false end if
   return MoveWindow(hwnd, x, y, width, height, true)
 end function
 
-// Implements show for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Scales one logical coordinate for the monitor currently hosting a window.
+function scaleDip(hwnd, value)
+  dpiValue = GetDpiForWindow(hwnd)
+  if dpiValue < 96 then dpiValue = 96 end if
+  return scaleAtDpi(value, dpiValue)
+end function
+
+// Converts a physical coordinate into a logical DPI-independent value.
+function unscaleDip(hwnd, value)
+  dpiValue = GetDpiForWindow(hwnd)
+  if dpiValue < 96 then dpiValue = 96 end if
+  halfDpi = dpiValue >> 1
+  if value < 0 then return -divideInt((-value) * 96 + halfDpi, dpiValue) end if
+  return divideInt(value * 96 + halfDpi, dpiValue)
+end function
+
+// Moves a control using logical coordinates and defers repainting to the layout boundary.
+function moveDip(hwnd, x, y, width, height)
+  if hwnd == 0 then return false end if
+  ignoredFont = applyDefaultFont(hwnd)
+  return MoveWindow(hwnd, scaleDip(hwnd, x), scaleDip(hwnd, y), scaleDip(hwnd, width), scaleDip(hwnd, height), false)
+end function
+
+// Invalidates a complete top-level window and all descendants after a layout transaction.
+function redraw(hwnd)
+  if hwnd == 0 then return false end if
+  return RedrawWindow(hwnd, void, void, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW)
+end function
+
+// Shows a fully constructed top-level window without exposing its placeholder layout.
+function showTopLevel(hwnd)
+  if hwnd == 0 then return false end if
+  ignoredShow = ShowWindow(hwnd, SW_SHOW)
+  ignoredRedraw = redraw(hwnd)
+  return UpdateWindow(hwnd)
+end function
+
+// Registers a DPI-aware minimum client size consumed by WM_GETMINMAXINFO.
+function setMinimumClientSizeDip(hwnd, width, height)
+  global windowMinimums
+  if hwnd == 0 or typeof(width) != "int" or typeof(height) != "int" or width < 320 or height < 240 then return false end if
+  retained = []
+  for each minimum in windowMinimums
+    if minimum.hwnd != hwnd then retained = retained + [minimum] end if
+  end for
+  windowMinimums = retained + [WindowMinimum(hwnd, width, height)]
+  return true
+end function
+
+// Resizes a top-level window so its client area matches logical dimensions exactly.
+function setClientSizeDip(hwnd, width, height, hasMenu)
+  if hwnd == 0 or typeof(width) != "int" or typeof(height) != "int" then return false end if
+  dpiValue = GetDpiForWindow(hwnd)
+  if dpiValue < 96 then dpiValue = GetDpiForSystem() end if
+  if dpiValue < 96 then dpiValue = 96 end if
+  outer = try(outerSizeForClient(width, height, dpiValue, hasMenu))
+  if typeof(outer) == "error" then return outer end if
+  return SetWindowPos(hwnd, 0, 0, 0, outer[0], outer[1], SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE)
+end function
+
+// Returns a child control rectangle in parent-relative DPI-independent pixels.
+function controlRectDip(parent, child)
+  if parent == 0 or child == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.controlRectDip: parent and child are required") end if
+  rectangle = bytes(16, 0)
+  if not GetWindowRect(child, rectangle) then return fail("controlRectDip", "GetWindowRect failed") end if
+  ignoredMap = MapWindowPoints(0, parent, rectangle, 2)
+  left = unscaleDip(parent, endian.readI32LE(rectangle, 0))
+  top = unscaleDip(parent, endian.readI32LE(rectangle, 4))
+  right = unscaleDip(parent, endian.readI32LE(rectangle, 8))
+  bottom = unscaleDip(parent, endian.readI32LE(rectangle, 12))
+  return [left, top, right - left, bottom - top]
+end function
+
+// Shows or hides one control without changing its layout rectangle.
 function show(hwnd, visible)
   if hwnd == 0 then return false end if
   command = 0
@@ -857,6 +1046,12 @@ end function
 function setEnabled(hwnd, enabled)
   if hwnd == 0 then return false end if
   return EnableWindow(hwnd, enabled)
+end function
+
+// Returns the effective Win32 enabled state of one control.
+function isEnabled(hwnd)
+  if hwnd == 0 then return false end if
+  return IsWindowEnabled(hwnd)
 end function
 
 // Gives keyboard focus to a workbench control.
@@ -873,86 +1068,93 @@ function showInfo(owner, title, message)
   return true
 end function
 
-// Implements tabSelect for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Selects a tab page by zero-based index.
 function tabSelect(hwnd, index)
   if hwnd == 0 then return -1 end if
   return SendMessageWInt(hwnd, 0x130C, index, 0)
 end function
 
-// Implements clientSize for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns the physical-pixel dimensions of a window's client area.
 function clientSize(hwnd)
   rectangle = bytes(16, 0)
   if not GetClientRect(hwnd, rectangle) then return fail("clientSize", "GetClientRect failed") end if
   return [endian.readI32LE(rectangle, 8), endian.readI32LE(rectangle, 12)]
 end function
 
-// Implements dpi for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns the client dimensions in DPI-independent pixels.
+function clientSizeDip(hwnd)
+  size = try(clientSize(hwnd))
+  if typeof(size) == "error" then return size end if
+  return [unscaleDip(hwnd, size[0]), unscaleDip(hwnd, size[1])]
+end function
+
+// Returns a valid DPI for a window, falling back to the 96-DPI baseline.
 function dpi(hwnd)
   value = GetDpiForWindow(hwnd)
   if value < 96 then return 96 end if
   return value
 end function
 
-// Implements buttonDown for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns whether a push button currently reports its pressed state.
 function buttonDown(hwnd)
   if hwnd == 0 then return false end if
   state = SendMessageWInt(hwnd, BM_GETSTATE, 0, 0)
   return (state & BST_PUSHED) != 0
 end function
 
-// Implements pumpMessages for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Dispatches a bounded batch of messages and applies dialog-style keyboard navigation.
 function pumpMessages()
   message = bytes(64, 0)
   pumped = 0
   while pumped < 128 and PeekMessageW(message, void, 0, 0, PM_REMOVE)
-    ignoredTranslate = TranslateMessage(message)
-    ignoredDispatch = DispatchMessageW(message)
+    active = GetActiveWindow()
+    handled = false
+    if active != 0 then handled = IsDialogMessageW(active, message) end if
+    if not handled then
+      ignoredTranslate = TranslateMessage(message)
+      ignoredDispatch = DispatchMessageW(message)
+    end if
     pumped = pumped + 1
   end while
   return pumped
 end function
 
-// Implements isOpen for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns whether a native handle still names a live window.
 function isOpen(hwnd)
   if hwnd == 0 then return false end if
   return IsWindow(hwnd)
 end function
 
-// Implements destroy for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Destroys a top-level window and releases its retained minimum-size policy.
 function destroy(hwnd)
+  global windowMinimums
   if hwnd == 0 then return true end if
+  retained = []
+  for each minimum in windowMinimums
+    if minimum.hwnd != hwnd then retained = retained + [minimum] end if
+  end for
+  windowMinimums = retained
   destroyed = DestroyWindow(hwnd)
   return destroyed != 0
 end function
 
-// Implements sleep for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Yields the current native thread for the requested polling interval.
 function sleep(milliseconds)
   Sleep(milliseconds)
   return true
 end function
 
-// Implements componentName for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Returns the stable module name used by smoke tests.
 function componentName()
   return "platform.win32_gui"
 end function
 
-// Implements targetMilestone for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Identifies the workbench milestone that introduced this Win32 adapter.
 function targetMilestone()
   return "M74"
 end function
 
-// Implements isImplemented for the native Windows GUI abstraction.
-// Validates public inputs and returns a structured error when Win32 rejects the operation.
+// Reports that the native Win32 adapter is available in this build.
 function isImplemented()
   return true
 end function

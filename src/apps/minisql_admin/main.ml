@@ -36,7 +36,7 @@ function runProfile(profile, password)
   return win32_client.runSession(session)
 end function
 
-// Implements the MiniSQL-only graphical client command line.
+// Dispatches GUI launch, smoke diagnostics, and explicit connection command lines.
 function main(args)
   if len(args) == 0 then
     result = try(win32_client.launchConnectionManager())
@@ -48,6 +48,8 @@ function main(args)
   if len(args) == 1 and args[0] == "--smoke" then
     smoke = try(gui.hiddenWindowSmoke())
     if typeof(smoke) == "error" then return printAppError(smoke) end if
+    layout = try(win32_client.layoutSmoke())
+    if typeof(layout) == "error" then return printAppError(layout) end if
     print "MiniSQL Workbench Win32 smoke: SUCCESS"
     return 0
   end if
