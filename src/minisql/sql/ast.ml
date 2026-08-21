@@ -66,6 +66,11 @@ const ALTER_TABLE_RENAME_COLUMN = 2
 const ALTER_TABLE_RENAME_TABLE = 3
 const ALTER_TABLE_ADD_CONSTRAINT = 4
 const ALTER_TABLE_DROP_CONSTRAINT = 5
+const ALTER_TABLE_DROP_COLUMN = 6
+const ALTER_TABLE_SET_DEFAULT = 7
+const ALTER_TABLE_DROP_DEFAULT = 8
+const ALTER_TABLE_SET_NOT_NULL = 9
+const ALTER_TABLE_DROP_NOT_NULL = 10
 
 // Groups the identifier state and preserves the field relationships documented below.
 struct Identifier
@@ -415,11 +420,35 @@ struct CreateIndexStatement
   ifNotExists
 end struct
 
+// Represents removal of one explicitly-created index by its database-wide name.
+struct DropIndexStatement
+  // Stores the index name selected for removal.
+  name
+  // Allows the command to succeed without mutation when the index is absent.
+  ifExists
+end struct
+
 // Groups the drop table statement state and preserves the field relationships documented below.
 struct DropTableStatement
   // Stores the name associated with this value.
   name
   // Stores the if exists associated with this value.
+  ifExists
+end struct
+
+// Represents creation of a durable SQL object namespace.
+struct CreateSchemaStatement
+  // Stores the schema name.
+  name
+  // Indicates whether an existing schema is accepted.
+  ifNotExists
+end struct
+
+// Represents removal of an empty SQL object namespace.
+struct DropSchemaStatement
+  // Stores the schema name.
+  name
+  // Indicates whether a missing schema is accepted.
   ifExists
 end struct
 
@@ -493,6 +522,50 @@ struct DropTriggerStatement
   ifExists
 end struct
 
+// Represents persistent activation changes for an existing trigger.
+struct AlterTriggerStatement
+  // Stores the trigger name.
+  name
+  // Indicates whether the trigger becomes enabled.
+  enabled
+end struct
+
+// Defines one named stored-procedure input parameter.
+struct ProcedureParameter
+  // Stores the parameter name used in the procedure body.
+  name
+  // Stores its declared SQL type.
+  typeName
+end struct
+
+// Represents a persisted single-statement stored procedure.
+struct CreateProcedureStatement
+  // Stores the qualified procedure name.
+  name
+  // Contains ordered input parameters.
+  parameters
+  // Stores the procedure's DML body.
+  body
+  // Indicates CREATE OR REPLACE behavior.
+  replace
+end struct
+
+// Represents removal of a stored procedure.
+struct DropProcedureStatement
+  // Stores the qualified procedure name.
+  name
+  // Indicates whether a missing procedure is accepted.
+  ifExists
+end struct
+
+// Represents invocation of a stored procedure with positional arguments.
+struct CallStatement
+  // Stores the qualified procedure name.
+  name
+  // Contains ordered argument expressions.
+  arguments
+end struct
+
 // Groups the alter table statement state and preserves the field relationships documented below.
 struct AlterTableStatement
   // Stores the table name associated with this value.
@@ -555,6 +628,28 @@ struct DeleteStatement
   returning
 end struct
 
+// Represents a source-driven conditional INSERT/UPDATE/DELETE operation.
+struct MergeStatement
+  // Stores the target table name.
+  targetTable
+  // Stores the optional target alias.
+  targetAlias
+  // Stores the source table name.
+  sourceTable
+  // Stores the optional source alias.
+  sourceAlias
+  // Stores the target/source match predicate.
+  condition
+  // Contains assignments for WHEN MATCHED UPDATE.
+  matchedAssignments
+  // Indicates WHEN MATCHED DELETE semantics.
+  matchedDelete
+  // Contains target columns for WHEN NOT MATCHED INSERT.
+  insertColumns
+  // Contains source expressions for WHEN NOT MATCHED INSERT.
+  insertValues
+end struct
+
 // Groups the truncate statement state and preserves the field relationships documented below.
 struct TruncateStatement
   // Stores the table name associated with this value.
@@ -571,6 +666,8 @@ struct CommonTableExpression
   query
   // Stores the column names associated with this value.
   columnNames
+  // Indicates whether this CTE may reference its own working table.
+  recursive
 end struct
 
 // Groups the select statement state and preserves the field relationships documented below.
@@ -1157,11 +1254,26 @@ function isCreateIndexStatement(value)
   return value is CreateIndexStatement
 end function
 
+// Returns whether the supplied value is a DROP INDEX statement.
+function isDropIndexStatement(value)
+  return value is DropIndexStatement
+end function
+
 // Returns whether the supplied value satisfies the drop table statement condition.
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isDropTableStatement(value)
   return value is DropTableStatement
+end function
+
+// Returns whether the supplied statement creates a schema namespace.
+function isCreateSchemaStatement(value)
+  return value is CreateSchemaStatement
+end function
+
+// Returns whether the supplied statement drops a schema namespace.
+function isDropSchemaStatement(value)
+  return value is DropSchemaStatement
 end function
 
 // Returns whether the supplied value satisfies the create view statement condition.
@@ -1206,6 +1318,26 @@ function isDropTriggerStatement(value)
   return value is DropTriggerStatement
 end function
 
+// Returns whether the supplied statement changes trigger activation.
+function isAlterTriggerStatement(value)
+  return value is AlterTriggerStatement
+end function
+
+// Returns whether the supplied statement creates a stored procedure.
+function isCreateProcedureStatement(value)
+  return value is CreateProcedureStatement
+end function
+
+// Returns whether the supplied statement drops a stored procedure.
+function isDropProcedureStatement(value)
+  return value is DropProcedureStatement
+end function
+
+// Returns whether the supplied statement invokes a stored procedure.
+function isCallStatement(value)
+  return value is CallStatement
+end function
+
 // Returns whether the supplied value satisfies the alter table statement condition.
 // Returns the computed value or operation status.
 // Does not modify its inputs.
@@ -1232,6 +1364,11 @@ end function
 // Does not modify its inputs.
 function isDeleteStatement(value)
   return value is DeleteStatement
+end function
+
+// Returns whether the supplied statement is a MERGE operation.
+function isMergeStatement(value)
+  return value is MergeStatement
 end function
 
 // Returns whether the supplied value satisfies the truncate statement condition.
@@ -1427,7 +1564,7 @@ end function
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isStatement(value)
-  return value is CreateTableStatement or value is CreateIndexStatement or value is DropTableStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
+  return value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateSchemaStatement or value is DropSchemaStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTriggerStatement or value is CreateProcedureStatement or value is DropProcedureStatement or value is CallStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is MergeStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
 end function
 
 // Implements expression kind for this module.
@@ -1617,6 +1754,11 @@ function formatSelect(statement)
   output = ""
   if len(statement.ctes) > 0 then
     output = "WITH "
+    recursive = false
+    for each cte in statement.ctes
+      if cte.recursive then recursive = true end if
+    end for
+    if recursive then output = output + "RECURSIVE " end if
     for index = 0 to len(statement.ctes) - 1
       if index > 0 then output = output + ", " end if
       cte = statement.ctes[index]
@@ -1681,6 +1823,21 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function formatStatement(statement)
   if statement is SelectStatement then return formatSelect(statement) end if
+  if statement is CreateSchemaStatement then
+    output = "CREATE SCHEMA "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    return output + statement.name
+  end if
+  if statement is DropSchemaStatement then
+    output = "DROP SCHEMA "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + statement.name
+  end if
+  if statement is DropIndexStatement then
+    output = "DROP INDEX "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + statement.name
+  end if
   if statement is InsertStatement then
     output = "INSERT INTO " + statement.tableName
     if len(statement.columns) > 0 then
@@ -1720,6 +1877,7 @@ function formatStatement(statement)
     if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
     return output
   end if
+  if statement is MergeStatement then return "MERGE INTO " + statement.targetTable + " USING " + statement.sourceTable + " ON " + formatExpression(statement.condition) end if
   return error(9001, "sql.ast.formatStatement: unsupported statement")
 end function
 

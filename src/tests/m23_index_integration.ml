@@ -75,13 +75,32 @@ function main(args)
   testkit.equal(state, len(joined.rows), 3, "index nested-loop join row count")
   testkit.equal(state, joined.rows[1][1].value, "Gamma", "index nested-loop join value")
 
+  dropped = executeOne(engine, "DROP INDEX idx_inventory_category_code")
+  testkit.equal(state, dropped.command, "DROP INDEX", "DROP INDEX command tag")
+  indexesAfterDrop = executeOne(engine, "SHOW INDEXES FROM inventory")
+  explicitFound = false
+  for each row in indexesAfterDrop.rows
+    if row[0].value == "idx_inventory_category_code" then explicitFound = true end if
+  end for
+  testkit.record(state, not explicitFound, "DROP INDEX removes explicit index metadata")
+  testkit.errorCode(state, try(executor.executeSql(engine, "DROP INDEX idx_inventory_category_code")), 9014, "DROP INDEX rejects a missing index")
+  ignoredMissing = executeOne(engine, "DROP INDEX IF EXISTS idx_inventory_category_code")
+  testkit.equal(state, ignoredMissing.affectedRows, 0, "DROP INDEX IF EXISTS is idempotent")
+  testkit.equal(state, executeOne(engine, "SELECT id FROM inventory WHERE category = 'c' AND code = 9").rows[0][0].value, 2, "queries remain correct after explicit index removal")
+
+  executeOne(engine, "CREATE UNIQUE INDEX idx_inventory_value ON inventory(value)")
+  testkit.errorCode(state, try(executor.executeSql(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (5, 'duplicate-value', 'a', 5, 10)")), 9022, "explicit unique index enforces uniqueness")
+  executeOne(engine, "DROP INDEX idx_inventory_value")
+  executeOne(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (5, 'duplicate-value', 'a', 5, 10)")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM inventory WHERE value = 10 ORDER BY id").rows), 2, "DROP INDEX removes explicit unique enforcement")
+
   executor.close(engine)
   database_manager.close(managed)
 
   reopened = executor.open(databasePath)
   persistent = executeOne(reopened, "SELECT id, sku FROM inventory WHERE sku = 'c-9'")
   testkit.equal(state, persistent.rows[0][0].value, 2, "index survives reopen")
-  testkit.record(state, dml.verifyAllIndexes(reopened.database) >= 4, "all reopened indexes match heaps")
+  testkit.record(state, dml.verifyAllIndexes(reopened.database) >= 3, "remaining reopened indexes match heaps")
   executor.close(reopened)
 
   return testkit.finish(state, "MiniSQL M23 index integration tests: SUCCESS", "MiniSQL M23 index integration tests: FAIL")

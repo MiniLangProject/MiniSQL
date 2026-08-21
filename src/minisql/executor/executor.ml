@@ -54,6 +54,9 @@ const MODE_DDL = 2
 const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
 
+// Identifies the flattened, versioned parameter metadata stored with procedures.
+const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
+
 // Groups the query result state and preserves the field relationships documented below.
 struct QueryResult
   // Stores the kind associated with this value.
@@ -90,6 +93,14 @@ struct SequenceSessionValue
   value
 end struct
 
+// Stores one active recursive CTE working table on the session-local evaluation stack.
+struct RecursiveCteFrame
+  // Stores the CTE name used by bound self-reference sources.
+  name
+  // Contains the current iteration's delta rows.
+  rows
+end struct
+
 // Groups the engine state and preserves the field relationships documented below.
 struct Engine
   // Stores the database associated with this value.
@@ -120,6 +131,8 @@ struct Engine
   sequenceValues
   // Tracks the trigger depth numeric value.
   triggerDepth
+  // Contains nested recursive-CTE working tables for this isolated session.
+  recursiveCteFrames
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -164,7 +177,7 @@ end function
 function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
   entered = try(database_manager.enterExecution(database))
-  engine = Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0)
+  engine = Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
   indexed = try(dml.ensureIndexes(database))
   released = try(database_manager.leaveExecution(database))
   if typeof(released) == "error" then return released end if
@@ -179,7 +192,7 @@ end function
 function open(databasePath)
   database = database_manager.open(databasePath)
   entered = try(database_manager.enterExecution(database))
-  engine = Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0)
+  engine = Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
   indexed = try(dml.ensureIndexes(database))
   released = try(database_manager.leaveExecution(database))
   if typeof(released) == "error" then return released end if
@@ -414,7 +427,7 @@ function substituteSelect(statement, parameters)
   end for
   ctes = []
   for each cte in statement.ctes
-    ctes = ctes + [ast.CommonTableExpression(cte.name, substituteSelect(cte.query, parameters), cte.columnNames)]
+    ctes = ctes + [ast.CommonTableExpression(cte.name, substituteSelect(cte.query, parameters), cte.columnNames, cte.recursive)]
   end for
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
@@ -476,34 +489,36 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function materializeExpression(engine, expression, pageTransaction)
+function materializeExpression(engine, expression, pageTransaction, deferSubqueries)
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isColumnExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, materializeExpression(engine, expression.operand, pageTransaction)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, materializeExpression(engine, expression.left, pageTransaction), materializeExpression(engine, expression.right, pageTransaction)) end if
-  if ast.isIsNullExpression(expression) then return ast.isNullExpression(materializeExpression(engine, expression.operand, pageTransaction), expression.negated) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, materializeExpression(engine, expression.left, pageTransaction, deferSubqueries), materializeExpression(engine, expression.right, pageTransaction, deferSubqueries)) end if
+  if ast.isIsNullExpression(expression) then return ast.isNullExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
     for each branch in expression.branches
-      branches = branches + [ast.caseBranch(materializeExpression(engine, branch.condition, pageTransaction), materializeExpression(engine, branch.result, pageTransaction))]
+      branches = branches + [ast.caseBranch(materializeExpression(engine, branch.condition, pageTransaction, deferSubqueries), materializeExpression(engine, branch.result, pageTransaction, deferSubqueries))]
     end for
     elseExpression = void
-    if expression.elseExpression is not void then elseExpression = materializeExpression(engine, expression.elseExpression, pageTransaction) end if
+    if expression.elseExpression is not void then elseExpression = materializeExpression(engine, expression.elseExpression, pageTransaction, deferSubqueries) end if
     return ast.caseExpression(branches, elseExpression)
   end if
-  if ast.isCastExpression(expression) then return ast.castExpression(materializeExpression(engine, expression.operand, pageTransaction), expression.targetType) end if
+  if ast.isCastExpression(expression) then return ast.castExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), expression.targetType) end if
   if ast.isInExpression(expression) then
     candidates = []
     for each candidate in expression.values
-      candidates = candidates + [materializeExpression(engine, candidate, pageTransaction)]
+      candidates = candidates + [materializeExpression(engine, candidate, pageTransaction, deferSubqueries)]
     end for
-    return ast.inExpression(materializeExpression(engine, expression.operand, pageTransaction), candidates, expression.negated)
+    return ast.inExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), candidates, expression.negated)
   end if
-  if ast.isBetweenExpression(expression) then return ast.betweenExpression(materializeExpression(engine, expression.operand, pageTransaction), materializeExpression(engine, expression.lower, pageTransaction), materializeExpression(engine, expression.upper, pageTransaction), expression.negated) end if
-  if ast.isTruthTestExpression(expression) then return ast.truthTestExpression(materializeExpression(engine, expression.operand, pageTransaction), expression.expected, expression.negated) end if
+  if ast.isBetweenExpression(expression) then return ast.betweenExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), materializeExpression(engine, expression.lower, pageTransaction, deferSubqueries), materializeExpression(engine, expression.upper, pageTransaction, deferSubqueries), expression.negated) end if
+  if ast.isTruthTestExpression(expression) then return ast.truthTestExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), expression.expected, expression.negated) end if
   if ast.isFunctionExpression(expression) then
     if expression.name == "NEXTVAL" or expression.name == "CURRVAL" then
       if len(expression.arguments) != 1 then return fail(BINDING_ERROR, "materializeExpression", expression.name + " requires one sequence-name argument") end if
       sequenceName = sequenceArgumentName(expression.arguments[0], "materializeExpression")
+      sequenceParts = splitObjectName(sequenceName)
+      if sequenceParts[0] == "public" then sequenceName = sequenceParts[1] end if
       sequenceValue = void
       if expression.name == "NEXTVAL" then
         sequenceValue = schema_history.nextSequence(engine.database.path, engine.database.catalogHandle.metadata.databaseId, sequenceName)
@@ -515,7 +530,7 @@ function materializeExpression(engine, expression, pageTransaction)
     end if
     arguments = []
     for each argument in expression.arguments
-      arguments = arguments + [materializeExpression(engine, argument, pageTransaction)]
+      arguments = arguments + [materializeExpression(engine, argument, pageTransaction, deferSubqueries)]
     end for
     return ast.functionExpression(expression.name, arguments, expression.distinct)
   end if
@@ -524,19 +539,24 @@ function materializeExpression(engine, expression, pageTransaction)
     partitions = []
     orders = []
     for each argument in expression.arguments
-      arguments = arguments + [materializeExpression(engine, argument, pageTransaction)]
+      arguments = arguments + [materializeExpression(engine, argument, pageTransaction, deferSubqueries)]
     end for
     for each value in expression.partitionBy
-      partitions = partitions + [materializeExpression(engine, value, pageTransaction)]
+      partitions = partitions + [materializeExpression(engine, value, pageTransaction, deferSubqueries)]
     end for
     for each value in expression.orderBy
-      orders = orders + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction), value.descending, value.nullsFirst, value.nullsSpecified)]
+      orders = orders + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction, deferSubqueries), value.descending, value.nullsFirst, value.nullsSpecified)]
     end for
     return ast.windowExpression(expression.name, arguments, partitions, orders)
   end if
   if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) or ast.isInSubqueryExpression(expression) then
     query = expression.query
     query = materializeSelectStatement(engine, query, pageTransaction)
+    if deferSubqueries and selectHasPotentialOuterReferences(query) then
+      if ast.isSubqueryExpression(expression) then return ast.subqueryExpression(query) end if
+      if ast.isExistsExpression(expression) then return ast.existsExpression(query) end if
+      return ast.inSubqueryExpression(materializeExpression(engine, expression.operand, pageTransaction, true), query, expression.negated)
+    end if
     bound = binder.bindSelect(query, engine.database.catalogHandle)
     result = selectRows(engine, bound, pageTransaction)
     if ast.isExistsExpression(expression) then return ast.typedLiteralExpression(values.boolean(len(result.rows) > 0)) end if
@@ -546,7 +566,7 @@ function materializeExpression(engine, expression, pageTransaction)
       if len(result.rows) == 0 then return ast.typedLiteralExpression(values.nullValue(bound.items[0].typeInfo.kind)) end if
       return ast.typedLiteralExpression(result.rows[0][0])
     end if
-    operand = materializeExpression(engine, expression.operand, pageTransaction)
+    operand = materializeExpression(engine, expression.operand, pageTransaction, false)
     if len(bound.items) != 1 then return fail(BINDING_ERROR, "materializeExpression", "IN subquery must return exactly one column") end if
     if len(result.rows) == 0 then return ast.typedLiteralExpression(values.boolean(expression.negated)) end if
     candidates = []
@@ -565,33 +585,227 @@ end function
 function materializeSelectStatement(engine, statement, pageTransaction)
   items = []
   for each item in statement.items
-    items = items + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
+    items = items + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction, true), item.alias)]
   end for
   joins = []
   for each value in statement.joins
     condition = void
-    if value.condition is not void then condition = materializeExpression(engine, value.condition, pageTransaction) end if
+    if value.condition is not void then condition = materializeExpression(engine, value.condition, pageTransaction, true) end if
     joins = joins + [ast.JoinClause(value.joinType, value.tableName, value.tableAlias, condition)]
   end for
   whereExpression = void
-  if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction) end if
+  if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction, true) end if
   groups = []
   for each value in statement.groupBy
-    groups = groups + [materializeExpression(engine, value, pageTransaction)]
+    groups = groups + [materializeExpression(engine, value, pageTransaction, true)]
   end for
   havingExpression = void
-  if statement.havingExpression is not void then havingExpression = materializeExpression(engine, statement.havingExpression, pageTransaction) end if
+  if statement.havingExpression is not void then havingExpression = materializeExpression(engine, statement.havingExpression, pageTransaction, true) end if
   setOperations = []
   for each value in statement.setOperations
     setOperations = setOperations + [ast.SetOperation(value.operator, value.all, materializeSelectStatement(engine, value.query, pageTransaction))]
   end for
   orderBy = []
   for each value in statement.orderBy
-    orderBy = orderBy + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction), value.descending, value.nullsFirst, value.nullsSpecified)]
+    orderBy = orderBy + [ast.OrderItem(materializeExpression(engine, value.expression, pageTransaction, true), value.descending, value.nullsFirst, value.nullsSpecified)]
   end for
   ctes = []
   for each cte in statement.ctes
-    ctes = ctes + [ast.CommonTableExpression(cte.name, materializeSelectStatement(engine, cte.query, pageTransaction), cte.columnNames)]
+    ctes = ctes + [ast.CommonTableExpression(cte.name, materializeSelectStatement(engine, cte.query, pageTransaction), cte.columnNames, cte.recursive)]
+  end for
+  return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
+end function
+
+// Returns true when a nested SELECT declares a qualifier that shadows an outer source.
+function nestedSelectDeclaresQualifier(statement, qualifier)
+  if statement.tableName is not void then
+    tableParts = splitObjectName(statement.tableName)
+    if statement.tableName == qualifier or tableParts[1] == qualifier or statement.tableAlias == qualifier then return true end if
+  end if
+  for each joinClause in statement.joins
+    joinParts = splitObjectName(joinClause.tableName)
+    if joinClause.tableName == qualifier or joinParts[1] == qualifier or joinClause.tableAlias == qualifier then return true end if
+  end for
+  for each cte in statement.ctes
+    if cte.name == qualifier then return true end if
+  end for
+  return false
+end function
+
+// Detects a qualified column whose source is not declared by its immediate SELECT.
+function expressionHasPotentialOuterReference(expression, statement)
+  if ast.isColumnExpression(expression) then return expression.qualifier is not void and not nestedSelectDeclaresQualifier(statement, expression.qualifier) end if
+  if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return false end if
+  if ast.isUnaryExpression(expression) or ast.isIsNullExpression(expression) then return expressionHasPotentialOuterReference(expression.operand, statement) end if
+  if ast.isBinaryExpression(expression) then return expressionHasPotentialOuterReference(expression.left, statement) or expressionHasPotentialOuterReference(expression.right, statement) end if
+  if ast.isCaseExpression(expression) then
+    for each branch in expression.branches
+      if expressionHasPotentialOuterReference(branch.condition, statement) or expressionHasPotentialOuterReference(branch.result, statement) then return true end if
+    end for
+    return expression.elseExpression is not void and expressionHasPotentialOuterReference(expression.elseExpression, statement)
+  end if
+  if ast.isCastExpression(expression) then return expressionHasPotentialOuterReference(expression.operand, statement) end if
+  if ast.isInExpression(expression) then
+    if expressionHasPotentialOuterReference(expression.operand, statement) then return true end if
+    for each candidate in expression.values
+      if expressionHasPotentialOuterReference(candidate, statement) then return true end if
+    end for
+    return false
+  end if
+  if ast.isBetweenExpression(expression) then return expressionHasPotentialOuterReference(expression.operand, statement) or expressionHasPotentialOuterReference(expression.lower, statement) or expressionHasPotentialOuterReference(expression.upper, statement) end if
+  if ast.isTruthTestExpression(expression) then return expressionHasPotentialOuterReference(expression.operand, statement) end if
+  if ast.isFunctionExpression(expression) or ast.isWindowExpression(expression) then
+    for each argument in expression.arguments
+      if expressionHasPotentialOuterReference(argument, statement) then return true end if
+    end for
+    if ast.isWindowExpression(expression) then
+      for each value in expression.partitionBy
+        if expressionHasPotentialOuterReference(value, statement) then return true end if
+      end for
+      for each value in expression.orderBy
+        if expressionHasPotentialOuterReference(value.expression, statement) then return true end if
+      end for
+    end if
+    return false
+  end if
+  if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) or ast.isInSubqueryExpression(expression) then
+    if ast.isInSubqueryExpression(expression) and expressionHasPotentialOuterReference(expression.operand, statement) then return true end if
+    return selectHasPotentialOuterReferences(expression.query)
+  end if
+  return false
+end function
+
+// Returns whether any expression in a SELECT may need a concrete outer row.
+function selectHasPotentialOuterReferences(statement)
+  for each item in statement.items
+    if expressionHasPotentialOuterReference(item.expression, statement) then return true end if
+  end for
+  for each joinClause in statement.joins
+    if joinClause.condition is not void and expressionHasPotentialOuterReference(joinClause.condition, statement) then return true end if
+  end for
+  if statement.whereExpression is not void and expressionHasPotentialOuterReference(statement.whereExpression, statement) then return true end if
+  for each value in statement.groupBy
+    if expressionHasPotentialOuterReference(value, statement) then return true end if
+  end for
+  if statement.havingExpression is not void and expressionHasPotentialOuterReference(statement.havingExpression, statement) then return true end if
+  for each value in statement.orderBy
+    if expressionHasPotentialOuterReference(value.expression, statement) then return true end if
+  end for
+  for each operation in statement.setOperations
+    if selectHasPotentialOuterReferences(operation.query) then return true end if
+  end for
+  for each cte in statement.ctes
+    if selectHasPotentialOuterReferences(cte.query) then return true end if
+  end for
+  return false
+end function
+
+// Resolves a qualified outer reference against the current joined source row.
+function substituteOuterColumn(expression, sources, rowValues, statement)
+  if expression.qualifier is void or nestedSelectDeclaresQualifier(statement, expression.qualifier) then return expression end if
+  for each source in sources
+    visibleName = source.alias
+    if visibleName is void then
+      sourceParts = splitObjectName(source.table.name)
+      visibleName = sourceParts[1]
+    end if
+    if expression.qualifier == visibleName or expression.qualifier == source.table.name then
+      if len(source.table.columns) > 0 then
+        for index = 0 to len(source.table.columns) - 1
+          if source.table.columns[index].name == expression.name then return ast.typedLiteralExpression(rowValues[source.offset + index]) end if
+        end for
+      end if
+      return fail(BINDING_ERROR, "correlatedSubquery", "unknown outer column " + expression.qualifier + "." + expression.name)
+    end if
+  end for
+  return expression
+end function
+
+// Substitutes outer-row values throughout an expression while preserving inner shadowing.
+function substituteOuterExpression(expression, sources, rowValues, statement)
+  if ast.isColumnExpression(expression) then return substituteOuterColumn(expression, sources, rowValues, statement) end if
+  if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, substituteOuterExpression(expression.operand, sources, rowValues, statement)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, substituteOuterExpression(expression.left, sources, rowValues, statement), substituteOuterExpression(expression.right, sources, rowValues, statement)) end if
+  if ast.isIsNullExpression(expression) then return ast.isNullExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), expression.negated) end if
+  if ast.isCaseExpression(expression) then
+    branches = []
+    for each branch in expression.branches
+      branches = branches + [ast.caseBranch(substituteOuterExpression(branch.condition, sources, rowValues, statement), substituteOuterExpression(branch.result, sources, rowValues, statement))]
+    end for
+    elseExpression = void
+    if expression.elseExpression is not void then elseExpression = substituteOuterExpression(expression.elseExpression, sources, rowValues, statement) end if
+    return ast.caseExpression(branches, elseExpression)
+  end if
+  if ast.isCastExpression(expression) then return ast.castExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), expression.targetType) end if
+  if ast.isInExpression(expression) then
+    candidates = []
+    for each candidate in expression.values
+      candidates = candidates + [substituteOuterExpression(candidate, sources, rowValues, statement)]
+    end for
+    return ast.inExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), candidates, expression.negated)
+  end if
+  if ast.isBetweenExpression(expression) then return ast.betweenExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), substituteOuterExpression(expression.lower, sources, rowValues, statement), substituteOuterExpression(expression.upper, sources, rowValues, statement), expression.negated) end if
+  if ast.isTruthTestExpression(expression) then return ast.truthTestExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), expression.expected, expression.negated) end if
+  if ast.isFunctionExpression(expression) then
+    arguments = []
+    for each argument in expression.arguments
+      arguments = arguments + [substituteOuterExpression(argument, sources, rowValues, statement)]
+    end for
+    return ast.functionExpression(expression.name, arguments, expression.distinct)
+  end if
+  if ast.isSubqueryExpression(expression) then return ast.subqueryExpression(substituteOuterSelect(expression.query, sources, rowValues)) end if
+  if ast.isExistsExpression(expression) then return ast.existsExpression(substituteOuterSelect(expression.query, sources, rowValues)) end if
+  if ast.isInSubqueryExpression(expression) then return ast.inSubqueryExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), substituteOuterSelect(expression.query, sources, rowValues), expression.negated) end if
+  if ast.isWindowExpression(expression) then
+    arguments = []
+    partitions = []
+    orders = []
+    for each argument in expression.arguments
+      arguments = arguments + [substituteOuterExpression(argument, sources, rowValues, statement)]
+    end for
+    for each value in expression.partitionBy
+      partitions = partitions + [substituteOuterExpression(value, sources, rowValues, statement)]
+    end for
+    for each value in expression.orderBy
+      orders = orders + [ast.OrderItem(substituteOuterExpression(value.expression, sources, rowValues, statement), value.descending, value.nullsFirst, value.nullsSpecified)]
+    end for
+    return ast.windowExpression(expression.name, arguments, partitions, orders)
+  end if
+  return fail(BINDING_ERROR, "correlatedSubquery", "unsupported nested expression")
+end function
+
+// Copies a nested SELECT with every non-shadowed outer reference replaced by a row literal.
+function substituteOuterSelect(statement, sources, rowValues)
+  items = []
+  for each item in statement.items
+    items = items + [ast.SelectItem(substituteOuterExpression(item.expression, sources, rowValues, statement), item.alias)]
+  end for
+  joins = []
+  for each value in statement.joins
+    condition = void
+    if value.condition is not void then condition = substituteOuterExpression(value.condition, sources, rowValues, statement) end if
+    joins = joins + [ast.JoinClause(value.joinType, value.tableName, value.tableAlias, condition)]
+  end for
+  whereExpression = void
+  if statement.whereExpression is not void then whereExpression = substituteOuterExpression(statement.whereExpression, sources, rowValues, statement) end if
+  groups = []
+  for each value in statement.groupBy
+    groups = groups + [substituteOuterExpression(value, sources, rowValues, statement)]
+  end for
+  havingExpression = void
+  if statement.havingExpression is not void then havingExpression = substituteOuterExpression(statement.havingExpression, sources, rowValues, statement) end if
+  setOperations = []
+  for each value in statement.setOperations
+    setOperations = setOperations + [ast.SetOperation(value.operator, value.all, substituteOuterSelect(value.query, sources, rowValues))]
+  end for
+  orderBy = []
+  for each value in statement.orderBy
+    orderBy = orderBy + [ast.OrderItem(substituteOuterExpression(value.expression, sources, rowValues, statement), value.descending, value.nullsFirst, value.nullsSpecified)]
+  end for
+  ctes = []
+  for each cte in statement.ctes
+    ctes = ctes + [ast.CommonTableExpression(cte.name, substituteOuterSelect(cte.query, sources, rowValues), cte.columnNames, cte.recursive)]
   end for
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
@@ -606,7 +820,7 @@ function materializeDmlStatement(engine, statement, pageTransaction)
     for each sourceRow in statement.rows
       row = []
       for each expression in sourceRow
-        row = row + [materializeExpression(engine, expression, pageTransaction)]
+        row = row + [materializeExpression(engine, expression, pageTransaction, false)]
       end for
       rows = rows + [row]
     end for
@@ -614,35 +828,35 @@ function materializeDmlStatement(engine, statement, pageTransaction)
     if statement.sourceQuery is not void then sourceQuery = materializeSelectStatement(engine, statement.sourceQuery, pageTransaction) end if
     assignments = []
     for each assignment in statement.conflictAssignments
-      assignments = assignments + [ast.Assignment(assignment.column, materializeExpression(engine, assignment.expression, pageTransaction))]
+      assignments = assignments + [ast.Assignment(assignment.column, materializeExpression(engine, assignment.expression, pageTransaction, false))]
     end for
     conflictWhere = void
-    if statement.conflictWhere is not void then conflictWhere = materializeExpression(engine, statement.conflictWhere, pageTransaction) end if
+    if statement.conflictWhere is not void then conflictWhere = materializeExpression(engine, statement.conflictWhere, pageTransaction, false) end if
     returning = []
     for each item in statement.returning
-      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
+      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction, false), item.alias)]
     end for
     return ast.InsertStatement(statement.tableName, statement.columns, rows, sourceQuery, statement.conflictTarget, statement.conflictAction, assignments, conflictWhere, returning)
   end if
   if ast.isUpdateStatement(statement) then
     assignments = []
     for each assignment in statement.assignments
-      assignments = assignments + [ast.Assignment(assignment.column, materializeExpression(engine, assignment.expression, pageTransaction))]
+      assignments = assignments + [ast.Assignment(assignment.column, materializeExpression(engine, assignment.expression, pageTransaction, false))]
     end for
     whereExpression = void
-    if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction) end if
+    if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction, false) end if
     returning = []
     for each item in statement.returning
-      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
+      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction, false), item.alias)]
     end for
     return ast.UpdateStatement(statement.tableName, assignments, whereExpression, returning)
   end if
   if ast.isDeleteStatement(statement) then
     whereExpression = void
-    if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction) end if
+    if statement.whereExpression is not void then whereExpression = materializeExpression(engine, statement.whereExpression, pageTransaction, false) end if
     returning = []
     for each item in statement.returning
-      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction), item.alias)]
+      returning = returning + [ast.SelectItem(materializeExpression(engine, item.expression, pageTransaction, false), item.alias)]
     end for
     return ast.DeleteStatement(statement.tableName, whereExpression, returning)
   end if
@@ -778,8 +992,57 @@ function stageDdl(ddlTransaction, bound)
   if binder.isBoundCreateTable(bound) then schema_history.stageCreateTable(ddlTransaction, bound); return "CREATE TABLE" end if
   if binder.isBoundCreateIndex(bound) then schema_history.stageCreateIndex(ddlTransaction, bound); return "CREATE INDEX" end if
   if binder.isBoundDropTable(bound) then schema_history.stageDropTable(ddlTransaction, bound); return "DROP TABLE" end if
-  if binder.isBoundAlterTable(bound) then schema_history.stageAlterTable(ddlTransaction, bound); return "ALTER TABLE" end if
+  if binder.isBoundAlterTable(bound) then schema_history.stageAlterTable(ddlTransaction, bound); return bound.command end if
   return fail(BINDING_ERROR, "stageDdl", "unsupported bound DDL statement")
+end function
+
+// Validates ALTER TABLE operations whose safety depends on currently stored rows.
+// DROP COLUMN deliberately starts with empty tables so the versioned row codec
+// never has to reinterpret a wider historical row as a shorter layout.
+function validateAlterTableRows(engine, bound)
+  if not binder.isBoundAlterTable(bound) or bound.table is void then return true end if
+  action = bound.statement.action
+  if action != ast.ALTER_TABLE_DROP_COLUMN and action != ast.ALTER_TABLE_SET_NOT_NULL then return true end if
+  rows = scan.scanTable(engine.database.path, bound.table, void)
+  if action == ast.ALTER_TABLE_DROP_COLUMN then
+    if len(rows) > 0 then return fail(UNSUPPORTED_SQL, "validateAlterTableRows", "DROP COLUMN currently requires an empty table to avoid an implicit physical rewrite") end if
+    return true
+  end if
+  columnIndex = binder.findColumnIndex(bound.table, bound.statement.oldName)
+  for each row in rows
+    if row.values[columnIndex].isNull then return fail(CONSTRAINT_VIOLATION, "validateAlterTableRows", "column contains NULL values: " + bound.statement.oldName) end if
+  end for
+  return true
+end function
+
+// Verifies that the namespace of a qualified object exists before object DDL.
+function requireObjectSchema(engine, objectName, operation)
+  parts = splitObjectName(objectName)
+  state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  if not schema_history.schemaExists(state, parts[0]) then return fail(BINDING_ERROR, operation, "schema does not exist: " + parts[0]) end if
+  return true
+end function
+
+// Executes durable CREATE/DROP SCHEMA operations outside user transactions.
+function executeSchemaDdl(engine, statement)
+  if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeSchemaDdl", "schema DDL is autocommit-only") end if
+  databaseId = engine.database.catalogHandle.metadata.databaseId
+  if ast.isCreateSchemaStatement(statement) then
+    created = schema_history.putSchema(engine.database.path, databaseId, statement.name, statement.ifNotExists)
+    count = 0
+    if created then count = 1 end if
+    return commandResult("CREATE SCHEMA", count, statement.name)
+  end if
+  if ast.isDropSchemaStatement(statement) then
+    for each table in engine.database.catalogHandle.catalog.tables
+      if schema_history.objectInSchema(table.name, statement.name) then return fail(CONSTRAINT_VIOLATION, "executeSchemaDdl", "schema is not empty: " + statement.name) end if
+    end for
+    dropped = schema_history.dropSchema(engine.database.path, databaseId, statement.name, statement.ifExists)
+    count = 0
+    if dropped then count = 1 end if
+    return commandResult("DROP SCHEMA", count, statement.name)
+  end if
+  return fail(BINDING_ERROR, "executeSchemaDdl", "unsupported schema DDL")
 end function
 
 // Executes view DDL using the supplied inputs.
@@ -790,7 +1053,9 @@ function executeViewDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeViewDdl", "view DDL is autocommit-only in M43") end if
   database = engine.database.catalogHandle
   databaseId = database.metadata.databaseId
+  if schema_history.isInternalExtensionViewName(statement.name) then return fail(BINDING_ERROR, "executeViewDdl", "view name is reserved for internal metadata") end if
   if ast.isCreateViewStatement(statement) then
+    requireObjectSchema(engine, statement.name, "executeViewDdl")
     if catalog.findTable(database, statement.name) is not void then return fail(BINDING_ERROR, "executeViewDdl", "table already exists with name " + statement.name) end if
     bound = binder.bindSelect(statement.query, database)
     saved = schema_history.putView(engine.database.path, databaseId, statement.name, ast.formatSelect(statement.query), bound.itemNames, statement.replace)
@@ -921,6 +1186,135 @@ function replaceTriggerStatement(statement, table, oldRow, newRow)
   return fail(UNSUPPORTED_SQL, "replaceTriggerStatement", "trigger body must be INSERT, UPDATE or DELETE")
 end function
 
+// Resolves one qualified MERGE source/target column for a concrete source row.
+function replaceMergeColumn(expression, statement, sourceTable, sourceRow)
+  sourceName = statement.sourceAlias
+  if sourceName is void then sourceName = splitObjectName(statement.sourceTable)[1] end if
+  targetName = statement.targetAlias
+  if targetName is void then targetName = splitObjectName(statement.targetTable)[1] end if
+  if expression.qualifier == sourceName or expression.qualifier == statement.sourceTable then
+    columnIndex = binder.findColumnIndex(sourceTable, expression.name)
+    if columnIndex < 0 then return fail(BINDING_ERROR, "merge", "unknown source column " + expression.name) end if
+    return ast.typedLiteralExpression(sourceRow[columnIndex])
+  end if
+  if expression.qualifier == targetName or expression.qualifier == statement.targetTable then return ast.columnExpression(void, expression.name) end if
+  if expression.qualifier is void then return expression end if
+  return fail(BINDING_ERROR, "merge", "unknown MERGE qualifier " + expression.qualifier)
+end function
+
+// Rewrites a MERGE expression for one source row while leaving target columns bindable.
+function replaceMergeExpression(expression, statement, sourceTable, sourceRow)
+  if ast.isColumnExpression(expression) then return replaceMergeColumn(expression, statement, sourceTable, sourceRow) end if
+  if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isParameterExpression(expression) then return expression end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, replaceMergeExpression(expression.left, statement, sourceTable, sourceRow), replaceMergeExpression(expression.right, statement, sourceTable, sourceRow)) end if
+  if ast.isIsNullExpression(expression) then return ast.isNullExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), expression.negated) end if
+  if ast.isCaseExpression(expression) then
+    branches = []
+    for each branch in expression.branches
+      branches = branches + [ast.caseBranch(replaceMergeExpression(branch.condition, statement, sourceTable, sourceRow), replaceMergeExpression(branch.result, statement, sourceTable, sourceRow))]
+    end for
+    elseExpression = void
+    if expression.elseExpression is not void then elseExpression = replaceMergeExpression(expression.elseExpression, statement, sourceTable, sourceRow) end if
+    return ast.caseExpression(branches, elseExpression)
+  end if
+  if ast.isCastExpression(expression) then return ast.castExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), expression.targetType) end if
+  if ast.isInExpression(expression) then
+    candidates = []
+    for each candidate in expression.values
+      candidates = candidates + [replaceMergeExpression(candidate, statement, sourceTable, sourceRow)]
+    end for
+    return ast.inExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), candidates, expression.negated)
+  end if
+  if ast.isBetweenExpression(expression) then return ast.betweenExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), replaceMergeExpression(expression.lower, statement, sourceTable, sourceRow), replaceMergeExpression(expression.upper, statement, sourceTable, sourceRow), expression.negated) end if
+  if ast.isTruthTestExpression(expression) then return ast.truthTestExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), expression.expected, expression.negated) end if
+  if ast.isFunctionExpression(expression) then
+    arguments = []
+    for each argument in expression.arguments
+      arguments = arguments + [replaceMergeExpression(argument, statement, sourceTable, sourceRow)]
+    end for
+    return ast.functionExpression(expression.name, arguments, expression.distinct)
+  end if
+  return fail(UNSUPPORTED_SQL, "merge", "MERGE actions do not support stars, subqueries, or windows")
+end function
+
+// Replaces an unqualified procedure parameter reference with its invocation value.
+function replaceProcedureParameter(expression, parameterNames, parameterValues)
+  if expression.qualifier is not void then return expression end if
+  if len(parameterNames) > 0 then
+    for index = 0 to len(parameterNames) - 1
+      if parameterNames[index] == expression.name then return ast.typedLiteralExpression(parameterValues[index]) end if
+    end for
+  end if
+  return expression
+end function
+
+// Substitutes named procedure inputs throughout a supported DML expression.
+function replaceProcedureExpression(expression, parameterNames, parameterValues)
+  if ast.isColumnExpression(expression) then return replaceProcedureParameter(expression, parameterNames, parameterValues) end if
+  if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, replaceProcedureExpression(expression.operand, parameterNames, parameterValues)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, replaceProcedureExpression(expression.left, parameterNames, parameterValues), replaceProcedureExpression(expression.right, parameterNames, parameterValues)) end if
+  if ast.isIsNullExpression(expression) then return ast.isNullExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), expression.negated) end if
+  if ast.isCaseExpression(expression) then
+    branches = []
+    for each branch in expression.branches
+      branches = branches + [ast.caseBranch(replaceProcedureExpression(branch.condition, parameterNames, parameterValues), replaceProcedureExpression(branch.result, parameterNames, parameterValues))]
+    end for
+    elseExpression = void
+    if expression.elseExpression is not void then elseExpression = replaceProcedureExpression(expression.elseExpression, parameterNames, parameterValues) end if
+    return ast.caseExpression(branches, elseExpression)
+  end if
+  if ast.isCastExpression(expression) then return ast.castExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), expression.targetType) end if
+  if ast.isInExpression(expression) then
+    candidates = []
+    for each candidate in expression.values
+      candidates = candidates + [replaceProcedureExpression(candidate, parameterNames, parameterValues)]
+    end for
+    return ast.inExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), candidates, expression.negated)
+  end if
+  if ast.isBetweenExpression(expression) then return ast.betweenExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), replaceProcedureExpression(expression.lower, parameterNames, parameterValues), replaceProcedureExpression(expression.upper, parameterNames, parameterValues), expression.negated) end if
+  if ast.isTruthTestExpression(expression) then return ast.truthTestExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), expression.expected, expression.negated) end if
+  if ast.isFunctionExpression(expression) then
+    arguments = []
+    for each argument in expression.arguments
+      arguments = arguments + [replaceProcedureExpression(argument, parameterNames, parameterValues)]
+    end for
+    return ast.functionExpression(expression.name, arguments, expression.distinct)
+  end if
+  return fail(UNSUPPORTED_SQL, "procedure", "procedure parameters are not supported inside subqueries or windows")
+end function
+
+// Substitutes procedure parameters in one persisted INSERT, UPDATE, or DELETE body.
+function replaceProcedureStatement(statement, parameterNames, parameterValues)
+  if ast.isInsertStatement(statement) then
+    rows = []
+    for each sourceRow in statement.rows
+      row = []
+      for each expression in sourceRow
+        row = row + [replaceProcedureExpression(expression, parameterNames, parameterValues)]
+      end for
+      rows = rows + [row]
+    end for
+    return ast.InsertStatement(statement.tableName, statement.columns, rows, void, statement.conflictTarget, statement.conflictAction, [], void, [])
+  end if
+  if ast.isUpdateStatement(statement) then
+    assignments = []
+    for each assignment in statement.assignments
+      assignments = assignments + [ast.Assignment(assignment.column, replaceProcedureExpression(assignment.expression, parameterNames, parameterValues))]
+    end for
+    whereExpression = void
+    if statement.whereExpression is not void then whereExpression = replaceProcedureExpression(statement.whereExpression, parameterNames, parameterValues) end if
+    return ast.UpdateStatement(statement.tableName, assignments, whereExpression, [])
+  end if
+  if ast.isDeleteStatement(statement) then
+    whereExpression = void
+    if statement.whereExpression is not void then whereExpression = replaceProcedureExpression(statement.whereExpression, parameterNames, parameterValues) end if
+    return ast.DeleteStatement(statement.tableName, whereExpression, [])
+  end if
+  return fail(CORRUPT_DATA, "procedure", "stored procedure body is not supported DML")
+end function
+
 // Implements update touches trigger column for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -963,28 +1357,42 @@ function fireTriggers(engine, bound, result, pageTransaction)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   triggerList = schema_history.triggersForTable(state, bound.table.tableId, eventType)
   if len(triggerList) == 0 then return result end if
-  for each trigger in triggerList
-    if trigger.timing != schema_history.TRIGGER_AFTER then continue end if
-    if eventType == schema_history.TRIGGER_UPDATE and not updateTouchesTriggerColumn(bound, trigger) then continue end if
-    if eventType == schema_history.TRIGGER_INSERT then
-      for each newRow in result.newRows
-        executeTriggerBody(engine, trigger, bound.table, void, newRow, pageTransaction)
-      end for
-    else if eventType == schema_history.TRIGGER_DELETE then
-      for each oldRow in result.oldRows
-        executeTriggerBody(engine, trigger, bound.table, oldRow, void, pageTransaction)
-      end for
-    else
-      count = len(result.newRows)
-      if len(result.oldRows) < count then count = len(result.oldRows) end if
-      if count > 0 then
-        for index = 0 to count - 1
-          executeTriggerBody(engine, trigger, bound.table, result.oldRows[index], result.newRows[index], pageTransaction)
+  for each timing in [schema_history.TRIGGER_BEFORE, schema_history.TRIGGER_AFTER]
+    for each trigger in triggerList
+      if trigger.timing != timing then continue end if
+      if eventType == schema_history.TRIGGER_UPDATE and not updateTouchesTriggerColumn(bound, trigger) then continue end if
+      if eventType == schema_history.TRIGGER_INSERT then
+        for each newRow in result.newRows
+          triggerResult = try(executeTriggerBody(engine, trigger, bound.table, void, newRow, pageTransaction))
+          if typeof(triggerResult) == "error" then return triggerResult end if
         end for
+      else if eventType == schema_history.TRIGGER_DELETE then
+        for each oldRow in result.oldRows
+          triggerResult = try(executeTriggerBody(engine, trigger, bound.table, oldRow, void, pageTransaction))
+          if typeof(triggerResult) == "error" then return triggerResult end if
+        end for
+      else
+        count = len(result.newRows)
+        if len(result.oldRows) < count then count = len(result.oldRows) end if
+        if count > 0 then
+          for index = 0 to count - 1
+            triggerResult = try(executeTriggerBody(engine, trigger, bound.table, result.oldRows[index], result.newRows[index], pageTransaction))
+            if typeof(triggerResult) == "error" then return triggerResult end if
+          end for
+        end if
       end if
-    end if
+    end for
   end for
   return result
+end function
+
+// Returns whether the persisted statement formatter preserves the entire DML body.
+function persistedProgramBodySupported(statement)
+  if ast.isInsertStatement(statement) then
+    return statement.sourceQuery is void and statement.conflictAction == ast.CONFLICT_NONE and len(statement.returning) == 0
+  end if
+  if ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) then return len(statement.returning) == 0 end if
+  return false
 end function
 
 // Executes trigger DDL using the supplied inputs.
@@ -995,7 +1403,8 @@ function executeTriggerDdl(engine, statement)
   database = engine.database.catalogHandle
   databaseId = database.metadata.databaseId
   if ast.isCreateTriggerStatement(statement) then
-    if statement.timing != "AFTER" then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "M45 supports AFTER triggers only") end if
+    requireObjectSchema(engine, statement.name, "executeTriggerDdl")
+    if not persistedProgramBodySupported(statement.body) then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "trigger body must be one VALUES INSERT, UPDATE, or DELETE without RETURNING or ON CONFLICT") end if
     table = catalog.findTable(database, statement.tableName)
     if table is void then return fail(BINDING_ERROR, "executeTriggerDdl", "unknown trigger table " + statement.tableName) end if
     eventType = schema_history.TRIGGER_INSERT
@@ -1005,7 +1414,9 @@ function executeTriggerDdl(engine, statement)
     // by typed literals at execution time and therefore intentionally remain
     // unresolved here; the target statement itself is validated after a sample
     // replacement in the acceptance suite.
-    created = schema_history.putTrigger(engine.database.path, databaseId, statement.name, table.tableId, schema_history.TRIGGER_AFTER, eventType, statement.targetColumn, ast.formatStatement(statement.body), statement.ifNotExists)
+    timing = schema_history.TRIGGER_AFTER
+    if statement.timing == "BEFORE" then timing = schema_history.TRIGGER_BEFORE end if
+    created = schema_history.putTrigger(engine.database.path, databaseId, statement.name, table.tableId, timing, eventType, statement.targetColumn, ast.formatStatement(statement.body), statement.ifNotExists)
     return commandResult("CREATE TRIGGER", 0, created.name)
   end if
   if ast.isDropTriggerStatement(statement) then
@@ -1013,6 +1424,12 @@ function executeTriggerDdl(engine, statement)
     count = 0
     if dropped then count = 1 end if
     return commandResult("DROP TRIGGER", count, statement.name)
+  end if
+  if ast.isAlterTriggerStatement(statement) then
+    schema_history.setTriggerEnabled(engine.database.path, databaseId, statement.name, statement.enabled)
+    command = "DISABLE TRIGGER"
+    if statement.enabled then command = "ENABLE TRIGGER" end if
+    return commandResult(command, 0, statement.name)
   end if
   return fail(BINDING_ERROR, "executeTriggerDdl", "unsupported trigger DDL")
 end function
@@ -1025,6 +1442,7 @@ function executeSequenceDdl(engine, statement)
   database = engine.database.catalogHandle
   databaseId = database.metadata.databaseId
   if ast.isCreateSequenceStatement(statement) then
+    requireObjectSchema(engine, statement.name, "executeSequenceDdl")
     created = schema_history.putSequence(engine.database.path, databaseId, statement.name, statement.startValue, statement.incrementValue, statement.minimumValue, statement.maximumValue, statement.cycle, statement.ifNotExists)
     return commandResult("CREATE SEQUENCE", 0, created.name)
   end if
@@ -1037,16 +1455,109 @@ function executeSequenceDdl(engine, statement)
   return fail(BINDING_ERROR, "executeSequenceDdl", "unsupported sequence DDL")
 end function
 
+// Flattens named procedure inputs and their exact SQL types into durable metadata.
+function encodeProcedureParameters(parameters)
+  encoded = [PROCEDURE_PARAMETER_METADATA_V1]
+  names = []
+  for each parameter in parameters
+    for each existing in names
+      if existing == parameter.name then return fail(BINDING_ERROR, "procedureParameters", "duplicate procedure parameter " + parameter.name) end if
+    end for
+    typeInfo = types.fromTypeName(parameter.typeName, true)
+    names = names + [parameter.name]
+    encoded = encoded + [parameter.name, parameter.typeName.name, "" + parameter.typeName.length, "" + parameter.typeName.precision, "" + parameter.typeName.scale]
+  end for
+  return encoded
+end function
+
+// Decodes ordered parameter names while accepting the pre-metadata representation.
+function decodeProcedureParameterNames(encoded)
+  if len(encoded) == 0 or encoded[0] != PROCEDURE_PARAMETER_METADATA_V1 then return encoded end if
+  if (len(encoded) - 1) % 5 != 0 then return fail(CORRUPT_DATA, "procedureParameters", "stored procedure parameter metadata is malformed") end if
+  names = []
+  index = 1
+  while index < len(encoded)
+    names = names + [encoded[index]]
+    index = index + 5
+  end while
+  return names
+end function
+
+// Reconstructs one declared SQL parameter type from flattened durable metadata.
+function decodeProcedureParameterType(encoded, parameterIndex)
+  if len(encoded) == 0 or encoded[0] != PROCEDURE_PARAMETER_METADATA_V1 then return void end if
+  offset = 1 + parameterIndex * 5
+  if offset + 4 >= len(encoded) then return fail(CORRUPT_DATA, "procedureParameters", "stored procedure parameter index is invalid") end if
+  lengthValue = toNumber(encoded[offset + 2])
+  precisionValue = toNumber(encoded[offset + 3])
+  scaleValue = toNumber(encoded[offset + 4])
+  if typeof(lengthValue) != "int" or typeof(precisionValue) != "int" or typeof(scaleValue) != "int" then return fail(CORRUPT_DATA, "procedureParameters", "stored procedure parameter type is malformed") end if
+  return types.fromTypeName(ast.typeName(encoded[offset + 1], lengthValue, precisionValue, scaleValue), true)
+end function
+
+// Creates, replaces, or drops a durable single-statement stored procedure.
+function executeProcedureDdl(engine, statement)
+  if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeProcedureDdl", "procedure DDL is autocommit-only") end if
+  databaseId = engine.database.catalogHandle.metadata.databaseId
+  if ast.isCreateProcedureStatement(statement) then
+    requireObjectSchema(engine, statement.name, "executeProcedureDdl")
+    if not persistedProgramBodySupported(statement.body) then return fail(UNSUPPORTED_SQL, "executeProcedureDdl", "procedure body must be one VALUES INSERT, UPDATE, or DELETE without RETURNING or ON CONFLICT") end if
+    parameterMetadata = encodeProcedureParameters(statement.parameters)
+    saved = schema_history.putProcedure(engine.database.path, databaseId, statement.name, ast.formatStatement(statement.body), parameterMetadata, statement.replace)
+    return commandResult("CREATE PROCEDURE", 0, statement.name)
+  end if
+  if ast.isDropProcedureStatement(statement) then
+    dropped = schema_history.dropProcedure(engine.database.path, databaseId, statement.name, statement.ifExists)
+    count = 0
+    if dropped then count = 1 end if
+    return commandResult("DROP PROCEDURE", count, statement.name)
+  end if
+  return fail(BINDING_ERROR, "executeProcedureDdl", "unsupported procedure DDL")
+end function
+
+// Evaluates CALL arguments, substitutes named inputs, and executes the persisted DML body.
+function executeCall(engine, statement)
+  state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  procedure = schema_history.findProcedure(state, statement.name)
+  if procedure is void then return fail(BINDING_ERROR, "call", "procedure not found: " + statement.name) end if
+  parameterNames = decodeProcedureParameterNames(procedure.columnNames)
+  if len(statement.arguments) != len(parameterNames) then return fail(BINDING_ERROR, "call", "procedure argument count mismatch") end if
+  parameterValues = []
+  if len(statement.arguments) > 0 then
+    for argumentIndex = 0 to len(statement.arguments) - 1
+      argument = statement.arguments[argumentIndex]
+      materialized = materializeExpression(engine, argument, void, false)
+      boundArgument = binder.bindExpression(materialized, void, void)
+      argumentValue = expressions.evaluate(boundArgument, expressions.rowContext([]))
+      parameterType = decodeProcedureParameterType(procedure.columnNames, argumentIndex)
+      if parameterType is not void then argumentValue = values.convert(argumentValue, parameterType) end if
+      parameterValues = parameterValues + [argumentValue]
+    end for
+  end if
+  parsed = parser.parseSql(procedure.sqlText)
+  if len(parsed) != 1 then return fail(CORRUPT_DATA, "call", "procedure body is not one statement") end if
+  body = replaceProcedureStatement(parsed[0], parameterNames, parameterValues)
+  authorizeStatement(engine, body)
+  result = executeStatementInner(engine, body)
+  result.command = "CALL"
+  result.message = statement.name
+  return result
+end function
+
 // Executes DDL using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function executeDdl(engine, statement)
   if ast.isCreateTableStatement(statement) then
+    requireObjectSchema(engine, statement.name, "executeDdl")
     state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
     if schema_history.findView(state, statement.name) is not void then return fail(BINDING_ERROR, "executeDdl", "view already exists with name " + statement.name) end if
   end if
+  if ast.isCreateIndexStatement(statement) then requireObjectSchema(engine, statement.name, "executeDdl") end if
   bound = bind(statement, engine)
+  if binder.isBoundAlterTable(bound) and bound.table is void then return commandResult(bound.command, 0, "object did not exist") end if
+  validateAlterTableRows(engine, bound)
   if binder.isBoundAlterTable(bound) then dml.validateExistingConstraint(engine.database, bound) end if
   if engine.explicitTransaction then
     if not engine.trusted then return fail(UNSUPPORTED_SQL, "executeDdl", "authenticated DDL is autocommit-only in M21") end if
@@ -1195,11 +1706,253 @@ function executeDml(engine, statement)
   return commandResult(dmlCommand(bound), result.affectedRows, "DML committed")
 end function
 
-// Scans bound source using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+// Executes every MERGE source row against the same transactional target snapshot.
+function runMerge(engine, statement, pageTransaction)
+  sourceTable = catalog.findTable(engine.database.catalogHandle, statement.sourceTable)
+  targetTable = catalog.findTable(engine.database.catalogHandle, statement.targetTable)
+  if sourceTable is void then return fail(BINDING_ERROR, "merge", "unknown source table " + statement.sourceTable) end if
+  if targetTable is void then return fail(BINDING_ERROR, "merge", "unknown target table " + statement.targetTable) end if
+  sourceQuery = ast.SelectStatement(false, [ast.SelectItem(ast.starExpression(void), void)], statement.sourceTable, statement.sourceAlias, [], void, [], void, [], [], -1, 0, [])
+  sourceBound = try(binder.bindSelect(materializeSelectStatement(engine, sourceQuery, pageTransaction), engine.database.catalogHandle))
+  if typeof(sourceBound) == "error" then return sourceBound end if
+  sourceResult = try(selectRows(engine, sourceBound, pageTransaction))
+  if typeof(sourceResult) == "error" then return sourceResult end if
+  affected = 0
+  for each sourceRow in sourceResult.rows
+    predicate = replaceMergeExpression(statement.condition, statement, sourceTable, sourceRow)
+    matchQuery = ast.SelectStatement(false, [ast.SelectItem(ast.integerLiteral("1"), void)], statement.targetTable, void, [], predicate, [], void, [], [], -1, 0, [])
+    matchBound = try(binder.bindSelect(materializeSelectStatement(engine, matchQuery, pageTransaction), engine.database.catalogHandle))
+    if typeof(matchBound) == "error" then return matchBound end if
+    matches = try(selectRows(engine, matchBound, pageTransaction))
+    if typeof(matches) == "error" then return matches end if
+    if len(matches.rows) > 0 then
+      action = void
+      if statement.matchedDelete then
+        action = ast.DeleteStatement(statement.targetTable, predicate, [])
+      else if len(statement.matchedAssignments) > 0 then
+        assignments = []
+        for each assignment in statement.matchedAssignments
+          assignments = assignments + [ast.Assignment(assignment.column, replaceMergeExpression(assignment.expression, statement, sourceTable, sourceRow))]
+        end for
+        action = ast.UpdateStatement(statement.targetTable, assignments, predicate, [])
+      end if
+      if action is not void then
+        boundAction = try(bind(materializeDmlStatement(engine, action, pageTransaction), engine))
+        if typeof(boundAction) == "error" then return boundAction end if
+        actionResult = try(runBoundDml(engine, boundAction, pageTransaction))
+        if typeof(actionResult) == "error" then return actionResult end if
+        triggered = try(fireTriggers(engine, boundAction, actionResult, pageTransaction))
+        if typeof(triggered) == "error" then return triggered end if
+        affected = affected + actionResult.affectedRows
+      end if
+    else if len(statement.insertValues) > 0 then
+      row = []
+      for each expression in statement.insertValues
+        row = row + [replaceMergeExpression(expression, statement, sourceTable, sourceRow)]
+      end for
+      action = ast.InsertStatement(statement.targetTable, statement.insertColumns, [row], void, [], ast.CONFLICT_NONE, [], void, [])
+      boundAction = try(bind(materializeDmlStatement(engine, action, pageTransaction), engine))
+      if typeof(boundAction) == "error" then return boundAction end if
+      actionResult = try(runBoundDml(engine, boundAction, pageTransaction))
+      if typeof(actionResult) == "error" then return actionResult end if
+      triggered = try(fireTriggers(engine, boundAction, actionResult, pageTransaction))
+      if typeof(triggered) == "error" then return triggered end if
+      affected = affected + actionResult.affectedRows
+    end if
+  end for
+  return affected
+end function
+
+// Runs MERGE in an existing explicit transaction or creates one atomic implicit transaction.
+function executeMerge(engine, statement)
+  if engine.explicitTransaction then
+    pageTransaction = ensureExplicitDml(engine)
+    // MERGE can execute many physical DML actions. Keep those actions atomic
+    // even inside a longer user transaction by restoring its exact pre-MERGE
+    // page set when any action, constraint, or trigger reports an error. The
+    // dollar sign makes this implementation savepoint inaccessible to SQL
+    // identifiers, so it cannot collide with a user-managed savepoint.
+    statementSavepoint = "__minisql$merge_statement"
+    saved = try(transaction.savepoint(pageTransaction, statementSavepoint))
+    if typeof(saved) == "error" then return saved end if
+    affected = try(runMerge(engine, statement, pageTransaction))
+    if typeof(affected) == "error" then
+      restored = try(transaction.rollbackToSavepoint(pageTransaction, statementSavepoint))
+      if typeof(restored) == "error" then return restored end if
+      releasedAfterFailure = try(transaction.releaseSavepoint(pageTransaction, statementSavepoint))
+      if typeof(releasedAfterFailure) == "error" then return releasedAfterFailure end if
+      return affected
+    end if
+    released = try(transaction.releaseSavepoint(pageTransaction, statementSavepoint))
+    if typeof(released) == "error" then return released end if
+    return commandResult("MERGE", affected, "MERGE staged")
+  end if
+  pageTransaction = database_manager.begin(engine.database, transaction.ISOLATION_SERIALIZABLE, false)
+  affected = try(runMerge(engine, statement, pageTransaction))
+  if typeof(affected) == "error" then transaction.rollback(pageTransaction); return affected end if
+  committed = try(commitPageTransaction(engine, pageTransaction))
+  if typeof(committed) == "error" then return committed end if
+  return commandResult("MERGE", affected, "MERGE committed")
+end function
+
+// Returns true when a recursive result row is already present by SQL value equality.
+function recursiveRowsContain(rows, candidate)
+  for each row in rows
+    if projection.sameValues(row, candidate) then return true end if
+  end for
+  return false
+end function
+
+// Returns the innermost active delta for a recursive self-reference.
+function recursiveWorkingRows(engine, name)
+  found = void
+  for each frame in engine.recursiveCteFrames
+    if frame.name == name then found = frame.rows end if
+  end for
+  if found is void then return fail(BINDING_ERROR, "recursiveCte", "recursive reference has no active working table: " + name) end if
+  return found
+end function
+
+// Evaluates anchor rows followed by semi-naive delta iterations until a fixpoint.
+// UNION removes rows already seen; UNION ALL preserves bags and therefore relies
+// on an empty recursive result to terminate. The depth guard diagnoses runaway SQL.
+function evaluateRecursiveQuery(engine, query, pageTransaction)
+  anchorResult = selectRows(engine, query.anchor, pageTransaction)
+  output = anchorResult.rows
+  delta = anchorResult.rows
+  iteration = 0
+  while len(delta) > 0 and iteration < 10000
+    engine.recursiveCteFrames = engine.recursiveCteFrames + [RecursiveCteFrame(query.name, delta)]
+    recursiveResult = try(selectRows(engine, query.recursiveTerm, pageTransaction))
+    if len(engine.recursiveCteFrames) <= 1 then
+      engine.recursiveCteFrames = []
+    else
+      engine.recursiveCteFrames = slice(engine.recursiveCteFrames, 0, len(engine.recursiveCteFrames) - 1)
+    end if
+    if typeof(recursiveResult) == "error" then return recursiveResult end if
+    nextDelta = []
+    for each candidate in recursiveResult.rows
+      converted = []
+      if len(candidate) != len(query.anchor.items) then return fail(BINDING_ERROR, "recursiveCte", "recursive term output width changed during execution") end if
+      if len(candidate) > 0 then
+        for index = 0 to len(candidate) - 1
+          converted = converted + [values.convert(candidate[index], query.anchor.items[index].typeInfo)]
+        end for
+      end if
+      if query.unionAll or (not recursiveRowsContain(output, converted) and not recursiveRowsContain(nextDelta, converted)) then nextDelta = nextDelta + [converted] end if
+    end for
+    output = output + nextDelta
+    delta = nextDelta
+    iteration = iteration + 1
+  end while
+  if len(delta) > 0 then return fail(UNSUPPORTED_SQL, "recursiveCte", "recursive CTE exceeded 10000 iterations") end if
+  return output
+end function
+
+// Splits a canonical object name into schema and local name, defaulting to public.
+function splitObjectName(name)
+  raw = bytes(name)
+  dot = -1
+  if len(raw) > 0 then
+    for index = 0 to len(raw) - 1
+      if raw[index] == 46 and dot < 0 then dot = index end if
+    end for
+  end if
+  if dot < 0 then return ["public", name] end if
+  return [decode(slice(raw, 0, dot)), decode(slice(raw, dot + 1, len(raw) - dot - 1))]
+end function
+
+// Materializes a supported INFORMATION_SCHEMA relation from the live catalog snapshot.
+function informationSchemaRows(engine, relationKind)
+  rows = []
+  state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  if relationKind == binder.INFORMATION_SCHEMATA then
+    for each name in schema_history.schemaNames(state)
+      rows = rows + [[values.text(name)]]
+    end for
+    return rows
+  end if
+  if relationKind == binder.INFORMATION_TABLES or relationKind == binder.INFORMATION_COLUMNS or relationKind == binder.INFORMATION_TABLE_CONSTRAINTS then
+    for each table in engine.database.catalogHandle.catalog.tables
+      parts = splitObjectName(table.name)
+      if relationKind == binder.INFORMATION_TABLES then
+        rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text("BASE TABLE")]]
+      else if relationKind == binder.INFORMATION_COLUMNS then
+        if len(table.columns) > 0 then
+          for index = 0 to len(table.columns) - 1
+            column = table.columns[index]
+            nullable = "NO"
+            if column.nullable then nullable = "YES" end if
+            rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text(column.name), values.integer(index + 1), values.text(types.kindName(column.typeCode)), values.text(nullable)]]
+          end for
+        end if
+      else
+        tableSchema = schema_history.findTableSchema(state, table.tableId)
+        if tableSchema is not void then
+          for each constraint in tableSchema.constraints
+            rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text(constraint.name), values.text(constraintKindName(constraint.kind))]]
+          end for
+        end if
+      end if
+    end for
+    if relationKind == binder.INFORMATION_TABLES then
+      for each view in state.views
+        if not schema_history.isInternalExtensionViewName(view.name) then
+          parts = splitObjectName(view.name)
+          rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text("VIEW")]]
+        end if
+      end for
+    end if
+    return rows
+  end if
+  if relationKind == binder.INFORMATION_VIEWS then
+    for each view in state.views
+      if not schema_history.isInternalExtensionViewName(view.name) then
+        parts = splitObjectName(view.name)
+        rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text(view.sqlText)]]
+      end if
+    end for
+    return rows
+  end if
+  if relationKind == binder.INFORMATION_ROUTINES then
+    for each procedure in state.views
+      if schema_history.isProcedureMarkerName(procedure.name) then
+        parts = splitObjectName(schema_history.procedureObjectName(procedure.name))
+        rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.text("PROCEDURE"), values.text(procedure.sqlText)]]
+      end if
+    end for
+    return rows
+  end if
+  return fail(BINDING_ERROR, "informationSchema", "unsupported metadata relation")
+end function
+
+// Scans a catalog table, named query, recursive fixpoint, or recursive delta source.
 function scanBoundSource(engine, source, pageTransaction)
   if source.query is void then return scan.scanTable(engine.database.path, source.table, pageTransaction) end if
+  if binder.isBoundInformationSchemaSource(source.query) then
+    metadataRows = informationSchemaRows(engine, source.query.relationKind)
+    metadataOutput = []
+    for each row in metadataRows
+      metadataOutput = metadataOutput + [scan.ScannedRow(void, row)]
+    end for
+    return metadataOutput
+  end if
+  if binder.isBoundRecursiveReference(source.query) then
+    workingRows = recursiveWorkingRows(engine, source.query.name)
+    workingOutput = []
+    for each row in workingRows
+      workingOutput = workingOutput + [scan.ScannedRow(void, row)]
+    end for
+    return workingOutput
+  end if
+  if binder.isBoundRecursiveQuery(source.query) then
+    recursiveRows = evaluateRecursiveQuery(engine, source.query, pageTransaction)
+    recursiveOutput = []
+    for each row in recursiveRows
+      recursiveOutput = recursiveOutput + [scan.ScannedRow(void, row)]
+    end for
+    return recursiveOutput
+  end if
   result = selectRows(engine, source.query, pageTransaction)
   output = []
   for each row in result.rows
@@ -1276,18 +2029,110 @@ function normalizeCompoundOrder(rows, bound)
   return output
 end function
 
+// Executes a validated scalar, EXISTS, or IN subquery for one outer source row.
+function materializeBoundSubquery(engine, expression, bound, row, pageTransaction)
+  query = substituteOuterSelect(expression.query, bound.sources, row.values)
+  query = materializeSelectStatement(engine, query, pageTransaction)
+  nested = binder.bindSelect(query, engine.database.catalogHandle)
+  result = selectRows(engine, nested, pageTransaction)
+  if expression.subqueryKind == expressions.SUBQUERY_EXISTS then return expressions.literal(values.boolean(len(result.rows) > 0), expression.typeInfo) end if
+  if len(nested.items) != 1 then return fail(BINDING_ERROR, "correlatedSubquery", "subquery must return exactly one column") end if
+  if expression.subqueryKind == expressions.SUBQUERY_SCALAR then
+    if len(result.rows) > 1 then return fail(BINDING_ERROR, "correlatedSubquery", "scalar subquery returned more than one row") end if
+    if len(result.rows) == 0 then return expressions.literal(values.nullValue(expression.typeInfo.kind), expression.typeInfo) end if
+    return expressions.literal(result.rows[0][0], expression.typeInfo)
+  end if
+  operand = materializeBoundExpression(engine, expression.operand, bound, row, pageTransaction)
+  if len(result.rows) == 0 then return expressions.literal(values.boolean(expression.negated), expression.typeInfo) end if
+  candidates = []
+  for each resultRow in result.rows
+    candidates = candidates + [expressions.literal(resultRow[0], nested.items[0].typeInfo)]
+  end for
+  predicate = expressions.inPredicate(operand, candidates, expression.negated)
+  return expressions.literal(expressions.evaluate(predicate, expressions.rowContext(row.values)), expression.typeInfo)
+end function
+
+// Rebuilds a bound expression with every deferred subquery replaced by a literal.
+// Reusing the ordinary expression evaluator keeps SQL NULL and boolean semantics centralized.
+function materializeBoundExpression(engine, expression, bound, row, pageTransaction)
+  if expressions.isBoundSubquery(expression) then return materializeBoundSubquery(engine, expression, bound, row, pageTransaction) end if
+  if expressions.isBaseBoundExpression(expression) then
+    if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return expression end if
+    if expression.kind == expressions.BOUND_UNARY then return expressions.unary(expression.operator, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.typeInfo) end if
+    if expression.kind == expressions.BOUND_IS_NULL then return expressions.isNull(materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.operator == "IS NOT NULL") end if
+    if expression.kind == expressions.BOUND_BINARY then return expressions.binary(expression.operator, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), materializeBoundExpression(engine, expression.right, bound, row, pageTransaction), expression.typeInfo) end if
+  end if
+  if expressions.isBoundCase(expression) then
+    branches = []
+    for each branch in expression.branches
+      branches = branches + [expressions.caseBranch(materializeBoundExpression(engine, branch.condition, bound, row, pageTransaction), materializeBoundExpression(engine, branch.result, bound, row, pageTransaction))]
+    end for
+    elseExpression = void
+    if expression.elseExpression is not void then elseExpression = materializeBoundExpression(engine, expression.elseExpression, bound, row, pageTransaction) end if
+    return expressions.caseExpression(branches, elseExpression, expression.typeInfo)
+  end if
+  if expressions.isBoundCast(expression) then return expressions.castExpression(materializeBoundExpression(engine, expression.operand, bound, row, pageTransaction), expression.targetType) end if
+  if expressions.isBoundScalar(expression) then
+    arguments = []
+    for each argument in expression.arguments
+      arguments = arguments + [materializeBoundExpression(engine, argument, bound, row, pageTransaction)]
+    end for
+    return expressions.scalar(expression.name, arguments, expression.typeInfo)
+  end if
+  if expressions.isBoundIn(expression) then
+    candidates = []
+    for each candidate in expression.candidates
+      candidates = candidates + [materializeBoundExpression(engine, candidate, bound, row, pageTransaction)]
+    end for
+    return expressions.inPredicate(materializeBoundExpression(engine, expression.operand, bound, row, pageTransaction), candidates, expression.negated)
+  end if
+  if expressions.isBoundBetween(expression) then return expressions.betweenPredicate(materializeBoundExpression(engine, expression.operand, bound, row, pageTransaction), materializeBoundExpression(engine, expression.lower, bound, row, pageTransaction), materializeBoundExpression(engine, expression.upper, bound, row, pageTransaction), expression.negated) end if
+  if expressions.isBoundTruthTest(expression) then return expressions.truthTest(materializeBoundExpression(engine, expression.operand, bound, row, pageTransaction), expression.expected, expression.negated) end if
+  return fail(BINDING_ERROR, "correlatedSubquery", "unsupported outer expression shape")
+end function
+
+// Filters and projects a non-grouped row set whose expressions contain subqueries.
+function projectSubqueryRows(engine, bound, source, pageTransaction)
+  output = []
+  for each row in source
+    context = expressions.rowContext(row.values)
+    passes = true
+    if bound.whereExpression is not void then
+      predicate = materializeBoundExpression(engine, bound.whereExpression, bound, row, pageTransaction)
+      passes = expressions.predicatePasses(predicate, context)
+    end if
+    if passes then
+      selected = []
+      for each item in bound.items
+        selected = selected + [expressions.evaluate(materializeBoundExpression(engine, item, bound, row, pageTransaction), context)]
+      end for
+      ordered = []
+      for each item in bound.orderExpressions
+        ordered = ordered + [expressions.evaluate(materializeBoundExpression(engine, item, bound, row, pageTransaction), context)]
+      end for
+      output = output + [projection.ProjectedRow(row, selected, ordered)]
+    end if
+  end for
+  return output
+end function
+
 // Implements select projected for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
   source = joinedSource(engine, bound, pageTransaction)
-  filtered = filter.apply(source, bound.whereExpression)
   projected = []
-  if bound.aggregateQuery then
+  hasSubqueries = expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(bound.whereExpression) or expressions.containsSubqueryList(bound.orderExpressions)
+  if hasSubqueries then
+    projected = projectSubqueryRows(engine, bound, source, pageTransaction)
+  else if bound.aggregateQuery then
+    filtered = filter.apply(source, bound.whereExpression)
     projected = aggregate.project(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions)
   else if bound.windowQuery then
+    filtered = filter.apply(source, bound.whereExpression)
     projected = projection.applyWindows(filtered, bound.items, bound.orderExpressions)
   else
+    filtered = filter.apply(source, bound.whereExpression)
     projected = projection.apply(filtered, bound.items, bound.orderExpressions)
   end if
   if bound.statement.distinct then projected = projection.distinct(projected) end if
@@ -1597,12 +2442,15 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function authorizeNamedSource(engine, state, name, viewStack)
+  parts = splitObjectName(name)
+  if parts[0] == "information_schema" then return true end if
   table = catalog.findTable(databaseHandle(engine), name)
   if table is not void then
     requirePrivilege(engine, metadata.OBJECT_TABLE, table.tableId, metadata.PRIVILEGE_SELECT, "authorizeSelect")
     return true
   end if
   view = schema_history.findView(state, name)
+  if view is not void and schema_history.isInternalExtensionViewName(view.name) then view = void end if
   if view is void then return fail(BINDING_ERROR, "authorizeSelect", "unknown table or view " + name) end if
   if nameInList(viewStack, name) then return fail(BINDING_ERROR, "authorizeSelect", "cyclic view dependency involving " + name) end if
   parsed = parser.parseSql(view.sqlText)
@@ -1623,7 +2471,9 @@ function authorizeSelectInternal(engine, statement, viewStack, inheritedCteNames
   // the main query and nested subqueries. Each CTE is authorized against only
   // the definitions that precede it.
   for each cte in statement.ctes
-    authorizeSelectInternal(engine, cte.query, viewStack, availableCtes)
+    cteScope = availableCtes
+    if cte.recursive then cteScope = cteScope + [cte.name] end if
+    authorizeSelectInternal(engine, cte.query, viewStack, cteScope)
     availableCtes = availableCtes + [cte.name]
   end for
   if statement.tableName is not void and not nameInList(availableCtes, statement.tableName) then authorizeNamedSource(engine, state, statement.tableName, viewStack) end if
@@ -1707,7 +2557,17 @@ function authorizeStatement(engine, statement)
     authorizeSelectItems(engine, statement.returning)
     return true
   end if
+  if ast.isMergeStatement(statement) then
+    requireTablePrivilegeByName(engine, statement.sourceTable, metadata.PRIVILEGE_SELECT, "authorizeMergeSource")
+    if len(statement.matchedAssignments) > 0 then requireTablePrivilegeByName(engine, statement.targetTable, metadata.PRIVILEGE_UPDATE, "authorizeMergeUpdate") end if
+    if statement.matchedDelete then requireTablePrivilegeByName(engine, statement.targetTable, metadata.PRIVILEGE_DELETE, "authorizeMergeDelete") end if
+    if len(statement.insertValues) > 0 then requireTablePrivilegeByName(engine, statement.targetTable, metadata.PRIVILEGE_INSERT, "authorizeMergeInsert") end if
+    return true
+  end if
   if ast.isTruncateStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_DELETE, "authorizeTruncate"); return true end if
+  if ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeSchemaDdl") end if
+  if ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeProcedureDdl") end if
+  if ast.isCallStatement(statement) then return true end if
   if ast.isCreateTableStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeCreateTable") end if
   if ast.isCreateViewStatement(statement) then
     requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeViewDdl")
@@ -1721,8 +2581,14 @@ function authorizeStatement(engine, statement)
     authorizeStatement(engine, statement.body)
     return true
   end if
-  if ast.isDropTriggerStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeDropTrigger") end if
+  if ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeTriggerDdl") end if
   if ast.isCreateIndexStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_INDEX, "authorizeCreateIndex"); return true end if
+  if ast.isDropIndexStatement(statement) then
+    boundIndex = binder.bindStatement(statement, engine.database.catalogHandle)
+    if boundIndex.table is void then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeDropIndex") end if
+    requireTablePrivilegeByName(engine, boundIndex.table.name, metadata.PRIVILEGE_INDEX, "authorizeDropIndex")
+    return true
+  end if
   if ast.isDropTableStatement(statement) then requireTablePrivilegeByName(engine, statement.name, metadata.PRIVILEGE_DROP, "authorizeDropTable"); return true end if
   if ast.isAlterTableStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_ALTER, "authorizeAlterTable"); return true end if
   if ast.isAnalyzeStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_MAINTAIN, "authorizeAnalyze") end if
@@ -2054,13 +2920,17 @@ function executeStatementInner(engine, statement)
   if ast.isShowTablesStatement(statement) then return executeShowTables(engine) end if
   if ast.isDescribeTableStatement(statement) then return executeDescribeTable(engine, statement) end if
   if ast.isShowIndexesStatement(statement) then return executeShowIndexes(engine, statement) end if
+  if ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) then return executeSchemaDdl(engine, statement) end if
+  if ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) then return executeProcedureDdl(engine, statement) end if
+  if ast.isCallStatement(statement) then return executeCall(engine, statement) end if
   if ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) then return executeViewDdl(engine, statement) end if
   if ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) then return executeSequenceDdl(engine, statement) end if
-  if ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) then return executeTriggerDdl(engine, statement) end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) then return executeDdl(engine, statement) end if
+  if ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) then return executeTriggerDdl(engine, statement) end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) then return executeDdl(engine, statement) end if
   if ast.isVacuumStatement(statement) then return executeVacuum(engine, statement) end if
   if ast.isReindexStatement(statement) then return executeReindex(engine, statement) end if
   if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isTruncateStatement(statement) then return executeDml(engine, statement) end if
+  if ast.isMergeStatement(statement) then return executeMerge(engine, statement) end if
   if ast.isSelectStatement(statement) then return executeSelect(engine, statement) end if
   if ast.isAnalyzeStatement(statement) then return executeAnalyze(engine, statement) end if
   if ast.isExplainStatement(statement) then return executeExplain(engine, statement) end if
@@ -2152,8 +3022,9 @@ end function
 // NEXTVAL. Transaction-control/session-only statements are handled separately.
 function statementUsesWriteLock(statement)
   if ast.isSelectStatement(statement) and selectUsesNextval(statement) then return true end if
-  if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isTruncateStatement(statement) then return true end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) then return true end if
+  if ast.isCallStatement(statement) then return true end if
+  if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isMergeStatement(statement) or ast.isTruncateStatement(statement) then return true end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) or ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) then return true end if
   if ast.isDclStatement(statement) or ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return true end if
   return false
 end function
@@ -2189,17 +3060,25 @@ function auditAction(statement)
   if ast.isInsertStatement(statement) then return "INSERT" end if
   if ast.isUpdateStatement(statement) then return "UPDATE" end if
   if ast.isDeleteStatement(statement) then return "DELETE" end if
+  if ast.isMergeStatement(statement) then return "MERGE" end if
+  if ast.isCallStatement(statement) then return "CALL" end if
   if ast.isTruncateStatement(statement) then return "TRUNCATE" end if
   if ast.isCreateTableStatement(statement) then return "CREATE TABLE" end if
   if ast.isCreateIndexStatement(statement) then return "CREATE INDEX" end if
+  if ast.isDropIndexStatement(statement) then return "DROP INDEX" end if
   if ast.isDropTableStatement(statement) then return "DROP TABLE" end if
   if ast.isAlterTableStatement(statement) then return "ALTER TABLE" end if
+  if ast.isCreateSchemaStatement(statement) then return "CREATE SCHEMA" end if
+  if ast.isDropSchemaStatement(statement) then return "DROP SCHEMA" end if
+  if ast.isCreateProcedureStatement(statement) then return "CREATE PROCEDURE" end if
+  if ast.isDropProcedureStatement(statement) then return "DROP PROCEDURE" end if
   if ast.isCreateViewStatement(statement) then return "CREATE VIEW" end if
   if ast.isDropViewStatement(statement) then return "DROP VIEW" end if
   if ast.isCreateSequenceStatement(statement) then return "CREATE SEQUENCE" end if
   if ast.isDropSequenceStatement(statement) then return "DROP SEQUENCE" end if
   if ast.isCreateTriggerStatement(statement) then return "CREATE TRIGGER" end if
   if ast.isDropTriggerStatement(statement) then return "DROP TRIGGER" end if
+  if ast.isAlterTriggerStatement(statement) then return "ALTER TRIGGER" end if
   if ast.isAnalyzeStatement(statement) then return "ANALYZE" end if
   if ast.isExplainStatement(statement) then return "EXPLAIN" end if
   if ast.isVacuumStatement(statement) then return "VACUUM" end if
@@ -2231,7 +3110,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function auditEventType(statement)
   if ast.isDclStatement(statement) then return diagnostics.AUDIT_DCL end if
-  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
+  if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) or ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
   if ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return diagnostics.AUDIT_MAINTENANCE end if
   return 0
 end function

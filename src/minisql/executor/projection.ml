@@ -12,6 +12,12 @@ import minisql.sql.values as values
 
 const INVALID_ARGUMENT = 9001
 
+// Performs truncating integer division without converting window cardinalities to floats.
+function integerDivide(numerator, denominator)
+  if denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "denominator must be positive") end if
+  return (numerator - (numerator % denominator)) / denominator
+end function
+
 // Groups the projected row state and preserves the field relationships documented below.
 struct ProjectedRow
   // Stores the source associated with this value.
@@ -193,6 +199,19 @@ function windowAggregate(expression, partitionRows)
   return fail(INVALID_ARGUMENT, "windowAggregate", "unsupported window aggregate " + name)
 end function
 
+// Decodes an integral SQL window argument and rejects NULL or non-integral values.
+function windowInteger(value, operation)
+  if value.isNull then return fail(INVALID_ARGUMENT, operation, "argument cannot be NULL") end if
+  if value.typeKind == types.SqlTypeKind.BigInt then return endian.int64ToInt(value.value) end if
+  if value.typeKind == types.SqlTypeKind.SmallInt or value.typeKind == types.SqlTypeKind.Integer then return value.value end if
+  return fail(INVALID_ARGUMENT, operation, "argument must be integral")
+end function
+
+// Evaluates a window argument in the context of one selected partition row.
+function evaluateWindowArgument(expression, argumentIndex, row)
+  return expressions.evaluate(expression.arguments[argumentIndex], expressions.rowContext(row.values))
+end function
+
 // Implements window value for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -223,6 +242,49 @@ function windowValue(expression, allRows, currentRow)
   end if
   if expression.name == "RANK" then return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(rank)) end if
   if expression.name == "DENSE_RANK" then return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(dense)) end if
+  if expression.name == "PERCENT_RANK" then
+    if len(ordered) <= 1 then return values.doubleValue(0.0) end if
+    return values.doubleValue(((rank - 1) + 0.0) / (len(ordered) - 1))
+  end if
+  if expression.name == "CUME_DIST" then
+    peerEnd = position
+    while peerEnd + 1 < len(ordered) and compareWindowRows(ordered[position], ordered[peerEnd + 1], expression) == 0
+      peerEnd = peerEnd + 1
+    end while
+    return values.doubleValue(((peerEnd + 1) + 0.0) / len(ordered))
+  end if
+  if expression.name == "NTILE" then
+    buckets = windowInteger(evaluateWindowArgument(expression, 0, currentRow), "NTILE")
+    if buckets <= 0 then return fail(INVALID_ARGUMENT, "NTILE", "bucket count must be positive") end if
+    smallerSize = integerDivide(len(ordered), buckets)
+    largerBuckets = len(ordered) % buckets
+    largerSize = smallerSize + 1
+    bucket = 1
+    if position < largerBuckets * largerSize then
+      bucket = integerDivide(position, largerSize) + 1
+    else
+      bucket = largerBuckets + integerDivide(position - largerBuckets * largerSize, smallerSize) + 1
+    end if
+    return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(bucket))
+  end if
+  if expression.name == "LAG" or expression.name == "LEAD" then
+    offset = 1
+    if len(expression.arguments) >= 2 then offset = windowInteger(evaluateWindowArgument(expression, 1, currentRow), expression.name) end if
+    if offset < 0 then return fail(INVALID_ARGUMENT, expression.name, "offset must be non-negative") end if
+    target = position - offset
+    if expression.name == "LEAD" then target = position + offset end if
+    if target >= 0 and target < len(ordered) then return values.convert(evaluateWindowArgument(expression, 0, ordered[target]), expression.typeInfo) end if
+    if len(expression.arguments) == 3 then return values.convert(evaluateWindowArgument(expression, 2, currentRow), expression.typeInfo) end if
+    return values.nullValue(expression.typeInfo.kind)
+  end if
+  if expression.name == "FIRST_VALUE" then return values.convert(evaluateWindowArgument(expression, 0, ordered[0]), expression.typeInfo) end if
+  if expression.name == "LAST_VALUE" then return values.convert(evaluateWindowArgument(expression, 0, ordered[len(ordered) - 1]), expression.typeInfo) end if
+  if expression.name == "NTH_VALUE" then
+    nth = windowInteger(evaluateWindowArgument(expression, 1, currentRow), "NTH_VALUE")
+    if nth <= 0 then return fail(INVALID_ARGUMENT, "NTH_VALUE", "position must be positive") end if
+    if nth > len(ordered) then return values.nullValue(expression.typeInfo.kind) end if
+    return values.convert(evaluateWindowArgument(expression, 0, ordered[nth - 1]), expression.typeInfo)
+  end if
   return fail(INVALID_ARGUMENT, "windowValue", "unknown window function " + expression.name)
 end function
 

@@ -4,6 +4,8 @@ package minisql.sql.expressions
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+import std.math as math
+import minisql.common.endian as endian
 import minisql.sql.types as types
 import minisql.sql.values as values
 
@@ -24,6 +26,11 @@ const BOUND_IN = 10
 const BOUND_BETWEEN = 11
 const BOUND_TRUTH_TEST = 12
 const BOUND_WINDOW = 13
+const BOUND_SUBQUERY = 14
+
+const SUBQUERY_SCALAR = 1
+const SUBQUERY_EXISTS = 2
+const SUBQUERY_IN = 3
 
 // Groups the bound expression state and preserves the field relationships documented below.
 struct BoundExpression
@@ -51,6 +58,8 @@ struct BoundAggregate
   name
   // Stores the argument associated with this value.
   argument
+  // Stores the optional delimiter or secondary aggregate argument.
+  separator
   // Indicates whether the distinct condition is active.
   distinct
   // Stores the type info associated with this value.
@@ -147,6 +156,22 @@ struct BoundTruthTest
   typeInfo
 end struct
 
+// Carries a SELECT that must be evaluated against the current outer row.
+// The binder records its SQL result type while the executor substitutes
+// qualified outer references immediately before running the nested query.
+struct BoundSubquery
+  // Identifies scalar, EXISTS, or IN result semantics.
+  subqueryKind
+  // Retains the parsed nested SELECT until an outer row is available.
+  query
+  // Stores the bound left operand for IN, or void for scalar and EXISTS forms.
+  operand
+  // Indicates whether an IN result is negated.
+  negated
+  // Stores the statically inferred SQL result type.
+  typeInfo
+end struct
+
 
 // Groups the bound window state and preserves the field relationships documented below.
 struct BoundWindow
@@ -187,7 +212,7 @@ end function
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isBoundExpression(value)
-  return value is BoundExpression or value is BoundAggregate or value is BoundCase or value is BoundCast or value is BoundScalar or value is BoundIn or value is BoundBetween or value is BoundTruthTest or value is BoundWindow
+  return value is BoundExpression or value is BoundAggregate or value is BoundCase or value is BoundCast or value is BoundScalar or value is BoundIn or value is BoundBetween or value is BoundTruthTest or value is BoundWindow or value is BoundSubquery
 end function
 
 // Returns whether the supplied value satisfies the bound aggregate condition.
@@ -260,6 +285,11 @@ function isBoundWindow(value)
   return value is BoundWindow
 end function
 
+// Returns whether a bound expression defers a nested SELECT to row evaluation.
+function isBoundSubquery(value)
+  return value is BoundSubquery
+end function
+
 // Implements literal for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -310,10 +340,11 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function aggregate(name, argument, distinct, typeInfo, countStar)
+function aggregate(name, argument, separator, distinct, typeInfo, countStar)
   if typeof(name) != "string" or len(name) == 0 or typeof(distinct) != "bool" or not types.isSqlType(typeInfo) or typeof(countStar) != "bool" then return fail(INVALID_ARGUMENT, "aggregate", "invalid aggregate binding") end if
   if not countStar and not isBoundExpression(argument) then return fail(INVALID_ARGUMENT, "aggregate", "aggregate argument must be bound") end if
-  return BoundAggregate(BOUND_AGGREGATE, name, argument, distinct, typeInfo, countStar)
+  if separator is not void and not isBoundExpression(separator) then return fail(INVALID_ARGUMENT, "aggregate", "aggregate separator must be bound") end if
+  return BoundAggregate(BOUND_AGGREGATE, name, argument, separator, distinct, typeInfo, countStar)
 end function
 
 // Implements case branch for this module.
@@ -392,6 +423,73 @@ function truthTest(operand, expected, negated)
   return BoundTruthTest(BOUND_TRUTH_TEST, operand, expected, negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false))
 end function
 
+// Creates a deferred subquery binding after its shape and result type have been validated.
+function subquery(subqueryKind, query, operand, negated, typeInfo)
+  if typeof(subqueryKind) != "int" or typeof(negated) != "bool" or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "subquery", "invalid subquery binding") end if
+  if subqueryKind != SUBQUERY_SCALAR and subqueryKind != SUBQUERY_EXISTS and subqueryKind != SUBQUERY_IN then return fail(INVALID_ARGUMENT, "subquery", "unknown subquery kind") end if
+  if subqueryKind == SUBQUERY_IN and not isBoundExpression(operand) then return fail(INVALID_ARGUMENT, "subquery", "IN subquery requires a bound operand") end if
+  if subqueryKind != SUBQUERY_IN and operand is not void then return fail(INVALID_ARGUMENT, "subquery", "unexpected subquery operand") end if
+  return BoundSubquery(subqueryKind, query, operand, negated, typeInfo)
+end function
+
+// Returns true when an expression tree contains a row-dependent nested SELECT.
+function containsSubquery(expression)
+  if expression is void then return false end if
+  if expression is BoundSubquery then return true end if
+  if expression is BoundExpression then
+    if expression.kind == BOUND_UNARY or expression.kind == BOUND_IS_NULL then return containsSubquery(expression.left) end if
+    if expression.kind == BOUND_BINARY then return containsSubquery(expression.left) or containsSubquery(expression.right) end if
+    return false
+  end if
+  if expression is BoundAggregate then
+    if expression.countStar then return false end if
+    if containsSubquery(expression.argument) then return true end if
+    return expression.separator is not void and containsSubquery(expression.separator)
+  end if
+  if expression is BoundCase then
+    for each branch in expression.branches
+      if containsSubquery(branch.condition) or containsSubquery(branch.result) then return true end if
+    end for
+    return expression.elseExpression is not void and containsSubquery(expression.elseExpression)
+  end if
+  if expression is BoundCast then return containsSubquery(expression.operand) end if
+  if expression is BoundScalar then
+    for each argument in expression.arguments
+      if containsSubquery(argument) then return true end if
+    end for
+    return false
+  end if
+  if expression is BoundIn then
+    if containsSubquery(expression.operand) then return true end if
+    for each candidate in expression.candidates
+      if containsSubquery(candidate) then return true end if
+    end for
+    return false
+  end if
+  if expression is BoundBetween then return containsSubquery(expression.operand) or containsSubquery(expression.lower) or containsSubquery(expression.upper) end if
+  if expression is BoundTruthTest then return containsSubquery(expression.operand) end if
+  if expression is BoundWindow then
+    for each argument in expression.arguments
+      if containsSubquery(argument) then return true end if
+    end for
+    for each value in expression.partitionBy
+      if containsSubquery(value) then return true end if
+    end for
+    for each value in expression.orderBy
+      if containsSubquery(value) then return true end if
+    end for
+  end if
+  return false
+end function
+
+// Returns true when at least one expression in a list contains a subquery.
+function containsSubqueryList(items)
+  for each item in items
+    if containsSubquery(item) then return true end if
+  end for
+  return false
+end function
+
 // Implements window for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -418,6 +516,7 @@ end function
 function containsWindow(expression)
   if expression is void then return false end if
   if expression is BoundWindow then return true end if
+  if expression is BoundSubquery then return false end if
   if expression is BoundExpression then
     if expression.kind == BOUND_UNARY or expression.kind == BOUND_IS_NULL then return containsWindow(expression.left) end if
     if expression.kind == BOUND_BINARY then return containsWindow(expression.left) or containsWindow(expression.right) end if
@@ -465,6 +564,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function referencesColumnAtOrAfter(expression, minimumIndex)
   if expression is void then return false end if
+  if expression is BoundSubquery then return referencesColumnAtOrAfter(expression.operand, minimumIndex) end if
   if expression is BoundExpression then
     if expression.kind == BOUND_COLUMN then return expression.columnIndex >= minimumIndex end if
     if expression.kind == BOUND_UNARY or expression.kind == BOUND_IS_NULL then return referencesColumnAtOrAfter(expression.left, minimumIndex) end if
@@ -473,7 +573,8 @@ function referencesColumnAtOrAfter(expression, minimumIndex)
   end if
   if expression is BoundAggregate then
     if expression.countStar then return false end if
-    return referencesColumnAtOrAfter(expression.argument, minimumIndex)
+    if referencesColumnAtOrAfter(expression.argument, minimumIndex) then return true end if
+    return expression.separator is not void and referencesColumnAtOrAfter(expression.separator, minimumIndex)
   end if
   if expression is BoundCase then
     for each branch in expression.branches
@@ -519,6 +620,7 @@ end function
 // Does not modify its inputs.
 function containsAggregate(expression)
   if expression is BoundWindow then return false end if
+  if expression is BoundSubquery then return false end if
   if expression is BoundAggregate then return true end if
   if expression is BoundExpression then
     if expression.kind == BOUND_UNARY or expression.kind == BOUND_IS_NULL then return containsAggregate(expression.left) end if
@@ -556,11 +658,14 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function sameBinding(left, right)
+  if left is BoundSubquery or right is BoundSubquery then return false end if
   if left is BoundAggregate or right is BoundAggregate then
     if left is not BoundAggregate or right is not BoundAggregate then return false end if
     if left.name != right.name or left.distinct != right.distinct or left.countStar != right.countStar then return false end if
     if left.countStar then return true end if
-    return sameBinding(left.argument, right.argument)
+    if not sameBinding(left.argument, right.argument) then return false end if
+    if left.separator is void or right.separator is void then return left.separator is void and right.separator is void end if
+    return sameBinding(left.separator, right.separator)
   end if
   if left is BoundExpression or right is BoundExpression then
     if left is not BoundExpression or right is not BoundExpression or left.kind != right.kind or left.operator != right.operator then return false end if
@@ -731,6 +836,242 @@ function evaluateCase(expression, context)
   return values.convert(evaluate(expression.elseExpression, context), expression.typeInfo)
 end function
 
+// Applies ASCII case conversion while preserving every non-ASCII UTF-8 byte.
+function asciiCase(value, upper)
+  raw = bytes(value)
+  output = bytes(len(raw))
+  if len(raw) > 0 then
+    for index = 0 to len(raw) - 1
+      code = raw[index]
+      if upper and code >= 97 and code <= 122 then code = code - 32 end if
+      if not upper and code >= 65 and code <= 90 then code = code + 32 end if
+      output[index] = code
+    end for
+  end if
+  return decode(output)
+end function
+
+// Counts Unicode scalar starts in validated UTF-8 text.
+function utf8CharacterCount(raw)
+  count = 0
+  for each value in raw
+    if (value & 0xC0) != 0x80 then count = count + 1 end if
+  end for
+  return count
+end function
+
+// Maps a zero-based Unicode character index to a UTF-8 byte offset.
+function utf8ByteOffset(raw, characterIndex)
+  if characterIndex <= 0 then return 0 end if
+  seen = 0
+  for index = 0 to len(raw) - 1
+    if (raw[index] & 0xC0) != 0x80 then
+      if seen == characterIndex then return index end if
+      seen = seen + 1
+    end if
+  end for
+  return len(raw)
+end function
+
+// Returns whether `needle` occurs in `source` at the supplied byte offset.
+function bytesMatchAt(source, needle, offset)
+  if len(needle) == 0 or offset < 0 or offset > len(source) - len(needle) then return false end if
+  for index = 0 to len(needle) - 1
+    if source[offset + index] != needle[index] then return false end if
+  end for
+  return true
+end function
+
+// Replaces all non-overlapping UTF-8 byte sequences without changing unaffected bytes.
+function replaceText(sourceText, searchText, replacementText)
+  source = bytes(sourceText)
+  search = bytes(searchText)
+  if len(search) == 0 then return sourceText end if
+  replacement = bytes(replacementText)
+  matchCount = 0
+  index = 0
+  while index < len(source)
+    if bytesMatchAt(source, search, index) then
+      matchCount = matchCount + 1
+      index = index + len(search)
+    else
+      index = index + 1
+    end if
+  end while
+  output = bytes(len(source) + matchCount * (len(replacement) - len(search)))
+  sourceIndex = 0
+  outputIndex = 0
+  while sourceIndex < len(source)
+    if bytesMatchAt(source, search, sourceIndex) then
+      if len(replacement) > 0 then
+        for replacementIndex = 0 to len(replacement) - 1
+          output[outputIndex] = replacement[replacementIndex]
+          outputIndex = outputIndex + 1
+        end for
+      end if
+      sourceIndex = sourceIndex + len(search)
+    else
+      output[outputIndex] = source[sourceIndex]
+      sourceIndex = sourceIndex + 1
+      outputIndex = outputIndex + 1
+    end if
+  end while
+  return decode(output)
+end function
+
+// Computes exact floor division for native integers.
+function integerDivide(left, right)
+  remainder = left % right
+  quotient = (left - remainder) / right
+  if remainder != 0 and ((remainder < 0 and right > 0) or (remainder > 0 and right < 0)) then quotient = quotient - 1 end if
+  return quotient
+end function
+
+// Converts days since 1970-01-01 to Gregorian year, month and day.
+function civilDateFromEpochDays(days)
+  shifted = days + 719468
+  eraInput = shifted
+  if shifted < 0 then eraInput = shifted - 146096 end if
+  era = integerDivide(eraInput, 146097)
+  dayOfEra = shifted - era * 146097
+  yearOfEra = integerDivide(dayOfEra - integerDivide(dayOfEra, 1460) + integerDivide(dayOfEra, 36524) - integerDivide(dayOfEra, 146096), 365)
+  year = yearOfEra + era * 400
+  dayOfYear = dayOfEra - (365 * yearOfEra + integerDivide(yearOfEra, 4) - integerDivide(yearOfEra, 100))
+  monthPrime = integerDivide(5 * dayOfYear + 2, 153)
+  day = dayOfYear - integerDivide(153 * monthPrime + 2, 5) + 1
+  month = monthPrime + 3
+  if monthPrime >= 10 then month = monthPrime - 9 end if
+  if month <= 2 then year = year + 1 end if
+  return [year, month, day]
+end function
+
+// Returns the absolute value while preserving full-width signed integer semantics.
+function absoluteValue(value)
+  if value.isNull then return values.nullValue(value.typeKind) end if
+  if endian.isInt64Words(value.value) then
+    words = value.value
+    if not endian.int64IsNegative(words) then return value end if
+    if words.high == 2147483648 and words.low == 0 then return fail(TYPE_MISMATCH, "absoluteValue", "ABS overflows signed 64-bit minimum") end if
+    low = endian.MAX_U32 - words.low + 1
+    carry = 0
+    if low > endian.MAX_U32 then low = 0; carry = 1 end if
+    high = endian.MAX_U32 - words.high + carry
+    return values.of(value.typeKind, endian.makeInt64(high, low))
+  end if
+  number = values.asNumber(value)
+  if number < 0 then number = 0 - number end if
+  return values.of(value.typeKind, number)
+end function
+
+// Evaluates a scalar after its arguments have already been evaluated.
+// This entry point is also used by grouped expressions containing aggregates.
+function evaluateScalarValues(expression, arguments)
+  name = expression.name
+  if name != "COALESCE" then
+    for each argument in arguments
+      if argument.isNull then return values.nullValue(expression.typeInfo.kind) end if
+    end for
+  end if
+  if name == "COALESCE" then
+    for each argument in arguments
+      if not argument.isNull then return values.convert(argument, expression.typeInfo) end if
+    end for
+    return values.nullValue(expression.typeInfo.kind)
+  end if
+  if name == "NULLIF" then
+    left = arguments[0]
+    if left.isNull then return values.nullValue(expression.typeInfo.kind) end if
+    right = arguments[1]
+    if not right.isNull and values.compareNonNull(left, right) == 0 then return values.nullValue(expression.typeInfo.kind) end if
+    return values.convert(left, expression.typeInfo)
+  end if
+  if name == "LOWER" then return values.text(asciiCase(arguments[0].value, false)) end if
+  if name == "UPPER" then return values.text(asciiCase(arguments[0].value, true)) end if
+  if name == "LENGTH" or name == "CHAR_LENGTH" then return values.integer(utf8CharacterCount(bytes(arguments[0].value))) end if
+  if name == "TRIM" then
+    raw = bytes(arguments[0].value)
+    start = 0
+    finish = len(raw)
+    while start < finish and raw[start] == 32
+      start = start + 1
+    end while
+    while finish > start and raw[finish - 1] == 32
+      finish = finish - 1
+    end while
+    return values.text(decode(slice(raw, start, finish - start)))
+  end if
+  if name == "SUBSTRING" then
+    start = values.asNumber(arguments[1])
+    if typeof(start) != "int" or start < 1 then return fail(INVALID_ARGUMENT, "evaluateScalarValues", "SUBSTRING start must be at least one") end if
+    raw = bytes(arguments[0].value)
+    startOffset = utf8ByteOffset(raw, start - 1)
+    endOffset = len(raw)
+    if len(arguments) == 3 then
+      count = values.asNumber(arguments[2])
+      if typeof(count) != "int" or count < 0 then return fail(INVALID_ARGUMENT, "evaluateScalarValues", "SUBSTRING length must be non-negative") end if
+      endOffset = utf8ByteOffset(raw, start - 1 + count)
+    end if
+    return values.text(decode(slice(raw, startOffset, endOffset - startOffset)))
+  end if
+  if name == "REPLACE" then return values.text(replaceText(arguments[0].value, arguments[1].value, arguments[2].value)) end if
+  if name == "CONCAT" then
+    outputSize = 0
+    for each argument in arguments
+      outputSize = outputSize + len(bytes(argument.value))
+    end for
+    output = bytes(outputSize)
+    outputOffset = 0
+    for each argument in arguments
+      raw = bytes(argument.value)
+      if len(raw) > 0 then
+        for byteIndex = 0 to len(raw) - 1
+          output[outputOffset] = raw[byteIndex]
+          outputOffset = outputOffset + 1
+        end for
+      end if
+    end for
+    return values.text(decode(output))
+  end if
+  if name == "ABS" then return values.convert(absoluteValue(arguments[0]), expression.typeInfo) end if
+  if name == "ROUND" or name == "CEIL" or name == "FLOOR" then
+    if types.isIntegralKind(arguments[0].typeKind) then return arguments[0] end if
+    number = values.asNumber(arguments[0])
+    rounded = math.round(number)
+    if name == "CEIL" then rounded = math.ceil(number) end if
+    if name == "FLOOR" then rounded = math.floor(number) end if
+    return values.convert(values.doubleValue(rounded + 0.0), expression.typeInfo)
+  end if
+  if name == "POWER" then
+    powered = math.pow(values.asNumber(arguments[0]), values.asNumber(arguments[1]))
+    if powered is void then return fail(TYPE_MISMATCH, "evaluateScalarValues", "POWER domain is undefined") end if
+    return values.doubleValue(powered)
+  end if
+  if name == "DATE_PART" then
+    part = asciiCase(arguments[0].value, true)
+    temporal = arguments[1]
+    rawValue = values.asNumber(temporal)
+    days = rawValue
+    microsOfDay = 0
+    if temporal.typeKind == types.SqlTypeKind.Timestamp then
+      days = integerDivide(rawValue, 86400000000)
+      microsOfDay = rawValue - days * 86400000000
+    else if temporal.typeKind == types.SqlTypeKind.Time then
+      days = 0
+      microsOfDay = rawValue
+    end if
+    if part == "HOUR" then return values.integer(integerDivide(microsOfDay, 3600000000)) end if
+    if part == "MINUTE" then return values.integer(integerDivide(microsOfDay % 3600000000, 60000000)) end if
+    if part == "SECOND" then return values.integer(integerDivide(microsOfDay % 60000000, 1000000)) end if
+    if temporal.typeKind == types.SqlTypeKind.Time then return fail(TYPE_MISMATCH, "evaluateScalarValues", "TIME supports HOUR, MINUTE and SECOND parts") end if
+    civil = civilDateFromEpochDays(days)
+    if part == "YEAR" then return values.integer(civil[0]) end if
+    if part == "MONTH" then return values.integer(civil[1]) end if
+    if part == "DAY" then return values.integer(civil[2]) end if
+    return fail(INVALID_ARGUMENT, "evaluateScalarValues", "unsupported DATE_PART field " + part)
+  end if
+  return fail(BINDING_ERROR, "evaluateScalarValues", "unknown scalar function " + name)
+end function
+
 // Evaluates scalar using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -742,14 +1083,11 @@ function evaluateScalar(expression, context)
     end for
     return values.nullValue(expression.typeInfo.kind)
   end if
-  if expression.name == "NULLIF" then
-    left = evaluate(expression.arguments[0], context)
-    if left.isNull then return values.nullValue(expression.typeInfo.kind) end if
-    right = evaluate(expression.arguments[1], context)
-    if not right.isNull and values.compareNonNull(left, right) == 0 then return values.nullValue(expression.typeInfo.kind) end if
-    return values.convert(left, expression.typeInfo)
-  end if
-  return fail(BINDING_ERROR, "evaluateScalar", "unknown scalar function " + expression.name)
+  arguments = []
+  for each argument in expression.arguments
+    arguments = arguments + [evaluate(argument, context)]
+  end for
+  return evaluateScalarValues(expression, arguments)
 end function
 
 // Evaluates in using the supplied inputs.
@@ -807,6 +1145,7 @@ end function
 function evaluate(expression, context)
   if not isBoundExpression(expression) then return fail(INVALID_ARGUMENT, "evaluate", "expression must be bound") end if
   if expression is BoundAggregate then return fail(BINDING_ERROR, "evaluate", "aggregate requires a group context") end if
+  if expression is BoundSubquery then return fail(BINDING_ERROR, "evaluate", "subquery must be materialized by the executor") end if
   if context is not RowContext then return fail(INVALID_ARGUMENT, "evaluate", "context must be RowContext") end if
   if expression is BoundCase then return evaluateCase(expression, context) end if
   if expression is BoundCast then return values.cast(evaluate(expression.operand, context), expression.targetType) end if

@@ -3,9 +3,16 @@
 ## DDL
 
 Supported statements include `CREATE/DROP TABLE`, `CREATE/DROP INDEX`,
-`ALTER TABLE` for compatible schema evolution, `CREATE/DROP VIEW`,
-`CREATE/DROP SEQUENCE`, `CREATE/DROP TRIGGER`, `TRUNCATE`, `VACUUM`, `REINDEX`
-and `ANALYZE`.
+`ALTER TABLE` for compatible schema evolution, `CREATE/DROP SCHEMA`,
+`CREATE/DROP VIEW`, `CREATE/DROP SEQUENCE`, `CREATE/DROP TRIGGER`,
+`ALTER TRIGGER ... ENABLE|DISABLE`, `CREATE/DROP PROCEDURE`, `TRUNCATE`,
+`VACUUM`, `REINDEX` and `ANALYZE`.
+
+`ALTER TABLE` supports adding columns and constraints, dropping constraints,
+renaming tables and columns, dropping an unreferenced column from an empty
+table, and changing a column's default or `NOT NULL` property. `DROP INDEX [IF
+EXISTS] name` removes an explicit index; constraint-owned indexes must be
+removed through their constraint.
 
 Column features include SQL NULL, defaults, `NOT NULL`, `CHECK`, primary and
 unique keys, foreign keys, stored generated columns, identity columns and the
@@ -13,10 +20,55 @@ unique keys, foreign keys, stored generated columns, identity columns and the
 
 ## DML and queries
 
-`INSERT`, `INSERT ... SELECT`, `UPDATE`, `DELETE`, `RETURNING`, `ON CONFLICT DO
-NOTHING`, UPSERT, joins including full outer joins, grouping, aggregates, set
-operations, non-correlated subqueries, views, nonrecursive CTEs and the documented
-window functions are supported.
+`INSERT`, `INSERT ... SELECT`, `UPDATE`, `DELETE`, `MERGE`, `RETURNING`, `ON
+CONFLICT DO NOTHING`, UPSERT, joins including full outer joins, grouping,
+aggregates, set operations, derived tables, correlated subqueries, views,
+recursive CTEs and window functions are supported.
+
+Derived tables require an alias. Scalar, `EXISTS`, `IN` and `NOT IN` subqueries
+may use explicitly qualified outer references. Recursive CTEs use an anchor
+followed by `UNION` or `UNION ALL` and a recursive term. `UNION` terminates at a
+deduplicated fixpoint; runaway recursion is diagnosed after 10,000 iterations.
+
+Scalar functions include `LOWER`, `UPPER`, `LENGTH`, `CHAR_LENGTH`,
+`SUBSTRING`, `TRIM`, `REPLACE`, `CONCAT`, `ABS`, `ROUND`, `CEIL`, `FLOOR`,
+`POWER` and `DATE_PART`. Aggregates also include `STRING_AGG`, `BOOL_AND` and
+`BOOL_OR`. Window functions include aggregate windows, `ROW_NUMBER`, `RANK`,
+`DENSE_RANK`, `PERCENT_RANK`, `CUME_DIST`, `NTILE`, `LAG`, `LEAD`,
+`FIRST_VALUE`, `LAST_VALUE` and `NTH_VALUE`.
+
+The core `MERGE` form accepts one source table, a match predicate, one matched
+`UPDATE` or `DELETE` action and one not-matched `INSERT` action. All actions run
+in one database transaction and use the ordinary constraint, index and trigger
+paths.
+
+## Schemas and metadata
+
+Two-part `schema.object` names are supported for database objects. `public` and
+`information_schema` always exist. `DROP SCHEMA` has restrictive semantics and
+rejects non-empty schemas. The virtual metadata relations are
+`information_schema.schemata`, `tables`, `columns`, `table_constraints`,
+`views`, and `routines`.
+
+## Triggers and procedures
+
+Row triggers support `BEFORE` and `AFTER` timing for `INSERT`, `UPDATE [OF
+column]` and `DELETE`, plus durable enable/disable state. `OLD` and `NEW` are
+read-only row images. A trigger body is one `VALUES`-based `INSERT`, `UPDATE` or
+`DELETE` without `RETURNING` or `ON CONFLICT`.
+
+Stored procedures use typed positional input parameters and one persisted DML
+body:
+
+```sql
+CREATE [OR REPLACE] PROCEDURE name(p_id INTEGER, p_name VARCHAR(80))
+AS INSERT INTO item(id, name) VALUES (p_id, p_name);
+CALL name(1, 'example');
+DROP PROCEDURE [IF EXISTS] name;
+```
+
+Declared parameter types are durably stored and enforced by `CALL`. Procedure
+DDL is autocommit-only.
 
 ## Transactions
 
@@ -30,5 +82,8 @@ SQL uses a dot as decimal separator: `3.3`, `-4.75`, `1.25e2`.
 
 ## Deliberate limits
 
-Recursive CTEs, correlated subqueries, arbitrary trigger programs, stored
-procedures and user-defined functions are outside MiniSQL 1.0.
+Three-part catalog names, schema search paths, explicit window-frame syntax,
+unqualified outer references, multi-statement procedural programs and
+user-defined functions are not supported. Correlated subqueries are limited to
+non-grouped outer projection/filter/order expressions and are not accepted in
+join predicates or aggregate/window queries.

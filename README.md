@@ -22,8 +22,10 @@ is `M48-M50R3`.
   crash recovery, transactions, savepoints, and isolation-aware locking;
 - heap files, overflow values, B+ tree indexes, buffer pool, VACUUM, REINDEX,
   backup/restore, PITR, consistency checking, and offline page-size migration;
-- DDL, DML, and DCL with constraints, roles, grants, prepared statements, views,
-  CTEs, subqueries, window functions, triggers, sequences, and generated columns;
+- DDL, DML, and DCL with schemas, `INFORMATION_SCHEMA`, constraints, roles,
+  grants, prepared statements, views, recursive CTEs, correlated subqueries,
+  window functions, `MERGE`, triggers, typed single-statement procedures,
+  sequences, and generated columns;
 - joins, aggregates, set operations, optimizer statistics, hash operators, and
   external merge-sort runs;
 - `AUTO_INCREMENT` / `AUTOINCREMENT`, exact `DECIMAL(p,s)` input, and floating

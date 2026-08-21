@@ -71,6 +71,9 @@ const TRIGGER_INSERT = 1
 const TRIGGER_UPDATE = 2
 const TRIGGER_DELETE = 3
 
+const SCHEMA_MARKER_PREFIX = "__minisql_schema__"
+const PROCEDURE_MARKER_PREFIX = "__minisql_procedure__"
+
 // Defines the column rule record used by this module.
 struct ColumnRule
   // Column name field of the column rule.
@@ -1005,6 +1008,14 @@ function sameStringArray(left, right)
   return true
 end function
 
+// Returns whether the supplied string array contains an exact identifier.
+function stringArrayContains(values, name)
+  for each value in values
+    if value == name then return true end if
+  end for
+  return false
+end function
+
 // Performs the constraint name exists operation for this module.
 // Inputs: `tableSchemaValue`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function constraintNameExists(tableSchemaValue, name)
@@ -1162,6 +1173,79 @@ function buildAlterTable(prepared, databasePath, bound)
       original = indexFilePath(databasePath, removed.indexId)
       prepared.backups = prepared.backups + [BackupPlan(original, original + ".ddl.old")]
     end if
+    return true
+  end if
+  if statement.action == ast.ALTER_TABLE_DROP_COLUMN then
+    columnIndex = columnIndexByName(table, statement.oldName)
+    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+    if len(table.columns) <= 1 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "a table must retain at least one column") end if
+    // Dropping a column is metadata-safe only after every dependent catalog
+    // object has been removed. The executor separately requires an empty heap,
+    // so no stored row ever needs a physical rewrite under the shorter schema.
+    for each schemaValue in prepared.newState.tables
+      for each value in schemaValue.constraints
+        if schemaValue.tableId == table.tableId then
+          if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
+          if stringArrayContains(value.columns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
+        end if
+        if value.kind == CONSTRAINT_FOREIGN_KEY and value.referenceTable == table.name and stringArrayContains(value.referenceColumns, statement.oldName) then
+          return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by foreign key " + value.name)
+        end if
+      end for
+    end for
+    generatedIndex = -1
+    if len(prepared.newState.generatedColumns) > 0 then
+      for index = 0 to len(prepared.newState.generatedColumns) - 1
+        generated = prepared.newState.generatedColumns[index]
+        if generated.tableId == table.tableId then
+          if generated.columnName == statement.oldName then generatedIndex = index else return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop generated columns before dropping a source column") end if
+        end if
+      end for
+    end if
+    for each trigger in prepared.newState.triggers
+      if trigger.tableId == table.tableId then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop table triggers before dropping a column") end if
+    end for
+    ruleIndex = -1
+    if len(tableSchemaValue.columnRules) > 0 then
+      for index = 0 to len(tableSchemaValue.columnRules) - 1
+        if tableSchemaValue.columnRules[index].columnName == statement.oldName then
+          if tableSchemaValue.columnRules[index].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column cannot be dropped while its sequence is owned") end if
+          ruleIndex = index
+        end if
+      end for
+    end if
+    table.columns = removeAt(table.columns, columnIndex)
+    if ruleIndex >= 0 then tableSchemaValue.columnRules = removeAt(tableSchemaValue.columnRules, ruleIndex) end if
+    if generatedIndex >= 0 then prepared.newState.generatedColumns = removeAt(prepared.newState.generatedColumns, generatedIndex) end if
+    table.schemaVersion = table.schemaVersion + 1
+    tableSchemaValue.schemaVersion = table.schemaVersion
+    return true
+  end if
+  if statement.action == ast.ALTER_TABLE_SET_DEFAULT or statement.action == ast.ALTER_TABLE_DROP_DEFAULT then
+    columnIndex = columnIndexByName(table, statement.oldName)
+    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+    ruleIndex = -1
+    if len(tableSchemaValue.columnRules) > 0 then
+      for index = 0 to len(tableSchemaValue.columnRules) - 1
+        if tableSchemaValue.columnRules[index].columnName == statement.oldName then ruleIndex = index end if
+      end for
+    end if
+    if ruleIndex < 0 then
+      tableSchemaValue.columnRules = tableSchemaValue.columnRules + [columnRule(statement.oldName, void, false)]
+      ruleIndex = len(tableSchemaValue.columnRules) - 1
+    end if
+    if tableSchemaValue.columnRules[ruleIndex].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column default is sequence-owned") end if
+    if statement.action == ast.ALTER_TABLE_SET_DEFAULT then tableSchemaValue.columnRules[ruleIndex].defaultSql = ast.formatExpression(statement.columnDefinition) else tableSchemaValue.columnRules[ruleIndex].defaultSql = void end if
+    table.schemaVersion = table.schemaVersion + 1
+    tableSchemaValue.schemaVersion = table.schemaVersion
+    return true
+  end if
+  if statement.action == ast.ALTER_TABLE_SET_NOT_NULL or statement.action == ast.ALTER_TABLE_DROP_NOT_NULL then
+    columnIndex = columnIndexByName(table, statement.oldName)
+    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+    table.columns[columnIndex].nullable = statement.action == ast.ALTER_TABLE_DROP_NOT_NULL
+    table.schemaVersion = table.schemaVersion + 1
+    tableSchemaValue.schemaVersion = table.schemaVersion
     return true
   end if
   return fail(UNSUPPORTED_SQL, "buildAlterTable", "unsupported ALTER TABLE action")
@@ -2064,6 +2148,129 @@ function findView(state, name)
   return void
 end function
 
+// Encodes a durable schema namespace as an internal extension entry.
+function schemaMarkerName(name)
+  return SCHEMA_MARKER_PREFIX + name
+end function
+
+// Returns whether a persisted view entry is an internal schema marker.
+function isSchemaMarkerName(name)
+  raw = bytes(name)
+  prefix = bytes(SCHEMA_MARKER_PREFIX)
+  if len(raw) <= len(prefix) then return false end if
+  for index = 0 to len(prefix) - 1
+    if raw[index] != prefix[index] then return false end if
+  end for
+  return true
+end function
+
+// Encodes a stored procedure in the durable extension namespace.
+function procedureMarkerName(name)
+  return PROCEDURE_MARKER_PREFIX + name
+end function
+
+// Returns whether a view extension entry stores procedure metadata.
+function isProcedureMarkerName(name)
+  raw = bytes(name)
+  prefix = bytes(PROCEDURE_MARKER_PREFIX)
+  if len(raw) <= len(prefix) then return false end if
+  for index = 0 to len(prefix) - 1
+    if raw[index] != prefix[index] then return false end if
+  end for
+  return true
+end function
+
+// Decodes the SQL-visible procedure name from an internal marker.
+function procedureObjectName(markerName)
+  if not isProcedureMarkerName(markerName) then return "" end if
+  raw = bytes(markerName)
+  prefixLength = len(bytes(PROCEDURE_MARKER_PREFIX))
+  return decode(slice(raw, prefixLength, len(raw) - prefixLength))
+end function
+
+// Returns whether a view extension entry is internal rather than SQL-visible.
+function isInternalExtensionViewName(name)
+  return isSchemaMarkerName(name) or isProcedureMarkerName(name)
+end function
+
+// Returns true when an object name starts with the exact `schema.` prefix.
+function objectInSchema(objectName, schemaName)
+  prefix = schemaName + "."
+  objectRaw = bytes(objectName)
+  prefixRaw = bytes(prefix)
+  if len(objectRaw) <= len(prefixRaw) then return false end if
+  for index = 0 to len(prefixRaw) - 1
+    if objectRaw[index] != prefixRaw[index] then return false end if
+  end for
+  return true
+end function
+
+// Returns whether a schema is built in or durably registered.
+function schemaExists(state, name)
+  if name == "public" or name == "information_schema" then return true end if
+  return findView(state, schemaMarkerName(name)) is not void
+end function
+
+// Returns all SQL-visible schemas while hiding internal persistence markers.
+function schemaNames(state)
+  output = ["public", "information_schema"]
+  for each view in state.views
+    raw = bytes(view.name)
+    prefix = bytes(SCHEMA_MARKER_PREFIX)
+    if len(raw) > len(prefix) then
+      matches = true
+      for index = 0 to len(prefix) - 1
+        if raw[index] != prefix[index] then matches = false end if
+      end for
+      if matches then output = output + [decode(slice(raw, len(prefix), len(raw) - len(prefix)))] end if
+    end if
+  end for
+  return output
+end function
+
+// Creates a durable empty schema namespace using the extension sidecar.
+function putSchema(databasePath, databaseId, name, ifNotExists)
+  if name == "public" or name == "information_schema" then
+    if ifNotExists then return false end if
+    return fail(OBJECT_EXISTS, "putSchema", "schema already exists: " + name)
+  end if
+  state = loadOrCreate(databasePath, databaseId)
+  if schemaExists(state, name) then
+    if ifNotExists then return false end if
+    return fail(OBJECT_EXISTS, "putSchema", "schema already exists: " + name)
+  end if
+  putView(databasePath, databaseId, schemaMarkerName(name), "SELECT 1", ["schema_marker"], false)
+  return true
+end function
+
+// Drops an empty user schema and rejects built-in or populated namespaces.
+function dropSchema(databasePath, databaseId, name, ifExists)
+  if name == "public" or name == "information_schema" then return fail(CONSTRAINT_VIOLATION, "dropSchema", "built-in schema cannot be dropped: " + name) end if
+  state = loadOrCreate(databasePath, databaseId)
+  if not schemaExists(state, name) then
+    if ifExists then return false end if
+    return fail(OBJECT_NOT_FOUND, "dropSchema", "schema not found: " + name)
+  end if
+  for each view in state.views
+    visibleName = view.name
+    if isProcedureMarkerName(view.name) then visibleName = procedureObjectName(view.name) end if
+    if view.name != schemaMarkerName(name) and objectInSchema(visibleName, name) then return fail(CONSTRAINT_VIOLATION, "dropSchema", "schema is not empty: " + name) end if
+  end for
+  for each sequence in state.sequences
+    if objectInSchema(sequence.name, name) then return fail(CONSTRAINT_VIOLATION, "dropSchema", "schema is not empty: " + name) end if
+  end for
+  for each trigger in state.triggers
+    if objectInSchema(trigger.name, name) then return fail(CONSTRAINT_VIOLATION, "dropSchema", "schema is not empty: " + name) end if
+  end for
+  for each table in state.tables
+    for each value in table.constraints
+      if objectInSchema(value.name, name) or objectInSchema(value.indexName, name) then return fail(CONSTRAINT_VIOLATION, "dropSchema", "schema is not empty: " + name) end if
+    end for
+  end for
+  dropView(databasePath, databaseId, schemaMarkerName(name), false)
+  return true
+end function
+
 // Performs the put view operation for this module.
 // Inputs: `databasePath`, `databaseId`, `name`, `sqlText`, `columnNames`, `replace`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function putView(databasePath, databaseId, name, sqlText, columnNames, replace)
@@ -2100,6 +2307,21 @@ function dropView(databasePath, databaseId, name, ifExists)
   state.generation = state.generation + 1
   saveExtensions(databasePath, state)
   return true
+end function
+
+// Finds a persisted stored procedure by its SQL-visible name.
+function findProcedure(state, name)
+  return findView(state, procedureMarkerName(name))
+end function
+
+// Creates or replaces a stored procedure body and ordered parameter names.
+function putProcedure(databasePath, databaseId, name, bodySql, parameterNames, replace)
+  return putView(databasePath, databaseId, procedureMarkerName(name), bodySql, parameterNames, replace)
+end function
+
+// Drops a stored procedure without exposing its internal extension marker.
+function dropProcedure(databasePath, databaseId, name, ifExists)
+  return dropView(databasePath, databaseId, procedureMarkerName(name), ifExists)
 end function
 
 // Finds the sequence.
@@ -2220,6 +2442,20 @@ function dropTrigger(databasePath, databaseId, name, ifExists)
     return fail(OBJECT_NOT_FOUND, "dropTrigger", "trigger not found: " + name)
   end if
   state.triggers = removeAt(state.triggers, index)
+  state.generation = state.generation + 1
+  saveExtensions(databasePath, state)
+  return true
+end function
+
+// Persists the enabled state of an existing trigger definition.
+function setTriggerEnabled(databasePath, databaseId, name, enabled)
+  if typeof(enabled) != "bool" then return fail(INVALID_ARGUMENT, "setTriggerEnabled", "enabled must be bool") end if
+  state = loadOrCreate(databasePath, databaseId)
+  found = false
+  for each trigger in state.triggers
+    if trigger.name == name then trigger.enabled = enabled; found = true end if
+  end for
+  if not found then return fail(OBJECT_NOT_FOUND, "setTriggerEnabled", "trigger not found: " + name) end if
   state.generation = state.generation + 1
   saveExtensions(databasePath, state)
   return true

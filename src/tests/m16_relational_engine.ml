@@ -56,6 +56,19 @@ function main(args)
   testkit.equal(state, int64Value(grouped.rows[1][1]), 0, "COUNT ignores NULL in empty group")
   testkit.record(state, grouped.rows[1][2].isNull, "SUM over empty group is NULL")
 
+  textAggregate = executeOne(engine, "SELECT d.name, STRING_AGG(e.name, ',') AS names FROM department d LEFT JOIN employee e ON e.department_id = d.id GROUP BY d.name ORDER BY d.name")
+  testkit.equal(state, textAggregate.rows[0][1].value, "Ada,Bob", "STRING_AGG joins non-NULL group values")
+  testkit.record(state, textAggregate.rows[1][1].isNull, "STRING_AGG over an empty outer-join group is NULL")
+  rowDelimiterAggregate = executeOne(engine, "SELECT STRING_AGG(e.name, CASE WHEN e.name = 'Bob' THEN '|' ELSE ',' END) AS names FROM employee e WHERE e.department_id = 1")
+  testkit.equal(state, rowDelimiterAggregate.rows[0][0].value, "Ada|Bob", "STRING_AGG evaluates each row delimiter")
+
+  executeOne(engine, "CREATE TABLE decision (group_id INTEGER NOT NULL, accepted BOOLEAN)")
+  executeOne(engine, "INSERT INTO decision(group_id, accepted) VALUES (1, TRUE), (1, FALSE), (2, TRUE), (2, NULL)")
+  booleanAggregates = executeOne(engine, "SELECT group_id, BOOL_AND(accepted) AS all_accepted, BOOL_OR(accepted) AS any_accepted FROM decision GROUP BY group_id ORDER BY group_id")
+  testkit.record(state, not booleanAggregates.rows[0][1].value, "BOOL_AND detects FALSE")
+  testkit.record(state, booleanAggregates.rows[0][2].value, "BOOL_OR detects TRUE")
+  testkit.record(state, booleanAggregates.rows[1][1].value, "BOOL_AND ignores NULL inputs")
+
   having = executeOne(engine, "SELECT d.name, COUNT(e.id) AS employees FROM department d LEFT JOIN employee e ON e.department_id = d.id GROUP BY d.name HAVING COUNT(e.id) >= 1 ORDER BY employees DESC, d.name")
   testkit.equal(state, len(having.rows), 2, "HAVING filters empty group")
   testkit.equal(state, having.rows[0][0].value, "Engineering", "HAVING order first")
@@ -63,6 +76,37 @@ function main(args)
 
   aggregateNoFrom = executeOne(engine, "SELECT COUNT(*) AS rows_seen")
   testkit.equal(state, int64Value(aggregateNoFrom.rows[0][0]), 1, "COUNT star without FROM")
+
+  derived = executeOne(engine, "SELECT payroll.department_id, payroll.total FROM (SELECT department_id, SUM(salary) AS total FROM employee GROUP BY department_id) AS payroll ORDER BY payroll.department_id")
+  testkit.equal(state, len(derived.rows), 2, "derived table row count")
+  testkit.equal(state, derived.rows[0][0].value, 1, "derived table first group")
+  testkit.equal(state, int64Value(derived.rows[0][1]), 220, "derived table aggregate value")
+
+  derivedJoin = executeOne(engine, "SELECT d.name, payroll.total FROM department d LEFT JOIN (SELECT department_id, SUM(salary) AS total FROM employee GROUP BY department_id) AS payroll ON payroll.department_id = d.id ORDER BY d.id")
+  testkit.equal(state, len(derivedJoin.rows), 3, "joined derived table row count")
+  testkit.equal(state, int64Value(derivedJoin.rows[0][1]), 220, "joined derived table value")
+  testkit.record(state, derivedJoin.rows[2][1].isNull, "joined derived table preserves unmatched outer row")
+  testkit.errorCode(state, try(executor.executeSql(engine, "SELECT id FROM (SELECT id FROM department)")), 9019, "derived table alias is required")
+
+  correlatedScalar = executeOne(engine, "SELECT d.name, (SELECT COUNT(*) FROM employee e WHERE e.department_id = d.id) AS employee_count FROM department d ORDER BY d.id")
+  testkit.equal(state, len(correlatedScalar.rows), 3, "correlated scalar subquery row count")
+  testkit.equal(state, int64Value(correlatedScalar.rows[0][1]), 2, "correlated scalar subquery first count")
+  testkit.equal(state, int64Value(correlatedScalar.rows[2][1]), 0, "correlated scalar subquery empty count")
+
+  aggregateWithIndependentSubquery = executeOne(engine, "SELECT COUNT(*) AS employee_count, (SELECT MAX(id) FROM department) AS maximum_department FROM employee")
+  testkit.equal(state, int64Value(aggregateWithIndependentSubquery.rows[0][0]), 3, "outer aggregate retains independent scalar subquery support")
+  testkit.equal(state, aggregateWithIndependentSubquery.rows[0][1].value, 3, "independent scalar subquery materializes before aggregate binding")
+
+  correlatedExists = executeOne(engine, "SELECT d.name FROM department d WHERE EXISTS (SELECT 1 FROM employee e WHERE e.department_id = d.id AND e.salary >= 100) ORDER BY d.id")
+  testkit.equal(state, len(correlatedExists.rows), 1, "correlated EXISTS filters outer rows")
+  testkit.equal(state, correlatedExists.rows[0][0].value, "Engineering", "correlated EXISTS result")
+
+  correlatedIn = executeOne(engine, "SELECT d.name FROM department d WHERE d.id IN (SELECT e.department_id FROM employee e WHERE e.department_id = d.id AND e.salary < 100) ORDER BY d.id")
+  testkit.equal(state, len(correlatedIn.rows), 1, "correlated IN filters outer rows")
+  testkit.equal(state, correlatedIn.rows[0][0].value, "Sales", "correlated IN result")
+
+  shadowedAlias = executeOne(engine, "SELECT d.name FROM department d WHERE EXISTS (SELECT 1 FROM employee d WHERE d.department_id = 1) ORDER BY d.id")
+  testkit.equal(state, len(shadowedAlias.rows), 3, "inner alias shadows the outer qualifier")
 
   unionDistinct = executeOne(engine, "SELECT department_id FROM employee UNION SELECT id FROM department ORDER BY department_id")
   testkit.equal(state, len(unionDistinct.rows), 3, "UNION removes duplicates")

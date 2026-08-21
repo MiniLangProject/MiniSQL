@@ -6,6 +6,14 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-21
 
+- completed six post-1.0 SQL expansion blocks: `DROP INDEX` and additional
+  `ALTER TABLE` actions; text/numeric/temporal functions and aggregates;
+  derived tables and correlated subqueries; recursive CTEs and navigation/
+  distribution window functions; durable schemas and `INFORMATION_SCHEMA`;
+  and transactional `MERGE`, trigger enable/timing controls, and typed
+  single-statement stored procedures;
+- added focused parser, binder, executor, durability, negative-path, and reopen
+  regressions across M16, M23, M24, M34, M35, M44, and M45;
 - fixed the native compiler's Windows-x64 `input()` ABI path so allocator calls
   cannot clobber the interactive line length and exhaust the 4 GiB MiniLang heap
   on the first shell command; added compiler-level and MiniSQL shell regressions;

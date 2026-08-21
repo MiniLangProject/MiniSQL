@@ -1187,7 +1187,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function equalityLiteralForColumn(expression, columnIndex)
-  if expression is void or not expressions.isBoundExpression(expression) then return [false, void] end if
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, void] end if
   if expression.operator == "AND" then
     left = equalityLiteralForColumn(expression.left, columnIndex)
@@ -1246,7 +1246,7 @@ function indexRowsForBound(database, bound, pageTransaction)
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
   if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
   expression = bound.whereExpression
-  if expression is void or not expressions.isBoundExpression(expression) then return void end if
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
   composite = compositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction)
   if composite is not void then return composite end if
   if expression.kind != expressions.BOUND_BINARY then return void end if
@@ -1282,7 +1282,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function joinIndexRows(database, source, condition, leftRow, pageTransaction)
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
-  if condition is void or not expressions.isBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
   leftColumn = void
   rightColumn = void
   if condition.left.kind == expressions.BOUND_COLUMN and condition.right.kind == expressions.BOUND_COLUMN then

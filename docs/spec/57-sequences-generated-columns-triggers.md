@@ -28,15 +28,31 @@ metadata-only `ADD COLUMN` materialize the generated value when read.
 ## Triggers
 
 ```sql
-CREATE TRIGGER name AFTER INSERT|UPDATE [OF column]|DELETE
+CREATE TRIGGER name BEFORE|AFTER INSERT|UPDATE [OF column]|DELETE
 ON table FOR EACH ROW dml_statement;
+ALTER TRIGGER name ENABLE|DISABLE;
 DROP TRIGGER [IF EXISTS] name;
 ```
 
-M45 supports `AFTER` row triggers only. The body is exactly one INSERT, UPDATE,
-or DELETE statement. `OLD.column` and `NEW.column` are replaced with typed row
-values for each affected row. Trigger recursion is limited to eight levels.
-Trigger and sequence DDL is autocommit-only.
+The body is exactly one supported INSERT, UPDATE, or DELETE statement.
+`OLD.column` and `NEW.column` are replaced with typed, read-only row values for
+each affected row. BEFORE bodies are ordered ahead of AFTER bodies inside the
+same page/WAL transaction; the base DML has already computed and validated the
+row images, so triggers cannot rewrite `NEW`. Trigger recursion is limited to
+eight levels. Enable state is durable. Trigger and sequence DDL is
+autocommit-only.
+
+## MERGE and stored procedures
+
+The core `MERGE` form uses one table source and supports matched UPDATE or
+DELETE plus not-matched INSERT in one transaction. Each generated action uses
+the ordinary DML constraint, index, WAL, and trigger path.
+
+Typed, positional stored-procedure inputs are supported for one persisted
+VALUES INSERT, UPDATE, or DELETE body. `CREATE OR REPLACE PROCEDURE`, `CALL`,
+`DROP PROCEDURE`, schema-qualified procedure names, durable parameter type
+validation, and `information_schema.routines` are supported. Multi-statement
+bodies and procedural control flow are intentionally outside this contract.
 ## Contextual trigger/audit identifiers
 
 `ACTION` is a contextual, non-reserved keyword. It retains its referential-action grammar

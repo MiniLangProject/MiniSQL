@@ -33,3 +33,19 @@ index_name, index_kind, unique, columns
 The statements acquire a read lease. Authenticated users may list table names;
 `DESCRIBE` and `SHOW INDEXES` require `SELECT` on the target table. Unknown
 objects fail explicitly instead of producing an empty result.
+
+Post-1.0 schema support adds durable `CREATE SCHEMA [IF NOT EXISTS]` and
+restrictive `DROP SCHEMA [IF EXISTS] [RESTRICT]`, two-part `schema.object`
+names, and the following read-only virtual relations:
+
+```text
+information_schema.schemata
+information_schema.tables
+information_schema.columns
+information_schema.table_constraints
+information_schema.views
+information_schema.routines
+```
+
+The virtual rows are generated from the same live catalog and schema-extension
+snapshot used by execution, so they cannot drift from persisted database state.

@@ -21,6 +21,8 @@ struct ParserState
   index
   // Number assigned to the next positional parameter encountered.
   parameterCount
+  // Monotonic suffix used to give inline derived tables collision-resistant internal CTE names.
+  derivedTableCount
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -107,7 +109,7 @@ end function
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isFunctionNameToken(value)
-  return isIdentifierToken(value) or token.isKeyword(value, "COALESCE") or token.isKeyword(value, "NULLIF") or token.isKeyword(value, "ROW_NUMBER") or token.isKeyword(value, "RANK") or token.isKeyword(value, "DENSE_RANK") or token.isKeyword(value, "NEXTVAL") or token.isKeyword(value, "CURRVAL")
+  return isIdentifierToken(value) or token.isKeyword(value, "COALESCE") or token.isKeyword(value, "NULLIF") or token.isKeyword(value, "ROW_NUMBER") or token.isKeyword(value, "RANK") or token.isKeyword(value, "DENSE_RANK") or token.isKeyword(value, "PERCENT_RANK") or token.isKeyword(value, "CUME_DIST") or token.isKeyword(value, "NTILE") or token.isKeyword(value, "LAG") or token.isKeyword(value, "LEAD") or token.isKeyword(value, "FIRST_VALUE") or token.isKeyword(value, "LAST_VALUE") or token.isKeyword(value, "NTH_VALUE") or token.isKeyword(value, "NEXTVAL") or token.isKeyword(value, "CURRVAL")
 end function
 
 // OLD and NEW are reserved pseudo-row qualifiers, not general identifiers.
@@ -174,6 +176,16 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseIdentifierName(state, description)
   return parseIdentifier(state, description).name
+end function
+
+// Parses an optionally schema-qualified SQL object name into its canonical dotted form.
+function parseObjectName(state, description)
+  first = "public"
+  if not matchKeyword(state, "PUBLIC") then first = parseIdentifierName(state, description) end if
+  if not matchKind(state, token.TokenKind.Dot) then return first end if
+  second = parseIdentifierName(state, description)
+  if first == "public" then return second end if
+  return first + "." + second
 end function
 
 // Parses principal name using the supplied inputs.
@@ -300,7 +312,7 @@ function parseColumnDefinition(state)
       checkExpression = parseExpression(state, 0)
       expectKind(state, token.TokenKind.RightParen, "')'")
     else if matchKeyword(state, "REFERENCES") then
-      referencesTable = parseIdentifierName(state, "referenced table")
+      referencesTable = parseObjectName(state, "referenced table")
       referencesColumns = parseIdentifierList(state)
     else if matchKeyword(state, "ON") then
       if matchKeyword(state, "DELETE") then
@@ -360,7 +372,7 @@ function parseTableConstraint(state)
     expectKeyword(state, "KEY")
     columns = parseIdentifierList(state)
     expectKeyword(state, "REFERENCES")
-    referenceTable = parseIdentifierName(state, "referenced table")
+    referenceTable = parseObjectName(state, "referenced table")
     referenceColumns = parseIdentifierList(state)
     onDelete = "NO ACTION"
     onUpdate = "NO ACTION"
@@ -403,7 +415,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseAlterTable(state)
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   if matchKeyword(state, "ADD") then
     ignoredColumn = matchKeyword(state, "COLUMN")
     if startsTableConstraint(state) then
@@ -421,10 +433,32 @@ function parseAlterTable(state)
     return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_RENAME_TABLE, void, void, parseIdentifierName(state, "new table name"), void, void)
   end if
   if matchKeyword(state, "DROP") then
+    if matchKeyword(state, "COLUMN") then
+      return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_COLUMN, void, parseIdentifierName(state, "column name"), void, void, void)
+    end if
     expectKeyword(state, "CONSTRAINT")
     return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_CONSTRAINT, void, void, void, void, parseIdentifierName(state, "constraint name"))
   end if
-  return fail(state, "expected ADD, RENAME or DROP after ALTER TABLE")
+  if matchKeyword(state, "ALTER") then
+    ignoredColumn = matchKeyword(state, "COLUMN")
+    columnName = parseIdentifierName(state, "column name")
+    if matchKeyword(state, "SET") then
+      if matchKeyword(state, "DEFAULT") then
+        return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_SET_DEFAULT, parseExpression(state, 0), columnName, void, void, void)
+      end if
+      expectKeyword(state, "NOT")
+      expectKeyword(state, "NULL")
+      return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_SET_NOT_NULL, void, columnName, void, void, void)
+    end if
+    expectKeyword(state, "DROP")
+    if matchKeyword(state, "DEFAULT") then
+      return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_DEFAULT, void, columnName, void, void, void)
+    end if
+    expectKeyword(state, "NOT")
+    expectKeyword(state, "NULL")
+    return ast.AlterTableStatement(tableName, ast.ALTER_TABLE_DROP_NOT_NULL, void, columnName, void, void, void)
+  end if
+  return fail(state, "expected ADD, RENAME, DROP or ALTER after ALTER TABLE")
 end function
 
 // Parses alter using the supplied inputs.
@@ -432,6 +466,12 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseAlter(state)
   if matchKeyword(state, "TABLE") then return parseAlterTable(state) end if
+  if matchKeyword(state, "TRIGGER") then
+    name = parseObjectName(state, "trigger name")
+    if matchKeyword(state, "ENABLE") then return ast.AlterTriggerStatement(name, true) end if
+    expectKeyword(state, "DISABLE")
+    return ast.AlterTriggerStatement(name, false)
+  end if
   expectKeyword(state, "USER")
   name = parsePrincipalName(state, "user name")
   if matchKeyword(state, "WITH") then
@@ -492,7 +532,7 @@ function parseGrant(state)
     objectType = ast.DCL_OBJECT_DATABASE
   else
     ignoredTable = matchKeyword(state, "TABLE")
-    objectName = parseIdentifierName(state, "table name")
+    objectName = parseObjectName(state, "table name")
   end if
   expectKeyword(state, "TO")
   granteeName = parsePrincipalName(state, "grantee name")
@@ -530,7 +570,7 @@ function parseRevoke(state)
     objectType = ast.DCL_OBJECT_DATABASE
   else
     ignoredTable = matchKeyword(state, "TABLE")
-    objectName = parseIdentifierName(state, "table name")
+    objectName = parseObjectName(state, "table name")
   end if
   expectKeyword(state, "FROM")
   granteeName = parsePrincipalName(state, "grantee name")
@@ -544,7 +584,7 @@ end function
 function parseCreateTable(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
-  name = parseIdentifierName(state, "table name")
+  name = parseObjectName(state, "table name")
   expectKind(state, token.TokenKind.LeftParen, "'('")
   columns = []
   constraints = []
@@ -563,15 +603,22 @@ function parseCreateTable(state)
   return ast.CreateTableStatement(name, columns, constraints, ifNotExists)
 end function
 
+// Parses CREATE SCHEMA with optional idempotent creation semantics.
+function parseCreateSchema(state)
+  ifNotExists = false
+  if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
+  return ast.CreateSchemaStatement(parseIdentifierName(state, "schema name"), ifNotExists)
+end function
+
 // Parses create index using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseCreateIndex(state, unique)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
-  name = parseIdentifierName(state, "index name")
+  name = parseObjectName(state, "index name")
   expectKeyword(state, "ON")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   columns = parseIdentifierList(state)
   return ast.CreateIndexStatement(name, tableName, columns, unique, ifNotExists)
 end function
@@ -580,7 +627,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseCreateView(state, replace)
-  name = parseIdentifierName(state, "view name")
+  name = parseObjectName(state, "view name")
   expectKeyword(state, "AS")
   query = void
   if matchKeyword(state, "WITH") then
@@ -592,13 +639,33 @@ function parseCreateView(state, replace)
   return ast.CreateViewStatement(name, query, replace)
 end function
 
+// Parses a stored procedure with typed positional inputs and one DML body statement.
+function parseCreateProcedure(state, replace)
+  name = parseObjectName(state, "procedure name")
+  expectKind(state, token.TokenKind.LeftParen, "'('")
+  parameters = []
+  if not checkKind(state, token.TokenKind.RightParen) then
+    parsing = true
+    while parsing
+      parameterName = parseIdentifierName(state, "procedure parameter")
+      parameters = parameters + [ast.ProcedureParameter(parameterName, parseTypeName(state))]
+      if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
+    end while
+  end if
+  expectKind(state, token.TokenKind.RightParen, "')'")
+  expectKeyword(state, "AS")
+  body = parseStatement(state)
+  if not (ast.isInsertStatement(body) or ast.isUpdateStatement(body) or ast.isDeleteStatement(body)) then return fail(state, "procedure body must be one INSERT, UPDATE or DELETE statement") end if
+  return ast.CreateProcedureStatement(name, parameters, body, replace)
+end function
+
 // Parses create sequence using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseCreateSequence(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
-  name = parseIdentifierName(state, "sequence name")
+  name = parseObjectName(state, "sequence name")
   startValue = 1
   incrementValue = 1
   minimumValue = -1152921504606846976
@@ -636,7 +703,7 @@ end function
 function parseCreateTrigger(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
-  name = parseIdentifierName(state, "trigger name")
+  name = parseObjectName(state, "trigger name")
   timing = "AFTER"
   if matchKeyword(state, "BEFORE") then timing = "BEFORE" else expectKeyword(state, "AFTER") end if
   eventType = ""
@@ -649,7 +716,7 @@ function parseCreateTrigger(state)
     eventType = "DELETE"
   end if
   expectKeyword(state, "ON")
-  tableName = parseIdentifierName(state, "trigger table")
+  tableName = parseObjectName(state, "trigger table")
   if matchKeyword(state, "FOR") then expectKeyword(state, "EACH"); expectKeyword(state, "ROW") end if
   body = parseStatement(state)
   if not (ast.isInsertStatement(body) or ast.isUpdateStatement(body) or ast.isDeleteStatement(body)) then return fail(state, "trigger body must be one INSERT, UPDATE or DELETE statement") end if
@@ -662,14 +729,21 @@ end function
 function parseCreate(state)
   if matchKeyword(state, "USER") then return parseCreatePrincipal(state, ast.PRINCIPAL_USER) end if
   if matchKeyword(state, "ROLE") then return parseCreatePrincipal(state, ast.PRINCIPAL_ROLE) end if
+  if matchKeyword(state, "SCHEMA") then return parseCreateSchema(state) end if
+  if matchKeyword(state, "PROCEDURE") then return parseCreateProcedure(state, false) end if
   if matchKeyword(state, "TABLE") then return parseCreateTable(state) end if
   if matchKeyword(state, "VIEW") then return parseCreateView(state, false) end if
-  if matchKeyword(state, "OR") then expectKeyword(state, "REPLACE"); expectKeyword(state, "VIEW"); return parseCreateView(state, true) end if
+  if matchKeyword(state, "OR") then
+    expectKeyword(state, "REPLACE")
+    if matchKeyword(state, "VIEW") then return parseCreateView(state, true) end if
+    expectKeyword(state, "PROCEDURE")
+    return parseCreateProcedure(state, true)
+  end if
   if matchKeyword(state, "SEQUENCE") then return parseCreateSequence(state) end if
   if matchKeyword(state, "TRIGGER") then return parseCreateTrigger(state) end if
   unique = matchKeyword(state, "UNIQUE")
   if matchKeyword(state, "INDEX") then return parseCreateIndex(state, unique) end if
-  return fail(state, "expected USER, ROLE, TABLE, VIEW, SEQUENCE, TRIGGER or INDEX after CREATE")
+  return fail(state, "expected USER, ROLE, SCHEMA, TABLE, VIEW, SEQUENCE, TRIGGER or INDEX after CREATE")
 end function
 
 // Parses drop using the supplied inputs.
@@ -684,11 +758,28 @@ function parseDrop(state)
     if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
     return ast.DropPrincipalStatement(principalKind, parsePrincipalName(state, "principal name"), ifExists)
   end if
+  if matchKeyword(state, "INDEX") then
+    ifExists = false
+    if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
+    return ast.DropIndexStatement(parseObjectName(state, "index name"), ifExists)
+  end if
+  if matchKeyword(state, "SCHEMA") then
+    ifExists = false
+    if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
+    name = parseIdentifierName(state, "schema name")
+    ignoredRestrict = matchKeyword(state, "RESTRICT")
+    return ast.DropSchemaStatement(name, ifExists)
+  end if
+  if matchKeyword(state, "PROCEDURE") then
+    ifExists = false
+    if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
+    return ast.DropProcedureStatement(parseObjectName(state, "procedure name"), ifExists)
+  end if
   objectKind = "TABLE"
   if matchKeyword(state, "VIEW") then objectKind = "VIEW" else if matchKeyword(state, "SEQUENCE") then objectKind = "SEQUENCE" else if matchKeyword(state, "TRIGGER") then objectKind = "TRIGGER" else expectKeyword(state, "TABLE") end if
   ifExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "EXISTS"); ifExists = true end if
-  name = parseIdentifierName(state, "object name")
+  name = parseObjectName(state, "object name")
   if objectKind == "VIEW" then return ast.DropViewStatement(name, ifExists) end if
   if objectKind == "SEQUENCE" then return ast.DropSequenceStatement(name, ifExists) end if
   if objectKind == "TRIGGER" then return ast.DropTriggerStatement(name, ifExists) end if
@@ -728,7 +819,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseInsert(state)
   expectKeyword(state, "INTO")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   columns = []
   if checkKind(state, token.TokenKind.LeftParen) then columns = parseIdentifierList(state) end if
   rows = []
@@ -775,7 +866,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseUpdate(state)
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   expectKeyword(state, "SET")
   assignments = parseAssignments(state)
   whereExpression = void
@@ -788,7 +879,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseDelete(state)
   expectKeyword(state, "FROM")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   whereExpression = void
   if matchKeyword(state, "WHERE") then whereExpression = parseExpression(state, 0) end if
   return ast.DeleteStatement(tableName, whereExpression, parseReturning(state))
@@ -799,7 +890,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseTruncate(state)
   ignoredTable = matchKeyword(state, "TABLE")
-  tableName = parseIdentifierName(state, "table name")
+  tableName = parseObjectName(state, "table name")
   restartIdentity = true
   if matchKeyword(state, "RESTART") then
     expectKeyword(state, "IDENTITY")
@@ -818,7 +909,7 @@ function parseShow(state)
   if matchKeyword(state, "TABLES") then return ast.ShowTablesStatement(1) end if
   if matchKeyword(state, "INDEXES") then
     if not matchKeyword(state, "FROM") then expectKeyword(state, "ON") end if
-    return ast.ShowIndexesStatement(parseIdentifierName(state, "table name"))
+    return ast.ShowIndexesStatement(parseObjectName(state, "table name"))
   end if
   return fail(state, "expected TABLES or INDEXES after SHOW")
 end function
@@ -827,7 +918,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseDescribe(state)
-  return ast.DescribeTableStatement(parseIdentifierName(state, "table name"))
+  return ast.DescribeTableStatement(parseObjectName(state, "table name"))
 end function
 
 // Parses select item using the supplied inputs.
@@ -877,6 +968,29 @@ function parseTableAlias(state)
   return alias
 end function
 
+// Parses either a catalog/CTE name or a parenthesized SELECT source.
+// Derived tables are represented as private CTEs so the existing named-query
+// binder and executor retain one source abstraction; only the user alias is visible.
+function parseTableSource(state, description)
+  if matchKind(state, token.TokenKind.LeftParen) then
+    query = void
+    if matchKeyword(state, "WITH") then
+      query = parseWithSelect(state)
+    else
+      expectKeyword(state, "SELECT")
+      query = parseSelect(state)
+    end if
+    expectKind(state, token.TokenKind.RightParen, "')'")
+    alias = parseTableAlias(state)
+    if alias is void then return fail(state, "derived table requires an alias") end if
+    state.derivedTableCount = state.derivedTableCount + 1
+    internalName = "__minisql_derived_" + state.derivedTableCount
+    return [internalName, alias, ast.CommonTableExpression(internalName, query, [], false)]
+  end if
+  tableName = parseObjectName(state, description)
+  return [tableName, parseTableAlias(state), void]
+end function
+
 // Parses join clause using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -903,14 +1017,15 @@ function parseJoinClause(state)
   else
     expectKeyword(state, "JOIN")
   end if
-  tableName = parseIdentifierName(state, "joined table name")
-  tableAlias = parseTableAlias(state)
+  source = parseTableSource(state, "joined table name")
+  tableName = source[0]
+  tableAlias = source[1]
   condition = void
   if joinType != ast.JOIN_CROSS then
     expectKeyword(state, "ON")
     condition = parseExpression(state, 0)
   end if
-  return ast.JoinClause(joinType, tableName, tableAlias, condition)
+  return [ast.JoinClause(joinType, tableName, tableAlias, condition), source[2]]
 end function
 
 // Implements starts join for this module.
@@ -932,11 +1047,16 @@ function parseSelectCore(state)
   tableName = void
   tableAlias = void
   joins = []
+  derivedTables = []
   if matchKeyword(state, "FROM") then
-    tableName = parseIdentifierName(state, "table name")
-    tableAlias = parseTableAlias(state)
+    source = parseTableSource(state, "table name")
+    tableName = source[0]
+    tableAlias = source[1]
+    if source[2] is not void then derivedTables = derivedTables + [source[2]] end if
     while startsJoin(state)
-      joins = joins + [parseJoinClause(state)]
+      parsedJoin = parseJoinClause(state)
+      joins = joins + [parsedJoin[0]]
+      if parsedJoin[1] is not void then derivedTables = derivedTables + [parsedJoin[1]] end if
     end while
   end if
   whereExpression = void
@@ -951,7 +1071,7 @@ function parseSelectCore(state)
   end if
   havingExpression = void
   if matchKeyword(state, "HAVING") then havingExpression = parseExpression(state, 0) end if
-  return ast.SelectStatement(distinct, items, tableName, tableAlias, joins, whereExpression, groupBy, havingExpression, [], [], -1, 0, [])
+  return ast.SelectStatement(distinct, items, tableName, tableAlias, joins, whereExpression, groupBy, havingExpression, [], [], -1, 0, derivedTables)
 end function
 
 // Parses select using the supplied inputs.
@@ -1006,7 +1126,7 @@ end function
 // Returns the computed value or operation status.
 // May mutate supplied state as documented by the operation name.
 function parseWithSelect(state)
-  if matchKeyword(state, "RECURSIVE") then return fail(state, "recursive CTEs are not supported") end if
+  recursive = matchKeyword(state, "RECURSIVE")
   ctes = []
   parsing = true
   while parsing
@@ -1023,12 +1143,12 @@ function parseWithSelect(state)
       query = parseSelect(state)
     end if
     expectKind(state, token.TokenKind.RightParen, "')'")
-    ctes = ctes + [ast.CommonTableExpression(name, query, columnNames)]
+    ctes = ctes + [ast.CommonTableExpression(name, query, columnNames, recursive)]
     if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
   end while
   expectKeyword(state, "SELECT")
   statement = parseSelect(state)
-  statement.ctes = ctes
+  statement.ctes = ctes + statement.ctes
   return statement
 end function
 
@@ -1058,6 +1178,55 @@ function parseBegin(state)
     end if
   end while
   return ast.BeginStatement(readOnly, isolationLevel)
+end function
+
+// Parses the core SQL MERGE form with table source, matched update/delete, and insert.
+function parseMerge(state)
+  expectKeyword(state, "INTO")
+  targetTable = parseObjectName(state, "MERGE target table")
+  targetAlias = parseTableAlias(state)
+  expectKeyword(state, "USING")
+  sourceTable = parseObjectName(state, "MERGE source table")
+  sourceAlias = parseTableAlias(state)
+  expectKeyword(state, "ON")
+  condition = parseExpression(state, 0)
+  matchedAssignments = []
+  matchedDelete = false
+  insertColumns = []
+  insertValues = []
+  actionCount = 0
+  while matchKeyword(state, "WHEN")
+    if matchKeyword(state, "MATCHED") then
+      expectKeyword(state, "THEN")
+      if matchKeyword(state, "DELETE") then
+        matchedDelete = true
+      else
+        expectKeyword(state, "UPDATE")
+        expectKeyword(state, "SET")
+        matchedAssignments = parseAssignments(state)
+      end if
+    else
+      expectKeyword(state, "NOT")
+      expectKeyword(state, "MATCHED")
+      expectKeyword(state, "THEN")
+      expectKeyword(state, "INSERT")
+      if checkKind(state, token.TokenKind.LeftParen) then insertColumns = parseIdentifierList(state) end if
+      expectKeyword(state, "VALUES")
+      expectKind(state, token.TokenKind.LeftParen, "'('")
+      if not checkKind(state, token.TokenKind.RightParen) then
+        insertValues = [parseExpression(state, 0)]
+        while matchKind(state, token.TokenKind.Comma)
+          insertValues = insertValues + [parseExpression(state, 0)]
+        end while
+      end if
+      expectKind(state, token.TokenKind.RightParen, "')'")
+    end if
+    actionCount = actionCount + 1
+  end while
+  if actionCount == 0 then return fail(state, "MERGE requires at least one WHEN action") end if
+  if matchedDelete and len(matchedAssignments) > 0 then return fail(state, "MERGE cannot both UPDATE and DELETE matched rows") end if
+  if len(insertValues) > 0 and len(insertColumns) > 0 and len(insertValues) != len(insertColumns) then return fail(state, "MERGE INSERT column/value count mismatch") end if
+  return ast.MergeStatement(targetTable, targetAlias, sourceTable, sourceAlias, condition, matchedAssignments, matchedDelete, insertColumns, insertValues)
 end function
 
 // Implements preparable statement for this module.
@@ -1099,6 +1268,21 @@ function parseExecutePrepared(state)
   return ast.ExecutePreparedStatement(name, arguments)
 end function
 
+// Parses CALL with positional constant argument expressions.
+function parseCall(state)
+  name = parseObjectName(state, "procedure name")
+  expectKind(state, token.TokenKind.LeftParen, "'('")
+  arguments = []
+  if not checkKind(state, token.TokenKind.RightParen) then
+    arguments = [parseExpression(state, 0)]
+    while matchKind(state, token.TokenKind.Comma)
+      arguments = arguments + [parseExpression(state, 0)]
+    end while
+  end if
+  expectKind(state, token.TokenKind.RightParen, "')'")
+  return ast.CallStatement(name, arguments)
+end function
+
 // Parses deallocate using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -1111,17 +1295,18 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseStatement(state)
+  if matchKeyword(state, "CALL") then return parseCall(state) end if
   if matchKeyword(state, "PREPARE") then return parsePrepare(state) end if
   if matchKeyword(state, "EXECUTE") then return parseExecutePrepared(state) end if
   if matchKeyword(state, "DEALLOCATE") then return parseDeallocate(state) end if
   if matchKeyword(state, "VACUUM") then
     tableName = void
-    if isIdentifierToken(current(state)) then tableName = parseIdentifierName(state, "table name") end if
+    if isIdentifierToken(current(state)) then tableName = parseObjectName(state, "table name") end if
     return ast.VacuumStatement(tableName)
   end if
   if matchKeyword(state, "REINDEX") then
     name = void
-    if isIdentifierToken(current(state)) then name = parseIdentifierName(state, "table or index name") end if
+    if isIdentifierToken(current(state)) then name = parseObjectName(state, "table or index name") end if
     return ast.ReindexStatement(name)
   end if
   if matchKeyword(state, "SHOW") then return parseShow(state) end if
@@ -1134,6 +1319,7 @@ function parseStatement(state)
   if matchKeyword(state, "INSERT") then return parseInsert(state) end if
   if matchKeyword(state, "UPDATE") then return parseUpdate(state) end if
   if matchKeyword(state, "DELETE") then return parseDelete(state) end if
+  if matchKeyword(state, "MERGE") then return parseMerge(state) end if
   if matchKeyword(state, "TRUNCATE") then return parseTruncate(state) end if
   if matchKeyword(state, "WITH") then return parseWithSelect(state) end if
   if matchKeyword(state, "SELECT") then return parseSelect(state) end if
@@ -1154,7 +1340,7 @@ function parseStatement(state)
   end if
   if matchKeyword(state, "ANALYZE") then
     tableName = void
-    if isIdentifierToken(current(state)) then tableName = parseIdentifierName(state, "table name") end if
+    if isIdentifierToken(current(state)) then tableName = parseObjectName(state, "table name") end if
     return ast.AnalyzeStatement(tableName)
   end if
   if matchKeyword(state, "EXPLAIN") then
@@ -1411,7 +1597,7 @@ end function
 // syntax error. The input must be a non-empty array ending in EndOfInput.
 function parseTokens(tokens)
   if typeof(tokens) != "array" or len(tokens) == 0 then return error(INVALID_ARGUMENT, "sql.parser.parseTokens: tokens must be a non-empty array") end if
-  state = ParserState(tokens, 0, 0)
+  state = ParserState(tokens, 0, 0, 0)
   statements = []
   while not atEnd(state)
     while matchKind(state, token.TokenKind.Semicolon)
@@ -1438,7 +1624,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseExpressionText(source)
   tokens = lexer.tokenizeSql(source)
-  state = ParserState(tokens, 0, 0)
+  state = ParserState(tokens, 0, 0, 0)
   expression = parseExpression(state, 0)
   while matchKind(state, token.TokenKind.Semicolon)
   end while

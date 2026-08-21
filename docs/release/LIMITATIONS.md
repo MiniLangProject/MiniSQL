@@ -12,8 +12,23 @@
   finite at the storage format's integer representation, process address space,
   and available disk; protocol frames and individual values retain defensive
   bounds and are not schema-object-count limits.
-* CTEs are nonrecursive and subqueries are non-correlated.
-* Trigger bodies contain one supported DML statement and have bounded recursion.
+* Recursive CTEs support an anchor and one recursive `UNION`/`UNION ALL` term;
+  explicit mutual recursion is not supported and a 10,000-iteration guard
+  diagnoses non-terminating statements.
+* Correlated subqueries require explicitly qualified outer references and are
+  supported in non-grouped projection/filter/order expressions, not join
+  predicates or aggregate/window queries.
+* Derived tables require aliases. Schema names are two-part only and there is no
+  configurable search path or cross-database catalog qualifier.
+* Window functions operate on the complete partition. Explicit `ROWS`, `RANGE`,
+  `GROUPS`, frame bounds and named windows are not implemented.
+* Trigger and stored-procedure bodies contain one supported DML statement and
+  have no procedural control language. `OLD`/`NEW` are read-only, trigger
+  recursion is bounded, and body `RETURNING`, `ON CONFLICT`, and `INSERT ...
+  SELECT` forms are rejected rather than partially persisted.
+* `MERGE` accepts one source table and one action per matched/not-matched branch;
+  conditional branches, multiple matched clauses and a query source are not yet
+  implemented.
 * DCL is autocommit-only.
 * Connections, framing, SQL parsing and read-only query plans are threaded.
   Multiple reads can execute against one database simultaneously; mutations,

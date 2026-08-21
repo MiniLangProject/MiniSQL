@@ -24,3 +24,8 @@ encoding exists. Unique constraints continue to allow multiple SQL NULL values.
 
 `EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen.
 The consistency checker compares each derived tree with the logical heap rows.
+
+Explicit indexes may be removed with `DROP INDEX [IF EXISTS] name`. The binder
+resolves the database-wide index name to its owning table, and DDL publication
+removes both catalog metadata and the derived file atomically. Indexes owned by
+PRIMARY KEY or UNIQUE constraints must be removed by dropping that constraint.

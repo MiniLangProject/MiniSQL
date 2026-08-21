@@ -154,6 +154,48 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function aggregateValue(expression, rows)
   if not expressions.isBoundAggregate(expression) then return fail(INVALID_ARGUMENT, "aggregateValue", "expression must be aggregate") end if
+  if expression.name == "STRING_AGG" then
+    entries = []
+    for each row in rows
+      value = evaluateArgument(expression.argument, row)
+      if not value.isNull then
+        duplicate = false
+        if expression.distinct then
+          for each entry in entries
+            if sameValue(value, entry[0]) then duplicate = true end if
+          end for
+        end if
+        if not duplicate then entries = entries + [[value, evaluateArgument(expression.separator, row)]] end if
+      end if
+    end for
+    if len(entries) == 0 then return values.nullValue(expression.typeInfo.kind) end if
+    outputSize = 0
+    for index = 0 to len(entries) - 1
+      outputSize = outputSize + len(bytes(entries[index][0].value))
+      if index > 0 and not entries[index][1].isNull then outputSize = outputSize + len(bytes(entries[index][1].value)) end if
+    end for
+    output = bytes(outputSize)
+    outputOffset = 0
+    for index = 0 to len(entries) - 1
+      if index > 0 and not entries[index][1].isNull then
+        separatorBytes = bytes(entries[index][1].value)
+        if len(separatorBytes) > 0 then
+          for byteIndex = 0 to len(separatorBytes) - 1
+            output[outputOffset] = separatorBytes[byteIndex]
+            outputOffset = outputOffset + 1
+          end for
+        end if
+      end if
+      valueBytes = bytes(entries[index][0].value)
+      if len(valueBytes) > 0 then
+        for byteIndex = 0 to len(valueBytes) - 1
+          output[outputOffset] = valueBytes[byteIndex]
+          outputOffset = outputOffset + 1
+        end for
+      end if
+    end for
+    return values.text(decode(output))
+  end if
   candidates = []
   if expression.countStar then
     return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(len(rows)))
@@ -165,6 +207,13 @@ function aggregateValue(expression, rows)
   if expression.distinct then candidates = distinctValues(candidates) end if
   if expression.name == "COUNT" then return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(len(candidates))) end if
   if len(candidates) == 0 then return values.nullValue(expression.typeInfo.kind) end if
+  if expression.name == "BOOL_AND" or expression.name == "BOOL_OR" then
+    result = expression.name == "BOOL_AND"
+    for each candidate in candidates
+      if expression.name == "BOOL_AND" then result = result and candidate.value else result = result or candidate.value end if
+    end for
+    return values.boolean(result)
+  end if
   if expression.name == "MIN" or expression.name == "MAX" then
     selected = candidates[0]
     if len(candidates) > 1 then
@@ -218,6 +267,11 @@ function evaluateGroup(expression, rows, representative)
       if not right.isNull and values.compareNonNull(left, right) == 0 then return values.nullValue(expression.typeInfo.kind) end if
       return values.convert(left, expression.typeInfo)
     end if
+    arguments = []
+    for each argument in expression.arguments
+      arguments = arguments + [evaluateGroup(argument, rows, representative)]
+    end for
+    return expressions.evaluateScalarValues(expression, arguments)
   end if
   if expressions.isBoundIn(expression) then
     operand = evaluateGroup(expression.operand, rows, representative)

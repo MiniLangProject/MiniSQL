@@ -27,3 +27,15 @@ conversions and conversions already accepted by the strict type converter.
 
 All new expressions are valid around aggregate expressions and participate in
 GROUP BY safety checks. SQL NULL remains distinct from MiniLang `void`.
+
+Post-1.0 scalar coverage adds the text functions `LOWER`, `UPPER`, `LENGTH`,
+`CHAR_LENGTH`, `SUBSTRING`, `TRIM`, `REPLACE`, and `CONCAT`; the numeric
+functions `ABS`, `ROUND`, `CEIL`, `FLOOR`, and `POWER`; and `DATE_PART` for
+`DATE`, `TIME`, and `TIMESTAMP`. Text offsets and lengths count UTF-8 code
+points, not encoded bytes. The aggregate family additionally includes
+`STRING_AGG(value, delimiter)`, `BOOL_AND`, and `BOOL_OR` with ordinary SQL NULL
+handling.
+
+`LOWER` and `UPPER` apply deterministic ASCII case folding and preserve
+non-ASCII UTF-8 code points unchanged; locale-sensitive Unicode case mapping is
+not part of the current collation model.
