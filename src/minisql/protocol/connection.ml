@@ -5,6 +5,7 @@ package minisql.protocol.connection
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.platform.network as network
+import minisql.platform.tls_schannel as tls_schannel
 import minisql.common.uuid as uuid
 import minisql.common.endian as endian
 import minisql.protocol.codec as codec
@@ -41,6 +42,10 @@ struct Connection
   sendSequence
   // Only sequence number accepted for the next inbound secure frame.
   receiveSequence
+  // Indicates that native TLS record protection is active below framing.
+  tls
+  // Schannel context that owns TLS keys and encrypted record buffers.
+  tlsContext
 end struct
 
 // Groups the poll result state and preserves the field relationships documented below.
@@ -70,7 +75,7 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function create(socketHandle)
   if not network.isHandle(socketHandle) then return fail(INVALID_ARGUMENT, "create", "socket handle is invalid") end if
-  return Connection(socketHandle, false, bytes(0), bytes(POLL_RECEIVE_BYTES, 0), false, false, void, void, 0, 0)
+  return Connection(socketHandle, false, bytes(0), bytes(POLL_RECEIVE_BYTES, 0), false, false, void, void, 0, 0, false, void)
 end function
 
 // Connects address using the supplied inputs.
@@ -78,6 +83,30 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function connectAddress(address, port)
   return create(network.connectTcp(address, port))
+end function
+
+// Connects a TCP socket and completes native TLS with Windows root-store trust.
+function connectTlsAddress(address, port, serverName)
+  socketHandle = try(network.connectTcp(address, port))
+  if typeof(socketHandle) == "error" then return socketHandle end if
+  tlsContext = try(tls_schannel.connectClient(socketHandle, serverName))
+  if typeof(tlsContext) == "error" then ignoredClose = try(network.close(socketHandle)); return tlsContext end if
+  active = create(socketHandle)
+  enabled = try(enableTls(active, tlsContext))
+  if typeof(enabled) == "error" then ignoredContext = try(tls_schannel.closeContext(tlsContext)); ignoredClose = try(network.close(socketHandle)); return enabled end if
+  return active
+end function
+
+// Connects native TLS using an exact SHA-256 leaf pin for private certificates.
+function connectTlsPinnedAddress(address, port, serverName, pinText)
+  socketHandle = try(network.connectTcp(address, port))
+  if typeof(socketHandle) == "error" then return socketHandle end if
+  tlsContext = try(tls_schannel.connectClientPinned(socketHandle, serverName, pinText))
+  if typeof(tlsContext) == "error" then ignoredClose = try(network.close(socketHandle)); return tlsContext end if
+  active = create(socketHandle)
+  enabled = try(enableTls(active, tlsContext))
+  if typeof(enabled) == "error" then ignoredContext = try(tls_schannel.closeContext(tlsContext)); ignoredClose = try(network.close(socketHandle)); return enabled end if
+  return active
 end function
 
 // Connects loopback using the supplied inputs.
@@ -127,6 +156,19 @@ function appendReceiveScratch(connection, count)
   return true
 end function
 
+// Appends plaintext obtained from Schannel while preserving the frame memory bound.
+function appendReceiveBytes(connection, incoming)
+  if typeof(incoming) != "bytes" then return fail(INVALID_ARGUMENT, "appendReceiveBytes", "incoming must be bytes") end if
+  previousLength = len(connection.receiveBuffer)
+  maximumBuffered = constants.HEADER_BYTES + constants.MAX_PAYLOAD_BYTES + POLL_RECEIVE_BYTES
+  if previousLength > maximumBuffered - len(incoming) then return fail(CORRUPT_DATA, "appendReceiveBytes", "receive buffer exceeds bounded frame window") end if
+  combined = bytes(previousLength + len(incoming), 0)
+  if previousLength > 0 then copyBytes(combined, 0, connection.receiveBuffer, 0, previousLength) end if
+  if len(incoming) > 0 then copyBytes(combined, previousLength, incoming, 0, len(incoming)) end if
+  connection.receiveBuffer = combined
+  return true
+end function
+
 // Implements extract buffered message for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -171,12 +213,28 @@ function enableSecure(connection, sendKey, receiveKey)
   return true
 end function
 
+// Attaches a completed Schannel context below the MiniSQL framed protocol.
+function enableTls(connection, tlsContext)
+  validateOpen(connection, "enableTls")
+  if not tls_schannel.isTlsContext(tlsContext) then return fail(INVALID_ARGUMENT, "enableTls", "TLS context is invalid") end if
+  if connection.tls then return fail(INVALID_ARGUMENT, "enableTls", "TLS transport is already active") end if
+  connection.tlsContext = tlsContext
+  connection.tls = true
+  return true
+end function
+
 // Implements secure active for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function secureActive(connection)
   validateOpen(connection, "secureActive")
   return connection.secure
+end function
+
+// Reports whether native TLS record protection is active.
+function tlsActive(connection)
+  validateOpen(connection, "tlsActive")
+  return connection.tls
 end function
 
 // Implements protect message for this module.
@@ -262,6 +320,20 @@ function pollMessage(connection)
   if typeof(buffered) == "error" then return buffered end if
   if buffered is not void then return buffered end if
 
+  if connection.tls then
+    incoming = try(tls_schannel.receiveAvailable(connection.tlsContext, connection.socket, len(connection.receiveScratch)))
+    if typeof(incoming) == "error" then return incoming end if
+    if incoming is void then return void end if
+    if len(incoming) == 0 then
+      connection.peerClosed = true
+      if len(connection.receiveBuffer) != 0 then return fail(INVALID_ARGUMENT, "pollMessage", "TLS connection closed with a partial frame") end if
+      return PollResult(void, true)
+    end if
+    appendedTls = try(appendReceiveBytes(connection, incoming))
+    if typeof(appendedTls) == "error" then return appendedTls end if
+    return extractBufferedMessage(connection)
+  end if
+
   count = try(network.receiveAvailableInto(connection.socket, connection.receiveScratch, 0, len(connection.receiveScratch)))
   if typeof(count) == "error" then return count end if
   if count is void then return void end if
@@ -283,7 +355,11 @@ function sendMessage(connection, message)
   validateOpen(connection, "sendMessage")
   outbound = protectMessage(connection, message)
   encoded = codec.encodeMessage(outbound)
-  network.sendAll(connection.socket, encoded)
+  if connection.tls then
+    tls_schannel.sendAll(connection.tlsContext, connection.socket, encoded)
+  else
+    network.sendAll(connection.socket, encoded)
+  end if
   return len(encoded)
 end function
 
@@ -292,10 +368,13 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function receiveMessage(connection)
   validateOpen(connection, "receiveMessage")
-  headerBytes = network.receiveExact(connection.socket, constants.HEADER_BYTES)
+  headerBytes = void
+  if connection.tls then headerBytes = tls_schannel.receiveExact(connection.tlsContext, connection.socket, constants.HEADER_BYTES) else headerBytes = network.receiveExact(connection.socket, constants.HEADER_BYTES) end if
   header = codec.decodeHeader(headerBytes)
   payload = bytes(0)
-  if header.payloadLength > 0 then payload = network.receiveExact(connection.socket, header.payloadLength) end if
+  if header.payloadLength > 0 then
+    if connection.tls then payload = tls_schannel.receiveExact(connection.tlsContext, connection.socket, header.payloadLength) else payload = network.receiveExact(connection.socket, header.payloadLength) end if
+  end if
   frame = bytes(constants.HEADER_BYTES + len(payload), 0)
   copyBytes(frame, 0, headerBytes, 0, constants.HEADER_BYTES)
   if len(payload) > 0 then copyBytes(frame, constants.HEADER_BYTES, payload, 0, len(payload)) end if
@@ -308,7 +387,13 @@ end function
 // May mutate supplied state and perform I/O through its dependencies.
 function close(connection)
   validateOpen(connection, "close")
-  network.close(connection.socket)
+  shutdownResult = true
+  tlsCloseResult = true
+  if connection.tls and connection.tlsContext is not void then
+    shutdownResult = try(tls_schannel.shutdown(connection.tlsContext, connection.socket))
+    tlsCloseResult = try(tls_schannel.closeContext(connection.tlsContext))
+  end if
+  socketCloseResult = try(network.close(connection.socket))
   if typeof(connection.sendKey) == "bytes" then uuid.wipeSecret(connection.sendKey) end if
   if typeof(connection.receiveKey) == "bytes" then uuid.wipeSecret(connection.receiveKey) end if
   connection.sendKey = void
@@ -316,7 +401,12 @@ function close(connection)
   if typeof(connection.receiveScratch) == "bytes" then fillBytes(connection.receiveScratch, 0, len(connection.receiveScratch), 0) end if
   connection.receiveBuffer = bytes(0)
   connection.receiveScratch = bytes(0)
+  connection.tls = false
+  connection.tlsContext = void
   connection.closed = true
+  if typeof(shutdownResult) == "error" then return shutdownResult end if
+  if typeof(tlsCloseResult) == "error" then return tlsCloseResult end if
+  if typeof(socketCloseResult) == "error" then return socketCloseResult end if
   return true
 end function
 

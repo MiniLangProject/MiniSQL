@@ -24,7 +24,6 @@ import json
 import os
 import re
 import socket
-import ssl
 import subprocess
 import sys
 import time
@@ -598,114 +597,42 @@ def run_m33_public_multiline_script(verbose: bool) -> None:
             process.communicate()
 
 
-def run_m47_tls(verbose: bool) -> None:
-    """Compiles and executes the M47 tls acceptance scenario."""
-    server, client = public_apps()
-    root = data_root("m47-tls")
-    database = initialize_public_database(server, root, "tls_transport", verbose)
-    backend_port = free_port()
-    tls_port = free_port()
-    local_port = free_port()
-    proxy = ROOT / "tools/tls/minisql_tls_proxy.py"
-    fixtures = ROOT / "tests/fixtures/tls"
-    server_ready = root / "tls-server.ready"
-    client_ready = root / "tls-client.ready"
-
-    backend_command = base.executable_command(server, "--serve", str(database), str(backend_port), "8")
-    backend = subprocess.Popen(
-        backend_command, cwd=ROOT, text=True, encoding="utf-8", errors="replace",
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+def run_native_tls(compiler: Path, verbose: bool) -> None:
+    """Runs policy, ABI, trust, hostname, pinning, and native TLS data-path coverage."""
+    run_simple(
+        compiler, "src/tests/m73_tls_policy.ml", "minisql-m73-tls-policy.exe",
+        "MiniSQL M73 TLS policy test: SUCCESS", verbose,
     )
-    tls_server_command = [
-        sys.executable, str(proxy), "server",
-        "--listen-host", "127.0.0.1", "--listen-port", str(tls_port),
-        "--backend-host", "127.0.0.1", "--backend-port", str(backend_port),
-        "--cert", str(fixtures / "server-cert.pem"),
-        "--key", str(fixtures / "server-key.pem"),
-        "--ready-file", str(server_ready),
-        "--relay-chunk-size", "5", "--relay-delay-ms", "1",
+    run_simple(
+        compiler, "src/tests/m73_schannel_abi.ml", "minisql-m73-schannel-abi.exe",
+        "MiniSQL M73 Schannel ABI test: SUCCESS", verbose,
+    )
+    server_worker = base.compile_target(
+        compiler, "src/tests/m73_tls_server_worker.ml", "minisql-m73-tls-server-worker.exe", verbose,
+    )
+    client_worker = base.compile_target(
+        compiler, "src/tests/m73_tls_client_worker.ml", "minisql-m73-tls-client-worker.exe", verbose,
+    )
+    server, _ = public_apps()
+    root = data_root("m73-native-tls")
+    database = initialize_public_database(server, root, "tls_transport", verbose)
+    command = [
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-File", str(ROOT / "tests/run_native_tls_tests.ps1"),
+        "-ServerWorker", str(server_worker),
+        "-ClientWorker", str(client_worker),
+        "-DatabasePath", str(database),
+        "-WorkDirectory", str(root / "integration"),
     ]
-    tls_server: subprocess.Popen[str] | None = None
-    tls_client: subprocess.Popen[str] | None = None
-    try:
-        wait_listening(backend, backend_port, "m47-backend-server", 180)
-        tls_server = subprocess.Popen(
-            tls_server_command, cwd=ROOT, text=True, encoding="utf-8", errors="replace",
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    completed = base.run_command(
+        command, log_name="m73-native-tls.run.log", verbose=verbose, timeout=300,
+    )
+    output = base.normalized(completed.stdout)
+    if completed.returncode != 0 or output != "MiniSQL M73 native TLS integration: SUCCESS" or base.normalized(completed.stderr):
+        raise AcceptanceFailure(
+            f"M73 native TLS integration failed: rc={completed.returncode} "
+            f"stdout={output!r} stderr={base.normalized(completed.stderr)!r}"
         )
-        wait_ready(tls_server, server_ready, "m47-tls-server", 60)
-
-        valid_probe = base.run_command(
-            [sys.executable, str(proxy), "probe", "--host", "127.0.0.1", "--port", str(tls_port),
-             "--server-name", "localhost", "--ca", str(fixtures / "ca-cert.pem")],
-            log_name="m47-valid-probe.run.log", verbose=verbose, timeout=60,
-        )
-        if valid_probe.returncode != 0 or "protocol=TLSv1.3" not in base.normalized(valid_probe.stdout):
-            raise AcceptanceFailure(
-                f"M47 verified TLS probe failed: rc={valid_probe.returncode} "
-                f"stdout={base.normalized(valid_probe.stdout)!r} stderr={base.normalized(valid_probe.stderr)!r}"
-            )
-        wrong_probe = base.run_command(
-            [sys.executable, str(proxy), "probe", "--host", "127.0.0.1", "--port", str(tls_port),
-             "--server-name", "wrong.invalid", "--ca", str(fixtures / "ca-cert.pem")],
-            log_name="m47-wrong-host-probe.run.log", verbose=verbose, timeout=60,
-        )
-        if wrong_probe.returncode == 0 or "FAIL" not in base.normalized(wrong_probe.stderr):
-            raise AcceptanceFailure("M47 hostname verification did not reject a mismatched X.509 identity")
-
-        tls_client_command = [
-            sys.executable, str(proxy), "client",
-            "--listen-host", "127.0.0.1", "--listen-port", str(local_port),
-            "--remote-host", "127.0.0.1", "--remote-port", str(tls_port),
-            "--server-name", "localhost", "--ca", str(fixtures / "ca-cert.pem"),
-            "--ready-file", str(client_ready), "--max-connections", "2",
-            "--relay-chunk-size", "7", "--relay-delay-ms", "1",
-        ]
-        tls_client = subprocess.Popen(
-            tls_client_command, cwd=ROOT, text=True, encoding="utf-8", errors="replace",
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        )
-        wait_ready(tls_client, client_ready, "m47-tls-client", 60)
-
-        ping = base.run_command(
-            base.executable_command(client, "--ping", str(local_port)),
-            log_name="m47-tls-ping.run.log", verbose=verbose, timeout=300,
-        )
-        if ping.returncode != 0 or base.normalized(ping.stdout) != "PONG" or base.normalized(ping.stderr):
-            raise AcceptanceFailure(
-                f"M47 MiniSQL ping through TLS failed: rc={ping.returncode} "
-                f"stdout={base.normalized(ping.stdout)!r} stderr={base.normalized(ping.stderr)!r}"
-            )
-        query = base.run_command(
-            base.executable_command(client, "--query", str(local_port), "SELECT 47 AS milestone;"),
-            log_name="m47-tls-query.run.log", verbose=verbose, timeout=300,
-        )
-        query_output = base.normalized(query.stdout)
-        if query.returncode != 0 or base.normalized(query.stderr) or "milestone\n47\n(1 rows)" not in query_output:
-            raise AcceptanceFailure(
-                f"M47 MiniSQL query through TLS failed: rc={query.returncode} "
-                f"stdout={query_output!r} stderr={base.normalized(query.stderr)!r}"
-            )
-        client_out, client_err = tls_client.communicate(timeout=120)
-        base.write_log("m47-tls-client.run.log", tls_client_command, tls_client.returncode, client_out, client_err)
-        if tls_client.returncode != 0 or client_out.count("TLSv1.3") < 2 or base.normalized(client_err):
-            raise AcceptanceFailure(
-                f"M47 TLS client proxy failed: rc={tls_client.returncode} "
-                f"stdout={base.normalized(client_out)!r} stderr={base.normalized(client_err)!r}"
-            )
-        tls_client = None
-    finally:
-        for label, process, command in (
-            ("m47-tls-client", tls_client, []),
-            ("m47-tls-server", tls_server, tls_server_command),
-            ("m47-backend-server", backend, backend_command),
-        ):
-            if process is None:
-                continue
-            if process.poll() is None:
-                process.kill()
-            out, err = process.communicate(timeout=10)
-            base.write_log(label + ".run.log", command or list(process.args), process.returncode if process.returncode is not None else -9, out, err)
 
 def validate_repository(manifest: dict[str, Any]) -> None:
     """Validates the tracked repository inventory, package layout, headers and launcher contract."""
@@ -715,7 +642,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 72,
+        "moduleCount": 74,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -780,8 +707,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 72:
-        raise AcceptanceFailure("Module catalog must contain exactly 72 modules")
+    if not isinstance(modules, list) or len(modules) != 74:
+        raise AcceptanceFailure("Module catalog must contain exactly 74 modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1004,13 +931,18 @@ def validate_source_contracts() -> None:
         ],
         "src/apps/minisqld/main.ml": ["--serve-standby", "read-only-hot-standby"],
         "src/apps/minisql_backup/main.ml": ["archive-wal-live", "MiniSQL live WAL archive: SUCCESS"],
-        "tools/tls/minisql_tls_proxy.py": [
-            "def send_fragmented",
-            "--relay-chunk-size",
-            "--relay-delay-ms",
-            'relay(raw, secure, relay_chunk_size, relay_delay_seconds, "local-client", "tls-server")',
-            "secure.settimeout(None)",
-            "left_to_right = threading.Thread",
+        "src/minisql/platform/tls_schannel.ml": [
+            "SCH_CREDENTIALS_VERSION",
+            "verifyCipherSuite",
+            "validatePinnedX509",
+            "processPostHandshake",
+            "function shutdown",
+        ],
+        "src/minisql/platform/tls_policy.ml": [
+            "TLS_AES_256_GCM_SHA384_ID",
+            "X25519_ID",
+            "verifyServerHello",
+            "pinnedClientPolicy",
         ],
         "tools/replication/minisql_hot_replica.py": [
             "class SwitchingProxy",
@@ -1035,7 +967,7 @@ def validate_source_contracts() -> None:
         "src/tests/m48_hot_replication.ml": ["MiniSQL M48 hot replication tests: SUCCESS", "archiveWalLive", "openStandby"],
         "src/tests/m49_hardening.ml": ["MiniSQL M49 hardening tests: SUCCESS", "AUTO_INCREMENT", "3.3", "deterministic SQL mutation outcome is controlled"],
         "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.0.0"'],
-        "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (72 modules)"],
+        "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (74 modules)"],
         "build.ps1": [
             "minisql-m48-hot-replication.exe",
             "minisql-m49-hardening.exe",
@@ -1084,20 +1016,6 @@ def validate_source_contracts() -> None:
     ):
         if required not in runner_text:
             raise AcceptanceFailure(f"Concurrent-process diagnostics are missing: {required}")
-    tls_text = (ROOT / "tools/tls/minisql_tls_proxy.py").read_text(encoding="utf-8")
-    for required in (
-        "--relay-chunk-size", "--relay-delay-ms", "send_fragmented",
-    ):
-        if required not in tls_text:
-            raise AcceptanceFailure(f"Deterministic TLS fragmentation support is missing: {required}")
-    runner_text = Path(__file__).read_text(encoding="utf-8")
-    for required in (
-        '"--relay-chunk-size", "5", "--relay-delay-ms", "1"',
-        '"--relay-chunk-size", "7", "--relay-delay-ms", "1"',
-    ):
-        if required not in runner_text:
-            raise AcceptanceFailure(f"TLS fragmentation test vector is missing: {required}")
-
     version_text = (ROOT / "src/minisql/common/version.ml").read_text(encoding="utf-8")
     if "0.47.0-m47" in version_text or 'const MILESTONE = "M47"' in version_text:
         raise AcceptanceFailure("Release version module still contains the M47 product identity")
@@ -1107,7 +1025,7 @@ def validate_source_contracts() -> None:
 
 
 def _run_python_static(command: list[str], description: str, timeout: float = 120.0) -> str:
-    """Runs a Python sidecar check with bytecode disabled and returns its captured stdout."""
+    """Runs a Python tooling check with bytecode disabled and returns its captured stdout."""
     completed = subprocess.run(
         command,
         cwd=ROOT,
@@ -1516,7 +1434,7 @@ def milestone_statuses(phases: list[dict[str, Any]]) -> dict[str, str]:
         "M50": [
             "M50 release contract and compatibility freeze",
             "M50 deterministic Windows-x64 distribution build and verification",
-            "M50 72-module implementation smoke",
+            "M50 74-module implementation smoke",
             "M50 final cumulative gate",
         ],
     }
@@ -1588,7 +1506,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 72-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 74-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -1687,7 +1605,7 @@ def main() -> int:
             ("M44 nonrecursive CTEs and window functions", lambda: run_simple(compiler,"src/tests/m44_cte_windows.ml","minisql-m44-cte-windows.exe","MiniSQL M44 CTE and window tests: SUCCESS",args.verbose,[str(data_root('m44-root'))],3000)),
             ("M45 sequences, generated columns and row triggers", lambda: run_simple(compiler,"src/tests/m45_sequences_generated_triggers.ml","minisql-m45-schema-extensions.exe","MiniSQL M45 sequence generated trigger tests: SUCCESS",args.verbose,[str(data_root('m45-root'))],3600)),
             ("M46 hash operators and external merge sort", lambda: run_simple(compiler,"src/tests/m46_optimizer_executor_v2.ml","minisql-m46-optimizer-v2.exe","MiniSQL M46 optimizer executor v2: SUCCESS",args.verbose,[str(data_root('m46-root'))],5400)),
-            ("M47 standards-compatible TLS 1.3/X.509 sidecar integration", lambda: run_m47_tls(args.verbose)),
+            ("M73 native TLS 1.3/X.509, X25519 and certificate pinning", lambda: run_native_tls(compiler,args.verbose)),
             ("M47 71-module implementation smoke", lambda: run_simple(compiler,"src/tests/m47_all_modules.ml","minisql-m47-modules.exe","MiniSQL M47 module smoke test: SUCCESS (71 modules)",args.verbose,timeout=2400)),
             ("M47 final cumulative gate", lambda: None),
             ("M48 durable live WAL export and read-only standby", lambda: run_simple(compiler,"src/tests/m48_hot_replication.ml","minisql-m48-hot-replication.exe","MiniSQL M48 hot replication tests: SUCCESS",args.verbose,[str(data_root('m48-root'))],3600)),
@@ -1699,7 +1617,7 @@ def main() -> int:
             ("M49 final cumulative gate", lambda: None),
             ("M50 release contract and compatibility freeze", lambda: run_simple(compiler,"src/tests/m50_release_contract.ml","minisql-m50-release-contract.exe","MiniSQL M50 release contract tests: SUCCESS",args.verbose,[str(data_root('m50-root'))],3600)),
             ("M50 deterministic Windows-x64 distribution build and verification", lambda: run_m50_release_distribution(args.verbose)),
-            ("M50 72-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (72 modules)",args.verbose,timeout=2400)),
+            ("M50 74-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (74 modules)",args.verbose,timeout=2400)),
             ("M50 final cumulative gate", lambda: None),
         ]
         if len(actions) != PHASE_COUNT:

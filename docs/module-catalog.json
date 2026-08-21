@@ -104,6 +104,18 @@
       "targetMilestone": "M18"
     },
     {
+      "path": "src/minisql/platform/tls_policy.ml",
+      "package": "minisql.platform.tls_policy",
+      "component": "platform.tls_policy",
+      "targetMilestone": "M73"
+    },
+    {
+      "path": "src/minisql/platform/tls_schannel.ml",
+      "package": "minisql.platform.tls_schannel",
+      "component": "platform.tls_schannel",
+      "targetMilestone": "M73"
+    },
+    {
       "path": "src/minisql/storage/page.ml",
       "package": "minisql.storage.page",
       "component": "storage.page",

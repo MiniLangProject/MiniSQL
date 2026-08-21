@@ -63,6 +63,21 @@ function serveSecureAddress(databasePath, address, port, maximumClients, maximum
   return listener.serveAuthenticatedConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests)
 end function
 
+// Serves authenticated MiniSQL over native TLS 1.3 using a store or PFX certificate.
+function serveTlsAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
+  return listener.serveTlsConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
+end function
+
+// Serves native TLS with an explicit in-memory PFX password for controlled callers.
+function serveTlsAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes)
+  return listener.serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, void)
+end function
+
+// Serves bounded native TLS and publishes a readiness marker for integration tests.
+function serveTlsAddressWithReadyFile(databasePath, address, port, maximumClients, maximumRequests, certificateReference, readyPath)
+  return listener.serveTlsConcurrentAddressWithReadyFile(databasePath, address, port, maximumClients, maximumRequests, certificateReference, readyPath)
+end function
+
 // Implements start for this module.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.

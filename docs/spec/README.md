@@ -63,7 +63,7 @@ Exact byte offsets are frozen by the documents under `docs/formats`.
 56. [CTEs and window functions](56-ctes-and-window-functions.md)
 57. [Sequences, generated columns and triggers](57-sequences-generated-columns-triggers.md)
 58. [Optimizer and executor v2](58-optimizer-executor-v2.md)
-59. [TLS 1.3 and X.509 sidecar](59-tls13-x509-sidecar.md)
+59. [Native TLS 1.3 and X.509 transport](59-native-tls13-x509.md)
 - `60-auto-increment-and-decimal-inserts.md` — compatibility identity syntax and exact numeric INSERT input.
 61. [Continuous hot-streaming replication](61-hot-streaming-replication.md)
 62. [Quality and release hardening](62-quality-hardening.md)

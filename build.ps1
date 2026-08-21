@@ -177,7 +177,11 @@ $Targets = @(
   @{ Input = "src\tests\m48_hot_replication.ml"; Output = "minisql-m48-hot-replication.exe" },
   @{ Input = "src\tests\m49_hardening.ml"; Output = "minisql-m49-hardening.exe" },
   @{ Input = "src\tests\m50_release_contract.ml"; Output = "minisql-m50-release-contract.exe" },
-  @{ Input = "src\tests\m50_all_modules.ml"; Output = "minisql-m50-modules.exe" }
+  @{ Input = "src\tests\m50_all_modules.ml"; Output = "minisql-m50-modules.exe" },
+  @{ Input = "src\tests\m73_tls_policy.ml"; Output = "minisql-m73-tls-policy.exe" },
+  @{ Input = "src\tests\m73_schannel_abi.ml"; Output = "minisql-m73-schannel-abi.exe" },
+  @{ Input = "src\tests\m73_tls_server_worker.ml"; Output = "minisql-m73-tls-server-worker.exe" },
+  @{ Input = "src\tests\m73_tls_client_worker.ml"; Output = "minisql-m73-tls-client-worker.exe" }
 )
 
 if ($AppsOnly) {

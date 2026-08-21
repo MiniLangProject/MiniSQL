@@ -107,34 +107,44 @@ RETURNING id, label;
 TRUNCATE TABLE staging RESTART IDENTITY;
 ```
 
-## TLS 1.3/X.509 sidecar (M47)
+## Native TLS 1.3 and X.509
 
-Keep the native MiniSQL server on loopback and terminate standard TLS in front
-of it:
-
-```powershell
-python .\tools\tls\minisql_tls_proxy.py server `
-  --listen-host 0.0.0.0 --listen-port 7443 `
-  --backend-host 127.0.0.1 --backend-port 7432 `
-  --cert C:\certs\server.pem --key C:\certs\server-key.pem
-```
-
-On the client machine, expose a verified loopback proxy:
+MiniSQL terminates TLS directly through Windows Schannel. For a PFX certificate,
+put the password in the server process environment and start the native listener:
 
 ```powershell
-python .\tools\tls\minisql_tls_proxy.py client `
-  --listen-host 127.0.0.1 --listen-port 7432 `
-  --remote-host db.example.org --remote-port 7443 `
-  --server-name db.example.org --ca C:\certs\ca.pem
-
-.\build\bin\minisql.exe --shell 7432
+$env:MINISQL_TLS_PFX_PASSWORD = "replace-with-the-PFX-password"
+.\build\bin\minisqld.exe --serve-tls `
+  .\data\db_<uuid> 0.0.0.0 7443 32 pfx:C:\certs\server.pfx
 ```
 
-The client rejects untrusted certificates, hostname mismatches and protocol
-versions other than TLS 1.3. Test certificates under `tests\fixtures\tls` are
-not deployment credentials. The sidecar uses one blocking pump per relay
-direction after the TLS handshake; bounded modes drain every accepted relay
-before exiting, including fragmented final requests.
+For a certificate installed with its private key in `CurrentUser\MY` or
+`LocalMachine\MY`, use `store:<SHA1-thumbprint>`. The thumbprint is only a local
+store lookup key.
+
+Connect with ordinary Windows root-store and DNS-name validation:
+
+```powershell
+.\build\bin\minisql.exe --tls-shell `
+  db.example.org 7443 db.example.org admin
+```
+
+For a private self-signed leaf, calculate the SHA-256 digest of its DER and pin
+it explicitly:
+
+```powershell
+$certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new("C:\certs\server.cer")
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+$pin = ([BitConverter]::ToString($sha256.ComputeHash($certificate.RawData))).Replace("-", "").ToLowerInvariant()
+.\build\bin\minisql.exe --tls-pin-shell `
+  127.0.0.1 7443 localhost ("sha256:" + $pin) admin
+```
+
+Pin mode ignores only an unknown certificate root. It still rejects expired or
+not-yet-valid certificates, a wrong hostname/EKU/signature, and a pin mismatch.
+Every connection must negotiate TLS 1.3, `TLS_AES_256_GCM_SHA384`, and X25519.
+There is no Python TLS process or plaintext proxy hop. Native TLS requires
+Windows 11 or Windows Server 2022 or newer.
 
 ## Continuous read-only hot standby (M48)
 

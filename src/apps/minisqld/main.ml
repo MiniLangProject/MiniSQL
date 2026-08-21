@@ -28,9 +28,11 @@ function printUsage()
   print "  minisqld.exe --serve-authenticated <database-path> <port> [max-clients]"
   print "  minisqld.exe --serve-standby <standby-path> <port> [max-clients]"
   print "  minisqld.exe --serve-secure <database-path> <address> <port> <max-clients> [max-requests]"
+  print "  minisqld.exe --serve-tls <database-path> <address> <port> <max-clients> <store:thumbprint|pfx:path> [max-requests]"
   print "  minisqld.exe --serve-config <database-path> <config-file>"
   print "  minisqld.exe --serve-authenticated-config <database-path> <config-file>"
   print "  minisqld.exe --serve-standby-config <database-path> <config-file>"
+  print "  minisqld.exe --serve-tls-config <database-path> <config-file>"
   print ""
   print "Bounded compatibility/test servers:"
   print "  minisqld.exe --serve-one <database-path> <port> [max-requests]"
@@ -78,6 +80,11 @@ function runConfiguredServer(mode, databasePath, configPath)
   configured = try(configureLogger(config))
   if typeof(configured) == "error" then return printAppError(configured) end if
   ignoredLog = logger.info("minisql.main.runConfiguredServer", "starting mode=" + mode + " database=" + databasePath + " address=" + config.server.bindAddress + " port=" + config.server.port + " maxClients=" + config.server.maxConnections)
+  if mode == "tls" then
+    if not config.tls.enabled then ignoredClose = try(logger.close()); print "ERROR 9002: tls.enabled must be true for --serve-tls-config"; return 1 end if
+    announceServer("native-tls1.3-authenticated", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
+    return serverResult(try(server.serveTlsAddress(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0, config.tls.certificateReference)))
+  end if
   if mode == "authenticated" then
     announceServer("authenticated-encrypted", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
     return serverResult(try(server.serveSecureAddress(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)))
@@ -175,10 +182,11 @@ function main(args)
     return setUserPassword(args[1], args[2])
   end if
 
-  if len(args) == 3 and (args[0] == "--serve-config" or args[0] == "--serve-authenticated-config" or args[0] == "--serve-standby-config") then
+  if len(args) == 3 and (args[0] == "--serve-config" or args[0] == "--serve-authenticated-config" or args[0] == "--serve-standby-config" or args[0] == "--serve-tls-config") then
     mode = "trusted"
     if args[0] == "--serve-authenticated-config" then mode = "authenticated" end if
     if args[0] == "--serve-standby-config" then mode = "standby" end if
+    if args[0] == "--serve-tls-config" then mode = "tls" end if
     return runConfiguredServer(mode, args[1], args[2])
   end if
 
@@ -250,6 +258,19 @@ function main(args)
     if typeof(port) != "int" or typeof(maximumClients) != "int" or typeof(maximumRequests) != "int" then printUsage(); return 2 end if
     announceServer("authenticated-encrypted", args[1], args[2], port, maximumClients, maximumRequests)
     return serverResult(try(server.serveSecureAddress(args[1], args[2], port, maximumClients, maximumRequests)))
+  end if
+
+  if (len(args) == 6 or len(args) == 7) and args[0] == "--serve-tls" then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
+    port = toNumber(args[3])
+    maximumClients = toNumber(args[4])
+    maximumRequests = 0
+    if len(args) == 7 then maximumRequests = toNumber(args[6]) end if
+    if typeof(port) != "int" or typeof(maximumClients) != "int" or typeof(maximumRequests) != "int" then printUsage(); return 2 end if
+    announceServer("native-tls1.3-authenticated", args[1], args[2], port, maximumClients, maximumRequests)
+    ignoredTlsLog = logger.info("minisql.main.main", "native TLS policy cipher=TLS_AES_256_GCM_SHA384 group=X25519 certificate=" + args[5])
+    return serverResult(try(server.serveTlsAddress(args[1], args[2], port, maximumClients, maximumRequests, args[5])))
   end if
 
   printUsage()

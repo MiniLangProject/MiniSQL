@@ -1,8 +1,9 @@
 # MiniSQL 1.0 known limitations
 
 * Windows x64 is the native target.
-* TLS and hot replication use Python sidecars rather than in-process MiniLang
-  bindings.
+* Native TLS uses the Windows Schannel and CryptoAPI providers. The current
+  strict profile supports TLS 1.3 with `TLS_AES_256_GCM_SHA384` and X25519 only;
+  peers offering only different suites or groups are rejected.
 * Replication is asynchronous and operator-managed.
 * The external sort reduces peak memory but final query results are still
   materialized.

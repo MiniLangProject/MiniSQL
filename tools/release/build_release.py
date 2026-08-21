@@ -78,7 +78,6 @@ def source_files(project: Path, bin_dir: Path) -> dict[str, bytes]:
         "docs/UPGRADE.md": project / "docs/release/UPGRADE.md",
         "docs/upgrade-matrix.json": project / "docs/release/upgrade-matrix.json",
         "docs/feature-matrix.json": project / "docs/release/feature-matrix.json",
-        "tools/minisql_tls_proxy.py": project / "tools/tls/minisql_tls_proxy.py",
         "tools/minisql_hot_replica.py": project / "tools/replication/minisql_hot_replica.py",
     }
     for target, source in mapping.items():
@@ -96,7 +95,8 @@ def manifest(files: dict[str, bytes]) -> dict[str, object]:
         "databaseFormatVersion": 1,
         "wireProtocolVersion": 1,
         "platform": "windows-x64",
-        "pythonSidecars": ["TLS 1.3/X.509", "continuous hot replication"],
+        "nativeTransports": ["Windows Schannel TLS 1.3/X.509"],
+        "pythonSidecars": ["continuous hot replication"],
         "files": [
             {"path": path, "bytes": len(data), "sha256": sha256(data)}
             for path, data in sorted(files.items())

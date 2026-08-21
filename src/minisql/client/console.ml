@@ -170,6 +170,26 @@ function openAuthenticatedPrompt(address, port, username)
   return active
 end function
 
+// Prompts for a password and opens native TLS using Windows certificate trust.
+function openTlsAuthenticatedPrompt(address, port, serverName, username)
+  secret = try(readPassword("Password: "))
+  if typeof(secret) == "error" then return secret end if
+  active = try(client.openTlsAuthenticatedAddressBytes(address, port, serverName, username, secret))
+  uuid.wipeSecret(secret)
+  if typeof(active) == "error" then return active end if
+  return active
+end function
+
+// Prompts for a password and opens native TLS using an exact leaf SHA-256 pin.
+function openTlsPinnedAuthenticatedPrompt(address, port, serverName, pinText, username)
+  secret = try(readPassword("Password: "))
+  if typeof(secret) == "error" then return secret end if
+  active = try(client.openTlsPinnedAuthenticatedAddressBytes(address, port, serverName, pinText, username, secret))
+  uuid.wipeSecret(secret)
+  if typeof(active) == "error" then return active end if
+  return active
+end function
+
 // Implements trim ascii for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.

@@ -1,11 +1,11 @@
 # Notice
 
-MiniSQL is implemented primarily in MiniLang. The TLS 1.3/X.509 terminator and
-hot-replication controller are Python sidecars built only from Python's
-standard library.
+MiniSQL is implemented primarily in MiniLang. TLS 1.3 and X.509 processing use
+the Windows Schannel and CryptoAPI system interfaces. The hot-replication
+controller is a Python sidecar built only from Python's standard library.
 
-The certificates and private key under `tests/fixtures/tls/` are public
-localhost test fixtures. They must not be reused in production.
+Native TLS tests create an ephemeral localhost certificate and private key at
+runtime; no reusable test identity is distributed with the source tree.
 
 MiniSQL 1.0 does not bundle third-party binary libraries. Operators are
 responsible for protecting database files, backup archives, audit keys,

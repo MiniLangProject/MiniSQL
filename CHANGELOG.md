@@ -4,7 +4,7 @@ All notable release-level changes are documented here. The detailed milestone
 and repair-candidate log from development is preserved in
 `docs/history/DEVELOPMENT_CHANGELOG.md`.
 
-## Unreleased — 2026-08-20
+## Unreleased — 2026-08-21
 
 - fixed the native compiler's Windows-x64 `input()` ABI path so allocator calls
   cannot clobber the interactive line length and exhaust the 4 GiB MiniLang heap
@@ -34,9 +34,11 @@ and repair-candidate log from development is preserved in
 - serialized all CNG RNG, PBKDF2, SHA/HMAC and AEAD native call sequences on
   the same recursive monitor so compiler-managed native argument buffers cannot
   overlap across authentication and secure-frame workers;
-- made bounded TLS sidecars drain every accepted relay before process exit and
-  replaced selector-based `SSLSocket` reads with directional blocking pumps, so
-  post-handshake wakeups and fragmented final connections cannot reset clients;
+- replaced the Python TLS sidecar and plaintext proxy hop with an in-process
+  Windows Schannel TLS 1.3 transport; the strict current profile accepts only
+  `TLS_AES_256_GCM_SHA384` and X25519, validates X.509 chains and hostnames,
+  supports explicit SHA-256 leaf pinning for self-signed deployments, handles
+  post-handshake messages and emits authenticated `close_notify` alerts;
 - taught build and acceptance commands to include the selected Python
   compiler's standard library automatically;
 - fixed restart recovery after `DROP TABLE`: historical committed WAL images

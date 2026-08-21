@@ -21,8 +21,14 @@ Accepted source revision: M48-M50R3
 | M27-M32 | concurrent sessions, secret handling, secure transport, audit, PITR, operational CLI | Complete |
 | M33-M37 | SQL-aware shell/scripts, introspection, scalar predicates, outer joins | Complete |
 | M38-M42 | RETURNING, INSERT SELECT, conflict handling, UPSERT, TRUNCATE | Complete |
-| M43-M47 | views, subqueries, CTEs, windows, sequences, triggers, optimizer v2, TLS sidecar | Complete |
+| M43-M47 | views, subqueries, CTEs, windows, sequences, triggers, optimizer v2, original TLS sidecar | Complete |
 | M48-M50 | hot WAL shipping, hardening, 1.0 release freeze and distribution | Complete |
+
+## Post-1.0 additions
+
+| Milestone | Main outcome | Status |
+|---|---|---|
+| M73 | native TLS 1.3, exact AES-256-GCM/SHA-384 and X25519 profile, X.509 validation and pinning | Complete |
 
 Historical milestone acceptance definitions remain under `docs/history/milestones/`. The final
 machine-readable result is `docs/acceptance/MiniSQL-1.0.0-results.json`.

@@ -131,6 +131,38 @@
         }
       }
     },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "certificateReference",
+        "pfxPasswordEnvironment",
+        "cipherSuite",
+        "namedGroup",
+        "protocolVersion"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "certificateReference": {
+          "type": "string"
+        },
+        "pfxPasswordEnvironment": {
+          "const": "MINISQL_TLS_PFX_PASSWORD"
+        },
+        "cipherSuite": {
+          "const": "TLS_AES_256_GCM_SHA384"
+        },
+        "namedGroup": {
+          "const": "X25519"
+        },
+        "protocolVersion": {
+          "const": "TLS1.3"
+        }
+      }
+    },
     "databaseDefaults": {
       "type": "object",
       "additionalProperties": false,

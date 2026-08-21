@@ -19,6 +19,8 @@ import minisql.platform.file_win32 as m12_platform_file_win32
 import minisql.platform.lock as m13_platform_lock
 import minisql.platform.clock as m14_platform_clock
 import minisql.platform.network as m15_platform_network
+import minisql.platform.tls_policy as m72_platform_tls_policy
+import minisql.platform.tls_schannel as m73_platform_tls_schannel
 import minisql.storage.page as m16_storage_page
 import minisql.storage.superblock as m17_storage_superblock
 import minisql.storage.paged_file as m18_storage_paged_file
@@ -147,6 +149,12 @@ function main(args)
   failures = failures + check(m15_platform_network.componentName(), "platform.network", "platform.network component")
   failures = failures + check(m15_platform_network.targetMilestone(), "M18", "platform.network target")
   failures = failures + checkBool(m15_platform_network.isImplemented(), "platform.network implementation")
+  failures = failures + check(m72_platform_tls_policy.componentName(), "platform.tls_policy", "platform.tls_policy component")
+  failures = failures + check(m72_platform_tls_policy.targetMilestone(), "M73", "platform.tls_policy target")
+  failures = failures + checkBool(m72_platform_tls_policy.isImplemented(), "platform.tls_policy implementation")
+  failures = failures + check(m73_platform_tls_schannel.componentName(), "platform.tls_schannel", "platform.tls_schannel component")
+  failures = failures + check(m73_platform_tls_schannel.targetMilestone(), "M73", "platform.tls_schannel target")
+  failures = failures + checkBool(m73_platform_tls_schannel.isImplemented(), "platform.tls_schannel implementation")
   failures = failures + check(m16_storage_page.componentName(), "storage.page", "storage.page component")
   failures = failures + check(m16_storage_page.targetMilestone(), "M4", "storage.page target")
   failures = failures + checkBool(m16_storage_page.isImplemented(), "storage.page implementation")
@@ -325,6 +333,6 @@ function main(args)
     print "MiniSQL M50 module smoke test: FAIL (failures=" + failures + ")"
     return 1
   end if
-  print "MiniSQL M50 module smoke test: SUCCESS (72 modules)"
+  print "MiniSQL M50 module smoke test: SUCCESS (74 modules)"
   return 0
 end function

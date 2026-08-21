@@ -28,6 +28,15 @@ function printUsage()
   print "  minisql.exe --secure-query <address> <port> <user> <sql>"
   print "  minisql.exe --secure-shell <address> <port> <user>"
   print "  minisql.exe --secure-script <address> <port> <user> <file>"
+  print ""
+  print "Native TLS 1.3 with Windows certificate trust:"
+  print "  minisql.exe --tls-ping <address> <port> <server-name> <user>"
+  print "  minisql.exe --tls-query <address> <port> <server-name> <user> <sql>"
+  print "  minisql.exe --tls-shell <address> <port> <server-name> <user>"
+  print "  minisql.exe --tls-script <address> <port> <server-name> <user> <file>"
+  print "Native TLS 1.3 with a self-signed/leaf SHA-256 pin:"
+  print "  minisql.exe --tls-pin-shell <address> <port> <server-name> <sha256-pin> <user>"
+  print "  (ping, query, and script variants use the same argument order)"
 end function
 
 // Prints a structured client error and returns the conventional failure status.
@@ -97,6 +106,16 @@ function openPrompt(address, port, username)
   return console.openAuthenticatedPrompt(address, port, username)
 end function
 
+// Prompts for credentials and opens native TLS with Windows certificate trust.
+function openTlsPrompt(address, port, serverName, username)
+  return console.openTlsAuthenticatedPrompt(address, port, serverName, username)
+end function
+
+// Prompts for credentials and opens native TLS with exact leaf-certificate pinning.
+function openTlsPinnedPrompt(address, port, serverName, pinText, username)
+  return console.openTlsPinnedAuthenticatedPrompt(address, port, serverName, pinText, username)
+end function
+
 // Dispatches the public CLI modes after validating arity and numeric ports.
 // Returns zero on success, one on operational failure, or two for usage errors.
 function main(args)
@@ -143,6 +162,34 @@ function main(args)
     if args[0] == "--secure-query" then return runQuery(active, args[4]) end if
     if args[0] == "--secure-shell" then return runShell(active) end if
     return runScript(active, args[4])
+  end if
+
+  if len(args) > 0 and (args[0] == "--tls-ping" or args[0] == "--tls-query" or args[0] == "--tls-shell" or args[0] == "--tls-script") then
+    expected = 5
+    if args[0] == "--tls-query" or args[0] == "--tls-script" then expected = 6 end if
+    if len(args) != expected then printUsage(); return 2 end if
+    port = toNumber(args[2])
+    if typeof(port) != "int" then printUsage(); return 2 end if
+    active = try(openTlsPrompt(args[1], port, args[3], args[4]))
+    if typeof(active) == "error" then return printClientError(active) end if
+    if args[0] == "--tls-ping" then return runPing(active) end if
+    if args[0] == "--tls-query" then return runQuery(active, args[5]) end if
+    if args[0] == "--tls-shell" then return runShell(active) end if
+    return runScript(active, args[5])
+  end if
+
+  if len(args) > 0 and (args[0] == "--tls-pin-ping" or args[0] == "--tls-pin-query" or args[0] == "--tls-pin-shell" or args[0] == "--tls-pin-script") then
+    expected = 6
+    if args[0] == "--tls-pin-query" or args[0] == "--tls-pin-script" then expected = 7 end if
+    if len(args) != expected then printUsage(); return 2 end if
+    port = toNumber(args[2])
+    if typeof(port) != "int" then printUsage(); return 2 end if
+    active = try(openTlsPinnedPrompt(args[1], port, args[3], args[4], args[5]))
+    if typeof(active) == "error" then return printClientError(active) end if
+    if args[0] == "--tls-pin-ping" then return runPing(active) end if
+    if args[0] == "--tls-pin-query" then return runQuery(active, args[6]) end if
+    if args[0] == "--tls-pin-shell" then return runShell(active) end if
+    return runScript(active, args[6])
   end if
 
   printUsage()

@@ -366,7 +366,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M10",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 71,
+        "moduleCount": 74,
         "acceptancePhaseCount": 30,
         "userFacingTestRunner": "test.ps1",
     }
@@ -426,8 +426,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_doc = load_json(ROOT / "docs" / "module-catalog.json")
     modules = catalog_doc.get("modules") if isinstance(catalog_doc, dict) else None
-    if not isinstance(modules, list) or len(modules) != 71:
-        raise AcceptanceFailure("Module catalog must contain exactly 71 modules")
+    if not isinstance(modules, list) or len(modules) != 74:
+        raise AcceptanceFailure("Module catalog must contain exactly 74 modules")
     if catalog_doc.get("version") not in (1, "1"):
         raise AcceptanceFailure("Unsupported module catalog version")
 
@@ -1180,7 +1180,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 71-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 74-module catalog", lambda: validate_repository(manifest)),
             ("configuration and normative documentation", validate_config_and_docs),
             ("M6-M10R3 source, exact-type and monotonic-regression contracts", validate_source_contracts),
             ("independent reference vectors and persisted layouts", validate_reference_vectors),

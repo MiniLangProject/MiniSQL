@@ -38,6 +38,11 @@ function main(args)
   testkit.record(state, config.logging.stdoutEnabled and config.logging.fileEnabled, "logger destinations enabled")
   testkit.equal(state, config.logging.rotationHours, 24, "logger rotation hours")
   testkit.record(state, not config.binlog.enabled, "SQL binlog disabled by default")
+  testkit.record(state, model.isTlsConfig(config.tls), "native TLS exact type predicate")
+  testkit.record(state, not config.tls.enabled, "native TLS disabled by default")
+  testkit.equal(state, config.tls.protocolVersion, "TLS1.3", "native TLS protocol policy")
+  testkit.equal(state, config.tls.cipherSuite, "TLS_AES_256_GCM_SHA384", "native TLS cipher policy")
+  testkit.equal(state, config.tls.namedGroup, "X25519", "native TLS group policy")
   testkit.record(state, model.isMiniSqlConfig(config), "config exact type predicate")
   testkit.record(state, model.isDatabaseDefaults(config.databaseDefaults), "database defaults exact type predicate")
   testkit.record(state, validation.validate(config), "valid config")
@@ -49,6 +54,13 @@ function main(args)
   testkit.errorCode(state, try(loader.ensureOnlyKeys(loader.parse("{\"known\":1,\"extra\":2}"), ["known"], "test")), loader.INVALID_CONFIGURATION, "unknown configuration key rejected")
   config.server.bindAddress = "0.0.0.0"
   testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "remote bind rejected before DCL")
+  config.tls.enabled = true
+  config.tls.certificateReference = "pfx:server.pfx"
+  testkit.record(state, validation.validate(config), "remote bind accepted with native TLS")
+  config.tls.cipherSuite = "TLS_AES_128_GCM_SHA256"
+  testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "unconfigured TLS cipher rejected")
+  config.tls.cipherSuite = "TLS_AES_256_GCM_SHA384"
+  config.tls.enabled = false
   config.server.bindAddress = "127.0.0.1"
   config.databaseDefaults.pageSize = 5000
   testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "unsupported page size rejected")

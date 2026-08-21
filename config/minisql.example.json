@@ -29,6 +29,14 @@
     "enabled": false,
     "fileName": "minisql-bin.log"
   },
+  "tls": {
+    "enabled": false,
+    "certificateReference": "pfx:.\\config\\server.pfx",
+    "pfxPasswordEnvironment": "MINISQL_TLS_PFX_PASSWORD",
+    "protocolVersion": "TLS1.3",
+    "cipherSuite": "TLS_AES_256_GCM_SHA384",
+    "namedGroup": "X25519"
+  },
   "databaseDefaults": {
     "pageSize": 4096,
     "checksumAlgorithm": "crc32c",

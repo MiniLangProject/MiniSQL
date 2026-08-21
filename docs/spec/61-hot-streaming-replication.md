@@ -44,7 +44,7 @@ new generation is never published.
 M48 is asynchronous. It does not provide synchronous quorum commit, automatic
 leader election, or split-brain prevention. Promotion remains an explicit
 operator action. The cleartext switch binds only to loopback; remote exposure
-must use the M47 TLS 1.3 sidecar.
+must use the native TLS 1.3 listener.
 
 ## Schema and maintenance boundary
 

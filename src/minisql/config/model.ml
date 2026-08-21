@@ -63,6 +63,22 @@ struct BinlogConfig
   fileName
 end struct
 
+// Defines the native TLS server profile independently of ordinary authentication.
+struct TlsConfig
+  // Enables Schannel TLS 1.3 for the configured listener.
+  enabled
+  // Locates the server certificate as store:<thumbprint> or pfx:<path>.
+  certificateReference
+  // Names the environment variable that supplies an optional PFX password.
+  pfxPasswordEnvironment
+  // Declares the only cipher suite accepted by the current fail-closed policy.
+  cipherSuite
+  // Declares the only key-exchange group accepted by the current policy.
+  namedGroup
+  // Declares the exact protocol version accepted by the current policy.
+  protocolVersion
+end struct
+
 // Groups the database defaults state and preserves the field relationships documented below.
 struct DatabaseDefaults
   // Tracks the page size numeric value.
@@ -111,6 +127,8 @@ struct MiniSqlConfig
   logging
   // Stores SQL binlog settings.
   binlog
+  // Stores native TLS listener and algorithm policy settings.
+  tls
   // Stores the database defaults associated with this value.
   databaseDefaults
   // Stores the safety associated with this value.
@@ -148,6 +166,11 @@ end function
 // Inputs: `value`. Returns true only for `BinlogConfig` values.
 function isBinlogConfig(value)
   return value is BinlogConfig
+end function
+
+// Returns whether the supplied value is a native TLS configuration.
+function isTlsConfig(value)
+  return value is TlsConfig
 end function
 
 // Returns whether the supplied value satisfies the database defaults condition.
@@ -210,6 +233,7 @@ function defaultConfig(dataRoot)
     RuntimeConfig(268435456, 30000, 67108864, 134217728, "info"),
     LoggingConfig(true, true, "minisql.log", 24),
     BinlogConfig(false, "minisql-bin.log"),
+    TlsConfig(false, "store:", "MINISQL_TLS_PFX_PASSWORD", "TLS_AES_256_GCM_SHA384", "X25519", "TLS1.3"),
     defaultDatabaseSettings(4096),
     SafetyConfig(false, "full", false)
   )

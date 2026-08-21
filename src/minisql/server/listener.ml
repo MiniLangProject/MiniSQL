@@ -9,6 +9,7 @@ import std.concurrent.thread_pool as thread_pool
 import minisql.platform.file as file_api
 import minisql.common.logger as logger
 import minisql.platform.network as network
+import minisql.platform.tls_schannel as tls_schannel
 import minisql.platform.clock as clock
 import minisql.protocol.connection as connection
 import minisql.protocol.constants as constants
@@ -262,6 +263,8 @@ struct ConcurrentClientTask
   state
   // Maximum logical-lock retry duration in milliseconds.
   lockWaitMs
+  // Shared inbound Schannel credential, or void for a non-TLS listener.
+  tlsCredential
 end struct
 
 // Creates concurrent server state using the supplied inputs.
@@ -378,6 +381,32 @@ end function
 function serveConcurrentClient(task)
   slot = task.slot
   claimed = false
+  if task.tlsCredential is not void then
+    blockingTls = try(network.setNonBlocking(slot.client.socket, false))
+    if typeof(blockingTls) == "error" then closeSlot(slot); concurrentClientDone(task.state); return 0 end if
+    ignoredTimeouts = try(network.setTimeouts(slot.client.socket, 15000, 15000))
+    tlsContext = try(tls_schannel.acceptServer(slot.client.socket, task.tlsCredential))
+    if typeof(tlsContext) == "error" then
+      ignoredLog = logger.warning("minisql.server.listener.serveConcurrentClient", "TLS handshake rejected peer=" + slot.peerEndpoint + " message=" + tlsContext.message)
+      closeSlot(slot)
+      concurrentClientDone(task.state)
+      return 0
+    end if
+    enabled = try(connection.enableTls(slot.client, tlsContext))
+    if typeof(enabled) == "error" then
+      ignoredContext = try(tls_schannel.closeContext(tlsContext))
+      closeSlot(slot)
+      concurrentClientDone(task.state)
+      return 0
+    end if
+    nonBlockingTls = try(connection.makeNonBlocking(slot.client))
+    if typeof(nonBlockingTls) == "error" then
+      closeSlot(slot)
+      concurrentClientDone(task.state)
+      return 0
+    end if
+    ignoredTlsLog = logger.info("minisql.server.listener.serveConcurrentClient", "TLS established peer=" + slot.peerEndpoint + " protocol=TLS1.3 cipher=TLS_AES_256_GCM_SHA384 group=X25519")
+  end if
   while not concurrentShouldStop(task.state)
     request = slot.pendingRequest
     if request is void then
@@ -443,7 +472,7 @@ end function
 // Accepts clients into a bounded native thread pool backed by one shared database.
 // The acceptor owns the listener and pool; each job owns exactly one connection.
 // Returns the successful request count or the first fatal error after draining jobs.
-function serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimitMs, standby)
+function serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimitMs, standby, tlsCredential)
   if typeof(maximumClients) != "int" or maximumClients < 1 or maximumClients > 128 then network.close(listener); return fail("serveConcurrent", "maximumClients is invalid") end if
   if typeof(idleLimitMs) != "int" or idleLimitMs < 0 or idleLimitMs > 600000 or (idleLimitMs > 0 and idleLimitMs < 100) then network.close(listener); return fail("serveConcurrent", "idleLimitMs is invalid; zero means unlimited") end if
   shared = void
@@ -487,8 +516,10 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
 
     client = try(connection.create(socketHandle))
     if typeof(client) == "error" then ignoredSocket = try(network.close(socketHandle)); concurrentSetFailure(state, client); break end if
-    madeNonBlocking = try(connection.makeNonBlocking(client))
-    if typeof(madeNonBlocking) == "error" then ignoredClient = try(connection.close(client)); concurrentSetFailure(state, madeNonBlocking); break end if
+    if tlsCredential is void then
+      madeNonBlocking = try(connection.makeNonBlocking(client))
+      if typeof(madeNonBlocking) == "error" then ignoredClient = try(connection.close(client)); concurrentSetFailure(state, madeNonBlocking); break end if
+    end if
     active = void
     if secure then active = try(session.openSecureAttached(shared)) else active = try(session.openAttached(shared)) end if
     if typeof(active) == "error" then
@@ -498,7 +529,7 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
     end if
     now = clock.monotonicMilliseconds()
     slot = ClientSlot(client, active, 0, false, void, 0, now, peer)
-    task = ConcurrentClientTask(slot, state, 5000)
+    task = ConcurrentClientTask(slot, state, 5000, tlsCredential)
     concurrentRegisterClient(state)
     job = pool.Submit(serveConcurrentClient, task)
     if job is void then
@@ -539,7 +570,7 @@ function serveConcurrentLoopback(databasePath, port, maximumClients, maximumRequ
   listener = network.listenLoopback(port, maximumClients)
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, false)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, false, void)
 end function
 
 // Serves authenticated concurrent loopback using the supplied inputs.
@@ -550,7 +581,7 @@ function serveAuthenticatedConcurrentLoopback(databasePath, port, maximumClients
   listener = network.listenLoopback(port, maximumClients)
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
 end function
 
 // Serves concurrent with ready file using the supplied inputs.
@@ -564,7 +595,7 @@ function serveConcurrentWithReadyFile(databasePath, port, maximumClients, maximu
   if typeof(published) == "error" then return published end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimit, false)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimit, false, void)
 end function
 
 // Serves standby concurrent loopback using the supplied inputs.
@@ -575,7 +606,7 @@ function serveStandbyConcurrentLoopback(databasePath, port, maximumClients, maxi
   listener = network.listenLoopback(port, maximumClients)
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, true)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, true, void)
 end function
 
 // Serves authenticated concurrent address using the supplied inputs.
@@ -586,7 +617,7 @@ function serveAuthenticatedConcurrentAddress(databasePath, address, port, maximu
   listener = network.listenAddress(address, port, maximumClients, true)
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
 end function
 
 // Serves authenticated concurrent address with ready file using the supplied inputs.
@@ -600,7 +631,38 @@ function serveAuthenticatedConcurrentAddressWithReadyFile(databasePath, address,
   if typeof(published) == "error" then return published end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false)
+  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
+end function
+
+// Serves concurrent authenticated sessions over native TLS 1.3 and Schannel.
+function serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath)
+  validateArguments(databasePath, maximumRequests, "serveTlsConcurrentAddressWithPassword")
+  if typeof(certificateReference) != "string" or len(certificateReference) == 0 then return fail("serveTlsConcurrentAddressWithPassword", "certificateReference must be non-empty") end if
+  credential = try(tls_schannel.acquireServerCredentialWithPassword(certificateReference, passwordBytes))
+  if typeof(credential) == "error" then return credential end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then ignoredCredential = try(tls_schannel.closeCredential(credential)); return listener end if
+  if readyPath is not void then
+    published = try(publishReady(listener, readyPath, "serveTlsConcurrentAddressWithPassword"))
+    if typeof(published) == "error" then ignoredListener = try(network.close(listener)); ignoredCredential = try(tls_schannel.closeCredential(credential)); return published end if
+  end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  result = try(serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, credential))
+  closedCredential = try(tls_schannel.closeCredential(credential))
+  if typeof(result) == "error" then return result end if
+  if typeof(closedCredential) == "error" then return closedCredential end if
+  return result
+end function
+
+// Serves native TLS using a store or PFX certificate and environment PFX secret.
+function serveTlsConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
+  return serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void)
+end function
+
+// Publishes a readiness marker only after the native TLS credential and listener exist.
+function serveTlsConcurrentAddressWithReadyFile(databasePath, address, port, maximumClients, maximumRequests, certificateReference, readyPath)
+  return serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, readyPath)
 end function
 
 // Implements component name for this module.

@@ -29,7 +29,7 @@ is `M48-M50R3`.
 - `AUTO_INCREMENT` / `AUTOINCREMENT`, exact `DECIMAL(p,s)` input, and floating
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
-  TLS 1.3/X.509 sidecar, audit chain, WAL shipping, and read-only hot standby;
+  native TLS 1.3/X.509 transport, audit chain, WAL shipping, and read-only hot standby;
 - scalable multi-page catalog and security metadata, a thread-safe singleton
   logger with stdout plus time-rolled files, and an optional complete SQL binlog;
 - native per-connection concurrency through a bounded MiniLang thread pool, with
@@ -60,11 +60,13 @@ one. The design intentionally retains a single physical writer per database.
 
 ## Requirements
 
-- Windows x64
+- Windows x64 with Schannel TLS 1.3 support
 - Python 3.11 or newer
 - `mlc_win64.py` from MiniLangCompilerPy
 
-The Python TLS and replication sidecars use only the Python standard library.
+TLS runs in-process through the Windows Schannel and CryptoAPI system
+interfaces. Python is used by the test/release tooling and the optional
+hot-replication controller, not by the TLS data path.
 
 ## Build
 
@@ -171,7 +173,7 @@ build\release\MiniSQL-1.0.0-windows-x64.zip.sha256
 
 ```text
 src/apps/              executable entry points
-src/minisql/           72 database-engine modules
+src/minisql/           74 database-engine modules
 src/tests/             native MiniLang tests
 config/                example configuration and JSON schema
 docs/spec/             behavioral specifications
@@ -179,7 +181,7 @@ docs/formats/          persistent and wire-format specifications
 docs/adr/              architecture decision records
 docs/release/          operator and SQL documentation
 tests/                 cumulative runner, fixtures, corpora, and references
-tools/                 TLS, replication, quality, and release sidecars
+tools/                 replication, quality, and release tooling
 ```
 
 A generated overview is available in
@@ -203,9 +205,9 @@ The frozen compatibility contract and known limitations are documented in:
 
 Read [`SECURITY.md`](SECURITY.md) and
 [`docs/release/SECURITY_GUIDE.md`](docs/release/SECURITY_GUIDE.md) before
-exposing a server outside a trusted local environment. Test certificates and
-the private test key under `tests/fixtures/tls/` are public fixtures and must
-never be used in production.
+exposing a server outside a trusted local environment. The native TLS tests
+generate an ephemeral localhost identity at runtime; production certificates
+and private keys remain operator-managed secrets.
 
 ## License
 

@@ -40,7 +40,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function validate(config)
   if not model.isMiniSqlConfig(config) then return fail("value must be MiniSqlConfig") end if
-  if not model.isPathsConfig(config.paths) or not model.isServerConfig(config.server) or not model.isRuntimeConfig(config.runtime) or not model.isLoggingConfig(config.logging) or not model.isBinlogConfig(config.binlog) or not model.isDatabaseDefaults(config.databaseDefaults) or not model.isSafetyConfig(config.safety) then return fail("configuration sections have invalid types") end if
+  if not model.isPathsConfig(config.paths) or not model.isServerConfig(config.server) or not model.isRuntimeConfig(config.runtime) or not model.isLoggingConfig(config.logging) or not model.isBinlogConfig(config.binlog) or not model.isTlsConfig(config.tls) or not model.isDatabaseDefaults(config.databaseDefaults) or not model.isSafetyConfig(config.safety) then return fail("configuration sections have invalid types") end if
   if typeof(config.configVersion) != "int" or config.configVersion != 1 then return fail("configVersion must be 1") end if
   nonEmpty(config.paths.dataRoot, "paths.dataRoot")
   nonEmpty(config.paths.temporaryRoot, "paths.temporaryRoot")
@@ -71,10 +71,17 @@ function validate(config)
   if config.logging.rotationHours > 87600 then return fail("logging.rotationHours must not exceed ten years") end if
   if typeof(config.binlog.enabled) != "bool" then return fail("binlog.enabled must be boolean") end if
   nonEmpty(config.binlog.fileName, "binlog.fileName")
+  if typeof(config.tls.enabled) != "bool" then return fail("tls.enabled must be boolean") end if
+  if typeof(config.tls.certificateReference) != "string" then return fail("tls.certificateReference must be string") end if
+  if config.tls.enabled and len(config.tls.certificateReference) == 0 then return fail("tls.certificateReference must be non-empty when TLS is enabled") end if
+  if config.tls.pfxPasswordEnvironment != "MINISQL_TLS_PFX_PASSWORD" then return fail("tls.pfxPasswordEnvironment must be MINISQL_TLS_PFX_PASSWORD") end if
+  if config.tls.protocolVersion != "TLS1.3" then return fail("tls.protocolVersion must be TLS1.3") end if
+  if config.tls.cipherSuite != "TLS_AES_256_GCM_SHA384" then return fail("tls.cipherSuite must be TLS_AES_256_GCM_SHA384") end if
+  if config.tls.namedGroup != "X25519" then return fail("tls.namedGroup must be X25519") end if
   if typeof(config.safety.allowRemoteWithoutAuthentication) != "bool" or typeof(config.safety.allowUnknownFormatFeatures) != "bool" then return fail("safety flags must be boolean") end if
   if config.safety.durability != "full" then return fail("safety.durability must be full") end if
-  if config.server.bindAddress != "127.0.0.1" and not config.safety.allowRemoteWithoutAuthentication then
-    return fail("remote bind requires explicit unsafe override before DCL")
+  if config.server.bindAddress != "127.0.0.1" and not config.tls.enabled and not config.safety.allowRemoteWithoutAuthentication then
+    return fail("remote bind requires native TLS or an explicit unsafe override")
   end if
   if config.safety.allowUnknownFormatFeatures then return fail("unknown persisted format features must not be allowed") end if
   return true

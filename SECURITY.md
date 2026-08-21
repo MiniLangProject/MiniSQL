@@ -23,9 +23,10 @@ Include, where possible:
 - Do not expose plaintext or trusted-local server modes to untrusted networks.
 - Protect database directories, backup archives, audit keys, TLS private keys,
   and operator credentials using OS-level access controls.
-- Never use `tests/fixtures/tls/server-key.pem` or its certificates outside the
-  test suite.
+- Use system-trusted server certificates for normal deployments. Certificate
+  pinning is intended for deliberately self-signed installations; distribute
+  the expected SHA-256 leaf-certificate pin through an authenticated channel.
 - Review `docs/release/SECURITY_GUIDE.md` and `docs/release/LIMITATIONS.md` before
   deployment.
-- Treat the Python TLS and replication sidecars as security-sensitive processes
-  and run them with least privilege.
+- Treat the native TLS credential configuration, its certificate stores or PFX
+  files, and the Python replication controller as security-sensitive assets.

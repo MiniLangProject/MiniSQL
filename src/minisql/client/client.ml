@@ -196,6 +196,22 @@ function openAuthenticatedAddressBytes(address, port, username, passwordBytes)
   return openAuthenticatedConnection(connection.connectAddress(address, port), username, passwordBytes, "openAuthenticatedAddressBytes")
 end function
 
+// Opens authenticated MiniSQL over native TLS with Windows X.509 trust.
+function openTlsAuthenticatedAddressBytes(address, port, serverName, username, passwordBytes)
+  if typeof(passwordBytes) != "bytes" then return fail(INVALID_ARGUMENT, "openTlsAuthenticatedAddressBytes", "password must be bytes") end if
+  transport = try(connection.connectTlsAddress(address, port, serverName))
+  if typeof(transport) == "error" then return transport end if
+  return openAuthenticatedConnection(transport, username, passwordBytes, "openTlsAuthenticatedAddressBytes")
+end function
+
+// Opens authenticated MiniSQL over native TLS with exact SHA-256 leaf pinning.
+function openTlsPinnedAuthenticatedAddressBytes(address, port, serverName, pinText, username, passwordBytes)
+  if typeof(passwordBytes) != "bytes" then return fail(INVALID_ARGUMENT, "openTlsPinnedAuthenticatedAddressBytes", "password must be bytes") end if
+  transport = try(connection.connectTlsPinnedAddress(address, port, serverName, pinText))
+  if typeof(transport) == "error" then return transport end if
+  return openAuthenticatedConnection(transport, username, passwordBytes, "openTlsPinnedAuthenticatedAddressBytes")
+end function
+
 // Opens authenticated loopback bytes using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -211,6 +227,26 @@ function openAuthenticatedAddress(address, port, username, password)
   if typeof(password) != "string" then return fail(INVALID_ARGUMENT, "openAuthenticatedAddress", "password must be string") end if
   secret = bytes(password)
   result = try(openAuthenticatedAddressBytes(address, port, username, secret))
+  uuid.wipeSecret(secret)
+  if typeof(result) == "error" then return result end if
+  return result
+end function
+
+// Opens native TLS with Windows trust while wiping the temporary password bytes.
+function openTlsAuthenticatedAddress(address, port, serverName, username, password)
+  if typeof(password) != "string" then return fail(INVALID_ARGUMENT, "openTlsAuthenticatedAddress", "password must be string") end if
+  secret = bytes(password)
+  result = try(openTlsAuthenticatedAddressBytes(address, port, serverName, username, secret))
+  uuid.wipeSecret(secret)
+  if typeof(result) == "error" then return result end if
+  return result
+end function
+
+// Opens pinned native TLS while wiping the temporary password bytes.
+function openTlsPinnedAuthenticatedAddress(address, port, serverName, pinText, username, password)
+  if typeof(password) != "string" then return fail(INVALID_ARGUMENT, "openTlsPinnedAuthenticatedAddress", "password must be string") end if
+  secret = bytes(password)
+  result = try(openTlsPinnedAuthenticatedAddressBytes(address, port, serverName, pinText, username, secret))
   uuid.wipeSecret(secret)
   if typeof(result) == "error" then return result end if
   return result

@@ -336,10 +336,11 @@ function toConfig(root)
   runtime = objectMember(root, "runtime")
   loggingValue = optionalMember(root, "logging")
   binlogValue = optionalMember(root, "binlog")
+  tlsValue = optionalMember(root, "tls")
   defaults = objectMember(root, "databaseDefaults")
   safety = objectMember(root, "safety")
 
-  ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "logging", "binlog", "databaseDefaults", "safety"], "root")
+  ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "logging", "binlog", "tls", "databaseDefaults", "safety"], "root")
   ensureOnlyKeys(paths, ["dataRoot", "temporaryRoot", "logDirectory"], "paths")
   ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes"], "server")
   ensureOnlyKeys(runtime, ["bufferPoolBytes", "queryTimeoutMs", "checkpointWalBytes", "temporaryMemoryBytes", "logLevel"], "runtime")
@@ -354,6 +355,12 @@ function toConfig(root)
     if binlogValue.kind != JSON_OBJECT then return fail("toConfig", "binlog must be object") end if
     ensureOnlyKeys(binlogValue, ["enabled", "fileName"], "binlog")
     binlog = model.BinlogConfig(boolMember(binlogValue, "enabled"), stringMember(binlogValue, "fileName"))
+  end if
+  tls = model.TlsConfig(false, "store:", "MINISQL_TLS_PFX_PASSWORD", "TLS_AES_256_GCM_SHA384", "X25519", "TLS1.3")
+  if tlsValue is not void then
+    if tlsValue.kind != JSON_OBJECT then return fail("toConfig", "tls must be object") end if
+    ensureOnlyKeys(tlsValue, ["enabled", "certificateReference", "pfxPasswordEnvironment", "cipherSuite", "namedGroup", "protocolVersion"], "tls")
+    tls = model.TlsConfig(boolMember(tlsValue, "enabled"), stringMember(tlsValue, "certificateReference"), stringMember(tlsValue, "pfxPasswordEnvironment"), stringMember(tlsValue, "cipherSuite"), stringMember(tlsValue, "namedGroup"), stringMember(tlsValue, "protocolVersion"))
   end if
   ensureOnlyKeys(defaults, ["pageSize", "checksumAlgorithm", "walSegmentBytes", "textEncoding", "defaultCollation", "databaseFormatVersion", "tableFileFormatVersion", "indexFileFormatVersion", "walFormatVersion", "rowFormatVersion"], "databaseDefaults")
   ensureOnlyKeys(safety, ["allowRemoteWithoutAuthentication", "durability", "allowUnknownFormatFeatures"], "safety")
@@ -377,6 +384,7 @@ function toConfig(root)
     ),
     logging,
     binlog,
+    tls,
     model.DatabaseDefaults(
       intMember(defaults, "pageSize"),
       stringMember(defaults, "checksumAlgorithm"),
