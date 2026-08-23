@@ -33,8 +33,9 @@ mechanism.
 
 An implementation MAY use lookup tables, loop unrolling, or processor
 instructions, but it MUST produce exactly the same state after every incremental
-update boundary. The current native build uses the canonical 256-entry reflected
-Castagnoli table and an eight-byte unrolled loop; this changes no serialized value.
+update boundary. The current native build dispatches once from the detected CPU
+features to SSE4.2 qword instructions or the canonical 256-entry reflected
+Castagnoli table fallback; this changes no serialized value.
 
 ## 14.3 Protected envelope
 

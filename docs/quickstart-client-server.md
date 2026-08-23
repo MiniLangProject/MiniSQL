@@ -2,6 +2,7 @@
 
 ```powershell
 $compiler = "C:\Users\nilsk\Desktop\MiniLangCompilerPy\mlc_win64.py"
+# Use MiniLangCompilerPy revision 3706716 or newer.
 .\build.ps1 -Compiler $compiler -AppsOnly
 
 .\build\bin\minisqld.exe --init .\data demo 4096

@@ -62,7 +62,9 @@ proves heap/index equality with exact entry probes and count equality. Runtime
 still scales with all authoritative payload bytes because no checksum or overflow
 validation is skipped.
 
-CRC-32C calculation is table-driven and processes eight bytes per loop body.
-This is an implementation-only acceleration: the reflected Castagnoli
-polynomial, initial state, final XOR, incremental-update behavior, and every
-persisted checksum remain unchanged, so no migration or rebuild is required.
+CRC-32C calculation uses MiniLang's CPU-dispatched native primitive. Supported
+processors use SSE4.2 qword instructions; other processors automatically use
+the exact reflected Castagnoli table fallback. This is an implementation-only
+acceleration: the polynomial, initial state, final XOR, incremental-update
+behavior, and every persisted checksum remain unchanged, so no migration or
+rebuild is required.

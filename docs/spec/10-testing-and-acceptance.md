@@ -8,6 +8,10 @@ Every delivered source archive exposes exactly one user-facing root acceptance l
 .\test.ps1 -Compiler C:\path\to\mlc_win64.py
 ```
 
+The accepted compiler baseline is MiniLangCompilerPy revision `3706716` or
+newer. It supplies the native CRC-32C and SIMD runtime contracts referenced by
+the source package; using an older compiler is not a valid acceptance run.
+
 There are no milestone-specific PowerShell wrappers. After this one launcher is approved,
 it removes the Windows download marker from the rest of the tree, creates all runtime
 directories and executes every accepted regression plus every test through the highest

@@ -6,6 +6,10 @@ The repository exposes exactly one user-facing launcher:
 .\test.ps1 -Compiler C:\path\to\mlc_win64.py
 ```
 
+Dynamic acceptance requires MiniLangCompilerPy revision `3706716` or newer so
+the native `std.checksum.crc32c`, CPU dispatch, and SIMD built-ins used by the
+current source tree are available.
+
 The suite contains **106 cumulative phases** covering M0 through M50. It builds
 and runs native Windows x64 applications and tests, process-level crash cases,
 concurrent clients, TLS proxy integration, replication, fuzz/mutation inputs,

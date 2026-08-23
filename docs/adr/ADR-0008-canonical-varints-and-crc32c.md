@@ -7,3 +7,8 @@ for accidental-corruption detection. Full-width 64-bit values continue to use ex
 word pairs. Non-canonical forms are rejected so every integer has exactly one byte
 representation. CRC-32C is fast enough for the initial implementation and has stable
 external reference vectors; it is not used as a security MAC.
+
+The current implementation retains that exact format contract but delegates
+calculation to MiniLang's native `std.checksum.crc32c` primitive. Runtime CPU
+dispatch selects SSE4.2 qword instructions or a bit-identical reflected
+Castagnoli table fallback; neither path changes serialized values.

@@ -70,7 +70,8 @@ one. The design intentionally retains a single physical writer per database.
 
 - Windows x64 with Schannel TLS 1.3 support
 - Python 3.11 or newer
-- `mlc_win64.py` from MiniLangCompilerPy
+- `mlc_win64.py` from MiniLangCompilerPy revision `3706716` or newer, including
+  the native `std.checksum.crc32c` runtime primitive
 
 TLS runs in-process through the Windows Schannel and CryptoAPI system
 interfaces. Python is used by the test/release tooling and the optional
@@ -208,11 +209,12 @@ and cross-checks every derived index entry, but retains only one row, one heap
 page, and one index leaf at a time. The retained 1 GiB reference check therefore
 uses 98.1 MiB peak private memory instead of 1,237.7 MiB.
 
-CRC-32C uses a format-compatible reflected Castagnoli lookup table with an
-eight-byte unrolled hot loop. Existing databases, WAL, backups, protocol frames,
+CRC-32C delegates to MiniLang's CPU-dispatched native checksum primitive. It
+uses SSE4.2 qword processing when supported and an exact reflected Castagnoli
+table fallback otherwise. Existing databases, WAL, backups, protocol frames,
 and page checksums remain bit-for-bit compatible. On the retained 1 GiB database
-the fully streaming consistency check completed in 35,216 ms after this change,
-versus 208,515 ms with the former bit-at-a-time checksum loop.
+the fully streaming consistency check completed in 3,683 ms, versus 35,216 ms
+with MiniSQL's former table loop and 208,515 ms with its bit-at-a-time loop.
 
 ## Build the binary distribution
 

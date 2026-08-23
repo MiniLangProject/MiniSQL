@@ -15,3 +15,7 @@ MiniLang. The distribution contains:
 Start with `docs/QUICKSTART.md`. MiniSQL 1.0 targets Windows x64 with Schannel
 TLS 1.3 support. Python 3.11 or newer is recommended when replication or the
 development tooling is used.
+
+Source builds require MiniLangCompilerPy revision `3706716` or newer. That
+compiler provides the CPU-dispatched native CRC-32C primitive and SIMD
+string/byte built-ins used by the current MiniSQL sources.

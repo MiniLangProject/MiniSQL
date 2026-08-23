@@ -5,6 +5,7 @@
 import minisql.common.crc32c as crc32c
 import minisql.storage.checksum as checksum
 import tests.support.testkit as test
+import std.cpu as cpu
 
 // Runs the crc envelope test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
@@ -16,11 +17,11 @@ function main(args)
   test.equal(state, crc32c.compute(bytes(32, 0)), 0x8A9136AA, "CRC 32 zero bytes")
 
   // Exact values on both sides of every eight-byte block boundary protect the
-  // unrolled table path and its scalar tail from off-by-one regressions.
+  // native qword path and its scalar tail from off-by-one regressions.
   boundaryLengths = [1, 7, 8, 9, 15, 16, 17, 4096, 4097]
   boundaryChecksums = [0x527D5351, 0xBB3E6A6D, 0x8C28B28A, 0xBBE568A3, 0x530ED410, 0x42709AEA, 0xDAEDA3E9, 0x98F94189, 0xA8A14AA4]
   for index = 0 to len(boundaryLengths) - 1
-    test.equal(state, crc32c.compute(bytes(boundaryLengths[index], 0)), boundaryChecksums[index], "CRC unrolled boundary " + boundaryLengths[index])
+    test.equal(state, crc32c.compute(bytes(boundaryLengths[index], 0)), boundaryChecksums[index], "CRC native boundary " + boundaryLengths[index])
   end for
 
   allBytes = bytes(256, 0)
@@ -28,6 +29,13 @@ function main(args)
     allBytes[index] = index
   end for
   test.equal(state, crc32c.compute(allBytes), 0x9C44184B, "CRC byte ramp")
+  // Force the portable backend to prove that databases remain readable on
+  // processors without SSE4.2 and that dispatch changes no serialized bit.
+  detectedFeatures = cpu.features()
+  previousDispatch = cpu.setDispatchMaskForTesting(detectedFeatures ^ (detectedFeatures & cpu.SSE42))
+  test.equal(state, crc32c.compute(allBytes), 0x9C44184B, "CRC software fallback byte ramp")
+  cpu.setDispatchMaskForTesting(previousDispatch)
+  test.equal(state, crc32c.compute(allBytes), 0x9C44184B, "CRC restored hardware dispatch")
 
   text = bytes("123456789")
   partial = crc32c.update(0, text, 0, 4)
@@ -37,7 +45,7 @@ function main(args)
   boundaryPartial = crc32c.update(0, zeroSeventeen, 0, 7)
   boundaryPartial = crc32c.update(boundaryPartial, zeroSeventeen, 7, 8)
   boundaryPartial = crc32c.update(boundaryPartial, zeroSeventeen, 15, 2)
-  test.equal(state, boundaryPartial, 0xDAEDA3E9, "CRC incremental across unrolled boundaries")
+  test.equal(state, boundaryPartial, 0xDAEDA3E9, "CRC incremental across native boundaries")
   test.equal(state, crc32c.computeRange(text, 2, 4), crc32c.compute(bytes("3456")), "CRC range")
   test.record(state, crc32c.verifyRange(text, 0, len(text), 0xE3069283), "CRC verify")
   test.record(state, not crc32c.verifyRange(text, 0, len(text), 0), "CRC reject mismatch")

@@ -9,3 +9,7 @@ before and after. Page-size changes require an offline source-to-target rewrite;
 never edit `db.meta` or file headers manually. Downgrading after using a feature
 unknown to the older engine is not supported even when the physical format is
 unchanged.
+
+The native CRC-32C acceleration is an executable-only change. It preserves the
+Castagnoli polynomial, initial/final XOR, and incremental state exactly, so it
+requires no database rewrite and remains readable by earlier format-1 binaries.

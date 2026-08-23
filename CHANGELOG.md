@@ -107,6 +107,10 @@ and repair-candidate log from development is preserved in
   Castagnoli lookup table and eight-way unrolled byte processing without any
   format change; the isolated 64 MiB checksum improved from 3,125 ms to 375 ms,
   and the retained 1 GiB full consistency check from 208,515 ms to 35,216 ms;
+- adopted MiniLang's CPU-dispatched native CRC-32C primitive, using SSE4.2 qword
+  instructions with an exact table fallback; a repeated 4 GiB checksum measured
+  297 ms (about 13.5 GiB/s), and the retained 1 GiB full consistency check fell
+  from 35,216 ms to 3,683 ms while preserving its 98.1 MiB private-memory peak;
 - made PITR and standby refresh rebuild derived B+ tree indexes after replaying
   post-base table WAL, closing a consistency gap exposed by the clean restart
   fast path while preserving the zero-rebuild exact-base restore path;

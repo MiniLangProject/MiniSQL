@@ -50,3 +50,10 @@ performance work. The table-driven implementation measured 375 ms versus 3,125
 ms for the former bit-at-a-time loop, with the identical checksum `843410269`.
 The retained 1 GiB full-check wall time correspondingly fell from 208,515 ms to
 35,216 ms while retaining the 98.1 MiB private-memory bound.
+
+With MiniLang's native SSE4.2 CRC-32C primitive, a 64-iteration run over the
+same 64 MiB buffer processed 4 GiB in 297 ms, about 13.5 GiB/s or an average
+4.64 ms per 64 MiB. The controlled table baseline compiled by the same compiler
+was 359 ms per 64 MiB. The retained 1 GiB full checker completed in 3,683 ms
+with the identical `tables=3 rows=1036 indexes=4` result and 98.1 MiB peak
+private memory. CPUs without SSE4.2 use the exact table fallback.
