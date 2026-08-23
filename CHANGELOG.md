@@ -98,6 +98,11 @@ and repair-candidate log from development is preserved in
 - reduced full logical verification of the retained 1 GiB overflow workload
   from 1,368,140 ms to 71,453 ms for its one-time legacy directory build and to
   1,093 ms on a fresh-process warm restart;
+- made offline consistency checking row-streaming and B+ tree structural
+  validation leaf-streaming; heap/index agreement now uses exact membership
+  probes plus count equality instead of retaining two complete entry arrays,
+  reducing the retained 1 GiB check's private-memory peak from 1,237.7 MiB to
+  98.1 MiB while preserving full overflow, checksum, and index validation;
 - made PITR and standby refresh rebuild derived B+ tree indexes after replaying
   post-base table WAL, closing a consistency gap exposed by the clean restart
   fast path while preserving the zero-rebuild exact-base restore path;

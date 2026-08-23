@@ -74,6 +74,26 @@ struct TableReader
   closed
 end struct
 
+// Holds a forward-only live-row scan. The cursor retains one heap page and one
+// decoded row at a time; callers can therefore validate or consume tables whose
+// total payload is much larger than the MiniLang heap.
+struct TableRowCursor
+  // Reader that supplies transaction visibility, schema, and overflow access.
+  reader
+  // Optional column mask used to avoid unrelated overflow payload reads.
+  requiredColumns
+  // Persistent-directory result containing physical heap page numbers only.
+  heapPages
+  // Index of the heap page currently being visited.
+  pageIndex
+  // Checksummed bytes for the current heap page, or void between pages.
+  pageBytes
+  // Next slot to inspect within pageBytes.
+  slotId
+  // Indicates that every page and slot has been consumed.
+  finished
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -100,6 +120,11 @@ end function
 // Does not modify its inputs.
 function isTableReader(value)
   return value is TableReader
+end function
+
+// Returns whether value is a forward-only table row cursor.
+function isTableRowCursor(value)
+  return value is TableRowCursor
 end function
 
 // Appends array value using the supplied inputs.
@@ -328,6 +353,79 @@ function decodeRecordColumns(reader, encoded, requiredColumns)
     end for
   end if
   return output
+end function
+
+// Creates a forward-only cursor over live rows. Heap-page discovery uses the
+// persistent sidecar index, while each selected heap page is still checksum
+// verified before any slot or overflow pointer is trusted.
+function openCursor(reader, requiredColumns)
+  validateOpen(reader, "openCursor")
+  if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "openCursor", "required column mask must match the table") end if
+  return TableRowCursor(reader, requiredColumns, heap_file.heapPageNumbers(reader.file), 0, void, 0, false)
+end function
+
+// Returns the next live row or void at end-of-table. Advancing before returning
+// makes repeated calls deterministic even when the caller immediately discards
+// a multi-megabyte decoded payload.
+function nextRow(cursor)
+  if cursor is not TableRowCursor then return fail(INVALID_ARGUMENT, "nextRow", "cursor must be TableRowCursor") end if
+  validateOpen(cursor.reader, "nextRow")
+  if cursor.finished then return void end if
+  while cursor.pageIndex < len(cursor.heapPages)
+    if cursor.pageBytes is void then
+      pageNumber = cursor.heapPages[cursor.pageIndex]
+      encoded = visiblePage(cursor.reader, pageNumber)
+      header = page.verify(encoded)
+      if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "nextRow", "table page has wrong type") end if
+      cursor.pageBytes = encoded
+      cursor.slotId = 0
+    end if
+
+    count = slotted_page.slotCount(cursor.pageBytes)
+    while cursor.slotId < count
+      currentSlot = cursor.slotId
+      cursor.slotId = cursor.slotId + 1
+      current = slotted_page.entry(cursor.pageBytes, currentSlot)
+      if current.flags == slotted_page.SLOT_FLAG_LIVE then
+        pageNumber = cursor.heapPages[cursor.pageIndex]
+        rowValues = decodeRecordColumns(cursor.reader, slotted_page.read(cursor.pageBytes, currentSlot), cursor.requiredColumns)
+        return ScannedRow(RowReference(pageNumber, currentSlot, current.generation), rowValues)
+      end if
+    end while
+
+    cursor.pageIndex = cursor.pageIndex + 1
+    cursor.pageBytes = void
+    cursor.slotId = 0
+  end while
+  cursor.finished = true
+  return void
+end function
+
+// Fully decodes and validates every live row while retaining only one row. This
+// includes external TEXT/BLOB chains, UTF-8 conversion, schema compatibility,
+// generated/default column handling, page checksums, and slot generations.
+function verifyAndCount(reader)
+  validateOpen(reader, "verifyAndCount")
+  cursor = openCursor(reader, void)
+  rowCount = 0
+  while true
+    row = try(nextRow(cursor))
+    if typeof(row) == "error" then return row end if
+    if row is void then break end if
+    rowCount = rowCount + 1
+  end while
+  return rowCount
+end function
+
+// Opens, streams, and closes one table for the offline consistency checker.
+function verifyTable(databasePath, table, pageTransaction)
+  reader = open(databasePath, table, pageTransaction)
+  if typeof(reader) == "error" then return reader end if
+  result = try(verifyAndCount(reader))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
 end function
 
 // Implements all for this module.

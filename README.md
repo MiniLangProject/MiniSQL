@@ -202,6 +202,12 @@ automatically rebuilt if missing, stale, or corrupt. On the retained 1 GiB
 capacity database, full logical verification improved from 1,368,140 ms before
 this index to 71,453 ms for the one-time legacy build and 1,093 ms after restart.
 
+`minisql-check.exe` consumes rows and active B+ tree leaves through forward-only
+cursors. It still decodes every row, traverses every referenced overflow chain,
+and cross-checks every derived index entry, but retains only one row, one heap
+page, and one index leaf at a time. The retained 1 GiB reference check therefore
+uses 98.1 MiB peak private memory instead of 1,237.7 MiB.
+
 ## Build the binary distribution
 
 ```powershell

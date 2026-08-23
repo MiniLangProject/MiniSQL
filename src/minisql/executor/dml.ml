@@ -1293,23 +1293,56 @@ function rebuildAllIndexes(database)
   return rebuilt
 end function
 
-// Verifies index using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+// Compares one derived index with the heap through forward-only row reads and
+// logarithmic B+ tree membership probes. Count equality plus the presence of
+// every unique row-reference entry proves that the tree has neither missing nor
+// additional entries, without retaining either complete collection.
+function verifyIndexStreaming(database, table, constraint, tree, reader)
+  cursorResult = try(scan.openCursor(reader, constraintColumnMask(table, [constraint])))
+  if typeof(cursorResult) == "error" then return cursorResult end if
+  expectedCount = 0
+  operationError = void
+  finished = false
+  while not finished and operationError is void
+    row = try(scan.nextRow(cursorResult))
+    if typeof(row) == "error" then
+      operationError = row
+    else if row is void then
+      finished = true
+    else
+      keyValues = constraintKey(row.values, table, constraint)
+      if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
+        expected = try(btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, row.reference)))
+        if typeof(expected) == "error" then
+          operationError = expected
+        else
+          present = try(btree.containsEntry(tree, expected))
+          if typeof(present) == "error" then operationError = present else if not present then operationError = fail(CORRUPT_DATA, "verifyIndex", "index entry is missing from derived tree") end if
+        end if
+        expectedCount = expectedCount + 1
+      end if
+    end if
+  end while
+  if operationError is not void then return operationError end if
+  if expectedCount != btree.count(tree) then return fail(CORRUPT_DATA, "verifyIndex", "index entry count differs from heap") end if
+  return true
+end function
+
+// Verifies one index while guaranteeing that both read-only handles are closed
+// on comparison failures. B+ tree open already performs the streaming structural
+// audit, and the explicit call documents that integrity is part of this API.
 function verifyIndex(database, table, constraint)
-  expected = btree.sortEntries(buildIndexEntries(database, table, constraint, void))
-  tree = btree.open(indexPath(database, constraint))
-  btree.verify(tree)
-  actual = btree.allEntries(tree)
-  closeResult = try(btree.close(tree))
-  if typeof(closeResult) == "error" then return closeResult end if
-  if len(expected) != len(actual) then return fail(CORRUPT_DATA, "verifyIndex", "index entry count differs from heap") end if
-  if len(expected) > 0 then
-    for index = 0 to len(expected) - 1
-      if btree.compareEntries(expected[index], actual[index]) != 0 then return fail(CORRUPT_DATA, "verifyIndex", "index entry differs from heap") end if
-    end for
-  end if
+  tree = try(btree.openReadOnly(indexPath(database, constraint)))
+  if typeof(tree) == "error" then return tree end if
+  reader = try(scan.open(database.path, table, void))
+  if typeof(reader) == "error" then ignoredTreeClose = try(btree.close(tree)); return reader end if
+  operationResult = try(btree.verify(tree))
+  if typeof(operationResult) != "error" then operationResult = try(verifyIndexStreaming(database, table, constraint, tree, reader)) end if
+  readerClose = try(scan.close(reader))
+  treeClose = try(btree.close(tree))
+  if typeof(operationResult) == "error" then return operationResult end if
+  if typeof(readerClose) == "error" then return readerClose end if
+  if typeof(treeClose) == "error" then return treeClose end if
   return true
 end function
 

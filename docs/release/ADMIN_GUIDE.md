@@ -56,4 +56,8 @@ requires `minisql-migrate.exe --rewrite`.
 
 Run `minisql-check.exe <database>` after abnormal storage events and before
 publishing a restored or migrated database. Schedule verified backups and test
-restores regularly.
+restores regularly. The checker is memory-bounded by the largest individual row:
+it streams heap rows, external TEXT/BLOB chains, and active B+ tree leaves, then
+proves heap/index equality with exact entry probes and count equality. Runtime
+still scales with all authoritative payload bytes because no checksum or overflow
+validation is skipped.

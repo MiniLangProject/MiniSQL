@@ -111,7 +111,8 @@ end struct
 
 // Defines the visit state record used by this module.
 struct VisitState
-  // Pages field of the visit state.
+  // One byte per physical page marks nodes already reached from the root.
+  // The bitmap is bounded by index-file size and never retains index entries.
   pages
 end struct
 
@@ -686,6 +687,99 @@ function allEntries(tree)
   return result
 end function
 
+// Walks the active leaf generation one page at a time. Only the previous entry
+// remains live between pages, so structural validation does not materialize the
+// complete index. The page-count guard turns a corrupt forward-link cycle into
+// a deterministic error without a second visited-page collection.
+function auditLeafChain(tree)
+  validateOpen(tree, "auditLeafChain")
+  if tree.meta.entryCount == 0 then return BTreeAudit(void, void, 0, 0) end if
+  currentPage = tree.meta.firstLeaf
+  previousPage = 0
+  visitedLeaves = 0
+  entryCount = 0
+  firstKey = void
+  lastEntry = void
+  while currentPage != 0
+    visitedLeaves = visitedLeaves + 1
+    if visitedLeaves > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "auditLeafChain", "leaf chain contains a cycle") end if
+    leaf = decodeLeaf(tree, currentPage)
+    if leaf.previousPage != previousPage then return fail(CORRUPT_DATA, "auditLeafChain", "leaf backward link mismatch") end if
+    for each value in leaf.entries
+      if lastEntry is not void and compareEntries(lastEntry, value) > 0 then return fail(CORRUPT_DATA, "auditLeafChain", "global leaf order is invalid") end if
+      if firstKey is void then firstKey = bytes(value.key) end if
+      lastEntry = copyEntry(value)
+      entryCount = entryCount + 1
+      if entryCount > tree.meta.entryCount then return fail(CORRUPT_DATA, "auditLeafChain", "leaf chain exceeds metadata entry count") end if
+    end for
+    previousPage = currentPage
+    currentPage = leaf.nextPage
+  end while
+  if previousPage != tree.meta.lastLeaf or entryCount != tree.meta.entryCount then return fail(CORRUPT_DATA, "auditLeafChain", "leaf chain does not match metadata") end if
+  return BTreeAudit(firstKey, bytes(lastEntry.key), entryCount, visitedLeaves)
+end function
+
+// Descends through separator keys to the leaf that owns the rightmost range
+// beginning at or before key. Duplicate keys can straddle adjacent leaves, so
+// containsEntry subsequently walks backward over equal-key predecessors.
+function locateLeaf(tree, key)
+  validateOpen(tree, "locateLeaf")
+  if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "locateLeaf", "key must contain 1..256 bytes") end if
+  if tree.meta.entryCount == 0 then return void end if
+  pageNumber = tree.meta.rootPage
+  expectedLevel = tree.meta.height - 1
+  while expectedLevel > 0
+    node = decodeInternal(tree, pageNumber)
+    if node.level != expectedLevel then return fail(CORRUPT_DATA, "locateLeaf", "internal level mismatch") end if
+    childIndex = 0
+    for index = 0 to len(node.separators) - 1
+      if compareKeys(key, node.separators[index]) < 0 then break end if
+      childIndex = index + 1
+    end for
+    pageNumber = node.children[childIndex]
+    expectedLevel = expectedLevel - 1
+  end while
+  return decodeLeaf(tree, pageNumber)
+end function
+
+// Tests one complete key/value entry without building allEntries(). At most one
+// leaf page and its small decoded entry array are retained at a time. Equal-key
+// predecessor leaves are included so non-unique indexes remain exact even when
+// a duplicate run crosses a leaf boundary.
+function containsEntry(tree, expected)
+  validateOpen(tree, "containsEntry")
+  checked = copyEntry(expected)
+  if tree.meta.entryCount == 0 then return false end if
+  leaf = locateLeaf(tree, checked.key)
+  traversed = 0
+  while leaf.previousPage != 0
+    traversed = traversed + 1
+    if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "containsEntry", "leaf backward chain contains a cycle") end if
+    previous = decodeLeaf(tree, leaf.previousPage)
+    if previous.nextPage != leaf.pageNumber then return fail(CORRUPT_DATA, "containsEntry", "leaf forward link mismatch") end if
+    previousLast = previous.entries[len(previous.entries) - 1]
+    if compareKeys(previousLast.key, checked.key) != 0 then break end if
+    leaf = previous
+  end while
+
+  traversed = 0
+  while leaf is not void
+    traversed = traversed + 1
+    if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "containsEntry", "leaf forward chain contains a cycle") end if
+    for each current in leaf.entries
+      keyOrder = compareKeys(current.key, checked.key)
+      if keyOrder > 0 then return false end if
+      if keyOrder == 0 and compareEntries(current, checked) == 0 then return true end if
+    end for
+    if leaf.nextPage == 0 then return false end if
+    nextLeaf = decodeLeaf(tree, leaf.nextPage)
+    if nextLeaf.previousPage != leaf.pageNumber then return fail(CORRUPT_DATA, "containsEntry", "leaf backward link mismatch") end if
+    if compareKeys(nextLeaf.entries[0].key, checked.key) > 0 then return false end if
+    leaf = nextLeaf
+  end while
+  return false
+end function
+
 // Inserts the requested value.
 // Inputs: `tree`, `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function insert(tree, key, value)
@@ -772,17 +866,14 @@ end function
 // Performs the visit contains operation for this module.
 // Inputs: `state`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function visitContains(state, pageNumber)
-  for each existing in state.pages
-    if existing == pageNumber then return true end if
-  end for
-  return false
+  return state.pages[pageNumber] != 0
 end function
 
 // Performs the audit node operation for this module.
 // Inputs: `tree`, `pageNumber`, `expectedLevel`, `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function auditNode(tree, pageNumber, expectedLevel, state)
   if visitContains(state, pageNumber) then return fail(CORRUPT_DATA, "auditNode", "node graph contains a cycle or duplicate child") end if
-  state.pages = state.pages + [pageNumber]
+  state.pages[pageNumber] = 1
   if expectedLevel == 0 then
     leaf = decodeLeaf(tree, pageNumber)
     return BTreeAudit(bytes(leaf.entries[0].key), bytes(leaf.entries[len(leaf.entries) - 1].key), len(leaf.entries), 1)
@@ -811,13 +902,13 @@ end function
 // Inputs: `tree`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function verify(tree)
   validateOpen(tree, "verify")
-  values = allEntries(tree)
-  if len(values) != tree.meta.entryCount then return fail(CORRUPT_DATA, "verify", "entry count mismatch") end if
+  leafAudit = auditLeafChain(tree)
   if tree.meta.entryCount == 0 then return true end if
-  state = VisitState([])
+  state = VisitState(bytes(tree.pagedFile.pageCount, 0))
   audit = auditNode(tree, tree.meta.rootPage, tree.meta.height - 1, state)
   if audit.entryCount != tree.meta.entryCount then return fail(CORRUPT_DATA, "verify", "node graph count mismatch") end if
-  if not bytesEqual(audit.firstKey, values[0].key) or not bytesEqual(audit.lastKey, values[len(values) - 1].key) then return fail(CORRUPT_DATA, "verify", "node graph boundary mismatch") end if
+  if audit.leafCount != leafAudit.leafCount then return fail(CORRUPT_DATA, "verify", "node graph leaf count differs from leaf chain") end if
+  if not bytesEqual(audit.firstKey, leafAudit.firstKey) or not bytesEqual(audit.lastKey, leafAudit.lastKey) then return fail(CORRUPT_DATA, "verify", "node graph boundary mismatch") end if
   return true
 end function
 

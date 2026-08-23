@@ -29,6 +29,17 @@ function corruptFirstByte(path)
   return true
 end function
 
+// Produces a deterministic external TEXT payload that cannot fit inline on a
+// 4 KiB heap page. The consistency check must validate its overflow chain while
+// retaining only this one row.
+function externalPayload()
+  output = ""
+  for index = 0 to 255
+    output = output + "0123456789abcdef"
+  end for
+  return output
+end function
+
 // Runs the tools test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
 function main(args)
   if len(args) != 1 then
@@ -46,15 +57,17 @@ function main(args)
   engine = executor.attach(managed)
   executeOne(engine, "CREATE TABLE asset (id INTEGER PRIMARY KEY, code VARCHAR(20) NOT NULL UNIQUE, value INTEGER CHECK (value >= 0))")
   executeOne(engine, "INSERT INTO asset(id, code, value) VALUES (1, 'alpha', 10), (2, 'beta', 20), (3, 'gamma', 30)")
+  executeOne(engine, "CREATE TABLE streamed_payload (id INTEGER PRIMARY KEY, code VARCHAR(20) NOT NULL UNIQUE, body TEXT NOT NULL)")
+  executeOne(engine, "INSERT INTO streamed_payload(id, code, body) VALUES (1, 'external', '" + externalPayload() + "')")
   executeOne(engine, "ANALYZE asset")
   executor.close(engine)
   database_manager.close(managed)
 
   report = checker.run(databasePath)
   testkit.record(state, checker.isCheckReport(report), "consistency checker returns report")
-  testkit.equal(state, report.tableCount, 1, "checker table count")
-  testkit.equal(state, report.rowCount, 3, "checker row count")
-  testkit.record(state, report.indexCount >= 2, "checker verifies primary and unique indexes")
+  testkit.equal(state, report.tableCount, 2, "checker table count")
+  testkit.equal(state, report.rowCount, 4, "checker row count including external payload")
+  testkit.record(state, report.indexCount >= 4, "checker verifies primary and unique indexes through streaming probes")
   testkit.equal(state, report.statisticsTableCount, 1, "checker validates statistics")
   testkit.equal(state, len(report.warnings), 0, "checker warning count")
 
@@ -72,13 +85,15 @@ function main(args)
   testkit.record(state, backup.isRestoreReport(restoreReport), "restore returns report")
   testkit.equal(state, restoreReport.fileCount, backupReport.fileCount, "restore file count")
   restoredCheck = checker.run(restorePath)
-  testkit.equal(state, restoredCheck.rowCount, 3, "restored database passes consistency check")
+  testkit.equal(state, restoredCheck.rowCount, 4, "restored database passes consistency check")
 
   restored = executor.open(restorePath)
   rows = executeOne(restored, "SELECT code, value FROM asset ORDER BY id")
   testkit.equal(state, len(rows.rows), 3, "restored SQL row count")
   testkit.equal(state, rows.rows[2][0].value, "gamma", "restored SQL text value")
   testkit.equal(state, rows.rows[2][1].value, 30, "restored SQL numeric value")
+  payloadRows = executeOne(restored, "SELECT LENGTH(body) FROM streamed_payload WHERE id = 1")
+  testkit.equal(state, payloadRows.rows[0][0].value, 4096, "restored external payload remains complete")
   executor.close(restored)
 
   samePlan = migrate.plan(databasePath, 4096)
@@ -95,7 +110,7 @@ function main(args)
   testkit.errorCode(state, try(migrate.run(databasePath, 8192)), 9003, "page-size rewrite refused before mutation")
   afterRefusal = checker.run(databasePath)
   testkit.equal(state, afterRefusal.pageSize, 4096, "refused migration preserves source page size")
-  testkit.equal(state, afterRefusal.rowCount, 3, "refused migration preserves source rows")
+  testkit.equal(state, afterRefusal.rowCount, 4, "refused migration preserves source rows")
 
   corruptFirstByte(file_api.joinPath(backupPath, "db.meta"))
   testkit.errorCode(state, try(backup.restore(backupPath, rejectedRestorePath)), 9004, "corrupt backup rejected by checksum")

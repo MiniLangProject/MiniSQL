@@ -131,8 +131,10 @@ function checkOpen(database)
     if not schemaHasTable(state, table.tableId) then return fail(CORRUPT_DATA, "checkOpen", "catalog table has no schema record: " + table.name) end if
     tablePath = catalog.tableFilePath(database.path, table.tableId)
     if not file_api.fileExists(tablePath) then return fail(CORRUPT_DATA, "checkOpen", "table file is missing: " + table.name) end if
-    rows = scan.scanTable(database.path, table, void)
-    rowCount = rowCount + len(rows)
+    // Decode and validate one row at a time. This still traverses every external
+    // TEXT/BLOB chain and verifies its pages, but memory is bounded by the
+    // largest individual row instead of the complete table payload.
+    rowCount = rowCount + try(scan.verifyTable(database.path, table, void))
   end for
 
   for each tableState in state.tables

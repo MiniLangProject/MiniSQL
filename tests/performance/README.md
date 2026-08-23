@@ -37,3 +37,10 @@ mode twice. The first process performs a complete classification and publishes
 the map; the second demonstrates persistent restart performance. On the retained
 1 GiB reference database the measured engine times were 71,453 ms cold and
 1,093 ms warm, versus 1,368,140 ms before page-type indexing.
+
+The offline `minisql-check.exe` path is intentionally stricter than the warm
+logical scan: it validates every row value and derived index relationship. Its
+row/leaf streaming implementation reduced the same retained 1 GiB database from
+1,237.7 MiB to 98.1 MiB peak private memory. Full-check wall time remains a
+physical overflow-I/O measurement and should be compared separately from the
+heap-directory-assisted warm scan.

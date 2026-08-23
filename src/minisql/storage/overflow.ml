@@ -222,15 +222,6 @@ function validateChainPage(pagedFile, pageBytes, pointer, expectedPage, expected
   return chunkLength
 end function
 
-// Performs the contains operation for this module.
-// Inputs: `values`, `sought`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function contains(values, sought)
-  for each value in values
-    if value == sought then return true end if
-  end for
-  return false
-end function
-
 // Performs the page count for length operation for this module.
 // Inputs: `pagedFile`, `length`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pageCountForLength(pagedFile, length)
@@ -334,7 +325,6 @@ function readRange(pagedFile, pointer, requestedOffset, requestedLength)
 
   output = bytes(requestedLength, 0)
   current = pointer.firstPage
-  visited = []
   sequence = 0
   logicalOffset = 0
   copied = 0
@@ -342,8 +332,11 @@ function readRange(pagedFile, pointer, requestedOffset, requestedLength)
   rangeEnd = requestedOffset + requestedLength
   while current != -1
     if current < 0 or current >= pagedFile.pageCount then return fail(CORRUPT_DATA, "readRange", "overflow page is missing") end if
-    if contains(visited, current) then return fail(CORRUPT_DATA, "readRange", "overflow chain contains a cycle") end if
-    visited = visited + [current]
+    // A valid chain cannot visit more pages than the containing file. Every
+    // page also stores its zero-based sequence, which validateChainPage checks
+    // against this monotonically increasing counter. Re-entering any earlier
+    // page therefore fails immediately without an O(n^2) visited-page array.
+    if sequence >= pagedFile.pageCount then return fail(CORRUPT_DATA, "readRange", "overflow chain contains a cycle") end if
     pageBytes = paged_file.readPage(pagedFile, current)
     chunkLength = validateChainPage(pagedFile, pageBytes, pointer, current, sequence)
     if chunkLength > pointer.totalLength - logicalOffset then return fail(CORRUPT_DATA, "readRange", "chunks exceed total length") end if
