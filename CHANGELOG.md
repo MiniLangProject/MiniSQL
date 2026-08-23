@@ -103,6 +103,10 @@ and repair-candidate log from development is preserved in
   probes plus count equality instead of retaining two complete entry arrays,
   reducing the retained 1 GiB check's private-memory peak from 1,237.7 MiB to
   98.1 MiB while preserving full overflow, checksum, and index validation;
+- replaced CRC-32C's eight polynomial iterations per byte with an immutable
+  Castagnoli lookup table and eight-way unrolled byte processing without any
+  format change; the isolated 64 MiB checksum improved from 3,125 ms to 375 ms,
+  and the retained 1 GiB full consistency check from 208,515 ms to 35,216 ms;
 - made PITR and standby refresh rebuild derived B+ tree indexes after replaying
   post-base table WAL, closing a consistency gap exposed by the clean restart
   fast path while preserving the zero-rebuild exact-base restore path;

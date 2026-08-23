@@ -61,3 +61,8 @@ it streams heap rows, external TEXT/BLOB chains, and active B+ tree leaves, then
 proves heap/index equality with exact entry probes and count equality. Runtime
 still scales with all authoritative payload bytes because no checksum or overflow
 validation is skipped.
+
+CRC-32C calculation is table-driven and processes eight bytes per loop body.
+This is an implementation-only acceleration: the reflected Castagnoli
+polynomial, initial state, final XOR, incremental-update behavior, and every
+persisted checksum remain unchanged, so no migration or rebuild is required.

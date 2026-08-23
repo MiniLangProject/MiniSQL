@@ -31,6 +31,11 @@ The API supports complete-buffer, range and incremental computation. An empty bu
 has checksum zero. CRC-32C detects accidental corruption; it is not an authentication
 mechanism.
 
+An implementation MAY use lookup tables, loop unrolling, or processor
+instructions, but it MUST produce exactly the same state after every incremental
+update boundary. The current native build uses the canonical 256-entry reflected
+Castagnoli table and an eight-byte unrolled loop; this changes no serialized value.
+
 ## 14.3 Protected envelope
 
 The generic v1 envelope has a 32-byte little-endian header, an exact payload length, a

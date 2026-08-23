@@ -44,3 +44,9 @@ row/leaf streaming implementation reduced the same retained 1 GiB database from
 1,237.7 MiB to 98.1 MiB peak private memory. Full-check wall time remains a
 physical overflow-I/O measurement and should be compared separately from the
 heap-directory-assisted warm scan.
+
+CRC-32C has a separate deterministic 64 MiB zero-buffer microbenchmark during
+performance work. The table-driven implementation measured 375 ms versus 3,125
+ms for the former bit-at-a-time loop, with the identical checksum `843410269`.
+The retained 1 GiB full-check wall time correspondingly fell from 208,515 ms to
+35,216 ms while retaining the 98.1 MiB private-memory bound.
