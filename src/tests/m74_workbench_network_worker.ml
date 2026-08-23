@@ -7,6 +7,37 @@ import minisql.admin.win32_client as win32_client
 import minisql.platform.win32_gui as gui
 import tests.support.testkit as testkit
 
+// Carries one independent read-only connection workload to a native thread.
+struct ConcurrentReaderTask
+  // Stores the shared immutable connection profile.
+  profile
+  // Distinguishes the worker in deterministic SELECT literals.
+  workerIndex
+  // Stores the bounded number of roundtrips performed by this worker.
+  iterations
+end struct
+
+// Opens an independent connection and repeatedly reads the same database.
+function concurrentReader(task)
+  state = try(fullclient.openProfile(task.profile, bytes(0)))
+  if typeof(state) == "error" then return state end if
+  success = true
+  for iteration = 0 to task.iterations - 1
+    response = try(fullclient.queryOne(state, "SELECT COUNT(*) AS row_count FROM workbench_item WHERE id >= " + task.workerIndex))
+    if typeof(response) == "error" then
+      ignoredAbort = try(fullclient.abort(state))
+      return error(response.code, "parallel reader " + task.workerIndex + " iteration " + iteration + ": " + response.message)
+    end if
+    if len(response.rows) != 1 then
+      ignoredAbort = try(fullclient.abort(state))
+      return error(9001, "parallel reader " + task.workerIndex + " iteration " + iteration + ": expected one aggregate row")
+    end if
+  end for
+  closed = try(fullclient.close(state))
+  if typeof(closed) == "error" then return closed end if
+  return success
+end function
+
 // Waits for one asynchronous workbench operation while pumping native messages.
 function awaitOperation(session, maximumMilliseconds)
   elapsed = 0
@@ -96,11 +127,65 @@ function main(args)
   testkit.record(test, typeof(created) != "error" and created.success, "worksheet creates table")
   batch = try(fullclient.executeSql(active, "INSERT INTO workbench_item(id, label) VALUES (1, 'alpha');\r\nINSERT INTO workbench_item(id, label) VALUES (2, 'beta;still-data');\r\nSELECT id, label FROM workbench_item ORDER BY id;"))
   testkit.record(test, typeof(batch) != "error" and batch.success and batch.statementCount == 3 and batch.rowCount == 2, "worksheet executes a quote-aware multi-statement script")
+  bulkSql = ""
+  for id = 10 to 259
+    bulkSql = bulkSql + "INSERT INTO workbench_item(id, label) VALUES (" + id + ", 'bulk-" + id + "');\r\n"
+  end for
+  bulk = try(fullclient.executeAtomicSql(active, bulkSql))
+  testkit.record(test, typeof(bulk) != "error" and bulk.success and bulk.statementCount == 250, "large editable dataset loads atomically")
+  paged = try(fullclient.describeTableView(active, "workbench_item", fullclient.createDataBrowseOptions("id >= 10", "id", false, 1, 25)))
+  testkit.record(test, typeof(paged) != "error" and len(paged.contentsGrid.rows) == 25 and paged.contentsGrid.rows[0][0] == "234" and paged.rowCountGrid.rows[0][0] == "250", "server-side filter sort count and pagination remain aligned")
+  rolledBackBatch = try(fullclient.executeAtomicSql(active, "INSERT INTO workbench_item(id, label) VALUES (900, 'must-rollback');\r\nINSERT INTO workbench_item(id, label) VALUES (1, 'duplicate');"))
+  rolledBackProbe = try(fullclient.queryOne(active, "SELECT id FROM workbench_item WHERE id = 900"))
+  testkit.record(test, typeof(rolledBackBatch) != "error" and not rolledBackBatch.success and typeof(rolledBackProbe) != "error" and len(rolledBackProbe.rows) == 0, "failed multi-row Apply transaction rolls back every staged change")
+  schemaSteps = [
+    fullclient.schemaEditorSql(0, "workbench_schema", "", "id INTEGER PRIMARY KEY", ""),
+    fullclient.schemaEditorSql(1, "workbench_schema", "code", "VARCHAR(30)", ""),
+    fullclient.schemaEditorSql(4, "workbench_schema", "idx_workbench_schema_code", "code", "UNIQUE"),
+    fullclient.schemaEditorSql(6, "workbench_schema", "chk_workbench_code", "CHECK (code IS NULL OR code <> '')", ""),
+    fullclient.schemaEditorSql(7, "workbench_schema", "chk_workbench_code", "", ""),
+    fullclient.schemaEditorSql(5, "", "idx_workbench_schema_code", "", ""),
+    fullclient.schemaEditorSql(9, "workbench_schema", "", "", "")
+  ]
+  schemaSucceeded = true
+  for each schemaSql in schemaSteps
+    schemaResult = try(fullclient.executeSql(active, schemaSql))
+    if typeof(schemaResult) == "error" or not schemaResult.success then schemaSucceeded = false end if
+  end for
+  testkit.record(test, schemaSucceeded, "schema designer DDL executes for tables columns indexes and constraints")
+  readerWorkers = []
+  for workerIndex = 0 to 7
+    worker = Thread(concurrentReader, "m74-parallel-reader")
+    if worker.Start(ConcurrentReaderTask(profile, workerIndex, 10)) then readerWorkers = readerWorkers + [worker] else print "parallel reader failed to start: " + workerIndex end if
+  end for
+  readersSucceeded = len(readerWorkers) == 8
+  for each worker in readerWorkers
+    if not worker.Join(60000) then readersSucceeded = false; print "parallel reader join timed out"
+    else
+      result = try(worker.Result())
+      if typeof(result) == "error" then readersSucceeded = false; print "parallel reader error: " + result.message
+      else if not result then readersSucceeded = false; print "parallel reader reported unsuccessful query"
+      end if
+    end if
+    ignoredReaderClose = worker.Close()
+  end for
+  testkit.record(test, readersSucceeded, "eight parallel workbench connections complete 80 shared-database reads")
+  reconnectSucceeded = true
+  for reconnect = 0 to 9
+    reopened = try(fullclient.openProfile(profile, bytes(0)))
+    if typeof(reopened) == "error" then reconnectSucceeded = false
+    else
+      probe = try(fullclient.queryOne(reopened, "SELECT 1 AS connected"))
+      closedAgain = try(fullclient.close(reopened))
+      if typeof(probe) == "error" or typeof(closedAgain) == "error" then reconnectSucceeded = false end if
+    end if
+  end for
+  testkit.record(test, reconnectSucceeded, "repeated disconnect and reconnect cycles preserve server availability")
   selected = try(fullclient.executeSql(active, "SELECT id, label FROM workbench_item ORDER BY id;"))
   testkit.record(test, typeof(selected) != "error" and selected.success, "worksheet selects rows")
-  if typeof(selected) != "error" then testkit.equal(test, selected.rowCount, 2, "worksheet row count") end if
+  if typeof(selected) != "error" then testkit.equal(test, selected.rowCount, 252, "worksheet row count") end if
   tab = fullclient.activeResultTab(active)
-  testkit.record(test, tab is not void and len(tab.columns) == 2 and len(tab.rows) == 2, "structured grid result retained")
+  testkit.record(test, tab is not void and len(tab.columns) == 2 and len(tab.rows) == 252, "structured grid result retained")
   refreshed = try(fullclient.refresh(active))
   testkit.record(test, typeof(refreshed) != "error" and fullclient.containsText(active.tables, "workbench_item"), "object tree refresh sees table")
   details = try(fullclient.describeTable(active, "workbench_item"))
@@ -121,6 +206,7 @@ function main(args)
     testkit.record(test, typeof(startedRefresh) != "error" and session.busy, "object refresh starts asynchronously")
     testkit.record(test, not gui.isEnabled(session.window.queryEdit) and not gui.isEnabled(session.window.objectTree) and gui.isEnabled(session.window.stopButton), "state-reading controls lock while worker owns the session")
     testkit.record(test, awaitOperation(session, 30000), "asynchronous object refresh completes")
+    session.dataOptions = fullclient.createDataBrowseOptions("", "id", true, 0, 100)
     startedDescribe = try(win32_client.startDescribe(session, "workbench_item"))
     testkit.record(test, typeof(startedDescribe) != "error" and awaitOperation(session, 30000), "asynchronous table details complete")
     testkit.record(test, session.workspacePage == 1 and gui.tabSelectedIndex(session.window.workspaceTabs) == 1, "completed table metadata keeps the Object Details workspace active")
@@ -129,13 +215,13 @@ function main(args)
     testkit.record(test, gui.listViewRowCount(session.window.detailGrid) == 2, "Columns detail renders two native grid rows")
     gui.tabSelect(session.window.detailTabs, 3)
     win32_client.render(session)
-    testkit.record(test, gui.listViewRowCount(session.window.detailGrid) == 2, "Data detail renders preview rows in a native grid")
+    testkit.record(test, gui.listViewRowCount(session.window.detailGrid) == 100, "Data detail renders one bounded native-grid page")
     insertSql = try(fullclient.insertDataSql(session.state.tableDetails, ["3", "gamma"] ))
     startedInsert = error(9001, "insert SQL generation failed")
     if typeof(insertSql) == "string" then startedInsert = try(win32_client.startDataMutation(session, insertSql)) end if
     insertedThroughGrid = typeof(startedInsert) != "error" and awaitOperation(session, 30000)
     insertedRow = findDetailRow(session.state.tableDetails.contentsGrid, 0, "3")
-    testkit.record(test, insertedThroughGrid and insertedRow >= 0 and gui.listViewRowCount(session.window.detailGrid) == 3, "Data-grid insert executes asynchronously and refreshes its preview")
+    testkit.record(test, insertedThroughGrid and insertedRow >= 0 and gui.listViewRowCount(session.window.detailGrid) == 100, "Data-grid insert executes atomically and refreshes its bounded preview")
     updateSql = error(9001, "inserted row unavailable")
     if insertedRow >= 0 then updateSql = try(fullclient.updateDataSql(session.state.tableDetails, session.state.tableDetails.contentsGrid.rows[insertedRow], ["3", "gamma-updated"])) end if
     startedUpdate = error(9001, "update SQL generation failed")
@@ -148,7 +234,7 @@ function main(args)
     startedDelete = error(9001, "delete SQL generation failed")
     if typeof(deleteSql) == "string" then startedDelete = try(win32_client.startDataMutation(session, deleteSql)) end if
     deletedThroughGrid = typeof(startedDelete) != "error" and awaitOperation(session, 30000)
-    testkit.record(test, deletedThroughGrid and findDetailRow(session.state.tableDetails.contentsGrid, 0, "3") < 0 and gui.listViewRowCount(session.window.detailGrid) == 2, "Data-grid delete removes exactly the keyed row and refreshes its preview")
+    testkit.record(test, deletedThroughGrid and findDetailRow(session.state.tableDetails.contentsGrid, 0, "3") < 0 and gui.listViewRowCount(session.window.detailGrid) == 100, "Data-grid delete removes exactly the keyed row and refreshes its preview")
     gui.tabSelect(session.window.workspaceTabs, 0)
     win32_client.render(session)
     testkit.record(test, gui.tabSelectedIndex(session.window.workspaceTabs) == 1, "render restores the session-owned Object Details workspace")

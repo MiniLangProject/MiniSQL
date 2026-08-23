@@ -45,6 +45,20 @@ function main(args)
   testkit.equal(state, selfCopy.affectedRows, 3, "self INSERT SELECT materializes finite source")
   testkit.equal(state, len(executeOne(engine, "SELECT id FROM target_item").rows), 6, "self INSERT SELECT final count")
 
+  // A larger self-copy protects both the eager source snapshot and the linear
+  // materialization path that prevents runaway heap use under load.
+  executeOne(engine, "CREATE TABLE bulk_self (id INTEGER PRIMARY KEY, payload VARCHAR(200))")
+  executeOne(engine, "INSERT INTO bulk_self(id, payload) SELECT id, label FROM source_item")
+  offset = 10
+  expectedRows = 3
+  while expectedRows < 192
+    copiedBatch = executeOne(engine, "INSERT INTO bulk_self(id, payload) SELECT id + " + offset + ", payload FROM bulk_self")
+    testkit.equal(state, copiedBatch.affectedRows, expectedRows, "bulk self INSERT SELECT copies only its initial snapshot")
+    expectedRows = expectedRows * 2
+    offset = offset * 10
+  end while
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM bulk_self").rows), expectedRows, "bulk self INSERT SELECT final count")
+
   executeOne(engine, "CREATE TABLE rollback_target (id INTEGER PRIMARY KEY, label VARCHAR(30))")
   executeOne(engine, "BEGIN")
   staged = executeOne(engine, "INSERT INTO rollback_target(id, label) SELECT id, label FROM source_item RETURNING id")

@@ -80,6 +80,8 @@ function main(args)
   pending.createdAt = now
   pending.lastActivity = now - session.SESSION_IDLE_TIMEOUT_MS - 1
   testkit.record(state, session.isExpired(pending), "authenticated session idle timeout")
+  session.touch(pending)
+  testkit.record(state, not session.isExpired(pending), "completed request refreshes authenticated session activity")
   pending.lastActivity = clock.monotonicMilliseconds()
   testkit.record(state, not session.isExpired(pending), "active authenticated session is not expired")
   session.close(pending)

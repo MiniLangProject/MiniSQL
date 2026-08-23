@@ -51,6 +51,21 @@ independent of that threshold and are flushed before the statement executes.
 The binlog contains complete statement text and can therefore contain personal
 data or SQL literals that act as secrets; restrict access to the log directory.
 
+`runtime.bufferPoolBytes` is the actual database-owned, thread-safe committed
+page-cache budget. `runtime.checkpointWalBytes` is the current-WAL threshold:
+after a committed writer has durably published all table pages, MiniSQL creates
+crash-safe epoch/pending markers, resets the WAL, and keeps recovery correct
+across the new low-LSN generation. The example configuration uses a 256 MiB
+cache and a 64 MiB WAL threshold. A failed maintenance reset leaves the intact
+WAL or pending marker for the next writer/open to finish; it never changes an
+already durable SQL result into a client retry.
+
+Clean derived indexes are accepted immediately after restart because every
+mutation creates a durable `catalog/indexes.dirty` marker before heap commit
+and removes it only after index publication. A present marker or missing index
+file performs rebuild plus verification under the exclusive database gate.
+Use `minisql-check` for an explicit full heap/index integrity audit.
+
 Read-only statements share the database gate only after parsing and
 classification. A durable dirty-index marker is repaired under the exclusive
 gate before a read proceeds. New readers stop entering once a writer is waiting,
@@ -68,9 +83,10 @@ For the native graphical client, launch:
 .\build\bin\minisql-admin.exe
 ```
 
-The workbench provides MiniSQL-only connection aliases, an object tree, SQL
-worksheet, bookmarks, history, object details, result tabs, and a structured
-grid. See `docs/release/WORKBENCH.md` for trusted-local, authenticated, TLS, and
+The workbench provides MiniSQL-only connection aliases, an object tree,
+multiple SQL worksheets, searchable history, result tabs, CSV export, a paged
+data editor with staged changes, and a schema designer with exact DDL preview.
+See `docs/release/WORKBENCH.md` for trusted-local, authenticated, TLS, and
 pinned-certificate setup.
 
 Statements may span lines and are executed when a real SQL terminator `;` is

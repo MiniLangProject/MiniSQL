@@ -44,8 +44,8 @@ The left sidebar switches between:
 
 - **Objects**: the connected database and all tables returned by `SHOW TABLES`;
 - **Bookmarks**: MiniSQL-specific SQL templates; double-click to insert one;
-- **History**: the latest 100 worksheet batches; secret-bearing account DCL is
-  replaced by a redaction marker.
+- **History**: the latest 100 worksheet batches, searchable through the filter
+  above the list; secret-bearing account DCL is replaced by a redaction marker.
 
 The main area switches between the SQL worksheet and object details. **Current**
 executes the explicit selection, or the complete statement containing the caret
@@ -60,31 +60,55 @@ be processed. Connection handshakes, object-tree refreshes, table descriptions,
 and the automatic refresh after SQL execution use the same non-blocking worker
 model. Controls that read shared session state remain disabled until the active
 worker publishes its result. Each execution creates a bounded result tab with
-elapsed time, success state, columns, rows, and server messages. Select a table
+elapsed time, success state, columns, rows, and server messages. **Export CSV**
+writes the active result with RFC-style quote escaping through the native Save
+As dialog. Select a table
 and choose **Open object** to load Summary, Columns, Indexes, Data, Row Count,
 and reconstructed DDL pages. Columns, indexes, preview data, and row counts are
 rendered as native report grids with real column headers, selectable rows,
 independent column widths, and horizontal/vertical scrolling rather than as
 pipe-delimited text.
 
-The **Data** page previews at most 100 rows and provides **Add row**, **Copy
-row**, **Edit row**, **Delete row**, and **Refresh data** actions. Add, copy, and
-edit open a resizable native row editor that presents every table field in a
-review grid and edits one field at a time, so tables with many columns do not
-require an oversized fixed form. Use `<NULL>` for SQL NULL; identity and default
-fields use `<DEFAULT>` during inserts. Text is SQL-escaped, numeric and Boolean
-input is validated before submission, and every mutation runs on the existing
-background worker before the preview is reloaded. Double-clicking a Data row
-opens it for editing. Updates and deletes require a primary key or unique index;
-the workbench refuses an unsafe mutation that could target multiple rows, and
-deletion always displays a confirmation dialog.
+The **Data** page is a native multi-select report grid. It loads 100 rows per
+page, displays the filtered row count, moves with **Page** controls, and sorts a
+column ascending or descending when its header is clicked. The filter accepts a
+single `WHERE` predicate; statement terminators and SQL comment openers are
+rejected before the query is sent. Paging, filtering, and sorting are disabled
+while edits are pending so a row cannot silently change underneath a staged
+operation.
+
+**Add row**, **Copy row**, and **Edit row** open a resizable field editor. A
+double-click opens the editor on the clicked cell. Use `<NULL>` for SQL NULL;
+identity and default fields use `<DEFAULT>` during inserts. Text is SQL-escaped,
+and numeric and Boolean input is validated before it can be staged. **Copy**
+writes selected rows plus their header as escaped tab-separated Unicode text;
+**Paste** validates the matching header and stages up to 1,000 inserts. Multiple
+selected rows may be staged for deletion in one operation.
+
+Insert, update, and delete operations remain local until **Apply changes** is
+chosen. The grid marks pending rows, **SQL preview** shows the exact generated
+statements, and **Revert** discards the local batch. Apply executes the batch
+atomically, using a transaction or savepoint as appropriate, and rolls the whole
+batch back when any statement or commit step fails. Updates and deletes require
+a primary key or unique index; the workbench refuses an unsafe mutation that
+could target multiple rows.
+
+## Schema designer
+
+**Schema** opens a structured designer for create/drop/rename table, add/drop/
+rename column, create/drop index, and add/drop constraint operations. The form
+quotes identifiers component by component, rejects statement terminators and
+comment openers in definition fields, and continually shows either the exact
+generated DDL or a validation error. **Insert into SQL** opens the statement in
+a new worksheet without changing the database. **Execute DDL** requires an
+explicit warning confirmation and refreshes the object tree only after success.
 
 The selected SQL/Object Details workspace is part
 of the session state, so metadata completion, refreshes, and full renders cannot
 switch the user back to the worksheet. The toolbar also exposes EXPLAIN, BEGIN,
 COMMIT, ROLLBACK, refresh, clear-results, and disconnect actions.
 
-The SQL worksheet uses the system Unicode RichEdit control and highlights
+Every SQL worksheet uses the system Unicode RichEdit control and highlights
 MiniSQL keywords, strings, numbers, quoted identifiers, and comments while
 preserving the caret, selection, and scroll position. Recoloring is debounced
 until 120 ms after the latest native text change. The editor raises the text
@@ -94,12 +118,20 @@ are not truncated at the compiler FFI scratch-buffer size. Generated metadata
 SQL quotes Unicode and punctuation-bearing object names and doubles embedded
 quote characters according to MiniSQL syntax.
 
+Use **+ SQL** or `Ctrl+N` to open another independent worksheet and **Close SQL**
+or `Ctrl+W` to close it. Non-empty worksheets require confirmation before their
+text is discarded. `F5` executes the current statement or selection,
+`Ctrl+Shift+Enter` runs the whole script, and `Ctrl+E` exports the active result.
+Data grids, result grids, the object tree, and the editor expose matching context
+menus.
+
 Both the connection manager and the session workbench use DPI-independent
 layout units. Native controls, Segoe UI fonts, editor panes, result grids, and
 toolbars reflow when a window is resized, maximized, restored, or moved between
 monitors with different scaling. Minimum client sizes prevent controls from
-being clipped. Tab and Shift+Tab traverse editors and actions, while Enter
-invokes the current default action.
+being clipped. The workbench persists its last valid top-level position and size
+next to the alias file and restores them on the next start. Tab and Shift+Tab
+traverse editors and actions, while Enter invokes the current default action.
 
 Stopping an executing worker also disconnects that session. MiniSQL wire
 protocol v1 has no server-side statement-cancellation frame, so disconnecting

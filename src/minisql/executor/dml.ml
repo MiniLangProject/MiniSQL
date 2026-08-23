@@ -4,6 +4,7 @@ package minisql.executor.dml
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+import std.ds.hashmap as hashmap
 import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
@@ -68,6 +69,16 @@ struct ConflictMatch
   constraint
 end struct
 
+// Tracks the last heap page considered by a statement-local bulk insert.
+struct InsertCursor
+  // First page that can still have capacity during the current insert batch.
+  pageNumber
+  // Maximum number of empty heap pages reserved by one durability barrier.
+  allocationBatch
+  // Rows not yet staged, used to avoid reserving unused tail pages.
+  remainingRows
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -121,14 +132,42 @@ function scanRows(database, table, pageTransaction, existingFile)
   return scan.scanTable(database.path, table, pageTransaction)
 end function
 
+// Scans rows while retaining only columns needed by a constraint check.
+function scanRowsColumns(database, table, pageTransaction, existingFile, requiredColumns)
+  return scan.scanUsingColumns(database.path, table, pageTransaction, existingFile, requiredColumns)
+end function
+
+// Builds a table-width mask for one or more unique constraints.
+function constraintColumnMask(table, constraints)
+  mask = array(len(table.columns), false)
+  for each constraint in constraints
+    for each columnName in constraint.columns
+      index = binder.findColumnIndex(table, columnName)
+      if index < 0 then return fail(CORRUPT_DATA, "constraintColumnMask", "constraint references missing column") end if
+      mask[index] = true
+    end for
+  end for
+  return mask
+end function
+
 // Implements storage row for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function storageRow(rowSchema, sqlValues)
-  raw = []
-  for each value in sqlValues
-    raw = raw + [values.toStorage(value)]
-  end for
+function storageRow(rowSchema, table, sqlValues, file, ownerId)
+  raw = array(len(sqlValues))
+  if len(sqlValues) > 0 then
+    for index = 0 to len(sqlValues) - 1
+      value = sqlValues[index]
+      stored = values.toStorage(value)
+      typeCode = table.columns[index].typeCode
+      if not value.isNull and (typeCode == types.SqlTypeKind.Text or typeCode == types.SqlTypeKind.Blob) then
+        data = stored
+        if typeof(data) == "string" then data = bytes(data) end if
+        if len(data) > (file.pageSize >> 2) then stored = overflow.toExternal(overflow.write(file, ownerId, data)) end if
+      end if
+      raw[index] = stored
+    end for
+  end if
   return row_codec.encodeRow(rowSchema, raw)
 end function
 
@@ -156,6 +195,42 @@ function stageInsert(pageTransaction, file, table, encodedRow)
   working = paged_file.readPage(file, pageNumber)
   slotId = slotted_page.insert(working, encodedRow)
   transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
+  return scan.RowReference(pageNumber, slotId, slotted_page.entryGeneration(working, slotId))
+end function
+
+// Stages one row while advancing a statement-local heap cursor. Pages before
+// the cursor were already proven full and cannot gain space during an insert-only
+// batch, so each heap page is visited only a bounded number of times.
+function stageInsertWithCursor(pageTransaction, file, table, encodedRow, cursor)
+  if cursor is not InsertCursor then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "cursor must be InsertCursor") end if
+  if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "encoded row must be non-empty bytes") end if
+  startPage = cursor.pageNumber
+  if startPage < 0 then startPage = 0 end if
+  if startPage < file.pageCount then
+    for pageNumber = startPage to file.pageCount - 1
+      working = bytes(visiblePage(pageTransaction, file, table.tableId, pageNumber))
+      header = page.verify(working)
+      if header.pageType != page.TYPE_HEAP then continue end if
+      inserted = try(slotted_page.insert(working, encodedRow))
+      if typeof(inserted) != "error" then
+        transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
+        cursor.pageNumber = pageNumber
+        cursor.remainingRows = cursor.remainingRows - 1
+        return scan.RowReference(pageNumber, inserted, slotted_page.entryGeneration(working, inserted))
+      end if
+      if inserted.code != PAGE_FULL then return inserted end if
+      cursor.pageNumber = pageNumber + 1
+    end for
+  end if
+  allocationCount = cursor.allocationBatch
+  if allocationCount > cursor.remainingRows then allocationCount = cursor.remainingRows end if
+  if allocationCount < 1 then allocationCount = 1 end if
+  pageNumber = paged_file.allocatePages(file, page.TYPE_HEAP, allocationCount)
+  working = paged_file.readPage(file, pageNumber)
+  slotId = slotted_page.insert(working, encodedRow)
+  transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
+  cursor.pageNumber = pageNumber
+  cursor.remainingRows = cursor.remainingRows - 1
   return scan.RowReference(pageNumber, slotId, slotted_page.entryGeneration(working, slotId))
 end function
 
@@ -284,12 +359,13 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function initialRow(database, bound, boundRow, pageTransaction, file)
   table = bound.table
-  row = []
-  provided = []
-  for each column in table.columns
-    row = row + [values.nullValue(column.typeCode)]
-    provided = provided + [false]
-  end for
+  row = array(len(table.columns))
+  provided = array(len(table.columns), false)
+  if len(table.columns) > 0 then
+    for index = 0 to len(table.columns) - 1
+      row[index] = values.nullValue(table.columns[index].typeCode)
+    end for
+  end if
   if len(bound.columnIndexes) > 0 then
     for index = 0 to len(bound.columnIndexes) - 1
       columnIndex = bound.columnIndexes[index]
@@ -321,12 +397,14 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function constraintKey(row, table, constraint)
-  output = []
-  for each columnName in constraint.columns
-    index = binder.findColumnIndex(table, columnName)
-    if index < 0 then return fail(CORRUPT_DATA, "constraintKey", "constraint references missing column") end if
-    output = output + [row[index]]
-  end for
+  output = array(len(constraint.columns))
+  if len(constraint.columns) > 0 then
+    for keyIndex = 0 to len(constraint.columns) - 1
+      index = binder.findColumnIndex(table, constraint.columns[keyIndex])
+      if index < 0 then return fail(CORRUPT_DATA, "constraintKey", "constraint references missing column") end if
+      output[keyIndex] = row[index]
+    end for
+  end if
   return output
 end function
 
@@ -370,7 +448,7 @@ function validateUnique(database, table, constraint, row, pageTransaction, exclu
   key = constraintKey(row, table, constraint)
   if constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY and keyHasNull(key) then return fail(CONSTRAINT_VIOLATION, "validateUnique", "PRIMARY KEY contains NULL: " + constraint.name) end if
   if keyHasNull(key) then return true end if
-  existingRows = scanRows(database, table, pageTransaction, file)
+  existingRows = scanRowsColumns(database, table, pageTransaction, file, constraintColumnMask(table, [constraint]))
   for each existing in existingRows
     if excludedReference is void or not sameReference(existing.reference, excludedReference) then
       if keysEqual(key, constraintKey(existing.values, table, constraint)) then return fail(DUPLICATE_KEY, "validateUnique", "duplicate key for " + constraint.name) end if
@@ -422,6 +500,99 @@ function validateRow(database, table, row, pageTransaction, excludedReference, f
     end if
   end for
   return row
+end function
+
+// Validates all unique keys for a statement from one stable table snapshot.
+// Precomputed keys remove the repeated full heap scan previously performed for
+// every inserted row while retaining SQL NULL and primary-key semantics.
+function validateUniqueBatch(database, table, rows, pageTransaction, file)
+  constraints = uniqueConstraints(database, table)
+  if len(constraints) == 0 or len(rows) == 0 then return true end if
+  existingRows = scanRowsColumns(database, table, pageTransaction, file, constraintColumnMask(table, constraints))
+  for each constraint in constraints
+    seen = hashmap.HashMap.new()
+    if len(existingRows) > 0 then
+      for existingIndex = 0 to len(existingRows) - 1
+        existingKey = constraintKey(existingRows[existingIndex].values, table, constraint)
+        if not keyHasNull(existingKey) then seen.set(encodeConstraintHashKey(existingKey), true) end if
+      end for
+    end if
+    for rowIndex = 0 to len(rows) - 1
+      key = constraintKey(rows[rowIndex], table, constraint)
+      if constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY and keyHasNull(key) then return fail(CONSTRAINT_VIOLATION, "validateUniqueBatch", "PRIMARY KEY contains NULL: " + constraint.name) end if
+      if not keyHasNull(key) then
+        encoded = encodeConstraintHashKey(key)
+        if seen.has(encoded) then return fail(DUPLICATE_KEY, "validateUniqueBatch", "duplicate key for " + constraint.name) end if
+        seen.set(encoded, true)
+      end if
+    end for
+  end for
+  return true
+end function
+
+// Returns whether identity allocation requires sequential visibility of rows
+// inserted earlier in the same statement.
+function hasIdentityColumn(database, table)
+  schema = tableSchemaState(database, table)
+  if schema is void then return false end if
+  for each rule in schema.columnRules
+    if rule.identity then return true end if
+  end for
+  return false
+end function
+
+// Inserts a conflict-free batch using fixed-size result buffers and one unique
+// snapshot. Other constraints are checked again in insertion order so foreign
+// keys may still reference a preceding row from the same SQL statement.
+function insertBatchWithoutConflict(database, bound, pageTransaction, file)
+  preparedRows = array(len(bound.rows))
+  if len(bound.rows) > 0 then
+    for rowIndex = 0 to len(bound.rows) - 1
+      row = initialRow(database, bound, bound.rows[rowIndex], pageTransaction, file)
+      // Conversion and CHECK validation do not depend on insertion order.
+      if typeof(row) != "array" or len(row) != len(bound.table.columns) then return fail(INVALID_ARGUMENT, "insertBatchWithoutConflict", "row shape mismatch") end if
+      for columnIndex = 0 to len(bound.table.columns) - 1
+        row[columnIndex] = values.convert(row[columnIndex], types.fromColumn(bound.table.columns[columnIndex]))
+      end for
+      schema = tableSchemaState(database, bound.table)
+      if schema is not void then
+        for each constraint in schema.constraints
+          if constraint.kind == schema_history.CONSTRAINT_CHECK then validateCheck(bound.table, constraint, row) end if
+        end for
+      end if
+      preparedRows[rowIndex] = row
+    end for
+  end if
+  validateUniqueBatch(database, bound.table, preparedRows, pageTransaction, file)
+  references = array(len(preparedRows))
+  returnedRows = []
+  if len(bound.returning) > 0 then returnedRows = array(len(preparedRows)) end if
+  rowSchema = scan.schemaForTable(bound.table)
+  cursorStart = 0
+  allocationBatch = 1
+  // Reserve heap pages in one durable allocation once a statement is large
+  // enough to amortize the metadata barrier. A 32-row floor also benefits wide
+  // rows that occupy one page each without changing small OLTP statements.
+  if len(preparedRows) >= 32 then
+    allocationBatch = 256
+    cursorStart = file.pageCount - 1
+    if cursorStart < 0 then cursorStart = 0 end if
+  end if
+  insertCursor = InsertCursor(cursorStart, allocationBatch, len(preparedRows))
+  if len(preparedRows) > 0 then
+    for rowIndex = 0 to len(preparedRows) - 1
+      row = preparedRows[rowIndex]
+      schema = tableSchemaState(database, bound.table)
+      if schema is not void then
+        for each constraint in schema.constraints
+          if constraint.kind == schema_history.CONSTRAINT_FOREIGN_KEY then validateForeignKey(database, bound.table, constraint, row, pageTransaction, file) end if
+        end for
+      end if
+      references[rowIndex] = stageInsertWithCursor(pageTransaction, file, bound.table, storageRow(rowSchema, bound.table, row, file, pageTransaction.transactionId), insertCursor)
+      if len(bound.returning) > 0 then returnedRows[rowIndex] = evaluateReturning(bound.returning, row) end if
+    end for
+  end if
+  return DmlResult(len(preparedRows), references, returnedRows, [], preparedRows)
 end function
 
 // Validates existing constraint using the supplied inputs.
@@ -505,11 +676,11 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function evaluateReturning(returningItems, row)
-  output = []
+  output = array(len(returningItems))
   if len(returningItems) == 0 then return output end if
   context = expressions.rowContext(row)
-  for each item in returningItems
-    output = output + [expressions.evaluate(item.expression, context)]
+  for index = 0 to len(returningItems) - 1
+    output[index] = expressions.evaluate(returningItems[index].expression, context)
   end for
   return output
 end function
@@ -577,7 +748,7 @@ function conflictUpdate(database, bound, excludedRow, match, pageTransaction, fi
   end for
   applyGenerated(database, bound.table, nextRow)
   validateRow(database, bound.table, nextRow, pageTransaction, match.reference, file)
-  nextReference = stageUpdate(pageTransaction, file, bound.table, match.reference, storageRow(rowSchema, nextRow))
+  nextReference = stageUpdate(pageTransaction, file, bound.table, match.reference, storageRow(rowSchema, bound.table, nextRow, file, pageTransaction.transactionId))
   returned = []
   if len(bound.returning) > 0 then returned = [evaluateReturning(bound.returning, nextRow)] end if
   return DmlResult(1, [nextReference], returned, [match.values], [nextRow])
@@ -588,6 +759,9 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function insertInner(database, bound, pageTransaction, file)
+  if bound.statement.conflictAction == ast.CONFLICT_NONE and not hasIdentityColumn(database, bound.table) then
+    return insertBatchWithoutConflict(database, bound, pageTransaction, file)
+  end if
   references = []
   returnedRows = []
   oldRows = []
@@ -609,7 +783,7 @@ function insertInner(database, bound, pageTransaction, file)
       end if
     else
       validateRow(database, bound.table, row, pageTransaction, void, file)
-      reference = stageInsert(pageTransaction, file, bound.table, storageRow(rowSchema, row))
+      reference = stageInsert(pageTransaction, file, bound.table, storageRow(rowSchema, bound.table, row, file, pageTransaction.transactionId))
       references = references + [reference]
       affected = affected + 1
       newRows = newRows + [row]
@@ -663,7 +837,7 @@ function updateInner(database, bound, pageTransaction, file)
       end for
       applyGenerated(database, bound.table, nextRow)
       validateRow(database, bound.table, nextRow, pageTransaction, source.reference, file)
-      nextReference = stageUpdate(pageTransaction, file, bound.table, source.reference, storageRow(rowSchema, nextRow))
+      nextReference = stageUpdate(pageTransaction, file, bound.table, source.reference, storageRow(rowSchema, bound.table, nextRow, file, pageTransaction.transactionId))
       references = references + [nextReference]
       oldRows = oldRows + [source.values]
       newRows = newRows + [nextRow]
@@ -789,7 +963,7 @@ function publishCommitted(database, pageTransaction, commitLsn)
   // Do not remove the private committed page batch until every base file has
   // accepted and durably flushed its pages. If publication fails, M7 recovery
   // can redo from WAL and callers may also retry this operation safely.
-  changes = transaction.committedPages(pageTransaction)
+  changes = transaction.committedPagesForPublication(pageTransaction)
   openedIds = []
   openedFiles = []
   operationError = void
@@ -905,6 +1079,20 @@ function encodeIndexKey(keyValues)
   return output
 end function
 
+// Encodes an exact composite constraint key without the physical B+ tree size
+// ceiling. The statement-local hash set uses this representation to validate
+// arbitrarily large batches in linear expected time.
+function encodeConstraintHashKey(keyValues)
+  if typeof(keyValues) != "array" or len(keyValues) == 0 then return fail(INVALID_ARGUMENT, "encodeConstraintHashKey", "keyValues must be non-empty") end if
+  output = bytes([127])
+  for each value in keyValues
+    normalized = value
+    if (value.typeKind == types.SqlTypeKind.Real or value.typeKind == types.SqlTypeKind.Double) and value.value == 0 then normalized = values.of(value.typeKind, 0.0) end if
+    output = appendKeyBytes(output, indexKeyPart(normalized))
+  end for
+  return output
+end function
+
 // Encodes row reference using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -956,18 +1144,38 @@ function indexPath(database, constraint)
   return schema_history.indexFilePath(database.path, constraint.indexId)
 end function
 
+// Opens an index for a read plan while retaining the concrete path in errors.
+// This makes a missing or inaccessible derived file diagnosable without hiding
+// corruption behind a generic native CreateFile failure.
+function openReadOnlyIndex(database, constraint, operation)
+  path = indexPath(database, constraint)
+  tree = try(btree.openReadOnly(path))
+  if typeof(tree) == "error" then return fail(tree.code, operation, "cannot open index file " + path + ": " + tree.message) end if
+  return tree
+end function
+
 // Builds index entries using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function buildIndexEntries(database, table, constraint, pageTransaction)
-  rows = scan.scanTable(database.path, table, pageTransaction)
-  entries = []
+  // Index construction needs only key columns plus the physical RowReference.
+  // Avoid fetching unrelated external values during startup verification,
+  // REINDEX, and VACUUM on wide multi-gigabyte tables.
+  rows = scan.scanTableRangeColumns(database.path, table, pageTransaction, 0, -1, constraintColumnMask(table, [constraint]))
+  entryCount = 0
   for each row in rows
     keyValues = constraintKey(row.values, table, constraint)
     // SQL UNIQUE permits multiple NULL keys. They are intentionally omitted
     // from unique indexes and remain visible through the heap scan.
+    if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then entryCount = entryCount + 1 end if
+  end for
+  entries = array(entryCount)
+  entryIndex = 0
+  for each row in rows
+    keyValues = constraintKey(row.values, table, constraint)
     if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
-      entries = entries + [btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, row.reference))]
+      entries[entryIndex] = btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, row.reference))
+      entryIndex = entryIndex + 1
     end if
   end for
   return entries
@@ -1007,6 +1215,52 @@ function rebuildIndexesForTable(database, table)
     rebuilt = rebuilt + 1
   end for
   return rebuilt
+end function
+
+// Applies an insert-only statement delta to every derived index without
+// rescanning unrelated table payload pages. The caller publishes the durable
+// indexes.dirty marker before the heap commit; a crash or failed index write is
+// therefore repaired by the ordinary startup path.
+function applyInsertedIndexes(database, table, result)
+  if not isDmlResult(result) or len(result.oldRows) != 0 or len(result.newRows) != len(result.references) then return fail(INVALID_ARGUMENT, "applyInsertedIndexes", "result is not an insert-only delta") end if
+  updated = 0
+  for each constraint in indexedConstraints(database, table)
+    tree = try(btree.open(indexPath(database, constraint)))
+    if typeof(tree) == "error" then return tree end if
+    existing = try(btree.allEntries(tree))
+    if typeof(existing) == "error" then btree.close(tree); return existing end if
+    additions = 0
+    if len(result.newRows) > 0 then
+      for rowIndex = 0 to len(result.newRows) - 1
+        keyValues = constraintKey(result.newRows[rowIndex], table, constraint)
+        if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then additions = additions + 1 end if
+      end for
+    end if
+    combined = array(len(existing) + additions)
+    // MiniLang ranges are inclusive even when their upper bound is negative.
+    // Guard empty arrays explicitly so an empty index cannot access element -1.
+    if len(existing) > 0 then
+      for index = 0 to len(existing) - 1
+        combined[index] = existing[index]
+      end for
+    end if
+    outputIndex = len(existing)
+    if len(result.newRows) > 0 then
+      for rowIndex = 0 to len(result.newRows) - 1
+        keyValues = constraintKey(result.newRows[rowIndex], table, constraint)
+        if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
+          combined[outputIndex] = btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, result.references[rowIndex]))
+          outputIndex = outputIndex + 1
+        end if
+      end for
+    end if
+    committed = try(btree.commitSorted(tree, btree.sortEntries(combined)))
+    closed = try(btree.close(tree))
+    if typeof(committed) == "error" then return committed end if
+    if typeof(closed) == "error" then return closed end if
+    updated = updated + 1
+  end for
+  return updated
 end function
 
 // Implements rebuild all indexes for this module.
@@ -1068,6 +1322,18 @@ function indexesNeedRepair(database)
   return file_api.fileExists(indexDirtyPath(database))
 end function
 
+// Detects missing derived index files without scanning any table heap. A clean
+// dirty-marker state proves that committed index updates completed, but older
+// databases or manual file loss may still leave an expected file absent.
+function indexFilesMissing(database)
+  for each table in database.catalogHandle.catalog.tables
+    for each constraint in indexedConstraints(database, table)
+      if not file_api.fileExists(indexPath(database, constraint)) then return true end if
+    end for
+  end for
+  return false
+end function
+
 // Implements mark indexes dirty for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
@@ -1096,12 +1362,16 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function ensureIndexes(database)
-  needsRebuild = indexesNeedRepair(database)
-  if not needsRebuild then
-    checked = try(verifyAllIndexes(database))
-    if typeof(checked) == "error" then needsRebuild = true end if
-  end if
-  if needsRebuild then rebuildAllIndexes(database) end if
+  needsRebuild = indexesNeedRepair(database) or indexFilesMissing(database)
+  // Every mutation durably creates indexes.dirty before its heap commit and
+  // removes it only after the derived indexes are durable. Its absence is the
+  // crash-safe fast path: re-verifying every heap after each server restart
+  // turns an indexed point lookup into an unrelated multi-gigabyte scan.
+  if not needsRebuild then return true end if
+  rebuilt = try(rebuildAllIndexes(database))
+  if typeof(rebuilt) == "error" then return rebuilt end if
+  checked = try(verifyAllIndexes(database))
+  if typeof(checked) == "error" then return checked end if
   clearIndexesDirty(database)
   return true
 end function
@@ -1141,7 +1411,7 @@ function equalityIndexRows(database, table, columnIndex, literalValue, pageTrans
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
-  tree = btree.openReadOnly(indexPath(database, constraint))
+  tree = openReadOnlyIndex(database, constraint, "equalityIndexRows")
   found = try(btree.find(tree, encodeIndexKey([converted])))
   closeResult = try(btree.close(tree))
   if typeof(found) == "error" then return found end if
@@ -1175,7 +1445,7 @@ function rangeIndexRows(database, table, columnIndex, literalValue, operator, pa
     upper = key
     upperInclusive = operator == "<="
   end if
-  tree = btree.openReadOnly(indexPath(database, constraint))
+  tree = openReadOnlyIndex(database, constraint, "rangeIndexRows")
   found = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
   closeResult = try(btree.close(tree))
   if typeof(found) == "error" then return found end if
@@ -1222,7 +1492,7 @@ function compositeEqualityIndexRows(database, table, expression, pageTransaction
       end for
       if complete then
         encodedKey = encodeIndexKey(keyValues)
-        tree = btree.openReadOnly(indexPath(database, constraint))
+        tree = openReadOnlyIndex(database, constraint, "compositeEqualityIndexRows")
         foundValues = try(btree.find(tree, encodedKey))
         closeResult = try(btree.close(tree))
         if typeof(foundValues) == "error" then return foundValues end if
@@ -1353,6 +1623,73 @@ function writeRowsToHeap(path, pageSize, databaseId, table, rows)
   return len(rows)
 end function
 
+// Rewrites one table with memory bounded to one source page, one decoded row,
+// and one target page. This is the VACUUM path for multi-gigabyte relations;
+// retaining the complete live row set would otherwise scale heap usage with
+// database size and fail long before the storage format reaches its limits.
+function rewriteTableStreaming(databasePath, path, pageSize, databaseId, table)
+  if typeof(databasePath) != "string" or len(databasePath) == 0 or typeof(path) != "string" or len(path) == 0 or not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "rewriteTableStreaming", "invalid arguments") end if
+  if file_api.pathExists(path) then file_api.deletePath(path) end if
+  reader = try(scan.open(databasePath, table, void))
+  if typeof(reader) == "error" then return reader end if
+  heap = try(heap_file.create(path, pageSize, table.tableId, databaseId))
+  if typeof(heap) == "error" then scan.close(reader); return heap end if
+  rowSchema = scan.schemaForTable(table)
+  operationError = void
+  written = 0
+  if reader.file.pageCount > 0 then
+    for pageNumber = 0 to reader.file.pageCount - 1
+      if operationError is void then
+        pageBytes = try(scan.visiblePage(reader, pageNumber))
+        if typeof(pageBytes) == "error" then
+          operationError = pageBytes
+        else
+          header = try(page.verify(pageBytes))
+          if typeof(header) == "error" then
+            operationError = header
+          else if header.pageType == page.TYPE_HEAP then
+            slotCount = slotted_page.slotCount(pageBytes)
+            if slotCount > 0 then
+              for slotId = 0 to slotCount - 1
+                if operationError is void then
+                  current = slotted_page.entry(pageBytes, slotId)
+                  if current.flags == slotted_page.SLOT_FLAG_LIVE then
+                    sqlValues = try(scan.decodeRecord(reader, slotted_page.read(pageBytes, slotId)))
+                    if typeof(sqlValues) == "error" then
+                      operationError = sqlValues
+                    else
+                      encoded = try(row_codec.encodeRow(rowSchema, vacuumStorageValues(heap, table, sqlValues, written + 1)))
+                      if typeof(encoded) == "error" then
+                        operationError = encoded
+                      else
+                        inserted = try(heap_file.insert(heap, encoded))
+                        if typeof(inserted) == "error" then operationError = inserted else written = written + 1 end if
+                        // Large values become unreachable after each iteration,
+                        // but the runtime otherwise waits for heap pressure before
+                        // collecting them. Periodic collection keeps physical
+                        // memory near the one-row live-data invariant.
+                        if operationError is void and (written % 8) == 0 then gc_collect() end if
+                      end if
+                    end if
+                  end if
+                end if
+              end for
+            end if
+          else if header.pageType != page.TYPE_OVERFLOW and header.pageType != page.TYPE_FREE then
+            operationError = fail(CORRUPT_DATA, "rewriteTableStreaming", "source table contains an unexpected page type")
+          end if
+        end if
+      end if
+    end for
+  end if
+  closedReader = try(scan.close(reader))
+  closedHeap = try(heap_file.close(heap))
+  if operationError is void and typeof(closedReader) == "error" then operationError = closedReader end if
+  if operationError is void and typeof(closedHeap) == "error" then operationError = closedHeap end if
+  if operationError is not void then ignoredDelete = try(file_api.deletePath(path)); return operationError end if
+  return written
+end function
+
 // Resets WAL after vacuum using the supplied inputs.
 // Returns the computed value or operation status.
 // May mutate supplied state and perform I/O through its dependencies.
@@ -1374,13 +1711,12 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function vacuumTable(database, table)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "vacuumTable", "table must be TableMetadata") end if
-  rows = scan.scanTable(database.path, table, void)
   finalPath = catalog.tableFilePath(database.path, table.tableId)
   temporaryPath = finalPath + ".vacuum.new"
   backupPath = finalPath + ".vacuum.old"
   if file_api.pathExists(temporaryPath) then file_api.deletePath(temporaryPath) end if
   if file_api.pathExists(backupPath) then file_api.deletePath(backupPath) end if
-  written = writeRowsToHeap(temporaryPath, database.catalogHandle.metadata.pageSize, database.catalogHandle.metadata.databaseId, table, rows)
+  written = rewriteTableStreaming(database.path, temporaryPath, database.catalogHandle.metadata.pageSize, database.catalogHandle.metadata.databaseId, table)
   journal = schema_history.beginMaintenance(database.path, finalPath, temporaryPath, backupPath)
   file_api.movePath(finalPath, backupPath, false)
   file_api.movePath(temporaryPath, finalPath, false)

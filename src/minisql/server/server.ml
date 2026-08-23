@@ -42,11 +42,26 @@ function serveConcurrent(databasePath, port, maximumClients, maximumRequests)
   return listener.serveConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
 end function
 
+// Serves trusted clients using the configured logical-lock wait timeout.
+function serveConcurrentWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  return listener.serveConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+end function
+
+// Serves trusted clients with all configured runtime durability thresholds.
+function serveConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  return listener.serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+end function
+
 // Serves authenticated concurrent using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function serveAuthenticatedConcurrent(databasePath, port, maximumClients, maximumRequests)
   return listener.serveAuthenticatedConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
+end function
+
+// Serves authenticated loopback clients using the configured lock wait timeout.
+function serveAuthenticatedConcurrentWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  return listener.serveAuthenticatedConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
 end function
 
 // Serves standby concurrent using the supplied inputs.
@@ -56,6 +71,16 @@ function serveStandbyConcurrent(databasePath, port, maximumClients, maximumReque
   return listener.serveStandbyConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
 end function
 
+// Serves standby clients using the configured logical-lock wait timeout.
+function serveStandbyConcurrentWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  return listener.serveStandbyConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+end function
+
+// Serves standby clients with configured lock and WAL thresholds.
+function serveStandbyConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  return listener.serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+end function
+
 // Serves secure address using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -63,9 +88,29 @@ function serveSecureAddress(databasePath, address, port, maximumClients, maximum
   return listener.serveAuthenticatedConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests)
 end function
 
+// Serves authenticated address clients using the configured lock wait timeout.
+function serveSecureAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs)
+  return listener.serveAuthenticatedConcurrentAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs)
+end function
+
+// Serves authenticated clients with configured lock and WAL thresholds.
+function serveSecureAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  return listener.serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+end function
+
 // Serves authenticated MiniSQL over native TLS 1.3 using a store or PFX certificate.
 function serveTlsAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
   return listener.serveTlsConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
+end function
+
+// Serves native TLS clients using the configured logical-lock wait timeout.
+function serveTlsAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs)
+  return listener.serveTlsConcurrentAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs)
+end function
+
+// Serves native TLS clients with configured lock and WAL thresholds.
+function serveTlsAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  return listener.serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
 end function
 
 // Serves native TLS with an explicit in-memory PFX password for controlled callers.

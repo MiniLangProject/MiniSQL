@@ -212,6 +212,17 @@ end function
 // Returns a response, void while error 9007 remains retryable, or a propagated
 // error. Exceeding `lockWaitMs` aborts the transaction and returns error 9032.
 function processRequest(slot, request, lockWaitMs)
+  if slot.pendingRequest is not void then
+    now = clock.monotonicMilliseconds()
+    if now - slot.waitStarted >= lockWaitMs then
+      session.abortForConcurrency(slot.activeSession)
+      slot.pendingRequest = void
+      return errorMessageFor(request, 9032, "lock wait timeout; transaction rolled back")
+    end if
+    waiting = try(session.waitingForConcurrency(slot.activeSession))
+    if typeof(waiting) == "error" then return waiting end if
+    if waiting then return void end if
+  end if
   response = try(session.handle(slot.activeSession, request))
   if typeof(response) == "error" then return response end if
   code = responseErrorCode(response)
@@ -442,6 +453,15 @@ function serveConcurrentClient(task)
       if claimed then concurrentFinishRequest(task.state, false); claimed = false end if
       break
     end if
+    // A request may legitimately run longer than the idle limit. Refresh the
+    // session clock after its response is delivered so execution time is never
+    // mistaken for client inactivity on the following poll iteration.
+    touched = try(session.touch(slot.activeSession))
+    if typeof(touched) == "error" then
+      if claimed then concurrentFinishRequest(task.state, false); claimed = false end if
+      concurrentSetFailure(task.state, touched)
+      break
+    end if
     transportReady = try(session.transportReady(slot.activeSession))
     if typeof(transportReady) == "error" then
       if claimed then concurrentFinishRequest(task.state, false); claimed = false end if
@@ -469,19 +489,37 @@ function serveConcurrentClient(task)
   return slot.handled
 end function
 
-// Accepts clients into a bounded native thread pool backed by one shared database.
-// The acceptor owns the listener and pool; each job owns exactly one connection.
-// Returns the successful request count or the first fatal error after draining jobs.
-function serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimitMs, standby, tlsCredential)
-  if typeof(maximumClients) != "int" or maximumClients < 1 or maximumClients > 128 then network.close(listener); return fail("serveConcurrent", "maximumClients is invalid") end if
-  if typeof(idleLimitMs) != "int" or idleLimitMs < 0 or idleLimitMs > 600000 or (idleLimitMs > 0 and idleLimitMs < 100) then network.close(listener); return fail("serveConcurrent", "idleLimitMs is invalid; zero means unlimited") end if
+// Opens and completes recovery/index preparation before a TCP listener becomes
+// visible, preventing early clients from timing out against a bound-but-unready port.
+function openPreparedDatabaseWithCheckpoint(databasePath, standby, checkpointWalBytes)
+  return openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, 268435456)
+end function
+
+// Opens and prepares a shared database using both runtime storage budgets.
+function openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, bufferPoolBytes)
   shared = void
   if standby then
-    shared = try(database_manager.openStandby(databasePath))
+    shared = try(database_manager.openStandbyWithRuntime(databasePath, checkpointWalBytes, bufferPoolBytes))
   else
-    shared = try(database_manager.open(databasePath))
+    shared = try(database_manager.openWithRuntime(databasePath, checkpointWalBytes, bufferPoolBytes))
   end if
-  if typeof(shared) == "error" then network.close(listener); return shared end if
+  if typeof(shared) == "error" then return shared end if
+  prepared = try(session.prepareAttachedDatabase(shared))
+  if typeof(prepared) == "error" then database_manager.close(shared); return prepared end if
+  return shared
+end function
+
+// Preserves the legacy server API with the documented 64 MiB WAL threshold.
+function openPreparedDatabase(databasePath, standby)
+  return openPreparedDatabaseWithCheckpoint(databasePath, standby, 67108864)
+end function
+
+// Accepts clients into a bounded native thread pool backed by one already
+// prepared shared database. This function owns both database and listener.
+function servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, secure, idleLimitMs, standby, tlsCredential, lockWaitMs)
+  if typeof(maximumClients) != "int" or maximumClients < 1 or maximumClients > 128 then database_manager.close(shared); network.close(listener); return fail("serveConcurrent", "maximumClients is invalid") end if
+  if typeof(idleLimitMs) != "int" or idleLimitMs < 0 or idleLimitMs > 600000 or (idleLimitMs > 0 and idleLimitMs < 100) then database_manager.close(shared); network.close(listener); return fail("serveConcurrent", "idleLimitMs is invalid; zero means unlimited") end if
+  if typeof(lockWaitMs) != "int" or lockWaitMs <= 0 then database_manager.close(shared); network.close(listener); return fail("serveConcurrent", "lockWaitMs must be positive") end if
   ignoredLog = logger.info("minisql.server.listener.serveConcurrentListenerMode", "database listener ready path=" + databasePath + " maxClients=" + maximumClients + " secure=" + secure + " standby=" + standby)
   nonBlocking = try(network.setNonBlocking(listener, true))
   if typeof(nonBlocking) == "error" then database_manager.close(shared); network.close(listener); return nonBlocking end if
@@ -529,7 +567,7 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
     end if
     now = clock.monotonicMilliseconds()
     slot = ClientSlot(client, active, 0, false, void, 0, now, peer)
-    task = ConcurrentClientTask(slot, state, 5000, tlsCredential)
+    task = ConcurrentClientTask(slot, state, lockWaitMs, tlsCredential)
     concurrentRegisterClient(state)
     job = pool.Submit(serveConcurrentClient, task)
     if job is void then
@@ -562,15 +600,50 @@ function serveConcurrentListenerMode(databasePath, listener, maximumClients, max
   return handled
 end function
 
+// Preserves the lower-level API for callers that already created a listener.
+// Public address/loopback entry points prepare before binding and should be preferred.
+function serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimitMs, standby, tlsCredential, lockWaitMs)
+  shared = try(openPreparedDatabase(databasePath, standby))
+  if typeof(shared) == "error" then network.close(listener); return shared end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, secure, idleLimitMs, standby, tlsCredential, lockWaitMs)
+end function
+
 // Serves concurrent loopback using the supplied inputs.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function serveConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
   validateArguments(databasePath, maximumRequests, "serveConcurrentLoopback")
-  listener = network.listenLoopback(port, maximumClients)
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, false, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, 5000)
+end function
+
+// Serves trusted loopback clients with a configured logical-lock timeout.
+function serveConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackWithLockWait")
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, lockWaitMs)
+end function
+
+// Serves trusted loopback clients with configured lock and WAL thresholds.
+function serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackWithRuntime")
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, lockWaitMs)
 end function
 
 // Serves authenticated concurrent loopback using the supplied inputs.
@@ -578,10 +651,25 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function serveAuthenticatedConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
   validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentLoopback")
-  listener = network.listenLoopback(port, maximumClients)
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, 5000)
+end function
+
+// Serves authenticated loopback clients with a configured logical-lock timeout.
+function serveAuthenticatedConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentLoopbackWithLockWait")
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, lockWaitMs)
 end function
 
 // Serves concurrent with ready file using the supplied inputs.
@@ -590,12 +678,15 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function serveConcurrentWithReadyFile(databasePath, port, maximumClients, maximumRequests, readyPath, secure)
   validateArguments(databasePath, maximumRequests, "serveConcurrentWithReadyFile")
-  listener = network.listenLoopback(port, maximumClients)
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   published = try(publishReady(listener, readyPath, "serveConcurrentWithReadyFile"))
-  if typeof(published) == "error" then return published end if
+  if typeof(published) == "error" then database_manager.close(shared); return published end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, secure, idleLimit, false, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, secure, idleLimit, false, void, 5000)
 end function
 
 // Serves standby concurrent loopback using the supplied inputs.
@@ -603,10 +694,37 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function serveStandbyConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
   validateArguments(databasePath, maximumRequests, "serveStandbyConcurrentLoopback")
-  listener = network.listenLoopback(port, maximumClients)
+  shared = try(openPreparedDatabase(databasePath, true))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, false, idleLimit, true, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, true, void, 5000)
+end function
+
+// Serves a standby listener with a configured logical-lock timeout.
+function serveStandbyConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
+  validateArguments(databasePath, maximumRequests, "serveStandbyConcurrentLoopbackWithLockWait")
+  shared = try(openPreparedDatabase(databasePath, true))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, true, void, lockWaitMs)
+end function
+
+// Serves a standby with configured lock and WAL thresholds.
+function serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  validateArguments(databasePath, maximumRequests, "serveStandbyConcurrentLoopbackWithRuntime")
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, true, checkpointWalBytes, bufferPoolBytes))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, true, void, lockWaitMs)
 end function
 
 // Serves authenticated concurrent address using the supplied inputs.
@@ -614,10 +732,37 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function serveAuthenticatedConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests)
   validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddress")
-  listener = network.listenAddress(address, port, maximumClients, true)
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, 5000)
+end function
+
+// Serves authenticated address clients with a configured logical-lock timeout.
+function serveAuthenticatedConcurrentAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs)
+  validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddressWithLockWait")
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, lockWaitMs)
+end function
+
+// Serves authenticated address clients with configured lock and WAL thresholds.
+function serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddressWithRuntime")
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, lockWaitMs)
 end function
 
 // Serves authenticated concurrent address with ready file using the supplied inputs.
@@ -626,38 +771,63 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function serveAuthenticatedConcurrentAddressWithReadyFile(databasePath, address, port, maximumClients, maximumRequests, readyPath)
   validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddressWithReadyFile")
-  listener = network.listenAddress(address, port, maximumClients, true)
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
   published = try(publishReady(listener, readyPath, "serveAuthenticatedConcurrentAddressWithReadyFile"))
-  if typeof(published) == "error" then return published end if
+  if typeof(published) == "error" then database_manager.close(shared); return published end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  return serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, void)
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, 5000)
 end function
 
 // Serves concurrent authenticated sessions over native TLS 1.3 and Schannel.
-function serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath)
+function serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
   validateArguments(databasePath, maximumRequests, "serveTlsConcurrentAddressWithPassword")
   if typeof(certificateReference) != "string" or len(certificateReference) == 0 then return fail("serveTlsConcurrentAddressWithPassword", "certificateReference must be non-empty") end if
   credential = try(tls_schannel.acquireServerCredentialWithPassword(certificateReference, passwordBytes))
   if typeof(credential) == "error" then return credential end if
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  if typeof(shared) == "error" then ignoredCredential = try(tls_schannel.closeCredential(credential)); return shared end if
   listener = try(network.listenAddress(address, port, maximumClients, true))
-  if typeof(listener) == "error" then ignoredCredential = try(tls_schannel.closeCredential(credential)); return listener end if
+  if typeof(listener) == "error" then database_manager.close(shared); ignoredCredential = try(tls_schannel.closeCredential(credential)); return listener end if
   if readyPath is not void then
     published = try(publishReady(listener, readyPath, "serveTlsConcurrentAddressWithPassword"))
-    if typeof(published) == "error" then ignoredListener = try(network.close(listener)); ignoredCredential = try(tls_schannel.closeCredential(credential)); return published end if
+    if typeof(published) == "error" then database_manager.close(shared); ignoredCredential = try(tls_schannel.closeCredential(credential)); return published end if
   end if
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
-  result = try(serveConcurrentListenerMode(databasePath, listener, maximumClients, maximumRequests, true, idleLimit, false, credential))
+  result = try(servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, credential, lockWaitMs))
   closedCredential = try(tls_schannel.closeCredential(credential))
   if typeof(result) == "error" then return result end if
   if typeof(closedCredential) == "error" then return closedCredential end if
   return result
 end function
 
+// Serves TLS with the legacy 64 MiB automatic checkpoint threshold.
+function serveTlsConcurrentAddressWithPasswordAndLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs)
+  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, 67108864, 268435456)
+end function
+
+// Serves TLS with configured lock and WAL thresholds.
+function serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+end function
+
+// Serves TLS with the legacy five-second logical-lock timeout.
+function serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath)
+  return serveTlsConcurrentAddressWithPasswordAndLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, 5000)
+end function
+
 // Serves native TLS using a store or PFX certificate and environment PFX secret.
 function serveTlsConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
   return serveTlsConcurrentAddressWithPassword(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void)
+end function
+
+// Serves native TLS with a configured logical-lock timeout.
+function serveTlsConcurrentAddressWithLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs)
+  return serveTlsConcurrentAddressWithPasswordAndLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void, lockWaitMs)
 end function
 
 // Publishes a readiness marker only after the native TLS credential and listener exist.

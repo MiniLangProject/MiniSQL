@@ -3,7 +3,10 @@
 // Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
 
 import minisql.config.model as config_model
+import minisql.catalog.catalog as catalog
 import minisql.executor.executor as executor
+import minisql.executor.scan as scan
+import minisql.platform.file as file_api
 import minisql.server.database_manager as database_manager
 import minisql.sql.types as types
 import tests.support.testkit as testkit
@@ -12,6 +15,16 @@ import tests.support.testkit as testkit
 function executeOne(engine, sqlText)
   results = executor.executeSql(engine, sqlText)
   return results[0]
+end function
+
+// Builds an overflow-sized deterministic value without embedding a giant
+// literal in the native test binary.
+function makeAsciiText(length)
+  output = ""
+  for index = 0 to length - 1
+    output = output + "x"
+  end for
+  return output
 end function
 
 // Runs the sql engine test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
@@ -81,6 +94,36 @@ function main(args)
   testkit.equal(state, deleted.affectedRows, 1, "DELETE count")
   remaining = executeOne(engine, "SELECT name FROM account ORDER BY name")
   testkit.equal(state, len(remaining.rows), 2, "row count after DELETE")
+  paged = executeOne(engine, "SELECT name FROM account LIMIT 1 OFFSET 1")
+  testkit.equal(state, len(paged.rows), 1, "physical range scan result count")
+  testkit.equal(state, paged.rows[0][0].value, "Committed", "physical range scan skips deleted slots")
+
+  // Projection pushdown must preserve column indexes while avoiding an
+  // overflow read for a large, unselected TEXT value.
+  executeOne(engine, "CREATE TABLE wide_row (id INTEGER PRIMARY KEY, payload TEXT)")
+  overflowText = makeAsciiText(12000)
+  executeOne(engine, "INSERT INTO wide_row(id, payload) VALUES (1, '" + overflowText + "')")
+  wideTable = catalog.findTable(managed.catalogHandle, "wide_row")
+  requiredColumns = [true, false]
+  maskedRows = scan.scanTableRangeColumns(databasePath, wideTable, void, 0, -1, requiredColumns)
+  testkit.equal(state, len(maskedRows), 1, "column-mask scan row count")
+  testkit.equal(state, maskedRows[0].values[0].value, 1, "column-mask retains selected value")
+  testkit.record(state, maskedRows[0].values[1].isNull, "column-mask does not materialize overflow value")
+  selectedWide = executeOne(engine, "SELECT id FROM wide_row")
+  testkit.equal(state, selectedWide.rows[0][0].value, 1, "projected SQL result remains correct")
+  fullWide = executeOne(engine, "SELECT payload FROM wide_row")
+  testkit.equal(state, len(fullWide.rows[0][0].value), 12000, "selected overflow value remains readable")
+
+  // Force the automatic checkpoint threshold below the accumulated WAL. The
+  // statement-boundary implementation resets the physical log and selects
+  // epoch recovery without changing committed SQL data.
+  managed.checkpointWalBytes = 4096
+  checkpointed = database_manager.checkpointIfNeeded(managed)
+  testkit.record(state, checkpointed, "automatic WAL checkpoint triggered")
+  testkit.equal(state, managed.walWriter.nextLsn, 0, "automatic checkpoint bounds WAL bytes")
+  testkit.record(state, managed.walEpoch, "automatic checkpoint enables epoch recovery")
+  testkit.equal(state, database_manager.checkpointResetCount(managed), 1, "automatic checkpoint diagnostic count")
+  testDatabaseId = bytes(managed.catalogHandle.metadata.databaseId)
 
   executor.close(engine)
   database_manager.close(managed)
@@ -92,7 +135,23 @@ function main(args)
   testkit.equal(state, durable.rows[0][1].value, 17, "durable updated value")
   testkit.equal(state, durable.rows[1][0].value, "Committed", "durable committed row")
   testkit.equal(state, durable.rows[0][0].typeKind, types.SqlTypeKind.VarChar, "result retains SQL type")
+  epochInsert = executeOne(reopened, "INSERT INTO account(name, balance) VALUES ('Epoch', 55)")
+  testkit.equal(state, epochInsert.affectedRows, 1, "post-checkpoint epoch accepts writes")
   executor.close(reopened)
+
+  // Simulate a process stopping after the durable reset journal is created but
+  // before the WAL is truncated. Opening must safely complete the reset because
+  // the committed base pages were already flushed before marker publication.
+  pendingPath = database_manager.walResetPendingPath(databasePath)
+  pendingBytes = database_manager.checkpointMarkerBytes(bytes("MSWRP001"), testDatabaseId)
+  database_manager.ensureCheckpointMarker(pendingPath, pendingBytes)
+
+  finalOpen = executor.open(databasePath)
+  testkit.record(state, not file_api.fileExists(pendingPath), "interrupted checkpoint reset journal completed on open")
+  epochDurable = executeOne(finalOpen, "SELECT balance FROM account WHERE name = 'Epoch'")
+  testkit.equal(state, len(epochDurable.rows), 1, "post-checkpoint epoch reopens")
+  testkit.equal(state, epochDurable.rows[0][0].value, 55, "post-checkpoint epoch write remains durable")
+  executor.close(finalOpen)
 
   return testkit.finish(state, "MiniSQL M15 SQL engine tests: SUCCESS", "MiniSQL M15 SQL engine tests: FAIL")
 end function

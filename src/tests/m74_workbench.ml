@@ -34,6 +34,7 @@ function main(args)
   testkit.errorCode(state, try(fullclient.createProfile("Bad Pin", "127.0.0.1", 7432, "localhost", "main", "admin", false, "AA", false)), 9001, "pin requires TLS")
   testkit.equal(state, len(fullclient.defaultBookmarks()), 8, "built-in MiniSQL bookmark count")
   testkit.equal(state, fullclient.quotedIdentifier("Bestellung \"München\""), "\"Bestellung \"\"München\"\"\"", "Unicode and quotes are safe in generated metadata SQL")
+  testkit.equal(state, fullclient.quotedObjectName("shop.product"), "\"shop\".\"product\"", "qualified object names quote schema and object independently")
   testkit.equal(state, profiles.escape(decode(bytes([1]))), "\\u0001", "profile JSON escapes uncommon control bytes")
 
   profilePath = file_api.joinPath(args[0], "workbench-profiles.json")
@@ -81,6 +82,29 @@ function main(args)
   testkit.record(state, typeof(copiedValues) == "array" and copiedValues[0] == "<DEFAULT>" and copiedValues[1] == "O'Reilly" and copiedValues[2] == "<NULL>", "duplicate-row draft clears identity and preserves nullable data")
   unkeyedDetails = fullclient.TableDetails("unkeyed", "", "", "", "", "", "", columnGrid, fullclient.DetailGrid([], []), dataGrid, countGrid)
   testkit.errorCode(state, try(fullclient.deleteDataSql(unkeyedDetails, dataGrid.rows[0])), 9001, "unsafe delete without a key is rejected")
+  pageOptions = fullclient.createDataBrowseOptions("active = TRUE", "code", false, 2, 50)
+  testkit.equal(state, fullclient.dataSelectSql("shop.shop_item", pageOptions), "SELECT * FROM \"shop\".\"shop_item\" WHERE active = TRUE ORDER BY \"code\" DESC LIMIT 50 OFFSET 100", "data browser generates filtered sorted pagination SQL")
+  testkit.equal(state, fullclient.dataCountSql("shop.shop_item", pageOptions), "SELECT COUNT(*) AS row_count FROM \"shop\".\"shop_item\" WHERE active = TRUE", "data browser count matches its filter")
+  testkit.errorCode(state, try(fullclient.createDataBrowseOptions("TRUE; DROP TABLE x", "", true, 0, 100)), 9001, "data browser rejects statement injection in filters")
+  testkit.errorCode(state, try(fullclient.createDataBrowseOptions("", "", true, 0, 1001)), 9001, "data browser bounds page size")
+  pendingInsert = fullclient.pendingDataChange("INSERT", insertSql, -1, ["<DEFAULT>", "new's", "<NULL>", "FALSE", "2.50"])
+  pendingUpdate = fullclient.pendingDataChange("UPDATE", updateSql, 0, ["7", "updated", "memo", "FALSE", "9.75"])
+  pendingGrid = fullclient.dataGridWithChanges(editableDetails, [pendingUpdate, pendingInsert])
+  testkit.record(state, len(pendingGrid.columns) == 6 and len(pendingGrid.rows) == 2 and pendingGrid.rows[0][0] == "UPDATE" and pendingGrid.rows[1][0] == "INSERT", "pending row changes render explicit optimistic grid markers")
+  testkit.record(state, fullclient.textContains(fullclient.pendingDataSql([pendingUpdate, pendingInsert]), "\r\nINSERT INTO"), "pending changes preserve exact ordered SQL preview")
+  csv = fullclient.gridCsv(fullclient.DetailGrid(["name", "note"], [["Müller, Anna", "line \"one\""]]))
+  testkit.equal(state, csv, "\"name\",\"note\"\r\n\"Müller, Anna\",\"line \"\"one\"\"\"\r\n", "CSV export uses UTF-8, CRLF, commas, and doubled quotes")
+  clipboardText = fullclient.gridClipboardText(fullclient.DetailGrid(["value"], [["tab\tline\r\nslash\\"]]), [0], false)
+  clipboardRows = fullclient.parseClipboardRows(clipboardText)
+  testkit.record(state, len(clipboardRows) == 1 and clipboardRows[0][0] == "tab\tline\r\nslash\\", "escaped clipboard TSV roundtrips tabs, line endings, and backslashes")
+  testkit.equal(state, len(fullclient.filterHistory(["SELECT 1;", "UPDATE shop SET x = 1;"], "ShOp")), 1, "history search is case-insensitive")
+  worksheets = [fullclient.newWorksheet(1, "SELECT 1;"), fullclient.newWorksheet(2, "SELECT 2;")]
+  testkit.equal(state, fullclient.worksheetLines(worksheets)[1], "SQL 2", "independent worksheet tabs retain stable labels")
+  testkit.equal(state, fullclient.schemaEditorSql(0, "shop.product", "", "id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL", ""), "CREATE TABLE \"shop\".\"product\" (id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL);", "schema designer previews CREATE TABLE")
+  testkit.equal(state, fullclient.schemaEditorSql(1, "shop.product", "active", "BOOLEAN NOT NULL DEFAULT TRUE", ""), "ALTER TABLE \"shop\".\"product\" ADD COLUMN \"active\" BOOLEAN NOT NULL DEFAULT TRUE;", "schema designer previews ADD COLUMN")
+  testkit.equal(state, fullclient.schemaEditorSql(4, "shop.product", "shop.idx_product_name", "name, active", "UNIQUE"), "CREATE UNIQUE INDEX \"shop\".\"idx_product_name\" ON \"shop\".\"product\" (\"name\", \"active\");", "schema designer previews quoted unique indexes")
+  testkit.equal(state, fullclient.schemaEditorSql(6, "shop.product", "chk_name", "CHECK (name <> '')", ""), "ALTER TABLE \"shop\".\"product\" ADD CONSTRAINT \"chk_name\" CHECK (name <> '');", "schema designer previews constraints")
+  testkit.errorCode(state, try(fullclient.schemaEditorSql(6, "shop.product", "bad", "CHECK (TRUE); DROP TABLE x", "")), 9001, "schema designer rejects multi-statement definitions")
   rowWindow = try(win32_client.createRowEditorWindow(editableDetails, false, false))
   testkit.record(state, typeof(rowWindow) != "error", "native row editor constructs for arbitrary table columns")
   if typeof(rowWindow) != "error" then
@@ -94,6 +118,19 @@ function main(args)
     rowValueRect = try(gui.controlRectDip(rowWindow.hwnd, rowWindow.valueEdit))
     testkit.record(state, typeof(rowLayout) != "error" and typeof(rowClient) == "array" and typeof(rowGridRect) == "array" and typeof(rowValueRect) == "array" and win32_client.rectangleInside(rowGridRect, rowClient[0], rowClient[1]) and win32_client.rectangleInside(rowValueRect, rowClient[0], rowClient[1]) and not win32_client.rectanglesOverlap(rowGridRect, rowValueRect), "row editor grids and fields reflow without overlap")
     gui.destroy(rowWindow.hwnd)
+  end if
+  schemaWindow = try(win32_client.createSchemaEditorWindow("shop_item", false))
+  testkit.record(state, typeof(schemaWindow) != "error", "native schema designer constructs")
+  if typeof(schemaWindow) != "error" then
+    gui.setText(schemaWindow.objectEdit, "added")
+    gui.setText(schemaWindow.definitionEdit, "INTEGER DEFAULT 0")
+    gui.listSelect(schemaWindow.actionList, 1)
+    schemaState = win32_client.SchemaEditorState(schemaWindow, void, false)
+    schemaPreview = try(win32_client.renderSchemaEditor(schemaState))
+    ignoredSchemaResize = try(gui.setClientSizeDip(schemaWindow.hwnd, 1100, 760, true))
+    schemaLayout = try(win32_client.layoutSchemaEditor(schemaWindow))
+    testkit.record(state, typeof(schemaPreview) == "string" and fullclient.textContains(schemaPreview, "ADD COLUMN") and typeof(schemaLayout) != "error", "schema designer updates DDL preview and responsive layout")
+    gui.destroy(schemaWindow.hwnd)
   end if
 
   editorScript = "SELECT 'a;b';\r\nUPDATE item SET label = 'München' WHERE id = 1;\r\n"
@@ -122,6 +159,8 @@ function main(args)
   largeHighlightText = decode(largeHighlightBytes)
   largeHighlightSpans = fullclient.sqlSyntaxSpans(largeHighlightText)
   testkit.equal(state, len(largeHighlightSpans), 8000, "large worksheet highlighting collects spans linearly")
+  testkit.equal(state, gui.richEditNativeOffset("A\r\nB", 3), 2, "RichEdit mapping collapses CRLF to one native paragraph mark")
+  testkit.equal(state, gui.richEditDocumentOffset("A\r\nB", 2), 3, "RichEdit mapping restores the public CRLF offset")
 
   smoke = try(gui.hiddenWindowSmoke())
   testkit.record(state, typeof(smoke) != "error" and smoke, "custom Win32 top-level smoke")
@@ -129,15 +168,39 @@ function main(args)
   if typeof(window) == "error" then print window.message end if
   testkit.record(state, typeof(window) != "error", "SQuirreL-style workbench controls construct")
   if typeof(window) != "error" then
-    testkit.record(state, window.objectTree != 0 and window.queryEdit != 0 and window.resultGrid != 0 and window.detailGrid != 0 and window.dataAddButton != 0, "object tree worksheet and editable detail grids exist")
+    testkit.record(state, window.objectTree != 0 and window.queryEdit != 0 and window.worksheetTabs != 0 and window.resultGrid != 0 and window.detailGrid != 0 and window.dataAddButton != 0 and window.schemaButton != 0, "object tree worksheet tabs schema designer and editable detail grids exist")
     testkit.equal(state, gui.tabSelectedIndex(window.workspaceTabs), 0, "SQL worksheet is default workspace")
     largeEditorText = decode(bytes(40000, 65))
     ignoredLargeText = try(gui.setText(window.queryEdit, largeEditorText))
     readLargeText = try(gui.getText(window.queryEdit))
     if typeof(readLargeText) != "string" then print readLargeText.message else if len(bytes(readLargeText)) != 40000 then print "large SQL editor roundtrip bytes=" + len(bytes(readLargeText)) end if
     testkit.record(state, typeof(readLargeText) == "string" and len(bytes(readLargeText)) == 40000, "SQL editor text is not capped at 32 KiB")
+    gui.listViewResetColumns(window.detailGrid)
+    gui.listViewAddColumn(window.detailGrid, 0, "id", 120)
+    gui.listViewAddRow(window.detailGrid, 0, ["first"])
+    gui.listViewAddRow(window.detailGrid, 1, ["second"])
+    gui.listViewSelect(window.detailGrid, 0)
+    gui.listViewAddSelection(window.detailGrid, 1)
+    selectedRows = gui.listViewSelectedIndices(window.detailGrid)
+    testkit.record(state, len(selectedRows) == 2 and gui.listViewCellText(window.detailGrid, 1, 0) == "second", "native grids support multi-selection and cell text access")
+    clipboardSet = try(gui.clipboardSetText(window.hwnd, "MiniSQL clipboard ✓"))
+    clipboardValid = false
+    if typeof(clipboardSet) == "error" then
+      // The clipboard is a global desktop resource. A different process may
+      // deliberately hold it longer than the bounded production retry window.
+      clipboardValid = clipboardSet.code == 9040 and fullclient.textContains(clipboardSet.message, "OpenClipboard remained busy after retrying")
+      if not clipboardValid then print "clipboard set: " + clipboardSet.message end if
+    else
+      clipboardRead = try(gui.clipboardText(window.hwnd))
+      clipboardValid = typeof(clipboardRead) == "string" and clipboardRead == "MiniSQL clipboard ✓"
+      if typeof(clipboardRead) == "error" then print "clipboard read: " + clipboardRead.message else if not clipboardValid then print "clipboard mismatch bytes=" + len(bytes(clipboardRead)) end if
+    end if
+    testkit.record(state, clipboardValid, "native Unicode clipboard roundtrips text or reports external ownership deterministically")
     gui.destroy(window.hwnd)
   end if
+  layoutPath = file_api.joinPath(args[0], "workbench-layout.json")
+  savedLayout = try(win32_client.saveWindowLayout(layoutPath, [40, 50, 1200, 800]))
+  testkit.record(state, typeof(savedLayout) != "error" and savedLayout and file_api.fileExists(layoutPath), "workbench window layout persists atomically")
   manager = try(win32_client.connectionManagerSmoke(profilePath))
   testkit.record(state, typeof(manager) != "error" and manager, "connection manager hidden smoke")
   connectionLayout = try(win32_client.connectionLayoutSmoke(profilePath))

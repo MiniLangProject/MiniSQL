@@ -82,14 +82,29 @@ function main(args)
   testkit.equal(state, second.pagesRedone, 0, "redo is idempotent")
   testkit.record(state, second.pagesSkipped >= 3, "idempotent and uncommitted pages skipped")
 
+  // A bounded WAL reset restarts physical LSNs at zero while existing base
+  // pages retain LSNs from the previous epoch. Conventional recovery therefore
+  // skips the numerically smaller new image; epoch recovery must replay it.
+  wal.rewind(log, 0)
+  epochTransaction = tx.beginTransaction(3001, tx.ISOLATION_SERIALIZABLE, false, log)
+  epochPage = makePage(4096, 44, 0, 7)
+  tx.stagePage(epochTransaction, 44, 0, epochPage)
+  tx.commit(epochTransaction)
+  epochScan = wal.scan(log, false)
+  conventionalEpoch = recovery.recoverScan(epochScan, [recovery.target(44, data)], 0)
+  testkit.equal(state, conventionalEpoch.pagesRedone, 0, "old page LSN demonstrates reset epoch")
+  forcedEpoch = recovery.recoverScanForced(epochScan, [recovery.target(44, data)])
+  testkit.equal(state, forcedEpoch.pagesRedone, 1, "bounded WAL epoch forces committed page replay")
+  testkit.equal(state, paged_file.readPage(data, 0)[page.HEADER_SIZE], 7, "forced epoch replay publishes newest image")
+
   wal.close(log)
   paged_file.close(data)
 
   reopenedData = paged_file.open(dataPath)
   reopenedWal = wal.open(walPath, 4096)
-  third = recovery.recover(reopenedWal, [recovery.target(44, reopenedData), recovery.retiredTarget(43)], 0)
-  testkit.equal(state, third.pagesRedone, 0, "restart recovery remains idempotent")
-  testkit.equal(state, paged_file.readPage(reopenedData, 1)[page.HEADER_SIZE], 3, "recovered data persisted")
+  third = recovery.recoverScanForced(wal.scan(reopenedWal, false), [recovery.target(44, reopenedData)])
+  testkit.equal(state, third.pagesRedone, 1, "restart epoch replay remains deterministic")
+  testkit.equal(state, paged_file.readPage(reopenedData, 0)[page.HEADER_SIZE], 7, "epoch-recovered data persisted")
   wal.close(reopenedWal)
   paged_file.close(reopenedData)
   cleanup(walPath)

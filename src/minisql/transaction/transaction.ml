@@ -6,6 +6,8 @@ package minisql.transaction.transaction
 import minisql.common.endian as endian
 import minisql.storage.page as page
 import minisql.transaction.wal as wal
+import std.ds.hashmap as hashmap
+import std.ds.list as list
 
 // Transaction state machine and page-level change tracking. Write-ahead-log
 // records become durable before changed pages are published; savepoints retain
@@ -56,6 +58,8 @@ struct Transaction
   beginLogged
   // Changes field of the transaction.
   changes
+  // Maps a stable file/page key to its position in the growable change list.
+  changeIndexes
   // Committed changes field of the transaction.
   committedChanges
   // Savepoints field of the transaction.
@@ -126,7 +130,20 @@ function beginTransaction(transactionId, isolationLevel, readOnly, walWriter)
   validateIsolation(isolationLevel, "beginTransaction")
   if typeof(readOnly) != "bool" then return fail(INVALID_ARGUMENT, "beginTransaction", "readOnly must be bool") end if
   wal.validateOpen(walWriter, "transaction.beginTransaction")
-  return Transaction(transactionId, TransactionState.Active, isolationLevel, readOnly, 0, 0, walWriter, false, [], [], [])
+  return Transaction(
+    transactionId,
+    TransactionState.Active,
+    isolationLevel,
+    readOnly,
+    0,
+    0,
+    walWriter,
+    false,
+    list.List.new(),
+    hashmap.HashMap.new(),
+    list.List.new(),
+    []
+  )
 end function
 
 // Creates the manager.
@@ -146,15 +163,31 @@ function beginManaged(manager, isolationLevel, readOnly, walWriter)
   return beginTransaction(id, isolationLevel, readOnly, walWriter)
 end function
 
-// Finds the change.
-// Inputs: `transaction`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+// Builds the collision-free textual key used by the transaction's change index.
+// File and page identifiers are non-negative decimal integers, so the separator
+// makes every pair unambiguous without imposing an artificial numeric limit.
+function changeKey(fileId, pageNumber)
+  return fileId + ":" + pageNumber
+end function
+
+// Finds a staged page in expected constant time through the private hash index.
+// Inputs: `transaction`, `fileId`, `pageNumber`. Returns its list index or `-1`.
 function findChange(transaction, fileId, pageNumber)
-  if len(transaction.changes) == 0 then return -1 end if
-  for index = 0 to len(transaction.changes) - 1
-    change = transaction.changes[index]
-    if change.fileId == fileId and change.pageNumber == pageNumber then return index end if
-  end for
-  return -1
+  index = transaction.changeIndexes.get(changeKey(fileId, pageNumber))
+  if typeof(index) == "void" then return -1 end if
+  return index
+end function
+
+// Rebuilds the change index after restoring an array-backed savepoint snapshot.
+function indexChanges(changes)
+  indexes = hashmap.HashMap.withCapacity(len(changes) * 2)
+  if len(changes) > 0 then
+    for index = 0 to len(changes) - 1
+      change = changes[index]
+      indexes.set(changeKey(change.fileId, change.pageNumber), index)
+    end for
+  end if
+  return indexes
 end function
 
 // Performs the stage page operation for this module.
@@ -169,9 +202,10 @@ function stagePage(transaction, fileId, pageNumber, pageBytes)
   change = PageChange(fileId, pageNumber, bytes(pageBytes))
   index = findChange(transaction, fileId, pageNumber)
   if index < 0 then
-    transaction.changes = transaction.changes + [change]
+    transaction.changes.add(change)
+    transaction.changeIndexes.set(changeKey(fileId, pageNumber), transaction.changes.len() - 1)
   else
-    transaction.changes[index] = change
+    transaction.changes.set(index, change)
   end if
   return true
 end function
@@ -180,7 +214,7 @@ end function
 // Inputs: `transaction`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function stagedPageCount(transaction)
   validateTransaction(transaction, "stagedPageCount")
-  return len(transaction.changes)
+  return transaction.changes.len()
 end function
 
 // Reads the private page.
@@ -189,7 +223,7 @@ function readPrivatePage(transaction, fileId, pageNumber)
   validateTransaction(transaction, "readPrivatePage")
   index = findChange(transaction, fileId, pageNumber)
   if index < 0 then return void end if
-  return bytes(transaction.changes[index].pageBytes)
+  return bytes(transaction.changes.get(index).pageBytes)
 end function
 
 // Marks the failed.
@@ -203,10 +237,13 @@ end function
 // Clones the changes.
 // Inputs: `changes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function cloneChanges(changes)
-  output = []
-  for each change in changes
-    output = output + [PageChange(change.fileId, change.pageNumber, bytes(change.pageBytes))]
-  end for
+  output = array(len(changes))
+  if len(changes) > 0 then
+    for index = 0 to len(changes) - 1
+      change = changes[index]
+      output[index] = PageChange(change.fileId, change.pageNumber, bytes(change.pageBytes))
+    end for
+  end if
   return output
 end function
 
@@ -222,7 +259,7 @@ end function
 function savepoint(transaction, name)
   requireActive(transaction, "savepoint")
   validateSavepointName(name, "savepoint")
-  transaction.savepoints = transaction.savepoints + [Savepoint(name, cloneChanges(transaction.changes))]
+  transaction.savepoints = transaction.savepoints + [Savepoint(name, cloneChanges(transaction.changes.toArray()))]
   return len(transaction.savepoints)
 end function
 
@@ -246,7 +283,9 @@ function rollbackToSavepoint(transaction, name)
   if transaction.state != TransactionState.Active and transaction.state != TransactionState.Failed then return fail(TRANSACTION_STATE, "rollbackToSavepoint", "transaction is not active or failed") end if
   index = findSavepoint(transaction, name)
   if index < 0 then return fail(TRANSACTION_STATE, "rollbackToSavepoint", "savepoint not found: " + name) end if
-  transaction.changes = cloneChanges(transaction.savepoints[index].changes)
+  restored = cloneChanges(transaction.savepoints[index].changes)
+  transaction.changes = list.List.fromArray(restored)
+  transaction.changeIndexes = indexChanges(restored)
   retained = []
   for position = 0 to index
     retained = retained + [transaction.savepoints[position]]
@@ -301,27 +340,20 @@ function commit(transaction)
   requireActive(transaction, "commit")
   startLsn = transaction.walWriter.nextLsn
   transaction.state = TransactionState.Committing
-  beginResult = try(wal.appendBegin(transaction.walWriter, transaction.transactionId))
-  if typeof(beginResult) == "error" then return failCommit(transaction, startLsn, beginResult) end if
-  transaction.beginLsn = beginResult.lsn
+  appended = try(wal.appendTransaction(transaction.walWriter, transaction.transactionId, transaction.changes.toArray()))
+  if typeof(appended) == "error" then return failCommit(transaction, startLsn, appended) end if
+  transaction.beginLsn = appended[0]
   transaction.beginLogged = true
-  if len(transaction.changes) > 0 then
-    for each change in transaction.changes
-      pageResult = try(wal.appendPageImage(transaction.walWriter, transaction.transactionId, change.fileId, change.pageNumber, change.pageBytes))
-      if typeof(pageResult) == "error" then return failCommit(transaction, startLsn, pageResult) end if
-    end for
-  end if
-  commitResult = try(wal.appendCommit(transaction.walWriter, transaction.transactionId))
-  if typeof(commitResult) == "error" then return failCommit(transaction, startLsn, commitResult) end if
   flushResult = try(wal.flush(transaction.walWriter))
   if typeof(flushResult) == "error" then return failCommit(transaction, startLsn, flushResult) end if
-  transaction.commitLsn = commitResult.lsn
+  transaction.commitLsn = appended[1]
   transaction.state = TransactionState.Committed
   // Keep a private immutable batch until the storage layer has published the
   // committed pages into its buffer pool/base files. WAL durability is already
   // established, so a publication failure is recovered by M7 redo.
   transaction.committedChanges = transaction.changes
-  transaction.changes = []
+  transaction.changes = list.List.new()
+  transaction.changeIndexes = hashmap.HashMap.new()
   transaction.savepoints = []
   return transaction.commitLsn
 end function
@@ -330,7 +362,7 @@ end function
 // Inputs: `transaction`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function committedPageCount(transaction)
   validateTransaction(transaction, "committedPageCount")
-  return len(transaction.committedChanges)
+  return transaction.committedChanges.len()
 end function
 
 // Commits the ted pages.
@@ -338,11 +370,24 @@ end function
 function committedPages(transaction)
   validateTransaction(transaction, "committedPages")
   if transaction.state != TransactionState.Committed then return fail(TRANSACTION_STATE, "committedPages", "transaction is not committed") end if
-  result = []
-  for each change in transaction.committedChanges
-    result = result + [PageChange(change.fileId, change.pageNumber, bytes(change.pageBytes))]
-  end for
+  result = array(transaction.committedChanges.len())
+  if transaction.committedChanges.len() > 0 then
+    for index = 0 to transaction.committedChanges.len() - 1
+      change = transaction.committedChanges.get(index)
+      result[index] = PageChange(change.fileId, change.pageNumber, bytes(change.pageBytes))
+    end for
+  end if
   return result
+end function
+
+// Returns a shallow publication view of the immutable committed page batch.
+// Only the storage publisher may use this helper; unlike committedPages(), its
+// page buffers are intentionally not cloned so publishing a large transaction
+// does not temporarily duplicate every full-page image in the MiniLang heap.
+function committedPagesForPublication(transaction)
+  validateTransaction(transaction, "committedPagesForPublication")
+  if transaction.state != TransactionState.Committed then return fail(TRANSACTION_STATE, "committedPagesForPublication", "transaction is not committed") end if
+  return transaction.committedChanges.toArray()
 end function
 
 // Performs the acknowledge committed pages operation for this module.
@@ -350,7 +395,7 @@ end function
 function acknowledgeCommittedPages(transaction)
   validateTransaction(transaction, "acknowledgeCommittedPages")
   if transaction.state != TransactionState.Committed then return fail(TRANSACTION_STATE, "acknowledgeCommittedPages", "transaction is not committed") end if
-  transaction.committedChanges = []
+  transaction.committedChanges = list.List.new()
   return true
 end function
 
@@ -374,8 +419,9 @@ function rollback(transaction)
     abortResult = try(wal.appendAbort(transaction.walWriter, transaction.transactionId))
     if typeof(abortResult) != "error" then ignored = try(wal.flush(transaction.walWriter)) end if
   end if
-  transaction.changes = []
-  transaction.committedChanges = []
+  transaction.changes = list.List.new()
+  transaction.changeIndexes = hashmap.HashMap.new()
+  transaction.committedChanges = list.List.new()
   transaction.savepoints = []
   transaction.state = TransactionState.Aborted
   return true

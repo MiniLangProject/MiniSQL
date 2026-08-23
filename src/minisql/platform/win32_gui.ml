@@ -45,10 +45,12 @@ const WM_SETREDRAW = 0x000B
 const WM_SETFONT = 0x0030
 const WM_CLOSE = 0x0010
 const WM_DESTROY = 0x0002
+const WM_MOVE = 0x0003
 const WM_SIZE = 0x0005
 const WM_GETMINMAXINFO = 0x0024
 const WM_COMMAND = 0x0111
 const WM_NOTIFY = 0x004E
+const WM_CONTEXTMENU = 0x007B
 const WM_LBUTTONDOWN = 0x0201
 const WM_LBUTTONUP = 0x0202
 const WM_DPICHANGED = 0x02E0
@@ -61,6 +63,7 @@ const EM_SETCHARFORMAT = 0x0444
 const EM_SETEVENTMASK = 0x0445
 const EM_GETSCROLLPOS = 0x04DD
 const EM_SETSCROLLPOS = 0x04DE
+const EM_SETCUEBANNER = 0x1501
 const ENM_CHANGE = 1
 const SCF_SELECTION = 1
 const CFM_BOLD = 1
@@ -127,6 +130,8 @@ const LVM_INSERTCOLUMNW = LVM_FIRST + 97
 const LVM_DELETECOLUMN = LVM_FIRST + 28
 const LVM_GETNEXTITEM = LVM_FIRST + 12
 const LVM_SETITEMSTATE = LVM_FIRST + 43
+const LVM_GETITEMTEXTW = LVM_FIRST + 115
+const LVM_SUBITEMHITTEST = LVM_FIRST + 57
 const LVIF_TEXT = 1
 const LVIF_STATE = 8
 const LVIS_FOCUSED = 1
@@ -148,10 +153,29 @@ const MB_ICONINFORMATION = 64
 const MB_YESNO = 4
 const MB_ICONWARNING = 48
 const IDYES = 6
+const CF_UNICODETEXT = 13
+const GMEM_MOVEABLE = 2
+const GMEM_ZEROINIT = 64
+const CLIPBOARD_OPEN_ATTEMPTS = 100
+const CLIPBOARD_RETRY_DELAY_MS = 10
+const TPM_RIGHTBUTTON = 2
+const TPM_RETURNCMD = 256
+const OFN_OVERWRITEPROMPT = 2
+const OFN_PATHMUSTEXIST = 0x00000800
+const FVIRTKEY = 1
+const FSHIFT = 4
+const FCONTROL = 8
+const VK_F5 = 0x74
+const VK_RETURN = 0x0D
+const VK_N = 0x4E
+const VK_W = 0x57
+const VK_E = 0x45
 
 const MENU_FILE_NEW = 1000
 const MENU_FILE_CLOSE = 1001
 const MENU_FILE_EXIT = 1002
+const MENU_FILE_CLOSE_WORKSHEET = 1003
+const MENU_FILE_EXPORT = 1004
 const MENU_ALIAS_CONNECT = 1100
 const MENU_ALIAS_NEW = 1101
 const MENU_ALIAS_EDIT = 1102
@@ -171,6 +195,16 @@ const MENU_HELP_ABOUT = 1500
 const MENU_OBJECT_USE = 1600
 const MENU_OBJECT_DESCRIBE = 1601
 const MENU_OBJECT_QUERY = 1602
+const MENU_OBJECT_SCHEMA = 1603
+
+const MENU_DATA_ADD = 1700
+const MENU_DATA_COPY = 1701
+const MENU_DATA_PASTE = 1702
+const MENU_DATA_EDIT = 1703
+const MENU_DATA_DELETE = 1704
+const MENU_DATA_APPLY = 1705
+const MENU_DATA_REVERT = 1706
+const MENU_DATA_PREVIEW = 1707
 
 // COLORREF palette shared by native SQL syntax rendering and its smoke tests.
 const SQL_COLOR_DEFAULT = 0x002B2B2B
@@ -204,12 +238,22 @@ struct WindowMinimum
   height
 end struct
 
+// Associates one top-level workbench window with its native shortcut table.
+struct AcceleratorBinding
+  // Identifies the top-level window receiving translated WM_COMMAND messages.
+  hwnd
+  // Owns the native HACCEL handle until the window is destroyed.
+  table
+end struct
+
 guiEvents = []
 guiClassRegistered = false
 guiClassNameWide = void
 modernGuiFontDpis = []
 modernGuiFonts = []
 windowMinimums = []
+acceleratorBindings = []
+closeEventWindows = []
 richEditLibrary = 0
 
 // Binds the native Windows CreateWindowExW API used by the GUI abstraction.
@@ -324,6 +368,44 @@ extern function MessageBoxW(hwnd as ptr, text as wstr, caption as wstr, kind as 
 extern function GetActiveWindow() from "user32.dll" symbol "GetActiveWindow" returns ptr
 // Routes Tab, Shift+Tab, Enter, and mnemonic input among ordinary child controls.
 extern function IsDialogMessageW(hwnd as ptr, message as bytes) from "user32.dll" symbol "IsDialogMessageW" returns bool
+// Returns a child control's numeric identifier for context-menu routing.
+extern function GetDlgCtrlID(hwnd as ptr) from "user32.dll" symbol "GetDlgCtrlID" returns i32
+// Reads the current pointer position for ListView cell and context-menu hit testing.
+extern function GetCursorPos(point as bytes) from "user32.dll" symbol "GetCursorPos" returns bool
+// Converts a screen-space point to coordinates relative to one native control.
+extern function ScreenToClient(hwnd as ptr, point as bytes) from "user32.dll" symbol "ScreenToClient" returns bool
+// Displays a popup menu and returns the selected command without blocking controller state.
+extern function TrackPopupMenuEx(menu as ptr, flags as u32, x as i32, y as i32, hwnd as ptr, parameters as ptr) from "user32.dll" symbol "TrackPopupMenuEx" returns u32
+// Releases a temporary native menu after a context action was selected.
+extern function DestroyMenu(menu as ptr) from "user32.dll" symbol "DestroyMenu" returns bool
+// Builds a native keyboard accelerator table from packed ACCEL records.
+extern function CreateAcceleratorTableW(entries as bytes, count as i32) from "user32.dll" symbol "CreateAcceleratorTableW" returns ptr
+// Translates one queued key message into its registered workbench command.
+extern function TranslateAcceleratorW(hwnd as ptr, table as ptr, message as bytes) from "user32.dll" symbol "TranslateAcceleratorW" returns i32
+// Releases a native keyboard accelerator table.
+extern function DestroyAcceleratorTable(table as ptr) from "user32.dll" symbol "DestroyAcceleratorTable" returns bool
+// Opens the process clipboard for Unicode row copy and paste.
+extern function OpenClipboard(hwnd as ptr) from "user32.dll" symbol "OpenClipboard" returns bool
+// Clears the clipboard after exclusive ownership was acquired.
+extern function EmptyClipboard() from "user32.dll" symbol "EmptyClipboard" returns bool
+// Publishes a movable Unicode memory block to the clipboard.
+extern function SetClipboardData(format as u32, memory as ptr) from "user32.dll" symbol "SetClipboardData" returns ptr
+// Retrieves one published clipboard memory block.
+extern function GetClipboardData(format as u32) from "user32.dll" symbol "GetClipboardData" returns ptr
+// Closes the clipboard ownership scope.
+extern function CloseClipboard() from "user32.dll" symbol "CloseClipboard" returns bool
+// Allocates a movable process heap block required by SetClipboardData.
+extern function GlobalAlloc(flags as u32, size as u64) from "kernel32.dll" symbol "GlobalAlloc" returns ptr
+// Locks a movable global memory block and returns its stable data pointer.
+extern function GlobalLock(memory as ptr) from "kernel32.dll" symbol "GlobalLock" returns ptr
+// Unlocks a movable global memory block after copying data.
+extern function GlobalUnlock(memory as ptr) from "kernel32.dll" symbol "GlobalUnlock" returns bool
+// Releases a global memory block when clipboard publication fails.
+extern function GlobalFree(memory as ptr) from "kernel32.dll" symbol "GlobalFree" returns ptr
+// Returns the byte size of a global memory block used by clipboard reads.
+extern function GlobalSize(memory as ptr) from "kernel32.dll" symbol "GlobalSize" returns u64
+// Opens the native Save As dialog for CSV export.
+extern function GetSaveFileNameW(configuration as bytes) from "comdlg32.dll" symbol "GetSaveFileNameW" returns bool
 
 // Binds the native Windows SendMessageWPtrBuffer API used by the GUI abstraction.
 extern function SendMessageWPtrBuffer(hwnd as ptr, message as u32, wParam as ptr, lParam as bytes) from "user32.dll" symbol "SendMessageW" returns ptr
@@ -385,6 +467,15 @@ function windowMinimum(hwnd)
   return void
 end function
 
+// Reports whether the owning controller asked to validate a native close request.
+function routesCloseEvent(hwnd)
+  global closeEventWindows
+  for each retainedHwnd in closeEventWindows
+    if retainedHwnd == hwnd then return true end if
+  end for
+  return false
+end function
+
 // Calculates a DPI-aware outer window size for the requested client area.
 function outerSizeForClient(width, height, dpiValue, hasMenu)
   rectangle = bytes(16, 0)
@@ -408,10 +499,26 @@ function windowProcedure(hwnd, message, wParam, lParam)
     if typeof(source) == "error" then source = 0 end if
     controlId = try(readPointer(header, 8))
     if typeof(controlId) == "error" then controlId = 0 end if
-    guiEvents = guiEvents + [GuiEvent(hwnd, message, controlId, endian.readI32LE(header, 16), source)]
+    notification = endian.readI32LE(header, 16)
+    if notification == -108 then
+      columnClick = bytes(32, 0)
+      RtlMoveMemory(columnClick, lParam, 32)
+      source = endian.readI32LE(columnClick, 28)
+    end if
+    guiEvents = guiEvents + [GuiEvent(hwnd, message, controlId, notification, source)]
+    return 0
+  end if
+  if message == WM_CONTEXTMENU then
+    controlId = 0
+    if wParam != 0 then controlId = GetDlgCtrlID(wParam) end if
+    guiEvents = guiEvents + [GuiEvent(hwnd, message, controlId, 0, wParam)]
     return 0
   end if
   if message == WM_SIZE then
+    guiEvents = guiEvents + [GuiEvent(hwnd, message, lParam & 65535, (lParam >> 16) & 65535, 0)]
+    return DefWindowProcW(hwnd, message, wParam, lParam)
+  end if
+  if message == WM_MOVE then
     guiEvents = guiEvents + [GuiEvent(hwnd, message, lParam & 65535, (lParam >> 16) & 65535, 0)]
     return DefWindowProcW(hwnd, message, wParam, lParam)
   end if
@@ -444,8 +551,12 @@ function windowProcedure(hwnd, message, wParam, lParam)
     end if
   end if
   if message == WM_CLOSE then
-    // Route native close-button destruction through the same lifecycle helper
-    // as controller-driven closes so per-window retained state is released.
+    // Long-lived controllers may need to confirm staged work before destruction;
+    // modal helpers keep the conventional immediate-close behavior.
+    if routesCloseEvent(hwnd) then
+      guiEvents = guiEvents + [GuiEvent(hwnd, message, 0, 0, 0)]
+      return 0
+    end if
     ignored = destroy(hwnd)
     return 0
   end if
@@ -601,15 +712,57 @@ function createTopMenu(items, identifiers)
   return menu
 end function
 
+// Displays a command-returning context menu at the current pointer position.
+function showContextMenu(owner, items, identifiers)
+  if owner == 0 or typeof(items) != "array" or typeof(identifiers) != "array" or len(items) == 0 or len(items) != len(identifiers) then return 0 end if
+  menu = createTopMenu(items, identifiers)
+  if menu == 0 then return 0 end if
+  point = bytes(8, 0)
+  if not GetCursorPos(point) then ignoredDestroy = DestroyMenu(menu); return 0 end if
+  command = TrackPopupMenuEx(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD, endian.readI32LE(point, 0), endian.readI32LE(point, 4), owner, void)
+  ignoredDestroy = DestroyMenu(menu)
+  if command != 0 then ignoredPost = PostMessageW(owner, WM_COMMAND, command, 0) end if
+  return command
+end function
+
+// Registers the workbench keyboard contract for one top-level window.
+function attachWorkbenchAccelerators(hwnd)
+  global acceleratorBindings
+  if hwnd == 0 then return false end if
+  commands = [MENU_SQL_EXECUTE, MENU_SQL_EXECUTE_SCRIPT, MENU_FILE_NEW, MENU_FILE_CLOSE_WORKSHEET, MENU_FILE_EXPORT]
+  keys = [VK_F5, VK_RETURN, VK_N, VK_W, VK_E]
+  modifiers = [FVIRTKEY, FVIRTKEY | FCONTROL | FSHIFT, FVIRTKEY | FCONTROL, FVIRTKEY | FCONTROL, FVIRTKEY | FCONTROL]
+  entries = bytes(len(commands) * 6, 0)
+  for index = 0 to len(commands) - 1
+    offset = index * 6
+    entries[offset] = modifiers[index]
+    endian.writeU16LE(entries, offset + 2, keys[index])
+    endian.writeU16LE(entries, offset + 4, commands[index])
+  end for
+  table = CreateAcceleratorTableW(entries, len(commands))
+  if table == 0 then return false end if
+  acceleratorBindings = acceleratorBindings + [AcceleratorBinding(hwnd, table)]
+  return true
+end function
+
+// Finds the keyboard accelerator table owned by an active top-level window.
+function acceleratorForWindow(hwnd)
+  global acceleratorBindings
+  for each binding in acceleratorBindings
+    if binding.hwnd == hwnd then return binding.table end if
+  end for
+  return 0
+end function
+
 // Attaches the complete MiniSQL workbench menu hierarchy to a top-level window.
 function attachWorkbenchMenuBar(hwnd)
   if hwnd == 0 then return false end if
   mainMenu = CreateMenu()
   if mainMenu == 0 then return false end if
-  fileMenu = createTopMenu(["New SQL Worksheet", "Disconnect", "Exit"], [MENU_FILE_NEW, MENU_FILE_CLOSE, MENU_FILE_EXIT])
+  fileMenu = createTopMenu(["New SQL Worksheet\tCtrl+N", "Close SQL Worksheet\tCtrl+W", "Export Active Result as CSV\tCtrl+E", "Disconnect", "Exit"], [MENU_FILE_NEW, MENU_FILE_CLOSE_WORKSHEET, MENU_FILE_EXPORT, MENU_FILE_CLOSE, MENU_FILE_EXIT])
   sessionMenu = createTopMenu(["Refresh Object Tree", "Commit Transaction", "Rollback Transaction"], [MENU_SESSION_REFRESH, MENU_SESSION_COMMIT, MENU_SESSION_ROLLBACK])
-  sqlMenu = createTopMenu(["Execute Current / Selection", "Execute Script", "Explain Current / Selection", "Stop Execution", "Clear Results"], [MENU_SQL_EXECUTE, MENU_SQL_EXECUTE_SCRIPT, MENU_SQL_EXPLAIN, MENU_SQL_CANCEL, MENU_SQL_CLEAR])
-  objectMenu = createTopMenu(["Open Table Details", "Select First 100 Rows"], [MENU_OBJECT_DESCRIBE, MENU_OBJECT_QUERY])
+  sqlMenu = createTopMenu(["Execute Current / Selection\tF5", "Execute Script\tCtrl+Shift+Enter", "Explain Current / Selection", "Stop Execution", "Clear Results"], [MENU_SQL_EXECUTE, MENU_SQL_EXECUTE_SCRIPT, MENU_SQL_EXPLAIN, MENU_SQL_CANCEL, MENU_SQL_CLEAR])
+  objectMenu = createTopMenu(["Open Table Details", "Open Schema Designer", "Select First 100 Rows"], [MENU_OBJECT_DESCRIBE, MENU_OBJECT_SCHEMA, MENU_OBJECT_QUERY])
   helpMenu = createTopMenu(["About MiniSQL Workbench"], [MENU_HELP_ABOUT])
   if fileMenu != 0 then ignoredFile = AppendMenuWPtr(mainMenu, MF_POPUP, fileMenu, "File") end if
   if sessionMenu != 0 then ignoredSession = AppendMenuWPtr(mainMenu, MF_POPUP, sessionMenu, "Session") end if
@@ -618,6 +771,7 @@ function attachWorkbenchMenuBar(hwnd)
   if helpMenu != 0 then ignoredHelp = AppendMenuWPtr(mainMenu, MF_POPUP, helpMenu, "Help") end if
   if not SetMenu(hwnd, mainMenu) then return false end if
   ignoredDraw = DrawMenuBar(hwnd)
+  ignoredAccelerators = attachWorkbenchAccelerators(hwnd)
   return true
 end function
 
@@ -750,17 +904,132 @@ function createEdit(parent, text, x, y, width, height, readOnly)
   return hwnd
 end function
 
-// Reads the RichEdit selection as an ordered pair of UTF-16 code-unit offsets.
+// Counts UTF-16 code units in one NUL-terminated Win32 string buffer.
+function utf16BufferUnits(wide)
+  if typeof(wide) != "bytes" or len(wide) < 2 or (len(wide) % 2) != 0 then return fail("utf16BufferUnits", "invalid UTF-16 buffer") end if
+  return divideInt(len(wide) - 2, 2)
+end function
+
+// Maps a public CRLF-preserving text offset to RichEdit's CR-only coordinate space.
+function richEditNativeOffset(text, textOffset)
+  if typeof(text) != "string" or typeof(textOffset) != "int" or textOffset < 0 then return fail("richEditNativeOffset", "invalid text offset") end if
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  documentUnits = try(utf16BufferUnits(wide))
+  if typeof(documentUnits) == "error" then return documentUnits end if
+  if textOffset > documentUnits then return fail("richEditNativeOffset", "text offset is outside the document") end if
+  nativeOffset = 0
+  previous = -1
+  if textOffset > 0 then
+    for index = 0 to textOffset - 1
+      current = endian.readU16LE(wide, index * 2)
+      if current != 10 or previous != 13 then nativeOffset = nativeOffset + 1 end if
+      previous = current
+    end for
+  end if
+  return nativeOffset
+end function
+
+// Maps RichEdit's CR-only selection coordinate back to public CRLF text units.
+function richEditDocumentOffset(text, nativeOffset)
+  if typeof(text) != "string" or typeof(nativeOffset) != "int" or nativeOffset < 0 then return fail("richEditDocumentOffset", "invalid native offset") end if
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  documentUnits = try(utf16BufferUnits(wide))
+  if typeof(documentUnits) == "error" then return documentUnits end if
+  documentOffset = 0
+  currentNative = 0
+  previous = -1
+  while documentOffset < documentUnits and currentNative < nativeOffset
+    current = endian.readU16LE(wide, documentOffset * 2)
+    if current != 10 or previous != 13 then currentNative = currentNative + 1 end if
+    previous = current
+    documentOffset = documentOffset + 1
+  end while
+  if currentNative != nativeOffset then return fail("richEditDocumentOffset", "native offset is outside the document") end if
+  // A caret after RichEdit's single paragraph mark corresponds to the public
+  // position after both code units of the CRLF pair.
+  while documentOffset < documentUnits
+    current = endian.readU16LE(wide, documentOffset * 2)
+    prior = -1
+    if documentOffset > 0 then prior = endian.readU16LE(wide, (documentOffset - 1) * 2) end if
+    if current == 10 and prior == 13 then documentOffset = documentOffset + 1 else break end if
+  end while
+  return documentOffset
+end function
+
+// Converts ordered presentation spans to RichEdit-native offsets in one linear pass.
+function richEditSyntaxRanges(text, spans)
+  if typeof(text) != "string" or typeof(spans) != "array" then return fail("richEditSyntaxRanges", "invalid text or spans") end if
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  documentUnits = try(utf16BufferUnits(wide))
+  if typeof(documentUnits) == "error" then return documentUnits end if
+  ranges = array(len(spans), void)
+  documentOffset = 0
+  nativeOffset = 0
+  previous = -1
+  if len(spans) > 0 then
+    for spanIndex = 0 to len(spans) - 1
+      span = spans[spanIndex]
+      if span.startOffset < documentOffset or span.endOffset < span.startOffset or span.endOffset > documentUnits then return fail("richEditSyntaxRanges", "syntax spans must be ordered and inside the document") end if
+      while documentOffset < span.startOffset
+        current = endian.readU16LE(wide, documentOffset * 2)
+        if current != 10 or previous != 13 then nativeOffset = nativeOffset + 1 end if
+        previous = current
+        documentOffset = documentOffset + 1
+      end while
+      nativeStart = nativeOffset
+      while documentOffset < span.endOffset
+        current = endian.readU16LE(wide, documentOffset * 2)
+        if current != 10 or previous != 13 then nativeOffset = nativeOffset + 1 end if
+        previous = current
+        documentOffset = documentOffset + 1
+      end while
+      ranges[spanIndex] = [nativeStart, nativeOffset, span.kind]
+    end for
+  end if
+  while documentOffset < documentUnits
+    current = endian.readU16LE(wide, documentOffset * 2)
+    if current != 10 or previous != 13 then nativeOffset = nativeOffset + 1 end if
+    previous = current
+    documentOffset = documentOffset + 1
+  end while
+  return [ranges, documentUnits, nativeOffset]
+end function
+
+// Reads the RichEdit selection in the CRLF-preserving offsets used by MiniSQL text.
 function textSelection(hwnd)
   if hwnd == 0 then return fail("textSelection", "hwnd is required") end if
   selection = bytes(8, 0)
   ignored = SendMessageWPtrBuffer(hwnd, EM_EXGETSEL, 0, selection)
-  return [endian.readI32LE(selection, 0), endian.readI32LE(selection, 4)]
+  text = try(getText(hwnd))
+  if typeof(text) == "error" then return text end if
+  startOffset = try(richEditDocumentOffset(text, endian.readI32LE(selection, 0)))
+  if typeof(startOffset) == "error" then return startOffset end if
+  endOffset = try(richEditDocumentOffset(text, endian.readI32LE(selection, 4)))
+  if typeof(endOffset) == "error" then return endOffset end if
+  return [startOffset, endOffset]
 end function
 
-// Selects one UTF-16 range without modifying editor contents.
+// Selects one CRLF-preserving UTF-16 range without modifying editor contents.
 function selectText(hwnd, startOffset, endOffset)
   if hwnd == 0 or typeof(startOffset) != "int" or typeof(endOffset) != "int" or startOffset < 0 or endOffset < startOffset then return fail("selectText", "invalid RichEdit range") end if
+  text = try(getText(hwnd))
+  if typeof(text) == "error" then return text end if
+  nativeStart = try(richEditNativeOffset(text, startOffset))
+  if typeof(nativeStart) == "error" then return nativeStart end if
+  nativeEnd = try(richEditNativeOffset(text, endOffset))
+  if typeof(nativeEnd) == "error" then return nativeEnd end if
+  selection = bytes(8, 0)
+  endian.writeI32LE(selection, 0, nativeStart)
+  endian.writeI32LE(selection, 4, nativeEnd)
+  ignored = SendMessageWIntBuffer(hwnd, EM_EXSETSEL, 0, selection)
+  return true
+end function
+
+// Selects one already translated RichEdit-native range.
+function selectNativeText(hwnd, startOffset, endOffset)
   selection = bytes(8, 0)
   endian.writeI32LE(selection, 0, startOffset)
   endian.writeI32LE(selection, 4, endOffset)
@@ -768,10 +1037,9 @@ function selectText(hwnd, startOffset, endOffset)
   return true
 end function
 
-// Applies one CHARFORMAT2 color/effect tuple to the current native selection.
-function applyCharacterStyle(hwnd, startOffset, endOffset, color, bold, italic)
-  selected = try(selectText(hwnd, startOffset, endOffset))
-  if typeof(selected) == "error" then return selected end if
+// Applies one CHARFORMAT2 color/effect tuple to a RichEdit-native range.
+function applyNativeCharacterStyle(hwnd, startOffset, endOffset, color, bold, italic)
+  selectNativeText(hwnd, startOffset, endOffset)
   format = bytes(CHARFORMAT2W_BYTES, 0)
   endian.writeU32LE(format, 0, CHARFORMAT2W_BYTES)
   endian.writeU32LE(format, 4, CFM_COLOR | CFM_BOLD | CFM_ITALIC)
@@ -784,36 +1052,34 @@ function applyCharacterStyle(hwnd, startOffset, endOffset, color, bold, italic)
   return true
 end function
 
-// Maps one presentation token kind to the stable light-theme SQL palette.
-function applySqlSpanStyle(hwnd, span)
-  if span.kind == 1 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_KEYWORD, true, false) end if
-  if span.kind == 2 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_STRING, false, false) end if
-  if span.kind == 3 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_NUMBER, false, false) end if
-  if span.kind == 4 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_COMMENT, false, true) end if
-  if span.kind == 5 then return applyCharacterStyle(hwnd, span.startOffset, span.endOffset, SQL_COLOR_QUOTED_IDENTIFIER, false, false) end if
+// Maps one translated token range to the stable light-theme SQL palette.
+function applySqlSpanStyle(hwnd, range)
+  if range[2] == 1 then return applyNativeCharacterStyle(hwnd, range[0], range[1], SQL_COLOR_KEYWORD, true, false) end if
+  if range[2] == 2 then return applyNativeCharacterStyle(hwnd, range[0], range[1], SQL_COLOR_STRING, false, false) end if
+  if range[2] == 3 then return applyNativeCharacterStyle(hwnd, range[0], range[1], SQL_COLOR_NUMBER, false, false) end if
+  if range[2] == 4 then return applyNativeCharacterStyle(hwnd, range[0], range[1], SQL_COLOR_COMMENT, false, true) end if
+  if range[2] == 5 then return applyNativeCharacterStyle(hwnd, range[0], range[1], SQL_COLOR_QUOTED_IDENTIFIER, false, false) end if
   return true
 end function
 
 // Recolors a complete worksheet while preserving its caret/selection exactly.
 function applySqlSyntaxStyles(hwnd, spans)
   if hwnd == 0 or typeof(spans) != "array" then return fail("applySqlSyntaxStyles", "invalid editor or spans") end if
+  editorText = try(getText(hwnd))
+  if typeof(editorText) == "error" then return editorText end if
+  converted = try(richEditSyntaxRanges(editorText, spans))
+  if typeof(converted) == "error" then return converted end if
+  ranges = converted[0]
+  nativeUnits = converted[2]
   original = try(textSelection(hwnd))
   if typeof(original) == "error" then return original end if
   scrollPosition = bytes(8, 0)
   ignoredScrollRead = SendMessageWPtrBuffer(hwnd, EM_GETSCROLLPOS, 0, scrollPosition)
-  textUnits = GetWindowTextLengthW(hwnd)
-  if textUnits < 0 then return fail("applySqlSyntaxStyles", "editor text length is invalid") end if
   ignoredRedrawOff = SendMessageWInt(hwnd, WM_SETREDRAW, 0, 0)
-  defaulted = try(applyCharacterStyle(hwnd, 0, textUnits, SQL_COLOR_DEFAULT, false, false))
+  defaulted = try(applyNativeCharacterStyle(hwnd, 0, nativeUnits, SQL_COLOR_DEFAULT, false, false))
   if typeof(defaulted) == "error" then ignoredRestore = try(selectText(hwnd, original[0], original[1])); ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition); ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0); return defaulted end if
-  for each span in spans
-    if span.startOffset < 0 or span.endOffset < span.startOffset or span.endOffset > textUnits then
-      ignoredRestore = try(selectText(hwnd, original[0], original[1]))
-      ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition)
-      ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0)
-      return fail("applySqlSyntaxStyles", "syntax span is outside the editor text")
-    end if
-    styled = try(applySqlSpanStyle(hwnd, span))
+  for each range in ranges
+    styled = try(applySqlSpanStyle(hwnd, range))
     if typeof(styled) == "error" then ignoredRestore = try(selectText(hwnd, original[0], original[1])); ignoredScrollRestore = SendMessageWIntBuffer(hwnd, EM_SETSCROLLPOS, 0, scrollPosition); ignoredRedrawOn = SendMessageWInt(hwnd, WM_SETREDRAW, 1, 0); return styled end if
   end for
   restored = try(selectText(hwnd, original[0], original[1]))
@@ -826,7 +1092,13 @@ end function
 
 // Reads the native color and effects of one character for deterministic tests.
 function sqlEditorStyleAt(hwnd, offset)
-  if hwnd == 0 or typeof(offset) != "int" or offset < 0 or offset >= GetWindowTextLengthW(hwnd) then return fail("sqlEditorStyleAt", "offset is outside the editor") end if
+  if hwnd == 0 or typeof(offset) != "int" or offset < 0 then return fail("sqlEditorStyleAt", "offset is outside the editor") end if
+  editorText = try(getText(hwnd))
+  if typeof(editorText) == "error" then return editorText end if
+  wide = try(utf16Bytes(editorText))
+  if typeof(wide) == "error" then return wide end if
+  documentUnits = try(utf16BufferUnits(wide))
+  if typeof(documentUnits) == "error" or offset >= documentUnits then return fail("sqlEditorStyleAt", "offset is outside the editor") end if
   original = try(textSelection(hwnd))
   if typeof(original) == "error" then return original end if
   selected = try(selectText(hwnd, offset, offset + 1))
@@ -868,7 +1140,7 @@ end function
 
 // Creates a double-buffered report ListView for structured query results.
 function createListView(parent, controlId, x, y, width, height)
-  hwnd = try(createChildId(parent, "SysListView32", "", x, y, width, height, WS_BORDER | WS_TABSTOP | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL, WS_EX_CLIENTEDGE, controlId))
+  hwnd = try(createChildId(parent, "SysListView32", "", x, y, width, height, WS_BORDER | WS_TABSTOP | WS_VSCROLL | WS_HSCROLL | LVS_REPORT | LVS_SHOWSELALWAYS, WS_EX_CLIENTEDGE, controlId))
   if typeof(hwnd) == "error" then return hwnd end if
   ignored = SendMessageWInt(hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER)
   return hwnd
@@ -886,6 +1158,12 @@ function setText(hwnd, text)
   return true
 end function
 
+// Sets the native placeholder text shown by an empty single-line editor.
+function setCueBanner(hwnd, text)
+  if hwnd == 0 or typeof(text) != "string" then return false end if
+  return SendMessageWText(hwnd, EM_SETCUEBANNER, 1, text) != 0
+end function
+
 // Reads complete Unicode control text into a validated MiniLang string.
 function getText(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.getText: hwnd is required") end if
@@ -896,6 +1174,93 @@ function getText(hwnd)
   actual = GetWindowTextW(hwnd, buffer, units + 1)
   if actual < 0 then return fail("getText", "GetWindowTextW failed") end if
   return wideBytesToText(buffer, actual)
+end function
+
+// Acquires the process-wide Windows clipboard with a bounded retry because
+// clipboard viewers and other desktop applications may own it momentarily.
+function openClipboardWithRetry(owner)
+  for attempt = 1 to CLIPBOARD_OPEN_ATTEMPTS
+    if OpenClipboard(owner) then return true end if
+    if attempt < CLIPBOARD_OPEN_ATTEMPTS then Sleep(CLIPBOARD_RETRY_DELAY_MS) end if
+  end for
+  return false
+end function
+
+// Replaces the Windows clipboard with one NUL-terminated Unicode string.
+function clipboardSetText(owner, text)
+  if typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.win32_gui.clipboardSetText: text must be a string") end if
+  wide = try(utf16Bytes(text))
+  if typeof(wide) == "error" then return wide end if
+  if not openClipboardWithRetry(owner) then return fail("clipboardSetText", "OpenClipboard remained busy after retrying; Win32 error " + GetLastError()) end if
+  if not EmptyClipboard() then ignoredClose = CloseClipboard(); return fail("clipboardSetText", "EmptyClipboard failed") end if
+  memory = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(wide))
+  if memory == 0 then ignoredClose = CloseClipboard(); return fail("clipboardSetText", "GlobalAlloc failed") end if
+  pointer = GlobalLock(memory)
+  if pointer == 0 then ignoredFree = GlobalFree(memory); ignoredClose = CloseClipboard(); return fail("clipboardSetText", "GlobalLock failed") end if
+  RtlMoveMemoryToPtr(pointer, wide, len(wide))
+  ignoredUnlock = GlobalUnlock(memory)
+  published = SetClipboardData(CF_UNICODETEXT, memory)
+  ignoredClose = CloseClipboard()
+  if published == 0 then ignoredFree = GlobalFree(memory); return fail("clipboardSetText", "SetClipboardData failed") end if
+  return true
+end function
+
+// Reads Unicode clipboard text into a dynamically sized MiniLang string.
+function clipboardText(owner)
+  if not openClipboardWithRetry(owner) then return fail("clipboardText", "OpenClipboard remained busy after retrying; Win32 error " + GetLastError()) end if
+  memory = GetClipboardData(CF_UNICODETEXT)
+  if memory == 0 then ignoredClose = CloseClipboard(); return fail("clipboardText", "clipboard does not contain Unicode text") end if
+  pointer = GlobalLock(memory)
+  if pointer == 0 then ignoredClose = CloseClipboard(); return fail("clipboardText", "GlobalLock failed") end if
+  size = GlobalSize(memory)
+  if size < 2 or size > 67108864 then ignoredUnlock = GlobalUnlock(memory); ignoredClose = CloseClipboard(); return fail("clipboardText", "clipboard text size is invalid") end if
+  wide = bytes(size, 0)
+  RtlMoveMemory(wide, pointer, size)
+  ignoredUnlock = GlobalUnlock(memory)
+  ignoredClose = CloseClipboard()
+  units = 0
+  while units * 2 + 1 < len(wide) and (wide[units * 2] != 0 or wide[units * 2 + 1] != 0)
+    units = units + 1
+  end while
+  return wideBytesToText(wide, units)
+end function
+
+// Opens a native Save As dialog and returns an absolute CSV path or an empty cancellation result.
+function chooseCsvPath(owner, defaultName)
+  if typeof(defaultName) != "string" or len(defaultName) == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.chooseCsvPath: default name is required") end if
+  path = bytes(65536, 0)
+  initial = try(utf16Bytes(defaultName))
+  if typeof(initial) == "error" then return initial end if
+  if len(initial) > len(path) then return fail("chooseCsvPath", "default file name is too long") end if
+  for index = 0 to len(initial) - 1
+    path[index] = initial[index]
+  end for
+  filter = bytes("CSV files (*.csv)") + bytes([0]) + bytes("*.csv") + bytes([0]) + bytes("All files (*.*)") + bytes([0]) + bytes("*.*") + bytes([0, 0])
+  // Convert the ASCII filter explicitly to UTF-16 because embedded NULs are significant.
+  wideFilter = bytes(len(filter) * 2, 0)
+  for index = 0 to len(filter) - 1
+    wideFilter[index * 2] = filter[index]
+  end for
+  title = try(utf16Bytes("Export MiniSQL result as CSV"))
+  extension = try(utf16Bytes("csv"))
+  if typeof(title) == "error" then return title end if
+  if typeof(extension) == "error" then return extension end if
+  configuration = bytes(152, 0)
+  endian.writeU32LE(configuration, 0, 152)
+  writePointer(configuration, 8, owner)
+  writePointer(configuration, 24, nativeBytesPtr(wideFilter))
+  endian.writeU32LE(configuration, 44, 1)
+  writePointer(configuration, 48, nativeBytesPtr(path))
+  endian.writeU32LE(configuration, 56, len(path) / 2)
+  writePointer(configuration, 88, nativeBytesPtr(title))
+  endian.writeU32LE(configuration, 96, OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST)
+  writePointer(configuration, 104, nativeBytesPtr(extension))
+  if not GetSaveFileNameW(configuration) then return "" end if
+  units = 0
+  while units * 2 + 1 < len(path) and (path[units * 2] != 0 or path[units * 2 + 1] != 0)
+    units = units + 1
+  end while
+  return wideBytesToText(path, units)
 end function
 
 // Reads a password directly into bytes and clears both temporary UTF-16 storage and the editor.
@@ -1122,6 +1487,47 @@ function listViewSelectedIndex(hwnd)
   return SendMessageWInt(hwnd, LVM_GETNEXTITEM, -1, LVNI_SELECTED)
 end function
 
+// Returns every selected report-row index in ascending native order.
+function listViewSelectedIndices(hwnd)
+  if hwnd == 0 then return [] end if
+  selected = []
+  current = SendMessageWInt(hwnd, LVM_GETNEXTITEM, -1, LVNI_SELECTED)
+  while current >= 0
+    selected = selected + [current]
+    current = SendMessageWInt(hwnd, LVM_GETNEXTITEM, current, LVNI_SELECTED)
+  end while
+  return selected
+end function
+
+// Reads one report cell through a dynamically sized LVITEMW text buffer.
+function listViewCellText(hwnd, rowIndex, columnIndex)
+  if hwnd == 0 or typeof(rowIndex) != "int" or typeof(columnIndex) != "int" or rowIndex < 0 or columnIndex < 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listViewCellText: invalid cell") end if
+  wide = bytes(65536, 0)
+  item = bytes(88, 0)
+  endian.writeI32LE(item, 4, rowIndex)
+  endian.writeI32LE(item, 8, columnIndex)
+  writePointer(item, 24, nativeBytesPtr(wide))
+  endian.writeI32LE(item, 32, len(wide) / 2)
+  ignored = SendMessageWIntBuffer(hwnd, LVM_GETITEMTEXTW, rowIndex, item)
+  units = 0
+  while units * 2 + 1 < len(wide) and (wide[units * 2] != 0 or wide[units * 2 + 1] != 0)
+    units = units + 1
+  end while
+  return wideBytesToText(wide, units)
+end function
+
+// Returns the report row and subitem under the pointer, or [-1, -1].
+function listViewPointerCell(hwnd)
+  if hwnd == 0 then return [-1, -1] end if
+  point = bytes(8, 0)
+  if not GetCursorPos(point) or not ScreenToClient(hwnd, point) then return [-1, -1] end if
+  hit = bytes(40, 0)
+  endian.writeI32LE(hit, 0, endian.readI32LE(point, 0))
+  endian.writeI32LE(hit, 4, endian.readI32LE(point, 4))
+  ignored = SendMessageWIntBuffer(hwnd, LVM_SUBITEMHITTEST, -1, hit)
+  return [endian.readI32LE(hit, 12), endian.readI32LE(hit, 16)]
+end function
+
 // Returns the number of report rows currently rendered in a native grid.
 function listViewRowCount(hwnd)
   if hwnd == 0 then return 0 end if
@@ -1131,12 +1537,32 @@ end function
 // Selects and focuses one report row for deterministic keyboard and test workflows.
 function listViewSelect(hwnd, rowIndex)
   if hwnd == 0 or typeof(rowIndex) != "int" or rowIndex < 0 then return false end if
+  cleared = bytes(88, 0)
+  endian.writeU32LE(cleared, 0, LVIF_STATE)
+  endian.writeU32LE(cleared, 12, 0)
+  endian.writeU32LE(cleared, 16, LVIS_SELECTED | LVIS_FOCUSED)
+  ignoredClear = SendMessageWIntBuffer(hwnd, LVM_SETITEMSTATE, -1, cleared)
   item = bytes(88, 0)
   endian.writeU32LE(item, 0, LVIF_STATE)
   endian.writeU32LE(item, 12, LVIS_SELECTED | LVIS_FOCUSED)
   endian.writeU32LE(item, 16, LVIS_SELECTED | LVIS_FOCUSED)
   ignored = SendMessageWIntBuffer(hwnd, LVM_SETITEMSTATE, rowIndex, item)
   return listViewSelectedIndex(hwnd) == rowIndex
+end function
+
+// Adds one row to the current report selection without clearing other rows.
+function listViewAddSelection(hwnd, rowIndex)
+  if hwnd == 0 or typeof(rowIndex) != "int" or rowIndex < 0 then return false end if
+  item = bytes(88, 0)
+  endian.writeU32LE(item, 0, LVIF_STATE)
+  endian.writeU32LE(item, 12, LVIS_SELECTED)
+  endian.writeU32LE(item, 16, LVIS_SELECTED)
+  ignored = SendMessageWIntBuffer(hwnd, LVM_SETITEMSTATE, rowIndex, item)
+  selected = listViewSelectedIndices(hwnd)
+  for each value in selected
+    if value == rowIndex then return true end if
+  end for
+  return false
 end function
 
 // Moves a control using physical Win32 coordinates and repaints immediately.
@@ -1194,6 +1620,18 @@ function setMinimumClientSizeDip(hwnd, width, height)
   return true
 end function
 
+// Selects whether WM_CLOSE is queued for controller validation or destroys immediately.
+function setCloseEventRouting(hwnd, enabled)
+  global closeEventWindows
+  retained = []
+  for each retainedHwnd in closeEventWindows
+    if retainedHwnd != hwnd then retained = retained + [retainedHwnd] end if
+  end for
+  closeEventWindows = retained
+  if enabled then closeEventWindows = closeEventWindows + [hwnd] end if
+  return true
+end function
+
 // Resizes a top-level window so its client area matches logical dimensions exactly.
 function setClientSizeDip(hwnd, width, height, hasMenu)
   if hwnd == 0 or typeof(width) != "int" or typeof(height) != "int" then return false end if
@@ -1216,6 +1654,27 @@ function controlRectDip(parent, child)
   right = unscaleDip(parent, endian.readI32LE(rectangle, 8))
   bottom = unscaleDip(parent, endian.readI32LE(rectangle, 12))
   return [left, top, right - left, bottom - top]
+end function
+
+// Returns one top-level window rectangle in physical desktop pixels for persistence.
+function topLevelRect(hwnd)
+  if hwnd == 0 then return fail("topLevelRect", "hwnd is required") end if
+  rectangle = bytes(16, 0)
+  if not GetWindowRect(hwnd, rectangle) then return fail("topLevelRect", "GetWindowRect failed") end if
+  left = endian.readI32LE(rectangle, 0)
+  top = endian.readI32LE(rectangle, 4)
+  right = endian.readI32LE(rectangle, 8)
+  bottom = endian.readI32LE(rectangle, 12)
+  return [left, top, right - left, bottom - top]
+end function
+
+// Restores a validated top-level physical desktop rectangle.
+function setTopLevelRect(hwnd, rectangle)
+  if hwnd == 0 or typeof(rectangle) != "array" or len(rectangle) != 4 then return false end if
+  if typeof(rectangle[0]) != "int" or typeof(rectangle[1]) != "int" or typeof(rectangle[2]) != "int" or typeof(rectangle[3]) != "int" then return false end if
+  if rectangle[0] < -32768 or rectangle[0] > 32768 or rectangle[1] < -32768 or rectangle[1] > 32768 then return false end if
+  if rectangle[2] < 640 or rectangle[3] < 480 or rectangle[2] > 16384 or rectangle[3] > 16384 then return false end if
+  return SetWindowPos(hwnd, 0, rectangle[0], rectangle[1], rectangle[2], rectangle[3], SWP_NOZORDER | SWP_NOACTIVATE)
 end function
 
 // Shows or hides one control without changing its layout rectangle.
@@ -1299,7 +1758,11 @@ function pumpMessages()
   while pumped < 128 and PeekMessageW(message, void, 0, 0, PM_REMOVE)
     active = GetActiveWindow()
     handled = false
-    if active != 0 then handled = IsDialogMessageW(active, message) end if
+    if active != 0 then
+      accelerator = acceleratorForWindow(active)
+      if accelerator != 0 then handled = TranslateAcceleratorW(active, accelerator, message) != 0 end if
+      if not handled then handled = IsDialogMessageW(active, message) end if
+    end if
     if not handled then
       ignoredTranslate = TranslateMessage(message)
       ignoredDispatch = DispatchMessageW(message)
@@ -1317,13 +1780,23 @@ end function
 
 // Destroys a top-level window and releases its retained minimum-size policy.
 function destroy(hwnd)
-  global windowMinimums
+  global windowMinimums, acceleratorBindings, closeEventWindows
   if hwnd == 0 then return true end if
   retained = []
   for each minimum in windowMinimums
     if minimum.hwnd != hwnd then retained = retained + [minimum] end if
   end for
   windowMinimums = retained
+  retainedAccelerators = []
+  for each binding in acceleratorBindings
+    if binding.hwnd == hwnd then ignoredAccelerator = DestroyAcceleratorTable(binding.table) else retainedAccelerators = retainedAccelerators + [binding] end if
+  end for
+  acceleratorBindings = retainedAccelerators
+  retainedCloseEvents = []
+  for each retainedHwnd in closeEventWindows
+    if retainedHwnd != hwnd then retainedCloseEvents = retainedCloseEvents + [retainedHwnd] end if
+  end for
+  closeEventWindows = retainedCloseEvents
   destroyed = DestroyWindow(hwnd)
   return destroyed != 0
 end function

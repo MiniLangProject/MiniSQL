@@ -38,9 +38,10 @@ is `M48-M50R3`.
   parallel network/framing work, parallel read-only query plans on one database,
   and exclusive, writer-prioritized mutation execution;
 - a native Windows MiniSQL Workbench with saved aliases, TLS/pinning, object
-  browsing, syntax-colored SQL worksheets, current/selection and whole-script
-  execution, bookmarks, history, native metadata/data grids, and safe keyed
-  row insertion, copying, editing, deletion, and refresh workflows;
+  browsing, multiple syntax-colored SQL worksheets, current/selection and
+  whole-script execution, searchable history, CSV export, native metadata/data
+  grids, paged filtering and sorting, staged bulk row changes, and a guarded
+  schema designer with exact DDL previews;
 - deterministic 106-phase cumulative test suite and reproducible Windows-x64
   release packaging.
 
@@ -135,7 +136,8 @@ Or open the graphical MiniSQL Workbench:
 ```
 
 See [`docs/release/WORKBENCH.md`](docs/release/WORKBENCH.md) for its
-SQuirreL-style MiniSQL workflow, aliases, native TLS, and certificate pinning.
+SQuirreL-style MiniSQL workflow, data and schema editors, aliases, native TLS,
+and certificate pinning.
 
 Example SQL:
 
@@ -176,6 +178,20 @@ A source-only static validation is available with:
 ```powershell
 .\test.ps1 -StaticOnly
 ```
+
+Restart-aware capacity and memory regressions are available separately for
+`1`, `5`, and `10` GiB logical payloads. They use the same Python compiler,
+default to 32 MiB write processes and enforce a 512 MiB private-memory ceiling:
+
+```powershell
+python .\tests\performance\capacity_regression.py --profile 1 --vacuum
+```
+
+The profile validates automatic WAL reset, recovery between every chunk,
+indexed restart latency, projection/range pushdown, the configured read cache,
+large overflow values, and post-`VACUUM` data integrity. See
+[`tests/performance/README.md`](tests/performance/README.md) for the `5` and
+`10` GiB commands and tunable guardrails.
 
 ## Build the binary distribution
 

@@ -38,7 +38,9 @@ function main(args)
     return 1
   end if
   path = args[0]
+  appendPath = path + ".append"
   cleanup(path)
+  cleanup(appendPath)
   state = testkit.create()
 
   rawPage = slotted.create(4096, 99, 0)
@@ -74,6 +76,22 @@ function main(args)
   testkit.equal(state, slotted.entryGeneration(saturatedPage, saturatedSlot), 65535, "generation saturates without wrap")
   nextSlot = slotted.insert(saturatedPage, bytes("new"))
   testkit.record(state, nextSlot != saturatedSlot, "saturated deleted slot is permanently retired")
+
+  // Near-page-sized rows must advance through the append frontier without
+  // rescanning every older full page for every insertion.
+  appendHeap = heap_file.create(appendPath, 4096, 101, databaseId())
+  appendId = void
+  for index = 0 to 255
+    appendId = heap_file.insert(appendHeap, makeRecord(index, 3000))
+  end for
+  testkit.equal(state, appendHeap.pagedFile.pageCount, 256, "append-heavy rows allocate one page each")
+  testkit.equal(state, appendId.pageNumber, 255, "append frontier advances linearly")
+  testkit.equal(state, appendHeap.insertionPageHint, 255, "heap retains the latest insertion page")
+  heap_file.close(appendHeap)
+  reopenedAppend = heap_file.open(appendPath)
+  testkit.equal(state, reopenedAppend.insertionPageHint, 255, "reopened append-only heap resumes at its frontier")
+  heap_file.close(reopenedAppend)
+  cleanup(appendPath)
 
   heap = heap_file.create(path, 4096, 99, databaseId())
   ids = []
@@ -112,6 +130,7 @@ function main(args)
   heap_file.close(heap)
 
   reopened = heap_file.open(path)
+  testkit.equal(state, reopened.insertionPageHint, ids[0].pageNumber, "reopen discovers durable deleted-slot space")
   for index = 0 to 199
     if deleted[index] then
       testkit.errorCode(state, try(heap_file.read(reopened, ids[index])), heap_file.ROW_NOT_FOUND, "deleted row after reopen " + index)

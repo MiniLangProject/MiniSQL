@@ -16,6 +16,8 @@ import minisql.sql.dialect as dialect
 const INVALID_ARGUMENT = 9001
 const MAX_RESULT_TABS = 32
 const MAX_HISTORY_ITEMS = 100
+const DEFAULT_DATA_PAGE_SIZE = 100
+const MAX_DATA_PAGE_SIZE = 1000
 
 const SQL_STYLE_KEYWORD = 1
 const SQL_STYLE_STRING = 2
@@ -51,6 +53,40 @@ struct DetailGrid
   columns
   // Stores ordered textual rows aligned with columns.
   rows
+end struct
+
+// Describes one stable server-side page of a table data browser.
+struct DataBrowseOptions
+  // Stores an optional SQL predicate entered in the WHERE filter box.
+  filterText
+  // Stores an optional exact result-column name used for ORDER BY.
+  sortColumn
+  // Selects ascending ordering when a sort column is present.
+  ascending
+  // Stores the zero-based page number.
+  page
+  // Stores the bounded number of rows requested per page.
+  pageSize
+end struct
+
+// Retains one unapplied row change so the grid can preview and later commit it.
+struct PendingDataChange
+  // Stores INSERT, UPDATE, or DELETE for presentation.
+  kind
+  // Stores the generated, key-constrained SQL statement.
+  sqlText
+  // Stores -1 for inserts or the original page-row index for updates/deletes.
+  rowIndex
+  // Stores editor values aligned with DESCRIBE metadata when available.
+  values
+end struct
+
+// Retains one independent SQL worksheet tab.
+struct Worksheet
+  // Stores the short user-visible tab title.
+  title
+  // Stores the complete SQL editor contents for this worksheet.
+  sqlText
 end struct
 
 // Captures the metadata pages shown for a selected table.
@@ -207,6 +243,29 @@ function quotedIdentifier(value)
   quoted = decode(output)
   if typeof(quoted) != "string" then return fail("quotedIdentifier", "identifier is not valid UTF-8") end if
   return quoted
+end function
+
+// Quotes a one- or two-part MiniSQL object name without treating a dot as data.
+function quotedObjectName(value)
+  if typeof(value) != "string" or len(bytes(value)) == 0 then return fail("quotedObjectName", "object name must be a non-empty string") end if
+  raw = bytes(value)
+  separator = -1
+  for index = 0 to len(raw) - 1
+    if raw[index] == 46 then
+      if separator >= 0 then return fail("quotedObjectName", "object name may contain at most one schema separator") end if
+      separator = index
+    end if
+  end for
+  if separator < 0 then return quotedIdentifier(value) end if
+  if separator == 0 or separator == len(raw) - 1 then return fail("quotedObjectName", "schema and object names must be non-empty") end if
+  schemaName = decode(slice(raw, 0, separator))
+  objectName = decode(slice(raw, separator + 1, len(raw) - separator - 1))
+  if typeof(schemaName) != "string" or typeof(objectName) != "string" then return fail("quotedObjectName", "object name is not valid UTF-8") end if
+  quotedSchema = try(quotedIdentifier(schemaName))
+  if typeof(quotedSchema) == "error" then return quotedSchema end if
+  quotedObject = try(quotedIdentifier(objectName))
+  if typeof(quotedObject) == "error" then return quotedObject end if
+  return quotedSchema + "." + quotedObject
 end function
 
 // Quotes user-entered text as one SQL string literal and doubles embedded apostrophes.
@@ -743,6 +802,65 @@ function executeSql(state, sqlText)
   return view
 end function
 
+// Executes a generated mutation batch atomically, using a savepoint inside an existing transaction.
+function executeAtomicSql(state, sqlText)
+  if state is not FullClientState then return fail("executeAtomicSql", "state must be FullClientState") end if
+  text = try(console.trimAscii(sqlText))
+  if typeof(text) == "error" or len(text) == 0 then return fail("executeAtomicSql", "SQL text must be non-empty") end if
+  statements = try(console.splitSqlStatements(text))
+  if typeof(statements) == "error" then return statements end if
+  if len(statements) == 0 then return fail("executeAtomicSql", "finish every generated statement with a semicolon") end if
+  started = clock.monotonicMilliseconds()
+  nested = state.transactionActive
+  beginSql = "BEGIN;"
+  finishSql = "COMMIT;"
+  rollbackSql = "ROLLBACK;"
+  if nested then beginSql = "SAVEPOINT minisql_workbench_apply;"; finishSql = "RELEASE SAVEPOINT minisql_workbench_apply;"; rollbackSql = "ROLLBACK TO SAVEPOINT minisql_workbench_apply;" end if
+  opened = try(client.query(state.remoteClient, beginSql))
+  if typeof(opened) == "error" then return opened end if
+  if opened.status == constants.STATUS_ERROR then return responseFailure(opened, "executeAtomicSql") end if
+  responses = []
+  commandCount = 0
+  rowCount = 0
+  success = true
+  lines = []
+  for each statement in statements
+    if success then
+      response = try(client.query(state.remoteClient, statement))
+      if typeof(response) == "error" then
+        ignoredRollback = try(client.query(state.remoteClient, rollbackSql))
+        if nested then ignoredRelease = try(client.query(state.remoteClient, finishSql)) end if
+        return response
+      end if
+      responses = responses + [response]
+      lines = lines + [renderResponse(response)]
+      if response.status == constants.STATUS_ERROR then success = false end if
+      if response.status == constants.STATUS_COMMAND then commandCount = commandCount + 1 end if
+      if response.status == constants.STATUS_ROWS then rowCount = len(response.rows) end if
+    end if
+  end for
+  if success then
+    finished = try(client.query(state.remoteClient, finishSql))
+    if typeof(finished) == "error" then return finished end if
+    if finished.status == constants.STATUS_ERROR then
+      success = false
+      lines = lines + [renderResponse(finished)]
+      ignoredFinishRollback = try(client.query(state.remoteClient, rollbackSql))
+      if nested then ignoredFinishRelease = try(client.query(state.remoteClient, finishSql)) end if
+    end if
+  else
+    ignoredRollback = try(client.query(state.remoteClient, rollbackSql))
+    if nested then ignoredRelease = try(client.query(state.remoteClient, finishSql)) end if
+  end if
+  elapsed = clock.monotonicMilliseconds() - started
+  view = QueryView(len(statements), commandCount, rowCount, success, lineJoin(lines))
+  state.queryText = historySql(text)
+  state.queryView = view
+  ignoredTab = addResultTab(state, text, view, responses, elapsed)
+  if success then state.statusText = "Applied " + len(statements) + " atomic change(s) in " + elapsed + " ms" else state.statusText = "Atomic change batch rolled back in " + elapsed + " ms" end if
+  return view
+end function
+
 // Executes EXPLAIN for the editor selection.
 function explainSql(state, sqlText)
   text = try(console.trimAscii(sqlText))
@@ -803,7 +921,7 @@ end function
 
 // Converts validated DESCRIBE metadata into a readable CREATE TABLE preview.
 function ddlFromDescribe(tableName, response)
-  quoted = try(quotedIdentifier(tableName))
+  quoted = try(quotedObjectName(tableName))
   if typeof(quoted) == "error" then return "" end if
   output = "CREATE TABLE " + quoted + " (\r\n"
   if len(response.rows) > 0 then
@@ -948,6 +1066,151 @@ function splitIndexColumns(text)
   return values
 end function
 
+// Rejects statement separators and SQL comments from a user-entered SQL fragment.
+function validatedSqlFragment(value, description, allowEmpty)
+  if typeof(value) != "string" or typeof(description) != "string" or typeof(allowEmpty) != "bool" then return fail("validatedSqlFragment", "invalid fragment request") end if
+  trimmed = try(console.trimAscii(value))
+  if typeof(trimmed) == "error" then return trimmed end if
+  if len(trimmed) == 0 then
+    if allowEmpty then return "" end if
+    return fail("validatedSqlFragment", description + " must be non-empty")
+  end if
+  if textContains(trimmed, ";") or textContains(trimmed, "--") or textContains(trimmed, "/*") or textContains(trimmed, "*/") then return fail("validatedSqlFragment", description + " must contain one SQL fragment without comments or semicolons") end if
+  return trimmed
+end function
+
+// Constructs validated table-browser paging, filter, and ordering options.
+function createDataBrowseOptions(filterText, sortColumn, ascending, page, pageSize)
+  if typeof(filterText) != "string" or typeof(sortColumn) != "string" or typeof(ascending) != "bool" or typeof(page) != "int" or typeof(pageSize) != "int" then return fail("createDataBrowseOptions", "invalid data browser options") end if
+  if page < 0 then return fail("createDataBrowseOptions", "page must be non-negative") end if
+  if pageSize < 1 or pageSize > MAX_DATA_PAGE_SIZE then return fail("createDataBrowseOptions", "page size must be between 1 and " + MAX_DATA_PAGE_SIZE) end if
+  checkedFilter = try(validatedSqlFragment(filterText, "WHERE filter", true))
+  if typeof(checkedFilter) == "error" then return checkedFilter end if
+  if len(sortColumn) > 0 then
+    checkedSort = try(quotedIdentifier(sortColumn))
+    if typeof(checkedSort) == "error" then return checkedSort end if
+  end if
+  return DataBrowseOptions(checkedFilter, sortColumn, ascending, page, pageSize)
+end function
+
+// Returns the default first-page data-browser options.
+function defaultDataBrowseOptions()
+  return DataBrowseOptions("", "", true, 0, DEFAULT_DATA_PAGE_SIZE)
+end function
+
+// Builds the bounded SELECT used by the editable table browser.
+function dataSelectSql(tableName, options)
+  if options is not DataBrowseOptions then return fail("dataSelectSql", "options must be DataBrowseOptions") end if
+  tableSql = try(quotedObjectName(tableName))
+  if typeof(tableSql) == "error" then return tableSql end if
+  sqlText = "SELECT * FROM " + tableSql
+  if len(options.filterText) > 0 then sqlText = sqlText + " WHERE " + options.filterText end if
+  if len(options.sortColumn) > 0 then
+    columnSql = try(quotedIdentifier(options.sortColumn))
+    if typeof(columnSql) == "error" then return columnSql end if
+    direction = " ASC"
+    if not options.ascending then direction = " DESC" end if
+    sqlText = sqlText + " ORDER BY " + columnSql + direction
+  end if
+  return sqlText + " LIMIT " + options.pageSize + " OFFSET " + (options.page * options.pageSize)
+end function
+
+// Builds the matching filtered row-count query used by pagination controls.
+function dataCountSql(tableName, options)
+  if options is not DataBrowseOptions then return fail("dataCountSql", "options must be DataBrowseOptions") end if
+  tableSql = try(quotedObjectName(tableName))
+  if typeof(tableSql) == "error" then return tableSql end if
+  sqlText = "SELECT COUNT(*) AS row_count FROM " + tableSql
+  if len(options.filterText) > 0 then sqlText = sqlText + " WHERE " + options.filterText end if
+  return sqlText
+end function
+
+// Returns the schema-designer actions in stable native-list order.
+function schemaActionLines()
+  return ["Create table", "Add column", "Rename column", "Drop column", "Create index", "Drop index", "Add constraint", "Drop constraint", "Rename table", "Drop table"]
+end function
+
+// Quotes a comma-separated identifier list for CREATE INDEX generation.
+function quotedColumnList(text)
+  values = splitIndexColumns(text)
+  if len(values) == 0 then return fail("quotedColumnList", "at least one column is required") end if
+  output = ""
+  for index = 0 to len(values) - 1
+    quoted = try(quotedIdentifier(values[index]))
+    if typeof(quoted) == "error" then return quoted end if
+    if index > 0 then output = output + ", " end if
+    output = output + quoted
+  end for
+  return output
+end function
+
+// Generates one previewable schema mutation from the structured designer fields.
+function schemaEditorSql(action, tableName, objectName, definition, optionText)
+  if typeof(action) != "int" or action < 0 or action >= len(schemaActionLines()) then return fail("schemaEditorSql", "schema action is invalid") end if
+  if typeof(tableName) != "string" or typeof(objectName) != "string" or typeof(definition) != "string" or typeof(optionText) != "string" then return fail("schemaEditorSql", "schema fields must be strings") end if
+  tableSql = ""
+  if action != 5 then
+    tableSql = try(quotedObjectName(tableName))
+    if typeof(tableSql) == "error" then return tableSql end if
+  end if
+  if action == 0 then
+    body = try(validatedSqlFragment(definition, "column definitions", false))
+    if typeof(body) == "error" then return body end if
+    return "CREATE TABLE " + tableSql + " (" + body + ");"
+  end if
+  if action == 1 then
+    columnSql = try(quotedIdentifier(objectName))
+    if typeof(columnSql) == "error" then return columnSql end if
+    body = try(validatedSqlFragment(definition, "column definition", false))
+    if typeof(body) == "error" then return body end if
+    return "ALTER TABLE " + tableSql + " ADD COLUMN " + columnSql + " " + body + ";"
+  end if
+  if action == 2 then
+    oldSql = try(quotedIdentifier(objectName))
+    if typeof(oldSql) == "error" then return oldSql end if
+    newSql = try(quotedIdentifier(optionText))
+    if typeof(newSql) == "error" then return newSql end if
+    return "ALTER TABLE " + tableSql + " RENAME COLUMN " + oldSql + " TO " + newSql + ";"
+  end if
+  if action == 3 then
+    columnSql = try(quotedIdentifier(objectName))
+    if typeof(columnSql) == "error" then return columnSql end if
+    return "ALTER TABLE " + tableSql + " DROP COLUMN " + columnSql + ";"
+  end if
+  if action == 4 then
+    indexSql = try(quotedObjectName(objectName))
+    if typeof(indexSql) == "error" then return indexSql end if
+    columnsSql = try(quotedColumnList(definition))
+    if typeof(columnsSql) == "error" then return columnsSql end if
+    uniqueText = ""
+    if asciiUpper(try(console.trimAscii(optionText))) == "UNIQUE" then uniqueText = "UNIQUE " end if
+    return "CREATE " + uniqueText + "INDEX " + indexSql + " ON " + tableSql + " (" + columnsSql + ");"
+  end if
+  if action == 5 then
+    indexSql = try(quotedObjectName(objectName))
+    if typeof(indexSql) == "error" then return indexSql end if
+    return "DROP INDEX " + indexSql + ";"
+  end if
+  if action == 6 then
+    constraintSql = try(quotedIdentifier(objectName))
+    if typeof(constraintSql) == "error" then return constraintSql end if
+    body = try(validatedSqlFragment(definition, "constraint definition", false))
+    if typeof(body) == "error" then return body end if
+    return "ALTER TABLE " + tableSql + " ADD CONSTRAINT " + constraintSql + " " + body + ";"
+  end if
+  if action == 7 then
+    constraintSql = try(quotedIdentifier(objectName))
+    if typeof(constraintSql) == "error" then return constraintSql end if
+    return "ALTER TABLE " + tableSql + " DROP CONSTRAINT " + constraintSql + ";"
+  end if
+  if action == 8 then
+    newTableSql = try(quotedIdentifier(optionText))
+    if typeof(newTableSql) == "error" then return newTableSql end if
+    return "ALTER TABLE " + tableSql + " RENAME TO " + newTableSql + ";"
+  end if
+  return "DROP TABLE " + tableSql + ";"
+end function
+
 // Selects a primary key, or the first unique key, for safe single-row mutations.
 function editableKeyColumns(details)
   if details is not TableDetails then return [] end if
@@ -1036,7 +1299,7 @@ function insertDataSql(details, values)
     end if
   end for
   if included == 0 then return fail("insertDataSql", "at least one non-default value is required") end if
-  tableSql = try(quotedIdentifier(details.tableName))
+  tableSql = try(quotedObjectName(details.tableName))
   if typeof(tableSql) == "error" then return tableSql end if
   return "INSERT INTO " + tableSql + " (" + columnsSql + ") VALUES (" + valuesSql + ");"
 end function
@@ -1065,7 +1328,7 @@ function updateDataSql(details, originalRow, values)
   if count == 0 then return fail("updateDataSql", "table has no editable non-identity columns") end if
   predicate = try(dataRowPredicate(details, originalRow))
   if typeof(predicate) == "error" then return predicate end if
-  tableSql = try(quotedIdentifier(details.tableName))
+  tableSql = try(quotedObjectName(details.tableName))
   if typeof(tableSql) == "error" then return tableSql end if
   return "UPDATE " + tableSql + " SET " + assignments + " WHERE " + predicate + ";"
 end function
@@ -1074,29 +1337,265 @@ end function
 function deleteDataSql(details, originalRow)
   predicate = try(dataRowPredicate(details, originalRow))
   if typeof(predicate) == "error" then return predicate end if
-  tableSql = try(quotedIdentifier(details.tableName))
+  tableSql = try(quotedObjectName(details.tableName))
   if typeof(tableSql) == "error" then return tableSql end if
   return "DELETE FROM " + tableSql + " WHERE " + predicate + ";"
 end function
 
-// Loads all SQuirreL-style detail pages for one selected MiniSQL table.
-function describeTable(state, tableName)
-  quoted = try(quotedIdentifier(tableName))
+// Creates one validated pending row change for preview and deferred application.
+function pendingDataChange(kind, sqlText, rowIndex, values)
+  upper = asciiUpper(kind)
+  if upper != "INSERT" and upper != "UPDATE" and upper != "DELETE" then return fail("pendingDataChange", "change kind must be INSERT, UPDATE, or DELETE") end if
+  if typeof(sqlText) != "string" or len(sqlText) == 0 or typeof(rowIndex) != "int" or typeof(values) != "array" then return fail("pendingDataChange", "invalid pending change") end if
+  if upper == "INSERT" and rowIndex != -1 then return fail("pendingDataChange", "inserts must use row index -1") end if
+  if upper != "INSERT" and rowIndex < 0 then return fail("pendingDataChange", "updates and deletes require a source row") end if
+  return PendingDataChange(upper, sqlText, rowIndex, values)
+end function
+
+// Converts editor sentinels into the text shown by the optimistic data grid.
+function previewEditorValue(value)
+  if value == "<NULL>" then return "NULL" end if
+  if value == "<DEFAULT>" then return "DEFAULT" end if
+  return value
+end function
+
+// Aligns DESCRIBE-ordered editor values with SELECT result-column order.
+function previewRowFromValues(details, values)
+  if details is not TableDetails or typeof(values) != "array" or len(values) != len(details.columnsGrid.rows) then return fail("previewRowFromValues", "editor values do not match table metadata") end if
+  row = []
+  for each columnName in details.contentsGrid.columns
+    matched = false
+    for metadataIndex = 0 to len(details.columnsGrid.rows) - 1
+      metadata = details.columnsGrid.rows[metadataIndex]
+      if len(metadata) >= 2 and metadata[1] == columnName then row = row + [previewEditorValue(values[metadataIndex])]; matched = true end if
+    end for
+    if not matched then row = row + [""] end if
+  end for
+  return row
+end function
+
+// Builds an optimistic Data-page grid with explicit pending-change markers.
+function dataGridWithChanges(details, changes)
+  if details is not TableDetails or typeof(changes) != "array" then return DetailGrid([], []) end if
+  columns = ["change"] + details.contentsGrid.columns
+  rows = []
+  if len(details.contentsGrid.rows) > 0 then
+    for rowIndex = 0 to len(details.contentsGrid.rows) - 1
+      marker = ""
+      values = details.contentsGrid.rows[rowIndex]
+      for each change in changes
+        if change is PendingDataChange and change.rowIndex == rowIndex then
+          marker = change.kind
+          if change.kind == "UPDATE" and len(change.values) > 0 then
+            preview = try(previewRowFromValues(details, change.values))
+            if typeof(preview) == "array" then values = preview end if
+          end if
+        end if
+      end for
+      rows = rows + [[marker] + values]
+    end for
+  end if
+  for each change in changes
+    if change is PendingDataChange and change.kind == "INSERT" then
+      preview = try(previewRowFromValues(details, change.values))
+      if typeof(preview) == "array" then rows = rows + [["INSERT"] + preview] end if
+    end if
+  end for
+  return DetailGrid(columns, rows)
+end function
+
+// Joins pending statements into the exact SQL preview submitted by Apply Changes.
+function pendingDataSql(changes)
+  if typeof(changes) != "array" then return fail("pendingDataSql", "changes must be an array") end if
+  output = ""
+  for each change in changes
+    if change is not PendingDataChange then return fail("pendingDataSql", "changes contain an invalid item") end if
+    if len(output) > 0 then output = output + "\r\n" end if
+    output = output + change.sqlText
+  end for
+  return output
+end function
+
+// Escapes one cell for RFC 4180-compatible UTF-8 CSV output.
+function csvField(value)
+  if typeof(value) != "string" then return fail("csvField", "cell value must be a string") end if
+  output = bytes([34])
+  for each item in bytes(value)
+    output = output + bytes([item])
+    if item == 34 then output = output + bytes([34]) end if
+  end for
+  output = output + bytes([34])
+  text = decode(output)
+  if typeof(text) != "string" then return fail("csvField", "cell is not valid UTF-8") end if
+  return text
+end function
+
+// Serializes a structured grid as deterministic CRLF-terminated CSV.
+function gridCsv(grid)
+  if grid is not DetailGrid then return fail("gridCsv", "grid must be DetailGrid") end if
+  output = ""
+  rows = [grid.columns] + grid.rows
+  for rowIndex = 0 to len(rows) - 1
+    row = rows[rowIndex]
+    for columnIndex = 0 to len(row) - 1
+      if columnIndex > 0 then output = output + "," end if
+      output = output + try(csvField(row[columnIndex]))
+    end for
+    output = output + "\r\n"
+  end for
+  return output
+end function
+
+// Escapes tabs, line endings, and backslashes for lossless clipboard TSV.
+function clipboardField(value)
+  if typeof(value) != "string" then return fail("clipboardField", "cell value must be a string") end if
+  output = bytes(0)
+  for each item in bytes(value)
+    if item == 92 then output = output + bytes("\\\\")
+    else if item == 9 then output = output + bytes("\\t")
+    else if item == 13 then output = output + bytes("\\r")
+    else if item == 10 then output = output + bytes("\\n")
+    else output = output + bytes([item])
+    end if
+  end for
+  text = decode(output)
+  if typeof(text) != "string" then return fail("clipboardField", "cell is not valid UTF-8") end if
+  return text
+end function
+
+// Serializes selected grid rows as escaped tab-separated clipboard text.
+function gridClipboardText(grid, selectedRows, includeHeader)
+  if grid is not DetailGrid or typeof(selectedRows) != "array" or typeof(includeHeader) != "bool" then return fail("gridClipboardText", "invalid clipboard selection") end if
+  outputRows = []
+  if includeHeader then outputRows = outputRows + [grid.columns] end if
+  for each rowIndex in selectedRows
+    if typeof(rowIndex) != "int" or rowIndex < 0 or rowIndex >= len(grid.rows) then return fail("gridClipboardText", "selected row is out of range") end if
+    outputRows = outputRows + [grid.rows[rowIndex]]
+  end for
+  output = ""
+  for rowIndex = 0 to len(outputRows) - 1
+    row = outputRows[rowIndex]
+    for columnIndex = 0 to len(row) - 1
+      if columnIndex > 0 then output = output + "\t" end if
+      output = output + try(clipboardField(row[columnIndex]))
+    end for
+    if rowIndex + 1 < len(outputRows) then output = output + "\r\n" end if
+  end for
+  return output
+end function
+
+// Decodes one escaped clipboard field without interpreting SQL syntax.
+function decodeClipboardField(raw)
+  if typeof(raw) != "bytes" then return fail("decodeClipboardField", "field must be bytes") end if
+  output = bytes(0)
+  index = 0
+  while index < len(raw)
+    item = raw[index]
+    if item == 92 and index + 1 < len(raw) then
+      next = raw[index + 1]
+      if next == 116 then output = output + bytes([9]); index = index + 2
+      else if next == 114 then output = output + bytes([13]); index = index + 2
+      else if next == 110 then output = output + bytes([10]); index = index + 2
+      else if next == 92 then output = output + bytes([92]); index = index + 2
+      else output = output + bytes([item]); index = index + 1
+      end if
+    else
+      output = output + bytes([item])
+      index = index + 1
+    end if
+  end while
+  text = decode(output)
+  if typeof(text) != "string" then return fail("decodeClipboardField", "clipboard field is not valid UTF-8") end if
+  return text
+end function
+
+// Parses escaped TSV clipboard rows into a rectangular array.
+function parseClipboardRows(text)
+  if typeof(text) != "string" then return fail("parseClipboardRows", "clipboard text must be a string") end if
+  raw = bytes(text)
+  rows = []
+  row = []
+  start = 0
+  index = 0
+  while index <= len(raw)
+    boundary = index == len(raw) or raw[index] == 9 or raw[index] == 10 or raw[index] == 13
+    if boundary then
+      field = try(decodeClipboardField(slice(raw, start, index - start)))
+      if typeof(field) == "error" then return field end if
+      row = row + [field]
+      lineEnd = index == len(raw) or raw[index] == 10 or raw[index] == 13
+      if lineEnd then
+        if len(row) > 1 or len(row[0]) > 0 then rows = rows + [row] end if
+        row = []
+        if index < len(raw) and raw[index] == 13 and index + 1 < len(raw) and raw[index + 1] == 10 then index = index + 1 end if
+      end if
+      start = index + 1
+    end if
+    index = index + 1
+  end while
+  if len(rows) == 0 then return fail("parseClipboardRows", "clipboard contains no rows") end if
+  width = len(rows[0])
+  for each parsedRow in rows
+    if len(parsedRow) != width then return fail("parseClipboardRows", "clipboard rows have different column counts") end if
+  end for
+  return rows
+end function
+
+// Filters redacted worksheet history case-insensitively for the sidebar search box.
+function filterHistory(history, searchText)
+  if typeof(history) != "array" or typeof(searchText) != "string" then return [] end if
+  wanted = asciiUpper(try(console.trimAscii(searchText)))
+  if len(wanted) == 0 then return history end if
+  output = []
+  for each item in history
+    if textContains(asciiUpper(item), wanted) then output = output + [item] end if
+  end for
+  return output
+end function
+
+// Creates a sequentially named independent SQL worksheet.
+function newWorksheet(index, sqlText)
+  if typeof(index) != "int" or index < 1 or typeof(sqlText) != "string" then return fail("newWorksheet", "invalid worksheet") end if
+  return Worksheet("SQL " + index, sqlText)
+end function
+
+// Returns stable worksheet labels for the native tab strip.
+function worksheetLines(worksheets)
+  lines = []
+  for each worksheet in worksheets
+    if worksheet is Worksheet then lines = lines + [worksheet.title] end if
+  end for
+  return lines
+end function
+
+// Loads a filtered, ordered, and paginated set of detail pages for one table.
+function describeTableView(state, tableName, options)
+  if options is not DataBrowseOptions then return fail("describeTableView", "options must be DataBrowseOptions") end if
+  quoted = try(quotedObjectName(tableName))
   if typeof(quoted) == "error" then return quoted end if
   columns = try(queryOne(state, "DESCRIBE " + quoted))
   if typeof(columns) == "error" then return columns end if
   indexes = try(queryOne(state, "SHOW INDEXES FROM " + quoted))
   if typeof(indexes) == "error" then return indexes end if
-  contents = try(queryOne(state, "SELECT * FROM " + quoted + " LIMIT 100"))
+  selectSql = try(dataSelectSql(tableName, options))
+  if typeof(selectSql) == "error" then return selectSql end if
+  contents = try(queryOne(state, selectSql))
   if typeof(contents) == "error" then return contents end if
-  rowCount = try(queryOne(state, "SELECT COUNT(*) AS row_count FROM " + quoted))
+  countSql = try(dataCountSql(tableName, options))
+  if typeof(countSql) == "error" then return countSql end if
+  rowCount = try(queryOne(state, countSql))
   if typeof(rowCount) == "error" then return rowCount end if
-  summary = "Table: " + tableName + "\r\nColumns: " + len(columns.rows) + "\r\nIndexes: " + len(indexes.rows) + "\r\nPreview rows: " + len(contents.rows)
+  summary = "Table: " + tableName + "\r\nColumns: " + len(columns.rows) + "\r\nIndexes: " + len(indexes.rows) + "\r\nPage: " + (options.page + 1) + "\r\nPage rows: " + len(contents.rows)
   details = TableDetails(tableName, summary, renderResponse(columns), renderResponse(indexes), renderResponse(contents), renderResponse(rowCount), ddlFromDescribe(tableName, columns), detailGridFromResponse(columns), detailGridFromResponse(indexes), detailGridFromResponse(contents), detailGridFromResponse(rowCount))
   state.selectedTable = tableName
   state.tableDetails = details
   state.statusText = "Loaded metadata for table " + tableName
   return details
+end function
+
+// Loads the default first page while preserving the original public API.
+function describeTable(state, tableName)
+  return describeTableView(state, tableName, defaultDataBrowseOptions())
 end function
 
 // Returns names of the object-detail notebook pages.
@@ -1153,7 +1652,7 @@ function bookmarkSqlForSelection(state, label)
       sqlText = bookmark.sqlText
       if textContains(sqlText, "<table>") then
         if len(state.selectedTable) == 0 then return "" end if
-        quoted = try(quotedIdentifier(state.selectedTable))
+        quoted = try(quotedObjectName(state.selectedTable))
         if typeof(quoted) == "error" then return "" end if
         if label == "Describe selected table" then return "DESCRIBE " + quoted + ";" end if
         if label == "Preview selected table" then return "SELECT * FROM " + quoted + " LIMIT 100;" end if
@@ -1167,7 +1666,7 @@ end function
 
 // Returns a SELECT template for the selected table.
 function queryForTable(state, tableName)
-  quoted = try(quotedIdentifier(tableName))
+  quoted = try(quotedObjectName(tableName))
   if typeof(quoted) == "error" then return quoted end if
   return "SELECT * FROM " + quoted + " LIMIT 100;"
 end function

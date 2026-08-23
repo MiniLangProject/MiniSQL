@@ -706,7 +706,7 @@ def run_m74_workbench(compiler: Path, verbose: bool) -> None:
     server, _ = public_apps()
     database = initialize_public_database(server, root / "database", "workbench", verbose)
     port = free_port()
-    command = base.executable_command(server, "--serve", str(database), str(port), "4")
+    command = base.executable_command(server, "--serve", str(database), str(port), "16")
     server_stdout_path = root / "server.stdout"
     server_stderr_path = root / "server.stderr"
     # Server logging is intentionally verbose. Redirect to files rather than
@@ -995,7 +995,7 @@ def validate_source_contracts() -> None:
         ],
         "src/minisql/server/listener.ml": [
             "function serveStandbyConcurrentLoopback",
-            "database_manager.openStandby(databasePath)",
+            "database_manager.openStandbyWithRuntime(databasePath",
             "import std.concurrent.thread_pool as thread_pool",
             "function serveConcurrentClient",
             "function reapConcurrentJobs",

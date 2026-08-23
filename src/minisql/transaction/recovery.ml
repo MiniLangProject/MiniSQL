@@ -5,6 +5,7 @@ package minisql.transaction.recovery
 
 import minisql.common.endian as endian
 import std.ds.hashmap as hashmap
+import std.ds.list as list
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.transaction.wal as wal
@@ -102,15 +103,16 @@ end function
 // Builds the statuses.
 // Inputs: `records`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function buildStatuses(records, startLsn)
-  statuses = []
+  statuses = list.List.new()
+  statusMap = hashmap.HashMap.new()
   for each record in records
     if record.lsn >= startLsn and (record.recordType == wal.RECORD_TX_BEGIN or record.recordType == wal.RECORD_PAGE_IMAGE or record.recordType == wal.RECORD_TX_COMMIT or record.recordType == wal.RECORD_TX_ABORT) then
-      index = findStatus(statuses, record.transactionId)
-      if index < 0 then
-        statuses = statuses + [TransactionStatus(record.transactionId, false, false, false)]
-        index = len(statuses) - 1
+      status = statusMap.get(record.transactionId)
+      if typeof(status) == "void" then
+        status = TransactionStatus(record.transactionId, false, false, false)
+        statuses.add(status)
+        statusMap.set(record.transactionId, status)
       end if
-      status = statuses[index]
       if record.recordType == wal.RECORD_TX_BEGIN then
         if status.begun then return fail(CORRUPT_DATA, "buildStatuses", "duplicate TX_BEGIN") end if
         status.begun = true
@@ -125,7 +127,7 @@ function buildStatuses(records, startLsn)
       end if
     end if
   end for
-  return statuses
+  return statuses.toArray()
 end function
 
 // Evaluates whether the supplied input satisfies the committed predicate.
@@ -138,7 +140,7 @@ end function
 
 // Applies the page.
 // Inputs: `record`, `destination`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function applyPage(record, destination)
+function applyPage(record, destination, forceRedo)
   image = bytes(record.payload)
   header = page.verify(image)
   if header.pageId.fileId != record.fileId or header.pageId.pageNumber != record.pageNumber then return fail(CORRUPT_DATA, "applyPage", "page identity mismatch") end if
@@ -152,17 +154,20 @@ function applyPage(record, destination)
   end if
   current = paged_file.readPage(file, record.pageNumber)
   currentHeader = page.verify(current)
-  if page.compareLsn(currentHeader.pageLsn, header.pageLsn) >= 0 then return false end if
+  if not forceRedo and page.compareLsn(currentHeader.pageLsn, header.pageLsn) >= 0 then return false end if
   paged_file.writePage(file, record.pageNumber, image)
   return true
 end function
 
 // Recovers the scan.
 // Inputs: `scanResult`, `targets`, `startLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function recoverScan(scanResult, targets, startLsn)
+function recoverScanMode(scanResult, targets, startLsn, forceRedo)
   if not wal.isWalScan(scanResult) then return fail(INVALID_ARGUMENT, "recoverScan", "scanResult must be WalScan") end if
   if typeof(targets) != "array" then return fail(INVALID_ARGUMENT, "recoverScan", "targets must be array") end if
   if typeof(startLsn) != "int" or startLsn < 0 then return fail(INVALID_ARGUMENT, "recoverScan", "startLsn must be non-negative") end if
+  if typeof(forceRedo) != "bool" then return fail(INVALID_ARGUMENT, "recoverScan", "forceRedo must be bool") end if
+  effectiveStart = startLsn
+  if forceRedo then effectiveStart = 0 end if
   // Build the immutable lookup once. Recovery cost is linear in WAL records
   // even when a database owns thousands of live or retired table file IDs.
   targetMap = hashmap.HashMap.new()
@@ -171,17 +176,20 @@ function recoverScan(scanResult, targets, startLsn)
     if targetMap.has(current.fileId) then return fail(INVALID_ARGUMENT, "recoverScan", "duplicate recovery target for file " + current.fileId) end if
     targetMap.set(current.fileId, current)
   end for
-  statuses = buildStatuses(scanResult.records, startLsn)
+  statuses = buildStatuses(scanResult.records, effectiveStart)
+  statusMap = hashmap.HashMap.withCapacity(len(statuses) * 2)
   committed = 0
   for each status in statuses
+    statusMap.set(status.transactionId, status)
     if status.committed and not status.aborted then committed = committed + 1 end if
   end for
   redone = 0
   skipped = 0
   touched = []
   for each record in scanResult.records
-    if record.lsn >= startLsn and record.recordType == wal.RECORD_PAGE_IMAGE then
-      if isCommitted(statuses, record.transactionId) then
+    if record.lsn >= effectiveStart and record.recordType == wal.RECORD_PAGE_IMAGE then
+      status = statusMap.get(record.transactionId)
+      if typeof(status) != "void" and status.committed and not status.aborted then
         destination = void
         if targetMap.has(record.fileId) then destination = targetMap.get(record.fileId) end if
         if destination is void then return fail(CORRUPT_DATA, "recoverScan", "missing recovery target for file " + record.fileId) end if
@@ -190,7 +198,7 @@ function recoverScan(scanResult, targets, startLsn)
           // file was dropped, replaying its older images would resurrect data.
           skipped = skipped + 1
         else
-          changed = applyPage(record, destination)
+          changed = applyPage(record, destination, forceRedo)
           if changed then
             redone = redone + 1
             already = false
@@ -211,6 +219,18 @@ function recoverScan(scanResult, targets, startLsn)
     paged_file.flush(destination.pagedFile)
   end for
   return RecoveryResult(len(scanResult.records), committed, redone, skipped, scanResult.validBytes, scanResult.truncatedTail)
+end function
+
+// Recovers a conventional monotonically increasing WAL using page-LSN skips.
+function recoverScan(scanResult, targets, startLsn)
+  return recoverScanMode(scanResult, targets, startLsn, false)
+end function
+
+// Replays every committed image in the bounded post-reset WAL. Page LSNs from
+// an earlier physical WAL epoch may be numerically larger, so they cannot be a
+// skip predicate. Full page-image replay is still idempotent and log ordered.
+function recoverScanForced(scanResult, targets)
+  return recoverScanMode(scanResult, targets, 0, true)
 end function
 
 // Recovers the requested value.

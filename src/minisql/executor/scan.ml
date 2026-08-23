@@ -13,11 +13,13 @@ import minisql.sql.parser as parser
 import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.overflow as overflow
+import minisql.storage.buffer_pool as buffer_pool
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.row_codec as row_codec
 import minisql.storage.slotted_page as slotted_page
 import minisql.transaction.transaction as transaction
+import std.ds.list as list
 
 // Transaction-aware sequential table scan for the first executable SQL engine.
 // A scan always consults private transaction pages before the committed base
@@ -65,6 +67,8 @@ struct TableReader
   pageTransaction
   // Stores the filesystem owns file.
   ownsFile
+  // Optional database-owned concurrent read cache.
+  readCache
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -130,22 +134,33 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
-function open(databasePath, table, pageTransaction)
+function openCached(databasePath, table, pageTransaction, readCache)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "open", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "open", "table must be TableMetadata") end if
   if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.open") end if
-  file = paged_file.openReadOnly(catalog.tableFilePath(databasePath, table.tableId))
-  state = schema_history.loadOrCreate(databasePath, file.databaseId)
+  tablePath = catalog.tableFilePath(databasePath, table.tableId)
+  file = try(paged_file.openReadOnly(tablePath))
+  if typeof(file) == "error" then return fail(file.code, "open", "cannot open table file " + tablePath + ": " + file.message) end if
+  state = try(schema_history.loadOrCreate(databasePath, file.databaseId))
+  if typeof(state) == "error" then
+    ignoredClose = try(paged_file.close(file))
+    return fail(state.code, "open", "cannot load schema history: " + state.message)
+  end if
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, false)
+end function
+
+// Opens a table without a shared cache for storage tools and direct tests.
+function open(databasePath, table, pageTransaction)
+  return openCached(databasePath, table, pageTransaction, void)
 end function
 
 // Opens existing using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
-function openExisting(databasePath, file, table, pageTransaction)
+function openExistingCached(databasePath, file, table, pageTransaction, readCache)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openExisting", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openExisting", "table must be TableMetadata") end if
   paged_file.validateOpen(file, "executor.scan.openExisting")
@@ -154,7 +169,12 @@ function openExisting(databasePath, file, table, pageTransaction)
   state = schema_history.loadOrCreate(databasePath, file.databaseId)
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, false)
+end function
+
+// Opens a caller-owned file without a shared cache.
+function openExisting(databasePath, file, table, pageTransaction)
+  return openExistingCached(databasePath, file, table, pageTransaction, void)
 end function
 
 // Validates open using the supplied inputs.
@@ -179,6 +199,7 @@ function visiblePage(reader, pageNumber)
     privatePage = transaction.readPrivatePage(reader.pageTransaction, reader.table.tableId, pageNumber)
     if privatePage is not void then return privatePage end if
   end if
+  if reader.readCache is not void then return buffer_pool.readCached(reader.readCache, reader.file, pageNumber) end if
   return paged_file.readPage(reader.file, pageNumber)
 end function
 
@@ -273,13 +294,56 @@ function decodeRecord(reader, encoded)
   return output
 end function
 
+// Decodes one record while materializing only columns required by the query.
+// Unused values retain a correctly typed SQL NULL placeholder so bound column
+// indexes remain stable, but external TEXT/BLOB payloads are never fetched.
+// Generated columns conservatively use the full decoder because their stored
+// expressions may depend on columns that are not explicit in the SELECT list.
+function decodeRecordColumns(reader, encoded, requiredColumns)
+  if requiredColumns is void or len(reader.generatedColumns) > 0 then return decodeRecord(reader, encoded) end if
+  if typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns) then return fail(INVALID_ARGUMENT, "decodeRecordColumns", "required column mask must match the table") end if
+  decoded = row_codec.decodeCompatible(reader.rowSchema, encoded)
+  storedCount = len(decoded.values)
+  if storedCount > len(reader.table.columns) then return fail(CORRUPT_DATA, "decodeRecordColumns", "stored row has more columns than the catalog") end if
+  output = array(len(reader.table.columns))
+  if storedCount > 0 then
+    for index = 0 to storedCount - 1
+      column = reader.table.columns[index]
+      if requiredColumns[index] then
+        output[index] = materializeStoredValue(reader, index, decoded.values[index])
+      else
+        output[index] = values.nullValue(column.typeCode)
+      end if
+    end for
+  end if
+  if storedCount < len(reader.table.columns) then
+    for index = storedCount to len(reader.table.columns) - 1
+      column = reader.table.columns[index]
+      if requiredColumns[index] then
+        output[index] = evaluateDefault(findColumnRule(reader, column.name), column)
+      else
+        output[index] = values.nullValue(column.typeCode)
+      end if
+    end for
+  end if
+  return output
+end function
+
 // Implements all for this module.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
-function all(reader)
-  validateOpen(reader, "all")
-  output = []
-  if reader.file.pageCount == 0 then return output end if
+function allRangeColumns(reader, offset, limit, requiredColumns)
+  validateOpen(reader, "allRangeColumns")
+  if typeof(offset) != "int" or offset < 0 then return fail(INVALID_ARGUMENT, "allRange", "offset must be non-negative") end if
+  if typeof(limit) != "int" or limit < -1 then return fail(INVALID_ARGUMENT, "allRange", "limit must be -1 or non-negative") end if
+  if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "allRange", "required column mask must match the table") end if
+  if limit == 0 then return [] end if
+  if reader.file.pageCount == 0 then return [] end if
+  // A growable buffer keeps appends amortized O(1) while allowing each page to
+  // be read and checksum-verified only once. The former exact pre-count pass
+  // doubled I/O and CRC work for every sequential SELECT.
+  output = list.List.new()
+  visibleRows = 0
   for pageNumber = 0 to reader.file.pageCount - 1
     pageBytes = visiblePage(reader, pageNumber)
     header = page.verify(pageBytes)
@@ -290,14 +354,29 @@ function all(reader)
       for slotId = 0 to count - 1
         current = slotted_page.entry(pageBytes, slotId)
         if current.flags == slotted_page.SLOT_FLAG_LIVE then
-          rowValues = decodeRecord(reader, slotted_page.read(pageBytes, slotId))
-          scanned = ScannedRow(RowReference(pageNumber, slotId, current.generation), rowValues)
-          output = appendArrayValue(output, scanned, "all")
+          if visibleRows >= offset then
+            rowValues = decodeRecordColumns(reader, slotted_page.read(pageBytes, slotId), requiredColumns)
+            output.add(ScannedRow(RowReference(pageNumber, slotId, current.generation), rowValues))
+            if limit >= 0 and output.len() >= limit then return output.toArray() end if
+          end if
+          visibleRows = visibleRows + 1
         end if
       end for
     end if
   end for
-  return output
+  return output.toArray()
+end function
+
+// Scans a physical live-row range and materializes all columns.
+function allRange(reader, offset, limit)
+  return allRangeColumns(reader, offset, limit, void)
+end function
+
+// Materializes every live row. The range implementation is shared with
+// LIMIT/OFFSET scans so checksum verification and transaction visibility have
+// one implementation.
+function all(reader)
+  return allRange(reader, 0, -1)
 end function
 
 // Reads reference using the supplied inputs.
@@ -361,6 +440,40 @@ function scanTable(databasePath, table, pageTransaction)
   return result
 end function
 
+// Scans only a physical live-row range and stops as soon as the requested
+// number of rows has been decoded. This bounds memory for simple paginated
+// SELECT statements and avoids reading overflow values outside the page.
+function scanTableRange(databasePath, table, pageTransaction, offset, limit)
+  reader = open(databasePath, table, pageTransaction)
+  result = try(allRange(reader, offset, limit))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
+// Scans a range while fetching only columns referenced by the bound query.
+function scanTableRangeColumns(databasePath, table, pageTransaction, offset, limit, requiredColumns)
+  reader = open(databasePath, table, pageTransaction)
+  result = try(allRangeColumns(reader, offset, limit, requiredColumns))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
+// Uses the database-owned concurrent page cache together with range and
+// projection pushdown. The reader handle remains short-lived; cache frames are
+// keyed only by stable path and page number.
+function scanTableRangeColumnsCached(databasePath, table, pageTransaction, offset, limit, requiredColumns, readCache)
+  reader = openCached(databasePath, table, pageTransaction, readCache)
+  result = try(allRangeColumns(reader, offset, limit, requiredColumns))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
 // Scans existing using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -374,6 +487,26 @@ function scanExisting(databasePath, file, table, pageTransaction)
   return result
 end function
 
+// Applies a bounded range scan to a caller-owned paged file.
+function scanExistingRange(databasePath, file, table, pageTransaction, offset, limit)
+  reader = openExisting(databasePath, file, table, pageTransaction)
+  result = try(allRange(reader, offset, limit))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
+// Applies both range and column pushdown to a caller-owned paged file.
+function scanExistingRangeColumns(databasePath, file, table, pageTransaction, offset, limit, requiredColumns)
+  reader = openExisting(databasePath, file, table, pageTransaction)
+  result = try(allRangeColumns(reader, offset, limit, requiredColumns))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
 // Scans using using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -381,6 +514,20 @@ function scanUsing(databasePath, table, pageTransaction, existingFile)
   if existingFile is void then return scanTable(databasePath, table, pageTransaction) end if
   if existingFile.fileId == table.tableId then return scanExisting(databasePath, existingFile, table, pageTransaction) end if
   return scanTable(databasePath, table, pageTransaction)
+end function
+
+// Selects the bounded scan implementation for an optional caller-owned file.
+function scanUsingRange(databasePath, table, pageTransaction, existingFile, offset, limit)
+  if existingFile is void then return scanTableRange(databasePath, table, pageTransaction, offset, limit) end if
+  if existingFile.fileId == table.tableId then return scanExistingRange(databasePath, existingFile, table, pageTransaction, offset, limit) end if
+  return scanTableRange(databasePath, table, pageTransaction, offset, limit)
+end function
+
+// Scans all rows but materializes only the supplied table-column mask.
+function scanUsingColumns(databasePath, table, pageTransaction, existingFile, requiredColumns)
+  if existingFile is void then return scanTableRangeColumns(databasePath, table, pageTransaction, 0, -1, requiredColumns) end if
+  if existingFile.fileId == table.tableId then return scanExistingRangeColumns(databasePath, existingFile, table, pageTransaction, 0, -1, requiredColumns) end if
+  return scanTableRangeColumns(databasePath, table, pageTransaction, 0, -1, requiredColumns)
 end function
 
 // Implements component name for this module.

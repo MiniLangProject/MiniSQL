@@ -250,20 +250,36 @@ end function
 // Inputs: `pagedFile`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function allocatePageNumbers(pagedFile, count)
   if typeof(count) != "int" or count < 0 then return fail(INVALID_ARGUMENT, "allocatePageNumbers", "count must be non-negative") end if
-  result = []
+  result = array(count)
   if count == 0 then return result end if
-  if pagedFile.pageCount > 0 then
-    for pageNumber = 0 to pagedFile.pageCount - 1
+  found = 0
+  startPage = pagedFile.allocationHint
+  if startPage < 0 or startPage > pagedFile.pageCount then startPage = 0 end if
+  if startPage < pagedFile.pageCount then
+    for pageNumber = startPage to pagedFile.pageCount - 1
       header = page.verify(paged_file.readPage(pagedFile, pageNumber))
-      if header.pageType == page.TYPE_FREE then result = result + [pageNumber] end if
-      if len(result) == count then return result end if
+      if header.pageType == page.TYPE_FREE then
+        result[found] = pageNumber
+        found = found + 1
+        if found == count then pagedFile.allocationHint = pageNumber + 1; return result end if
+      end if
     end for
   end if
-  nextPage = pagedFile.pageCount
-  while len(result) < count
-    result = result + [nextPage]
-    nextPage = nextPage + 1
+  // Reserve the remaining contiguous tail in bounded batches. Each batch uses
+  // one data flush and one metadata publication instead of appendPage's two
+  // durability barriers per individual overflow page.
+  remaining = count - found
+  while remaining > 0
+    batch = remaining
+    if batch > 65536 then batch = 65536 end if
+    firstPage = paged_file.allocatePages(pagedFile, page.TYPE_OVERFLOW, batch)
+    for offset = 0 to batch - 1
+      result[found + offset] = firstPage + offset
+    end for
+    found = found + batch
+    remaining = remaining - batch
   end while
+  pagedFile.allocationHint = pagedFile.pageCount
   return result
 end function
 
@@ -286,11 +302,7 @@ function write(pagedFile, ownerId, value)
     nextPage = -1
     if sequence < count - 1 then nextPage = pageNumbers[sequence + 1] end if
     encodedPage = encodePage(pagedFile, pageNumbers[sequence], ownerId, nextPage, len(value), sequence, slice(value, offset, length))
-    if pageNumbers[sequence] == pagedFile.pageCount then
-      paged_file.appendPage(pagedFile, encodedPage)
-    else
-      paged_file.writePage(pagedFile, pageNumbers[sequence], encodedPage)
-    end if
+    paged_file.writePage(pagedFile, pageNumbers[sequence], encodedPage)
     offset = offset + length
   end for
   paged_file.flush(pagedFile)
@@ -382,6 +394,7 @@ function free(pagedFile, pointer)
     next = decodeNext(original)
     replacement = page.create(pagedFile.pageSize, page.TYPE_FREE, pagedFile.fileId, current)
     paged_file.writePage(pagedFile, current, replacement)
+    if current < pagedFile.allocationHint then pagedFile.allocationHint = current end if
     current = next
     freed = freed + 1
   end while

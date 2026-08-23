@@ -46,6 +46,8 @@ struct PagedFile
   activeSlot
   // Feature flags field of the paged file.
   featureFlags
+  // First page that may still contain reusable free storage for appenders.
+  allocationHint
   // Closed field of the paged file.
   closed
 end struct
@@ -197,6 +199,7 @@ function create(path, pageSize, fileType, fileId, databaseId)
     endian.makeUInt64(0, 0),
     SLOT_B,
     0,
+    0,
     false
   )
 
@@ -292,6 +295,7 @@ function open(path)
     metadata.generation,
     activeSlot,
     metadata.featureFlags,
+    metadata.pageCount,
     false
   )
 end function
@@ -341,6 +345,7 @@ function openReadOnly(path)
     metadata.generation,
     activeSlot,
     metadata.featureFlags,
+    metadata.pageCount,
     false
   )
 end function
@@ -390,11 +395,26 @@ end function
 // Allocates the page.
 // Inputs: `pagedFile`, `pageType`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function allocatePage(pagedFile, pageType)
+  return allocatePages(pagedFile, pageType, 1)
+end function
+
+// Allocates a contiguous group of initialized pages with one durability barrier
+// and one superblock publication. Page bytes reach stable storage before the
+// increased page count becomes visible, preserving the single-page crash rule.
+function allocatePages(pagedFile, pageType, count)
   validateOpen(pagedFile, "allocatePage")
-  pageNumber = pagedFile.pageCount
-  pageBytes = page.create(pagedFile.pageSize, pageType, pagedFile.fileId, pageNumber)
-  appendPage(pagedFile, pageBytes)
-  return pageNumber
+  if typeof(count) != "int" or count < 1 or count > 65536 then return fail(INVALID_ARGUMENT, "allocatePages", "count must be in 1..65536") end if
+  firstPage = pagedFile.pageCount
+  if firstPage > maxPageCountFor(pagedFile.pageSize) - count then return fail(INVALID_ARGUMENT, "allocatePages", "page allocation exceeds the native file-size range") end if
+  for offset = 0 to count - 1
+    pageNumber = firstPage + offset
+    pageBytes = page.create(pagedFile.pageSize, pageType, pagedFile.fileId, pageNumber)
+    file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), pageBytes, 0, len(pageBytes))
+  end for
+  // All new pages become durable before either metadata copy advertises them.
+  file_api.flush(pagedFile.file)
+  commitMetadata(pagedFile, firstPage + count)
+  return firstPage
 end function
 
 // Writes the page.

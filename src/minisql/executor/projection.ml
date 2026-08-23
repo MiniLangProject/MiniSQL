@@ -48,10 +48,12 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function evaluateList(boundExpressions, context, operation)
   if typeof(boundExpressions) != "array" then return fail(INVALID_ARGUMENT, operation, "expressions must be array") end if
-  output = []
-  for each expression in boundExpressions
-    output = output + [expressions.evaluate(expression, context)]
-  end for
+  output = array(len(boundExpressions))
+  if len(boundExpressions) > 0 then
+    for index = 0 to len(boundExpressions) - 1
+      output[index] = expressions.evaluate(boundExpressions[index], context)
+    end for
+  end if
   return output
 end function
 
@@ -61,12 +63,15 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function apply(rows, selectExpressions, orderExpressions)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "apply", "rows must be array") end if
-  output = []
-  for each row in rows
-    if not scan.isScannedRow(row) then return fail(INVALID_ARGUMENT, "apply", "rows contain non-ScannedRow") end if
-    context = expressions.rowContext(row.values)
-    output = output + [ProjectedRow(row, evaluateList(selectExpressions, context, "apply.select"), evaluateList(orderExpressions, context, "apply.order"))]
-  end for
+  output = array(len(rows))
+  if len(rows) > 0 then
+    for index = 0 to len(rows) - 1
+      row = rows[index]
+      if not scan.isScannedRow(row) then return fail(INVALID_ARGUMENT, "apply", "rows contain non-ScannedRow") end if
+      context = expressions.rowContext(row.values)
+      output[index] = ProjectedRow(row, evaluateList(selectExpressions, context, "apply.select"), evaluateList(orderExpressions, context, "apply.order"))
+    end for
+  end if
   return output
 end function
 

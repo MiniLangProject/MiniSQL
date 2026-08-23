@@ -6,10 +6,10 @@ package minisql.sql.lexer
 
 import minisql.sql.dialect as dialect
 import minisql.sql.token as token
+import std.ds.list as list
 
 const INVALID_ARGUMENT = 9001
 const SQL_SYNTAX = 9019
-const MAX_SQL_BYTES = 1048576
 
 // Groups the lexer state state and preserves the field relationships documented below.
 struct LexerState
@@ -106,7 +106,7 @@ end function
 // Returns the computed value or operation status.
 // May mutate supplied state as documented by the operation name.
 function appendToken(state, kind, text, value, offset, line, column, quoted)
-  state.tokens = state.tokens + [token.create(kind, text, value, offset, line, column, quoted)]
+  state.tokens.add(token.create(kind, text, value, offset, line, column, quoted))
   return true
 end function
 
@@ -177,13 +177,15 @@ function readQuotedIdentifier(state)
   startLine = state.line
   startColumn = state.column
   advance(state)
-  output = []
+  output = bytes(len(state.raw) - state.index, 0)
+  outputLength = 0
   closed = false
   while current(state) >= 0
     value = current(state)
     if value == 34 then
       if peek(state, 1) == 34 then
-        output = output + [34]
+        output[outputLength] = 34
+        outputLength = outputLength + 1
         advance(state)
         advance(state)
       else
@@ -192,12 +194,13 @@ function readQuotedIdentifier(state)
         break
       end if
     else
-      output = output + [value]
+      output[outputLength] = value
+      outputLength = outputLength + 1
       advance(state)
     end if
   end while
   if not closed then return fail(state, "unterminated quoted identifier") end if
-  text = decode(bytes(output))
+  text = decode(slice(output, 0, outputLength))
   if len(text) == 0 then return fail(state, "quoted identifier must not be empty") end if
   appendToken(state, token.TokenKind.Identifier, text, text, startOffset, startLine, startColumn, true)
   return true
@@ -211,13 +214,15 @@ function readString(state)
   startLine = state.line
   startColumn = state.column
   advance(state)
-  output = []
+  output = bytes(len(state.raw) - state.index, 0)
+  outputLength = 0
   closed = false
   while current(state) >= 0
     value = current(state)
     if value == 39 then
       if peek(state, 1) == 39 then
-        output = output + [39]
+        output[outputLength] = 39
+        outputLength = outputLength + 1
         advance(state)
         advance(state)
       else
@@ -226,13 +231,16 @@ function readString(state)
         break
       end if
     else
-      output = output + [value]
+      output[outputLength] = value
+      outputLength = outputLength + 1
       advance(state)
     end if
   end while
   if not closed then return fail(state, "unterminated string literal") end if
-  value = decode(bytes(output))
-  appendToken(state, token.TokenKind.StringLiteral, rawText(state, startOffset, state.index), value, startOffset, startLine, startColumn, false)
+  value = decode(slice(output, 0, outputLength))
+  // Literal contents live in value. Avoid retaining a second raw copy of a
+  // potentially multi-gigabyte literal solely for diagnostic rendering.
+  appendToken(state, token.TokenKind.StringLiteral, "<string>", value, startOffset, startLine, startColumn, false)
   return true
 end function
 
@@ -309,8 +317,7 @@ end function
 function tokenizeSql(source)
   if typeof(source) != "string" then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: source must be string") end if
   raw = bytes(source)
-  if len(raw) > MAX_SQL_BYTES then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: SQL text exceeds 1 MiB") end if
-  state = LexerState(source, raw, 0, 1, 1, [])
+  state = LexerState(source, raw, 0, 1, 1, list.List.new())
   while state.index < len(raw)
     skipIgnored(state)
     if state.index >= len(raw) then break end if
@@ -325,11 +332,11 @@ function tokenizeSql(source)
       readNumber(state)
     else
       produced = symbolToken(state)
-      state.tokens = state.tokens + [produced]
+      state.tokens.add(produced)
     end if
   end while
-  state.tokens = state.tokens + [token.eof(state.index, state.line, state.column)]
-  return state.tokens
+  state.tokens.add(token.eof(state.index, state.line, state.column))
+  return state.tokens.toArray()
 end function
 
 // Implements component name for this module.

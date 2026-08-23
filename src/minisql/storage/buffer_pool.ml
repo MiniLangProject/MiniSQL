@@ -6,6 +6,8 @@ package minisql.storage.buffer_pool
 import minisql.common.limits as limits
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
+import std.ds.hashmap as hashmap
+import std.threading as threading
 
 // Fixed-capacity buffer pool with explicit pin/unpin guards and CLOCK eviction.
 // Dirty pages are resealed and written through the owning PagedFile before reuse.
@@ -81,6 +83,56 @@ struct BufferPoolStats
   pinnedPages
 end struct
 
+// Immutable read-cache frame keyed by a stable file path and page number. It
+// deliberately does not retain a PagedFile handle, allowing short-lived scan
+// handles to close without leaving dangling cache ownership.
+struct ReadCacheFrame
+  // Stable file-path and page-number identity used by the lookup map.
+  key
+  // Immutable verified-size page image retained independently of file handles.
+  data
+  // CLOCK reference bit set by every successful lookup.
+  referenced
+end struct
+
+// Thread-safe sparse CLOCK cache used by concurrent SQL table scans. Frames
+// are allocated only when populated, so a large byte budget does not eagerly
+// allocate one object per possible page.
+struct ReadPageCache
+  // Maximum number of page images derived from the configured byte budget.
+  maxPages
+  // Sparse CLOCK frame array; unused slots remain void.
+  frames
+  // Next CLOCK slot examined for insertion or eviction.
+  clockHand
+  // Maps stable page keys to their current frame indexes.
+  index
+  // Serializes lookups and metadata changes without covering disk I/O.
+  guard
+  // Number of requests served from resident page images.
+  hits
+  // Number of requests that required a physical page read.
+  misses
+  // Number of resident page images replaced by CLOCK.
+  evictions
+  // Prevents use after the database-owned cache has been released.
+  closed
+end struct
+
+// Snapshot of read-cache counters used by diagnostics and regression tests.
+struct ReadPageCacheStats
+  // Snapshot of successful resident lookups.
+  hits
+  // Snapshot of physical-read lookups.
+  misses
+  // Snapshot of CLOCK replacements.
+  evictions
+  // Number of populated frames at snapshot time.
+  residentPages
+  // Configured maximum number of frames.
+  maxPages
+end struct
+
 // Creates the module's structured error with operation context.
 // Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
@@ -129,6 +181,133 @@ function createForBytes(maxBytes, pageSize)
     return fail(INVALID_ARGUMENT, "createForBytes", "memory budget is smaller than one page")
   end if
   return create(capacity)
+end function
+
+// Converts a byte budget to pages using the database's validated page size.
+function pageCapacity(maxBytes, pageSize)
+  if typeof(maxBytes) != "int" or maxBytes <= 0 then return fail(INVALID_ARGUMENT, "pageCapacity", "maxBytes must be a positive int") end if
+  if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then return fail(INVALID_ARGUMENT, "pageCapacity", "unsupported page size") end if
+  capacity = 0
+  if pageSize == 4096 then capacity = maxBytes >> 12
+  else if pageSize == 8192 then capacity = maxBytes >> 13
+  else if pageSize == 16384 then capacity = maxBytes >> 14
+  else if pageSize == 32768 then capacity = maxBytes >> 15
+  end if
+  if capacity < 1 then return fail(INVALID_ARGUMENT, "pageCapacity", "memory budget is smaller than one page") end if
+  if capacity > 1048576 then capacity = 1048576 end if
+  return capacity
+end function
+
+// Creates the concurrent read cache for a configured memory budget.
+function createReadCache(maxBytes, pageSize)
+  capacity = pageCapacity(maxBytes, pageSize)
+  return ReadPageCache(capacity, array(capacity), 0, hashmap.HashMap.withCapacity(capacity * 2), threading.Lock.new(), 0, 0, 0, false)
+end function
+
+// Validates a read cache before synchronization or I/O.
+function validateReadCache(cache, operation)
+  if cache is not ReadPageCache then return fail(INVALID_ARGUMENT, operation, "cache must be ReadPageCache") end if
+  if cache.closed then return fail(CLOSED_HANDLE, operation, "read cache is closed") end if
+  return true
+end function
+
+// Builds an unambiguous cache key; page paths cannot contain a NUL character.
+function readCacheKey(pagedFile, pageNumber)
+  return pagedFile.path + "\0" + pageNumber
+end function
+
+// Chooses an empty frame or an unreferenced CLOCK victim while the cache guard
+// is held. Read frames are never pinned or dirty, so two passes always suffice.
+function chooseReadVictim(cache)
+  for index = 0 to cache.maxPages - 1
+    if cache.frames[index] is void then
+      cache.clockHand = (index + 1) % cache.maxPages
+      return index
+    end if
+  end for
+  scanned = 0
+  while scanned < cache.maxPages * 2
+    index = cache.clockHand
+    cache.clockHand = (cache.clockHand + 1) % cache.maxPages
+    frame = cache.frames[index]
+    if frame.referenced then frame.referenced = false else return index end if
+    scanned = scanned + 1
+  end while
+  return 0
+end function
+
+// Reads through the concurrent cache. Disk I/O occurs without holding the
+// cache guard; a second lookup collapses races when two readers miss together.
+function readCached(cache, pagedFile, pageNumber)
+  validateReadCache(cache, "readCached")
+  paged_file.validateOpen(pagedFile, "buffer_pool.readCached")
+  if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber >= pagedFile.pageCount then return fail(INVALID_ARGUMENT, "readCached", "page number is outside the paged file") end if
+  key = readCacheKey(pagedFile, pageNumber)
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readCached", "cache guard is unavailable") end if
+  existing = cache.index.get(key)
+  if typeof(existing) == "int" then
+    frame = cache.frames[existing]
+    frame.referenced = true
+    cache.hits = cache.hits + 1
+    result = bytes(frame.data)
+    cache.guard.release()
+    return result
+  end if
+  cache.misses = cache.misses + 1
+  cache.guard.release()
+
+  loaded = paged_file.readPage(pagedFile, pageNumber)
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readCached", "cache guard is unavailable after read") end if
+  raced = cache.index.get(key)
+  if typeof(raced) == "int" then
+    frame = cache.frames[raced]
+    frame.referenced = true
+    result = bytes(frame.data)
+    cache.guard.release()
+    return result
+  end if
+  victim = chooseReadVictim(cache)
+  replaced = cache.frames[victim]
+  if replaced is not void then
+    cache.index.remove(replaced.key)
+    cache.evictions = cache.evictions + 1
+  end if
+  cache.frames[victim] = ReadCacheFrame(key, bytes(loaded), true)
+  cache.index.set(key, victim)
+  cache.guard.release()
+  return loaded
+end function
+
+// Invalidates all cached base pages after a successful database mutation.
+function clearReadCache(cache)
+  validateReadCache(cache, "clearReadCache")
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "clearReadCache", "cache guard is unavailable") end if
+  cache.frames = array(cache.maxPages)
+  cache.index.clear()
+  cache.clockHand = 0
+  cache.guard.release()
+  return true
+end function
+
+// Returns a synchronized diagnostic snapshot.
+function readCacheStats(cache)
+  validateReadCache(cache, "readCacheStats")
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readCacheStats", "cache guard is unavailable") end if
+  result = ReadPageCacheStats(cache.hits, cache.misses, cache.evictions, cache.index.count(), cache.maxPages)
+  cache.guard.release()
+  return result
+end function
+
+// Closes a read cache after the owning database execution gate is empty.
+function closeReadCache(cache)
+  validateReadCache(cache, "closeReadCache")
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "closeReadCache", "cache guard is unavailable") end if
+  cache.frames = []
+  cache.index.clear()
+  cache.closed = true
+  cache.guard.release()
+  cache.guard.close()
+  return true
 end function
 
 // Validates the pool.

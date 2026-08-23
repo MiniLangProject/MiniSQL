@@ -170,19 +170,33 @@ function rowResult(columns, rows)
   return QueryResult(RESULT_ROWS, "SELECT", columns, rows, len(rows), "")
 end function
 
+// Performs the index readiness pass once for an opened database. Clean marker
+// state needs only derived-file existence checks; a dirty marker or missing
+// file performs the expensive rebuild/verification path. A double check inside
+// the exclusive gate lets concurrent connection accepts share either result.
+function prepareDatabase(database)
+  if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "prepareDatabase", "database must be ManagedDatabase") end if
+  if database_manager.indexesReady(database) then return true end if
+  entered = try(database_manager.enterExecution(database))
+  result = true
+  if not database_manager.indexesReady(database) then
+    result = try(dml.ensureIndexes(database))
+    if typeof(result) != "error" then result = try(database_manager.markIndexesReady(database)) end if
+  end if
+  released = try(database_manager.leaveExecution(database))
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
 // Implements attach for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
-  entered = try(database_manager.enterExecution(database))
-  engine = Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
-  indexed = try(dml.ensureIndexes(database))
-  released = try(database_manager.leaveExecution(database))
-  if typeof(released) == "error" then return released end if
-  if typeof(indexed) == "error" then return indexed end if
-  return engine
+  prepared = try(prepareDatabase(database))
+  if typeof(prepared) == "error" then return prepared end if
+  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
 end function
 
 // Opens open using the supplied inputs.
@@ -191,13 +205,9 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function open(databasePath)
   database = database_manager.open(databasePath)
-  entered = try(database_manager.enterExecution(database))
-  engine = Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
-  indexed = try(dml.ensureIndexes(database))
-  released = try(database_manager.leaveExecution(database))
-  if typeof(released) == "error" then return released end if
-  if typeof(indexed) == "error" then database_manager.close(database); return indexed end if
-  return engine
+  prepared = try(prepareDatabase(database))
+  if typeof(prepared) == "error" then database_manager.close(database); return prepared end if
+  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
 end function
 
 // Implements set principal for this module.
@@ -1544,6 +1554,20 @@ function executeCall(engine, statement)
   return result
 end function
 
+// Rebuilds only indexes whose table schema changed in one autocommit DDL.
+// Unrelated tables remain byte-for-byte untouched; the durable dirty marker
+// still triggers the conservative all-index repair after a rebuild failure.
+function rebuildIndexesForDdl(engine, bound, statement)
+  target = void
+  if ast.isCreateTableStatement(statement) then
+    target = catalog.findTable(engine.database.catalogHandle, statement.name)
+  else if ast.isCreateIndexStatement(statement) or ast.isAlterTableStatement(statement) then
+    if bound.table is not void then target = catalog.findTableById(engine.database.catalogHandle, bound.table.tableId) end if
+  end if
+  if target is void then return 0 end if
+  return dml.rebuildIndexesForTable(engine.database, target)
+end function
+
 // Executes DDL using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -1573,7 +1597,7 @@ function executeDdl(engine, statement)
   dml.markIndexesDirty(engine.database)
   committed = try(schema_history.commit(ddlTransaction))
   if typeof(committed) == "error" then return committed end if
-  rebuilt = try(dml.rebuildAllIndexes(engine.database))
+  rebuilt = try(rebuildIndexesForDdl(engine, bound, statement))
   if typeof(rebuilt) != "error" then dml.clearIndexesDirty(engine.database) end if
   if not engine.trusted and ast.isCreateTableStatement(statement) then
     createdTable = catalog.findTable(engine.database.catalogHandle, statement.name)
@@ -1611,7 +1635,7 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
-function commitPageTransaction(engine, pageTransaction)
+function commitPageTransaction(engine, pageTransaction, deltaBound, deltaResult)
   changedIds = []
   if transaction.stagedPageCount(pageTransaction) > 0 then dml.markIndexesDirty(engine.database) end if
   commitLsn = transaction.commit(pageTransaction)
@@ -1624,13 +1648,19 @@ function commitPageTransaction(engine, pageTransaction)
   end for
   dml.publishCommitted(engine.database, pageTransaction, commitLsn)
   rebuildError = void
-  for each tableId in changedIds
-    table = catalog.findTableById(engine.database.catalogHandle, tableId)
-    if table is not void and rebuildError is void then
-      rebuilt = try(dml.rebuildIndexesForTable(engine.database, table))
-      if typeof(rebuilt) == "error" then rebuildError = rebuilt end if
-    end if
-  end for
+  insertDelta = deltaBound is not void and binder.isBoundInsert(deltaBound) and dml.isDmlResult(deltaResult) and len(changedIds) == 1
+  if insertDelta then
+    applied = try(dml.applyInsertedIndexes(engine.database, deltaBound.table, deltaResult))
+    if typeof(applied) == "error" then rebuildError = applied end if
+  else
+    for each tableId in changedIds
+      table = catalog.findTableById(engine.database.catalogHandle, tableId)
+      if table is not void and rebuildError is void then
+        rebuilt = try(dml.rebuildIndexesForTable(engine.database, table))
+        if typeof(rebuilt) == "error" then rebuildError = rebuilt end if
+      end if
+    end for
+  end if
   if rebuildError is void then dml.clearIndexesDirty(engine.database) end if
   // The heap/WAL commit is already durable. A failed derived-index rebuild leaves
   // the durable dirty marker in place and is repaired before the next index use.
@@ -1645,16 +1675,21 @@ function materializeInsertSelect(engine, bound, pageTransaction)
   sourceResult = selectRows(engine, bound.sourceQuery, pageTransaction)
   if not isQueryResult(sourceResult) then return fail(INVALID_ARGUMENT, "materializeInsertSelect", "source SELECT must return QueryResult") end if
   sourceRows = sourceResult.rows
-  materialized = []
-  for each sourceRow in sourceRows
-    boundRow = []
-    if len(sourceRow) > 0 then
-      for index = 0 to len(sourceRow) - 1
-        boundRow = boundRow + [expressions.literal(sourceRow[index], bound.sourceQuery.items[index].typeInfo)]
-      end for
-    end if
-    materialized = materialized + [boundRow]
-  end for
+  // Build an eager, fixed-size literal snapshot before the target heap changes.
+  // This keeps self INSERT SELECT finite and avoids quadratic array growth.
+  materialized = array(len(sourceRows))
+  if len(sourceRows) > 0 then
+    for rowIndex = 0 to len(sourceRows) - 1
+      sourceRow = sourceRows[rowIndex]
+      boundRow = array(len(sourceRow))
+      if len(sourceRow) > 0 then
+        for columnIndex = 0 to len(sourceRow) - 1
+          boundRow[columnIndex] = expressions.literal(sourceRow[columnIndex], bound.sourceQuery.items[columnIndex].typeInfo)
+        end for
+      end if
+      materialized[rowIndex] = boundRow
+    end for
+  end if
   bound.rows = materialized
   return true
 end function
@@ -1700,7 +1735,7 @@ function executeDml(engine, statement)
   if typeof(result) == "error" then transaction.rollback(pageTransaction); return result end if
   triggered = try(fireTriggers(engine, bound, result, pageTransaction))
   if typeof(triggered) == "error" then transaction.rollback(pageTransaction); return triggered end if
-  committed = try(commitPageTransaction(engine, pageTransaction))
+  committed = try(commitPageTransaction(engine, pageTransaction, bound, result))
   if typeof(committed) == "error" then return committed end if
   if (binder.isBoundInsert(bound) or binder.isBoundUpdate(bound) or binder.isBoundDelete(bound)) and len(bound.returning) > 0 then return returningResult(bound, result) end if
   return commandResult(dmlCommand(bound), result.affectedRows, "DML committed")
@@ -1790,7 +1825,7 @@ function executeMerge(engine, statement)
   pageTransaction = database_manager.begin(engine.database, transaction.ISOLATION_SERIALIZABLE, false)
   affected = try(runMerge(engine, statement, pageTransaction))
   if typeof(affected) == "error" then transaction.rollback(pageTransaction); return affected end if
-  committed = try(commitPageTransaction(engine, pageTransaction))
+  committed = try(commitPageTransaction(engine, pageTransaction, void, void))
   if typeof(committed) == "error" then return committed end if
   return commandResult("MERGE", affected, "MERGE committed")
 end function
@@ -1927,8 +1962,8 @@ function informationSchemaRows(engine, relationKind)
 end function
 
 // Scans a catalog table, named query, recursive fixpoint, or recursive delta source.
-function scanBoundSource(engine, source, pageTransaction)
-  if source.query is void then return scan.scanTable(engine.database.path, source.table, pageTransaction) end if
+function scanBoundSource(engine, source, pageTransaction, offset, limit, requiredColumns)
+  if source.query is void then return scan.scanTableRangeColumnsCached(engine.database.path, source.table, pageTransaction, offset, limit, requiredColumns, engine.database.readCache) end if
   if binder.isBoundInformationSchemaSource(source.query) then
     metadataRows = informationSchemaRows(engine, source.query.relationKind)
     metadataOutput = []
@@ -1964,10 +1999,10 @@ end function
 // Implements joined source for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function joinedSource(engine, bound, pageTransaction)
+function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns)
   if len(bound.sources) == 0 then return [scan.ScannedRow(void, [])] end if
   output = dml.indexRowsForBound(engine.database, bound, pageTransaction)
-  if output is void then output = scanBoundSource(engine, bound.sources[0], pageTransaction) end if
+  if output is void then output = scanBoundSource(engine, bound.sources[0], pageTransaction, sourceOffset, sourceLimit, requiredColumns) end if
   for each boundJoin in bound.joins
     // RIGHT and FULL joins must see every row on the right so unmatched rows can
     // be emitted. Equality-index shortcuts are therefore reserved for inner and
@@ -1989,7 +2024,7 @@ function joinedSource(engine, bound, pageTransaction)
     if usedIndex and not outerRight then
       output = joinedRows
     else
-      right = scanBoundSource(engine, boundJoin.source, pageTransaction)
+      right = scanBoundSource(engine, boundJoin.source, pageTransaction, 0, -1, void)
       if join.canHash(boundJoin) then
         output = join.applyHash(output, right, boundJoin)
       else
@@ -2116,11 +2151,112 @@ function projectSubqueryRows(engine, bound, source, pageTransaction)
   return output
 end function
 
+// Marks every base-table column referenced by an expression tree. Returning
+// false disables projection pushdown for shapes whose dependencies cannot be
+// proven locally (notably correlated subqueries).
+function collectRequiredColumns(expression, requiredColumns)
+  if expression is void then return true end if
+  if expressions.isBoundSubquery(expression) then return false end if
+  if expressions.isBaseBoundExpression(expression) then
+    if expression.kind == expressions.BOUND_LITERAL then return true end if
+    if expression.kind == expressions.BOUND_COLUMN then
+      if expression.columnIndex < 0 or expression.columnIndex >= len(requiredColumns) then return false end if
+      requiredColumns[expression.columnIndex] = true
+      return true
+    end if
+    if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return collectRequiredColumns(expression.left, requiredColumns) end if
+    if expression.kind == expressions.BOUND_BINARY then return collectRequiredColumns(expression.left, requiredColumns) and collectRequiredColumns(expression.right, requiredColumns) end if
+    return false
+  end if
+  if expressions.isBoundAggregate(expression) then
+    if expression.countStar then return true end if
+    if not collectRequiredColumns(expression.argument, requiredColumns) then return false end if
+    return collectRequiredColumns(expression.separator, requiredColumns)
+  end if
+  if expressions.isBoundCase(expression) then
+    for each branch in expression.branches
+      if not collectRequiredColumns(branch.condition, requiredColumns) or not collectRequiredColumns(branch.result, requiredColumns) then return false end if
+    end for
+    return collectRequiredColumns(expression.elseExpression, requiredColumns)
+  end if
+  if expressions.isBoundCast(expression) then return collectRequiredColumns(expression.operand, requiredColumns) end if
+  if expressions.isBoundScalar(expression) then
+    for each argument in expression.arguments
+      if not collectRequiredColumns(argument, requiredColumns) then return false end if
+    end for
+    return true
+  end if
+  if expressions.isBoundIn(expression) then
+    if not collectRequiredColumns(expression.operand, requiredColumns) then return false end if
+    for each candidate in expression.candidates
+      if not collectRequiredColumns(candidate, requiredColumns) then return false end if
+    end for
+    return true
+  end if
+  if expressions.isBoundBetween(expression) then return collectRequiredColumns(expression.operand, requiredColumns) and collectRequiredColumns(expression.lower, requiredColumns) and collectRequiredColumns(expression.upper, requiredColumns) end if
+  if expressions.isBoundTruthTest(expression) then return collectRequiredColumns(expression.operand, requiredColumns) end if
+  if expressions.isBoundWindow(expression) then
+    for each argument in expression.arguments
+      if not collectRequiredColumns(argument, requiredColumns) then return false end if
+    end for
+    for each item in expression.partitionBy
+      if not collectRequiredColumns(item, requiredColumns) then return false end if
+    end for
+    for each item in expression.orderBy
+      if not collectRequiredColumns(item, requiredColumns) then return false end if
+    end for
+    return true
+  end if
+  return false
+end function
+
+// Computes a stable source-column mask for a one-table SELECT. Join column
+// indexes span multiple sources, and nested queries own separate bindings, so
+// those query forms deliberately retain complete row materialization.
+function selectRequiredColumns(bound)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void or len(bound.setOperations) != 0 then return void end if
+  requiredColumns = array(len(bound.sources[0].table.columns))
+  if len(requiredColumns) > 0 then
+    for index = 0 to len(requiredColumns) - 1
+      requiredColumns[index] = false
+    end for
+  end if
+  for each item in bound.items
+    if not collectRequiredColumns(item, requiredColumns) then return void end if
+  end for
+  if not collectRequiredColumns(bound.whereExpression, requiredColumns) then return void end if
+  for each item in bound.groupExpressions
+    if not collectRequiredColumns(item, requiredColumns) then return void end if
+  end for
+  if not collectRequiredColumns(bound.havingExpression, requiredColumns) then return void end if
+  for each item in bound.orderExpressions
+    if not collectRequiredColumns(item, requiredColumns) then return void end if
+  end for
+  return requiredColumns
+end function
+
 // Implements select projected for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
-  source = joinedSource(engine, bound, pageTransaction)
+  // A single unordered, unfiltered source preserves physical row order. Apply
+  // LIMIT/OFFSET while scanning that source so rows outside the requested page
+  // are neither decoded nor retained. Complex queries keep the full pipeline
+  // because joins, predicates, grouping, DISTINCT and ordering can change which
+  // source rows belong to the final page.
+  sourceOffset = 0
+  sourceLimit = -1
+  resultOffset = bound.statement.offset
+  rangeEligible = len(bound.sources) == 1 and len(bound.joins) == 0 and bound.sources[0].query is void
+  rangeEligible = rangeEligible and bound.whereExpression is void and not bound.aggregateQuery and not bound.windowQuery
+  rangeEligible = rangeEligible and not bound.statement.distinct and len(bound.setOperations) == 0 and len(bound.statement.orderBy) == 0
+  if rangeEligible and (bound.statement.offset > 0 or bound.statement.limit >= 0) then
+    sourceOffset = bound.statement.offset
+    sourceLimit = bound.statement.limit
+    resultOffset = 0
+  end if
+  requiredColumns = selectRequiredColumns(bound)
+  source = joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns)
   projected = []
   hasSubqueries = expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(bound.whereExpression) or expressions.containsSubqueryList(bound.orderExpressions)
   if hasSubqueries then
@@ -2143,7 +2279,7 @@ function selectProjected(engine, bound, pageTransaction)
   projected = normalizeCompoundOrder(projected, bound)
   temporaryRoot = file_api.joinPath(engine.database.path, "tmp")
   projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, SORT_SPILL_THRESHOLD)
-  projected = projection.sliceRows(projected, bound.statement.offset, bound.statement.limit)
+  projected = projection.sliceRows(projected, resultOffset, bound.statement.limit)
   return projected
 end function
 
@@ -2152,10 +2288,12 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function selectRows(engine, bound, pageTransaction)
   projected = selectProjected(engine, bound, pageTransaction)
-  rows = []
-  for each value in projected
-    rows = rows + [value.values]
-  end for
+  rows = array(len(projected))
+  if len(projected) > 0 then
+    for index = 0 to len(projected) - 1
+      rows[index] = projected[index].values
+    end for
+  end if
   return rowResult(bound.itemNames, rows)
 end function
 
@@ -2256,7 +2394,7 @@ function commitExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "commit", "no explicit transaction") end if
   if engine.failed then return fail(TRANSACTION_STATE, "commit", "transaction is failed; ROLLBACK required") end if
   if engine.transactionMode == MODE_DML then
-    commitPageTransaction(engine, engine.pageTransaction)
+    commitPageTransaction(engine, engine.pageTransaction, void, void)
   else if engine.transactionMode == MODE_DDL then
     dml.markIndexesDirty(engine.database)
     schema_history.commit(engine.ddlTransaction)
@@ -3226,6 +3364,16 @@ function executeStatement(engine, statement)
     if typeof(repaired) == "error" then result = repaired end if
   end if
   if typeof(result) != "error" then result = try(executeStatementCore(engine, statement)) end if
+  if not readExecution and typeof(result) != "error" then
+    // Mutations publish through separate write handles. Clearing the immutable
+    // base-page cache while the exclusive gate is held prevents a later reader
+    // from observing a pre-commit page image.
+    ignoredCacheInvalidation = database_manager.invalidateReadCache(engine.database)
+    // The exclusive physical gate is still held here, so no publisher can race
+    // automatic WAL reset. Post-commit maintenance logs its own failure and
+    // never turns a durable SQL success into an unsafe retry invitation.
+    ignoredCheckpoint = database_manager.checkpointAfterStatement(engine.database)
+  end if
   released = void
   if readExecution then
     released = try(database_manager.leaveReadExecution(engine.database))

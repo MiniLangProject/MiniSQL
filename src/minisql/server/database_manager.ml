@@ -13,6 +13,7 @@ import minisql.common.logger as logger
 import minisql.platform.file as file_api
 import minisql.platform.lock as file_lock
 import minisql.storage.paged_file as paged_file
+import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.checkpoint as checkpoint
 import minisql.transaction.recovery as recovery
 import minisql.transaction.transaction as transaction
@@ -23,6 +24,14 @@ const INVALID_ARGUMENT = 9001
 const CORRUPT_DATA = 9004
 const CLOSED_HANDLE = 9008
 const STANDBY_NOT_PROMOTED = 9033
+const DEFAULT_CHECKPOINT_WAL_BYTES = 67108864
+const DEFAULT_BUFFER_POOL_BYTES = 268435456
+
+// Durable marker formats used to make physical WAL reset crash-safe. The epoch
+// marker remains for the lifetime of a database after its first reset and tells
+// recovery to replay the bounded current WAL without comparing pre-reset page
+// LSNs. The pending marker is removed after WAL and checkpoint metadata agree.
+const CHECKPOINT_MARKER_BYTES = 24
 
 // Writer-prioritized readers/writer gate. A waiting writer owns turnstile, so
 // newly arriving readers cannot continuously postpone database mutations.
@@ -68,6 +77,16 @@ struct ManagedDatabase
   standby
   // Stores the execution gate associated with this value.
   executionGate
+  // Maximum current-WAL size before a statement boundary performs a reset.
+  checkpointWalBytes
+  // True after the database has entered bounded-WAL epoch replay mode.
+  walEpoch
+  // Counts successful automatic WAL resets for diagnostics and tests.
+  checkpointResets
+  // Database-owned concurrent cache for committed table pages.
+  readCache
+  // Indicates that process-local index readiness checks or repair completed.
+  indexesReady
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -96,6 +115,63 @@ function bytesEqual(left, right)
   for index = 0 to len(left) - 1
     if left[index] != right[index] then return false end if
   end for
+  return true
+end function
+
+// Returns the persistent marker path that selects bounded-WAL epoch recovery.
+function walEpochPath(path)
+  return catalog.joinPath(catalog.joinPath(path, "wal"), "wal.epoch")
+end function
+
+// Returns the transient crash-recovery journal for an in-progress WAL reset.
+function walResetPendingPath(path)
+  return catalog.joinPath(catalog.joinPath(path, "wal"), "wal.reset.pending")
+end function
+
+// Encodes an eight-byte marker magic and the database identity into one small,
+// self-identifying durable record.
+function checkpointMarkerBytes(magic, databaseId)
+  if typeof(magic) != "bytes" or len(magic) != 8 then return fail(INVALID_ARGUMENT, "checkpointMarkerBytes", "magic must contain eight bytes") end if
+  if typeof(databaseId) != "bytes" or len(databaseId) != 16 then return fail(INVALID_ARGUMENT, "checkpointMarkerBytes", "databaseId must contain sixteen bytes") end if
+  output = bytes(CHECKPOINT_MARKER_BYTES, 0)
+  for index = 0 to 7
+    output[index] = magic[index]
+  end for
+  for index = 0 to 15
+    output[8 + index] = databaseId[index]
+  end for
+  return output
+end function
+
+// Reads and validates a checkpoint marker before its state can affect recovery.
+function validateCheckpointMarker(path, expected)
+  if not file_api.fileExists(path) then return false end if
+  handle = try(file_api.openRead(path))
+  if typeof(handle) == "error" then return handle end if
+  if file_api.size(handle) != len(expected) then file_api.close(handle); return fail(CORRUPT_DATA, "validateCheckpointMarker", "checkpoint marker size mismatch: " + path) end if
+  actual = bytes(len(expected), 0)
+  read = try(file_api.readExactAt(handle, 0, actual, 0, len(actual)))
+  closed = try(file_api.close(handle))
+  if typeof(read) == "error" then return read end if
+  if typeof(closed) == "error" then return closed end if
+  if not bytesEqual(actual, expected) then return fail(CORRUPT_DATA, "validateCheckpointMarker", "checkpoint marker identity mismatch: " + path) end if
+  return true
+end function
+
+// Creates a marker durably or validates an already durable retry instance.
+function ensureCheckpointMarker(path, expected)
+  existing = try(validateCheckpointMarker(path, expected))
+  if typeof(existing) == "error" then return existing end if
+  if existing then return true end if
+  handle = try(file_api.createNewDurable(path))
+  if typeof(handle) == "error" then return handle end if
+  written = try(file_api.writeAt(handle, 0, expected, 0, len(expected)))
+  flushed = void
+  if typeof(written) != "error" then flushed = try(file_api.flush(handle)) end if
+  closed = try(file_api.close(handle))
+  if typeof(written) == "error" then return written end if
+  if typeof(flushed) == "error" then return flushed end if
+  if typeof(closed) == "error" then return closed end if
   return true
 end function
 
@@ -227,9 +303,11 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function openInternal(path, allowStandby)
+function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   if typeof(allowStandby) != "bool" then return fail(INVALID_ARGUMENT, "open", "allowStandby must be bool") end if
+  if typeof(checkpointWalBytes) != "int" or checkpointWalBytes < 4096 then return fail(INVALID_ARGUMENT, "open", "checkpointWalBytes must be at least 4096") end if
+  if typeof(bufferPoolBytes) != "int" or bufferPoolBytes < 4096 then return fail(INVALID_ARGUMENT, "open", "bufferPoolBytes must be at least one 4096-byte page") end if
   ignoredLog = logger.debug("minisql.server.database_manager.openInternal", "opening database path=" + path + " standbyAllowed=" + allowStandby)
   standbyMarker = file_api.fileExists(catalog.joinPath(path, "standby.state"))
   if standbyMarker and not allowStandby then return fail(STANDBY_NOT_PROMOTED, "open", "standby is not promoted") end if
@@ -307,6 +385,60 @@ function openInternal(path, allowStandby)
     return fail(CORRUPT_DATA, "open", "checkpoint belongs to another database")
   end if
 
+  epochMarker = checkpointMarkerBytes(bytes("MSWEP001"), catalogHandle.metadata.databaseId)
+  pendingMarker = checkpointMarkerBytes(bytes("MSWRP001"), catalogHandle.metadata.databaseId)
+  epochActive = try(validateCheckpointMarker(walEpochPath(path), epochMarker))
+  if typeof(epochActive) == "error" then
+    checkpoint.close(checkpointFile)
+    wal.close(walWriter)
+    catalog.close(catalogHandle)
+    file_lock.release(lockToken)
+    file_api.close(lockFile)
+    return epochActive
+  end if
+  pendingReset = try(validateCheckpointMarker(walResetPendingPath(path), pendingMarker))
+  if typeof(pendingReset) == "error" then
+    checkpoint.close(checkpointFile)
+    wal.close(walWriter)
+    catalog.close(catalogHandle)
+    file_lock.release(lockToken)
+    file_api.close(lockFile)
+    return pendingReset
+  end if
+  if pendingReset then
+    // The pending marker is created only after every preceding committed page
+    // publication is durable. Completing the reset is therefore safe whether
+    // the previous process stopped before or after truncating the WAL.
+    epochEnsured = try(ensureCheckpointMarker(walEpochPath(path), epochMarker))
+    if typeof(epochEnsured) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return epochEnsured
+    end if
+    rewound = try(wal.rewind(walWriter, 0))
+    if typeof(rewound) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return rewound
+    end if
+    resetCheckpoint = try(checkpoint.publish(checkpointFile, 0, 0, 0))
+    if typeof(resetCheckpoint) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return resetCheckpoint
+    end if
+    catalogHandle.metadata.checkpointLsn = 0
+    persistedCatalog = try(catalog.persistMetadata(catalogHandle))
+    if typeof(persistedCatalog) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return persistedCatalog
+    end if
+    removedPending = try(file_api.deletePath(walResetPendingPath(path)))
+    if typeof(removedPending) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return removedPending
+    end if
+    epochActive = true
+    ignoredResetLog = logger.warning("minisql.server.database_manager.openInternal", "completed interrupted WAL checkpoint reset path=" + path)
+  end if
+
   // Complete committed table-page writes before the database is exposed to a
   // session. Catalog/DDL WAL integration is introduced with transactional DDL;
   // M7 recovery currently targets all catalog-listed table files.
@@ -351,7 +483,12 @@ function openInternal(path, allowStandby)
       retiredRecoveryTargets = retiredRecoveryTargets + 1
     end if
   end for
-  recoveryResult = try(recovery.recoverScan(recoveryScan, recoveryTargets, checkpointFile.metadata.redoStartLsn))
+  recoveryResult = void
+  if epochActive then
+    recoveryResult = try(recovery.recoverScanForced(recoveryScan, recoveryTargets))
+  else
+    recoveryResult = try(recovery.recoverScan(recoveryScan, recoveryTargets, checkpointFile.metadata.redoStartLsn))
+  end if
   closeRecoveryFiles(recoveryFiles)
   if typeof(recoveryResult) == "error" then
     checkpoint.close(checkpointFile)
@@ -384,7 +521,13 @@ function openInternal(path, allowStandby)
     file_api.close(lockFile)
     return executionGate
   end if
-  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, false)
+  readCache = try(buffer_pool.createReadCache(bufferPoolBytes, catalogHandle.metadata.pageSize))
+  if typeof(readCache) == "error" then
+    executionGate.roomEmpty.close(); executionGate.turnstile.close(); executionGate.stateLock.close()
+    diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+    return readCache
+  end if
+  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -393,14 +536,35 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function open(path)
-  return openInternal(path, false)
+  return openInternal(path, false, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES)
+end function
+
+// Opens a primary database with a configured maximum current-WAL size.
+function openWithCheckpoint(path, checkpointWalBytes)
+  return openInternal(path, false, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES)
+end function
+
+// Opens a primary database with configured WAL and buffer-pool budgets.
+function openWithRuntime(path, checkpointWalBytes, bufferPoolBytes)
+  return openInternal(path, false, checkpointWalBytes, bufferPoolBytes)
 end function
 
 // Opens standby using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function openStandby(path)
-  return openInternal(path, true)
+  return openInternal(path, true, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES)
+end function
+
+// Opens a standby with the configured checkpoint threshold. Standbys never
+// initiate a reset, but retaining the value keeps promotion configuration exact.
+function openStandbyWithCheckpoint(path, checkpointWalBytes)
+  return openInternal(path, true, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES)
+end function
+
+// Opens a standby with configured WAL and buffer-pool budgets.
+function openStandbyWithRuntime(path, checkpointWalBytes, bufferPoolBytes)
+  return openInternal(path, true, checkpointWalBytes, bufferPoolBytes)
 end function
 
 // Creates create using the supplied inputs.
@@ -435,6 +599,25 @@ function allocateSessionId(database)
   if database.nextSessionId <= 0 then database.nextSessionId = 1 end if
   database.executionGate.stateLock.release()
   return value
+end function
+
+// Returns whether the one-time process-local index readiness pass completed.
+// The execution-gate state lock makes this probe safe during concurrent accepts.
+function indexesReady(database)
+  validateOpen(database, "indexesReady")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "indexesReady", "database execution state is unavailable") end if
+  value = database.indexesReady
+  database.executionGate.stateLock.release()
+  return value
+end function
+
+// Publishes completion of process-local index readiness to later sessions.
+function markIndexesReady(database)
+  validateOpen(database, "markIndexesReady")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "markIndexesReady", "database execution state is unavailable") end if
+  database.indexesReady = true
+  database.executionGate.stateLock.release()
+  return true
 end function
 
 // Acquires statement read using the supplied inputs.
@@ -475,6 +658,13 @@ end function
 function cancelLockWait(database, transactionId)
   validateOpen(database, "cancelLockWait")
   return lock_manager.cancelWait(database.lockManager, transactionId)
+end function
+
+// Returns whether a transaction is still blocked in the logical lock graph.
+// Listener workers use this probe to wait without reparsing or re-executing SQL.
+function isLockWaiting(database, transactionId)
+  validateOpen(database, "isLockWaiting")
+  return lock_manager.isWaiting(database.lockManager, transactionId)
 end function
 
 // Implements waiter count for this module.
@@ -542,6 +732,73 @@ function findTable(database, name)
   return catalog.findTable(database.catalogHandle, name)
 end function
 
+// Resets the current WAL at a fully published statement boundary once it
+// reaches the configured threshold. The caller must hold exclusive database
+// execution, which guarantees that every WAL record being discarded already
+// has a durable base-file page image and that no commit can race the reset.
+// Persistent epoch replay avoids comparing new low LSNs with page LSNs from a
+// previous physical WAL generation.
+function checkpointIfNeeded(database)
+  validateOpen(database, "checkpointIfNeeded")
+  if database.standby or database.walWriter.nextLsn < database.checkpointWalBytes then return false end if
+  reclaimed = database.walWriter.nextLsn
+  flushed = try(wal.flush(database.walWriter))
+  if typeof(flushed) == "error" then return flushed end if
+
+  epochMarker = checkpointMarkerBytes(bytes("MSWEP001"), database.catalogHandle.metadata.databaseId)
+  pendingMarker = checkpointMarkerBytes(bytes("MSWRP001"), database.catalogHandle.metadata.databaseId)
+  epochReady = try(ensureCheckpointMarker(walEpochPath(database.path), epochMarker))
+  if typeof(epochReady) == "error" then return epochReady end if
+  pendingReady = try(ensureCheckpointMarker(walResetPendingPath(database.path), pendingMarker))
+  if typeof(pendingReady) == "error" then return pendingReady end if
+
+  rewound = try(wal.rewind(database.walWriter, 0))
+  if typeof(rewound) == "error" then return rewound end if
+  published = try(checkpoint.publish(database.checkpointFile, 0, 0, 0))
+  if typeof(published) == "error" then return published end if
+  database.catalogHandle.metadata.checkpointLsn = 0
+  persisted = try(catalog.persistMetadata(database.catalogHandle))
+  if typeof(persisted) == "error" then return persisted end if
+  removed = try(file_api.deletePath(walResetPendingPath(database.path)))
+  if typeof(removed) == "error" then return removed end if
+
+  database.walEpoch = true
+  database.checkpointResets = database.checkpointResets + 1
+  ignoredLog = logger.info("minisql.server.database_manager.checkpointIfNeeded", "automatic WAL checkpoint reset path=" + database.path + " reclaimedBytes=" + reclaimed + " thresholdBytes=" + database.checkpointWalBytes)
+  return true
+end function
+
+// Returns the number of successful process-local automatic WAL resets.
+function checkpointResetCount(database)
+  validateOpen(database, "checkpointResetCount")
+  return database.checkpointResets
+end function
+
+// Invalidates committed page images after a successful mutation. The caller
+// holds exclusive execution, so no reader can observe a stale/new mixture.
+function invalidateReadCache(database)
+  validateOpen(database, "invalidateReadCache")
+  return buffer_pool.clearReadCache(database.readCache)
+end function
+
+// Returns synchronized buffer-cache diagnostics.
+function readCacheStats(database)
+  validateOpen(database, "readCacheStats")
+  return buffer_pool.readCacheStats(database.readCache)
+end function
+
+// Runs post-commit checkpoint maintenance without changing an already durable
+// SQL outcome into a retryable client error. Failures remain visible in the
+// server log and the next writer retries while the intact WAL stays recoverable.
+function checkpointAfterStatement(database)
+  result = try(checkpointIfNeeded(database))
+  if typeof(result) == "error" then
+    ignoredLog = logger.errorLog("minisql.server.database_manager.checkpointAfterStatement", "automatic WAL checkpoint failed path=" + database.path + " code=" + result.code + " message=" + result.message)
+    return false
+  end if
+  return result
+end function
+
 // Creates table using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -560,6 +817,8 @@ function close(database)
   failure = void
   closedAudit = try(diagnostics.closeAudit(database.auditLog))
   if typeof(closedAudit) == "error" then failure = closedAudit end if
+  closedReadCache = try(buffer_pool.closeReadCache(database.readCache))
+  if typeof(failure) != "error" and typeof(closedReadCache) == "error" then failure = closedReadCache end if
   closedCheckpoint = try(checkpoint.close(database.checkpointFile))
   if typeof(failure) != "error" and typeof(closedCheckpoint) == "error" then failure = closedCheckpoint end if
   closedWal = try(wal.close(database.walWriter))

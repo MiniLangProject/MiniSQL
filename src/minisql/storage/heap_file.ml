@@ -56,6 +56,8 @@ end struct
 struct HeapFile
   // Paged file field of the heap file.
   pagedFile
+  // Page most likely to accept the next row without a whole-file free-space scan.
+  insertionPageHint
   // Closed field of the heap file.
   closed
 end struct
@@ -139,7 +141,29 @@ end function
 // Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create(path, pageSize, fileId, databaseId)
   file = paged_file.create(path, pageSize, superblock.FILE_TYPE_TABLE, fileId, databaseId)
-  return HeapFile(file, false)
+  return HeapFile(file, -1, false)
+end function
+
+// Finds the first page containing a reusable deleted slot after reopening a
+// heap, otherwise selecting the append frontier. The one-time scan preserves
+// durable slot reuse without repeating it for every row in a batch.
+function initialInsertionPage(file)
+  if file.pageCount == 0 then return -1 end if
+  lastHeapPage = -1
+  for pageNumber = 0 to file.pageCount - 1
+    pageBytes = try(paged_file.readPage(file, pageNumber))
+    header = try(page.verify(pageBytes))
+    if header.pageType != page.TYPE_HEAP then continue end if
+    lastHeapPage = pageNumber
+    slotHeader = page.decodePageHeader(pageBytes)
+    if slotHeader.itemCount > 0 then
+      for slotId = 0 to slotHeader.itemCount - 1
+        current = try(slotted.entry(pageBytes, slotId))
+        if current.flags == slotted.SLOT_FLAG_DELETED and current.generation < 65535 then return pageNumber end if
+      end for
+    end if
+  end for
+  return lastHeapPage
 end function
 
 // Opens the requested value.
@@ -147,7 +171,9 @@ end function
 function open(path)
   file = paged_file.open(path)
   if file.fileType != superblock.FILE_TYPE_TABLE then paged_file.close(file); return fail(CORRUPT_DATA, "open", "file is not a table") end if
-  return HeapFile(file, false)
+  hint = try(initialInsertionPage(file))
+  if typeof(hint) == "error" then paged_file.close(file); return hint end if
+  return HeapFile(file, hint, false)
 end function
 
 // Validates the open.
@@ -214,20 +240,45 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   if typeof(recordBytes) != "bytes" or len(recordBytes) == 0 then return fail(INVALID_ARGUMENT, "insertWithFlags", "record must be non-empty bytes") end if
   if slotFlags != slotted.SLOT_FLAG_LIVE and slotFlags != slotted.SLOT_FLAG_MOVED then return fail(INVALID_ARGUMENT, "insertWithFlags", "heap insertion requires live or moved state") end if
 
-  if heap.pagedFile.pageCount > 0 then
-    for pageNumber = 0 to heap.pagedFile.pageCount - 1
-      pageBytes = paged_file.readPage(heap.pagedFile, pageNumber)
-      header = page.verify(pageBytes)
-      if header.pageType != page.TYPE_HEAP then continue end if
+  attemptedHint = -1
+  if heap.insertionPageHint >= 0 and heap.insertionPageHint < heap.pagedFile.pageCount then
+    attemptedHint = heap.insertionPageHint
+    pageBytes = try(paged_file.readPage(heap.pagedFile, attemptedHint))
+    header = try(page.verify(pageBytes))
+    if header.pageType == page.TYPE_HEAP then
       inserted = try(slotted.insertWithFlags(pageBytes, recordBytes, slotFlags))
       if typeof(inserted) != "error" then
         generation = slotted.entryGeneration(pageBytes, inserted)
-        paged_file.writePage(heap.pagedFile, pageNumber, pageBytes)
+        paged_file.writePage(heap.pagedFile, attemptedHint, pageBytes)
         paged_file.flush(heap.pagedFile)
-        return rowId(pageNumber, inserted, generation)
+        return rowId(attemptedHint, inserted, generation)
       end if
       if inserted.code != slotted.PAGE_FULL then return inserted end if
-    end for
+    else
+      // TEXT/BLOB overflow pages may have been appended after the hinted heap
+      // page. A stale physical frontier is not corruption; allocate a new heap
+      // page below instead.
+      heap.insertionPageHint = -1
+    end if
+  end if
+
+  // A reopened heap may point at an old reusable slot that is too small for
+  // this row. Try the append frontier once before allocating another page.
+  lastPage = heap.pagedFile.pageCount - 1
+  if lastPage >= 0 and lastPage != attemptedHint then
+    pageBytes = try(paged_file.readPage(heap.pagedFile, lastPage))
+    header = try(page.verify(pageBytes))
+    if header.pageType == page.TYPE_HEAP then
+      inserted = try(slotted.insertWithFlags(pageBytes, recordBytes, slotFlags))
+      if typeof(inserted) != "error" then
+        generation = slotted.entryGeneration(pageBytes, inserted)
+        paged_file.writePage(heap.pagedFile, lastPage, pageBytes)
+        paged_file.flush(heap.pagedFile)
+        heap.insertionPageHint = lastPage
+        return rowId(lastPage, inserted, generation)
+      end if
+      if inserted.code != slotted.PAGE_FULL then return inserted end if
+    end if
   end if
 
   pageNumber = heap.pagedFile.pageCount
@@ -235,6 +286,7 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   slotId = slotted.insertWithFlags(pageBytes, recordBytes, slotFlags)
   generation = slotted.entryGeneration(pageBytes, slotId)
   paged_file.appendPage(heap.pagedFile, pageBytes)
+  heap.insertionPageHint = pageNumber
   return rowId(pageNumber, slotId, generation)
 end function
 
@@ -265,6 +317,7 @@ function update(heap, identifier, recordBytes)
   if typeof(direct) != "error" then
     paged_file.writePage(heap.pagedFile, leaf.pageNumber, pageBytes)
     paged_file.flush(heap.pagedFile)
+    heap.insertionPageHint = leaf.pageNumber
     return identifier
   end if
   if direct.code != slotted.PAGE_FULL then return direct end if
@@ -281,6 +334,7 @@ function update(heap, identifier, recordBytes)
   slotted.updateWithFlags(pageBytes, leaf.slotId, encodeForward(newId), forwardingFlags)
   paged_file.writePage(heap.pagedFile, leaf.pageNumber, pageBytes)
   paged_file.flush(heap.pagedFile)
+  heap.insertionPageHint = leaf.pageNumber
   return identifier
 end function
 
@@ -305,6 +359,7 @@ function remove(heap, identifier)
     // Make the externally visible deletion durable before reclaiming internal
     // forwarding/moved records. A crash can then leak only unreachable storage.
     paged_file.flush(heap.pagedFile)
+    heap.insertionPageHint = rootId.pageNumber
 
     if len(chain) > 1 then
       for index = 1 to len(chain) - 1

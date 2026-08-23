@@ -206,25 +206,29 @@ end function
 // Merges the sorted.
 // Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function mergeSorted(left, right)
-  result = []
+  result = array(len(left) + len(right))
+  resultIndex = 0
   leftIndex = 0
   rightIndex = 0
   while leftIndex < len(left) and rightIndex < len(right)
     if compareEntries(left[leftIndex], right[rightIndex]) <= 0 then
-      result = result + [left[leftIndex]]
+      result[resultIndex] = left[leftIndex]
       leftIndex = leftIndex + 1
     else
-      result = result + [right[rightIndex]]
+      result[resultIndex] = right[rightIndex]
       rightIndex = rightIndex + 1
     end if
+    resultIndex = resultIndex + 1
   end while
   while leftIndex < len(left)
-    result = result + [left[leftIndex]]
+    result[resultIndex] = left[leftIndex]
     leftIndex = leftIndex + 1
+    resultIndex = resultIndex + 1
   end while
   while rightIndex < len(right)
-    result = result + [right[rightIndex]]
+    result[resultIndex] = right[rightIndex]
     rightIndex = rightIndex + 1
+    resultIndex = resultIndex + 1
   end while
   return result
 end function
@@ -234,17 +238,15 @@ end function
 function sortEntries(values)
   if typeof(values) != "array" then return fail(INVALID_ARGUMENT, "sortEntries", "values must be array") end if
   if len(values) <= 1 then
-    result = []
-    for each value in values
-      result = result + [copyEntry(value)]
-    end for
+    result = array(len(values))
+    if len(values) == 1 then result[0] = copyEntry(values[0]) end if
     return result
   end if
   middle = len(values) >> 1
-  left = []
-  right = []
+  left = array(middle)
+  right = array(len(values) - middle)
   for index = 0 to len(values) - 1
-    if index < middle then left = left + [values[index]] else right = right + [values[index]] end if
+    if index < middle then left[index] = values[index] else right[index - middle] = values[index] end if
   end for
   return mergeSorted(sortEntries(left), sortEntries(right))
 end function

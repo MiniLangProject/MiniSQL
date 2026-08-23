@@ -7,7 +7,9 @@ package minisql.admin.win32_client
 import minisql.admin.connection_profiles as connection_profiles
 import minisql.admin.fullclient as fullclient
 import minisql.common.uuid as uuid
+import minisql.config.loader as json
 import minisql.platform.clock as clock
+import minisql.platform.file as file_api
 import minisql.platform.win32_gui as gui
 
 const INVALID_ARGUMENT = 9001
@@ -16,6 +18,7 @@ const LBN_DBLCLK = 2
 const TCN_SELCHANGE = -551
 const TVN_SELCHANGEDW = -451
 const NM_DBLCLK = -3
+const LVN_COLUMNCLICK = -108
 const EN_CHANGE = 0x0300
 
 const QUERY_EXECUTE = 1
@@ -26,6 +29,7 @@ const QUERY_ROLLBACK = 5
 const QUERY_REFRESH = 6
 const QUERY_DESCRIBE = 7
 const QUERY_DATA_MUTATION = 8
+const QUERY_SCHEMA_MUTATION = 9
 
 const ID_PROFILE_LIST = 8001
 const ID_PROFILE_NAME = 8002
@@ -71,6 +75,21 @@ const ID_DATA_COPY = 8125
 const ID_DATA_EDIT = 8126
 const ID_DATA_DELETE = 8127
 const ID_DATA_REFRESH = 8128
+const ID_DATA_COPY_CLIPBOARD = 8129
+const ID_DATA_PASTE = 8130
+const ID_DATA_FILTER = 8131
+const ID_DATA_FILTER_APPLY = 8132
+const ID_DATA_PREVIOUS_PAGE = 8133
+const ID_DATA_NEXT_PAGE = 8134
+const ID_DATA_PAGE_LABEL = 8135
+const ID_DATA_APPLY_CHANGES = 8136
+const ID_DATA_REVERT_CHANGES = 8137
+const ID_DATA_PREVIEW_CHANGES = 8138
+const ID_SCHEMA_DESIGNER = 8139
+const ID_EXPORT_CSV = 8140
+const ID_CLOSE_SQL = 8141
+const ID_WORKSHEET_TABS = 8142
+const ID_HISTORY_FILTER = 8143
 
 const ID_ROW_VALUES = 8201
 const ID_ROW_VALUE = 8202
@@ -78,6 +97,16 @@ const ID_ROW_PREVIOUS = 8203
 const ID_ROW_NEXT = 8204
 const ID_ROW_SAVE = 8205
 const ID_ROW_CANCEL = 8206
+
+const ID_SCHEMA_ACTIONS = 8301
+const ID_SCHEMA_TABLE = 8302
+const ID_SCHEMA_OBJECT = 8303
+const ID_SCHEMA_DEFINITION = 8304
+const ID_SCHEMA_OPTION = 8305
+const ID_SCHEMA_PREVIEW = 8306
+const ID_SCHEMA_EXECUTE = 8307
+const ID_SCHEMA_INSERT = 8308
+const ID_SCHEMA_CANCEL = 8309
 
 // Owns all native controls in the connection-alias window.
 struct ConnectionWindow
@@ -193,6 +222,36 @@ struct AdminWindow
   closeButton
   // Stores the workbench status line.
   statusLabel
+  // Stores independent SQL worksheet tabs above the active editor.
+  worksheetTabs
+  // Closes the active SQL worksheet while retaining at least one page.
+  closeSqlButton
+  // Exports the active structured result page as UTF-8 CSV.
+  exportCsvButton
+  // Opens the structured MiniSQL schema designer.
+  schemaButton
+  // Filters the History sidebar without changing retained history.
+  historyFilterEdit
+  // Copies every selected data row to escaped TSV clipboard text.
+  dataCopyClipboardButton
+  // Stages clipboard TSV rows as INSERT changes.
+  dataPasteButton
+  // Stores the server-side WHERE predicate used by the Data page.
+  dataFilterEdit
+  // Applies the current Data-page filter and resets pagination.
+  dataFilterButton
+  // Loads the preceding bounded Data page.
+  dataPreviousButton
+  // Loads the next bounded Data page.
+  dataNextButton
+  // Shows current page, page size, and pending-change count.
+  dataPageLabel
+  // Executes all previewed row changes through the background worker.
+  dataApplyButton
+  // Discards every unapplied row change.
+  dataRevertButton
+  // Shows the exact generated SQL for pending changes.
+  dataPreviewButton
 end struct
 
 // Owns the bounded modal editor used for arbitrary-width table rows.
@@ -237,6 +296,42 @@ struct RowEditorState
   resultSql
 end struct
 
+// Owns the structured schema designer controls.
+struct SchemaEditorWindow
+  // Stores the modal top-level schema designer handle.
+  hwnd
+  // Stores the ordered schema action list.
+  actionList
+  // Edits the target table name.
+  tableEdit
+  // Edits a column, index, or constraint name.
+  objectEdit
+  // Edits column definitions, index columns, or constraint expressions.
+  definitionEdit
+  // Edits action-specific options such as UNIQUE or a rename target.
+  optionEdit
+  // Shows the exact generated DDL before submission.
+  previewEdit
+  // Returns the generated DDL for immediate execution.
+  executeButton
+  // Returns the generated DDL for insertion into a worksheet.
+  insertButton
+  // Closes the designer without returning DDL.
+  cancelButton
+  // Stores explanatory labels for all editable fields.
+  labels
+end struct
+
+// Retains schema-designer modal state until execution, insertion, or cancellation.
+struct SchemaEditorState
+  // Owns the modal native controls.
+  window
+  // Stores generated DDL or void when cancelled.
+  resultSql
+  // Selects direct execution instead of worksheet insertion.
+  executeImmediately
+end struct
+
 // Bundles immutable input for any protocol operation executed off the UI thread.
 struct QueryTask
   // Stores the fullclient state owned by the session.
@@ -247,6 +342,8 @@ struct QueryTask
   sqlText
   // Stores the table selected for an asynchronous description operation.
   tableName
+  // Stores the immutable page/filter/sort request for table description refreshes.
+  browseOptions
 end struct
 
 // Carries one worker result and its optional object-tree refresh back to the UI.
@@ -299,6 +396,22 @@ struct AdminSession
   highlightAfterMilliseconds
   // Persists the selected SQL/details workspace across asynchronous renders.
   workspacePage
+  // Retains every independent SQL worksheet.
+  worksheets
+  // Selects the worksheet currently loaded in the RichEdit control.
+  selectedWorksheetIndex
+  // Allocates monotonically increasing worksheet labels.
+  nextWorksheetNumber
+  // Retains unapplied INSERT, UPDATE, and DELETE previews.
+  pendingChanges
+  // Stores the active Data-page filter, order, and pagination settings.
+  dataOptions
+  // Stores the case-insensitive History sidebar filter.
+  historyFilter
+  // Stores the optional per-user window-layout file path.
+  layoutPath
+  // Retains the last live top-level rectangle for persistence after WM_CLOSE.
+  windowRect
 end struct
 
 // Creates a namespaced GUI-controller error.
@@ -751,6 +864,9 @@ end function
 function createWindow(visible)
   hwnd = try(gui.createTopLevel("MiniSQL Workbench", 1440, 900, false))
   if typeof(hwnd) == "error" then return hwnd end if
+  // Native title-bar closes must pass through the session controller so staged
+  // table changes receive the same warning as the Disconnect command.
+  gui.setCloseEventRouting(hwnd, true)
   ignoredMenu = try(gui.attachWorkbenchMenuBar(hwnd))
   if typeof(ignoredMenu) == "error" then gui.destroy(hwnd); return ignoredMenu end if
   if not ignoredMenu then gui.destroy(hwnd); return fail("createWindow", "workbench menu could not be attached") end if
@@ -769,14 +885,19 @@ function createWindow(visible)
   rollbackButton = try(gui.createButtonId(hwnd, ID_ROLLBACK, "Rollback", 802, 10, 82, 34))
   stopButton = try(gui.createButtonId(hwnd, ID_STOP, "■ Stop", 900, 10, 72, 34))
   clearButton = try(gui.createButtonId(hwnd, ID_CLEAR, "Clear results", 980, 10, 104, 34))
+  schemaButton = try(gui.createButtonId(hwnd, ID_SCHEMA_DESIGNER, "Schema", 1092, 10, 82, 34))
+  exportCsvButton = try(gui.createButtonId(hwnd, ID_EXPORT_CSV, "Export CSV", 1182, 10, 92, 34))
+  closeSqlButton = try(gui.createButtonId(hwnd, ID_CLOSE_SQL, "Close SQL", 1282, 10, 88, 34))
   closeButton = try(gui.createButtonId(hwnd, ID_CLOSE, "Disconnect", 1318, 10, 102, 34))
   connectionLabel = try(gui.createLabel(hwnd, "Opening MiniSQL session …", 12, 54, 1398, 24))
   sidebarTabs = try(gui.createTabControl(hwnd, ID_SIDEBAR_TABS, 12, 82, 294, 30))
   objectTree = try(gui.createTreeView(hwnd, ID_OBJECT_TREE, 12, 116, 294, 714))
   bookmarkList = try(gui.createListBoxId(hwnd, ID_BOOKMARK_LIST, 12, 116, 294, 714))
   historyList = try(gui.createListBoxId(hwnd, ID_HISTORY_LIST, 12, 116, 294, 714))
+  historyFilterEdit = try(gui.createTextBoxId(hwnd, ID_HISTORY_FILTER, "", 12, 116, 294, 28, false))
   workspaceTabs = try(gui.createTabControl(hwnd, ID_WORKSPACE_TABS, 320, 82, 1100, 30))
-  queryEdit = try(gui.createSqlEditor(hwnd, ID_QUERY_EDIT, "SHOW TABLES;", 320, 116, 1100, 310))
+  worksheetTabs = try(gui.createTabControl(hwnd, ID_WORKSHEET_TABS, 320, 116, 1100, 30))
+  queryEdit = try(gui.createSqlEditor(hwnd, ID_QUERY_EDIT, "SHOW TABLES;", 320, 150, 1100, 276))
   resultTabs = try(gui.createTabControl(hwnd, ID_RESULT_TABS, 320, 434, 1100, 30))
   resultGrid = try(gui.createListView(hwnd, ID_RESULT_GRID, 320, 468, 1100, 362))
   detailTabs = try(gui.createTabControl(hwnd, ID_DETAIL_TABS, 320, 116, 1100, 30))
@@ -787,15 +908,28 @@ function createWindow(visible)
   dataEditButton = try(gui.createButtonId(hwnd, ID_DATA_EDIT, "Edit row", 520, 150, 92, 34))
   dataDeleteButton = try(gui.createButtonId(hwnd, ID_DATA_DELETE, "Delete row", 620, 150, 96, 34))
   dataRefreshButton = try(gui.createButtonId(hwnd, ID_DATA_REFRESH, "Refresh data", 724, 150, 104, 34))
+  dataCopyClipboardButton = try(gui.createButtonId(hwnd, ID_DATA_COPY_CLIPBOARD, "Copy", 836, 150, 72, 34))
+  dataPasteButton = try(gui.createButtonId(hwnd, ID_DATA_PASTE, "Paste", 916, 150, 72, 34))
+  dataFilterEdit = try(gui.createTextBoxId(hwnd, ID_DATA_FILTER, "", 320, 192, 360, 30, false))
+  dataFilterButton = try(gui.createButtonId(hwnd, ID_DATA_FILTER_APPLY, "Apply filter", 688, 192, 92, 30))
+  dataPreviousButton = try(gui.createButtonId(hwnd, ID_DATA_PREVIOUS_PAGE, "◀ Page", 788, 192, 82, 30))
+  dataNextButton = try(gui.createButtonId(hwnd, ID_DATA_NEXT_PAGE, "Page ▶", 878, 192, 82, 30))
+  dataPageLabel = try(gui.createLabel(hwnd, "Page 1", 968, 196, 180, 24))
+  dataApplyButton = try(gui.createButtonId(hwnd, ID_DATA_APPLY_CHANGES, "Apply changes", 996, 150, 108, 34))
+  dataRevertButton = try(gui.createButtonId(hwnd, ID_DATA_REVERT_CHANGES, "Revert", 1112, 150, 78, 34))
+  dataPreviewButton = try(gui.createButtonId(hwnd, ID_DATA_PREVIEW_CHANGES, "SQL preview", 1198, 150, 96, 34))
   statusLabel = try(gui.createLabel(hwnd, "Ready", 12, 842, 1408, 24))
-  controlFailure = firstControlError([refreshButton, openButton, newSqlButton, executeButton, executeScriptButton, explainButton, beginButton, commitButton, rollbackButton, stopButton, clearButton, closeButton, connectionLabel, sidebarTabs, objectTree, bookmarkList, historyList, workspaceTabs, queryEdit, resultTabs, resultGrid, detailTabs, detailEdit, detailGrid, dataAddButton, dataCopyButton, dataEditButton, dataDeleteButton, dataRefreshButton, statusLabel])
+  controlFailure = firstControlError([refreshButton, openButton, newSqlButton, executeButton, executeScriptButton, explainButton, beginButton, commitButton, rollbackButton, stopButton, clearButton, schemaButton, exportCsvButton, closeSqlButton, closeButton, connectionLabel, sidebarTabs, objectTree, bookmarkList, historyList, historyFilterEdit, workspaceTabs, worksheetTabs, queryEdit, resultTabs, resultGrid, detailTabs, detailEdit, detailGrid, dataAddButton, dataCopyButton, dataEditButton, dataDeleteButton, dataRefreshButton, dataCopyClipboardButton, dataPasteButton, dataFilterEdit, dataFilterButton, dataPreviousButton, dataNextButton, dataPageLabel, dataApplyButton, dataRevertButton, dataPreviewButton, statusLabel])
   if controlFailure is not void then gui.destroy(hwnd); return controlFailure end if
-  window = AdminWindow(hwnd, connectionLabel, sidebarTabs, objectTree, bookmarkList, historyList, workspaceTabs, detailTabs, resultTabs, queryEdit, detailEdit, detailGrid, dataAddButton, dataCopyButton, dataEditButton, dataDeleteButton, dataRefreshButton, resultGrid, refreshButton, openButton, newSqlButton, executeButton, executeScriptButton, explainButton, beginButton, commitButton, rollbackButton, stopButton, clearButton, closeButton, statusLabel)
+  window = AdminWindow(hwnd, connectionLabel, sidebarTabs, objectTree, bookmarkList, historyList, workspaceTabs, detailTabs, resultTabs, queryEdit, detailEdit, detailGrid, dataAddButton, dataCopyButton, dataEditButton, dataDeleteButton, dataRefreshButton, resultGrid, refreshButton, openButton, newSqlButton, executeButton, executeScriptButton, explainButton, beginButton, commitButton, rollbackButton, stopButton, clearButton, closeButton, statusLabel, worksheetTabs, closeSqlButton, exportCsvButton, schemaButton, historyFilterEdit, dataCopyClipboardButton, dataPasteButton, dataFilterEdit, dataFilterButton, dataPreviousButton, dataNextButton, dataPageLabel, dataApplyButton, dataRevertButton, dataPreviewButton)
+  ignoredHistoryCue = gui.setCueBanner(historyFilterEdit, "Search history …")
+  ignoredFilterCue = gui.setCueBanner(dataFilterEdit, "WHERE predicate, e.g. active = TRUE")
   gui.tabAdd(sidebarTabs, "Objects")
   gui.tabAdd(sidebarTabs, "Bookmarks")
   gui.tabAdd(sidebarTabs, "History")
   gui.tabAdd(workspaceTabs, "SQL Worksheet")
   gui.tabAdd(workspaceTabs, "Object Details")
+  gui.tabAdd(worksheetTabs, "SQL 1")
   gui.tabSelect(sidebarTabs, 0)
   gui.tabSelect(workspaceTabs, 0)
   applyVisibility(window)
@@ -819,29 +953,33 @@ function layoutWindow(window)
   height = size[1]
   if width < 980 then width = 980 end if
   if height < 650 then height = 650 end if
-  compact = width < 1250
+  compact = width < 1520
   contentTop = 82
   gui.moveDip(window.refreshButton, 12, 10, 92, 34)
   gui.moveDip(window.openButton, 112, 10, 106, 34)
-  gui.moveDip(window.newSqlButton, 226, 10, 70, 34)
-  gui.moveDip(window.executeButton, 312, 10, 116, 34)
-  gui.moveDip(window.executeScriptButton, 436, 10, 96, 34)
-  gui.moveDip(window.explainButton, 540, 10, 82, 34)
+  gui.moveDip(window.schemaButton, 226, 10, 82, 34)
+  gui.moveDip(window.newSqlButton, 316, 10, 70, 34)
+  gui.moveDip(window.closeSqlButton, 394, 10, 88, 34)
+  gui.moveDip(window.executeButton, 490, 10, 116, 34)
+  gui.moveDip(window.executeScriptButton, 614, 10, 96, 34)
+  gui.moveDip(window.explainButton, 718, 10, 82, 34)
   if compact then
-    gui.moveDip(window.stopButton, 630, 10, 72, 34)
+    gui.moveDip(window.stopButton, 808, 10, 72, 34)
     gui.moveDip(window.beginButton, 12, 52, 72, 34)
     gui.moveDip(window.commitButton, 92, 52, 76, 34)
     gui.moveDip(window.rollbackButton, 176, 52, 82, 34)
     gui.moveDip(window.clearButton, 266, 52, 104, 34)
+    gui.moveDip(window.exportCsvButton, 378, 52, 92, 34)
     gui.moveDip(window.closeButton, width - 122, 52, 102, 34)
     gui.moveDip(window.connectionLabel, 12, 94, width - 24, 24)
     contentTop = 124
   else
-    gui.moveDip(window.beginButton, 638, 10, 72, 34)
-    gui.moveDip(window.commitButton, 718, 10, 76, 34)
-    gui.moveDip(window.rollbackButton, 802, 10, 82, 34)
-    gui.moveDip(window.stopButton, 900, 10, 72, 34)
-    gui.moveDip(window.clearButton, 980, 10, 104, 34)
+    gui.moveDip(window.beginButton, 816, 10, 72, 34)
+    gui.moveDip(window.commitButton, 896, 10, 76, 34)
+    gui.moveDip(window.rollbackButton, 980, 10, 82, 34)
+    gui.moveDip(window.stopButton, 1070, 10, 72, 34)
+    gui.moveDip(window.clearButton, 1150, 10, 104, 34)
+    gui.moveDip(window.exportCsvButton, 1262, 10, 92, 34)
     gui.moveDip(window.closeButton, width - 122, 10, 102, 34)
     gui.moveDip(window.connectionLabel, 12, 54, width - 24, 24)
   end if
@@ -856,14 +994,21 @@ function layoutWindow(window)
   side = gui.tabSelectedIndex(window.sidebarTabs)
   if side == 0 then gui.moveDip(window.objectTree, 12, paneTop, left, bottom - paneTop) else parkControl(window.objectTree) end if
   if side == 1 then gui.moveDip(window.bookmarkList, 12, paneTop, left, bottom - paneTop) else parkControl(window.bookmarkList) end if
-  if side == 2 then gui.moveDip(window.historyList, 12, paneTop, left, bottom - paneTop) else parkControl(window.historyList) end if
+  if side == 2 then
+    gui.moveDip(window.historyFilterEdit, 12, paneTop, left, 30)
+    gui.moveDip(window.historyList, 12, paneTop + 38, left, bottom - paneTop - 38)
+  else
+    parkControl(window.historyFilterEdit)
+    parkControl(window.historyList)
+  end if
   gui.moveDip(window.workspaceTabs, mainX, contentTop, mainWidth, 30)
   editorHeight = (bottom - paneTop - 42) >> 1
   if editorHeight < 150 then editorHeight = 150 end if
   resultTabY = paneTop + editorHeight + 8
   workspace = gui.tabSelectedIndex(window.workspaceTabs)
   if workspace == 0 then
-    gui.moveDip(window.queryEdit, mainX, paneTop, mainWidth, editorHeight)
+    gui.moveDip(window.worksheetTabs, mainX, paneTop, mainWidth, 30)
+    gui.moveDip(window.queryEdit, mainX, paneTop + 34, mainWidth, editorHeight - 34)
     gui.moveDip(window.resultTabs, mainX, resultTabY, mainWidth, 30)
     gui.moveDip(window.resultGrid, mainX, resultTabY + 34, mainWidth, bottom - (resultTabY + 34))
     parkControl(window.detailTabs)
@@ -874,7 +1019,18 @@ function layoutWindow(window)
     parkControl(window.dataEditButton)
     parkControl(window.dataDeleteButton)
     parkControl(window.dataRefreshButton)
+    parkControl(window.dataCopyClipboardButton)
+    parkControl(window.dataPasteButton)
+    parkControl(window.dataFilterEdit)
+    parkControl(window.dataFilterButton)
+    parkControl(window.dataPreviousButton)
+    parkControl(window.dataNextButton)
+    parkControl(window.dataPageLabel)
+    parkControl(window.dataApplyButton)
+    parkControl(window.dataRevertButton)
+    parkControl(window.dataPreviewButton)
   else
+    parkControl(window.worksheetTabs)
     parkControl(window.queryEdit)
     parkControl(window.resultTabs)
     parkControl(window.resultGrid)
@@ -886,18 +1042,38 @@ function layoutWindow(window)
       parkControl(window.detailEdit)
       gridTop = paneTop + 34
       if dataPage then
-        gui.moveDip(window.dataAddButton, mainX, gridTop, 92, 34)
-        gui.moveDip(window.dataCopyButton, mainX + 100, gridTop, 92, 34)
-        gui.moveDip(window.dataEditButton, mainX + 200, gridTop, 92, 34)
-        gui.moveDip(window.dataDeleteButton, mainX + 300, gridTop, 96, 34)
-        gui.moveDip(window.dataRefreshButton, mainX + 404, gridTop, 104, 34)
-        gridTop = gridTop + 42
+        gui.moveDip(window.dataAddButton, mainX, gridTop, 84, 34)
+        gui.moveDip(window.dataCopyButton, mainX + 92, gridTop, 84, 34)
+        gui.moveDip(window.dataEditButton, mainX + 184, gridTop, 84, 34)
+        gui.moveDip(window.dataDeleteButton, mainX + 276, gridTop, 88, 34)
+        gui.moveDip(window.dataRefreshButton, mainX + 372, gridTop, 96, 34)
+        gui.moveDip(window.dataCopyClipboardButton, mainX + 476, gridTop, 64, 34)
+        gui.moveDip(window.dataPasteButton, mainX + 548, gridTop, 64, 34)
+        gui.moveDip(window.dataFilterEdit, mainX, gridTop + 42, 240, 30)
+        gui.moveDip(window.dataFilterButton, mainX + 248, gridTop + 42, 90, 30)
+        gui.moveDip(window.dataPreviousButton, mainX + 346, gridTop + 42, 72, 30)
+        gui.moveDip(window.dataNextButton, mainX + 426, gridTop + 42, 72, 30)
+        gui.moveDip(window.dataPageLabel, mainX + 506, gridTop + 46, mainWidth - 506, 24)
+        gui.moveDip(window.dataApplyButton, mainX, gridTop + 80, 108, 30)
+        gui.moveDip(window.dataRevertButton, mainX + 116, gridTop + 80, 78, 30)
+        gui.moveDip(window.dataPreviewButton, mainX + 202, gridTop + 80, 96, 30)
+        gridTop = gridTop + 118
       else
         parkControl(window.dataAddButton)
         parkControl(window.dataCopyButton)
         parkControl(window.dataEditButton)
         parkControl(window.dataDeleteButton)
         parkControl(window.dataRefreshButton)
+        parkControl(window.dataCopyClipboardButton)
+        parkControl(window.dataPasteButton)
+        parkControl(window.dataFilterEdit)
+        parkControl(window.dataFilterButton)
+        parkControl(window.dataPreviousButton)
+        parkControl(window.dataNextButton)
+        parkControl(window.dataPageLabel)
+        parkControl(window.dataApplyButton)
+        parkControl(window.dataRevertButton)
+        parkControl(window.dataPreviewButton)
       end if
       gui.moveDip(window.detailGrid, mainX, gridTop, mainWidth, bottom - gridTop)
     else
@@ -907,6 +1083,16 @@ function layoutWindow(window)
       parkControl(window.dataEditButton)
       parkControl(window.dataDeleteButton)
       parkControl(window.dataRefreshButton)
+      parkControl(window.dataCopyClipboardButton)
+      parkControl(window.dataPasteButton)
+      parkControl(window.dataFilterEdit)
+      parkControl(window.dataFilterButton)
+      parkControl(window.dataPreviousButton)
+      parkControl(window.dataNextButton)
+      parkControl(window.dataPageLabel)
+      parkControl(window.dataApplyButton)
+      parkControl(window.dataRevertButton)
+      parkControl(window.dataPreviewButton)
       gui.moveDip(window.detailEdit, mainX, paneTop + 34, mainWidth, bottom - (paneTop + 34))
     end if
   end if
@@ -923,7 +1109,7 @@ function verifyWorkbenchLayout(window, width, height)
   if typeof(laidOut) == "error" then return laidOut end if
   actual = try(gui.clientSizeDip(window.hwnd))
   if typeof(actual) == "error" then return actual end if
-  controls = [window.connectionLabel, window.sidebarTabs, window.objectTree, window.workspaceTabs, window.resultTabs, window.queryEdit, window.resultGrid, window.refreshButton, window.openButton, window.newSqlButton, window.executeButton, window.executeScriptButton, window.explainButton, window.beginButton, window.commitButton, window.rollbackButton, window.stopButton, window.clearButton, window.closeButton, window.statusLabel]
+  controls = [window.connectionLabel, window.sidebarTabs, window.objectTree, window.workspaceTabs, window.worksheetTabs, window.resultTabs, window.queryEdit, window.resultGrid, window.refreshButton, window.openButton, window.schemaButton, window.newSqlButton, window.closeSqlButton, window.executeButton, window.executeScriptButton, window.explainButton, window.beginButton, window.commitButton, window.rollbackButton, window.stopButton, window.clearButton, window.exportCsvButton, window.closeButton, window.statusLabel]
   for each control in controls
     rectangle = try(gui.controlRectDip(window.hwnd, control))
     if typeof(rectangle) == "error" or not rectangleInside(rectangle, actual[0], actual[1]) then return fail("verifyWorkbenchLayout", "a workbench control is outside the client area") end if
@@ -932,7 +1118,7 @@ function verifyWorkbenchLayout(window, width, height)
   editorRect = try(gui.controlRectDip(window.hwnd, window.queryEdit))
   resultsRect = try(gui.controlRectDip(window.hwnd, window.resultGrid))
   if rectanglesOverlap(sidebarRect, editorRect) or rectanglesOverlap(editorRect, resultsRect) then return fail("verifyWorkbenchLayout", "workbench panes overlap") end if
-  parked = [window.bookmarkList, window.historyList, window.detailTabs, window.detailEdit, window.detailGrid, window.dataAddButton, window.dataCopyButton, window.dataEditButton, window.dataDeleteButton, window.dataRefreshButton]
+  parked = [window.bookmarkList, window.historyList, window.historyFilterEdit, window.detailTabs, window.detailEdit, window.detailGrid, window.dataAddButton, window.dataCopyButton, window.dataEditButton, window.dataDeleteButton, window.dataRefreshButton, window.dataCopyClipboardButton, window.dataPasteButton, window.dataFilterEdit, window.dataFilterButton, window.dataPreviousButton, window.dataNextButton, window.dataPageLabel, window.dataApplyButton, window.dataRevertButton, window.dataPreviewButton]
   for each control in parked
     rectangle = try(gui.controlRectDip(window.hwnd, control))
     if typeof(rectangle) == "error" or rectangleInside(rectangle, actual[0], actual[1]) then return fail("verifyWorkbenchLayout", "an inactive notebook page was not parked") end if
@@ -963,7 +1149,20 @@ function workbenchLayoutSmoke()
   commentStyle = gui.sqlEditorStyleAt(window.queryEdit, 0)
   if keywordStyle[0] != gui.SQL_COLOR_KEYWORD or (keywordStyle[1] & 1) == 0 then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "SELECT did not receive keyword styling") end if
   if commentStyle[0] != gui.SQL_COLOR_COMMENT or (commentStyle[1] & 2) == 0 then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "line comment did not receive comment styling") end if
-  tabSession = AdminSession(window, void, void, false, false, false, false, 0, 0)
+  multilineText = "SHOW TABLES;\r\n\r\nSELECT* from shop_customer;"
+  gui.setText(window.queryEdit, multilineText)
+  multilineStart = fullclient.utf16Length("SHOW TABLES;\r\n\r\n")
+  gui.selectText(window.queryEdit, multilineStart, multilineStart)
+  highlightedMultiline = try(highlightSqlEditor(window))
+  if typeof(highlightedMultiline) == "error" then gui.destroy(window.hwnd); return highlightedMultiline end if
+  multilineSelection = try(gui.textSelection(window.queryEdit))
+  selectStyle = try(gui.sqlEditorStyleAt(window.queryEdit, multilineStart))
+  fromStyle = try(gui.sqlEditorStyleAt(window.queryEdit, multilineStart + 8))
+  starStyle = try(gui.sqlEditorStyleAt(window.queryEdit, multilineStart + 6))
+  if multilineSelection[0] != multilineStart or multilineSelection[1] != multilineStart then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "CRLF translation moved the multiline caret") end if
+  if selectStyle[0] != gui.SQL_COLOR_KEYWORD or (selectStyle[1] & 1) == 0 or fromStyle[0] != gui.SQL_COLOR_KEYWORD or (fromStyle[1] & 1) == 0 then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "keywords after CRLF did not receive complete styling") end if
+  if starStyle[0] != gui.SQL_COLOR_DEFAULT or (starStyle[1] & 1) != 0 then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "operator after CRLF inherited keyword styling") end if
+  tabSession = AdminSession(window, void, void, false, false, false, false, 0, 0, [fullclient.newWorksheet(1, editorText)], 0, 2, [], fullclient.defaultDataBrowseOptions(), "", "", [])
   gui.clearEvents()
   if not gui.clickTabHeaderForTest(window.workspaceTabs, 180, 12) then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "workspace tab could not be clicked") end if
   gui.pumpMessages()
@@ -1016,7 +1215,9 @@ function applyVisibility(window)
   gui.show(window.objectTree, side == 0)
   gui.show(window.bookmarkList, side == 1)
   gui.show(window.historyList, side == 2)
+  gui.show(window.historyFilterEdit, side == 2)
   workspace = gui.tabSelectedIndex(window.workspaceTabs)
+  gui.show(window.worksheetTabs, workspace == 0)
   gui.show(window.queryEdit, workspace == 0)
   gui.show(window.resultTabs, workspace == 0)
   gui.show(window.resultGrid, workspace == 0)
@@ -1031,6 +1232,16 @@ function applyVisibility(window)
   gui.show(window.dataEditButton, dataPage)
   gui.show(window.dataDeleteButton, dataPage)
   gui.show(window.dataRefreshButton, dataPage)
+  gui.show(window.dataCopyClipboardButton, dataPage)
+  gui.show(window.dataPasteButton, dataPage)
+  gui.show(window.dataFilterEdit, dataPage)
+  gui.show(window.dataFilterButton, dataPage)
+  gui.show(window.dataPreviousButton, dataPage)
+  gui.show(window.dataNextButton, dataPage)
+  gui.show(window.dataPageLabel, dataPage)
+  gui.show(window.dataApplyButton, dataPage)
+  gui.show(window.dataRevertButton, dataPage)
+  gui.show(window.dataPreviewButton, dataPage)
   return layoutWindow(window)
 end function
 
@@ -1162,12 +1373,15 @@ function detailColumnWidthDip(caption)
 end function
 
 // Renders a structured object-detail response into the shared native report grid.
-function fillDetailGrid(window, state, detailName)
+function fillDetailGrid(session, detailName)
+  window = session.window
+  state = session.state
   resetRows = try(gui.listViewReset(window.detailGrid))
   if typeof(resetRows) == "error" then return resetRows end if
   resetColumns = try(gui.listViewResetColumns(window.detailGrid))
   if typeof(resetColumns) == "error" then return resetColumns end if
   grid = fullclient.detailGridByName(state, detailName)
+  if detailName == "Data" then grid = fullclient.dataGridWithChanges(state.tableDetails, session.pendingChanges) end if
   if grid is void or len(grid.columns) == 0 then
     messageColumn = try(gui.listViewAddColumn(window.detailGrid, 0, "Message", gui.scaleDip(window.hwnd, 600)))
     if typeof(messageColumn) == "error" then return messageColumn end if
@@ -1202,6 +1416,15 @@ function setBusyControls(session)
   gui.setEnabled(session.window.dataEditButton, enabled)
   gui.setEnabled(session.window.dataDeleteButton, enabled)
   gui.setEnabled(session.window.dataRefreshButton, enabled)
+  gui.setEnabled(session.window.dataCopyClipboardButton, enabled)
+  gui.setEnabled(session.window.dataPasteButton, enabled)
+  gui.setEnabled(session.window.dataFilterEdit, enabled)
+  gui.setEnabled(session.window.dataFilterButton, enabled)
+  gui.setEnabled(session.window.dataPreviousButton, enabled and session.dataOptions.page > 0)
+  gui.setEnabled(session.window.dataNextButton, enabled and len(session.state.tableDetails.contentsGrid.rows) >= session.dataOptions.pageSize)
+  gui.setEnabled(session.window.dataApplyButton, enabled and len(session.pendingChanges) > 0)
+  gui.setEnabled(session.window.dataRevertButton, enabled and len(session.pendingChanges) > 0)
+  gui.setEnabled(session.window.dataPreviewButton, enabled and len(session.pendingChanges) > 0)
   gui.setEnabled(session.window.resultTabs, enabled)
   gui.setEnabled(session.window.queryEdit, enabled)
   gui.setEnabled(session.window.executeButton, enabled)
@@ -1214,6 +1437,11 @@ function setBusyControls(session)
   gui.setEnabled(session.window.openButton, enabled)
   gui.setEnabled(session.window.newSqlButton, enabled)
   gui.setEnabled(session.window.clearButton, enabled)
+  gui.setEnabled(session.window.worksheetTabs, enabled)
+  gui.setEnabled(session.window.closeSqlButton, enabled and len(session.worksheets) > 1)
+  gui.setEnabled(session.window.exportCsvButton, enabled and fullclient.activeResultTab(session.state) is not void)
+  gui.setEnabled(session.window.schemaButton, enabled)
+  gui.setEnabled(session.window.historyFilterEdit, enabled)
   gui.setEnabled(session.window.stopButton, session.busy)
   return true
 end function
@@ -1224,8 +1452,10 @@ function render(session)
   if typeof(treeRendered) == "error" then return treeRendered end if
   bookmarksRendered = try(fillList(session.window.bookmarkList, fullclient.bookmarkLines(session.state.bookmarks)))
   if typeof(bookmarksRendered) == "error" then return bookmarksRendered end if
-  historyRendered = try(fillList(session.window.historyList, session.state.history))
+  historyRendered = try(fillList(session.window.historyList, fullclient.filterHistory(session.state.history, session.historyFilter)))
   if typeof(historyRendered) == "error" then return historyRendered end if
+  worksheetsRendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  if typeof(worksheetsRendered) == "error" then return worksheetsRendered end if
   detailSelected = gui.tabSelectedIndex(session.window.detailTabs)
   detailsRendered = try(fillTabs(session.window.detailTabs, fullclient.detailTabLines(session.state), detailSelected))
   if typeof(detailsRendered) == "error" then return detailsRendered end if
@@ -1238,8 +1468,14 @@ function render(session)
   detailSelected = gui.tabSelectedIndex(session.window.detailTabs)
   if detailSelected >= 0 and detailSelected < len(labels) then detailName = labels[detailSelected] end if
   gui.setText(session.window.detailEdit, fullclient.detailTextByName(session.state, detailName))
-  detailGridRendered = try(fillDetailGrid(session.window, session.state, detailName))
+  detailGridRendered = try(fillDetailGrid(session, detailName))
   if typeof(detailGridRendered) == "error" then return detailGridRendered end if
+  totalText = "?"
+  if len(session.state.tableDetails.rowCountGrid.rows) > 0 and len(session.state.tableDetails.rowCountGrid.rows[0]) > 0 then totalText = session.state.tableDetails.rowCountGrid.rows[0][0] end if
+  sortText = "natural order"
+  if len(session.dataOptions.sortColumn) > 0 then sortText = session.dataOptions.sortColumn + " ASC"; if not session.dataOptions.ascending then sortText = session.dataOptions.sortColumn + " DESC" end if end if
+  pageText = "Page " + (session.dataOptions.page + 1) + "   •   " + totalText + " rows   •   " + sortText + "   •   " + len(session.pendingChanges) + " pending"
+  gui.setText(session.window.dataPageLabel, pageText)
   gui.setText(session.window.connectionLabel, session.state.profile.name + "   •   " + fullclient.endpointText(session.state.profile))
   gui.setText(session.window.statusLabel, session.state.statusText)
   setBusyControls(session)
@@ -1247,6 +1483,132 @@ function render(session)
   if typeof(restoredWorkspace) == "error" then return restoredWorkspace end if
   layoutWindow(session.window)
   return true
+end function
+
+// Creates the modal structured MiniSQL schema designer.
+function createSchemaEditorWindow(tableName, visible)
+  hwnd = try(gui.createTopLevel("MiniSQL Schema Designer", 900, 650, false))
+  if typeof(hwnd) == "error" then return hwnd end if
+  gui.setMinimumClientSizeDip(hwnd, 700, 500)
+  actions = try(gui.createListBoxId(hwnd, ID_SCHEMA_ACTIONS, 16, 54, 210, 510))
+  title = try(gui.createLabel(hwnd, "Schema operation", 16, 18, 210, 28))
+  tableLabel = try(gui.createLabel(hwnd, "Table", 246, 18, 620, 24))
+  tableEdit = try(gui.createTextBoxId(hwnd, ID_SCHEMA_TABLE, tableName, 246, 44, 620, 30, false))
+  objectLabel = try(gui.createLabel(hwnd, "Column / index / constraint name", 246, 84, 620, 24))
+  objectEdit = try(gui.createTextBoxId(hwnd, ID_SCHEMA_OBJECT, "", 246, 110, 620, 30, false))
+  definitionLabel = try(gui.createLabel(hwnd, "Definition / comma-separated index columns", 246, 150, 620, 24))
+  definitionEdit = try(gui.createTextBoxId(hwnd, ID_SCHEMA_DEFINITION, "", 246, 176, 620, 30, false))
+  optionLabel = try(gui.createLabel(hwnd, "Option (UNIQUE or rename target)", 246, 216, 620, 24))
+  optionEdit = try(gui.createTextBoxId(hwnd, ID_SCHEMA_OPTION, "", 246, 242, 620, 30, false))
+  previewLabel = try(gui.createLabel(hwnd, "Generated DDL preview", 246, 284, 620, 24))
+  previewEdit = try(gui.createEdit(hwnd, "Enter the required fields to generate DDL.", 246, 310, 620, 254, true))
+  executeButton = try(gui.createDefaultButtonId(hwnd, ID_SCHEMA_EXECUTE, "Execute DDL", 548, 584, 102, 34))
+  insertButton = try(gui.createButtonId(hwnd, ID_SCHEMA_INSERT, "Insert into SQL", 658, 584, 112, 34))
+  cancelButton = try(gui.createButtonId(hwnd, ID_SCHEMA_CANCEL, "Cancel", 778, 584, 88, 34))
+  labels = [title, tableLabel, objectLabel, definitionLabel, optionLabel, previewLabel]
+  controlFailure = firstControlError([actions, tableEdit, objectEdit, definitionEdit, optionEdit, previewEdit, executeButton, insertButton, cancelButton] + labels)
+  if controlFailure is not void then gui.destroy(hwnd); return controlFailure end if
+  for each action in fullclient.schemaActionLines()
+    added = try(gui.listAdd(actions, action))
+    if typeof(added) == "error" then gui.destroy(hwnd); return added end if
+  end for
+  gui.listSelect(actions, 0)
+  window = SchemaEditorWindow(hwnd, actions, tableEdit, objectEdit, definitionEdit, optionEdit, previewEdit, executeButton, insertButton, cancelButton, labels)
+  layoutSchemaEditor(window)
+  if visible and not gui.showTopLevel(hwnd) then gui.destroy(hwnd); return fail("createSchemaEditorWindow", "schema designer could not be shown") end if
+  return window
+end function
+
+// Reflows the schema designer at its current DPI and client size.
+function layoutSchemaEditor(window)
+  size = try(gui.clientSizeDip(window.hwnd))
+  if typeof(size) == "error" then return size end if
+  width = size[0]
+  height = size[1]
+  if width < 700 then width = 700 end if
+  if height < 500 then height = 500 end if
+  leftWidth = 210
+  rightX = 246
+  rightWidth = width - rightX - 24
+  gui.moveDip(window.labels[0], 16, 18, leftWidth, 28)
+  gui.moveDip(window.actionList, 16, 54, leftWidth, height - 78)
+  y = 18
+  for index = 1 to 4
+    gui.moveDip(window.labels[index], rightX, y, rightWidth, 24)
+    editor = window.tableEdit
+    if index == 2 then editor = window.objectEdit end if
+    if index == 3 then editor = window.definitionEdit end if
+    if index == 4 then editor = window.optionEdit end if
+    gui.moveDip(editor, rightX, y + 26, rightWidth, 30)
+    y = y + 66
+  end for
+  gui.moveDip(window.labels[5], rightX, y + 2, rightWidth, 24)
+  buttonY = height - 50
+  gui.moveDip(window.previewEdit, rightX, y + 28, rightWidth, buttonY - y - 36)
+  gui.moveDip(window.executeButton, width - 342, buttonY, 102, 34)
+  gui.moveDip(window.insertButton, width - 232, buttonY, 112, 34)
+  gui.moveDip(window.cancelButton, width - 112, buttonY, 88, 34)
+  gui.redraw(window.hwnd)
+  return true
+end function
+
+// Rebuilds the exact DDL preview from all current schema-designer fields.
+function renderSchemaEditor(editor)
+  action = gui.listSelectedIndex(editor.window.actionList)
+  tableName = try(gui.getText(editor.window.tableEdit))
+  objectName = try(gui.getText(editor.window.objectEdit))
+  definition = try(gui.getText(editor.window.definitionEdit))
+  optionText = try(gui.getText(editor.window.optionEdit))
+  sqlText = try(fullclient.schemaEditorSql(action, tableName, objectName, definition, optionText))
+  if typeof(sqlText) == "error" then gui.setText(editor.window.previewEdit, "Cannot generate DDL yet:\r\n" + sqlText.message); return sqlText end if
+  gui.setText(editor.window.previewEdit, sqlText)
+  return sqlText
+end function
+
+// Runs the modal schema designer and returns generated SQL plus execution intent.
+function runSchemaEditor(session)
+  window = try(createSchemaEditorWindow(session.state.selectedTable, false))
+  if typeof(window) == "error" then return window end if
+  editor = SchemaEditorState(window, void, false)
+  ignoredPreview = try(renderSchemaEditor(editor))
+  gui.setEnabled(session.window.hwnd, false)
+  if not gui.showTopLevel(window.hwnd) then gui.setEnabled(session.window.hwnd, true); gui.destroy(window.hwnd); return fail("runSchemaEditor", "schema designer could not be shown") end if
+  while gui.isOpen(window.hwnd) and gui.isOpen(session.window.hwnd)
+    ignoredPump = gui.pumpMessages()
+    event = gui.pollEvent()
+    while typeof(event) == "struct"
+      if event.hwnd == window.hwnd and (event.message == gui.WM_SIZE or event.message == gui.WM_DPICHANGED) then
+        ignoredLayout = try(layoutSchemaEditor(window))
+      else if event.hwnd == window.hwnd and event.message == gui.WM_COMMAND then
+        if event.controlId == ID_SCHEMA_CANCEL then
+          gui.destroy(window.hwnd)
+        else if event.controlId == ID_SCHEMA_EXECUTE or event.controlId == ID_SCHEMA_INSERT then
+          sqlText = try(renderSchemaEditor(editor))
+          if typeof(sqlText) != "error" then editor.resultSql = sqlText; editor.executeImmediately = event.controlId == ID_SCHEMA_EXECUTE; gui.destroy(window.hwnd) end if
+        else if event.controlId == ID_SCHEMA_ACTIONS or event.controlId == ID_SCHEMA_TABLE or event.controlId == ID_SCHEMA_OBJECT or event.controlId == ID_SCHEMA_DEFINITION or event.controlId == ID_SCHEMA_OPTION then
+          ignoredChangedPreview = try(renderSchemaEditor(editor))
+        end if
+      end if
+      event = gui.pollEvent()
+    end while
+    gui.sleep(10)
+  end while
+  if gui.isOpen(window.hwnd) then gui.destroy(window.hwnd) end if
+  if gui.isOpen(session.window.hwnd) then gui.setEnabled(session.window.hwnd, true) end if
+  if editor.resultSql is void then return void end if
+  return [editor.resultSql, editor.executeImmediately]
+end function
+
+// Opens the schema designer and either executes or inserts its generated DDL.
+function openSchemaDesigner(session)
+  result = try(runSchemaEditor(session))
+  if typeof(result) == "error" then session.state.statusText = result.message; return result end if
+  if result is void then session.state.statusText = "Schema design cancelled"; return false end if
+  if result[1] then
+    if not gui.confirmWarning(session.window.hwnd, "Execute schema DDL", "Execute this schema change?\r\n\r\n" + result[0]) then session.state.statusText = "Schema change cancelled"; return false end if
+    return startSchemaMutation(session, result[0])
+  end if
+  return addWorksheet(session, result[0])
 end function
 
 // Creates the modal field-by-field editor used for inserts, copies, and updates.
@@ -1363,13 +1725,14 @@ function rowEditorSql(editor)
   return fullclient.insertDataSql(editor.details, editor.values)
 end function
 
-// Runs one modal row editor and returns generated SQL or void after cancellation.
-function runRowEditor(session, rowIndex, duplicate, updateMode)
+// Runs one modal row editor and returns generated SQL plus its preview values.
+function runRowEditor(session, rowIndex, duplicate, updateMode, initialField)
   values = try(fullclient.dataEditorValues(session.state.tableDetails, rowIndex, duplicate))
   if typeof(values) == "error" then return values end if
   window = try(createRowEditorWindow(session.state.tableDetails, updateMode, false))
   if typeof(window) == "error" then return window end if
-  editor = RowEditorState(window, session.state.tableDetails, values, 0, rowIndex, updateMode, void)
+  if typeof(initialField) != "int" or initialField < 0 or initialField >= len(values) then initialField = 0 end if
+  editor = RowEditorState(window, session.state.tableDetails, values, initialField, rowIndex, updateMode, void)
   rendered = try(renderRowEditor(editor))
   if typeof(rendered) == "error" then gui.destroy(window.hwnd); return rendered end if
   gui.setEnabled(session.window.hwnd, false)
@@ -1406,7 +1769,8 @@ function runRowEditor(session, rowIndex, duplicate, updateMode)
   end while
   if gui.isOpen(window.hwnd) then gui.destroy(window.hwnd) end if
   if gui.isOpen(session.window.hwnd) then gui.setEnabled(session.window.hwnd, true); gui.focus(session.window.detailGrid) end if
-  return editor.resultSql
+  if editor.resultSql is void then return void end if
+  return [editor.resultSql, editor.values]
 end function
 
 // Returns the selected Data-grid row index or a descriptive validation error.
@@ -1416,19 +1780,286 @@ function selectedDataRow(session)
   return selected
 end function
 
-// Opens a modal insert/update draft and starts its asynchronous mutation when saved.
-function editDataRow(session, rowIndex, duplicate, updateMode)
-  sqlText = try(runRowEditor(session, rowIndex, duplicate, updateMode))
-  if typeof(sqlText) == "error" then session.state.statusText = sqlText.message; return sqlText end if
-  if sqlText is void then session.state.statusText = "Row edit cancelled"; return false end if
-  return startDataMutation(session, sqlText)
+// Resolves a SELECT-grid column to its DESCRIBE editor field.
+function editorFieldForDataColumn(details, dataColumn)
+  if typeof(details) != "struct" or typeof(dataColumn) != "int" or dataColumn < 0 or dataColumn >= len(details.contentsGrid.columns) then return 0 end if
+  name = details.contentsGrid.columns[dataColumn]
+  for index = 0 to len(details.columnsGrid.rows) - 1
+    row = details.columnsGrid.rows[index]
+    if len(row) >= 2 and row[1] == name then return index end if
+  end for
+  return 0
+end function
+
+// Returns whether one preview row already has an unapplied update or delete.
+function rowHasPendingChange(session, rowIndex)
+  for each change in session.pendingChanges
+    if change.rowIndex == rowIndex then return true end if
+  end for
+  return false
+end function
+
+// Opens an insert/update draft and stages its exact SQL after explicit preview.
+function editDataRow(session, rowIndex, duplicate, updateMode, initialField)
+  if updateMode and rowHasPendingChange(session, rowIndex) then session.state.statusText = "This row already has a pending change; apply or revert it first"; return false end if
+  editResult = try(runRowEditor(session, rowIndex, duplicate, updateMode, initialField))
+  if typeof(editResult) == "error" then session.state.statusText = editResult.message; return editResult end if
+  if editResult is void then session.state.statusText = "Row edit cancelled"; return false end if
+  sqlText = editResult[0]
+  kind = "INSERT"
+  pendingRow = -1
+  if updateMode then kind = "UPDATE"; pendingRow = rowIndex end if
+  if not gui.confirmWarning(session.window.hwnd, "Preview " + kind + " change", "Stage this generated SQL?\r\n\r\n" + sqlText + "\r\n\r\nUse Apply changes to commit it or Revert to discard it.") then session.state.statusText = "Row change was not staged"; return false end if
+  change = try(fullclient.pendingDataChange(kind, sqlText, pendingRow, editResult[1]))
+  if typeof(change) == "error" then session.state.statusText = change.message; return change end if
+  session.pendingChanges = session.pendingChanges + [change]
+  session.state.statusText = kind + " staged; " + len(session.pendingChanges) + " pending change(s)"
+  render(session)
+  return true
+end function
+
+// Saves the RichEdit contents into the selected worksheet model.
+function storeActiveWorksheet(session)
+  if session is not AdminSession or session.selectedWorksheetIndex < 0 or session.selectedWorksheetIndex >= len(session.worksheets) then return fail("storeActiveWorksheet", "active worksheet is invalid") end if
+  text = try(gui.getText(session.window.queryEdit))
+  if typeof(text) == "error" then return text end if
+  session.worksheets[session.selectedWorksheetIndex].sqlText = text
+  return true
+end function
+
+// Loads one worksheet into the shared colorized RichEdit control.
+function activateWorksheet(session, index)
+  if session is not AdminSession or typeof(index) != "int" or index < 0 or index >= len(session.worksheets) then return fail("activateWorksheet", "worksheet index is invalid") end if
+  stored = try(storeActiveWorksheet(session))
+  if typeof(stored) == "error" then return stored end if
+  session.selectedWorksheetIndex = index
+  gui.tabSelect(session.window.worksheetTabs, index)
+  gui.setText(session.window.queryEdit, session.worksheets[index].sqlText)
+  highlighted = try(highlightSqlEditor(session.window))
+  if typeof(highlighted) == "error" then return highlighted end if
+  gui.focus(session.window.queryEdit)
+  return true
+end function
+
+// Adds and activates a separately retained SQL worksheet.
+function addWorksheet(session, initialSql)
+  if typeof(initialSql) != "string" then return fail("addWorksheet", "initial SQL must be a string") end if
+  stored = try(storeActiveWorksheet(session))
+  if typeof(stored) == "error" then return stored end if
+  worksheet = try(fullclient.newWorksheet(session.nextWorksheetNumber, initialSql))
+  if typeof(worksheet) == "error" then return worksheet end if
+  session.nextWorksheetNumber = session.nextWorksheetNumber + 1
+  session.worksheets = session.worksheets + [worksheet]
+  session.selectedWorksheetIndex = len(session.worksheets) - 1
+  rendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  if typeof(rendered) == "error" then return rendered end if
+  gui.setText(session.window.queryEdit, initialSql)
+  selectWorkspace(session, 0)
+  highlighted = try(highlightSqlEditor(session.window))
+  if typeof(highlighted) == "error" then return highlighted end if
+  session.state.statusText = "Opened " + worksheet.title
+  setBusyControls(session)
+  gui.focus(session.window.queryEdit)
+  return true
+end function
+
+// Closes the active worksheet while ensuring one editor always remains available.
+function closeWorksheet(session)
+  if len(session.worksheets) <= 1 then session.state.statusText = "At least one SQL worksheet must remain open"; return false end if
+  stored = try(storeActiveWorksheet(session))
+  if typeof(stored) == "error" then return stored end if
+  active = session.worksheets[session.selectedWorksheetIndex]
+  if len(active.sqlText) > 0 and not gui.confirmWarning(session.window.hwnd, "Close SQL worksheet", "Close " + active.title + " and discard its SQL text?") then session.state.statusText = "SQL worksheet close cancelled"; return false end if
+  retained = []
+  for index = 0 to len(session.worksheets) - 1
+    if index != session.selectedWorksheetIndex then retained = retained + [session.worksheets[index]] end if
+  end for
+  session.worksheets = retained
+  if session.selectedWorksheetIndex >= len(retained) then session.selectedWorksheetIndex = len(retained) - 1 end if
+  rendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  if typeof(rendered) == "error" then return rendered end if
+  gui.setText(session.window.queryEdit, session.worksheets[session.selectedWorksheetIndex].sqlText)
+  session.state.statusText = "SQL worksheet closed"
+  render(session)
+  return true
+end function
+
+// Writes a complete UTF-8 text artifact and flushes it before returning success.
+function writeTextFile(path, text)
+  if typeof(path) != "string" or len(path) == 0 or typeof(text) != "string" then return fail("writeTextFile", "path and text are required") end if
+  handle = try(file_api.create(path))
+  if typeof(handle) == "error" then return handle end if
+  payload = bytes(text)
+  written = try(file_api.writeAt(handle, 0, payload, 0, len(payload)))
+  if typeof(written) == "error" then ignoredClose = try(file_api.close(handle)); return written end if
+  flushed = try(file_api.flush(handle))
+  closed = try(file_api.close(handle))
+  if typeof(flushed) == "error" then return flushed end if
+  return closed
+end function
+
+// Exports the active result grid through the native Save As dialog.
+function exportActiveResult(session)
+  tab = fullclient.activeResultTab(session.state)
+  if tab is void then session.state.statusText = "There is no active result to export"; return false end if
+  columns = tab.columns
+  rows = tab.rows
+  if len(columns) == 0 then columns = ["message"]; rows = [[tab.resultText]] end if
+  csv = try(fullclient.gridCsv(fullclient.DetailGrid(columns, rows)))
+  if typeof(csv) == "error" then session.state.statusText = csv.message; return csv end if
+  path = try(gui.chooseCsvPath(session.window.hwnd, "minisql-result.csv"))
+  if typeof(path) == "error" then session.state.statusText = path.message; return path end if
+  if len(path) == 0 then session.state.statusText = "CSV export cancelled"; return false end if
+  saved = try(writeTextFile(path, csv))
+  if typeof(saved) == "error" then session.state.statusText = "CSV export failed: " + saved.message; return saved end if
+  session.state.statusText = "Exported " + len(rows) + " row(s) to " + path
+  return true
+end function
+
+// Copies all selected preview rows as escaped, header-bearing TSV.
+function copySelectedDataRows(session)
+  selected = gui.listViewSelectedIndices(session.window.detailGrid)
+  if len(selected) == 0 then session.state.statusText = "Select one or more Data rows first"; return false end if
+  marked = fullclient.dataGridWithChanges(session.state.tableDetails, session.pendingChanges)
+  clipboardRows = []
+  for each markedRow in marked.rows
+    row = []
+    if len(markedRow) > 1 then
+      for columnIndex = 1 to len(markedRow) - 1
+        row = row + [markedRow[columnIndex]]
+      end for
+    end if
+    clipboardRows = clipboardRows + [row]
+  end for
+  grid = fullclient.DetailGrid(session.state.tableDetails.contentsGrid.columns, clipboardRows)
+  text = try(fullclient.gridClipboardText(grid, selected, true))
+  if typeof(text) == "error" then session.state.statusText = text.message; return text end if
+  copied = try(gui.clipboardSetText(session.window.hwnd, text))
+  if typeof(copied) == "error" then session.state.statusText = copied.message; return copied end if
+  session.state.statusText = "Copied " + len(selected) + " row(s) to the clipboard"
+  return true
+end function
+
+// Tests whether a clipboard row is the exact Data-grid header.
+function clipboardHeader(details, row)
+  if typeof(row) != "array" or len(row) != len(details.contentsGrid.columns) then return false end if
+  for index = 0 to len(row) - 1
+    if row[index] != details.contentsGrid.columns[index] then return false end if
+  end for
+  return true
+end function
+
+// Converts one SELECT-ordered clipboard row into DESCRIBE-ordered editor values.
+function clipboardEditorValues(details, row)
+  if typeof(row) != "array" or len(row) != len(details.contentsGrid.columns) then return fail("clipboardEditorValues", "clipboard column count does not match the table") end if
+  values = try(fullclient.dataEditorValues(details, -1, false))
+  if typeof(values) == "error" then return values end if
+  for metadataIndex = 0 to len(details.columnsGrid.rows) - 1
+    metadata = details.columnsGrid.rows[metadataIndex]
+    dataIndex = fullclient.dataColumnIndex(details, metadata[1])
+    if dataIndex >= 0 then
+      value = row[dataIndex]
+      if value == "NULL" and metadata[3] == "TRUE" then value = "<NULL>" end if
+      values[metadataIndex] = value
+    end if
+  end for
+  return values
+end function
+
+// Stages clipboard TSV rows as validated INSERT statements.
+function pasteDataRows(session)
+  text = try(gui.clipboardText(session.window.hwnd))
+  if typeof(text) == "error" then session.state.statusText = text.message; return text end if
+  rows = try(fullclient.parseClipboardRows(text))
+  if typeof(rows) == "error" then session.state.statusText = rows.message; return rows end if
+  start = 0
+  if clipboardHeader(session.state.tableDetails, rows[0]) then start = 1 end if
+  if start >= len(rows) then session.state.statusText = "Clipboard contains only a header"; return false end if
+  if len(rows) - start > 1000 then session.state.statusText = "Clipboard paste is limited to 1000 rows per operation"; return false end if
+  additions = []
+  for rowIndex = start to len(rows) - 1
+    values = try(clipboardEditorValues(session.state.tableDetails, rows[rowIndex]))
+    if typeof(values) == "error" then session.state.statusText = values.message; return values end if
+    sqlText = try(fullclient.insertDataSql(session.state.tableDetails, values))
+    if typeof(sqlText) == "error" then session.state.statusText = "Clipboard row " + (rowIndex + 1) + ": " + sqlText.message; return sqlText end if
+    change = try(fullclient.pendingDataChange("INSERT", sqlText, -1, values))
+    if typeof(change) == "error" then return change end if
+    additions = additions + [change]
+  end for
+  if not gui.confirmWarning(session.window.hwnd, "Paste table rows", "Stage " + len(additions) + " clipboard row(s) as INSERT changes?\r\n\r\nReview them with SQL preview before applying.") then session.state.statusText = "Clipboard paste cancelled"; return false end if
+  session.pendingChanges = session.pendingChanges + additions
+  session.state.statusText = "Staged " + len(additions) + " clipboard INSERT(s)"
+  render(session)
+  return true
+end function
+
+// Stages safe key-constrained DELETE statements for all selected rows.
+function stageSelectedDeletes(session)
+  selected = gui.listViewSelectedIndices(session.window.detailGrid)
+  if len(selected) == 0 then session.state.statusText = "Select one or more Data rows first"; return false end if
+  additions = []
+  for each rowIndex in selected
+    if rowIndex < 0 or rowIndex >= len(session.state.tableDetails.contentsGrid.rows) then return fail("stageSelectedDeletes", "pending insert rows cannot be deleted before Apply") end if
+    if rowHasPendingChange(session, rowIndex) then session.state.statusText = "A selected row already has a pending change"; return false end if
+    sqlText = try(fullclient.deleteDataSql(session.state.tableDetails, session.state.tableDetails.contentsGrid.rows[rowIndex]))
+    if typeof(sqlText) == "error" then session.state.statusText = sqlText.message; return sqlText end if
+    change = try(fullclient.pendingDataChange("DELETE", sqlText, rowIndex, []))
+    if typeof(change) == "error" then return change end if
+    additions = additions + [change]
+  end for
+  preview = try(fullclient.pendingDataSql(additions))
+  if not gui.confirmWarning(session.window.hwnd, "Preview DELETE changes", "Stage " + len(additions) + " key-constrained DELETE statement(s)?\r\n\r\n" + preview) then session.state.statusText = "Delete cancelled"; return false end if
+  session.pendingChanges = session.pendingChanges + additions
+  session.state.statusText = "Staged " + len(additions) + " DELETE change(s)"
+  render(session)
+  return true
+end function
+
+// Applies a new filter/page/sort request only when pending row indices remain stable.
+function startDataPage(session, options)
+  if len(session.pendingChanges) > 0 then session.state.statusText = "Apply or revert pending changes before filtering, sorting, or changing page"; return false end if
+  if typeof(options) != "struct" then return fail("startDataPage", "options must be DataBrowseOptions") end if
+  session.dataOptions = options
+  return startDescribe(session, session.state.selectedTable)
+end function
+
+// Persists one validated physical window rectangle as a tiny JSON document.
+function saveWindowLayout(path, rectangle)
+  if typeof(path) != "string" or len(path) == 0 or typeof(rectangle) != "array" or len(rectangle) != 4 then return false end if
+  document = "{\"schemaVersion\":1,\"left\":" + rectangle[0] + ",\"top\":" + rectangle[1] + ",\"width\":" + rectangle[2] + ",\"height\":" + rectangle[3] + "}\n"
+  return connection_profiles.write(path, document)
+end function
+
+// Restores a previously persisted workbench rectangle when every field is valid.
+function restoreWindowLayout(path, hwnd)
+  if typeof(path) != "string" or len(path) == 0 or not file_api.fileExists(path) then return false end if
+  text = try(file_api.readAllText(path, 4096))
+  if typeof(text) == "error" then return false end if
+  document = try(json.parse(text))
+  if typeof(document) == "error" then return false end if
+  version = try(json.intMember(document, "schemaVersion"))
+  left = try(json.intMember(document, "left"))
+  top = try(json.intMember(document, "top"))
+  width = try(json.intMember(document, "width"))
+  height = try(json.intMember(document, "height"))
+  if typeof(version) != "int" or version != 1 or typeof(left) != "int" or typeof(top) != "int" or typeof(width) != "int" or typeof(height) != "int" then return false end if
+  return gui.setTopLevelRect(hwnd, [left, top, width, height])
 end function
 
 // Wraps an existing connected state in a native workbench window.
 function openState(state, visible)
   window = try(createWindow(visible))
   if typeof(window) == "error" then return window end if
-  session = AdminSession(window, state, void, false, false, false, false, 0, 0)
+  session = AdminSession(window, state, void, false, false, false, false, 0, 0, [fullclient.newWorksheet(1, state.queryText)], 0, 2, [], fullclient.defaultDataBrowseOptions(), "", "", [])
+  if visible then
+    profilePath = try(connection_profiles.defaultPath())
+    if typeof(profilePath) == "string" then
+      session.layoutPath = profilePath + ".layout.json"
+      ignoredRestore = try(restoreWindowLayout(session.layoutPath, window.hwnd))
+      currentRect = try(gui.topLevelRect(window.hwnd))
+      if typeof(currentRect) == "array" then session.windowRect = currentRect end if
+    end if
+  end if
   rendered = try(render(session))
   if typeof(rendered) == "error" then gui.destroy(window.hwnd); return rendered end if
   return session
@@ -1450,14 +2081,21 @@ function queryWorker(task)
     return QueryCompletion(task.operation, result, void, task.state.statusText)
   end if
   if task.operation == QUERY_DESCRIBE then
-    result = try(fullclient.describeTable(task.state, task.tableName))
+    result = try(fullclient.describeTableView(task.state, task.tableName, task.browseOptions))
     return QueryCompletion(task.operation, result, void, task.state.statusText)
   end if
   if task.operation == QUERY_DATA_MUTATION then
+    result = try(fullclient.executeAtomicSql(task.state, task.sqlText))
+    statusText = task.state.statusText
+    refreshed = void
+    if typeof(result) != "error" and result.success then refreshed = try(fullclient.describeTableView(task.state, task.tableName, task.browseOptions)) end if
+    return QueryCompletion(task.operation, result, refreshed, statusText)
+  end if
+  if task.operation == QUERY_SCHEMA_MUTATION then
     result = try(fullclient.executeSql(task.state, task.sqlText))
     statusText = task.state.statusText
     refreshed = void
-    if typeof(result) != "error" and result.success then refreshed = try(fullclient.describeTable(task.state, task.tableName)) end if
+    if typeof(result) != "error" and result.success then refreshed = try(fullclient.refresh(task.state)) end if
     return QueryCompletion(task.operation, result, refreshed, statusText)
   end if
   result = void
@@ -1480,13 +2118,14 @@ function startOperation(session, operation, sqlText, tableName)
   if session.aborted then return fail("startQuery", "the cancelled session cannot be reused") end if
   if session.busy then return fail("startQuery", "a query is already running") end if
   worker = Thread(queryWorker, "minisql-workbench-query")
-  if not worker.Start(QueryTask(session.state, operation, sqlText, tableName)) then return fail("startQuery", "native SQL worker could not be started") end if
+  if not worker.Start(QueryTask(session.state, operation, sqlText, tableName, session.dataOptions)) then return fail("startQuery", "native SQL worker could not be started") end if
   session.worker = worker
   session.busy = true
   session.sensitiveSql = (operation == QUERY_EXECUTE or operation == QUERY_EXPLAIN) and fullclient.isSensitiveSql(sqlText)
   if operation == QUERY_REFRESH then session.state.statusText = "Refreshing the object tree …"
   else if operation == QUERY_DESCRIBE then session.state.statusText = "Loading metadata for table " + tableName + " …"
   else if operation == QUERY_DATA_MUTATION then session.state.statusText = "Saving table data on a native worker thread …"
+  else if operation == QUERY_SCHEMA_MUTATION then session.state.statusText = "Applying schema DDL on a native worker thread …"
   else session.state.statusText = "Executing SQL on a native worker thread …"
   end if
   setBusyControls(session)
@@ -1520,6 +2159,12 @@ function startDataMutation(session, sqlText)
   return startOperation(session, QUERY_DATA_MUTATION, sqlText, session.state.selectedTable)
 end function
 
+// Starts one generated schema mutation and reloads the object tree on success.
+function startSchemaMutation(session, sqlText)
+  if session is not AdminSession or typeof(sqlText) != "string" or len(sqlText) == 0 then return fail("startSchemaMutation", "generated DDL is required") end if
+  return startOperation(session, QUERY_SCHEMA_MUTATION, sqlText, "")
+end function
+
 // Publishes a completed worker result without performing network I/O on the UI thread.
 function pollQuery(session)
   if not session.busy or session.worker is void then return false end if
@@ -1528,7 +2173,7 @@ function pollQuery(session)
   ignoredClose = session.worker.Close()
   session.worker = void
   session.busy = false
-  if session.sensitiveSql then gui.setText(session.window.queryEdit, "") end if
+  if session.sensitiveSql then gui.setText(session.window.queryEdit, ""); session.worksheets[session.selectedWorksheetIndex].sqlText = "" end if
   session.sensitiveSql = false
   if typeof(completion) == "error" then
     session.state.statusText = "Operation failed: " + completion.message
@@ -1543,6 +2188,7 @@ function pollQuery(session)
   else
     session.state.statusText = completion.statusText
   end if
+  if typeof(completion) != "error" and completion.operation == QUERY_DATA_MUTATION and typeof(completion.result) != "error" and completion.result.success then session.pendingChanges = [] end if
   if typeof(completion) != "error" and (completion.operation == QUERY_DESCRIBE or completion.operation == QUERY_DATA_MUTATION) and typeof(completion.result) != "error" then session.workspacePage = 1 end if
   render(session)
   return true
@@ -1557,7 +2203,7 @@ function stopQuery(session)
   session.worker = void
   session.busy = false
   session.aborted = true
-  if session.sensitiveSql then gui.setText(session.window.queryEdit, "") end if
+  if session.sensitiveSql then gui.setText(session.window.queryEdit, ""); session.worksheets[session.selectedWorksheetIndex].sqlText = "" end if
   session.sensitiveSql = false
   session.state.statusText = "Execution stopped. Disconnecting this session to preserve protocol framing."
   gui.setText(session.window.statusLabel, session.state.statusText)
@@ -1569,6 +2215,7 @@ end function
 function openSelectedObject(session)
   selected = try(gui.treeSelectedText(session.window.objectTree))
   if typeof(selected) != "string" or not fullclient.containsText(session.state.tables, selected) then session.state.statusText = "Select a table in the object tree"; return false end if
+  if selected != session.state.tableDetails.tableName then session.pendingChanges = []; session.dataOptions = fullclient.defaultDataBrowseOptions(); gui.setText(session.window.dataFilterEdit, "") end if
   selectWorkspace(session, 1)
   return startDescribe(session, selected)
 end function
@@ -1608,6 +2255,8 @@ end function
 
 // Resolves the requested editor scope and starts its background execution.
 function startEditorCommand(session, wholeScript, explain)
+  stored = try(storeActiveWorksheet(session))
+  if typeof(stored) == "error" then session.state.statusText = stored.message; return stored end if
   sqlText = try(editorSqlForCommand(session.window, wholeScript))
   if typeof(sqlText) == "error" then session.state.statusText = "Cannot execute SQL: " + sqlText.message; return sqlText end if
   started = try(startQuery(session, sqlText, explain))
@@ -1619,18 +2268,23 @@ end function
 function handleCommand(session, command)
   if session.busy and command != ID_STOP and command != gui.MENU_SQL_CANCEL and command != ID_CLOSE and command != gui.MENU_FILE_CLOSE and command != gui.MENU_FILE_EXIT then return true end if
   if command == ID_CLOSE or command == gui.MENU_FILE_CLOSE or command == gui.MENU_FILE_EXIT then
+    if len(session.pendingChanges) > 0 and not gui.confirmWarning(session.window.hwnd, "Discard pending changes", "Disconnect and discard " + len(session.pendingChanges) + " unapplied table change(s)?") then return true end if
     if session.busy then stopQuery(session) else gui.destroy(session.window.hwnd) end if
   else if command == ID_REFRESH or command == gui.MENU_SESSION_REFRESH then
     started = try(startRefresh(session))
     if typeof(started) == "error" then session.state.statusText = "Refresh failed: " + started.message end if
   else if command == ID_OPEN_OBJECT or command == gui.MENU_OBJECT_DESCRIBE then
     openSelectedObject(session)
+  else if command == ID_SCHEMA_DESIGNER or command == gui.MENU_OBJECT_SCHEMA then
+    ignoredSchema = try(openSchemaDesigner(session))
   else if command == gui.MENU_OBJECT_QUERY then
     querySelectedObject(session)
   else if command == ID_NEW_SQL or command == gui.MENU_FILE_NEW then
-    gui.setText(session.window.queryEdit, "")
-    selectWorkspace(session, 0)
-    gui.focus(session.window.queryEdit)
+    ignoredNewWorksheet = try(addWorksheet(session, ""))
+  else if command == ID_CLOSE_SQL or command == gui.MENU_FILE_CLOSE_WORKSHEET then
+    ignoredClosedWorksheet = try(closeWorksheet(session))
+  else if command == ID_EXPORT_CSV or command == gui.MENU_FILE_EXPORT then
+    ignoredExport = try(exportActiveResult(session))
   else if command == ID_EXECUTE or command == gui.MENU_SQL_EXECUTE then
     ignoredCurrent = try(startEditorCommand(session, false, false))
   else if command == ID_EXECUTE_SCRIPT or command == gui.MENU_SQL_EXECUTE_SCRIPT then
@@ -1648,30 +2302,47 @@ function handleCommand(session, command)
   else if command == ID_CLEAR or command == gui.MENU_SQL_CLEAR then
     fullclient.clearResultTabs(session.state)
     render(session)
-  else if command == ID_DATA_ADD then
-    ignoredAdd = try(editDataRow(session, -1, false, false))
+  else if command == ID_DATA_ADD or command == gui.MENU_DATA_ADD then
+    ignoredAdd = try(editDataRow(session, -1, false, false, 0))
   else if command == ID_DATA_COPY then
     selectedCopy = try(selectedDataRow(session))
-    if typeof(selectedCopy) == "error" then session.state.statusText = selectedCopy.message else ignoredCopy = try(editDataRow(session, selectedCopy, true, false)) end if
-  else if command == ID_DATA_EDIT then
+    if typeof(selectedCopy) == "error" then session.state.statusText = selectedCopy.message else ignoredCopy = try(editDataRow(session, selectedCopy, true, false, 0)) end if
+  else if command == ID_DATA_EDIT or command == gui.MENU_DATA_EDIT then
     selectedEdit = try(selectedDataRow(session))
-    if typeof(selectedEdit) == "error" then session.state.statusText = selectedEdit.message else ignoredEdit = try(editDataRow(session, selectedEdit, false, true)) end if
-  else if command == ID_DATA_DELETE then
-    selectedDelete = try(selectedDataRow(session))
-    if typeof(selectedDelete) == "error" then
-      session.state.statusText = selectedDelete.message
-    else
-      deleteSql = try(fullclient.deleteDataSql(session.state.tableDetails, session.state.tableDetails.contentsGrid.rows[selectedDelete]))
-      if typeof(deleteSql) == "error" then
-        session.state.statusText = deleteSql.message
-      else if gui.confirmWarning(session.window.hwnd, "Delete table row", "Delete the selected row from " + session.state.selectedTable + "?\r\n\r\nThis operation cannot be undone outside an active transaction.") then
-        ignoredDelete = try(startDataMutation(session, deleteSql))
-      else
-        session.state.statusText = "Delete cancelled"
-      end if
-    end if
+    if typeof(selectedEdit) == "error" then session.state.statusText = selectedEdit.message else ignoredEdit = try(editDataRow(session, selectedEdit, false, true, 0)) end if
+  else if command == ID_DATA_DELETE or command == gui.MENU_DATA_DELETE then
+    ignoredDelete = try(stageSelectedDeletes(session))
   else if command == ID_DATA_REFRESH then
-    if len(session.state.selectedTable) > 0 then ignoredDataRefresh = try(startDescribe(session, session.state.selectedTable)) end if
+    if len(session.pendingChanges) > 0 then session.state.statusText = "Apply or revert pending changes before refreshing data"
+    else if len(session.state.selectedTable) > 0 then ignoredDataRefresh = try(startDescribe(session, session.state.selectedTable))
+    end if
+  else if command == ID_DATA_COPY_CLIPBOARD or command == gui.MENU_DATA_COPY then
+    ignoredCopyRows = try(copySelectedDataRows(session))
+  else if command == ID_DATA_PASTE or command == gui.MENU_DATA_PASTE then
+    ignoredPasteRows = try(pasteDataRows(session))
+  else if command == ID_DATA_FILTER_APPLY then
+    filterText = try(gui.getText(session.window.dataFilterEdit))
+    options = try(fullclient.createDataBrowseOptions(filterText, session.dataOptions.sortColumn, session.dataOptions.ascending, 0, session.dataOptions.pageSize))
+    if typeof(options) == "error" then session.state.statusText = options.message else ignoredFilter = try(startDataPage(session, options)) end if
+  else if command == ID_DATA_PREVIOUS_PAGE then
+    page = session.dataOptions.page - 1
+    if page < 0 then page = 0 end if
+    options = try(fullclient.createDataBrowseOptions(session.dataOptions.filterText, session.dataOptions.sortColumn, session.dataOptions.ascending, page, session.dataOptions.pageSize))
+    if typeof(options) != "error" then ignoredPrevious = try(startDataPage(session, options)) end if
+  else if command == ID_DATA_NEXT_PAGE then
+    options = try(fullclient.createDataBrowseOptions(session.dataOptions.filterText, session.dataOptions.sortColumn, session.dataOptions.ascending, session.dataOptions.page + 1, session.dataOptions.pageSize))
+    if typeof(options) != "error" then ignoredNext = try(startDataPage(session, options)) end if
+  else if command == ID_DATA_APPLY_CHANGES or command == gui.MENU_DATA_APPLY then
+    pendingSql = try(fullclient.pendingDataSql(session.pendingChanges))
+    if typeof(pendingSql) == "error" or len(session.pendingChanges) == 0 then session.state.statusText = "There are no valid pending changes"
+    else if gui.confirmWarning(session.window.hwnd, "Apply table changes", "Execute " + len(session.pendingChanges) + " pending change(s)?\r\n\r\n" + pendingSql) then ignoredApply = try(startDataMutation(session, pendingSql))
+    else session.state.statusText = "Apply changes cancelled"
+    end if
+  else if command == ID_DATA_REVERT_CHANGES or command == gui.MENU_DATA_REVERT then
+    if len(session.pendingChanges) > 0 and gui.confirmWarning(session.window.hwnd, "Revert table changes", "Discard all " + len(session.pendingChanges) + " unapplied change(s)?") then session.pendingChanges = []; session.state.statusText = "Pending changes reverted"; render(session) end if
+  else if command == ID_DATA_PREVIEW_CHANGES or command == gui.MENU_DATA_PREVIEW then
+    pendingSql = try(fullclient.pendingDataSql(session.pendingChanges))
+    if typeof(pendingSql) == "string" and len(pendingSql) > 0 then gui.showInfo(session.window.hwnd, "Pending MiniSQL changes", pendingSql) else session.state.statusText = "There are no pending changes" end if
   else if command == gui.MENU_HELP_ABOUT then
     gui.showInfo(session.window.hwnd, "About MiniSQL Workbench", "MiniSQL Workbench\r\n\r\nA native Windows SQL client inspired by the SQuirreL SQL workflow and built exclusively for MiniSQL.")
   end if
@@ -1692,24 +2363,56 @@ function runSession(session)
     while typeof(event) == "struct"
       if event.hwnd != session.window.hwnd then
         ignoredForeignEvent = true
+      else if event.message == gui.WM_CLOSE then
+        ignoredNativeClose = try(handleCommand(session, ID_CLOSE))
       else if event.message == gui.WM_SIZE or event.message == gui.WM_DPICHANGED then
         layoutWindow(session.window)
+        currentRect = try(gui.topLevelRect(session.window.hwnd))
+        if typeof(currentRect) == "array" then session.windowRect = currentRect end if
+      else if event.message == gui.WM_MOVE then
+        currentRect = try(gui.topLevelRect(session.window.hwnd))
+        if typeof(currentRect) == "array" then session.windowRect = currentRect end if
+      else if event.message == gui.WM_CONTEXTMENU and not session.busy then
+        if event.controlId == ID_DETAIL_GRID and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
+          ignoredDataMenu = gui.showContextMenu(session.window.hwnd, ["Add row", "Edit selected row", "Delete selected row(s)", "Copy selected row(s)", "Paste rows", "Apply changes", "Revert changes", "SQL preview"], [gui.MENU_DATA_ADD, gui.MENU_DATA_EDIT, gui.MENU_DATA_DELETE, gui.MENU_DATA_COPY, gui.MENU_DATA_PASTE, gui.MENU_DATA_APPLY, gui.MENU_DATA_REVERT, gui.MENU_DATA_PREVIEW])
+        else if event.controlId == ID_OBJECT_TREE then
+          ignoredObjectMenu = gui.showContextMenu(session.window.hwnd, ["Open table details", "Select first 100 rows", "Open schema designer"], [gui.MENU_OBJECT_DESCRIBE, gui.MENU_OBJECT_QUERY, gui.MENU_OBJECT_SCHEMA])
+        else if event.controlId == ID_QUERY_EDIT then
+          ignoredSqlMenu = gui.showContextMenu(session.window.hwnd, ["Execute current / selection", "Execute script", "Explain", "New SQL worksheet", "Close SQL worksheet"], [gui.MENU_SQL_EXECUTE, gui.MENU_SQL_EXECUTE_SCRIPT, gui.MENU_SQL_EXPLAIN, gui.MENU_FILE_NEW, gui.MENU_FILE_CLOSE_WORKSHEET])
+        else if event.controlId == ID_RESULT_GRID then
+          ignoredResultMenu = gui.showContextMenu(session.window.hwnd, ["Export active result as CSV", "Clear results"], [gui.MENU_FILE_EXPORT, gui.MENU_SQL_CLEAR])
+        end if
       else if event.message == gui.WM_NOTIFY and not session.busy then
         if event.controlId == ID_SIDEBAR_TABS and event.notification == TCN_SELCHANGE then
           applyVisibility(session.window)
         else if event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then
           ignoredWorkspaceNotify = try(synchronizeWorkspace(session))
+        else if event.controlId == ID_WORKSHEET_TABS and event.notification == TCN_SELCHANGE then
+          selectedWorksheet = gui.tabSelectedIndex(session.window.worksheetTabs)
+          if selectedWorksheet >= 0 and selectedWorksheet < len(session.worksheets) and selectedWorksheet != session.selectedWorksheetIndex then ignoredWorksheet = try(activateWorksheet(session, selectedWorksheet)) end if
         else if event.controlId == ID_DETAIL_TABS and event.notification == TCN_SELCHANGE then
           labels = fullclient.detailTabLines(session.state)
           selected = gui.tabSelectedIndex(session.window.detailTabs)
           if selected >= 0 and selected < len(labels) then
             gui.setText(session.window.detailEdit, fullclient.detailTextByName(session.state, labels[selected]))
-            ignoredDetailGrid = try(fillDetailGrid(session.window, session.state, labels[selected]))
+            ignoredDetailGrid = try(fillDetailGrid(session, labels[selected]))
             applyVisibility(session.window)
           end if
         else if event.controlId == ID_DETAIL_GRID and event.notification == NM_DBLCLK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
           selectedData = try(selectedDataRow(session))
-          if typeof(selectedData) == "error" then session.state.statusText = selectedData.message else ignoredDoubleEdit = try(editDataRow(session, selectedData, false, true)) end if
+          cell = gui.listViewPointerCell(session.window.detailGrid)
+          initialField = 0
+          if len(cell) == 2 and cell[1] > 0 then initialField = editorFieldForDataColumn(session.state.tableDetails, cell[1] - 1) end if
+          if typeof(selectedData) == "error" then session.state.statusText = selectedData.message else ignoredDoubleEdit = try(editDataRow(session, selectedData, false, true, initialField)) end if
+        else if event.controlId == ID_DETAIL_GRID and event.notification == LVN_COLUMNCLICK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
+          dataColumn = event.source - 1
+          if dataColumn >= 0 and dataColumn < len(session.state.tableDetails.contentsGrid.columns) then
+            sortColumn = session.state.tableDetails.contentsGrid.columns[dataColumn]
+            ascending = true
+            if sortColumn == session.dataOptions.sortColumn then ascending = not session.dataOptions.ascending end if
+            options = try(fullclient.createDataBrowseOptions(session.dataOptions.filterText, sortColumn, ascending, 0, session.dataOptions.pageSize))
+            if typeof(options) == "error" then session.state.statusText = options.message else ignoredSort = try(startDataPage(session, options)) end if
+          end if
         else if event.controlId == ID_RESULT_TABS and event.notification == TCN_SELCHANGE then
           selected = gui.tabSelectedIndex(session.window.resultTabs)
           if selected >= 0 and selected < len(session.state.resultTabs) then session.state.selectedResultIndex = selected; fillResultGrid(session.window, session.state) end if
@@ -1721,6 +2424,9 @@ function runSession(session)
         end if
       else if event.message == gui.WM_COMMAND then
         if event.controlId == ID_QUERY_EDIT and event.notification == EN_CHANGE then session.highlightDirty = true; session.highlightAfterMilliseconds = clock.monotonicMilliseconds() + 120
+        else if event.controlId == ID_HISTORY_FILTER and event.notification == EN_CHANGE then
+          filterText = try(gui.getText(session.window.historyFilterEdit))
+          if typeof(filterText) == "string" then session.historyFilter = filterText; ignoredFilteredHistory = try(fillList(session.window.historyList, fullclient.filterHistory(session.state.history, filterText))) end if
         else if event.controlId == ID_BOOKMARK_LIST and event.notification == LBN_DBLCLK then insertSelectedBookmark(session)
         else if event.controlId == ID_HISTORY_LIST and event.notification == LBN_DBLCLK then insertSelectedHistory(session)
         else handleCommand(session, event.controlId)
@@ -1737,6 +2443,7 @@ function runSession(session)
     end if
     gui.sleep(10)
   end while
+  if len(session.layoutPath) > 0 and len(session.windowRect) == 4 then ignoredLayoutSave = try(saveWindowLayout(session.layoutPath, session.windowRect)) end if
   if session.busy then stopQuery(session) end if
   closed = true
   if session.aborted then closed = try(fullclient.abort(session.state)) else closed = try(fullclient.close(session.state)) end if

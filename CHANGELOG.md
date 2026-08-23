@@ -6,9 +6,24 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-21
 
+- expanded the native Workbench with multiple SQL worksheets, keyboard
+  accelerators, context menus, searchable history, CSV result export, and
+  persistent top-level window geometry;
+- replaced the fixed 100-row table preview workflow with sortable, filterable,
+  paged multi-select data grids; added Unicode copy/paste, direct cell-focused
+  editing, staged bulk insert/update/delete, exact SQL preview, revert, and
+  atomic transaction/savepoint application;
+- added a structured table/column/index/constraint schema designer with exact
+  DDL preview, injection-resistant fragment validation, insert-into-worksheet,
+  guarded execution, and automatic object-tree refresh;
+- added model, native-control, live-server, rollback, pagination, concurrent
+  reader, reconnect, and layout-persistence coverage for the extended Workbench;
 - upgraded the native Workbench worksheet to a Unicode RichEdit SQL editor with
   MiniSQL keyword, literal, number, quoted-identifier, and comment highlighting;
   added distinct current/selection and quote-aware whole-script execution paths;
+- corrected CRLF-to-RichEdit offset translation so syntax styles, caret
+  positions, selections, and current-statement execution stay aligned after
+  every Windows line break;
 - persisted the selected SQL/Object Details workspace across asynchronous
   metadata completion and native control rendering;
 - replaced pipe-delimited object-detail text with native Columns, Indexes,
@@ -63,6 +78,19 @@ and repair-candidate log from development is preserved in
 - fixed restart recovery after `DROP TABLE`: historical committed WAL images
   for catalog-proven retired table IDs are skipped without weakening strict
   missing-target validation, and recovery target lookup is now hash-based;
+- added crash-safe automatic current-WAL reset with persistent replay epochs,
+  configurable checkpoint thresholds, batched transaction WAL appends, and
+  interrupted-reset recovery;
+- made `runtime.bufferPoolBytes` an operational thread-safe CLOCK read cache;
+  added early LIMIT/OFFSET range scans and projection pushdown so unrelated
+  external TEXT/BLOB values are not materialized;
+- externalized large ordinary DML values, batched overflow/page allocation,
+  maintained insert-only indexes incrementally, and replaced eager VACUUM row
+  retention with a one-row streaming rewrite plus periodic garbage collection;
+- added restart-aware 1/5/10 GiB capacity profiles with fresh-process point
+  lookups, WAL bounds, configurable private-memory guardrails, optional
+  post-VACUUM verification, and JSON reports; the accepted 1 GiB reference run
+  completed eight restart chunks and ended with a zero-byte current WAL;
 - added Apache-2.0 headers to every MiniLang, Python and PowerShell source file,
   documented every declaration and non-obvious implementation invariant in
   English, and aligned the README, operator guides, concurrency specifications,

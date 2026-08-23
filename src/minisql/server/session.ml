@@ -107,6 +107,12 @@ function openAttached(database)
   return createSession(engine, false, true)
 end function
 
+// Completes process-local database preparation before the listener advertises
+// readiness, so the first client's HELLO does not pay the full index audit cost.
+function prepareAttachedDatabase(database)
+  return executor.prepareDatabase(database)
+end function
+
 // Opens secure attached using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -341,6 +347,14 @@ function activateTransport(session, connection)
   return true
 end function
 
+// Returns whether this session still has a logical lock blocker. The check is
+// side-effect free and lets the listener suspend a request without executing it
+// repeatedly while another explicit transaction owns the writer lock.
+function waitingForConcurrency(session)
+  validateOpen(session, "waitingForConcurrency")
+  return database_manager.isLockWaiting(session.engine.database, executor.sessionIdentifier(session.engine))
+end function
+
 // Handles query using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -360,7 +374,14 @@ function handleQuery(session, request)
   if len(parsed) != 1 then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   // The executor centrally selects the shared-reader or exclusive-writer path.
   result = try(executor.executeStatement(session.engine, parsed[0]))
-  if typeof(result) == "error" then ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message); return responseMessage(request, messages.errorResponse(result.code, result.message)) end if
+  if typeof(result) == "error" then
+    if result.code == 9007 then
+      ignoredLog = logger.debug("minisql.server.session.handleQuery", "SQL waiting for logical lock session=" + sessionId)
+    else
+      ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message)
+    end if
+    return responseMessage(request, messages.errorResponse(result.code, result.message))
+  end if
   converted = try(formatter.responseFromResult(result))
   if typeof(converted) == "error" then return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
   ignoredLog = logger.info("minisql.server.session.handleQuery", "SQL completed session=" + sessionId + " command=" + converted.command + " rows=" + converted.affectedRows)

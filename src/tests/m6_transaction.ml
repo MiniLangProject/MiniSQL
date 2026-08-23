@@ -88,6 +88,26 @@ function main(args)
   testkit.equal(state, log.nextLsn, beforeFlushFailure, "flush failure removes unacknowledged WAL transaction")
   tx.rollback(flushFailure)
 
+  // A large unique page set exercises the growable change list and hash index.
+  // Replacing a page must retain both the original ordering and the exact count.
+  bulk = tx.beginTransaction(106, tx.ISOLATION_SERIALIZABLE, false, log)
+  for pageNumber = 0 to 2047
+    tx.stagePage(bulk, 9, pageNumber, makePage(9, pageNumber, pageNumber & 255))
+  end for
+  bulkReplacement = makePage(9, 1024, 0xA5)
+  tx.stagePage(bulk, 9, 1024, bulkReplacement)
+  testkit.equal(state, tx.stagedPageCount(bulk), 2048, "large staged page set replaces through hash index")
+  testkit.equal(state, tx.readPrivatePage(bulk, 9, 1024)[page.HEADER_SIZE], 0xA5, "large staged page lookup returns replacement")
+  tx.commit(bulk)
+  publicationPages = tx.committedPagesForPublication(bulk)
+  testkit.equal(state, len(publicationPages), 2048, "publication view exposes complete committed batch")
+  testkit.equal(state, publicationPages[1024].pageBytes[page.HEADER_SIZE], 0xA5, "publication view retains committed page image")
+  bulkPages = tx.takeCommittedPages(bulk)
+  testkit.equal(state, len(bulkPages), 2048, "large committed page set preserves every page")
+  testkit.equal(state, bulkPages[0].pageNumber, 0, "large committed page order starts at first page")
+  testkit.equal(state, bulkPages[1024].pageBytes[page.HEADER_SIZE], 0xA5, "large committed page order retains replacement position")
+  testkit.equal(state, bulkPages[2047].pageNumber, 2047, "large committed page order ends at last page")
+
   manager = locks.create()
   testkit.record(state, locks.acquireRead(manager, 1), "first reader")
   testkit.record(state, locks.acquireRead(manager, 2), "second reader")

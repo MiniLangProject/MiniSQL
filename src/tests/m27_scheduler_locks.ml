@@ -127,7 +127,9 @@ function main(args)
   file_api.createDirectory(root)
   managed = database_manager.create(root, "m27_shared", config_model.defaultDatabaseSettings(4096))
   first = executor.attach(managed)
+  testkit.record(state, database_manager.indexesReady(managed), "first attachment completes one-time index verification")
   second = executor.attach(managed)
+  testkit.record(state, database_manager.indexesReady(managed), "later attachment reuses verified index state")
 
   // Two native readers occupy the same database simultaneously. An exclusive
   // writer cannot enter until both readers leave.
@@ -176,6 +178,7 @@ function main(args)
   testkit.errorCode(state, try(executor.executeSql(second, "INSERT INTO concurrent_item(id, value) VALUES (2, 'second')")), locks.LOCK_CONFLICT, "second executor waits for active writer")
   testkit.equal(state, database_manager.waiterCount(managed), 1, "shared database records one waiting session")
   executeOne(first, "COMMIT")
+  testkit.record(state, not database_manager.isLockWaiting(managed, executor.sessionIdentifier(second)), "released blocker wakes waiting session without a retry execution")
   inserted = executeOne(second, "INSERT INTO concurrent_item(id, value) VALUES (2, 'second')")
   testkit.equal(state, inserted.affectedRows, 1, "waiting write succeeds after commit")
   counted = executeOne(second, "SELECT COUNT(*) AS c FROM concurrent_item")

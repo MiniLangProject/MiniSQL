@@ -82,6 +82,19 @@ function main(args)
   test.equal(state, file_api.size(trimmed.file), paged_file.DATA_OFFSET + 3 * 4096, "uncommitted tail trimmed")
   paged_file.close(trimmed)
 
+  batched = paged_file.open(mainPath)
+  test.equal(state, paged_file.allocatePages(batched, page.TYPE_GENERIC, 4), 3, "batch allocation returns first reserved page")
+  test.equal(state, batched.pageCount, 7, "batch allocation publishes one combined page count")
+  for pageNumber = 3 to 6
+    reserved = paged_file.readPage(batched, pageNumber)
+    test.equal(state, page.verify(reserved).pageId.pageNumber, pageNumber, "batch page identity " + pageNumber)
+  end for
+  paged_file.close(batched)
+  reopenedBatch = paged_file.open(mainPath)
+  test.equal(state, reopenedBatch.pageCount, 7, "batch allocation survives reopen")
+  test.equal(state, file_api.size(reopenedBatch.file), paged_file.DATA_OFFSET + 7 * 4096, "batch allocation physical layout")
+  paged_file.close(reopenedBatch)
+
   // Three appends leave slot B newest (generation 4) and slot A at pageCount 2.
   fallback = paged_file.create(fallbackPath, 4096, superblock.FILE_TYPE_GENERIC, 77, makeDatabaseId(21))
   paged_file.allocatePage(fallback, page.TYPE_GENERIC)

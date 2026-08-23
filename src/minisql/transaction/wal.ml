@@ -7,6 +7,7 @@ import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.storage.page as page
+import std.ds.list as list
 
 // Write-ahead log format v1. Records are append-only, length-prefixed and
 // independently protected by header and payload CRC-32C values. The current
@@ -26,6 +27,7 @@ const MAGIC_SIZE = 8
 const PAYLOAD_CHECKSUM_OFFSET = 64
 const HEADER_CHECKSUM_OFFSET = 68
 const MAX_RECORD_SIZE = 67108864
+const APPEND_BATCH_BYTES = 4194304
 
 // M48 durable-export marker. The WAL itself remains format v1. The sidecar
 // marker records only the prefix known to have completed FlushFileBuffers.
@@ -98,6 +100,22 @@ struct WalWriter
   failNextFlush
   // Closed field of the wal writer.
   closed
+end struct
+
+// Holds one bounded WAL append buffer. `nextLsn` advances logically while the
+// physical writer position is published only after the complete transaction
+// batch has been appended successfully.
+struct WalAppendBatch
+  // WAL writer whose physical append position is published on commit.
+  writer
+  // Contiguous encoded records awaiting one file write.
+  buffer
+  // Number of populated bytes in the bounded append buffer.
+  used
+  // Logical LSN assigned to the next record in this batch.
+  nextLsn
+  // Number of complete encoded records accumulated in the batch.
+  records
 end struct
 
 // Creates the module's structured error with operation context.
@@ -355,7 +373,7 @@ function scanFile(file)
   file_api.validateOpen(file, "wal.scanFile")
   length = file_api.size(file)
   offset = 0
-  records = []
+  records = list.List.new()
   truncated = false
   while offset < length
     remaining = length - offset
@@ -371,10 +389,10 @@ function scanFile(file)
     file_api.readExactAt(file, offset, encoded, 0, totalLength)
     record = decodeRecord(encoded)
     if record.lsn != offset then return fail(CORRUPT_DATA, "scanFile", "record LSN differs from file offset") end if
-    records = records + [record]
+    records.add(record)
     offset = offset + totalLength
   end while
-  return WalScan(records, offset, truncated)
+  return WalScan(records.toArray(), offset, truncated)
 end function
 
 // Scans the snapshot.
@@ -382,7 +400,7 @@ end function
 function scanSnapshot(source)
   if typeof(source) != "bytes" then return fail(INVALID_ARGUMENT, "scanSnapshot", "source must be bytes") end if
   offset = 0
-  records = []
+  records = list.List.new()
   truncated = false
   while offset < len(source)
     remaining = len(source) - offset
@@ -397,10 +415,10 @@ function scanSnapshot(source)
       return decoded
     end if
     if decoded.lsn != offset then return fail(CORRUPT_DATA, "scanSnapshot", "record LSN differs from snapshot offset") end if
-    records = records + [decoded]
+    records.add(decoded)
     offset = offset + totalLength
   end while
-  return WalScan(records, offset, truncated)
+  return WalScan(records.toArray(), offset, truncated)
 end function
 
 // Validates the segment bytes.
@@ -491,6 +509,84 @@ function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumb
   writer.nextLsn = writer.nextLsn + len(encoded)
   writer.recordCount = writer.recordCount + 1
   return record
+end function
+
+// Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
+function encodeRecordAt(record, lsn)
+  record.lsn = lsn
+  if record.recordType == RECORD_PAGE_IMAGE then
+    image = bytes(record.payload)
+    header = page.verify(image)
+    header.pageLsn = endian.uint64FromInt(record.lsn)
+    page.seal(image, header)
+    record.payload = image
+    record.pageLsn = record.lsn
+    record.totalLength = HEADER_SIZE + len(image)
+  end if
+  return encode(record)
+end function
+
+// Flushes the occupied prefix of a bounded append batch.
+function flushAppendBatch(batch)
+  if batch is not WalAppendBatch then return fail(INVALID_ARGUMENT, "flushAppendBatch", "batch must be WalAppendBatch") end if
+  if batch.used == 0 then return false end if
+  written = try(file_api.append(batch.writer.file, batch.buffer, 0, batch.used))
+  if typeof(written) == "error" then return written end if
+  batch.used = 0
+  return true
+end function
+
+// Adds one record to the bounded batch, flushing or directly appending records
+// larger than the staging buffer. At most APPEND_BATCH_BYTES are duplicated.
+function appendBatchRecord(batch, record)
+  encoded = encodeRecordAt(record, batch.nextLsn)
+  if len(encoded) > len(batch.buffer) then
+    flushAppendBatch(batch)
+    written = try(file_api.append(batch.writer.file, encoded, 0, len(encoded)))
+    if typeof(written) == "error" then return written end if
+  else
+    if batch.used > len(batch.buffer) - len(encoded) then flushAppendBatch(batch) end if
+    copyExact(batch.buffer, batch.used, encoded, 0, len(encoded))
+    batch.used = batch.used + len(encoded)
+  end if
+  batch.nextLsn = batch.nextLsn + len(encoded)
+  batch.records = batch.records + 1
+  return record.lsn
+end function
+
+// Appends a complete transaction using a bounded staging buffer. This reduces
+// one kernel write per page image to roughly one write per 4 MiB while retaining
+// the existing single FlushFileBuffers durability boundary and rewind-on-error
+// behavior. `changes` contain fileId, pageNumber and pageBytes fields.
+function appendTransaction(writer, transactionId, changes)
+  validateOpen(writer, "appendTransaction")
+  validateNative(transactionId, "appendTransaction", "transactionId")
+  if typeof(changes) != "array" then return fail(INVALID_ARGUMENT, "appendTransaction", "changes must be array") end if
+  if writer.failNextWrite then
+    writer.failNextWrite = false
+    return fail(IO_FAILURE, "appendTransaction", "injected WAL write failure")
+  end if
+  bufferBytes = HEADER_SIZE * 2
+  for each change in changes
+    recordBytes = HEADER_SIZE + len(change.pageBytes)
+    if bufferBytes < APPEND_BATCH_BYTES then
+      if recordBytes >= APPEND_BATCH_BYTES - bufferBytes then bufferBytes = APPEND_BATCH_BYTES else bufferBytes = bufferBytes + recordBytes end if
+    end if
+  end for
+  batch = WalAppendBatch(writer, bytes(bufferBytes, 0), 0, writer.nextLsn, 0)
+  beginLsn = try(appendBatchRecord(batch, createRecord(RECORD_TX_BEGIN, 0, transactionId, 0, 0, bytes())))
+  if typeof(beginLsn) == "error" then return beginLsn end if
+  for each change in changes
+    appended = try(appendBatchRecord(batch, createRecord(RECORD_PAGE_IMAGE, 0, transactionId, change.fileId, change.pageNumber, change.pageBytes)))
+    if typeof(appended) == "error" then return appended end if
+  end for
+  commitLsn = try(appendBatchRecord(batch, createRecord(RECORD_TX_COMMIT, 0, transactionId, 0, 0, bytes())))
+  if typeof(commitLsn) == "error" then return commitLsn end if
+  finalAppend = try(flushAppendBatch(batch))
+  if typeof(finalAppend) == "error" then return finalAppend end if
+  writer.nextLsn = batch.nextLsn
+  writer.recordCount = writer.recordCount + batch.records
+  return [beginLsn, commitLsn]
 end function
 
 // Appends the begin.
