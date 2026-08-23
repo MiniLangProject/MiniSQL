@@ -4,10 +4,13 @@ package minisql.storage.heap_file
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import minisql.platform.file as file_api
+import minisql.storage.checksum as checksum
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.slotted_page as slotted
 import minisql.storage.superblock as superblock
+import std.ds.list as list
 
 // Heap-file storage built on stable slotted pages. External RowId values contain
 // the slot generation, so a deleted and later reused slot cannot alias an older
@@ -21,6 +24,14 @@ const STALE_REFERENCE = 9018
 
 const FORWARD_SIZE = 24
 const MAX_FORWARD_DEPTH = 64
+
+// The page directory is derived metadata: it records only physical heap-page
+// numbers and can always be reconstructed from the checksummed table file. Its
+// atomic envelope makes interrupted updates harmless, while the source page
+// count and superblock generation detect stale snapshots after file growth.
+const PAGE_DIRECTORY_FORMAT_VERSION = 1
+const PAGE_DIRECTORY_RECORD_KIND = 51
+const PAGE_DIRECTORY_HEADER_BYTES = 64
 
 // Defines the row id record used by this module.
 struct RowId
@@ -62,6 +73,22 @@ struct HeapFile
   closed
 end struct
 
+// Represents one validated snapshot of the heap pages in a table file. The
+// generation belongs to the paged-file superblock at `indexedPageCount`.
+struct HeapPageDirectory
+  // Number of source pages classified by this snapshot.
+  indexedPageCount
+  // Source superblock generation at publication time.
+  generation
+  // Strictly increasing physical page numbers whose type is TYPE_HEAP.
+  pageNumbers
+end struct
+
+// Reports whether a value is a decoded heap-page directory snapshot.
+function isHeapPageDirectory(value)
+  return value is HeapPageDirectory
+end function
+
 // Creates the module's structured error with operation context.
 // Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
@@ -74,6 +101,19 @@ function forwardingMagic()
   return bytes("MSFW")
 end function
 
+// Returns the fixed magic used by persistent heap-page directory envelopes.
+function pageDirectoryMagic()
+  return bytes("MSQLHPD1")
+end function
+
+// Returns the sidecar path associated with a physical table file. Keeping the
+// suffix next to the table makes backup/restore tooling able to ignore it as
+// derived state without changing the authoritative database format.
+function pageDirectoryPath(tablePath)
+  if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "pageDirectoryPath", "tablePath must be non-empty") end if
+  return tablePath + ".heap-pages"
+end function
+
 // Performs the bytes equal operation for this module.
 // Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function bytesEqual(left, right)
@@ -82,6 +122,169 @@ function bytesEqual(left, right)
   for index = 0 to len(left) - 1
     if left[index] != right[index] then return false end if
   end for
+  return true
+end function
+
+// Converts a persisted U64 into the native MiniLang range used by page APIs.
+function decodeDirectoryNative(words, operation, name)
+  if words.high > endian.MAX_SCALAR_HIGH then return fail(CORRUPT_DATA, operation, name + " exceeds native range") end if
+  return endian.uint64ToInt(words)
+end function
+
+// Reads an arbitrarily sized derived sidecar without imposing a catalog-style
+// policy limit. The native file and byte-array limits remain the only bounds.
+function readDirectoryBytes(path)
+  handle = try(file_api.openRead(path))
+  if typeof(handle) == "error" then return handle end if
+  length = try(file_api.size(handle))
+  if typeof(length) == "error" then ignoredClose = try(file_api.close(handle)); return length end if
+  output = bytes(length, 0)
+  if length > 0 then
+    readResult = try(file_api.readExactAt(handle, 0, output, 0, length))
+    if typeof(readResult) == "error" then ignoredClose = try(file_api.close(handle)); return readResult end if
+  end if
+  closed = try(file_api.close(handle))
+  if typeof(closed) == "error" then return closed end if
+  return output
+end function
+
+// Atomically publishes a checksummed directory. A crash leaves either the old
+// complete generation or an ignorable `.new` file, never a partial live map.
+function writeDirectoryAtomic(path, encoded)
+  if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writeDirectoryAtomic", "encoded must be bytes") end if
+  temporary = path + ".new"
+  if file_api.pathExists(temporary) then file_api.deletePath(temporary) end if
+  handle = try(file_api.createNewDurable(temporary))
+  if typeof(handle) == "error" then return handle end if
+  written = try(file_api.writeAt(handle, 0, encoded, 0, len(encoded)))
+  if typeof(written) == "error" then ignoredClose = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(temporary)); return written end if
+  flushed = try(file_api.flush(handle))
+  closed = try(file_api.close(handle))
+  if typeof(flushed) == "error" then ignoredDelete = try(file_api.deletePath(temporary)); return flushed end if
+  if typeof(closed) == "error" then ignoredDelete = try(file_api.deletePath(temporary)); return closed end if
+  published = try(file_api.movePath(temporary, path, true))
+  if typeof(published) == "error" then ignoredDelete = try(file_api.deletePath(temporary)); return published end if
+  return true
+end function
+
+// Encodes the table identity, source frontier, generation, and heap page list.
+// Every number is U64 on disk so directory capacity follows the table format.
+function encodePageDirectory(file, directory)
+  paged_file.validateOpen(file, "heap_file.encodePageDirectory")
+  if directory is not HeapPageDirectory then return fail(INVALID_ARGUMENT, "encodePageDirectory", "directory must be HeapPageDirectory") end if
+  if directory.indexedPageCount != file.pageCount then return fail(INVALID_ARGUMENT, "encodePageDirectory", "directory frontier must match the open file") end if
+  payload = bytes(PAGE_DIRECTORY_HEADER_BYTES + len(directory.pageNumbers) * 8, 0)
+  copyBytes(payload, 0, file.databaseId, 0, 16)
+  endian.writeU64LE(payload, 16, endian.uint64FromInt(file.fileId))
+  endian.writeU32LE(payload, 24, file.pageSize)
+  endian.writeU32LE(payload, 28, 0)
+  endian.writeU64LE(payload, 32, endian.uint64FromInt(directory.indexedPageCount))
+  endian.writeU64LE(payload, 40, directory.generation)
+  endian.writeU64LE(payload, 48, endian.uint64FromInt(len(directory.pageNumbers)))
+  endian.writeU32LE(payload, 56, 0)
+  endian.writeU32LE(payload, 60, 0)
+  if len(directory.pageNumbers) > 0 then
+    for index = 0 to len(directory.pageNumbers) - 1
+      endian.writeU64LE(payload, PAGE_DIRECTORY_HEADER_BYTES + index * 8, endian.uint64FromInt(directory.pageNumbers[index]))
+    end for
+  end if
+  return checksum.encodeEnvelope(pageDirectoryMagic(), PAGE_DIRECTORY_FORMAT_VERSION, PAGE_DIRECTORY_RECORD_KIND, 0, payload)
+end function
+
+// Decodes and validates a page directory against immutable table identity.
+// Ordering and bounds checks prevent a malformed sidecar from causing repeated,
+// out-of-range, or non-monotonic page reads.
+function decodePageDirectory(file, encoded)
+  paged_file.validateOpen(file, "heap_file.decodePageDirectory")
+  envelope = checksum.decodeEnvelope(encoded, pageDirectoryMagic(), PAGE_DIRECTORY_FORMAT_VERSION, PAGE_DIRECTORY_RECORD_KIND)
+  if envelope.flags != 0 then return fail(CORRUPT_DATA, "decodePageDirectory", "unsupported envelope flags") end if
+  payload = envelope.payload
+  if len(payload) < PAGE_DIRECTORY_HEADER_BYTES or ((len(payload) - PAGE_DIRECTORY_HEADER_BYTES) % 8) != 0 then return fail(CORRUPT_DATA, "decodePageDirectory", "payload size is invalid") end if
+  if not bytesEqual(slice(payload, 0, 16), file.databaseId) then return fail(CORRUPT_DATA, "decodePageDirectory", "directory belongs to another database") end if
+  fileId = decodeDirectoryNative(endian.readU64LE(payload, 16), "decodePageDirectory", "fileId")
+  if fileId != file.fileId or endian.readU32LE(payload, 24) != file.pageSize then return fail(CORRUPT_DATA, "decodePageDirectory", "table identity mismatch") end if
+  if endian.readU32LE(payload, 28) != 0 or endian.readU32LE(payload, 56) != 0 or endian.readU32LE(payload, 60) != 0 then return fail(CORRUPT_DATA, "decodePageDirectory", "reserved fields are non-zero") end if
+  indexedPageCount = decodeDirectoryNative(endian.readU64LE(payload, 32), "decodePageDirectory", "indexedPageCount")
+  heapPageCount = decodeDirectoryNative(endian.readU64LE(payload, 48), "decodePageDirectory", "heapPageCount")
+  if heapPageCount != (len(payload) - PAGE_DIRECTORY_HEADER_BYTES) >> 3 then return fail(CORRUPT_DATA, "decodePageDirectory", "heap page count does not match payload") end if
+  pages = array(heapPageCount)
+  previous = -1
+  if heapPageCount > 0 then
+    for index = 0 to heapPageCount - 1
+      pageNumber = decodeDirectoryNative(endian.readU64LE(payload, PAGE_DIRECTORY_HEADER_BYTES + index * 8), "decodePageDirectory", "pageNumber")
+      if pageNumber <= previous or pageNumber >= indexedPageCount then return fail(CORRUPT_DATA, "decodePageDirectory", "heap page numbers are not strictly ordered and bounded") end if
+      pages[index] = pageNumber
+      previous = pageNumber
+    end for
+  end if
+  return HeapPageDirectory(indexedPageCount, endian.readU64LE(payload, 40), pages)
+end function
+
+// Returns a decoded sidecar or void when it is missing, stale, unreadable, or
+// corrupt. Derived metadata never makes authoritative table data unavailable.
+function loadPageDirectory(file)
+  path = pageDirectoryPath(file.path)
+  if not file_api.fileExists(path) then return void end if
+  encoded = try(readDirectoryBytes(path))
+  if typeof(encoded) == "error" then return void end if
+  decoded = try(decodePageDirectory(file, encoded))
+  if typeof(decoded) == "error" then return void end if
+  return decoded
+end function
+
+// Classifies a source suffix after the caller has established that an existing
+// directory prefix is reusable. Each new page is checksum-verified exactly once.
+function classifyHeapPages(file, startPage, prefix)
+  output = list.List.new()
+  for each pageNumber in prefix
+    output.add(pageNumber)
+  end for
+  if startPage < file.pageCount then
+    for pageNumber = startPage to file.pageCount - 1
+      pageBytes = paged_file.readPage(file, pageNumber)
+      header = page.decodePageHeader(pageBytes)
+      if header.pageType == page.TYPE_HEAP then
+        output.add(pageNumber)
+      else if header.pageType != page.TYPE_OVERFLOW and header.pageType != page.TYPE_FREE then
+        return fail(CORRUPT_DATA, "classifyHeapPages", "table contains an unexpected page type")
+      end if
+    end for
+  end if
+  return output.toArray()
+end function
+
+// Returns the persistent physical heap-page index for an open table. File growth
+// extends only the unclassified tail; truncation, replacement, or inconsistent
+// generation state triggers a full rebuild. Publication failure merely disables
+// persistence for this call because the reconstructed result is still correct.
+function synchronized heapPageNumbers(file)
+  paged_file.validateOpen(file, "heap_file.heapPageNumbers")
+  if file.fileType != superblock.FILE_TYPE_TABLE then return fail(INVALID_ARGUMENT, "heapPageNumbers", "file must be a table") end if
+  directory = loadPageDirectory(file)
+  startPage = 0
+  prefix = []
+  if directory is HeapPageDirectory then
+    comparison = superblock.compareGeneration(file.generation, directory.generation)
+    if directory.indexedPageCount == file.pageCount and comparison == 0 then return directory.pageNumbers end if
+    if directory.indexedPageCount < file.pageCount and comparison > 0 then
+      startPage = directory.indexedPageCount
+      prefix = directory.pageNumbers
+    end if
+  end if
+  pages = classifyHeapPages(file, startPage, prefix)
+  rebuilt = HeapPageDirectory(file.pageCount, file.generation, pages)
+  encoded = try(encodePageDirectory(file, rebuilt))
+  if typeof(encoded) != "error" then ignoredWrite = try(writeDirectoryAtomic(pageDirectoryPath(file.path), encoded)) end if
+  return pages
+end function
+
+// Removes the live and interrupted page-directory generations. Callers use
+// this before physical table replacement; a subsequent scan rebuilds safely.
+function synchronized invalidatePageDirectory(tablePath)
+  path = pageDirectoryPath(tablePath)
+  temporary = path + ".new"
+  if file_api.pathExists(path) then file_api.deletePath(path) end if
+  if file_api.pathExists(temporary) then file_api.deletePath(temporary) end if
   return true
 end function
 
@@ -150,10 +353,9 @@ end function
 function initialInsertionPage(file)
   if file.pageCount == 0 then return -1 end if
   lastHeapPage = -1
-  for pageNumber = 0 to file.pageCount - 1
+  heapPages = heapPageNumbers(file)
+  for each pageNumber in heapPages
     pageBytes = try(paged_file.readPage(file, pageNumber))
-    header = try(page.verify(pageBytes))
-    if header.pageType != page.TYPE_HEAP then continue end if
     lastHeapPage = pageNumber
     slotHeader = page.decodePageHeader(pageBytes)
     if slotHeader.itemCount > 0 then
@@ -383,10 +585,9 @@ function scan(heap)
   validateOpen(heap, "scan")
   rows = []
   if heap.pagedFile.pageCount == 0 then return rows end if
-  for pageNumber = 0 to heap.pagedFile.pageCount - 1
+  heapPages = heapPageNumbers(heap.pagedFile)
+  for each pageNumber in heapPages
     pageBytes = paged_file.readPage(heap.pagedFile, pageNumber)
-    header = page.verify(pageBytes)
-    if header.pageType != page.TYPE_HEAP then continue end if
     count = slotted.slotCount(pageBytes)
     if count > 0 then
       for slotId = 0 to count - 1

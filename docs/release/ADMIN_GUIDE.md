@@ -43,6 +43,13 @@ shared Win32 byte-range lock. Writers retain exclusive locks. If a durable index
 dirty marker appears, the reader leaves the shared gate and performs repair only
 after acquiring the exclusive gate.
 
+Table scans maintain small `<table>.heap-pages` files next to table storage.
+These CRC-protected files are derived acceleration metadata, not user data: a
+legacy database creates them lazily, growth extends only the new page tail, and
+missing, stale, or damaged copies rebuild automatically. Do not copy or restore
+one independently of its table. It is safe to delete while the database is
+stopped; the next scan performs one complete classification pass.
+
 Format-relevant settings are copied into `db.meta` when a database is created.
 Changing global defaults never changes an existing database. A page-size change
 requires `minisql-migrate.exe --rewrite`.

@@ -1646,6 +1646,9 @@ function recoverMaintenance(databasePath)
   path = maintenancePath(databasePath)
   if not file_api.fileExists(path) then return true end if
   value = decodeMaintenance(readWhole(path))
+  // Maintenance may restore either generation of the authoritative table.
+  // Discard the derived physical-page map before choosing that generation.
+  heap_file.invalidatePageDirectory(value.originalPath)
   if value.status == MAINTENANCE_PREPARED then
     if file_api.pathExists(value.backupPath) then
       deleteIfExists(value.originalPath)
@@ -1711,6 +1714,11 @@ function recoverPending(databasePath)
     for each backup in value.backupPaths
       deleteIfExists(backup)
     end for
+    // A committed DROP/replace can leave only derived metadata next to the old
+    // path when recovery performs the cleanup after a crash.
+    for each original in value.backupOriginals
+      ignoredDirectory = try(heap_file.invalidatePageDirectory(original))
+    end for
   end if
   deleteIfExists(path)
   return true
@@ -1751,6 +1759,7 @@ end function
 function cleanupCommitted(prepared, databasePath)
   for each plan in prepared.backups
     deleteIfExists(plan.backupPath)
+    ignoredDirectory = try(heap_file.invalidatePageDirectory(plan.originalPath))
   end for
   for each plan in prepared.createFiles
     deleteIfExists(plan.temporaryPath)

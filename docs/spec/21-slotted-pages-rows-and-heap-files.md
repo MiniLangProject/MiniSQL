@@ -48,3 +48,26 @@ character-count semantics, collations, casts and coercion rules belong to M13-M1
 A heap file stores slotted pages in a paged file and supports insert, read, update, delete,
 scan/count and reopen. Deleted space SHOULD be reused before file growth. Page identities,
 checksums, slot state and RowId generation are verified on each read path.
+
+## 21.5 Persistent heap-page directory
+
+Every table may have a derived `<table>.heap-pages` sidecar. Its versioned
+CRC-32C envelope binds the database ID, table file ID, page size, classified
+page count, source superblock generation, and a strictly increasing list of
+physical `TYPE_HEAP` page numbers. The sidecar is not authoritative database
+content and MUST NOT impose a fixed table-size policy limit.
+
+A scan with an exact page-count/generation match reads only listed heap pages.
+When the table grows monotonically, the implementation MUST preserve the
+validated prefix, checksum and classify only the new tail, then atomically
+replace the sidecar. A smaller frontier, inconsistent generation, invalid
+identity, malformed ordering, unsupported fields, truncation, or checksum
+failure MUST trigger reconstruction from authoritative checksummed pages.
+Failure to publish derived state MUST NOT make a valid table unreadable.
+
+Physical replacement protocols such as `VACUUM` MUST invalidate the directory
+before publishing their replacement journal. Transactional `DROP TABLE` cleanup
+removes it, and interrupted maintenance recovery invalidates it before choosing
+the authoritative generation. Backup, restore, migration, and consistency
+checking operate on authoritative paged files; a missing sidecar is rebuilt on
+the next heap scan.

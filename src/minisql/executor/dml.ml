@@ -177,11 +177,12 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function stageInsert(pageTransaction, file, table, encodedRow)
   if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsert", "encoded row must be non-empty bytes") end if
-  if file.pageCount > 0 then
-    for pageNumber = 0 to file.pageCount - 1
+  heapPages = heap_file.heapPageNumbers(file)
+  if len(heapPages) > 0 then
+    for each pageNumber in heapPages
       working = bytes(visiblePage(pageTransaction, file, table.tableId, pageNumber))
-      header = page.verify(working)
-      if header.pageType != page.TYPE_HEAP then continue end if
+      header = page.decodePageHeader(working)
+      if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "stageInsert", "heap-page directory references a non-heap page") end if
       inserted = try(slotted_page.insert(working, encodedRow))
       if typeof(inserted) != "error" then
         transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
@@ -206,22 +207,40 @@ function stageInsertWithCursor(pageTransaction, file, table, encodedRow, cursor)
   if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "encoded row must be non-empty bytes") end if
   startPage = cursor.pageNumber
   if startPage < 0 then startPage = 0 end if
+  // The cursor normally names the current heap page, so try it before loading
+  // or extending the persistent directory. Overflow writes may have grown the
+  // physical file since the prior row while this page still has free space.
   if startPage < file.pageCount then
-    for pageNumber = startPage to file.pageCount - 1
-      working = bytes(visiblePage(pageTransaction, file, table.tableId, pageNumber))
-      header = page.verify(working)
-      if header.pageType != page.TYPE_HEAP then continue end if
+    working = bytes(visiblePage(pageTransaction, file, table.tableId, startPage))
+    header = page.decodePageHeader(working)
+    if header.pageType == page.TYPE_HEAP then
       inserted = try(slotted_page.insert(working, encodedRow))
       if typeof(inserted) != "error" then
-        transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
-        cursor.pageNumber = pageNumber
+        transaction.stagePage(pageTransaction, table.tableId, startPage, working)
+        cursor.pageNumber = startPage
         cursor.remainingRows = cursor.remainingRows - 1
-        return scan.RowReference(pageNumber, inserted, slotted_page.entryGeneration(working, inserted))
+        return scan.RowReference(startPage, inserted, slotted_page.entryGeneration(working, inserted))
       end if
       if inserted.code != PAGE_FULL then return inserted end if
-      cursor.pageNumber = pageNumber + 1
-    end for
+    end if
+    startPage = startPage + 1
   end if
+  heapPages = heap_file.heapPageNumbers(file)
+  for each pageNumber in heapPages
+    if pageNumber < startPage then continue end if
+    working = bytes(visiblePage(pageTransaction, file, table.tableId, pageNumber))
+    header = page.decodePageHeader(working)
+    if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "stageInsertWithCursor", "heap-page directory references a non-heap page") end if
+    inserted = try(slotted_page.insert(working, encodedRow))
+    if typeof(inserted) != "error" then
+      transaction.stagePage(pageTransaction, table.tableId, pageNumber, working)
+      cursor.pageNumber = pageNumber
+      cursor.remainingRows = cursor.remainingRows - 1
+      return scan.RowReference(pageNumber, inserted, slotted_page.entryGeneration(working, inserted))
+    end if
+    if inserted.code != PAGE_FULL then return inserted end if
+    cursor.pageNumber = pageNumber + 1
+  end for
   allocationCount = cursor.allocationBatch
   if allocationCount > cursor.remainingRows then allocationCount = cursor.remainingRows end if
   if allocationCount < 1 then allocationCount = 1 end if
@@ -1637,8 +1656,10 @@ function rewriteTableStreaming(databasePath, path, pageSize, databaseId, table)
   rowSchema = scan.schemaForTable(table)
   operationError = void
   written = 0
-  if reader.file.pageCount > 0 then
-    for pageNumber = 0 to reader.file.pageCount - 1
+  heapPages = try(heap_file.heapPageNumbers(reader.file))
+  if typeof(heapPages) == "error" then operationError = heapPages end if
+  if operationError is void and len(heapPages) > 0 then
+    for each pageNumber in heapPages
       if operationError is void then
         pageBytes = try(scan.visiblePage(reader, pageNumber))
         if typeof(pageBytes) == "error" then
@@ -1675,8 +1696,8 @@ function rewriteTableStreaming(databasePath, path, pageSize, databaseId, table)
                 end if
               end for
             end if
-          else if header.pageType != page.TYPE_OVERFLOW and header.pageType != page.TYPE_FREE then
-            operationError = fail(CORRUPT_DATA, "rewriteTableStreaming", "source table contains an unexpected page type")
+          else
+            operationError = fail(CORRUPT_DATA, "rewriteTableStreaming", "heap-page directory references a non-heap source page")
           end if
         end if
       end if
@@ -1717,6 +1738,10 @@ function vacuumTable(database, table)
   if file_api.pathExists(temporaryPath) then file_api.deletePath(temporaryPath) end if
   if file_api.pathExists(backupPath) then file_api.deletePath(backupPath) end if
   written = rewriteTableStreaming(database.path, temporaryPath, database.catalogHandle.metadata.pageSize, database.catalogHandle.metadata.databaseId, table)
+  // Invalidate before the replacement journal is published. A crash at any
+  // later phase restores either old or new authoritative data and forces the
+  // derived directory to rebuild against that exact file.
+  heap_file.invalidatePageDirectory(finalPath)
   journal = schema_history.beginMaintenance(database.path, finalPath, temporaryPath, backupPath)
   file_api.movePath(finalPath, backupPath, false)
   file_api.movePath(temporaryPath, finalPath, false)

@@ -181,6 +181,13 @@ def tree_bytes(path: Path) -> int:
     return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
+def heap_page_directories(database: Path) -> tuple[int, int]:
+    """Return the count and total bytes of persisted heap-page directories."""
+
+    paths = list((database / "tables").glob("*.heap-pages"))
+    return len(paths), sum(path.stat().st_size for path in paths)
+
+
 def parse_database_path(output: str) -> Path:
     """Extract and normalize the database path reported by worker initialization."""
 
@@ -283,6 +290,11 @@ def main() -> int:
     report["verifySeconds"] = round(verify_seconds, 3)
     report["verifyPeakPrivateBytes"] = verify_peak
     report["verifyOutput"] = verify_output.strip()
+    directory_count, directory_bytes = heap_page_directories(database)
+    if directory_count < 1 or directory_bytes < 1:
+        raise CapacityFailure("sequential verify did not persist a heap-page directory")
+    report["heapPageDirectoryCount"] = directory_count
+    report["heapPageDirectoryBytes"] = directory_bytes
 
     if args.vacuum:
         vacuum_output, vacuum_seconds, vacuum_peak = run(
@@ -301,6 +313,11 @@ def main() -> int:
         report["postVacuumVerifySeconds"] = round(post_seconds, 3)
         report["postVacuumVerifyPeakPrivateBytes"] = post_peak
         report["postVacuumVerifyOutput"] = post_output.strip()
+        post_directory_count, post_directory_bytes = heap_page_directories(database)
+        if post_directory_count < 1 or post_directory_bytes < 1:
+            raise CapacityFailure("post-VACUUM verify did not rebuild a heap-page directory")
+        report["postVacuumHeapPageDirectoryCount"] = post_directory_count
+        report["postVacuumHeapPageDirectoryBytes"] = post_directory_bytes
 
     logical_payload_bytes = expected_rows * payload_bytes
     wal_path = database / "wal" / "wal.log"

@@ -10,6 +10,7 @@ import minisql.executor.dml as dml
 import minisql.executor.executor as executor
 import minisql.platform.file as file_api
 import minisql.server.database_manager as database_manager
+import minisql.storage.heap_file as heap_file
 import minisql.storage.paged_file as paged_file
 import tests.support.testkit as testkit
 
@@ -84,8 +85,11 @@ function main(args)
   executeOne(engine, "ANALYZE document")
 
   table = catalog.findTable(managed.catalogHandle, "document")
+  tablePath = catalog.tableFilePath(databasePath, table.tableId)
+  directoryPath = heap_file.pageDirectoryPath(tablePath)
   initialPages = tablePages(databasePath, table)
   testkit.record(state, initialPages > 12, "overflow workload allocates many pages")
+  testkit.record(state, file_api.fileExists(directoryPath), "overflow workload persists heap-page directory")
 
   deleted = executeOne(engine, "DELETE FROM document WHERE id <= 12")
   testkit.equal(state, deleted.affectedRows, 12, "delete creates reclaimable storage")
@@ -98,6 +102,15 @@ function main(args)
   testkit.equal(state, vacuumed.affectedRows, 12, "VACUUM rewrites live rows")
   afterVacuum = tablePages(databasePath, table)
   testkit.record(state, afterVacuum < beforeVacuum, "VACUUM reclaims heap and overflow pages")
+  testkit.record(state, file_api.fileExists(directoryPath), "VACUUM rebuilds invalidated page directory")
+  directoryFile = paged_file.open(tablePath)
+  directory = heap_file.loadPageDirectory(directoryFile)
+  testkit.record(state, heap_file.isHeapPageDirectory(directory), "VACUUM publishes valid page directory")
+  if heap_file.isHeapPageDirectory(directory) then
+    testkit.equal(state, directory.indexedPageCount, afterVacuum, "VACUUM directory matches replacement frontier")
+    testkit.record(state, len(directory.pageNumbers) > 0, "VACUUM directory retains heap pages")
+  end if
+  paged_file.close(directoryFile)
 
   rows = executeOne(engine, "SELECT id, code, body FROM document ORDER BY id")
   testkit.equal(state, len(rows.rows), 12, "VACUUM preserves live row count")

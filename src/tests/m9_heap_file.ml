@@ -6,12 +6,26 @@ import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.storage.page as page
 import minisql.storage.heap_file as heap_file
+import minisql.storage.paged_file as paged_file
 import minisql.storage.slotted_page as slotted
 import tests.support.testkit as testkit
 
 // Removes a test artifact when present; absence is accepted so repeated test runs start from the same state.
 function cleanup(path)
   ignored = try(file_api.deletePath(path))
+  return true
+end function
+
+// Flips one durable sidecar byte to verify that derived metadata corruption is
+// repaired from authoritative, checksummed table pages instead of failing I/O.
+function corruptByte(path, offset)
+  handle = file_api.openReadWrite(path, false)
+  value = bytes(1, 0)
+  file_api.readExactAt(handle, offset, value, 0, 1)
+  value[0] = value[0] ^ 0xFF
+  file_api.writeAt(handle, offset, value, 0, 1)
+  file_api.flush(handle)
+  file_api.close(handle)
   return true
 end function
 
@@ -39,6 +53,8 @@ function main(args)
   end if
   path = args[0]
   appendPath = path + ".append"
+  heap_file.invalidatePageDirectory(path)
+  heap_file.invalidatePageDirectory(appendPath)
   cleanup(path)
   cleanup(appendPath)
   state = testkit.create()
@@ -90,7 +106,37 @@ function main(args)
   heap_file.close(appendHeap)
   reopenedAppend = heap_file.open(appendPath)
   testkit.equal(state, reopenedAppend.insertionPageHint, 255, "reopened append-only heap resumes at its frontier")
+  directoryPath = heap_file.pageDirectoryPath(appendPath)
+  testkit.record(state, file_api.fileExists(directoryPath), "reopen persists heap-page directory")
+  indexedPages = heap_file.heapPageNumbers(reopenedAppend.pagedFile)
+  testkit.equal(state, len(indexedPages), 256, "directory classifies every initial heap page")
+  testkit.equal(state, indexedPages[255], 255, "directory preserves physical heap order")
+
+  // Appending mixed page types extends only the newly committed suffix and
+  // never includes overflow pages in the physical heap scan plan.
+  overflowPage = paged_file.allocatePage(reopenedAppend.pagedFile, page.TYPE_OVERFLOW)
+  tailHeapPage = paged_file.allocatePage(reopenedAppend.pagedFile, page.TYPE_HEAP)
+  testkit.equal(state, overflowPage, 256, "mixed tail overflow page")
+  testkit.equal(state, tailHeapPage, 257, "mixed tail heap page")
+  extendedPages = heap_file.heapPageNumbers(reopenedAppend.pagedFile)
+  testkit.equal(state, len(extendedPages), 257, "directory tail extension adds only heap page")
+  testkit.equal(state, extendedPages[256], tailHeapPage, "directory tail records new heap page")
   heap_file.close(reopenedAppend)
+
+  // A valid table remains usable when the derived map is damaged. Opening the
+  // heap rebuilds and republishes the complete directory transparently.
+  corruptByte(directoryPath, 10)
+  rebuiltAppend = heap_file.open(appendPath)
+  rebuiltPages = heap_file.heapPageNumbers(rebuiltAppend.pagedFile)
+  testkit.equal(state, len(rebuiltPages), 257, "corrupt directory rebuilt from table")
+  testkit.equal(state, rebuiltPages[256], tailHeapPage, "rebuilt directory preserves mixed tail")
+  heap_file.invalidatePageDirectory(appendPath)
+  testkit.record(state, not file_api.fileExists(directoryPath), "explicit invalidation removes derived directory")
+  regeneratedPages = heap_file.heapPageNumbers(rebuiltAppend.pagedFile)
+  testkit.equal(state, len(regeneratedPages), 257, "invalidated directory regenerates on demand")
+  testkit.record(state, file_api.fileExists(directoryPath), "regenerated directory is persisted")
+  heap_file.close(rebuiltAppend)
+  heap_file.invalidatePageDirectory(appendPath)
   cleanup(appendPath)
 
   heap = heap_file.create(path, 4096, 99, databaseId())
@@ -144,6 +190,7 @@ function main(args)
   testkit.equal(state, replacementId.slotId, ids[0].slotId, "deleted slot reused by heap")
   testkit.errorCode(state, try(heap_file.read(reopened, ids[0])), heap_file.STALE_REFERENCE, "old RowId cannot alias reused slot")
   heap_file.close(reopened)
+  heap_file.invalidatePageDirectory(path)
   cleanup(path)
   return testkit.finish(state, "MiniSQL M9 heap-file tests: SUCCESS", "MiniSQL M9 heap-file tests: FAIL")
 end function

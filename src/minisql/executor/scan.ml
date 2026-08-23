@@ -14,6 +14,7 @@ import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.overflow as overflow
 import minisql.storage.buffer_pool as buffer_pool
+import minisql.storage.heap_file as heap_file
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.row_codec as row_codec
@@ -344,10 +345,13 @@ function allRangeColumns(reader, offset, limit, requiredColumns)
   // doubled I/O and CRC work for every sequential SELECT.
   output = list.List.new()
   visibleRows = 0
-  for pageNumber = 0 to reader.file.pageCount - 1
+  // The persistent directory contains only physical heap pages. Large TEXT/BLOB
+  // overflow regions therefore no longer consume one read and CRC verification
+  // per page during every table scan.
+  heapPages = heap_file.heapPageNumbers(reader.file)
+  for each pageNumber in heapPages
     pageBytes = visiblePage(reader, pageNumber)
-    header = page.verify(pageBytes)
-    if header.pageType == page.TYPE_OVERFLOW or header.pageType == page.TYPE_FREE then continue end if
+    header = page.decodePageHeader(pageBytes)
     if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "all", "table page has wrong type") end if
     count = slotted_page.slotCount(pageBytes)
     if count > 0 then

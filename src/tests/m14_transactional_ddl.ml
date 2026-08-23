@@ -10,6 +10,7 @@ import minisql.server.database_manager as database_manager
 import minisql.sql.binder as binder
 import minisql.sql.parser as parser
 import minisql.storage.btree as btree
+import minisql.storage.heap_file as heap_file
 import minisql.storage.paged_file as paged_file
 import tests.support.testkit as testkit
 
@@ -115,12 +116,19 @@ function main(args)
   auxiliary = catalog.findTable(database, "auxiliary")
   auxiliaryPath = catalog.tableFilePath(databasePath, auxiliary.tableId)
   testkit.record(state, file_api.fileExists(auxiliaryPath), "auxiliary table created")
+  auxiliaryFile = paged_file.open(auxiliaryPath)
+  auxiliaryPages = heap_file.heapPageNumbers(auxiliaryFile)
+  paged_file.close(auxiliaryFile)
+  auxiliaryDirectory = heap_file.pageDirectoryPath(auxiliaryPath)
+  testkit.equal(state, len(auxiliaryPages), 0, "empty table directory contains no heap pages")
+  testkit.record(state, file_api.fileExists(auxiliaryDirectory), "auxiliary page directory created")
   dropBound = bindOne(database, "DROP TABLE auxiliary")
   dropDdl = schema_history.begin(database)
   schema_history.stageDropTable(dropDdl, dropBound)
   schema_history.commit(dropDdl)
   testkit.record(state, catalog.findTable(database, "auxiliary") is void, "DROP TABLE removes catalog entry")
   testkit.record(state, not file_api.fileExists(auxiliaryPath), "DROP TABLE removes physical file")
+  testkit.record(state, not file_api.fileExists(auxiliaryDirectory), "DROP TABLE removes derived page directory")
 
   // Simulate process death after new files were moved but before catalog
   // publication. database_manager.open must invoke journal recovery first.

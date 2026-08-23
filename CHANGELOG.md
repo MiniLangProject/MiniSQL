@@ -4,7 +4,7 @@ All notable release-level changes are documented here. The detailed milestone
 and repair-candidate log from development is preserved in
 `docs/history/DEVELOPMENT_CHANGELOG.md`.
 
-## Unreleased — 2026-08-21
+## Unreleased — 2026-08-23
 
 - expanded the native Workbench with multiple SQL worksheets, keyboard
   accelerators, context menus, searchable history, CSV result export, and
@@ -91,6 +91,16 @@ and repair-candidate log from development is preserved in
   lookups, WAL bounds, configurable private-memory guardrails, optional
   post-VACUUM verification, and JSON reports; the accepted 1 GiB reference run
   completed eight restart chunks and ended with a zero-byte current WAL;
+- added an atomically published, CRC-protected physical heap-page directory per
+  table; sequential scans, insert page searches, reopen hints, and streaming
+  VACUUM now skip unrelated overflow/free pages, extend only a grown file tail,
+  and rebuild transparently after corruption, truncation, DROP, or replacement;
+- reduced full logical verification of the retained 1 GiB overflow workload
+  from 1,368,140 ms to 71,453 ms for its one-time legacy directory build and to
+  1,093 ms on a fresh-process warm restart;
+- made PITR and standby refresh rebuild derived B+ tree indexes after replaying
+  post-base table WAL, closing a consistency gap exposed by the clean restart
+  fast path while preserving the zero-rebuild exact-base restore path;
 - added Apache-2.0 headers to every MiniLang, Python and PowerShell source file,
   documented every declaration and non-obvious implementation invariant in
   English, and aligned the README, operator guides, concurrency specifications,

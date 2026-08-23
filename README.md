@@ -4,7 +4,7 @@ MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 applications.
 
-The frozen M0-M50 plan is complete. A clean Windows run on 2026-08-20 passed
+The frozen M0-M50 plan is complete. A clean Windows run on 2026-08-23 passed
 all **106/106 cumulative phases**, including crash recovery, genuinely parallel
 same-database reads, concurrent clients, TLS integration, replication, fuzzing,
 soak tests, and deterministic release packaging. The accepted source revision
@@ -20,8 +20,9 @@ is `M48-M50R3`.
 
 - durable paged storage, CRC-32C checksums, redundant metadata, WAL, checkpoints,
   crash recovery, transactions, savepoints, and isolation-aware locking;
-- heap files, overflow values, B+ tree indexes, buffer pool, VACUUM, REINDEX,
-  backup/restore, PITR, consistency checking, and offline page-size migration;
+- heap files with persistent physical heap-page directories, overflow values,
+  B+ tree indexes, buffer pool, VACUUM, REINDEX, backup/restore, PITR,
+  consistency checking, and offline page-size migration;
 - DDL, DML, and DCL with schemas, `INFORMATION_SCHEMA`, constraints, roles,
   grants, prepared statements, views, recursive CTEs, correlated subqueries,
   window functions, `MERGE`, triggers, typed single-statement procedures,
@@ -192,6 +193,14 @@ indexed restart latency, projection/range pushdown, the configured read cache,
 large overflow values, and post-`VACUUM` data integrity. See
 [`tests/performance/README.md`](tests/performance/README.md) for the `5` and
 `10` GiB commands and tunable guardrails.
+
+Sequential scans persist a checksummed `<table>.heap-pages` sidecar containing
+only physical heap-page numbers. Existing databases build it lazily once;
+subsequent processes skip unrelated overflow/free pages, while file growth
+classifies only the new tail. The sidecar is derived, atomically replaced, and
+automatically rebuilt if missing, stale, or corrupt. On the retained 1 GiB
+capacity database, full logical verification improved from 1,368,140 ms before
+this index to 71,453 ms for the one-time legacy build and 1,093 ms after restart.
 
 ## Build the binary distribution
 

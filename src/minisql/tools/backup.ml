@@ -11,6 +11,7 @@ import minisql.common.crc32c as crc32c
 import minisql.common.diagnostics as diagnostics
 import minisql.common.endian as endian
 import minisql.common.version as version
+import minisql.executor.dml as dml
 import minisql.platform.file as file_api
 import minisql.platform.clock as clock
 import minisql.server.database_manager as database_manager
@@ -39,6 +40,19 @@ const MAX_PATH_BYTES = 240
 const MAX_FILE_BYTES = 4294967295
 const MAX_TOTAL_BYTES = 1152921504606846975
 const MAX_FILE_COUNT = 4294967295
+
+// WAL archives contain authoritative table-page images, while B+ tree files
+// remain derived from the base backup. Rebuild them before publishing any
+// recovered generation that applied post-base WAL records.
+function repairRecoveredIndexes(database, required, operation)
+  if typeof(required) != "bool" then return fail(INVALID_ARGUMENT, operation, "required must be bool") end if
+  if not required then return true end if
+  marked = try(dml.markIndexesDirty(database))
+  if typeof(marked) == "error" then return fail(marked.code, operation, "cannot mark recovered indexes dirty: " + marked.message) end if
+  repaired = try(dml.ensureIndexes(database))
+  if typeof(repaired) == "error" then return fail(repaired.code, operation, "cannot rebuild recovered indexes: " + repaired.message) end if
+  return true
+end function
 
 // Groups the captured file state and preserves the field relationships documented below.
 struct CapturedFile
@@ -1022,7 +1036,10 @@ function restoreToLsn(archivePath, databasePath, targetLsn)
   if typeof(database) == "error" then return database end if
   ignoredAudit = try(database_manager.audit(database, diagnostics.AUDIT_RESTORE, diagnostics.AUDIT_SUCCESS, 0, 1, "point-in-time restore completed at LSN " + targetLsn))
   if not bytesEqual(database.catalogHandle.metadata.databaseId, manifest.databaseId) then database_manager.close(database); return fail(CORRUPT_DATA, "restoreToLsn", "restored database identity mismatch") end if
-  database_manager.close(database)
+  repairedIndexes = try(repairRecoveredIndexes(database, targetLsn > manifest.baseEndLsn, "restoreToLsn"))
+  closeDatabase = try(database_manager.close(database))
+  if typeof(repairedIndexes) == "error" then return repairedIndexes end if
+  if typeof(closeDatabase) == "error" then return closeDatabase end if
   movePathReliably(stage, databasePath, false)
   return PitrReport(bytes(manifest.databaseId), targetLsn, databasePath)
 end function
@@ -1150,7 +1167,9 @@ function refreshStandby(archivePath, databasePath)
   if typeof(database) == "error" then return database end if
   if not bytesEqual(database.catalogHandle.metadata.databaseId, manifest.databaseId) then database_manager.close(database); return fail(CORRUPT_DATA, "refreshStandby", "standby identity changed during recovery") end if
   ignoredAudit = try(database_manager.audit(database, diagnostics.AUDIT_REPLICATION, diagnostics.AUDIT_SUCCESS, 0, 1, "standby refreshed to LSN " + manifest.latestEndLsn))
+  repairedIndexes = try(repairRecoveredIndexes(database, manifest.latestEndLsn > state.appliedLsn, "refreshStandby"))
   closeResult = try(database_manager.close(database))
+  if typeof(repairedIndexes) == "error" then return repairedIndexes end if
   if typeof(closeResult) == "error" then return closeResult end if
   next = StandbyState(bytes(manifest.databaseId), manifest.generation, manifest.latestEndLsn)
   writeStandbyState(databasePath, next)
