@@ -36,6 +36,12 @@ function runProfile(profile, password)
   return win32_client.runSession(session)
 end function
 
+// Converts a direct-connect failure into a GUI error followed by a retryable manager.
+function recoverConnectionFailure(value)
+  gui.showError(0, "MiniSQL connection failed", win32_client.connectionFailureText(value))
+  return win32_client.launchConnectionManager()
+end function
+
 // Dispatches GUI launch, smoke diagnostics, and explicit connection command lines.
 function main(args)
   if len(args) == 0 then
@@ -61,7 +67,10 @@ function main(args)
     profile = try(fullclient.createProfile("Local MiniSQL", "127.0.0.1", port, "localhost", databaseName, "", false, "", true))
     if typeof(profile) == "error" then return printAppError(profile) end if
     result = try(runProfile(profile, bytes(0)))
-    if typeof(result) == "error" then return printAppError(result) end if
+    if typeof(result) == "error" then
+      recovered = try(recoverConnectionFailure(result))
+      if typeof(recovered) == "error" then return printAppError(recovered) end if
+    end if
     return 0
   end if
   if len(args) >= 4 and len(args) <= 5 and args[0] == "--connect" then
@@ -74,7 +83,10 @@ function main(args)
     profile = try(fullclient.createProfile(args[1] + ":" + port, args[1], port, args[1], databaseName, args[3], false, "", false))
     if typeof(profile) == "error" then uuid.wipeSecret(password); return printAppError(profile) end if
     result = try(runProfile(profile, password))
-    if typeof(result) == "error" then return printAppError(result) end if
+    if typeof(result) == "error" then
+      recovered = try(recoverConnectionFailure(result))
+      if typeof(recovered) == "error" then return printAppError(recovered) end if
+    end if
     return 0
   end if
   if len(args) >= 5 and len(args) <= 7 and args[0] == "--connect-tls" then
@@ -89,7 +101,10 @@ function main(args)
     profile = try(fullclient.createProfile("TLS " + args[1], args[1], port, args[3], databaseName, args[4], true, pinSha256, false))
     if typeof(profile) == "error" then uuid.wipeSecret(password); return printAppError(profile) end if
     result = try(runProfile(profile, password))
-    if typeof(result) == "error" then return printAppError(result) end if
+    if typeof(result) == "error" then
+      recovered = try(recoverConnectionFailure(result))
+      if typeof(recovered) == "error" then return printAppError(recovered) end if
+    end if
     return 0
   end if
   printUsage()

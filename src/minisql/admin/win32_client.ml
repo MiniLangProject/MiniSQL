@@ -17,6 +17,7 @@ const LBN_SELCHANGE = 1
 const LBN_DBLCLK = 2
 const TCN_SELCHANGE = -551
 const TVN_SELCHANGEDW = -451
+const NM_CLICK = -2
 const NM_DBLCLK = -3
 const LVN_COLUMNCLICK = -108
 const EN_CHANGE = 0x0300
@@ -688,6 +689,17 @@ function connectionFailureText(value)
   return value.message
 end function
 
+// Reports a failed handshake without closing the manager so the user can retry.
+function reportConnectionFailure(window, value, showDialog)
+  if window is not ConnectionWindow or typeof(showDialog) != "bool" then return fail("reportConnectionFailure", "invalid connection window or dialog mode") end if
+  message = connectionFailureText(value)
+  setConnectionBusy(window, false)
+  gui.setText(window.statusLabel, "Connection failed: " + message)
+  if showDialog then gui.showError(window.hwnd, "MiniSQL connection failed", message) end if
+  gui.focus(window.connectButton)
+  return message
+end function
+
 // Runs the native alias manager using an explicit profile path for tests.
 function runConnectionManagerWithPath(path, visible)
   profiles = try(connection_profiles.load(path))
@@ -703,9 +715,8 @@ function runConnectionManagerWithPath(path, visible)
     connected = void
     if gui.isOpen(window.hwnd) then connected = pollConnection(attempt) end if
     if connected is not void then
-      setConnectionBusy(window, false)
       if typeof(connected) == "error" then
-        gui.setText(window.statusLabel, "Connection failed: " + connectionFailureText(connected))
+        ignoredFailure = try(reportConnectionFailure(window, connected, true))
       else
         gui.destroy(window.hwnd)
         session = try(openState(connected, true))
@@ -753,11 +764,11 @@ function runConnectionManagerWithPath(path, visible)
           if typeof(saved) == "error" then gui.setText(window.statusLabel, "Cannot delete: " + saved.message) else renderConnectionProfiles(window, profiles); gui.setText(window.statusLabel, "Alias deleted.") end if
         else if command == ID_PROFILE_CONNECT or command == gui.MENU_ALIAS_CONNECT or (command == ID_PROFILE_LIST and event.notification == LBN_DBLCLK) then
           profile = try(profileFromWindow(window))
-          if typeof(profile) == "error" then gui.setText(window.statusLabel, "Cannot connect: " + profile.message)
+          if typeof(profile) == "error" then ignoredInvalidProfile = try(reportConnectionFailure(window, profile, true))
           else
             gui.setText(window.statusLabel, "Connecting to " + fullclient.endpointText(profile) + " …")
             started = try(startConnection(window, profile))
-            if typeof(started) == "error" then gui.setText(window.statusLabel, "Connection failed: " + connectionFailureText(started)) else attempt = started end if
+            if typeof(started) == "error" then ignoredStartFailure = try(reportConnectionFailure(window, started, true)) else attempt = started end if
           end if
         else if command == gui.MENU_HELP_ABOUT then
           gui.showInfo(window.hwnd, "About MiniSQL Workbench", "MiniSQL Workbench\r\n\r\nA native Windows SQL client built exclusively for MiniSQL.")
@@ -929,7 +940,7 @@ function createWindow(visible)
   gui.tabAdd(sidebarTabs, "History")
   gui.tabAdd(workspaceTabs, "SQL Worksheet")
   gui.tabAdd(workspaceTabs, "Object Details")
-  gui.tabAdd(worksheetTabs, "SQL 1")
+  gui.tabAdd(worksheetTabs, "SQL 1   ×")
   gui.tabSelect(sidebarTabs, 0)
   gui.tabSelect(workspaceTabs, 0)
   applyVisibility(window)
@@ -1329,6 +1340,15 @@ function fillTabs(hwnd, labels, selected)
   return true
 end function
 
+// Renders notebook labels with a trailing multiplication-sign close target.
+function fillClosableTabs(hwnd, labels, selected)
+  closable = []
+  for each label in labels
+    closable = closable + [label + "   ×"]
+  end for
+  return fillTabs(hwnd, closable, selected)
+end function
+
 // Renders the active structured result into the native ListView grid.
 function fillResultGrid(window, state)
   resetRows = try(gui.listViewReset(window.resultGrid))
@@ -1438,7 +1458,7 @@ function setBusyControls(session)
   gui.setEnabled(session.window.newSqlButton, enabled)
   gui.setEnabled(session.window.clearButton, enabled)
   gui.setEnabled(session.window.worksheetTabs, enabled)
-  gui.setEnabled(session.window.closeSqlButton, enabled and len(session.worksheets) > 1)
+  gui.setEnabled(session.window.closeSqlButton, enabled)
   gui.setEnabled(session.window.exportCsvButton, enabled and fullclient.activeResultTab(session.state) is not void)
   gui.setEnabled(session.window.schemaButton, enabled)
   gui.setEnabled(session.window.historyFilterEdit, enabled)
@@ -1454,12 +1474,12 @@ function render(session)
   if typeof(bookmarksRendered) == "error" then return bookmarksRendered end if
   historyRendered = try(fillList(session.window.historyList, fullclient.filterHistory(session.state.history, session.historyFilter)))
   if typeof(historyRendered) == "error" then return historyRendered end if
-  worksheetsRendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  worksheetsRendered = try(fillClosableTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
   if typeof(worksheetsRendered) == "error" then return worksheetsRendered end if
   detailSelected = gui.tabSelectedIndex(session.window.detailTabs)
   detailsRendered = try(fillTabs(session.window.detailTabs, fullclient.detailTabLines(session.state), detailSelected))
   if typeof(detailsRendered) == "error" then return detailsRendered end if
-  tabsRendered = try(fillTabs(session.window.resultTabs, fullclient.resultTabLines(session.state.resultTabs), session.state.selectedResultIndex))
+  tabsRendered = try(fillClosableTabs(session.window.resultTabs, fullclient.resultTabLines(session.state.resultTabs), session.state.selectedResultIndex))
   if typeof(tabsRendered) == "error" then return tabsRendered end if
   gridRendered = try(fillResultGrid(session.window, session.state))
   if typeof(gridRendered) == "error" then return gridRendered end if
@@ -1851,7 +1871,7 @@ function addWorksheet(session, initialSql)
   session.nextWorksheetNumber = session.nextWorksheetNumber + 1
   session.worksheets = session.worksheets + [worksheet]
   session.selectedWorksheetIndex = len(session.worksheets) - 1
-  rendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  rendered = try(fillClosableTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
   if typeof(rendered) == "error" then return rendered end if
   gui.setText(session.window.queryEdit, initialSql)
   selectWorkspace(session, 0)
@@ -1863,25 +1883,49 @@ function addWorksheet(session, initialSql)
   return true
 end function
 
-// Closes the active worksheet while ensuring one editor always remains available.
-function closeWorksheet(session)
-  if len(session.worksheets) <= 1 then session.state.statusText = "At least one SQL worksheet must remain open"; return false end if
+// Closes any worksheet tab and selects the nearest surviving editor page.
+function closeWorksheetAt(session, closingIndex)
+  if session is not AdminSession or typeof(closingIndex) != "int" or closingIndex < 0 or closingIndex >= len(session.worksheets) then return fail("closeWorksheetAt", "worksheet index is invalid") end if
   stored = try(storeActiveWorksheet(session))
   if typeof(stored) == "error" then return stored end if
-  active = session.worksheets[session.selectedWorksheetIndex]
+  active = session.worksheets[closingIndex]
   if len(active.sqlText) > 0 and not gui.confirmWarning(session.window.hwnd, "Close SQL worksheet", "Close " + active.title + " and discard its SQL text?") then session.state.statusText = "SQL worksheet close cancelled"; return false end if
-  retained = []
-  for index = 0 to len(session.worksheets) - 1
-    if index != session.selectedWorksheetIndex then retained = retained + [session.worksheets[index]] end if
-  end for
-  session.worksheets = retained
-  if session.selectedWorksheetIndex >= len(retained) then session.selectedWorksheetIndex = len(retained) - 1 end if
-  rendered = try(fillTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
+  if len(session.worksheets) == 1 then
+    replacement = try(fullclient.newWorksheet(session.nextWorksheetNumber, ""))
+    if typeof(replacement) == "error" then return replacement end if
+    session.nextWorksheetNumber = session.nextWorksheetNumber + 1
+    session.worksheets = [replacement]
+    session.selectedWorksheetIndex = 0
+  else
+    retained = []
+    for index = 0 to len(session.worksheets) - 1
+      if index != closingIndex then retained = retained + [session.worksheets[index]] end if
+    end for
+    selected = session.selectedWorksheetIndex
+    if closingIndex < selected then selected = selected - 1
+    else if closingIndex == selected and selected >= len(retained) then selected = len(retained) - 1
+    end if
+    session.worksheets = retained
+    session.selectedWorksheetIndex = selected
+  end if
+  rendered = try(fillClosableTabs(session.window.worksheetTabs, fullclient.worksheetLines(session.worksheets), session.selectedWorksheetIndex))
   if typeof(rendered) == "error" then return rendered end if
   gui.setText(session.window.queryEdit, session.worksheets[session.selectedWorksheetIndex].sqlText)
   session.state.statusText = "SQL worksheet closed"
   render(session)
   return true
+end function
+
+// Closes the worksheet currently loaded in the shared RichEdit control.
+function closeWorksheet(session)
+  return closeWorksheetAt(session, session.selectedWorksheetIndex)
+end function
+
+// Closes one structured result page selected through its tab-header glyph.
+function closeResultAt(session, closingIndex)
+  closed = try(fullclient.closeResultTab(session.state, closingIndex))
+  if typeof(closed) == "error" then return closed end if
+  return render(session)
 end function
 
 // Writes a complete UTF-8 text artifact and flushes it before returning success.
@@ -2383,7 +2427,13 @@ function runSession(session)
           ignoredResultMenu = gui.showContextMenu(session.window.hwnd, ["Export active result as CSV", "Clear results"], [gui.MENU_FILE_EXPORT, gui.MENU_SQL_CLEAR])
         end if
       else if event.message == gui.WM_NOTIFY and not session.busy then
-        if event.controlId == ID_SIDEBAR_TABS and event.notification == TCN_SELCHANGE then
+        if event.controlId == ID_WORKSHEET_TABS and event.notification == NM_CLICK then
+          closingWorksheet = gui.tabCloseHitIndexAt(session.window.worksheetTabs, event.source & 65535, (event.source >> 16) & 65535)
+          if closingWorksheet >= 0 then ignoredWorksheetClose = try(closeWorksheetAt(session, closingWorksheet)) end if
+        else if event.controlId == ID_RESULT_TABS and event.notification == NM_CLICK then
+          closingResult = gui.tabCloseHitIndexAt(session.window.resultTabs, event.source & 65535, (event.source >> 16) & 65535)
+          if closingResult >= 0 then ignoredResultClose = try(closeResultAt(session, closingResult)) end if
+        else if event.controlId == ID_SIDEBAR_TABS and event.notification == TCN_SELCHANGE then
           applyVisibility(session.window)
         else if event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then
           ignoredWorkspaceNotify = try(synchronizeWorkspace(session))

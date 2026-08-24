@@ -113,6 +113,8 @@ const TVGN_CARET = 9
 const TVE_EXPAND = 2
 const TCM_INSERTITEMW = 0x133E
 const TCM_GETCURSEL = 0x130B
+const TCM_GETITEMRECT = 0x130A
+const TCM_HITTEST = 0x130D
 const TCIF_TEXT = 1
 const LVS_REPORT = 1
 const LVS_SHOWSELALWAYS = 8
@@ -150,6 +152,7 @@ const RDW_ALLCHILDREN = 128
 const RDW_UPDATENOW = 256
 const MB_OK = 0
 const MB_ICONINFORMATION = 64
+const MB_ICONERROR = 16
 const MB_YESNO = 4
 const MB_ICONWARNING = 48
 const IDYES = 6
@@ -504,6 +507,18 @@ function windowProcedure(hwnd, message, wParam, lParam)
       columnClick = bytes(32, 0)
       RtlMoveMemory(columnClick, lParam, 32)
       source = endian.readI32LE(columnClick, 28)
+    else if notification == -2 then
+      // NM_CLICK does not retain its pointer location. Capture it while the
+      // notification is synchronous so delayed controller processing can
+      // distinguish a tab body click from its trailing close glyph.
+      point = bytes(8, 0)
+      if source != 0 and GetCursorPos(point) and ScreenToClient(source, point) then
+        pointX = endian.readI32LE(point, 0)
+        pointY = endian.readI32LE(point, 4)
+        if pointX >= 0 and pointX <= 65535 and pointY >= 0 and pointY <= 65535 then source = (pointY << 16) | (pointX & 65535) else source = -1 end if
+      else
+        source = -1
+      end if
     end if
     guiEvents = guiEvents + [GuiEvent(hwnd, message, controlId, notification, source)]
     return 0
@@ -1424,6 +1439,30 @@ function tabSelectedIndex(hwnd)
   return SendMessageWInt(hwnd, TCM_GETCURSEL, 0, 0)
 end function
 
+// Returns one tab header rectangle in control-relative physical pixels.
+function tabItemRectangle(hwnd, index)
+  if hwnd == 0 or typeof(index) != "int" or index < 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.tabItemRectangle: invalid tab") end if
+  rectangle = bytes(16, 0)
+  found = SendMessageWIntBuffer(hwnd, TCM_GETITEMRECT, index, rectangle)
+  if found == 0 then return fail("tabItemRectangle", "TCM_GETITEMRECT failed") end if
+  return [endian.readI32LE(rectangle, 0), endian.readI32LE(rectangle, 4), endian.readI32LE(rectangle, 8), endian.readI32LE(rectangle, 12)]
+end function
+
+// Hit-tests a captured pointer against the trailing close-glyph region of a tab.
+function tabCloseHitIndexAt(hwnd, x, y)
+  if hwnd == 0 or typeof(x) != "int" or typeof(y) != "int" or x < 0 or y < 0 then return -1 end if
+  hit = bytes(12, 0)
+  endian.writeI32LE(hit, 0, x)
+  endian.writeI32LE(hit, 4, y)
+  index = SendMessageWIntBuffer(hwnd, TCM_HITTEST, 0, hit)
+  if index < 0 then return -1 end if
+  rectangle = try(tabItemRectangle(hwnd, index))
+  if typeof(rectangle) == "error" then return -1 end if
+  closeWidth = scaleDip(hwnd, 24)
+  if x >= rectangle[2] - closeWidth and x < rectangle[2] and y >= rectangle[1] and y < rectangle[3] then return index end if
+  return -1
+end function
+
 // Removes every result row while preserving the column schema.
 function listViewReset(hwnd)
   if hwnd == 0 then return error(INVALID_ARGUMENT, "platform.win32_gui.listViewReset: hwnd is required") end if
@@ -1708,6 +1747,13 @@ end function
 function showInfo(owner, title, message)
   if owner == 0 or typeof(title) != "string" or typeof(message) != "string" then return false end if
   ignored = MessageBoxW(owner, message, title, MB_OK | MB_ICONINFORMATION)
+  return true
+end function
+
+// Displays a native error dialog; a zero owner supports pre-window startup failures.
+function showError(owner, title, message)
+  if typeof(owner) != "int" or typeof(title) != "string" or typeof(message) != "string" then return false end if
+  ignored = MessageBoxW(owner, message, title, MB_OK | MB_ICONERROR)
   return true
 end function
 

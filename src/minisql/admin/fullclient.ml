@@ -1636,6 +1636,27 @@ function activeResultTab(state)
   return void
 end function
 
+// Closes one result page and keeps the nearest surviving page selected.
+function closeResultTab(state, index)
+  if state is not FullClientState then return fail("closeResultTab", "state must be FullClientState") end if
+  if typeof(index) != "int" or index < 0 or index >= len(state.resultTabs) then return fail("closeResultTab", "result index is invalid") end if
+  retained = []
+  for current = 0 to len(state.resultTabs) - 1
+    if current != index then retained = retained + [state.resultTabs[current]] end if
+  end for
+  selected = state.selectedResultIndex
+  if index < selected then selected = selected - 1
+  else if index == selected and selected >= len(retained) then selected = len(retained) - 1
+  end if
+  if len(retained) == 0 then selected = -1; state.queryView = emptyQueryView()
+  else if selected < 0 or selected >= len(retained) then selected = 0
+  end if
+  state.resultTabs = retained
+  state.selectedResultIndex = selected
+  state.statusText = "Result tab closed"
+  return true
+end function
+
 // Clears result tabs while preserving SQL history.
 function clearResultTabs(state)
   state.resultTabs = []

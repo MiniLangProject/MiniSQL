@@ -100,6 +100,16 @@ function main(args)
   testkit.equal(state, len(fullclient.filterHistory(["SELECT 1;", "UPDATE shop SET x = 1;"], "ShOp")), 1, "history search is case-insensitive")
   worksheets = [fullclient.newWorksheet(1, "SELECT 1;"), fullclient.newWorksheet(2, "SELECT 2;")]
   testkit.equal(state, fullclient.worksheetLines(worksheets)[1], "SQL 2", "independent worksheet tabs retain stable labels")
+  resultOne = fullclient.ResultTab("First", "SELECT 1;", "first", 1, true, ["value"], [["1"]], 1)
+  resultTwo = fullclient.ResultTab("Second", "SELECT 2;", "second", 1, true, ["value"], [["2"]], 2)
+  resultThree = fullclient.ResultTab("Third", "SELECT 3;", "third", 1, true, ["value"], [["3"]], 3)
+  tabState = fullclient.FullClientState(plain, void, [], "", fullclient.emptyTableDetails(), "", fullclient.emptyQueryView(), "Ready", [resultOne, resultTwo, resultThree], 1, [], [], false)
+  closedBeforeSelection = try(fullclient.closeResultTab(tabState, 0))
+  testkit.record(state, typeof(closedBeforeSelection) != "error" and len(tabState.resultTabs) == 2 and tabState.selectedResultIndex == 0 and fullclient.activeResultTab(tabState).title == "Second", "closing a result before the selection preserves the same active result")
+  closedLastResult = try(fullclient.closeResultTab(tabState, 1))
+  closedOnlyResult = try(fullclient.closeResultTab(tabState, 0))
+  testkit.record(state, typeof(closedLastResult) != "error" and typeof(closedOnlyResult) != "error" and len(tabState.resultTabs) == 0 and tabState.selectedResultIndex == -1 and fullclient.activeResultTab(tabState) is void, "result close buttons remove the last page and clear its selection")
+  testkit.errorCode(state, try(fullclient.closeResultTab(tabState, 0)), 9001, "result close rejects an invalid tab index")
   testkit.equal(state, fullclient.schemaEditorSql(0, "shop.product", "", "id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL", ""), "CREATE TABLE \"shop\".\"product\" (id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL);", "schema designer previews CREATE TABLE")
   testkit.equal(state, fullclient.schemaEditorSql(1, "shop.product", "active", "BOOLEAN NOT NULL DEFAULT TRUE", ""), "ALTER TABLE \"shop\".\"product\" ADD COLUMN \"active\" BOOLEAN NOT NULL DEFAULT TRUE;", "schema designer previews ADD COLUMN")
   testkit.equal(state, fullclient.schemaEditorSql(4, "shop.product", "shop.idx_product_name", "name, active", "UNIQUE"), "CREATE UNIQUE INDEX \"shop\".\"idx_product_name\" ON \"shop\".\"product\" (\"name\", \"active\");", "schema designer previews quoted unique indexes")
@@ -170,6 +180,24 @@ function main(args)
   if typeof(window) != "error" then
     testkit.record(state, window.objectTree != 0 and window.queryEdit != 0 and window.worksheetTabs != 0 and window.resultGrid != 0 and window.detailGrid != 0 and window.dataAddButton != 0 and window.schemaButton != 0, "object tree worksheet tabs schema designer and editable detail grids exist")
     testkit.equal(state, gui.tabSelectedIndex(window.workspaceTabs), 0, "SQL worksheet is default workspace")
+    worksheetRectangle = try(gui.tabItemRectangle(window.worksheetTabs, 0))
+    worksheetCloseHit = -1
+    worksheetBodyHit = -1
+    if typeof(worksheetRectangle) == "array" then
+      worksheetY = (worksheetRectangle[1] + worksheetRectangle[3]) >> 1
+      worksheetCloseHit = gui.tabCloseHitIndexAt(window.worksheetTabs, worksheetRectangle[2] - 2, worksheetY)
+      worksheetBodyHit = gui.tabCloseHitIndexAt(window.worksheetTabs, worksheetRectangle[0] + 2, worksheetY)
+    end if
+    testkit.record(state, worksheetCloseHit == 0 and worksheetBodyHit == -1, "worksheet tab exposes a bounded trailing close target")
+    renderedResultTabs = try(win32_client.fillClosableTabs(window.resultTabs, ["First", "Second"], 1))
+    resultRectangle = try(gui.tabItemRectangle(window.resultTabs, 1))
+    resultCloseHit = -1
+    if typeof(resultRectangle) == "array" then resultCloseHit = gui.tabCloseHitIndexAt(window.resultTabs, resultRectangle[2] - 2, (resultRectangle[1] + resultRectangle[3]) >> 1) end if
+    testkit.record(state, typeof(renderedResultTabs) != "error" and gui.tabSelectedIndex(window.resultTabs) == 1 and resultCloseHit == 1, "result tabs render an independently clickable close target")
+    controllerState = fullclient.FullClientState(plain, void, [], "", fullclient.emptyTableDetails(), "", fullclient.emptyQueryView(), "Ready", [], -1, [], [], false)
+    controllerSession = win32_client.AdminSession(window, controllerState, void, false, false, false, false, 0, 0, [fullclient.newWorksheet(1, "")], 0, 2, [], fullclient.defaultDataBrowseOptions(), "", "", [])
+    closedSoleWorksheet = try(win32_client.closeWorksheetAt(controllerSession, 0))
+    testkit.record(state, typeof(closedSoleWorksheet) != "error" and len(controllerSession.worksheets) == 1 and controllerSession.worksheets[0].title == "SQL 2" and controllerSession.selectedWorksheetIndex == 0, "closing the sole worksheet replaces it with a fresh usable editor")
     largeEditorText = decode(bytes(40000, 65))
     ignoredLargeText = try(gui.setText(window.queryEdit, largeEditorText))
     readLargeText = try(gui.getText(window.queryEdit))
@@ -206,6 +234,16 @@ function main(args)
   connectionLayout = try(win32_client.connectionLayoutSmoke(profilePath))
   if typeof(connectionLayout) == "error" then print connectionLayout.message end if
   testkit.record(state, typeof(connectionLayout) != "error" and connectionLayout, "connection manager resizes and accepts editor, checkbox, and button input")
+  failureWindow = try(win32_client.createConnectionWindow(false))
+  if typeof(failureWindow) == "struct" then
+    refusal = error(9004, "connect failed with WinSock 10061")
+    failureMessage = try(win32_client.reportConnectionFailure(failureWindow, refusal, false))
+    failureStatus = try(gui.getText(failureWindow.statusLabel))
+    testkit.record(state, typeof(failureMessage) == "string" and failureMessage == "Connection refused. Verify address/port and start minisqld for this database." and failureStatus == "Connection failed: " + failureMessage and gui.isOpen(failureWindow.hwnd), "connection failure keeps the manager open with actionable retry guidance")
+    gui.destroy(failureWindow.hwnd)
+  else
+    testkit.record(state, false, "connection failure keeps the manager open with actionable retry guidance")
+  end if
   workbenchLayout = try(win32_client.workbenchLayoutSmoke())
   if typeof(workbenchLayout) == "error" then print workbenchLayout.message end if
   testkit.record(state, typeof(workbenchLayout) != "error" and workbenchLayout, "workbench compact and wide layouts remain non-overlapping and interactive")

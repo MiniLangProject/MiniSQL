@@ -22,6 +22,12 @@ server, clear that option, enter the MiniSQL user, and supply the password when
 connecting. Passwords exist only for the connection attempt and are never
 written to the alias file or SQL history.
 
+Failed DNS, TCP, TLS, or authentication attempts open an owned error dialog with
+an actionable reason. Dismissing the dialog returns focus to the enabled
+connection manager, where the endpoint or credentials can be corrected and the
+connection retried. Direct `--connect*` launch failures open the same dialog and
+then fall back to the connection manager instead of terminating at the console.
+
 MiniSQL serves one database per endpoint. The alias therefore stores a database
 label for the UI; it does not send a `USE` command or expose databases belonging
 to a different server process.
@@ -62,7 +68,8 @@ model. Controls that read shared session state remain disabled until the active
 worker publishes its result. Each execution creates a bounded result tab with
 elapsed time, success state, columns, rows, and server messages. **Export CSV**
 writes the active result with RFC-style quote escaping through the native Save
-As dialog. Select a table
+As dialog. Every result tab has a trailing `×` that closes only that result;
+**Clear results** still closes the complete result set. Select a table
 and choose **Open object** to load Summary, Columns, Indexes, Data, Row Count,
 and reconstructed DDL pages. Columns, indexes, preview data, and row counts are
 rendered as native report grids with real column headers, selectable rows,
@@ -119,8 +126,11 @@ SQL quotes Unicode and punctuation-bearing object names and doubles embedded
 quote characters according to MiniSQL syntax.
 
 Use **+ SQL** or `Ctrl+N` to open another independent worksheet and **Close SQL**
-or `Ctrl+W` to close it. Non-empty worksheets require confirmation before their
-text is discarded. `F5` executes the current statement or selection,
+or `Ctrl+W` to close it. The trailing `×` on each worksheet tab performs the
+same action and can close a background tab without first activating it.
+Non-empty worksheets require confirmation before their text is discarded. If
+the final worksheet is closed, the workbench immediately opens a fresh blank
+worksheet so the editor remains usable. `F5` executes the current statement or selection,
 `Ctrl+Shift+Enter` runs the whole script, and `Ctrl+E` exports the active result.
 Data grids, result grids, the object tree, and the editor expose matching context
 menus.
