@@ -107,6 +107,9 @@ struct ReadPageCache
   clockHand
   // Maps stable page keys to their current frame indexes.
   index
+  // Memoizes live-row counts for autocommit COUNT(*) queries. The owning
+  // database clears these entries together with page images after every write.
+  rowCounts
   // Serializes lookups and metadata changes without covering disk I/O.
   guard
   // Number of requests served from resident page images.
@@ -201,7 +204,7 @@ end function
 // Creates the concurrent read cache for a configured memory budget.
 function createReadCache(maxBytes, pageSize)
   capacity = pageCapacity(maxBytes, pageSize)
-  return ReadPageCache(capacity, array(capacity), 0, hashmap.HashMap.withCapacity(capacity * 2), threading.Lock.new(), 0, 0, 0, false)
+  return ReadPageCache(capacity, array(capacity), 0, hashmap.HashMap.withCapacity(capacity * 2), hashmap.HashMap.withCapacity(64), threading.Lock.new(), 0, 0, 0, false)
 end function
 
 // Validates a read cache before synchronization or I/O.
@@ -284,9 +287,32 @@ function clearReadCache(cache)
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "clearReadCache", "cache guard is unavailable") end if
   cache.frames = array(cache.maxPages)
   cache.index.clear()
+  cache.rowCounts.clear()
   cache.clockHand = 0
   cache.guard.release()
   return true
+end function
+
+// Returns a previously verified autocommit row count or void on a cache miss.
+function cachedRowCount(cache, tablePath)
+  validateReadCache(cache, "cachedRowCount")
+  if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "cachedRowCount", "table path must be non-empty") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "cachedRowCount", "cache guard is unavailable") end if
+  result = cache.rowCounts.get(tablePath)
+  cache.guard.release()
+  return result
+end function
+
+// Publishes a verified autocommit row count. Concurrent readers may race to
+// publish the same value because writers are excluded by the execution gate.
+function rememberRowCount(cache, tablePath, rowCount)
+  validateReadCache(cache, "rememberRowCount")
+  if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "rememberRowCount", "table path must be non-empty") end if
+  if typeof(rowCount) != "int" or rowCount < 0 then return fail(INVALID_ARGUMENT, "rememberRowCount", "row count must be non-negative") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "rememberRowCount", "cache guard is unavailable") end if
+  cache.rowCounts.set(tablePath, rowCount)
+  cache.guard.release()
+  return rowCount
 end function
 
 // Returns a synchronized diagnostic snapshot.
@@ -304,6 +330,7 @@ function closeReadCache(cache)
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "closeReadCache", "cache guard is unavailable") end if
   cache.frames = []
   cache.index.clear()
+  cache.rowCounts.clear()
   cache.closed = true
   cache.guard.release()
   cache.guard.close()

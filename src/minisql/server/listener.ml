@@ -427,7 +427,10 @@ function serveConcurrentClient(task)
         expired = try(session.isExpired(slot.activeSession))
         if typeof(expired) == "error" then concurrentSetFailure(task.state, expired); break end if
         if expired then break end if
-        threadSleep(1)
+        // WSAPoll wakes as soon as another frame arrives. This avoids the
+        // roughly 15.6 ms Windows timer quantum imposed by threadSleep(1).
+        readable = try(network.waitReadable(slot.client.socket, 100))
+        if typeof(readable) == "error" then break end if
         continue
       end if
       if polled.closed then break end if
@@ -545,7 +548,8 @@ function servePreparedConcurrentListenerMode(databasePath, listener, shared, max
     socketHandle = try(network.tryAccept(listener))
     if typeof(socketHandle) == "error" then concurrentSetFailure(state, socketHandle); break end if
     if socketHandle is void then
-      threadSleep(1)
+      readable = try(network.waitReadable(listener, 100))
+      if typeof(readable) == "error" then concurrentSetFailure(state, readable); break end if
       continue
     end if
 

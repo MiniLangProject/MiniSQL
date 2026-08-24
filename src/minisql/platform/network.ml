@@ -3,6 +3,8 @@ package minisql.platform.network
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
+import minisql.common.endian as endian
+
 // WinSock wrapper used by MiniSQL clients and servers. M27 adds bounded
 // non-blocking polling, now owned by native per-connection workers. M29 adds a
 // fail-closed binding policy: non-loopback listeners are accepted only by the
@@ -27,6 +29,12 @@ const WSAETIMEDOUT = 10060
 const FIONBIO = 0x8004667E
 const SO_RCVTIMEO = 0x1006
 const SO_SNDTIMEO = 0x1005
+const WSAPOLLFD_SIZE = 16
+const WSAPOLLFD_EVENTS_OFFSET = 8
+const WSAPOLLFD_REVENTS_OFFSET = 10
+const POLLRDNORM = 0x0100
+const POLLWRNORM = 0x0010
+const POLLNVAL = 0x0004
 
 // Initializes WinSock for `version`, filling `wsaData` and returning its status code.
 extern function WSAStartup(version as int, wsaData as bytes) from "ws2_32.dll" returns i32
@@ -60,6 +68,8 @@ extern function setsockopt(s as ptr, level as i32, option as i32, value as bytes
 extern function inet_addr(address as cstr) from "ws2_32.dll" returns u32
 // Applies a socket control command using the mutable value buffer and returns raw status.
 extern function ioctlsocket(s as ptr, command as u32, value as bytes) from "ws2_32.dll" returns i32
+// Waits until one or more sockets become ready without relying on the Windows timer quantum.
+extern function WSAPoll(descriptors as bytes, descriptorCount as u32, timeoutMs as i32) from "ws2_32.dll" returns i32
 // Suspends the current native thread for at least the requested milliseconds.
 extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
 
@@ -250,6 +260,35 @@ function tryAccept(listener)
   return client
 end function
 
+// Waits for one socket event using WinSock's readiness primitive. A timeout is
+// reported as false; readiness, hangup, and socket errors are reported as true
+// so the caller can perform the operation and receive its precise outcome.
+function waitSocket(handle, events, timeoutMs, operation)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network." + operation + ": handle must be socket") end if
+  if typeof(events) != "int" or events <= 0 or events > 65535 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": events are invalid") end if
+  if typeof(timeoutMs) != "int" or timeoutMs < 0 or timeoutMs > 60000 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": timeout is invalid") end if
+  descriptor = bytes(WSAPOLLFD_SIZE, 0)
+  endian.writeU64LE(descriptor, 0, endian.uint64FromInt(handle))
+  endian.writeU16LE(descriptor, WSAPOLLFD_EVENTS_OFFSET, events)
+  result = WSAPoll(descriptor, 1, timeoutMs)
+  if isSocketErrorResult(result) then return fail(operation, "WSAPoll failed (" + WSAGetLastError() + ")") end if
+  if result == 0 then return false end if
+  if result != 1 then return fail(operation, "WSAPoll returned invalid descriptor count " + result) end if
+  returnedEvents = endian.readU16LE(descriptor, WSAPOLLFD_REVENTS_OFFSET)
+  if (returnedEvents & POLLNVAL) != 0 then return fail(operation, "WSAPoll rejected the socket") end if
+  return returnedEvents != 0
+end function
+
+// Blocks for at most timeoutMs until recv or accept can make progress.
+function waitReadable(handle, timeoutMs)
+  return waitSocket(handle, POLLRDNORM, timeoutMs, "waitReadable")
+end function
+
+// Blocks for at most timeoutMs until send can make progress.
+function waitWritable(handle, timeoutMs)
+  return waitSocket(handle, POLLWRNORM, timeoutMs, "waitWritable")
+end function
+
 // Performs the accept tcp operation for this module.
 // Inputs: `listener`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function acceptTcp(listener)
@@ -316,9 +355,12 @@ function sendAll(handle, data)
     if isSocketErrorResult(written) then
       code = WSAGetLastError()
       if code == WSAEWOULDBLOCK then
-        waits = waits + 1
-        if waits > 30000 then return fail("sendAll", "send timed out") end if
-        Sleep(1)
+        writable = try(waitWritable(handle, 1000))
+        if typeof(writable) == "error" then return writable end if
+        if not writable then
+          waits = waits + 1
+          if waits >= 30 then return fail("sendAll", "send timed out") end if
+        end if
         continue
       end if
       return fail("sendAll", "send failed (" + code + ")")

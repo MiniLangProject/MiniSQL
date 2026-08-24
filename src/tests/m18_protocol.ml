@@ -31,15 +31,15 @@ function testSignedWinSockResults(state, port)
   // SOCKET_ERROR sentinel to WSAEWOULDBLOCK, not to a huge positive count.
   pending = try(network.tryAccept(listener))
   testkit.record(state, pending is void, "nonblocking accept reports no pending client")
+  testkit.record(state, not network.waitReadable(listener, 0), "listener readiness times out without a client")
 
   clientSocket = network.connectTcp("127.0.0.1", port)
-  for acceptAttempt = 0 to 100
-    serverSocket = network.tryAccept(listener)
-    if serverSocket is not void then break end if
-    network.sleepMilliseconds(1)
-  end for
+  testkit.record(state, network.waitReadable(listener, 1000), "listener readiness wakes for a client")
+  serverSocket = network.tryAccept(listener)
   if serverSocket is void then return error(9026, "M18 WinSock ABI regression: loopback accept timed out") end if
   network.setNonBlocking(serverSocket, true)
+  testkit.record(state, not network.waitReadable(serverSocket, 0), "socket readiness times out without data")
+  testkit.record(state, network.waitWritable(clientSocket, 1000), "connected socket becomes writable")
 
   scratch = bytes(32, 0)
   wouldBlock = try(network.receiveAvailableInto(serverSocket, scratch, 0, len(scratch)))
@@ -47,13 +47,9 @@ function testSignedWinSockResults(state, port)
 
   sent = network.sendAll(clientSocket, bytes("abc"))
   testkit.equal(state, sent, 3, "direct-offset send count")
+  testkit.record(state, network.waitReadable(serverSocket, 1000), "socket readiness wakes for received data")
 
-  received = void
-  for attempt = 0 to 100
-    received = network.receiveAvailableInto(serverSocket, scratch, 0, len(scratch))
-    if received is not void then break end if
-    network.sleepMilliseconds(1)
-  end for
+  received = network.receiveAvailableInto(serverSocket, scratch, 0, len(scratch))
   testkit.equal(state, received, 3, "nonblocking direct-offset receive count")
   testkit.equal(state, scratch[0], 97, "nonblocking receive byte 0")
   testkit.equal(state, scratch[1], 98, "nonblocking receive byte 1")

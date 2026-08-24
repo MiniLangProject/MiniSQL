@@ -417,6 +417,27 @@ function verifyAndCount(reader)
   return rowCount
 end function
 
+// Counts live slots without decoding row values. Every heap page still passes
+// through transaction visibility, the shared cache, and page checksum checks;
+// only row allocation, schema conversion, and overflow payload reads are skipped.
+function countLiveRows(reader)
+  validateOpen(reader, "countLiveRows")
+  rowCount = 0
+  heapPages = heap_file.heapPageNumbers(reader.file)
+  for each pageNumber in heapPages
+    pageBytes = visiblePage(reader, pageNumber)
+    header = page.decodePageHeader(pageBytes)
+    if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "countLiveRows", "table page has wrong type") end if
+    count = slotted_page.slotCount(pageBytes)
+    if count > 0 then
+      for slotId = 0 to count - 1
+        if slotted_page.entry(pageBytes, slotId).flags == slotted_page.SLOT_FLAG_LIVE then rowCount = rowCount + 1 end if
+      end for
+    end if
+  end for
+  return rowCount
+end function
+
 // Opens, streams, and closes one table for the offline consistency checker.
 function verifyTable(databasePath, table, pageTransaction)
   reader = open(databasePath, table, pageTransaction)
@@ -573,6 +594,26 @@ function scanTableRangeColumnsCached(databasePath, table, pageTransaction, offse
   closeResult = try(close(reader))
   if typeof(result) == "error" then return result end if
   if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
+// Opens a short-lived cached reader and returns only its number of visible rows.
+function countTableRowsCached(databasePath, table, pageTransaction, readCache)
+  tablePath = catalog.tableFilePath(databasePath, table.tableId)
+  if pageTransaction is void and readCache is not void then
+    cached = try(buffer_pool.cachedRowCount(readCache, tablePath))
+    if typeof(cached) == "error" then return cached end if
+    if typeof(cached) == "int" then return cached end if
+  end if
+  reader = openCached(databasePath, table, pageTransaction, readCache)
+  result = try(countLiveRows(reader))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  if pageTransaction is void and readCache is not void then
+    remembered = try(buffer_pool.rememberRowCount(readCache, tablePath, result))
+    if typeof(remembered) == "error" then return remembered end if
+  end if
   return result
 end function
 

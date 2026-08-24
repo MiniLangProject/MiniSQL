@@ -37,6 +37,7 @@ function main(args)
   testkit.equal(state, endian.int64ToInt(executeOne(engine, "SELECT COUNT(*) AS c FROM identity_item").rows[0][0].value), 0, "autocommit TRUNCATE empties table")
   restarted = executeOne(engine, "INSERT INTO identity_item(label) VALUES ('after') RETURNING id")
   testkit.equal(state, restarted.rows[0][0].value, 1, "TRUNCATE restarts derived identity")
+  testkit.equal(state, endian.int64ToInt(executeOne(engine, "SELECT COUNT(*) AS c FROM identity_item").rows[0][0].value), 1, "cached COUNT invalidated after INSERT")
 
   testkit.errorCode(state, try(executor.executeSql(engine, "TRUNCATE identity_item CONTINUE IDENTITY")), 9025, "CONTINUE IDENTITY rejected before persistent sequences")
 

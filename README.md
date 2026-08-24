@@ -193,7 +193,9 @@ The profile validates automatic WAL reset, recovery between every chunk,
 indexed restart latency, projection/range pushdown, the configured read cache,
 large overflow values, and post-`VACUUM` data integrity. See
 [`tests/performance/README.md`](tests/performance/README.md) for the `5` and
-`10` GiB commands and tunable guardrails.
+`10` GiB commands and tunable guardrails. The measured post-native-CRC baseline,
+including 1 GiB integrity checks and 1/2/4/8-client scaling, is in
+[`PERFORMANCE_BASELINE_2026-08-23.md`](tests/performance/PERFORMANCE_BASELINE_2026-08-23.md).
 
 Sequential scans persist a checksummed `<table>.heap-pages` sidecar containing
 only physical heap-page numbers. Existing databases build it lazily once;

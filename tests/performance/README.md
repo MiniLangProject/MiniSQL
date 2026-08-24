@@ -3,6 +3,11 @@
 Repeatable storage and query benchmarks live here. Correctness tests remain mandatory;
 performance measurements may never replace durability or semantic validation.
 
+The current measured reference is documented in
+[`PERFORMANCE_BASELINE_2026-08-23.md`](PERFORMANCE_BASELINE_2026-08-23.md). It
+covers bounded large-value writes, repeated fresh-process reads, the full 1 GiB
+offline checker, native CRC32C throughput, and 1/2/4/8-client loopback scaling.
+
 `capacity_regression.py` provides restart-aware `1`, `5`, and `10` GiB profiles
 plus a fast `smoke` profile. Each process writes a bounded chunk, so the test
 does not confuse process-heap growth with database capacity. The driver checks
@@ -57,3 +62,27 @@ same 64 MiB buffer processed 4 GiB in 297 ms, about 13.5 GiB/s or an average
 was 359 ms per 64 MiB. The retained 1 GiB full checker completed in 3,683 ms
 with the identical `tables=3 rows=1036 indexes=4` result and 98.1 MiB peak
 private memory. CPUs without SSE4.2 use the exact table fallback.
+
+`network_baseline.py` starts an isolated trusted-loopback server and compares
+one-shot process/connect/query/close latency with persistent multi-statement
+sessions. It warms the server before measuring, samples server private memory,
+and writes raw JSON for concurrency levels 1, 2, 4, and 8 by default. Always use
+a disposable or retained benchmark database rather than a production database.
+Use `--query` to isolate a plan shape, `--one-shot-per-client 0` for a
+persistent-only matrix, and `--buffer-pool-bytes` to generate an isolated server
+configuration for cache-size controls.
+
+The 2026-08-24 readiness and simple-COUNT implementation removes the earlier
+four-client collapse. On the retained 64-row workload, median persistent
+`COUNT(*)` throughput is now 1,079.8 / 1,551.7 / 1,943.8 / 2,028.5 / 1,988.9
+statements/s at 1 / 2 / 4 / 8 / 16 clients. Use at least 1,000 statements per
+session and three trials when comparing this plateau; short low-concurrency runs
+are sensitive to Windows host activity.
+
+```powershell
+python .\tests\performance\network_baseline.py `
+  --server .\build\performance\baseline\bin\minisqld.exe `
+  --client .\build\performance\baseline\bin\minisql.exe `
+  --database .\build\performance\baseline\capacity-smoke-native-crc\db_<id> `
+  --output .\build\performance\baseline\network-baseline.json
+```

@@ -9,6 +9,7 @@ import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
 import minisql.catalog.statistics as statistics
 import minisql.common.diagnostics as diagnostics
+import minisql.common.endian as endian
 import minisql.executor.aggregate as aggregate
 import minisql.executor.dml as dml
 import minisql.executor.filter as filter
@@ -2235,10 +2236,31 @@ function selectRequiredColumns(bound)
   return requiredColumns
 end function
 
+// Recognizes the exact aggregate shape whose result depends only on live-slot
+// visibility. More complex COUNT variants retain the general relational path.
+function simpleCountStarEligible(bound)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
+  if len(bound.items) != 1 or not expressions.isBoundAggregate(bound.items[0]) then return false end if
+  item = bound.items[0]
+  if item.name != "COUNT" or not item.countStar or item.distinct then return false end if
+  if bound.whereExpression is not void or len(bound.groupExpressions) != 0 or bound.havingExpression is not void then return false end if
+  if len(bound.orderExpressions) != 0 or len(bound.setOperations) != 0 or bound.windowQuery then return false end if
+  if bound.statement.distinct or bound.statement.offset != 0 or bound.statement.limit == 0 then return false end if
+  return true
+end function
+
+// Projects a scalar COUNT(*) directly from checksum-verified heap slot headers.
+function simpleCountStarProjected(engine, bound, pageTransaction)
+  rowCount = scan.countTableRowsCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache)
+  countValue = values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(rowCount))
+  return [projection.ProjectedRow(void, [countValue], [])]
+end function
+
 // Implements select projected for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
+  if simpleCountStarEligible(bound) then return simpleCountStarProjected(engine, bound, pageTransaction) end if
   // A single unordered, unfiltered source preserves physical row order. Apply
   // LIMIT/OFFSET while scanning that source so rows outside the requested page
   // are neither decoded nor retained. Complex queries keep the full pipeline
