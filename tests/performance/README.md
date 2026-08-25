@@ -8,6 +8,14 @@ The current measured reference is documented in
 covers bounded large-value writes, repeated fresh-process reads, the full 1 GiB
 offline checker, native CRC32C throughput, and 1/2/4/8-client loopback scaling.
 
+The current compiler performance-fix verification is documented in
+[`COMPILER_UPDATE_21C1BEA_2026-08-25.md`](COMPILER_UPDATE_21C1BEA_2026-08-25.md).
+It confirms full compiler and MiniSQL correctness and rechecks bounded storage,
+the retained 1 GiB database, allocation-heavy multi-client scans, native
+allocation churn, memory, and binary size. The preceding regression report is
+retained in
+[`COMPILER_UPDATE_A5597F7_2026-08-24.md`](COMPILER_UPDATE_A5597F7_2026-08-24.md).
+
 `capacity_regression.py` provides restart-aware `1`, `5`, and `10` GiB profiles
 plus a fast `smoke` profile. Each process writes a bounded chunk, so the test
 does not confuse process-heap growth with database capacity. The driver checks
