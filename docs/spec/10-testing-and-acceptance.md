@@ -36,14 +36,16 @@ files surviving extraction.
 The `linux-x64` profile is a portable target gate, not the historical M0-M50
 release gate. It cross-builds all five command-line applications and runs
 representative native storage, protocol, workload, authentication, scheduler,
-TLS, and release-contract tests through WSL. The Win32 Workbench, Windows ABI,
-crash injection, packaging, and the complete 106-phase matrix remain in the
-Windows profile.
+TLS, concurrent server/client, and release-contract tests through WSL. The
+concurrency gate executes two successive waves of four clients and requires the
+server to reap the first wave before accepting and executing the second. The
+Win32 Workbench, Windows ABI, crash injection, packaging, and the complete
+106-phase matrix remain in the Windows profile.
 
-A successful Linux gate proves the covered application and component contracts;
-it does not currently prove sustained concurrent-server readiness. A separate
-two-or-more-client regression remains mandatory before the Linux server can be
-promoted beyond single-client evaluation.
+A successful Linux gate proves the covered application and component contracts,
+including bounded multi-client lifecycle behavior. Long-duration soak,
+bare-metal Linux, and the complete historical release matrix remain separate
+qualification activities.
 
 ## 10.2 Test classes
 

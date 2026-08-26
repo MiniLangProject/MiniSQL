@@ -20,13 +20,11 @@ soak workloads, and deterministic release packaging.
 That complete release gate is `windows-x64`. The `linux-x64` profile builds the
 five command-line ELF applications and runs a focused portable suite through
 WSL. It covers storage, a loopback protocol session, workload, authentication,
-scheduler, OpenSSL TLS, and release contracts, but omits the Win32 Workbench,
-Windows ABI/crash injection, and Windows packaging.
-
-The Linux profile is not yet a concurrent-server readiness gate: repeated tests
-with two or more clients can fail or stall in the native socket path. Use the
-Linux result for build, offline-tool, TLS, and single-client validation only;
-see `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.
+scheduler, two consecutive waves of four concurrent clients, OpenSSL TLS, and
+release contracts, but omits the Win32 Workbench, Windows ABI/crash injection,
+and Windows packaging. The second client wave is a regression gate for worker
+job disposal and later connection acceptance; see
+`tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.
 
 A successful run ends with:
 

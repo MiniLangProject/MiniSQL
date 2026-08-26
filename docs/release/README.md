@@ -14,10 +14,10 @@ system written in MiniLang. The Windows distribution contains:
 
 Linux source builds provide the same five command-line applications without an
 `.exe` suffix and use OpenSSL 3 for native TLS; the Win32 Workbench is omitted.
-Offline tools and single-client server/client operation are validated on Linux.
-The Linux server is not yet supported for concurrent production traffic because
-tests with two or more simultaneous clients can fail or stall. Windows remains
-the fully accepted concurrent-server and binary-distribution target. See
+Offline tools, TLS, and bounded concurrent server/client operation are validated
+on Linux. The portable gate runs consecutive multi-client waves to exercise
+parallel dispatch, connection cleanup, and reuse of the worker pool. Windows
+remains the packaged binary-distribution target. See
 [known limitations](LIMITATIONS.md) and the dated
 [Windows/Linux performance report](../../tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md)
 before deploying Linux builds.

@@ -26,6 +26,7 @@ const MAX_RECEIVE_BYTES = 1048576
 #if TARGET_OS == "windows"
 const SOL_SOCKET = 0xFFFF
 const SO_REUSEADDR = 4
+const WSAEINTR = 10004
 const WSAEWOULDBLOCK = 10035
 const WSAETIMEDOUT = 10060
 const FIONBIO = 0x8004667E
@@ -40,6 +41,7 @@ const POLLNVAL = 0x0004
 #else
 const SOL_SOCKET = 1
 const SO_REUSEADDR = 2
+const WSAEINTR = 4
 const WSAEWOULDBLOCK = 11
 const WSAETIMEDOUT = 110
 const SO_RCVTIMEO = 20
@@ -343,7 +345,7 @@ function tryAccept(listener)
   client = accept(listener, void, void)
   if client == INVALID_SOCKET then
     code = nativeError()
-    if code == WSAEWOULDBLOCK then return void end if
+    if code == WSAEWOULDBLOCK or code == WSAEINTR then return void end if
     return fail("tryAccept", "accept failed (" + code + ")")
   end if
   return client
@@ -364,7 +366,13 @@ function waitSocket(handle, events, timeoutMs, operation)
 #endif
   endian.writeU16LE(descriptor, WSAPOLLFD_EVENTS_OFFSET, events)
   result = WSAPoll(descriptor, 1, timeoutMs)
-  if isSocketErrorResult(result) then return fail(operation, "poll failed (" + nativeError() + ")") end if
+  if isSocketErrorResult(result) then
+    code = nativeError()
+    // A signal can interrupt poll without changing socket state. Report that
+    // iteration as not ready so the owning bounded loop can retry normally.
+    if code == WSAEINTR then return false end if
+    return fail(operation, "poll failed (" + code + ")")
+  end if
   if result == 0 then return false end if
   if result != 1 then return fail(operation, "WSAPoll returned invalid descriptor count " + result) end if
   returnedEvents = endian.readU16LE(descriptor, WSAPOLLFD_REVENTS_OFFSET)
@@ -447,6 +455,7 @@ function sendAll(handle, data)
     written = send(handle, basePointer + total, remaining, 0)
     if isSocketErrorResult(written) then
       code = nativeError()
+      if code == WSAEINTR then continue end if
       if code == WSAEWOULDBLOCK then
         writable = try(waitWritable(handle, 1000))
         if typeof(writable) == "error" then return writable end if
@@ -475,9 +484,22 @@ function receive(handle, maximum)
   buffer = bytes(maximum, 0)
   pointer = try(bytePointer(buffer, 0, maximum, "receive"))
   if typeof(pointer) == "error" then return pointer end if
-  count = recv(handle, pointer, maximum, 0)
-  if count == 0 then return bytes(0) end if
-  if isSocketErrorResult(count) then return fail("receive", "recv failed (" + nativeError() + ")") end if
+  count = 0
+  while true
+    count = recv(handle, pointer, maximum, 0)
+    if count == 0 then return bytes(0) end if
+    if isSocketErrorResult(count) then
+      code = nativeError()
+      if code == WSAEINTR then continue end if
+      if code == WSAEWOULDBLOCK then
+        readable = try(waitReadable(handle, 1000))
+        if typeof(readable) == "error" then return readable end if
+        continue
+      end if
+      return fail("receive", "recv failed (" + code + ")")
+    end if
+    break
+  end while
   if count < 0 or count > maximum then return fail("receive", "recv returned invalid byte count " + count + " for maximum " + maximum) end if
   if count == maximum then return buffer end if
   return copyByteRange(buffer, 0, count, "receive")
@@ -497,7 +519,7 @@ function receiveAvailableInto(handle, target, offset, maximum)
   if count == 0 then return 0 end if
   if isSocketErrorResult(count) then
     code = nativeError()
-    if code == WSAEWOULDBLOCK then return void end if
+    if code == WSAEWOULDBLOCK or code == WSAEINTR then return void end if
     return fail("receiveAvailableInto", "recv failed (" + code + ")")
   end if
   if count < 0 or count > maximum then return fail("receiveAvailableInto", "recv returned invalid byte count " + count + " for maximum " + maximum) end if
@@ -536,13 +558,28 @@ function receiveExact(handle, count)
   basePointer = try(bytePointer(output, 0, count, "receiveExact"))
   if typeof(basePointer) == "error" then return basePointer end if
   cursor = 0
+  waits = 0
   while cursor < count
     remaining = count - cursor
     received = recv(handle, basePointer + cursor, remaining, 0)
     if received == 0 then return fail("receiveExact", "connection closed before frame completed") end if
-    if isSocketErrorResult(received) then return fail("receiveExact", "recv failed (" + nativeError() + ")") end if
+    if isSocketErrorResult(received) then
+      code = nativeError()
+      if code == WSAEINTR then continue end if
+      if code == WSAEWOULDBLOCK then
+        readable = try(waitReadable(handle, 1000))
+        if typeof(readable) == "error" then return readable end if
+        if not readable then
+          waits = waits + 1
+          if waits >= 30 then return fail("receiveExact", "receive timed out") end if
+        end if
+        continue
+      end if
+      return fail("receiveExact", "recv failed (" + code + ")")
+    end if
     if received < 0 or received > remaining then return fail("receiveExact", "recv returned invalid byte count " + received + " for remaining " + remaining) end if
     cursor = cursor + received
+    waits = 0
   end while
   return output
 end function

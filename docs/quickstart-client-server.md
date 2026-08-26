@@ -11,18 +11,19 @@ $compiler = "C:\path\to\MiniLangCompilerPy\mlc_win64.py"
 .\build\bin\minisqld.exe --serve .\data\db_<uuid> 7432 32
 ```
 
-For a Linux x64 build and single-client evaluation from Windows/WSL:
+For a Linux x64 build and loopback evaluation from Windows/WSL:
 
 ```powershell
 .\build.ps1 -Compiler $compiler -Target linux-x64 -AppsOnly
 wsl -- ./build/bin-linux/minisqld --init ./data demo 4096
-wsl -- ./build/bin-linux/minisqld --serve ./data/db_<uuid> 7432 1
+wsl -- ./build/bin-linux/minisqld --serve ./data/db_<uuid> 7432 32
 ```
 
-Linux offline tools, TLS, and single-client server/client operation are
-validated. The current Linux socket path can fail or stall with two or more
-simultaneous clients, so it is not yet supported for concurrent production
-traffic. See `docs/release/LIMITATIONS.md` before deployment.
+Linux offline tools, TLS, and concurrent server/client operation are validated.
+The Linux acceptance gate runs two consecutive waves of four simultaneous
+clients to cover both parallel request handling and completed-job disposal.
+See `docs/release/LIMITATIONS.md` for the remaining platform constraints before
+deployment.
 
 The final argument bounds native MiniLang connection workers. Each active
 client owns one thread-pool job. Read-only plans from different clients may run
@@ -31,8 +32,7 @@ exclusive. Slow clients no longer stall other connections. Choose the bound for
 the expected number of simultaneously connected clients and available memory;
 raising it increases connection and read concurrency but does not create
 multiple physical writers for one database. These concurrency guarantees are
-currently validated end-to-end on Windows; the Linux limitation above takes
-precedence.
+validated end-to-end on Windows and Linux.
 
 ## Configured logging and SQL binlog
 

@@ -22,8 +22,9 @@ once from Windows Python and once from Linux Python, using target-native data
 directories, then retain the two raw JSON files with the comparison report.
 The Linux memory sampler uses private mappings from `/proc/PID/smaps_rollup`;
 Windows continues to use `PROCESS_MEMORY_COUNTERS_EX.PrivateUsage`.
-The measured 2026-08-26 Windows/WSL2 comparison, including the Linux
-multi-client blocker, is retained in
+The measured 2026-08-26 Windows/WSL2 comparison retains the original Linux
+multi-client blocker and documents its subsequent pthread-runtime fix and
+successful 1/2/4/8-client functional rerun in
 [`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](WINDOWS_LINUX_COMPARISON_2026-08-26.md).
 
 `capacity_regression.py` provides restart-aware `1`, `5`, and `10` GiB profiles

@@ -2,13 +2,13 @@
 
 * Windows x64 PE and Linux x64 ELF are native targets. The graphical Workbench
   remains Windows-only.
-* Windows is the fully accepted concurrent-server target. Linux offline tools,
-  single-client server/client operation, and TLS pass the portable acceptance
-  gate, but repeated tests with two or more simultaneous Linux clients can fail
-  or stall in the current socket path (`recv` may expose
-  `EAGAIN`/`EWOULDBLOCK`). Do not use the Linux server for concurrent production
-  traffic until this blocker is resolved. The reproducible evidence is in
-  `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.
+* Linux offline tools, TLS, and bounded concurrent server/client operation pass
+  the portable acceptance gate. The original `EAGAIN`/`EWOULDBLOCK` multi-client
+  failure is retained as historical evidence in
+  `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`; it was resolved by
+  the pthread-backed MiniLang runtime and EINTR/readiness handling in the socket
+  facade. Linux performance still needs the same workload-specific qualification
+  as Windows before a production rollout.
 * Native TLS uses Schannel/CryptoAPI on Windows and OpenSSL 3 on Linux. Linux
   server credentials currently require an unencrypted PEM certificate/key pair.
   The current
@@ -46,8 +46,7 @@
   a writer-prioritized per-database gate. There is still only one active physical
   writer per database. Long-running readers can delay a waiting writer until the
   current reader set completes; new readers do not bypass that writer.
-  This paragraph describes the concurrency contract and the validated Windows
-  behavior; the Linux runtime restriction above currently takes precedence.
+  This concurrency contract is validated on both native targets.
 * There is no automatic distributed failover or cross-database transaction.
 * The M48 WAL stream covers committed table-page changes for an existing
   schema. DDL, DCL, VACUUM, migration or WAL rewind requires a new base archive.

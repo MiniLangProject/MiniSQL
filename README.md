@@ -21,10 +21,10 @@ is `M48-M50R3`.
 | Target | Build and validated use | Current restriction |
 | --- | --- | --- |
 | Windows x64 | Complete 106-phase release gate, all six applications, concurrent server, native TLS | The Workbench and deterministic release archive are Windows-specific. |
-| Linux x64 | Five command-line applications, offline storage tools, single-client server/client operation, native TLS | Repeated tests with two or more simultaneous clients can fail or stall; do not deploy the Linux server for concurrent production traffic yet. |
+| Linux x64 | Five command-line applications, offline storage tools, concurrent server/client operation, native TLS | The focused gate is validated under WSL2; the Win32 Workbench, Windows crash injection, packaging, and full 106-phase release matrix remain Windows-specific. |
 
-The Linux restriction was reproduced under WSL2 on 2026-08-26 and is tracked in
-the [Windows/Linux performance report](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md).
+The original Linux multi-client failure and its verified pthread-runtime fix are
+tracked in the [Windows/Linux performance report](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md).
 Persisted database and wire formats remain shared across both targets.
 
 ## Highlights
@@ -75,9 +75,9 @@ deadlock-detection semantics.
 This is real parallel query execution for independent reads, not only parallel
 socket handling. The M27 acceptance scenario starts two connections, executes
 100 indexed queries per connection and requires a measured overlap greater than
-one. This behavior is fully validated on Windows. The Linux implementation has
-the same scheduler and locking design, but its current socket path is subject to
-the multi-client restriction in the platform status above. The design
+one. This behavior is fully validated on Windows. The Linux gate additionally
+runs two consecutive waves of four simultaneous native clients, proving both
+parallel execution and completed-connection job reaping. The design
 intentionally retains a single physical writer per database.
 
 ## Requirements
@@ -208,8 +208,9 @@ There is one user-facing test entry point:
 The Windows target runs the complete M0-M50 suite and creates one archive under
 `build/`. The Linux target builds every public ELF application and runs
 representative storage, loopback protocol, workload, authentication, scheduler,
-secure-transport, and release-contract tests through WSL. That portable gate is
-not yet a production-readiness claim for sustained multi-client Linux traffic.
+secure-transport, concurrent two-wave server/client, and release-contract tests
+through WSL. It remains a focused portable gate rather than the complete Windows
+release matrix.
 Successful runs end with the platform-specific `SUCCESS` gate.
 
 ```text
@@ -260,8 +261,9 @@ the fully streaming consistency check completed in 3,683 ms, versus 35,216 ms
 with MiniSQL's former table loop and 208,515 ms with its bit-at-a-time loop.
 
 The current cross-platform benchmark compares storage, restart, one-shot, and
-persistent single-client workloads and records the unresolved Linux
-multi-client failure. See
+persistent workloads. It retains the original Linux multi-client failure as
+historical evidence and records the verified runtime fix and 1/2/4/8-client
+follow-up. See
 [`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md)
 for method, raw-data hashes, results, and WSL2 limitations.
 

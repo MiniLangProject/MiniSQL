@@ -22,13 +22,13 @@ The stable single-client result is mixed but encouraging:
   `PrivateUsage` and Linux private mappings are close rather than identical
   accounting definitions.
 
-The important blocker is concurrency. The Windows build completed the 1/4/8
-client matrix. The Linux build passed one-client sessions but reproducibly
-failed or stalled with two or more simultaneous clients. Consequently there is
-no valid Linux parallel-throughput number, and the Linux server target should
-not yet be treated as production-ready for concurrent workloads. The symptoms
-point to the Linux connection/socket/thread-pool lifecycle; this report does not
-claim a final root cause.
+The original measurement found a Linux concurrency blocker: Windows completed
+the 1/4/8-client matrix, while Linux reproducibly failed or stalled with two or
+more simultaneous clients. The original numbers and symptoms remain below as
+historical evidence. A same-day follow-up fixed the root cause in MiniLang's
+Linux thread runtime and passed the MiniSQL 1/2/4/8-client functional matrix;
+see **Resolved follow-up** below. The follow-up is a correctness validation,
+not a replacement for the original multi-trial performance comparison.
 
 ## Test environment
 
@@ -134,7 +134,7 @@ Linux results were 209.107–216.245 statements/s for `COUNT(*)` and
 therefore shows no broad Linux code-generation regression; the differences are
 query/path specific.
 
-## Parallel-client result and blocker
+## Original parallel-client result and blocker
 
 Windows completed all three trials:
 
@@ -164,19 +164,53 @@ should cover accepted-socket nonblocking state, retry handling for transient
 worker is active. A regression test must repeatedly connect at two, four, and
 eight clients on Linux before the benchmark is repeated.
 
+## Resolved follow-up
+
+The compiler runtime had created Linux workers with raw `clone(2)` while the
+standard library and MiniSQL called glibc, pthread synchronization, malloc, and
+OpenSSL from those workers. Raw clones did not receive independent glibc TLS,
+which broke recursive-mutex ownership and could corrupt libc allocator state.
+The Linux runtime now uses `pthread_create`/`pthread_join`, preserves MiniLang's
+Win64-compatible nonvolatile XMM register contract across SysV calls, and uses
+`exit_group` for process-wide termination. MiniSQL's socket loops also retry
+transient `EINTR`/`EAGAIN` readiness conditions.
+
+Validation on the same WSL2 host completed all of the following:
+
+- 40 short-lived queries from two simultaneous client launchers;
+- the full one-shot matrix with 20 requests per client at 1/2/4/8 clients;
+- 100-statement persistent sessions at 1/2/4/8 clients;
+- the portable MiniSQL gate, including two successive waves of four concurrent
+  native clients and exact server request draining;
+- native OpenSSL trust, pin, hostname, and authenticated-session tests.
+
+The single functional rerun produced these non-baseline throughput values:
+
+| Clients | One-shot requests/s | Persistent statements/s |
+|---:|---:|---:|
+| 1 | 36.136 | 188.677 |
+| 2 | 41.097 | 220.187 |
+| 4 | 40.607 | 217.373 |
+| 8 | 40.001 | 218.170 |
+
+No client timed out, no connection closed early, and no `EAGAIN` escaped into
+the protocol layer. A new multi-trial Windows/Linux run is still required for
+comparative performance conclusions, but the concurrent Linux correctness
+blocker described in the original report is closed.
+
 ## Interpretation
 
 1. **Do not describe one target as globally faster.** Linux wins process-heavy
    startup/restart and memory measurements; Windows wins durable 64 MiB writes
    and persistent `COUNT(*)`; `SUM(id)` is essentially tied.
-2. **Windows remains the only validated concurrent server target today.** Its
-   eight-client `SUM(id)` throughput is 62.3% above its one-client result.
-3. **Linux is already credible for single-client tools and offline work.** The
-   stable c1 query numbers, identical database size, and successful storage
-   verification show functional and performance viability outside concurrent
-   serving.
-4. **Fix correctness before optimizing Linux concurrency.** A hung or closed
-   connection cannot be represented as a slow throughput number.
+2. **The original Windows parallel numbers remain the only multi-trial baseline.**
+   The follow-up closes Linux correctness but does not manufacture comparable
+   performance evidence from a single functional run.
+3. **Linux now has focused concurrent-server validation.** The stable c1 query
+   numbers, identical database size, successful storage verification, 1/2/4/8
+   rerun, and two-wave acceptance case establish functional viability.
+4. **Keep correctness and performance gates separate.** The fixed lifecycle is
+   covered by acceptance; a fresh interleaved benchmark must measure speed.
 5. **Repeat on bare-metal Linux.** That run is required before making release
    claims about durable-write performance or WSL2's large apparent memory win.
 

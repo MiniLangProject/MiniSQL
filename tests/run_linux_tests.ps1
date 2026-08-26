@@ -93,6 +93,75 @@ function Invoke-LinuxClientCase([string]$Name, [string]$Image, [string[]]$Argume
   }
 }
 
+# Runs two waves of four simultaneous plain-protocol clients. The second wave
+# is essential: it verifies that completed connection jobs are reaped and that
+# their pthread-backed workers remain able to accept and execute later jobs.
+function Invoke-LinuxConcurrentIntegration([string]$ServerWorker, [string]$ClientWorker) {
+  $networkRoot = "$LinuxDataRoot/m27-network"
+  $readyPath = "$networkRoot/server.ready"
+  $port = 17434
+  $serverOut = Join-Path $BinDir "m27-server.stdout.log"
+  $serverErr = Join-Path $BinDir "m27-server.stderr.log"
+  $serverLinux = Convert-ToWslPath $ServerWorker
+  $clientLinux = Convert-ToWslPath $ClientWorker
+
+  & wsl.exe mkdir -p -- $LinuxDataRoot
+  if ($LASTEXITCODE -ne 0) { throw "Could not restore the Linux concurrent test root." }
+  $serverProcess = Start-Process -FilePath "wsl.exe" -ArgumentList @(
+    "--", $serverLinux, $networkRoot, $port, $readyPath, 4, 32
+  ) -RedirectStandardOutput $serverOut -RedirectStandardError $serverErr -WindowStyle Hidden -PassThru
+  try {
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    $ready = $false
+    while (-not $serverProcess.HasExited -and [DateTime]::UtcNow -lt $deadline) {
+      & wsl.exe test -f $readyPath
+      if ($LASTEXITCODE -eq 0) { $ready = $true; break }
+      Start-Sleep -Milliseconds 50
+      $serverProcess.Refresh()
+    }
+    if (-not $ready) { throw "Linux concurrent server did not publish readiness." }
+
+    foreach ($wave in @(@(3, 4, 5, 6), @(7, 8, 9, 10))) {
+      $clients = @()
+      foreach ($clientId in $wave) {
+        $stdout = Join-Path $BinDir ("m27-client-" + $clientId + ".stdout.log")
+        $stderr = Join-Path $BinDir ("m27-client-" + $clientId + ".stderr.log")
+        $process = Start-Process -FilePath "wsl.exe" -ArgumentList @(
+          "--", $clientLinux, $port, $clientId
+        ) -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden -PassThru
+        $clients += [pscustomobject]@{ Id = $clientId; Process = $process; Stdout = $stdout; Stderr = $stderr }
+      }
+      foreach ($client in $clients) {
+        if (-not $client.Process.WaitForExit(30000)) {
+          Stop-Process -Id $client.Process.Id -Force
+          throw "Linux concurrent client $($client.Id) timed out."
+        }
+        $client.Process.WaitForExit()
+        $stdout = (Get-Content -Raw -LiteralPath $client.Stdout).Trim()
+        $stderr = Get-Content -Raw -LiteralPath $client.Stderr
+        $expected = "MiniSQL M27 concurrent client worker: SUCCESS id=$($client.Id)"
+        if ($client.Process.ExitCode -ne 0 -or $stdout -ne $expected -or -not [string]::IsNullOrWhiteSpace($stderr)) {
+          throw "Linux concurrent client $($client.Id) failed: $stdout $stderr"
+        }
+      }
+    }
+
+    if (-not $serverProcess.WaitForExit(30000)) { throw "Linux concurrent server did not drain both client waves." }
+    $serverProcess.WaitForExit()
+    $serverLog = Get-Content -Raw -LiteralPath $serverOut
+    $serverError = Get-Content -Raw -LiteralPath $serverErr
+    if ($serverProcess.ExitCode -ne 0 -or $serverLog -notmatch "MiniSQL M27 concurrent server worker: SUCCESS requests=32" -or -not [string]::IsNullOrWhiteSpace($serverError)) {
+      throw "Linux concurrent server failed: $serverLog $serverError"
+    }
+    Write-Host "MiniSQL M27 Linux concurrent two-wave integration: SUCCESS"
+  } finally {
+    if (-not $serverProcess.HasExited) {
+      Stop-Process -Id $serverProcess.Id -Force
+      $serverProcess.WaitForExit()
+    }
+  }
+}
+
 # Generates a localhost PEM identity and validates trust, pin, hostname, and
 # authenticated MiniSQL traffic through the Linux OpenSSL provider.
 function Invoke-LinuxTlsIntegration([string]$ServerApplication, [string]$ServerWorker, [string]$ClientWorker) {
@@ -203,6 +272,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Could not restore the Linux test root before $($case.Name): $LinuxDataRoot" }
     Invoke-LinuxCase $case.Name $image $case.Args
   }
+
+  $concurrentServerWorker = Join-Path $BinDir "m27-server"
+  $concurrentClientWorker = Join-Path $BinDir "m27-client"
+  Invoke-Compiler (Join-Path $SourceRoot "tests\m27_server_worker.ml") $concurrentServerWorker
+  Invoke-Compiler (Join-Path $SourceRoot "tests\m27_client_worker.ml") $concurrentClientWorker
+  Invoke-LinuxConcurrentIntegration $concurrentServerWorker $concurrentClientWorker
 
   $tlsServerWorker = Join-Path $BinDir "m73-tls-server"
   $tlsClientWorker = Join-Path $BinDir "m73-tls-client"

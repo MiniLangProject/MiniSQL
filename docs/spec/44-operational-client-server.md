@@ -45,10 +45,9 @@ a deterministic exit after the exact number of handled protocol requests.
 Active connections run as bounded thread-pool jobs; `max-clients` is both the
 worker bound and the live-session backpressure limit.
 
-The complete bounded multi-client contract is accepted on Windows. Linux builds
-support the same interface, but repeated two-or-more-client workloads are a
-known native-socket blocker in the current release; only single-client Linux
-server operation is presently validated.
+The complete bounded multi-client contract is accepted on Windows and Linux.
+The Linux gate runs two consecutive waves of four simultaneous clients to verify
+parallel dispatch, connection cleanup, and reuse of completed thread-pool jobs.
 
 ## Stateful client
 

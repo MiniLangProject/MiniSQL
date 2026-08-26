@@ -6,12 +6,11 @@ a loopback server with `--serve`, an authenticated server with
 executables are under `build/bin`; Linux ELF applications are under
 `build/bin-linux` and omit the `.exe` suffix.
 
-Windows is the accepted target for concurrent production-style server testing.
-On Linux, offline tools and a single connected client are validated, but two or
-more simultaneous clients can currently fail or stall. Until the blocker in
-`LIMITATIONS.md` is resolved, keep Linux server use to development and
-single-client evaluation; do not infer production readiness from a successful
-portable acceptance run.
+Windows and Linux both pass concurrent production-style server acceptance.
+On Linux, the gate includes two consecutive waves of four simultaneous clients,
+covering parallel request handling, connection cleanup, and reuse of completed
+thread-pool jobs. Consult `LIMITATIONS.md` for the remaining platform-specific
+deployment constraints and qualify capacity with the intended workload.
 
 For production-style operational settings, use `--serve-config <database>
 <config-file>`, `--serve-authenticated-config`, or `--serve-standby-config`.
@@ -40,8 +39,8 @@ mutations remain exclusive behind a writer-prioritized gate. Size the limit for
 the expected connection count, read parallelism and available memory. Increasing
 it does not add write parallelism.
 
-The `max-clients` concurrency behavior in this section is currently validated
-end-to-end on Windows. It remains the intended cross-platform contract.
+The `max-clients` concurrency behavior in this section is validated end-to-end
+on Windows and Linux.
 
 The execution classifier treats ordinary read-only `SELECT`, `EXPLAIN` and
 metadata requests as shared operations. DML, DDL, DCL, explicit transaction and

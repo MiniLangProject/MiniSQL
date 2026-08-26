@@ -44,10 +44,10 @@ covered on both native targets.
 
 ## Verification status
 
-The portable gate validates component behavior, a loopback session, and the
-scheduler contract, but it does not establish sustained multi-client server
-readiness. The 2026-08-26 Windows/WSL2 comparison found that one Linux client is
-stable while repeated runs with two or more clients can close a connection or
-stall after `recv` reports `EAGAIN`/`EWOULDBLOCK`. Consequently Linux remains a
-supported build, offline-tool, and single-client evaluation target; Windows is
-the accepted concurrent-server target until that native socket blocker is fixed.
+The portable gate validates component behavior, TLS, the scheduler contract,
+and bounded concurrent loopback operation. It runs two consecutive waves of
+four simultaneous clients so both parallel dispatch and completed-job disposal
+are covered. The original 2026-08-26 Windows/WSL2 comparison exposed a Linux
+`EAGAIN`/`EWOULDBLOCK` failure; the pthread-backed MiniLang runtime plus
+EINTR/readiness handling in the socket facade resolved it. The dated report
+retains the original measurements and the verified follow-up separately.
