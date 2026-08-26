@@ -1,7 +1,17 @@
 # MiniSQL 1.0 known limitations
 
-* Windows x64 is the native target.
-* Native TLS uses the Windows Schannel and CryptoAPI providers. The current
+* Windows x64 PE and Linux x64 ELF are native targets. The graphical Workbench
+  remains Windows-only.
+* Windows is the fully accepted concurrent-server target. Linux offline tools,
+  single-client server/client operation, and TLS pass the portable acceptance
+  gate, but repeated tests with two or more simultaneous Linux clients can fail
+  or stall in the current socket path (`recv` may expose
+  `EAGAIN`/`EWOULDBLOCK`). Do not use the Linux server for concurrent production
+  traffic until this blocker is resolved. The reproducible evidence is in
+  `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.
+* Native TLS uses Schannel/CryptoAPI on Windows and OpenSSL 3 on Linux. Linux
+  server credentials currently require an unencrypted PEM certificate/key pair.
+  The current
   strict profile supports TLS 1.3 with `TLS_AES_256_GCM_SHA384` and X25519 only;
   peers offering only different suites or groups are rejected.
 * Replication is asynchronous and operator-managed.
@@ -36,12 +46,14 @@
   a writer-prioritized per-database gate. There is still only one active physical
   writer per database. Long-running readers can delay a waiting writer until the
   current reader set completes; new readers do not bypass that writer.
+  This paragraph describes the concurrency contract and the validated Windows
+  behavior; the Linux runtime restriction above currently takes precedence.
 * There is no automatic distributed failover or cross-database transaction.
-
-These are explicit scope limits, not silent fallbacks.
 * The M48 WAL stream covers committed table-page changes for an existing
   schema. DDL, DCL, VACUUM, migration or WAL rewind requires a new base archive.
 * One controller owns an archive directory; there is no multi-writer archive
   coordination.
 * Live archive generations retain complete WAL prefixes; rotate to a new base
   archive periodically to bound disk usage.
+
+These are explicit scope limits, not silent fallbacks.

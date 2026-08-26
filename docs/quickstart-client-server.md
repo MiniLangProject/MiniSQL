@@ -1,9 +1,9 @@
 # Client/server quickstart
 
 ```powershell
-$compiler = "C:\Users\nilsk\Desktop\MiniLangCompilerPy\mlc_win64.py"
-# Use MiniLangCompilerPy revision 3706716 or newer.
-.\build.ps1 -Compiler $compiler -AppsOnly
+$compiler = "C:\path\to\MiniLangCompilerPy\mlc_win64.py"
+# Use MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or newer.
+.\build.ps1 -Compiler $compiler -Target windows-x64 -AppsOnly
 
 .\build\bin\minisqld.exe --init .\data demo 4096
 # Copy the db_<uuid> path printed by the command.
@@ -11,13 +11,28 @@ $compiler = "C:\Users\nilsk\Desktop\MiniLangCompilerPy\mlc_win64.py"
 .\build\bin\minisqld.exe --serve .\data\db_<uuid> 7432 32
 ```
 
+For a Linux x64 build and single-client evaluation from Windows/WSL:
+
+```powershell
+.\build.ps1 -Compiler $compiler -Target linux-x64 -AppsOnly
+wsl -- ./build/bin-linux/minisqld --init ./data demo 4096
+wsl -- ./build/bin-linux/minisqld --serve ./data/db_<uuid> 7432 1
+```
+
+Linux offline tools, TLS, and single-client server/client operation are
+validated. The current Linux socket path can fail or stall with two or more
+simultaneous clients, so it is not yet supported for concurrent production
+traffic. See `docs/release/LIMITATIONS.md` before deployment.
+
 The final argument bounds native MiniLang connection workers. Each active
 client owns one thread-pool job. Read-only plans from different clients may run
 in parallel on the same database; a writer-prioritized gate keeps mutations
 exclusive. Slow clients no longer stall other connections. Choose the bound for
 the expected number of simultaneously connected clients and available memory;
 raising it increases connection and read concurrency but does not create
-multiple physical writers for one database.
+multiple physical writers for one database. These concurrency guarantees are
+currently validated end-to-end on Windows; the Linux limitation above takes
+precedence.
 
 ## Configured logging and SQL binlog
 
@@ -137,8 +152,9 @@ TRUNCATE TABLE staging RESTART IDENTITY;
 
 ## Native TLS 1.3 and X.509
 
-MiniSQL terminates TLS directly through Windows Schannel. For a PFX certificate,
-put the password in the server process environment and start the native listener:
+MiniSQL terminates TLS directly through the operating system's native provider.
+Windows uses Schannel. For a PFX certificate, put the password in the server
+process environment and start the native listener:
 
 ```powershell
 $env:MINISQL_TLS_PFX_PASSWORD = "replace-with-the-PFX-password"
@@ -173,6 +189,24 @@ not-yet-valid certificates, a wrong hostname/EKU/signature, and a pin mismatch.
 Every connection must negotiate TLS 1.3, `TLS_AES_256_GCM_SHA384`, and X25519.
 There is no Python TLS process or plaintext proxy hop. Native TLS requires
 Windows 11 or Windows Server 2022 or newer.
+
+Linux uses OpenSSL 3 and an unencrypted PEM certificate/key pair. Separate the
+two paths with `|`; quote the complete reference so the shell does not interpret
+that character:
+
+```bash
+./build/bin-linux/minisqld --serve-tls \
+  ./data/db_<uuid> 0.0.0.0 7443 32 'pem:/etc/minisql/server.crt|/etc/minisql/server.key'
+
+./build/bin-linux/minisql --tls-shell \
+  db.example.org 7443 db.example.org admin
+```
+
+The Linux client uses OpenSSL's default trust paths plus hostname validation.
+`--tls-pin-shell` applies the same `sha256:<DER-fingerprint>` leaf pin contract
+as Windows. Encrypted PEM private keys are not currently accepted by the native
+Linux adapter; protect the key with filesystem permissions and a dedicated
+service account.
 
 ## Continuous read-only hot standby (M48)
 

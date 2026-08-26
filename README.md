@@ -2,7 +2,7 @@
 
 MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
-to native Windows x64 applications.
+to native Windows x64 PE or Linux x64 ELF applications.
 
 The frozen M0-M50 plan is complete. A clean Windows run on 2026-08-23 passed
 all **106/106 cumulative phases**, including crash recovery, genuinely parallel
@@ -15,6 +15,17 @@ is `M48-M50R3`.
 > independent security or production audit. Validate it against your own
 > availability, durability, and security requirements before using it for
 > irreplaceable data.
+
+## Platform status
+
+| Target | Build and validated use | Current restriction |
+| --- | --- | --- |
+| Windows x64 | Complete 106-phase release gate, all six applications, concurrent server, native TLS | The Workbench and deterministic release archive are Windows-specific. |
+| Linux x64 | Five command-line applications, offline storage tools, single-client server/client operation, native TLS | Repeated tests with two or more simultaneous clients can fail or stall; do not deploy the Linux server for concurrent production traffic yet. |
+
+The Linux restriction was reproduced under WSL2 on 2026-08-26 and is tracked in
+the [Windows/Linux performance report](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md).
+Persisted database and wire formats remain shared across both targets.
 
 ## Highlights
 
@@ -43,8 +54,8 @@ is `M48-M50R3`.
   whole-script execution, searchable history, CSV export, native metadata/data
   grids, paged filtering and sorting, staged bulk row changes, and a guarded
   schema designer with exact DDL previews;
-- deterministic 106-phase cumulative test suite and reproducible Windows-x64
-  release packaging.
+- deterministic 106-phase cumulative Windows test suite, a portable Linux
+  acceptance suite, and reproducible Windows-x64 release packaging.
 
 ## Concurrency model
 
@@ -64,27 +75,39 @@ deadlock-detection semantics.
 This is real parallel query execution for independent reads, not only parallel
 socket handling. The M27 acceptance scenario starts two connections, executes
 100 indexed queries per connection and requires a measured overlap greater than
-one. The design intentionally retains a single physical writer per database.
+one. This behavior is fully validated on Windows. The Linux implementation has
+the same scheduler and locking design, but its current socket path is subject to
+the multi-client restriction in the platform status above. The design
+intentionally retains a single physical writer per database.
 
 ## Requirements
 
-- Windows x64 with Schannel TLS 1.3 support
-- Python 3.11 or newer
-- `mlc_win64.py` from MiniLangCompilerPy revision `3706716` or newer, including
-  the native `std.checksum.crc32c` runtime primitive
+- MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or newer;
+- Windows x64 with Schannel TLS 1.3 support, or Linux x64 with glibc and
+  OpenSSL 3 (`libssl.so.3`, `libcrypto.so.3`);
+- Python 3.11 or newer when using the Python compiler, cumulative Windows test
+  tooling, release tooling, or the optional hot-replication controller;
+- WSL when cross-compiling and running Linux acceptance from Windows.
 
-TLS runs in-process through the Windows Schannel and CryptoAPI system
-interfaces. Python is used by the test/release tooling and the optional
-hot-replication controller, not by the TLS data path.
+TLS always runs in-process. Windows builds use Schannel and CryptoAPI; Linux
+builds use the OpenSSL 3 system libraries through MiniLang's native `std.tls`,
+`std.crypto`, and `std.uuid` interfaces. Python is not in the TLS data path.
 
 ## Build
 
 ```powershell
 $compiler = "C:\path\to\MiniLangCompilerPy\mlc_win64.py"
-.\build.ps1 -Compiler $compiler -AppsOnly
+.\build.ps1 -Compiler $compiler -Target windows-x64 -AppsOnly
+.\build.ps1 -Compiler $compiler -Target linux-x64 -AppsOnly
 ```
 
-Applications are written to `build\bin`:
+`-Compiler` also accepts the native
+`MiniLangCompilerML\build\mlc_win64.exe`. The build and acceptance launchers
+discover its repository-level `std/` automatically and select the canonical
+object pipeline for large self-hosted builds, bounding the live code-generation
+graph without changing target bytes.
+
+Windows applications are written to `build\bin`:
 
 ```text
 minisqld.exe
@@ -94,6 +117,11 @@ minisql-backup.exe
 minisql-migrate.exe
 minisql-admin.exe
 ```
+
+Linux applications are written to `build\bin-linux` without an `.exe`
+suffix. `minisql-admin` is omitted because the native Workbench is Win32-only;
+the server, console client, checker, backup tool, and migration tool are
+available on both platforms.
 
 ## Quick start
 
@@ -160,16 +188,29 @@ SQL decimal literals use a dot. A comma separates values.
 See [`docs/quickstart-client-server.md`](docs/quickstart-client-server.md) for
 server modes, authenticated sessions, scripts, and operational examples.
 
+On Linux, use the equivalent ELF paths, for example:
+
+```bash
+./build/bin-linux/minisqld --init ./data demo 4096
+./build/bin-linux/minisqld --serve ./data/db_<uuid> 7432 32
+./build/bin-linux/minisql --shell 7432
+```
+
 ## Test
 
 There is one user-facing test entry point:
 
 ```powershell
-.\test.ps1 -Compiler $compiler
+.\test.ps1 -Compiler $compiler -Target windows-x64
+.\test.ps1 -Compiler $compiler -Target linux-x64
 ```
 
-It runs the complete M0-M50 suite and creates one archive under `build/`. A
-successful run ends with:
+The Windows target runs the complete M0-M50 suite and creates one archive under
+`build/`. The Linux target builds every public ELF application and runs
+representative storage, loopback protocol, workload, authentication, scheduler,
+secure-transport, and release-contract tests through WSL. That portable gate is
+not yet a production-readiness claim for sustained multi-client Linux traffic.
+Successful runs end with the platform-specific `SUCCESS` gate.
 
 ```text
 MiniSQL 1.0.0 test suite: SUCCESS
@@ -217,6 +258,12 @@ table fallback otherwise. Existing databases, WAL, backups, protocol frames,
 and page checksums remain bit-for-bit compatible. On the retained 1 GiB database
 the fully streaming consistency check completed in 3,683 ms, versus 35,216 ms
 with MiniSQL's former table loop and 208,515 ms with its bit-at-a-time loop.
+
+The current cross-platform benchmark compares storage, restart, one-shot, and
+persistent single-client workloads and records the unresolved Linux
+multi-client failure. See
+[`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md)
+for method, raw-data hashes, results, and WSL2 limitations.
 
 ## Build the binary distribution
 

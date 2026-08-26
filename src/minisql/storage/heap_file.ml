@@ -253,29 +253,47 @@ function classifyHeapPages(file, startPage, prefix)
   return output.toArray()
 end function
 
-// Returns the persistent physical heap-page index for an open table. File growth
-// extends only the unclassified tail; truncation, replacement, or inconsistent
-// generation state triggers a full rebuild. Publication failure merely disables
-// persistence for this call because the reconstructed result is still correct.
-function synchronized heapPageNumbers(file)
-  paged_file.validateOpen(file, "heap_file.heapPageNumbers")
-  if file.fileType != superblock.FILE_TYPE_TABLE then return fail(INVALID_ARGUMENT, "heapPageNumbers", "file must be a table") end if
+// Rechecks and rebuilds a stale page directory under the process-wide
+// publication guard. The single return path is intentional: every platform
+// must release the synchronized-function guard before a caller can retry.
+function synchronized rebuildHeapPageNumbers(file)
   directory = loadPageDirectory(file)
   startPage = 0
   prefix = []
+  exact = false
   if directory is HeapPageDirectory then
     comparison = superblock.compareGeneration(file.generation, directory.generation)
-    if directory.indexedPageCount == file.pageCount and comparison == 0 then return directory.pageNumbers end if
-    if directory.indexedPageCount < file.pageCount and comparison > 0 then
+    if directory.indexedPageCount == file.pageCount and comparison == 0 then
+      exact = true
+      prefix = directory.pageNumbers
+    else if directory.indexedPageCount < file.pageCount and comparison > 0 then
       startPage = directory.indexedPageCount
       prefix = directory.pageNumbers
     end if
   end if
-  pages = classifyHeapPages(file, startPage, prefix)
-  rebuilt = HeapPageDirectory(file.pageCount, file.generation, pages)
-  encoded = try(encodePageDirectory(file, rebuilt))
-  if typeof(encoded) != "error" then ignoredWrite = try(writeDirectoryAtomic(pageDirectoryPath(file.path), encoded)) end if
+  pages = prefix
+  if not exact then
+    pages = classifyHeapPages(file, startPage, prefix)
+    rebuilt = HeapPageDirectory(file.pageCount, file.generation, pages)
+    encoded = try(encodePageDirectory(file, rebuilt))
+    if typeof(encoded) != "error" then ignoredWrite = try(writeDirectoryAtomic(pageDirectoryPath(file.path), encoded)) end if
+  end if
   return pages
+end function
+
+// Returns the persistent physical heap-page index for an open table. The
+// immutable exact-generation fast path is safe for parallel readers and avoids
+// serializing every SELECT. Only stale or missing sidecars enter the guarded
+// rebuild, which rechecks after acquiring the publication lock.
+function heapPageNumbers(file)
+  paged_file.validateOpen(file, "heap_file.heapPageNumbers")
+  if file.fileType != superblock.FILE_TYPE_TABLE then return fail(INVALID_ARGUMENT, "heapPageNumbers", "file must be a table") end if
+  directory = loadPageDirectory(file)
+  if directory is HeapPageDirectory then
+    comparison = superblock.compareGeneration(file.generation, directory.generation)
+    if directory.indexedPageCount == file.pageCount and comparison == 0 then return directory.pageNumbers end if
+  end if
+  return rebuildHeapPageNumbers(file)
 end function
 
 // Removes the live and interrupted page-directory generations. Callers use

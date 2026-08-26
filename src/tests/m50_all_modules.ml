@@ -15,12 +15,20 @@ import minisql.config.model as m08_config_model
 import minisql.config.loader as m09_config_loader
 import minisql.config.validation as m10_config_validation
 import minisql.platform.file as m11_platform_file
+#if TARGET_OS == "windows"
 import minisql.platform.file_win32 as m12_platform_file_win32
+#else
+import minisql.platform.file_linux as m12_platform_file_win32
+#endif
 import minisql.platform.lock as m13_platform_lock
 import minisql.platform.clock as m14_platform_clock
 import minisql.platform.network as m15_platform_network
 import minisql.platform.tls_policy as m72_platform_tls_policy
+#if TARGET_OS == "windows"
 import minisql.platform.tls_schannel as m73_platform_tls_schannel
+#else
+import minisql.platform.tls_openssl as m73_platform_tls_schannel
+#endif
 import minisql.storage.page as m16_storage_page
 import minisql.storage.superblock as m17_storage_superblock
 import minisql.storage.paged_file as m18_storage_paged_file
@@ -80,6 +88,14 @@ import minisql.platform.win32_gui as m74_platform_win32_gui
 import minisql.admin.fullclient as m75_admin_fullclient
 import minisql.admin.connection_profiles as m76_admin_connection_profiles
 import minisql.admin.win32_client as m77_admin_win32_client
+
+#if TARGET_OS == "windows"
+const FILE_BACKEND_COMPONENT = "platform.file_win32"
+const TLS_BACKEND_COMPONENT = "platform.tls_schannel"
+#else
+const FILE_BACKEND_COMPONENT = "platform.file_linux"
+const TLS_BACKEND_COMPONENT = "platform.tls_openssl"
+#endif
 
 // Records a labeled scalar comparison and returns one when the values differ so the caller can accumulate failures.
 function check(actual, expected, label)
@@ -141,7 +157,7 @@ function main(args)
   failures = failures + check(m11_platform_file.componentName(), "platform.file", "platform.file component")
   failures = failures + check(m11_platform_file.targetMilestone(), "M3", "platform.file target")
   failures = failures + checkBool(m11_platform_file.isImplemented(), "platform.file implementation")
-  failures = failures + check(m12_platform_file_win32.componentName(), "platform.file_win32", "platform.file_win32 component")
+  failures = failures + check(m12_platform_file_win32.componentName(), FILE_BACKEND_COMPONENT, "platform file backend component")
   failures = failures + check(m12_platform_file_win32.targetMilestone(), "M3", "platform.file_win32 target")
   failures = failures + checkBool(m12_platform_file_win32.isImplemented(), "platform.file_win32 implementation")
   failures = failures + check(m13_platform_lock.componentName(), "platform.lock", "platform.lock component")
@@ -156,7 +172,7 @@ function main(args)
   failures = failures + check(m72_platform_tls_policy.componentName(), "platform.tls_policy", "platform.tls_policy component")
   failures = failures + check(m72_platform_tls_policy.targetMilestone(), "M73", "platform.tls_policy target")
   failures = failures + checkBool(m72_platform_tls_policy.isImplemented(), "platform.tls_policy implementation")
-  failures = failures + check(m73_platform_tls_schannel.componentName(), "platform.tls_schannel", "platform.tls_schannel component")
+  failures = failures + check(m73_platform_tls_schannel.componentName(), TLS_BACKEND_COMPONENT, "platform TLS backend component")
   failures = failures + check(m73_platform_tls_schannel.targetMilestone(), "M73", "platform.tls_schannel target")
   failures = failures + checkBool(m73_platform_tls_schannel.isImplemented(), "platform.tls_schannel implementation")
   failures = failures + check(m16_storage_page.componentName(), "storage.page", "storage.page component")

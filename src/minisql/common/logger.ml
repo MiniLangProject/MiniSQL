@@ -4,7 +4,7 @@ package minisql.common.logger
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import std.string_builder as string_builder
-import minisql.common.endian as endian
+import std.time as time_api
 import minisql.platform.clock as clock
 import minisql.platform.file as file_api
 
@@ -20,15 +20,12 @@ const LEVEL_INFO = 20
 const LEVEL_WARNING = 30
 const LEVEL_ERROR = 40
 
-// Writes the caller's local wall-clock fields into a 16-byte SYSTEMTIME image.
-extern function GetLocalTime(systemTime as bytes) from "kernel32.dll" symbol "GetLocalTime" returns void
-
 synchronized loggerConfigured = false
 synchronized loggerMinimumLevel = LEVEL_INFO
 synchronized loggerStdoutEnabled = true
 synchronized loggerFileEnabled = false
 synchronized loggerBinlogEnabled = false
-synchronized loggerDirectory = ".\\logs"
+synchronized loggerDirectory = "./logs"
 synchronized loggerFileName = "minisql.log"
 synchronized loggerBinlogFileName = "minisql-bin.log"
 synchronized loggerRotationMilliseconds = 86400000
@@ -86,14 +83,14 @@ end function
 // rolled-file suffixes from the same SYSTEMTIME snapshot.
 // Takes no caller inputs. Returns `[displayTimestamp, fileTimestamp]`.
 function timestampParts()
-  raw = bytes(16, 0)
-  GetLocalTime(raw)
-  year = endian.readU16LE(raw, 0)
-  month = endian.readU16LE(raw, 2)
-  day = endian.readU16LE(raw, 6)
-  hour = endian.readU16LE(raw, 8)
-  minute = endian.readU16LE(raw, 10)
-  second = endian.readU16LE(raw, 12)
+  current = time_api.datetime.nowLocal()
+  if current is void then return ["0000-00-00 00:00:00", "00000000-000000"] end if
+  year = current.date.year
+  month = current.date.month
+  day = current.date.day
+  hour = current.time.hour
+  minute = current.time.minute
+  second = current.time.second
   display = pad4(year) + "-" + pad2(month) + "-" + pad2(day) + " " + pad2(hour) + ":" + pad2(minute) + ":" + pad2(second)
   suffix = pad4(year) + pad2(month) + pad2(day) + "-" + pad2(hour) + pad2(minute) + pad2(second)
   return [display, suffix]

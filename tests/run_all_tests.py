@@ -748,7 +748,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 78,
+        "moduleCount": 80,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -813,8 +813,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 78:
-        raise AcceptanceFailure("Module catalog must contain exactly 78 modules")
+    if not isinstance(modules, list) or len(modules) != 80:
+        raise AcceptanceFailure("Module catalog must contain exactly 80 source modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1612,7 +1612,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 78-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 80-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),

@@ -10,6 +10,7 @@ import minisql.common.uuid as uuid
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.protocol.constants as constants
+import std.console as console_api
 
 const INVALID_ARGUMENT = 9001
 const IO_FAILURE = 9005
@@ -30,6 +31,7 @@ struct SqlBatch
   remainder
 end struct
 
+#if TARGET_OS == "windows"
 // Returns the Windows standard-stream handle identified by `kind`; failure uses an invalid native handle.
 extern function GetStdHandle(kind as i32) from "kernel32.dll" symbol "GetStdHandle" returns ptr
 // Reads console-mode flags into `mode` and returns false on a Win32 error.
@@ -42,6 +44,7 @@ extern function ReadConsoleW(handle as ptr, buffer as bytes, count as u32, readO
 extern function WriteConsoleW(handle as ptr, text as wstr, count as u32, writtenOut as bytes, reserved as ptr) from "kernel32.dll" symbol "WriteConsoleW" returns bool
 // Converts UTF-16 units to the requested code page; returns bytes written or zero on failure.
 extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as bytes, wideCount as i32, output as bytes, outputCount as i32, defaultChar as ptr, usedDefault as ptr) from "kernel32.dll" symbol "WideCharToMultiByte" returns i32
+#endif
 
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -54,6 +57,7 @@ end function
 // server. Redirected standard input and service processes have no console and
 // are treated as already safe; a real console-mode update reports failures.
 function disableQuickEdit()
+#if TARGET_OS == "windows"
   inputHandle = GetStdHandle(STD_INPUT_HANDLE)
   if inputHandle == 0 or inputHandle == -1 then return true end if
   modeBytes = bytes(4, 0)
@@ -63,6 +67,9 @@ function disableQuickEdit()
   if safeMode == currentMode then return true end if
   if not SetConsoleMode(inputHandle, safeMode) then return fail(IO_FAILURE, "disableQuickEdit", "cannot disable Windows QuickEdit mode") end if
   return true
+#else
+  return console_api.disableQuickEdit()
+#endif
 end function
 
 // Returns whether the supplied value satisfies the meta command condition.
@@ -97,8 +104,13 @@ function writePrompt(outputHandle, prompt)
   for each value in promptBytes
     if value > 127 then return fail(INVALID_ARGUMENT, "writePrompt", "prompt must be ASCII") end if
   end for
+#if TARGET_OS == "windows"
   written = bytes(4, 0)
   if not WriteConsoleW(outputHandle, prompt, len(promptBytes), written, void) then return fail(IO_FAILURE, "writePrompt", "WriteConsoleW failed") end if
+#else
+  // Linux password prompting is delegated to std.console/getpass, which owns
+  // prompt output and terminal echo handling.
+#endif
   return true
 end function
 
@@ -109,12 +121,16 @@ end function
 function utf16PasswordToUtf8(wide, units)
   if typeof(wide) != "bytes" or typeof(units) != "int" or units < 0 or units > MAX_PASSWORD_UTF16_UNITS then return fail(INVALID_ARGUMENT, "utf16PasswordToUtf8", "invalid UTF-16 input") end if
   if units == 0 then return bytes(0) end if
+#if TARGET_OS == "windows"
   required = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, units, void, 0, void, void)
   if required <= 0 or required > 4096 then return fail(IO_FAILURE, "utf16PasswordToUtf8", "password is not valid UTF-16") end if
   output = bytes(required, 0)
   actual = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, units, output, required, void, void)
   if actual != required then uuid.wipeSecret(output); return fail(IO_FAILURE, "utf16PasswordToUtf8", "UTF-8 conversion failed") end if
   return output
+#else
+  return fail(IO_FAILURE, "utf16PasswordToUtf8", "UTF-16 console conversion is only available on Windows")
+#endif
 end function
 
 // Reads password using the supplied inputs.
@@ -123,6 +139,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function readPassword(prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "readPassword", "prompt must be string") end if
+#if TARGET_OS == "windows"
   inputHandle = GetStdHandle(STD_INPUT_HANDLE)
   outputHandle = GetStdHandle(STD_OUTPUT_HANDLE)
   if inputHandle == 0 or inputHandle == -1 or outputHandle == 0 or outputHandle == -1 then return fail(IO_FAILURE, "readPassword", "console handles are unavailable") end if
@@ -157,6 +174,13 @@ function readPassword(prompt)
   uuid.wipeSecret(secret)
   if typeof(validated) == "error" then return validated end if
   return validated
+#else
+  secret = try(console_api.readPassword(prompt))
+  if typeof(secret) == "error" then return fail(IO_FAILURE, "readPassword", secret.message) end if
+  validated = uuid.validatePasswordBytes(secret, "readPassword")
+  uuid.wipeSecret(secret)
+  return validated
+#endif
 end function
 
 // Reads password confirmed using the supplied inputs.

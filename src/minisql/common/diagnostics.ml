@@ -6,6 +6,7 @@ package minisql.common.diagnostics
 import minisql.common.endian as endian
 import minisql.common.uuid as uuid
 import minisql.platform.file as file_api
+import std.time as time_api
 
 // Tamper-evident diagnostics and audit-log storage. Each record incorporates
 // the previous record's digest, so verification detects mutation, truncation,
@@ -38,9 +39,6 @@ const AUDIT_ROTATION = 10
 
 const AUDIT_FAILURE = 0
 const AUDIT_SUCCESS = 1
-
-// Writes the current UTC system time as a Win32 FILETIME into `fileTime`.
-extern function GetSystemTimeAsFileTime(fileTime as bytes) from "kernel32.dll" symbol "GetSystemTimeAsFileTime" returns void
 
 // Defines the diagnostic record used by this module.
 struct Diagnostic
@@ -355,9 +353,11 @@ end function
 // Inputs: `log`, `eventType`, `outcome`, `sessionId`, `principalId`, `detail`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function appendAudit(log, eventType, outcome, sessionId, principalId, detail)
   validateAuditOpen(log, "appendAudit")
-  fileTime = bytes(8, 0)
-  GetSystemTimeAsFileTime(fileTime)
-  timestamp = endian.uint64ToInt(endian.readU64LE(fileTime, 0))
+  unixMilliseconds = time_api.datetime.nowUnixMillisUtc()
+  if unixMilliseconds is void then return fail(IO_FAILURE, "appendAudit", "UTC clock is unavailable") end if
+  // Keep the existing FILETIME epoch and 100-nanosecond unit in the durable
+  // format so audit records are interchangeable between Windows and Linux.
+  timestamp = (unixMilliseconds + 11644473600000) * 10000
   encoded = encodeAuditRecord(log.key, log.nextSequence, timestamp, eventType, outcome, sessionId, principalId, log.lastHash, detail)
   // Validate the one-record suffix before publishing it. A full segment starts
   // at sequence 1, but an append suffix may start at any later sequence and must

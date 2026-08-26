@@ -16,6 +16,16 @@ allocation churn, memory, and binary size. The preceding regression report is
 retained in
 [`COMPILER_UPDATE_A5597F7_2026-08-24.md`](COMPILER_UPDATE_A5597F7_2026-08-24.md).
 
+`platform_compare.py` runs the same bounded storage, restart, one-shot and
+persistent loopback workloads for one already-built native target. Invoke it
+once from Windows Python and once from Linux Python, using target-native data
+directories, then retain the two raw JSON files with the comparison report.
+The Linux memory sampler uses private mappings from `/proc/PID/smaps_rollup`;
+Windows continues to use `PROCESS_MEMORY_COUNTERS_EX.PrivateUsage`.
+The measured 2026-08-26 Windows/WSL2 comparison, including the Linux
+multi-client blocker, is retained in
+[`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](WINDOWS_LINUX_COMPARISON_2026-08-26.md).
+
 `capacity_regression.py` provides restart-aware `1`, `5`, and `10` GiB profiles
 plus a fast `smoke` profile. Each process writes a bounded chunk, so the test
 does not confuse process-heap growth with database capacity. The driver checks

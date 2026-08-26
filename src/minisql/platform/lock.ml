@@ -4,7 +4,11 @@ package minisql.platform.lock
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.platform.file as file_api
+#if TARGET_OS == "windows"
 import minisql.platform.file_win32 as native
+#else
+import minisql.platform.file_linux as native
+#endif
 
 // Process-visible file-region locks used to coordinate database readers and
 // writers. A FileLock owns the duplicated handle that carries the Windows lock;

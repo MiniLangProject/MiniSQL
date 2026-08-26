@@ -4,6 +4,9 @@ package minisql.common.uuid
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import std.crypto as crypto
+import std.crypto.aes_gcm as aes_gcm
+import std.uuid as uuid_api
 
 // Cryptographic utility layer for identifiers, password verification, message
 // authentication, and authenticated encryption. Random material comes from the
@@ -25,6 +28,7 @@ const AES_GCM_NONCE_BYTES = 12
 const AES_GCM_TAG_BYTES = 16
 const BCRYPT_AUTH_MODE_INFO_BYTES = 88
 
+#if TARGET_OS == "windows"
 // Writes a new RFC-compatible GUID to `buffer` and returns the HRESULT status.
 extern function CoCreateGuid(buffer as bytes) from "ole32.dll" symbol "CoCreateGuid" returns i32
 // Fills `buffer` with cryptographically secure random bytes and returns NTSTATUS.
@@ -55,6 +59,7 @@ extern function BCryptHashData(hash as ptr, input as bytes, inputLength as u32, 
 extern function BCryptFinishHash(hash as ptr, output as bytes, outputLength as u32, flags as u32) from "bcrypt.dll" symbol "BCryptFinishHash" returns i32
 // Destroys a CNG hash handle and returns its NTSTATUS result.
 extern function BCryptDestroyHash(hash as ptr) from "bcrypt.dll" symbol "BCryptDestroyHash" returns i32
+#endif
 
 // Defines the password material record used by this module.
 struct PasswordMaterial
@@ -83,10 +88,16 @@ end function
 // Creates the requested value.
 // Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create()
+#if TARGET_OS == "windows"
   value = bytes(16, 0)
   result = CoCreateGuid(value)
   if result != 0 then return fail(IO_FAILURE, "create", "CoCreateGuid failed with HRESULT " + result) end if
   return value
+#else
+  value = try(uuid_api.v4Bytes())
+  if typeof(value) == "error" then return fail(IO_FAILURE, "create", value.message) end if
+  return value
+#endif
 end function
 
 // Validates the requested value.
@@ -129,21 +140,31 @@ end function
 // Inputs: `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function synchronized randomBytes(count)
   if typeof(count) != "int" or count < 1 or count > 1048576 then return fail(INVALID_ARGUMENT, "randomBytes", "count must be 1..1048576") end if
+#if TARGET_OS == "windows"
   output = bytes(count, 0)
   status = BCryptGenRandom(void, output, count, BCRYPT_USE_SYSTEM_PREFERRED_RNG)
   if status != 0 then return fail(IO_FAILURE, "randomBytes", "BCryptGenRandom failed with NTSTATUS " + status) end if
   return output
+#else
+  output = try(crypto.secureRandom(count))
+  if typeof(output) == "error" then return fail(IO_FAILURE, "randomBytes", output.message) end if
+  return output
+#endif
 end function
 
 // Opens the sha256 hmac.
 // Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function openSha256Hmac()
+#if TARGET_OS == "windows"
   handleBytes = bytes(8, 0)
   status = BCryptOpenAlgorithmProvider(handleBytes, "SHA256", void, BCRYPT_ALG_HANDLE_HMAC_FLAG)
   if status != 0 then return fail(IO_FAILURE, "openSha256Hmac", "BCryptOpenAlgorithmProvider failed with NTSTATUS " + status) end if
   handle = endian.uint64ToInt(endian.readU64LE(handleBytes, 0))
   if typeof(handle) != "int" or handle == 0 then return fail(IO_FAILURE, "openSha256Hmac", "provider returned an invalid handle") end if
   return handle
+#else
+  return true
+#endif
 end function
 
 // Performs the PBKDF2 sequence under the same process-wide monitor as all
@@ -154,6 +175,7 @@ function synchronized deriveKey(secret, salt, iterations, outputLength)
   if typeof(salt) != "bytes" or len(salt) == 0 or len(salt) > 4096 then return fail(INVALID_ARGUMENT, "deriveKey", "salt must contain 1..4096 bytes") end if
   if typeof(iterations) != "int" or iterations < 1 or iterations > MAX_PBKDF2_ITERATIONS then return fail(INVALID_ARGUMENT, "deriveKey", "iterations are outside the supported range") end if
   if typeof(outputLength) != "int" or outputLength < 16 or outputLength > 1024 then return fail(INVALID_ARGUMENT, "deriveKey", "outputLength must be 16..1024") end if
+#if TARGET_OS == "windows"
   provider = openSha256Hmac()
   output = bytes(outputLength, 0)
   status = BCryptDeriveKeyPBKDF2(provider, secret, len(secret), salt, len(salt), iterations, output, outputLength, 0)
@@ -161,6 +183,11 @@ function synchronized deriveKey(secret, salt, iterations, outputLength)
   if status != 0 then fillBytes(output, 0, len(output), 0); return fail(IO_FAILURE, "deriveKey", "BCryptDeriveKeyPBKDF2 failed with NTSTATUS " + status) end if
   if closeStatus != 0 then fillBytes(output, 0, len(output), 0); return fail(IO_FAILURE, "deriveKey", "BCryptCloseAlgorithmProvider failed with NTSTATUS " + closeStatus) end if
   return output
+#else
+  output = try(crypto.pbkdf2Sha256(secret, salt, iterations, outputLength))
+  if typeof(output) == "error" then return fail(IO_FAILURE, "deriveKey", output.message) end if
+  return output
+#endif
 end function
 
 // Performs the wipe secret operation for this module.
@@ -290,6 +317,7 @@ end function
 // Inputs: `input`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function synchronized sha256(input)
   if typeof(input) != "bytes" then return fail(INVALID_ARGUMENT, "sha256", "input must be bytes") end if
+#if TARGET_OS == "windows"
   providerOut = bytes(8, 0)
   status = BCryptOpenAlgorithmProvider(providerOut, "SHA256", void, 0)
   if status != 0 then return fail(IO_FAILURE, "sha256", "cannot open SHA-256 provider; NTSTATUS=" + status) end if
@@ -313,6 +341,11 @@ function synchronized sha256(input)
   wipeSecret(object)
   if status != 0 then wipeSecret(output); return fail(IO_FAILURE, "sha256", "SHA-256 failed; NTSTATUS=" + status) end if
   return output
+#else
+  output = try(crypto.sha256(input))
+  if typeof(output) == "error" then return fail(IO_FAILURE, "sha256", output.message) end if
+  return output
+#endif
 end function
 
 // Performs the HMAC provider lifecycle under the native-crypto monitor.
@@ -320,6 +353,7 @@ end function
 function synchronized hmacSha256(key, input)
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > 4096 then return fail(INVALID_ARGUMENT, "hmacSha256", "key must contain 1..4096 bytes") end if
   if typeof(input) != "bytes" then return fail(INVALID_ARGUMENT, "hmacSha256", "input must be bytes") end if
+#if TARGET_OS == "windows"
   providerOut = bytes(8, 0)
   status = BCryptOpenAlgorithmProvider(providerOut, "SHA256", void, BCRYPT_ALG_HANDLE_HMAC_FLAG)
   if status != 0 then return fail(IO_FAILURE, "hmacSha256", "cannot open HMAC-SHA-256 provider; NTSTATUS=" + status) end if
@@ -343,6 +377,11 @@ function synchronized hmacSha256(key, input)
   wipeSecret(object)
   if status != 0 then wipeSecret(output); return fail(IO_FAILURE, "hmacSha256", "HMAC-SHA-256 failed; NTSTATUS=" + status) end if
   return output
+#else
+  output = try(crypto.hmacSha256(key, input))
+  if typeof(output) == "error" then return fail(IO_FAILURE, "hmacSha256", output.message) end if
+  return output
+#endif
 end function
 
 // Performs the transport key operation for this module.
@@ -413,6 +452,7 @@ end function
 // Inputs: `keyBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function openAesGcm(keyBytes)
   if typeof(keyBytes) != "bytes" or len(keyBytes) != 32 then return fail(INVALID_ARGUMENT, "openAesGcm", "key must be 32 bytes") end if
+#if TARGET_OS == "windows"
   providerOut = bytes(8, 0)
   status = BCryptOpenAlgorithmProvider(providerOut, "AES", void, 0)
   if status != 0 then return fail(IO_FAILURE, "openAesGcm", "cannot open AES provider; NTSTATUS=" + status) end if
@@ -433,14 +473,19 @@ function openAesGcm(keyBytes)
   if status != 0 then wipeSecret(keyObject); BCryptCloseAlgorithmProvider(provider, 0); return fail(IO_FAILURE, "openAesGcm", "cannot create AES key; NTSTATUS=" + status) end if
   keyHandle = nativeHandle(keyOut, "openAesGcm")
   return [provider, keyHandle, keyObject]
+#else
+  return [0, 0, bytes(keyBytes)]
+#endif
 end function
 
 // Closes the aes gcm.
 // Inputs: `state`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function closeAesGcm(state)
   if typeof(state) != "array" or len(state) != 3 then return false end if
+#if TARGET_OS == "windows"
   if typeof(state[1]) == "int" and state[1] != 0 then ignoredKey = BCryptDestroyKey(state[1]) end if
   if typeof(state[0]) == "int" and state[0] != 0 then ignoredProvider = BCryptCloseAlgorithmProvider(state[0], 0) end if
+#endif
   if typeof(state[2]) == "bytes" then wipeSecret(state[2]) end if
   return true
 end function
@@ -496,6 +541,7 @@ function synchronized transportEncrypt(key, sequence, messageType, flags, reques
   if typeof(plaintext) != "bytes" then return fail(INVALID_ARGUMENT, "transportEncrypt", "plaintext must be bytes") end if
   nonce = transportNonce(key, sequence)
   aad = transportAssociatedData(messageType, flags, requestId, sequence, len(plaintext))
+#if TARGET_OS == "windows"
   tag = bytes(AES_GCM_TAG_BYTES, 0)
   info = authModeInfo(nonce, aad, tag, len(plaintext))
   state = try(openAesGcm(key))
@@ -509,6 +555,13 @@ function synchronized transportEncrypt(key, sequence, messageType, flags, reques
   wipeSecret(info)
   if status != 0 or endian.readU32LE(resultLength, 0) != len(plaintext) then wipeSecret(ciphertext); wipeSecret(tag); return fail(IO_FAILURE, "transportEncrypt", "AES-256-GCM encryption failed; NTSTATUS=" + status) end if
   return AeadPacket(ciphertext, tag)
+#else
+  encrypted = try(aes_gcm.encrypt(key, nonce, plaintext, aad, AES_GCM_TAG_BYTES))
+  wipeSecret(nonce)
+  wipeSecret(aad)
+  if typeof(encrypted) == "error" then return fail(IO_FAILURE, "transportEncrypt", encrypted.message) end if
+  return AeadPacket(encrypted.ciphertext, encrypted.tag)
+#endif
 end function
 
 // Authenticates and decrypts one transport frame under the synchronized native guard.
@@ -518,6 +571,7 @@ function synchronized transportDecrypt(key, sequence, messageType, flags, reques
   if typeof(ciphertext) != "bytes" or typeof(tag) != "bytes" or len(tag) != AES_GCM_TAG_BYTES then return fail(INVALID_ARGUMENT, "transportDecrypt", "ciphertext or tag is invalid") end if
   nonce = transportNonce(key, sequence)
   aad = transportAssociatedData(messageType, flags, requestId, sequence, len(ciphertext))
+#if TARGET_OS == "windows"
   tagCopy = bytes(tag)
   info = authModeInfo(nonce, aad, tagCopy, len(ciphertext))
   state = try(openAesGcm(key))
@@ -532,6 +586,13 @@ function synchronized transportDecrypt(key, sequence, messageType, flags, reques
   wipeSecret(info)
   if status != 0 or endian.readU32LE(resultLength, 0) != len(ciphertext) then wipeSecret(plaintext); return fail(AUTHENTICATION_FAILED, "transportDecrypt", "secure transport authentication failed") end if
   return plaintext
+#else
+  plaintext = try(aes_gcm.decrypt(key, nonce, ciphertext, tag, aad))
+  wipeSecret(nonce)
+  wipeSecret(aad)
+  if typeof(plaintext) == "error" then return fail(AUTHENTICATION_FAILED, "transportDecrypt", "secure transport authentication failed") end if
+  return plaintext
+#endif
 end function
 
 // Evaluates whether the supplied input satisfies the aead packet predicate.

@@ -34,5 +34,7 @@ After a process or operating-system restart:
 - no subset of a committed transaction may be exposed as the final recovered state; and
 - recovery MUST be safely repeatable.
 
-M7 validates process termination after both committed and uncommitted WAL sequences. Full
-power-loss guarantees still depend on Windows and storage hardware honoring flush requests.
+M7 validates process termination after both committed and uncommitted WAL
+sequences. Full power-loss guarantees still depend on the host operating system,
+filesystem, and storage hardware honoring the native flush requests (`FlushFileBuffers`
+on Windows and `fsync` on Linux).

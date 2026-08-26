@@ -9,7 +9,11 @@ import std.concurrent.thread_pool as thread_pool
 import minisql.platform.file as file_api
 import minisql.common.logger as logger
 import minisql.platform.network as network
+#if TARGET_OS == "windows"
 import minisql.platform.tls_schannel as tls_schannel
+#else
+import minisql.platform.tls_openssl as tls_schannel
+#endif
 import minisql.platform.clock as clock
 import minisql.protocol.connection as connection
 import minisql.protocol.constants as constants

@@ -64,8 +64,33 @@ class ProcessMemoryCountersEx(ctypes.Structure):
 
 
 def private_bytes(process_id: int) -> int:
-    """Return current private bytes for a Windows process, or zero if unavailable."""
+    """Return current private bytes on Windows or Linux, or zero if unavailable."""
 
+    if sys.platform.startswith("linux"):
+        # smaps_rollup provides the closest Linux equivalent to Windows private
+        # bytes: pages owned exclusively by this process, including swapped
+        # private pages. Fall back to resident bytes on restricted systems.
+        try:
+            private_kib = 0
+            for line in Path(f"/proc/{process_id}/smaps_rollup").read_text(
+                encoding="ascii", errors="replace"
+            ).splitlines():
+                name, _, value = line.partition(":")
+                if name in {"Private_Clean", "Private_Dirty", "Private_Hugetlb"}:
+                    private_kib += int(value.strip().split()[0])
+            if private_kib > 0:
+                return private_kib * 1024
+        except (FileNotFoundError, PermissionError, ProcessLookupError, ValueError):
+            pass
+        try:
+            for line in Path(f"/proc/{process_id}/status").read_text(
+                encoding="ascii", errors="replace"
+            ).splitlines():
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) * 1024
+        except (FileNotFoundError, PermissionError, ProcessLookupError, ValueError):
+            pass
+        return 0
     if sys.platform != "win32":
         return 0
     query_information = 0x0400

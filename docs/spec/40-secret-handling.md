@@ -1,6 +1,7 @@
 # Secret handling
 
-Interactive password input uses the Windows console API with echo disabled.
+Interactive password input uses the Windows console API or POSIX `getpass`,
+with echo disabled on both targets.
 Passwords enter the client as mutable UTF-8 `bytes`, are never required in a
 command-line argument, and are wiped after derivation. Password verifier, proof,
 nonce and directional transport-key buffers are wiped on every success and

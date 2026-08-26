@@ -1,5 +1,12 @@
 # Concurrent sessions and scheduling
 
+This document defines the cross-platform concurrency contract. Windows x64
+currently satisfies the complete end-to-end contract. Linux x64 uses the same
+database scheduler and locking design, but its native socket path is not yet
+reliable under repeated two-or-more-client workloads. That release limitation
+does not weaken the contract; it blocks claiming concurrent Linux-server
+readiness until the transport defect is fixed and retested.
+
 A server process owns one `ManagedDatabase` and creates one logical SQL session
 per connection. The acceptor submits each connection to a bounded native
 MiniLang thread pool with at most `maximumClients` workers and queued jobs. One
@@ -20,16 +27,16 @@ database is published to workers. Normal read plans do not rebuild indexes; a
 durable dirty marker causes the read to leave its shared gate, enter the writer
 gate, repair indexes and only then execute. External-sort spill identifiers are
 synchronized. The WAL cursor, audit stream
-and catalog mutations consequently remain writer-only. CNG RNG, PBKDF2,
+and catalog mutations consequently remain writer-only. Native RNG, PBKDF2,
 SHA/HMAC and AES-GCM provider lifecycles share a narrow process-wide
 synchronization gate because the native calls use compiler-managed argument
 buffers and AES descriptors contain pointers to managed temporary buffers.
 
-Each read scan owns its file handle and acquires a shared Win32 byte-range lock;
+Each read scan owns its file handle and acquires a shared native file lock;
 table and B+ tree writers retain their exclusive locks. Only UTF-16 path
-marshalling is briefly serialized because the current compiler runtime supplies
-process-wide scratch buffers for `wstr` extern arguments. Positioned reads on
-independent handles remain parallel.
+marshalling is briefly serialized on Windows because the compiler runtime
+supplies process-wide scratch buffers for `wstr` extern arguments. Linux uses
+UTF-8 paths. Positioned reads on independent handles remain parallel.
 
 The independently mutex-protected lock manager supports multiple logical readers
 and one writer. Wait edges are recorded as waiter-to-blocker relationships;
@@ -49,3 +56,8 @@ multiple open sockets. The deterministic M27 gate starts two connection workers,
 holds both at a shared start gate, executes 100 indexed reads per worker and
 requires the observed peak number of simultaneously executing query sections to
 be greater than one.
+
+The portable Linux gate exercises the scheduler scenario and a loopback session.
+It must not be described as full concurrent-server acceptance until a sustained
+native multi-client network regression also passes. The current failure evidence
+is retained in `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.

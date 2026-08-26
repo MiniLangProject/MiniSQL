@@ -86,6 +86,12 @@
       "targetMilestone": "M3"
     },
     {
+      "path": "src/minisql/platform/file_linux.ml",
+      "package": "minisql.platform.file_linux",
+      "component": "platform.file_linux",
+      "targetMilestone": "M3"
+    },
+    {
       "path": "src/minisql/platform/lock.ml",
       "package": "minisql.platform.lock",
       "component": "platform.lock",
@@ -113,6 +119,12 @@
       "path": "src/minisql/platform/tls_schannel.ml",
       "package": "minisql.platform.tls_schannel",
       "component": "platform.tls_schannel",
+      "targetMilestone": "M73"
+    },
+    {
+      "path": "src/minisql/platform/tls_openssl.ml",
+      "package": "minisql.platform.tls_openssl",
+      "component": "platform.tls_openssl",
       "targetMilestone": "M73"
     },
     {

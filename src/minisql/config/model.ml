@@ -65,9 +65,9 @@ end struct
 
 // Defines the native TLS server profile independently of ordinary authentication.
 struct TlsConfig
-  // Enables Schannel TLS 1.3 for the configured listener.
+  // Enables native TLS 1.3 for the configured listener.
   enabled
-  // Locates the server certificate as store:<thumbprint> or pfx:<path>.
+  // Locates the server certificate as store:/pfx: on Windows or pem:cert|key on Linux.
   certificateReference
   // Names the environment variable that supplies an optional PFX password.
   pfxPasswordEnvironment
@@ -228,7 +228,7 @@ end function
 function defaultConfig(dataRoot)
   return MiniSqlConfig(
     1,
-    PathsConfig(dataRoot, ".\\tmp", ".\\logs"),
+    PathsConfig(dataRoot, "./tmp", "./logs"),
     ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608),
     RuntimeConfig(268435456, 30000, 67108864, 134217728, "info"),
     LoggingConfig(true, true, "minisql.log", 24),

@@ -28,7 +28,11 @@ function printUsage()
   print "  minisqld.exe --serve-authenticated <database-path> <port> [max-clients]"
   print "  minisqld.exe --serve-standby <standby-path> <port> [max-clients]"
   print "  minisqld.exe --serve-secure <database-path> <address> <port> <max-clients> [max-requests]"
+#if TARGET_OS == "windows"
   print "  minisqld.exe --serve-tls <database-path> <address> <port> <max-clients> <store:thumbprint|pfx:path> [max-requests]"
+#else
+  print "  minisqld --serve-tls <database-path> <address> <port> <max-clients> <pem:cert-path|key-path> [max-requests]"
+#endif
   print "  minisqld.exe --serve-config <database-path> <config-file>"
   print "  minisqld.exe --serve-authenticated-config <database-path> <config-file>"
   print "  minisqld.exe --serve-standby-config <database-path> <config-file>"
@@ -101,7 +105,7 @@ end function
 // Enables documented default logging for legacy explicit-argument server modes.
 // Takes no caller inputs. Returns true after the singleton is configured.
 function configureDefaultLogger()
-  return configureLogger(config_model.defaultConfig(".\\data"))
+  return configureLogger(config_model.defaultConfig("./data"))
 end function
 
 // Implements initialize database for this module.

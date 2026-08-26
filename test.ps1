@@ -14,6 +14,8 @@ Runs the single supported MiniSQL cumulative acceptance entry point.
 Path to the MiniLang Python compiler forwarded to the internal runner.
 .PARAMETER Python
 Python executable used to run the acceptance orchestrator.
+.PARAMETER Target
+Selects the existing complete Windows suite or the portable Linux x64 suite.
 .PARAMETER StaticOnly
 Runs repository and source-contract checks without compiling native targets.
 .PARAMETER KeepArtifacts
@@ -24,6 +26,8 @@ Streams detailed compiler and test process output.
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
   [string]$Python = "python",
+  [ValidateSet("windows-x64", "linux-x64")]
+  [string]$Target = "windows-x64",
   [switch]$StaticOnly,
   [switch]$KeepArtifacts,
   [switch]$VerboseOutput
@@ -31,6 +35,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+if ($Target -eq "linux-x64" -and -not $StaticOnly) {
+  if ([string]::IsNullOrWhiteSpace($Compiler)) {
+    $Compiler = Join-Path $Root "..\MiniLangCompilerPy\mlc_win64.py"
+  }
+  $LinuxRunner = Join-Path $Root "tests\run_linux_tests.ps1"
+  & $LinuxRunner -Compiler $Compiler -Python $Python -KeepArtifacts:$KeepArtifacts
+  exit $LASTEXITCODE
+}
 
 # test.ps1 is the only user-facing test entry point. Once the user approves this
 # launcher, remove the Windows download marker from the remaining project tree so

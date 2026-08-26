@@ -78,9 +78,7 @@ end function
 // Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function joinPath(left, right)
   if len(left) == 0 then return right end if
-  last = bytes(left)[len(bytes(left)) - 1]
-  if last == 92 or last == 47 then return left + right end if
-  return left + "\\" + right
+  return file_api.joinPath(left, right)
 end function
 
 // Performs the table file name operation for this module.

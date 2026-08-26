@@ -11,17 +11,23 @@
 .SYNOPSIS
 Compiles MiniSQL applications and, unless requested otherwise, every native test.
 .PARAMETER Compiler
-Path to the MiniLang Python compiler; discovery is used when omitted.
+Path to the Python or native self-hosted MiniLang compiler; discovery is used
+when omitted.
 .PARAMETER Python
 Python executable used when the selected compiler is a Python script.
 .PARAMETER Clean
 Removes the existing binary output directory before compilation.
 .PARAMETER AppsOnly
-Limits compilation to the six public application entry points.
+Limits compilation to the public application entry points available on the
+selected target. The native Workbench remains Windows-only.
+.PARAMETER Target
+Selects the native MiniLang target: windows-x64 or linux-x64.
 #>
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
   [string]$Python = "python",
+  [ValidateSet("windows-x64", "linux-x64")]
+  [string]$Target = "windows-x64",
   [switch]$Clean,
   [switch]$AppsOnly
 )
@@ -29,7 +35,10 @@ param(
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SourceRoot = Join-Path $Root "src"
-$BinDir = Join-Path $Root "build\bin"
+$NativeTarget = $Target
+$BinDirectoryName = "bin"
+if ($NativeTarget -eq "linux-x64") { $BinDirectoryName = "bin-linux" }
+$BinDir = Join-Path $Root ("build\" + $BinDirectoryName)
 
 # Resolves an explicit or conventional compiler path and fails with actionable
 # setup guidance when no compiler exists. The returned path is absolute.
@@ -50,19 +59,40 @@ function Resolve-MiniLangCompiler([string]$Requested) {
       return (Resolve-Path -LiteralPath $Candidate).Path
     }
   }
-  throw "MiniLangPy compiler not found. Pass -Compiler C:\path\to\mlc_win64.py or set MINILANG_COMPILER."
+  throw "MiniLang compiler not found. Pass -Compiler C:\path\to\mlc_win64.py or mlc_win64.exe, or set MINILANG_COMPILER."
+}
+
+# Finds the compiler package root whether the selected entry point lives at
+# repository root (Python) or in the conventional build directory (native).
+function Resolve-MiniLangLibraryRoot([string]$CompilerPath) {
+  $Candidate = Split-Path -Parent $CompilerPath
+  for ($Depth = 0; $Depth -lt 4 -and -not [string]::IsNullOrWhiteSpace($Candidate); $Depth++) {
+    if (Test-Path -LiteralPath (Join-Path $Candidate "std") -PathType Container) {
+      return $Candidate
+    }
+    $Parent = Split-Path -Parent $Candidate
+    if ($Parent -eq $Candidate) { break }
+    $Candidate = $Parent
+  }
+  return ""
 }
 
 # Compiles one MiniLang entry point, adds the project and compiler standard-library
 # include roots, and verifies both the process result and expected output file.
-function Invoke-Compile([string]$CompilerPath, [string]$InputPath, [string]$OutputPath) {
+function Invoke-Compile([string]$CompilerPath, [string]$InputPath, [string]$OutputPath, [string]$NativeTarget) {
   Write-Host "Compiling $InputPath -> $OutputPath"
-  $CompilerRoot = Split-Path -Parent $CompilerPath
+  $CompilerRoot = Resolve-MiniLangLibraryRoot $CompilerPath
   $CompilerArguments = @($InputPath, $OutputPath, "-I", $SourceRoot)
-  if (Test-Path -LiteralPath (Join-Path $CompilerRoot "std") -PathType Container) {
+  if (-not [string]::IsNullOrWhiteSpace($CompilerRoot)) {
     $CompilerArguments += @("-I", $CompilerRoot)
   }
-  $CompilerArguments += @("--keep-going", "--max-errors", "100")
+  # Large MiniSQL programs exceed the practical monolithic working set of the
+  # self-hosted compiler. Its canonical object pipeline is byte-identical and
+  # bounds the live code-generation graph once module analysis is complete.
+  if ([System.IO.Path]::GetExtension($CompilerPath) -ine ".py") {
+    $CompilerArguments += "--object-pipeline"
+  }
+  $CompilerArguments += @("--target", $NativeTarget, "--keep-going", "--max-errors", "100")
   if ([System.IO.Path]::GetExtension($CompilerPath) -ieq ".py") {
     & $Python $CompilerPath @CompilerArguments
   } else {
@@ -192,8 +222,28 @@ if ($AppsOnly) {
   $Targets = @($Targets | Select-Object -First 6)
 }
 
-foreach ($Target in $Targets) {
-  Invoke-Compile $CompilerPath (Join-Path $Root $Target.Input) (Join-Path $BinDir $Target.Output)
+if ($NativeTarget -eq "linux-x64") {
+  # Win32 GUI, direct Schannel ABI probes, raw Win32 file aggregation, and the
+  # ExitProcess crash helper intentionally remain Windows-only. All database,
+  # CLI, storage, protocol, concurrency, security, and portable TLS targets are
+  # still compiled for Linux.
+  $WindowsOnlyOutputs = @(
+    "minisql-admin.exe",
+    "minisql-m0-modules.exe", "minisql-m5-modules.exe", "minisql-m10-modules.exe",
+    "minisql-m15-modules.exe", "minisql-m20-modules.exe", "minisql-m21-modules.exe",
+    "minisql-m26-modules.exe", "minisql-m31-modules.exe", "minisql-m37-modules.exe",
+    "minisql-m42-modules.exe", "minisql-m47-modules.exe", "minisql-m50-modules.exe",
+    "minisql-m7-crash-worker.exe", "minisql-m28-secrets.exe",
+    "minisql-m73-schannel-abi.exe", "minisql-m74-workbench.exe",
+    "minisql-m74-workbench-network-worker.exe"
+  )
+  $Targets = @($Targets | Where-Object { $WindowsOnlyOutputs -notcontains $_.Output })
+}
+
+foreach ($BuildTarget in $Targets) {
+  $OutputName = $BuildTarget.Output
+  if ($NativeTarget -eq "linux-x64") { $OutputName = $OutputName -replace '\.exe$', '' }
+  Invoke-Compile $CompilerPath (Join-Path $Root $BuildTarget.Input) (Join-Path $BinDir $OutputName) $NativeTarget
 }
 
 if ($AppsOnly) {

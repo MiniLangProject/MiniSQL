@@ -4,8 +4,9 @@ package minisql.platform.network
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import std.time as time_api
 
-// WinSock wrapper used by MiniSQL clients and servers. M27 adds bounded
+// Native IPv4/TCP wrapper used by MiniSQL clients and servers. M27 adds bounded
 // non-blocking polling, now owned by native per-connection workers. M29 adds a
 // fail-closed binding policy: non-loopback listeners are accepted only by the
 // authenticated secure-transport server path.
@@ -18,12 +19,13 @@ const IPPROTO_TCP = 6
 const INVALID_SOCKET = -1
 const SOCKET_ERROR = -1
 const SOCKET_ERROR_U32 = 4294967295
-const SOL_SOCKET = 0xFFFF
-const SO_REUSEADDR = 4
 const SD_BOTH = 2
 const WSA_VERSION_2_2 = 0x0202
 const SOCKADDR_IN_SIZE = 16
 const MAX_RECEIVE_BYTES = 1048576
+#if TARGET_OS == "windows"
+const SOL_SOCKET = 0xFFFF
+const SO_REUSEADDR = 4
 const WSAEWOULDBLOCK = 10035
 const WSAETIMEDOUT = 10060
 const FIONBIO = 0x8004667E
@@ -35,7 +37,25 @@ const WSAPOLLFD_REVENTS_OFFSET = 10
 const POLLRDNORM = 0x0100
 const POLLWRNORM = 0x0010
 const POLLNVAL = 0x0004
+#else
+const SOL_SOCKET = 1
+const SO_REUSEADDR = 2
+const WSAEWOULDBLOCK = 11
+const WSAETIMEDOUT = 110
+const SO_RCVTIMEO = 20
+const SO_SNDTIMEO = 21
+const F_GETFL = 3
+const F_SETFL = 4
+const O_NONBLOCK = 2048
+const WSAPOLLFD_SIZE = 8
+const WSAPOLLFD_EVENTS_OFFSET = 4
+const WSAPOLLFD_REVENTS_OFFSET = 6
+const POLLRDNORM = 0x0001
+const POLLWRNORM = 0x0004
+const POLLNVAL = 0x0020
+#endif
 
+#if TARGET_OS == "windows"
 // Initializes WinSock for `version`, filling `wsaData` and returning its status code.
 extern function WSAStartup(version as int, wsaData as bytes) from "ws2_32.dll" returns i32
 // Releases one process-wide WinSock initialization reference and returns its status.
@@ -70,8 +90,42 @@ extern function inet_addr(address as cstr) from "ws2_32.dll" returns u32
 extern function ioctlsocket(s as ptr, command as u32, value as bytes) from "ws2_32.dll" returns i32
 // Waits until one or more sockets become ready without relying on the Windows timer quantum.
 extern function WSAPoll(descriptors as bytes, descriptorCount as u32, timeoutMs as i32) from "ws2_32.dll" returns i32
-// Suspends the current native thread for at least the requested milliseconds.
-extern function Sleep(milliseconds as u32) from "kernel32.dll" symbol "Sleep" returns void
+#else
+// Linux uses the SysV socket ABI. The public MiniSQL API still accepts either
+// integer or pointer-like handles so callers remain source-compatible.
+// Creates a Linux socket descriptor for the requested address family and protocol.
+extern function socket(af as int, type as int, protocol as int) from "libc.so.6" returns i32
+// Closes one Linux socket descriptor.
+extern function closesocket(s as int) from "libc.so.6" symbol "close" returns i32
+// Connects a Linux socket to an encoded address.
+extern function connect(s as int, addr as bytes, addrlen as u32) from "libc.so.6" returns i32
+// Binds a Linux socket to an encoded local address.
+extern function bind(s as int, addr as bytes, addrlen as u32) from "libc.so.6" returns i32
+// Starts listening on a bound Linux socket.
+extern function listen(s as int, backlog as i32) from "libc.so.6" returns i32
+// Accepts one pending Linux connection.
+extern function accept(s as int, addr as ptr, addrlen as ptr) from "libc.so.6" returns i32
+// Reads the connected peer address for a Linux socket.
+extern function getpeername(s as int, address as bytes, addressLength as bytes) from "libc.so.6" returns i32
+// Sends a native byte range through a Linux socket.
+extern function send(s as int, buffer as ptr, count as u64, flags as i32) from "libc.so.6" returns i64
+// Receives a native byte range from a Linux socket.
+extern function recv(s as int, buffer as ptr, count as u64, flags as i32) from "libc.so.6" returns i64
+// Disables one or both directions of a Linux socket.
+extern function shutdown(s as int, how as i32) from "libc.so.6" returns i32
+// Applies one Linux socket option.
+extern function setsockopt(s as int, level as i32, option as i32, value as bytes, count as u32) from "libc.so.6" returns i32
+// Converts dotted-decimal IPv4 text to network byte order.
+extern function inet_addr(address as cstr) from "libc.so.6" returns u32
+// Reads or changes Linux descriptor flags.
+extern function fcntl(s as int, command as i32, value as i32) from "libc.so.6" returns i32
+// Polls Linux descriptors for bounded readiness.
+extern function WSAPoll(descriptors as bytes, descriptorCount as u64, timeoutMs as i32) from "libc.so.6" symbol "poll" returns i32
+// Returns the current thread's Linux errno address.
+extern function _errnoLocation() from "libc.so.6" symbol "__errno_location" returns ptr
+// Copies errno into a managed byte buffer without dereferencing raw memory in MiniLang.
+extern function _copyErrno(destination as bytes, source as ptr, count as u64) from "libc.so.6" symbol "memcpy" returns ptr
+#endif
 
 _wsaReady = false
 
@@ -79,6 +133,19 @@ _wsaReady = false
 // Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(operation, message)
   return error(NETWORK_ERROR, "platform.network." + operation + ": " + message)
+end function
+
+// Returns the current platform socket error using one stable MiniSQL call site.
+function nativeError()
+#if TARGET_OS == "windows"
+  return WSAGetLastError()
+#else
+  location = _errnoLocation()
+  if location == 0 then return 0 end if
+  raw = bytes(4, 0)
+  _copyErrno(raw, location, 4)
+  return endian.readU32LE(raw, 0)
+#endif
 end function
 
 // Evaluates whether the supplied input satisfies the handle predicate.
@@ -102,9 +169,11 @@ end function
 function initialize()
   global _wsaReady
   if _wsaReady then return true end if
+#if TARGET_OS == "windows"
   data = bytes(512, 0)
   result = WSAStartup(WSA_VERSION_2_2, data)
   if result != 0 then return fail("initialize", "WSAStartup failed (" + result + ")") end if
+#endif
   _wsaReady = true
   return true
 end function
@@ -114,8 +183,10 @@ end function
 function cleanup()
   global _wsaReady
   if not _wsaReady then return true end if
+#if TARGET_OS == "windows"
   result = WSACleanup()
-  if result != 0 then return fail("cleanup", "WSACleanup failed (" + WSAGetLastError() + ")") end if
+  if result != 0 then return fail("cleanup", "WSACleanup failed (" + nativeError() + ")") end if
+#endif
   _wsaReady = false
   return true
 end function
@@ -160,11 +231,11 @@ function connectTcp(host, port)
   validatePort(port, "connectTcp")
   ip = parseIPv4(host)
   handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-  if handle == INVALID_SOCKET then return fail("connectTcp", "socket failed (" + WSAGetLastError() + ")") end if
+  if handle == INVALID_SOCKET then return fail("connectTcp", "socket failed (" + nativeError() + ")") end if
   address = sockaddr(ip, port)
   result = connect(handle, address, len(address))
   if result != 0 then
-    code = WSAGetLastError()
+    code = nativeError()
     closesocket(handle)
     return fail("connectTcp", "connect failed (" + code + ")")
   end if
@@ -188,20 +259,20 @@ function listenAddress(addressText, port, backlog, allowRemote)
   if typeof(backlog) != "int" or backlog < 1 or backlog > 128 then backlog = 16 end if
   ip = parseIPv4(addressText)
   handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-  if handle == INVALID_SOCKET then return fail("listenAddress", "socket failed (" + WSAGetLastError() + ")") end if
+  if handle == INVALID_SOCKET then return fail("listenAddress", "socket failed (" + nativeError() + ")") end if
   option = bytes(4, 0)
   option[0] = 1
   ignored = setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, option, 4)
   address = sockaddr(ip, port)
   result = bind(handle, address, len(address))
   if result != 0 then
-    code = WSAGetLastError()
+    code = nativeError()
     closesocket(handle)
     return fail("listenAddress", "bind failed (" + code + ")")
   end if
   result = listen(handle, backlog)
   if result != 0 then
-    code = WSAGetLastError()
+    code = nativeError()
     closesocket(handle)
     return fail("listenAddress", "listen failed (" + code + ")")
   end if
@@ -219,10 +290,17 @@ end function
 function setNonBlocking(handle, enabled)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: handle must be socket") end if
   if typeof(enabled) != "bool" then return error(INVALID_ARGUMENT, "platform.network.setNonBlocking: enabled must be bool") end if
+#if TARGET_OS == "windows"
   mode = bytes(4, 0)
   if enabled then mode[0] = 1 end if
   result = ioctlsocket(handle, FIONBIO, mode)
-  if result != 0 then return fail("setNonBlocking", "ioctlsocket failed (" + WSAGetLastError() + ")") end if
+  if result != 0 then return fail("setNonBlocking", "ioctlsocket failed (" + nativeError() + ")") end if
+#else
+  flags = fcntl(handle, F_GETFL, 0)
+  if flags < 0 then return fail("setNonBlocking", "fcntl(F_GETFL) failed (" + nativeError() + ")") end if
+  if enabled then flags = flags | O_NONBLOCK else flags = flags & ~O_NONBLOCK end if
+  if fcntl(handle, F_SETFL, flags) != 0 then return fail("setNonBlocking", "fcntl(F_SETFL) failed (" + nativeError() + ")") end if
+#endif
   return true
 end function
 
@@ -234,6 +312,7 @@ function setTimeouts(handle, receiveMs, sendMs)
   if typeof(sendMs) != "int" or sendMs < 0 or sendMs > 3600000 then return error(INVALID_ARGUMENT, "platform.network.setTimeouts: send timeout is invalid") end if
   receiveValue = bytes(4, 0)
   sendValue = bytes(4, 0)
+#if TARGET_OS == "windows"
   receiveValue[0] = receiveMs & 255
   receiveValue[1] = (receiveMs >> 8) & 255
   receiveValue[2] = (receiveMs >> 16) & 255
@@ -242,8 +321,18 @@ function setTimeouts(handle, receiveMs, sendMs)
   sendValue[1] = (sendMs >> 8) & 255
   sendValue[2] = (sendMs >> 16) & 255
   sendValue[3] = (sendMs >> 24) & 255
-  if setsockopt(handle, SOL_SOCKET, SO_RCVTIMEO, receiveValue, 4) != 0 then return fail("setTimeouts", "SO_RCVTIMEO failed (" + WSAGetLastError() + ")") end if
-  if setsockopt(handle, SOL_SOCKET, SO_SNDTIMEO, sendValue, 4) != 0 then return fail("setTimeouts", "SO_SNDTIMEO failed (" + WSAGetLastError() + ")") end if
+#else
+  receiveValue = bytes(16, 0)
+  sendValue = bytes(16, 0)
+  receiveSeconds = receiveMs / 1000
+  sendSeconds = sendMs / 1000
+  endian.writeU64LE(receiveValue, 0, endian.uint64FromInt(receiveSeconds))
+  endian.writeU64LE(receiveValue, 8, endian.uint64FromInt((receiveMs % 1000) * 1000))
+  endian.writeU64LE(sendValue, 0, endian.uint64FromInt(sendSeconds))
+  endian.writeU64LE(sendValue, 8, endian.uint64FromInt((sendMs % 1000) * 1000))
+#endif
+  if setsockopt(handle, SOL_SOCKET, SO_RCVTIMEO, receiveValue, len(receiveValue)) != 0 then return fail("setTimeouts", "SO_RCVTIMEO failed (" + nativeError() + ")") end if
+  if setsockopt(handle, SOL_SOCKET, SO_SNDTIMEO, sendValue, len(sendValue)) != 0 then return fail("setTimeouts", "SO_SNDTIMEO failed (" + nativeError() + ")") end if
   return true
 end function
 
@@ -253,7 +342,7 @@ function tryAccept(listener)
   if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.tryAccept: listener must be socket handle") end if
   client = accept(listener, void, void)
   if client == INVALID_SOCKET then
-    code = WSAGetLastError()
+    code = nativeError()
     if code == WSAEWOULDBLOCK then return void end if
     return fail("tryAccept", "accept failed (" + code + ")")
   end if
@@ -268,10 +357,14 @@ function waitSocket(handle, events, timeoutMs, operation)
   if typeof(events) != "int" or events <= 0 or events > 65535 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": events are invalid") end if
   if typeof(timeoutMs) != "int" or timeoutMs < 0 or timeoutMs > 60000 then return error(INVALID_ARGUMENT, "platform.network." + operation + ": timeout is invalid") end if
   descriptor = bytes(WSAPOLLFD_SIZE, 0)
+#if TARGET_OS == "windows"
   endian.writeU64LE(descriptor, 0, endian.uint64FromInt(handle))
+#else
+  endian.writeU32LE(descriptor, 0, handle)
+#endif
   endian.writeU16LE(descriptor, WSAPOLLFD_EVENTS_OFFSET, events)
   result = WSAPoll(descriptor, 1, timeoutMs)
-  if isSocketErrorResult(result) then return fail(operation, "WSAPoll failed (" + WSAGetLastError() + ")") end if
+  if isSocketErrorResult(result) then return fail(operation, "poll failed (" + nativeError() + ")") end if
   if result == 0 then return false end if
   if result != 1 then return fail(operation, "WSAPoll returned invalid descriptor count " + result) end if
   returnedEvents = endian.readU16LE(descriptor, WSAPOLLFD_REVENTS_OFFSET)
@@ -294,7 +387,7 @@ end function
 function acceptTcp(listener)
   if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.acceptTcp: listener must be socket handle") end if
   client = accept(listener, void, void)
-  if client == INVALID_SOCKET then return fail("acceptTcp", "accept failed (" + WSAGetLastError() + ")") end if
+  if client == INVALID_SOCKET then return fail("acceptTcp", "accept failed (" + nativeError() + ")") end if
   return client
 end function
 
@@ -353,7 +446,7 @@ function sendAll(handle, data)
     remaining = dataLength - total
     written = send(handle, basePointer + total, remaining, 0)
     if isSocketErrorResult(written) then
-      code = WSAGetLastError()
+      code = nativeError()
       if code == WSAEWOULDBLOCK then
         writable = try(waitWritable(handle, 1000))
         if typeof(writable) == "error" then return writable end if
@@ -384,7 +477,7 @@ function receive(handle, maximum)
   if typeof(pointer) == "error" then return pointer end if
   count = recv(handle, pointer, maximum, 0)
   if count == 0 then return bytes(0) end if
-  if isSocketErrorResult(count) then return fail("receive", "recv failed (" + WSAGetLastError() + ")") end if
+  if isSocketErrorResult(count) then return fail("receive", "recv failed (" + nativeError() + ")") end if
   if count < 0 or count > maximum then return fail("receive", "recv returned invalid byte count " + count + " for maximum " + maximum) end if
   if count == maximum then return buffer end if
   return copyByteRange(buffer, 0, count, "receive")
@@ -403,7 +496,7 @@ function receiveAvailableInto(handle, target, offset, maximum)
   count = recv(handle, pointer, maximum, 0)
   if count == 0 then return 0 end if
   if isSocketErrorResult(count) then
-    code = WSAGetLastError()
+    code = nativeError()
     if code == WSAEWOULDBLOCK then return void end if
     return fail("receiveAvailableInto", "recv failed (" + code + ")")
   end if
@@ -429,7 +522,7 @@ end function
 // Inputs: `milliseconds`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function sleepMilliseconds(milliseconds)
   if typeof(milliseconds) != "int" or milliseconds < 0 or milliseconds > 60000 then return error(INVALID_ARGUMENT, "platform.network.sleepMilliseconds: invalid delay") end if
-  Sleep(milliseconds)
+  time_api.sleep(milliseconds)
   return true
 end function
 
@@ -447,7 +540,7 @@ function receiveExact(handle, count)
     remaining = count - cursor
     received = recv(handle, basePointer + cursor, remaining, 0)
     if received == 0 then return fail("receiveExact", "connection closed before frame completed") end if
-    if isSocketErrorResult(received) then return fail("receiveExact", "recv failed (" + WSAGetLastError() + ")") end if
+    if isSocketErrorResult(received) then return fail("receiveExact", "recv failed (" + nativeError() + ")") end if
     if received < 0 or received > remaining then return fail("receiveExact", "recv returned invalid byte count " + received + " for remaining " + remaining) end if
     cursor = cursor + received
   end while
@@ -460,7 +553,7 @@ function close(handle)
   if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.close: handle must be socket") end if
   ignored = shutdown(handle, SD_BOTH)
   result = closesocket(handle)
-  if result != 0 then return fail("close", "closesocket failed (" + WSAGetLastError() + ")") end if
+  if result != 0 then return fail("close", "closesocket failed (" + nativeError() + ")") end if
   return true
 end function
 

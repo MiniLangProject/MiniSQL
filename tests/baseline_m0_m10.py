@@ -106,8 +106,14 @@ def compiler_command(compiler: Path, source: Path, output: Path) -> list[str]:
         "-I",
         str(ROOT / "src"),
     ]
-    if (compiler.parent / "std").is_dir():
-        command.extend(["-I", str(compiler.parent)])
+    library_root = next(
+        (candidate for candidate in list(compiler.parents)[:4] if (candidate / "std").is_dir()),
+        None,
+    )
+    if library_root is not None:
+        command.extend(["-I", str(library_root)])
+    if compiler.suffix.lower() != ".py":
+        command.append("--object-pipeline")
     return command + [
         "--keep-going",
         "--max-errors",
@@ -366,7 +372,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M10",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 78,
+        "moduleCount": 80,
         "acceptancePhaseCount": 30,
         "userFacingTestRunner": "test.ps1",
     }
@@ -426,8 +432,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_doc = load_json(ROOT / "docs" / "module-catalog.json")
     modules = catalog_doc.get("modules") if isinstance(catalog_doc, dict) else None
-    if not isinstance(modules, list) or len(modules) != 78:
-        raise AcceptanceFailure("Module catalog must contain exactly 78 modules")
+    if not isinstance(modules, list) or len(modules) != 80:
+        raise AcceptanceFailure("Module catalog must contain exactly 80 source modules")
     if catalog_doc.get("version") not in (1, "1"):
         raise AcceptanceFailure("Unsupported module catalog version")
 
@@ -1180,7 +1186,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 78-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 80-module catalog", lambda: validate_repository(manifest)),
             ("configuration and normative documentation", validate_config_and_docs),
             ("M6-M10R3 source, exact-type and monotonic-regression contracts", validate_source_contracts),
             ("independent reference vectors and persisted layouts", validate_reference_vectors),

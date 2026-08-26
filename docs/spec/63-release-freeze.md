@@ -16,3 +16,9 @@ member is covered by SHA-256 checksums and a machine-readable release manifest.
 
 M50 does not imply that every ISO SQL feature exists. The supported SQL dialect
 and known limits are normative parts of the release documentation.
+
+This file records the historical first 1.0 freeze and its Windows binary
+distribution; it is not a current platform matrix. The later Linux source-build
+target is defined by ADR-0084 and retains database format version 1 and wire
+protocol version 1. Current readiness restrictions live in
+`docs/release/LIMITATIONS.md`.

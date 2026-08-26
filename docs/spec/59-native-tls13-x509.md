@@ -1,7 +1,8 @@
 # Native TLS 1.3 and X.509 transport
 
-MiniSQL terminates TLS inside the MiniLang process through the Windows Schannel
-SSPI. No Python process, plaintext loopback hop, or TLS proxy is involved.
+MiniSQL terminates TLS inside the MiniLang process through Windows Schannel or
+the Linux OpenSSL 3 provider exposed by MiniLang `std.tls`. No Python process,
+plaintext loopback hop, or TLS proxy is involved.
 
 ## Security profile
 
@@ -15,21 +16,22 @@ The current profile is intentionally narrow and fail-closed:
 - peer identity: X.509 server certificate plus DNS-name validation;
 - optional client policy: exact SHA-256 pin of the leaf certificate DER.
 
-Schannel implements the TLS state machine, HKDF key schedule, X25519 operation,
+The selected operating-system provider implements the TLS state machine, HKDF
+key schedule, X25519 operation,
 CertificateVerify verification, traffic-key updates, AES-GCM record protection,
 and authenticated `close_notify`. MiniSQL does not reimplement cryptographic
-primitives. It constrains Schannel through crypto-agile credentials and then
-parses the plaintext ServerHello and queries Schannel's negotiated connection
+primitives. MiniSQL constrains the provider through native credentials and then
+queries the negotiated connection
 metadata before any database frame is accepted. A version, suite, or group
 outside the policy aborts the connection.
 
 ## Certificate validation
 
-The default client mode delegates chain construction, Windows root-store trust,
-validity, EKU, signature, and hostname checks to Schannel.
+The default client mode delegates chain construction, system root-store trust,
+validity, EKU, signature, and hostname checks to Schannel or OpenSSL.
 
 Pin mode is intended for private and self-signed deployments. MiniSQL performs
-Windows SSL chain-policy validation for the requested DNS name and ignores only
+native chain-policy validation for the requested DNS name and ignores only
 the unknown-root result. It then compares the SHA-256 digest of the complete
 leaf certificate DER with the configured pin in constant time. Expired,
 not-yet-valid, wrong-host, wrong-EKU, malformed, or differently pinned
@@ -40,7 +42,8 @@ A `store:<thumbprint>` server reference uses a SHA-1 certificate-store
 thumbprint only as a local lookup key; it is not a cryptographic trust decision.
 A `pfx:<path>` reference imports the certificate and private key. Its password
 is read from `MINISQL_TLS_PFX_PASSWORD` and is never accepted as a command-line
-argument.
+argument. Linux uses `pem:<certificate-path>|<private-key-path>` and currently
+requires an unencrypted PEM private key.
 
 ## Extensibility
 
@@ -54,12 +57,12 @@ changes the current default policy implicitly.
 ## Operations
 
 The server exposes `--serve-tls` and `--serve-tls-config`. Clients expose
-`--tls-*` for Windows trust and `--tls-pin-*` for exact leaf pins. Native TLS
+`--tls-*` for system trust and `--tls-pin-*` for exact leaf pins. Native TLS
 can wrap MiniSQL's password-derived authenticated transport, providing defense
 in depth and retaining the existing user authentication protocol.
 
 TLS 1.3 through Schannel requires Windows 11 or Windows Server 2022 or newer.
+Linux requires glibc and OpenSSL 3 (`libssl.so.3` and `libcrypto.so.3`).
 A platform or machine policy that disables the required cipher or X25519 causes
 startup or handshake failure; MiniSQL never falls back to TLS 1.2 or another
 algorithm.
-

@@ -1,8 +1,17 @@
 # MiniSQL 1.0 administrator guide
 
-Create a database with `minisqld.exe --init <root> <name> [page-size]`. Start a
-loopback server with `--serve`, an authenticated server with
-`--serve-authenticated`, or a read-only standby with `--serve-standby`.
+Create a database with `minisqld[.exe] --init <root> <name> [page-size]`. Start
+a loopback server with `--serve`, an authenticated server with
+`--serve-authenticated`, or a read-only standby with `--serve-standby`. Windows
+executables are under `build/bin`; Linux ELF applications are under
+`build/bin-linux` and omit the `.exe` suffix.
+
+Windows is the accepted target for concurrent production-style server testing.
+On Linux, offline tools and a single connected client are validated, but two or
+more simultaneous clients can currently fail or stall. Until the blocker in
+`LIMITATIONS.md` is resolved, keep Linux server use to development and
+single-client evaluation; do not infer production readiness from a successful
+portable acceptance run.
 
 For production-style operational settings, use `--serve-config <database>
 <config-file>`, `--serve-authenticated-config`, or `--serve-standby-config`.
@@ -31,6 +40,9 @@ mutations remain exclusive behind a writer-prioritized gate. Size the limit for
 the expected connection count, read parallelism and available memory. Increasing
 it does not add write parallelism.
 
+The `max-clients` concurrency behavior in this section is currently validated
+end-to-end on Windows. It remains the intended cross-platform contract.
+
 The execution classifier treats ordinary read-only `SELECT`, `EXPLAIN` and
 metadata requests as shared operations. DML, DDL, DCL, explicit transaction and
 session state, maintenance, and sequence consumption are conservative exclusive
@@ -39,7 +51,7 @@ readers finish before the writer proceeds; this bounds writer starvation without
 aborting valid reads.
 
 Each read scan owns an independent table/index handle and holds a compatible
-shared Win32 byte-range lock. Writers retain exclusive locks. If a durable index
+shared native file lock. Writers retain exclusive locks. If a durable index
 dirty marker appears, the reader leaves the shared gate and performs repair only
 after acquiring the exclusive gate.
 

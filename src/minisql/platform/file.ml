@@ -4,7 +4,12 @@ package minisql.platform.file
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import std.string as string_api
+#if TARGET_OS == "windows"
 import minisql.platform.file_win32 as native
+#else
+import minisql.platform.file_linux as native
+#endif
 
 // Validated, lifetime-safe file API layered over the raw Win32 bindings.
 // Positioned operations preserve the caller's logical cursor and reject use of
@@ -139,6 +144,9 @@ function readAt(file, fileOffset, destination, destinationOffset, count)
   validateFileRange(fileOffset, count, "readAt")
   if count == 0 then return 0 end if
 
+#if TARGET_OS == "linux"
+  return native.readAt(file.nativeHandle, fileOffset, destination, destinationOffset, count)
+#else
   native.seek(file.nativeHandle, fileOffset)
   temporary = bytes(count, 0)
   total = 0
@@ -152,6 +160,7 @@ function readAt(file, fileOffset, destination, destinationOffset, count)
   end while
   if total > 0 then copyBytes(destination, destinationOffset, temporary, 0, total) end if
   return total
+#endif
 end function
 
 // Reads the exact at.
@@ -171,6 +180,9 @@ function writeAt(file, fileOffset, source, sourceOffset, count)
   validateFileRange(fileOffset, count, "writeAt")
   if count == 0 then return 0 end if
 
+#if TARGET_OS == "linux"
+  return native.writeAt(file.nativeHandle, fileOffset, source, sourceOffset, count)
+#else
   native.seek(file.nativeHandle, fileOffset)
   payload = source
   if sourceOffset != 0 or count != len(source) then payload = slice(source, sourceOffset, count) end if
@@ -184,6 +196,7 @@ function writeAt(file, fileOffset, source, sourceOffset, count)
     total = total + actual
   end while
   return total
+#endif
 end function
 
 // Appends the requested value.
@@ -313,10 +326,20 @@ function joinPath(left, right)
   if typeof(left) != "string" or len(left) == 0 or typeof(right) != "string" or len(right) == 0 then
     return fail(INVALID_ARGUMENT, "joinPath", "path parts must be non-empty strings")
   end if
-  raw = bytes(left)
+  normalizedLeft = left
+  normalizedRight = right
+#if TARGET_OS == "linux"
+  normalizedLeft = string_api.replaceAll(normalizedLeft, "\\", "/")
+  normalizedRight = string_api.replaceAll(normalizedRight, "\\", "/")
+#endif
+  raw = bytes(normalizedLeft)
   last = raw[len(raw) - 1]
-  if last == 92 or last == 47 then return left + right end if
-  return left + "\\" + right
+  if last == 92 or last == 47 then return normalizedLeft + normalizedRight end if
+#if TARGET_OS == "windows"
+  return normalizedLeft + "\\" + normalizedRight
+#else
+  return normalizedLeft + "/" + normalizedRight
+#endif
 end function
 
 // Returns the stable diagnostic name of this component.

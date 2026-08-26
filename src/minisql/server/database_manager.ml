@@ -283,6 +283,17 @@ function peakConcurrentReaders(database)
   return value
 end function
 
+// Returns the number of readers currently admitted through the physical
+// execution gate. This diagnostic is safe while sessions are still active.
+function activeConcurrentReaders(database)
+  validateOpen(database, "activeConcurrentReaders")
+  gate = database.executionGate
+  if not gate.stateLock.acquire() then return fail(CLOSED_HANDLE, "activeConcurrentReaders", "database execution state is unavailable") end if
+  value = gate.readers
+  gate.stateLock.release()
+  return value
+end function
+
 // Resets peak concurrent readers using the supplied inputs.
 // Returns the computed value or operation status.
 // May mutate supplied state as documented by the operation name.

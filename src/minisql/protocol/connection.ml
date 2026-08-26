@@ -5,7 +5,11 @@ package minisql.protocol.connection
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.platform.network as network
+#if TARGET_OS == "windows"
 import minisql.platform.tls_schannel as tls_schannel
+#else
+import minisql.platform.tls_openssl as tls_schannel
+#endif
 import minisql.common.uuid as uuid
 import minisql.common.endian as endian
 import minisql.protocol.codec as codec

@@ -5,19 +5,21 @@
 Every delivered source archive exposes exactly one user-facing root acceptance launcher:
 
 ```powershell
-.\test.ps1 -Compiler C:\path\to\mlc_win64.py
+.\test.ps1 -Compiler C:\path\to\mlc_win64.py -Target windows-x64
+.\test.ps1 -Compiler C:\path\to\mlc_win64.py -Target linux-x64
 ```
 
-The accepted compiler baseline is MiniLangCompilerPy revision `3706716` or
-newer. It supplies the native CRC-32C and SIMD runtime contracts referenced by
-the source package; using an older compiler is not a valid acceptance run.
+The accepted compiler baseline is MiniLangCompilerPy or MiniLangCompilerML
+1.1.0 or newer. It supplies both native targets, CRC-32C, SIMD, and the portable
+standard-library contracts referenced by the source package; using an older
+compiler is not a valid acceptance run.
 
 There are no milestone-specific PowerShell wrappers. After this one launcher is approved,
 it removes the Windows download marker from the rest of the tree, creates all runtime
 directories and executes every accepted regression plus every test through the highest
 milestone in the archive.
 
-A milestone is accepted only when:
+A Windows release milestone is accepted only when:
 
 1. every mandatory source compiles to a valid native Windows x64 executable;
 2. every process exits with its expected code and exact success output;
@@ -30,6 +32,18 @@ A milestone is accepted only when:
 The launcher emits exactly one result ZIP. A static-only run validates source/package
 contracts but is never milestone acceptance. Tests MUST NOT depend on hidden placeholder
 files surviving extraction.
+
+The `linux-x64` profile is a portable target gate, not the historical M0-M50
+release gate. It cross-builds all five command-line applications and runs
+representative native storage, protocol, workload, authentication, scheduler,
+TLS, and release-contract tests through WSL. The Win32 Workbench, Windows ABI,
+crash injection, packaging, and the complete 106-phase matrix remain in the
+Windows profile.
+
+A successful Linux gate proves the covered application and component contracts;
+it does not currently prove sustained concurrent-server readiness. A separate
+two-or-more-client regression remains mandatory before the Linux server can be
+promoted beyond single-client evaluation.
 
 ## 10.2 Test classes
 

@@ -9,7 +9,7 @@ applications.
 ## Database initialization
 
 ```text
-minisqld.exe --init <data-root> <database-name> [page-size]
+minisqld[.exe] --init <data-root> <database-name> [page-size]
 ```
 
 The page size defaults to 4096 and must be one of 4096, 8192, 16384 or 32768.
@@ -19,20 +19,20 @@ prints the exact physical path. It never opens or rewrites an existing database.
 ## Local password bootstrap
 
 ```text
-minisqld.exe --set-admin-password <database-path>
-minisqld.exe --set-user-password <database-path> <user>
+minisqld[.exe] --set-admin-password <database-path>
+minisqld[.exe] --set-user-password <database-path> <user>
 ```
 
-Passwords are collected twice from an attached Windows console with echo
-disabled. The application passes mutable UTF-8 bytes directly to the catalog
-password material API and wipes the caller buffer after use. Passwords do not
-appear in argv or SQL text.
+Passwords are collected twice with echo disabled through the Windows console or
+POSIX `getpass`. The application passes mutable UTF-8 bytes directly to the
+catalog password material API and wipes the caller buffer after use. Passwords
+do not appear in argv or SQL text.
 
 ## Operational server lifetime
 
 ```text
-minisqld.exe --serve <database-path> <port> [max-clients]
-minisqld.exe --serve-authenticated <database-path> <port> [max-clients]
+minisqld[.exe] --serve <database-path> <port> [max-clients]
+minisqld[.exe] --serve-authenticated <database-path> <port> [max-clients]
 ```
 
 These modes use a request budget of zero. In the server contract, zero means
@@ -45,11 +45,16 @@ a deterministic exit after the exact number of handled protocol requests.
 Active connections run as bounded thread-pool jobs; `max-clients` is both the
 worker bound and the live-session backpressure limit.
 
+The complete bounded multi-client contract is accepted on Windows. Linux builds
+support the same interface, but repeated two-or-more-client workloads are a
+known native-socket blocker in the current release; only single-client Linux
+server operation is presently validated.
+
 ## Stateful client
 
 ```text
-minisql.exe --shell <port>
-minisql.exe --script <port> <file>
+minisql[.exe] --shell <port>
+minisql[.exe] --script <port> <file>
 ```
 
 Both modes open one client connection, perform one HELLO handshake, execute all
