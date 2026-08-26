@@ -30,3 +30,24 @@ Source builds require MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or newer.
 Both compilers provide the CPU-dispatched native CRC-32C primitive, SIMD
 string/byte built-ins, conditional target compilation, and portable native
 services used by the current MiniSQL sources.
+
+## Validation status
+
+The current tree was validated on 2026-08-26. The Windows x64 gate passed all
+106 cumulative phases. The focused Linux x64 gate built every public CLI and
+passed storage, offline-tool, authentication, scheduler, native-TLS, and two-wave
+concurrent-client checks under WSL2. The Linux gate is intentionally smaller
+than the Windows release matrix and does not include the Win32 Workbench,
+Windows crash injection, or deterministic Windows packaging.
+
+Run the same public entry point for either target:
+
+```powershell
+.\test.ps1 -Compiler C:\path\to\MiniLangCompilerPy\mlc_win64.py -Target windows-x64
+.\test.ps1 -Compiler C:\path\to\MiniLangCompilerPy\mlc_win64.py -Target linux-x64
+```
+
+Use `.\test.ps1 -StaticOnly` for the source, documentation, format-vector, and
+repository-hygiene gate. Performance claims, raw-report hashes, methodology,
+and WSL2 caveats are documented in the
+[Windows/Linux comparison](../../tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md).

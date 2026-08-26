@@ -23,6 +23,11 @@ import threading
 import time
 from pathlib import Path
 
+# This runner is launched as a subprocess by platform_compare.py. Disable local
+# bytecode independently so direct and delegated benchmark runs both preserve
+# the repository's source-package hygiene contract.
+sys.dont_write_bytecode = True
+
 from capacity_regression import private_bytes
 
 

@@ -1,11 +1,11 @@
 # Concurrent sessions and scheduling
 
 This document defines the cross-platform concurrency contract. Windows x64
-currently satisfies the complete end-to-end contract. Linux x64 uses the same
-database scheduler and locking design, but its native socket path is not yet
-reliable under repeated two-or-more-client workloads. That release limitation
-does not weaken the contract; it blocks claiming concurrent Linux-server
-readiness until the transport defect is fixed and retested.
+satisfies it through the complete 106-phase release gate. Linux x64 uses the
+same database scheduler and locking design and satisfies the focused portable
+gate, including repeated multi-client network operation. The Linux gate remains
+smaller than the Windows release matrix, but concurrent Linux-server readiness
+is no longer blocked.
 
 A server process owns one `ManagedDatabase` and creates one logical SQL session
 per connection. The acceptor submits each connection to a bounded native
@@ -57,7 +57,9 @@ holds both at a shared start gate, executes 100 indexed reads per worker and
 requires the observed peak number of simultaneously executing query sections to
 be greater than one.
 
-The portable Linux gate exercises the scheduler scenario and a loopback session.
-It must not be described as full concurrent-server acceptance until a sustained
-native multi-client network regression also passes. The current failure evidence
-is retained in `tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.
+The portable Linux gate exercises the scheduler scenario, a loopback session,
+and two successive waves of four simultaneous native clients. It requires exact
+request draining after both waves, which covers parallel dispatch, worker
+completion, and reuse of the bounded thread pool. The original transport failure
+and its pthread-based resolution remain documented as historical evidence in
+`tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md`.

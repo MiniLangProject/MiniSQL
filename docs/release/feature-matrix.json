@@ -11,7 +11,7 @@
   },
   "readiness": {
     "windows-x64": "complete 106-phase release gate and concurrent-server acceptance",
-    "linux-x64": "offline tools, TLS, and single-client evaluation; concurrent multi-client server blocked"
+    "linux-x64": "focused portable gate with concurrent multi-client server and native TLS; full 106-phase release matrix remains Windows-specific"
   },
   "databaseFormatVersion": 1,
   "wireProtocolVersion": 1

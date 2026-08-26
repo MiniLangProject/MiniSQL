@@ -30,6 +30,11 @@ import sys
 import time
 from pathlib import Path
 
+# This benchmark imports a local sampler. Disable Python bytecode before that
+# import so a documented performance run cannot poison MiniSQL's source-package
+# hygiene gate with an ignored tests/performance/__pycache__ directory.
+sys.dont_write_bytecode = True
+
 from capacity_regression import private_bytes
 
 

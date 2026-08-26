@@ -4,7 +4,7 @@ All notable release-level changes are documented here. The detailed milestone
 and repair-candidate log from development is preserved in
 `docs/history/DEVELOPMENT_CHANGELOG.md`.
 
-## Unreleased — 2026-08-23
+## Unreleased — 2026-08-26
 
 - expanded the native Workbench with multiple SQL worksheets, keyboard
   accelerators, context menus, searchable history, CSV result export, and
@@ -73,6 +73,15 @@ and repair-candidate log from development is preserved in
   `TLS_AES_256_GCM_SHA384` and X25519, validates X.509 chains and hostnames,
   supports explicit SHA-256 leaf pinning for self-signed deployments, handles
   post-handshake messages and emits authenticated `close_notify` alerts;
+- added a native Linux x64 target for all five command-line applications, with
+  the same database and wire formats, portable platform services, OpenSSL 3 TLS,
+  authenticated sessions, and bounded concurrent database access;
+- corrected Linux worker lifetime and non-blocking socket readiness handling;
+  the portable gate now completes two consecutive waves of four simultaneous
+  clients and safely reuses the bounded pthread-backed worker pool;
+- completed a three-trial Windows/WSL2 comparison covering durable storage,
+  restart, one-shot requests, and persistent 1/4/8-client query workloads, and
+  made its Python parent/child runners preserve source-tree cache hygiene;
 - taught build and acceptance commands to include the selected Python
   compiler's standard library automatically;
 - fixed restart recovery after `DROP TABLE`: historical committed WAL images

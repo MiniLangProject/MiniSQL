@@ -4,11 +4,13 @@ MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 PE or Linux x64 ELF applications.
 
-The frozen M0-M50 plan is complete. A clean Windows run on 2026-08-23 passed
-all **106/106 cumulative phases**, including crash recovery, genuinely parallel
+The frozen M0-M50 plan is complete. The accepted 1.0 source revision is
+`M48-M50R3`. The current tree was revalidated on 2026-08-26: Windows passed all
+**106/106 cumulative phases**, including crash recovery, genuinely parallel
 same-database reads, concurrent clients, TLS integration, replication, fuzzing,
-soak tests, and deterministic release packaging. The accepted source revision
-is `M48-M50R3`.
+soak tests, and deterministic release packaging; the focused Linux gate passed
+all storage, client/server, concurrent scheduling, authentication, and native
+TLS checks under WSL2.
 
 > MiniSQL is an independently developed database engine. Version 1.0 has a
 > substantial project-specific test suite, but it has not received an

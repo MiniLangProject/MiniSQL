@@ -24,8 +24,12 @@ The Linux memory sampler uses private mappings from `/proc/PID/smaps_rollup`;
 Windows continues to use `PROCESS_MEMORY_COUNTERS_EX.PrivateUsage`.
 The measured 2026-08-26 Windows/WSL2 comparison retains the original Linux
 multi-client blocker and documents its subsequent pthread-runtime fix and
-successful 1/2/4/8-client functional rerun in
+successful 1/2/4/8-client functional rerun. It also contains the completed
+three-trial 1/4/8-client Windows/Linux performance follow-up in
 [`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](WINDOWS_LINUX_COMPARISON_2026-08-26.md).
+The parent runner and its network subprocess disable local Python bytecode before
+importing their memory sampler so documented benchmark runs do not leave
+source-tree cache artifacts that would invalidate the release hygiene gate.
 
 `capacity_regression.py` provides restart-aware `1`, `5`, and `10` GiB profiles
 plus a fast `smoke` profile. Each process writes a bounded chunk, so the test

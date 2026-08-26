@@ -1151,6 +1151,50 @@ def _run_python_static(command: list[str], description: str, timeout: float = 12
     return base.normalized(completed.stdout)
 
 
+def validate_platform_compare_cache_hygiene() -> None:
+    """Proves that benchmark parent and child processes import helpers without writing bytecode."""
+    probe_root = BUILD_ROOT / "platform-compare-cache-probe"
+    base.clean_path(probe_root)
+    probe_root.mkdir(parents=True, exist_ok=True)
+    for name in ("platform_compare.py", "network_baseline.py", "capacity_regression.py"):
+        source = ROOT / "tests" / "performance" / name
+        (probe_root / name).write_bytes(source.read_bytes())
+    environment = os.environ.copy()
+    environment.pop("PYTHONDONTWRITEBYTECODE", None)
+    environment.pop("PYTHONPYCACHEPREFIX", None)
+    try:
+        for script_name in ("platform_compare.py", "network_baseline.py"):
+            completed = subprocess.run(
+                [sys.executable, str(probe_root / script_name), "--help"],
+                cwd=probe_root,
+                env=environment,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=30,
+            )
+            if completed.returncode != 0:
+                raise AcceptanceFailure(
+                    f"{script_name} cache-hygiene probe failed: "
+                    f"rc={completed.returncode} stdout={completed.stdout.strip()!r} "
+                    f"stderr={completed.stderr.strip()!r}"
+                )
+        forbidden = sorted(
+            path.relative_to(probe_root).as_posix()
+            for path in probe_root.rglob("*")
+            if path.name == "__pycache__" or path.suffix.lower() in {".pyc", ".pyo"}
+        )
+        if forbidden:
+            raise AcceptanceFailure(
+                f"Platform comparison wrote forbidden Python cache artifacts: {forbidden}"
+            )
+    finally:
+        base.clean_path(probe_root)
+
+
 def validate_reference_vectors() -> None:
     """Validates independent binary, parser and security reference vectors."""
     if PHASE_COUNT != 106:
@@ -1183,6 +1227,28 @@ def validate_reference_vectors() -> None:
         raise AcceptanceFailure("M50 upgrade matrix version mismatch")
     if features.get("version") != VERSION or features.get("wireProtocolVersion") != 1:
         raise AcceptanceFailure("M50 feature matrix version mismatch")
+    expected_linux_readiness = (
+        "focused portable gate with concurrent multi-client server and native TLS; "
+        "full 106-phase release matrix remains Windows-specific"
+    )
+    if features.get("readiness", {}).get("linux-x64") != expected_linux_readiness:
+        raise AcceptanceFailure("Linux feature-matrix readiness does not match the validated portable gate")
+    concurrency_spec = (ROOT / "docs/spec/39-concurrent-sessions.md").read_text(encoding="utf-8")
+    normalized_concurrency_spec = re.sub(r"\s+", " ", concurrency_spec)
+    for stale_claim in (
+        "native socket path is not yet reliable",
+        "blocks claiming concurrent Linux-server readiness",
+        "must not be described as full concurrent-server acceptance",
+    ):
+        if stale_claim in normalized_concurrency_spec:
+            raise AcceptanceFailure(f"Linux concurrency specification retains stale blocker: {stale_claim}")
+    for required_claim in (
+        "concurrent Linux-server readiness is no longer blocked",
+        "two successive waves of four simultaneous native clients",
+    ):
+        if required_claim not in normalized_concurrency_spec:
+            raise AcceptanceFailure(f"Linux concurrency specification is missing: {required_claim}")
+    validate_platform_compare_cache_hygiene()
 
     output = _run_python_static(
         [sys.executable, str(ROOT / "tools/replication/minisql_hot_replica.py"), "self-test"],
