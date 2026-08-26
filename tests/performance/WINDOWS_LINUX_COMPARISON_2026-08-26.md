@@ -289,7 +289,8 @@ python .\tests\performance\platform_compare.py `
   --client .\build\bin\minisql.exe `
   --data-root .\build\performance\platform-compare-20260826\windows-data `
   --output .\build\performance\platform-compare-20260826\windows.json `
-  --trials 3 --storage-mib 64 --payload-kib 1024 --verify-trials 5 `
+  --trials 3 --storage-mib 64 --storage-chunk-mib 64 `
+  --payload-kib 1024 --verify-trials 5 `
   --concurrency 1,4,8 --one-shot-per-client 10 `
   --count-statements 500 --sum-statements 200
 ```

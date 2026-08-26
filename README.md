@@ -237,37 +237,123 @@ The profile validates automatic WAL reset, recovery between every chunk,
 indexed restart latency, projection/range pushdown, the configured read cache,
 large overflow values, and post-`VACUUM` data integrity. See
 [`tests/performance/README.md`](tests/performance/README.md) for the `5` and
-`10` GiB commands and tunable guardrails. The measured post-native-CRC baseline,
-including 1 GiB integrity checks and 1/2/4/8-client scaling, is in
+`10` GiB commands and tunable guardrails. The earlier optimization history is in
 [`PERFORMANCE_BASELINE_2026-08-23.md`](tests/performance/PERFORMANCE_BASELINE_2026-08-23.md).
 
-Sequential scans persist a checksummed `<table>.heap-pages` sidecar containing
-only physical heap-page numbers. Existing databases build it lazily once;
-subsequent processes skip unrelated overflow/free pages, while file growth
-classifies only the new tail. The sidecar is derived, atomically replaced, and
-automatically rebuilt if missing, stale, or corrupt. On the retained 1 GiB
-capacity database, full logical verification improved from 1,368,140 ms before
-this index to 71,453 ms for the one-time legacy build and 1,093 ms after restart.
+## Performance evaluation
 
-`minisql-check.exe` consumes rows and active B+ tree leaves through forward-only
-cursors. It still decodes every row, traverses every referenced overflow chain,
-and cross-checks every derived index entry, but retains only one row, one heap
-page, and one index leaf at a time. The retained 1 GiB reference check therefore
-uses 98.1 MiB peak private memory instead of 1,237.7 MiB.
+The current reference was measured on 2026-08-26 from MiniSQL revision
+`12997258408e27ab2f4839f52782b844eeade5a5` and MiniLangCompilerPy revision
+`21dbc2e99097099ee1d8e9e8168e46836e49b6a3` (compiler version 1.1.0). Both
+PE and ELF applications were rebuilt immediately before measurement.
 
-CRC-32C delegates to MiniLang's CPU-dispatched native checksum primitive. It
-uses SSE4.2 qword processing when supported and an exact reflected Castagnoli
-table fallback otherwise. Existing databases, WAL, backups, protocol frames,
-and page checksums remain bit-for-bit compatible. On the retained 1 GiB database
-the fully streaming consistency check completed in 3,683 ms, versus 35,216 ms
-with MiniSQL's former table loop and 208,515 ms with its bit-at-a-time loop.
+### Test system
 
-The current cross-platform benchmark compares storage, restart, one-shot, and
-persistent workloads. It retains the original Linux multi-client failure as
-historical evidence and records the verified runtime fix and 1/2/4/8-client
-follow-up. See
-[`WINDOWS_LINUX_COMPARISON_2026-08-26.md`](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md)
-for method, raw-data hashes, results, and WSL2 limitations.
+| Item | Reference system |
+| --- | --- |
+| Processor | AMD Ryzen 9 9900X, 12 cores / 24 logical processors |
+| Reported maximum clock | 4.40 GHz |
+| Host memory | 61.6 GiB installed |
+| Windows | Windows 11 Pro x64, version 10.0.26200, build 26200; Python 3.11.9 |
+| Windows storage | Lexar SSD NQ790 2 TB NVMe, NTFS |
+| Power policy | Windows `Balanced` |
+| Linux | Ubuntu 24.04.4 LTS under WSL2, kernel 6.6.87.2, glibc 2.39; Python 3.12.3 |
+| Linux resources | 24 logical processors, 30.2 GiB visible memory, ext4 data volume |
+
+The large-data workload contains 1,024 rows with one 1 MiB external `TEXT`
+value per row: exactly 1 GiB of logical payload and 1,115,584,941 bytes
+(1,063.90 MiB) on disk. Each platform created three complete databases using
+32 MiB transactions with a close/reopen between chunks. Seven independent
+processes measured restart verification, point lookup, and the full offline
+checker. Network figures are medians of three server runs at 1, 4, and 8
+clients; each persistent client executed 500 `COUNT(*)` or 200 `SUM(id)`
+statements. Host filesystem caches were warm and were not force-flushed.
+
+Linux data lived on native WSL2 ext4, not `/mnt/c`. These figures therefore
+compare the current Windows PE and Linux ELF implementations on one host, but
+they are not a bare-metal Linux comparison or a production performance
+guarantee.
+
+### Large-data storage, verification, and CRC-32C
+
+| Measurement, median | Windows x64 | Linux x64 under WSL2 |
+| --- | ---: | ---: |
+| Durable 1 GiB insert, engine time | 78.636 s | 120.453 s |
+| Durable 1 GiB insert throughput | **13.02 MiB/s** | **8.50 MiB/s** |
+| Durable 1 GiB insert, process wall time | 81.505 s | 124.494 s |
+| First fresh-process semantic verification, engine / wall | 188 ms / 290 ms | 230 ms / 344 ms |
+| Warm restart semantic verification, engine / wall | **110 ms / 172 ms** | **223 ms / 367 ms** |
+| Indexed 1 MiB value lookup, engine / wall | **16 ms / 100 ms** | **83 ms / 214 ms** |
+| Full 1,063.90 MiB offline integrity check | **4.666 s / 228.0 MiB/s** | **3.902 s / 272.6 MiB/s** |
+| Native CRC-32C over 4 GiB | **313 ms / 12.78 GiB/s** | **320 ms / 12.50 GiB/s** |
+
+The CRC result is the median of seven runs over a 64 MiB buffer repeated 64
+times. Both targets returned checksum `4049696722`. The production primitive
+uses SSE4.2 qword processing on this CPU and retains the exact Castagnoli table
+fallback for CPUs without SSE4.2. The offline checker is stricter than the
+semantic verifier: it reads every external value, validates every overflow
+chain and checksum, and cross-checks all active B+ tree entries.
+
+### SQL request throughput
+
+Persistent throughput includes protocol framing and result handling over
+loopback but excludes process startup and reconnect per statement.
+
+| Query | Clients | Windows stmt/s | Linux/WSL2 stmt/s |
+| --- | ---: | ---: | ---: |
+| `COUNT(*)` | 1 | **225.650** | **172.870** |
+| `COUNT(*)` | 4 | **243.199** | **204.813** |
+| `COUNT(*)` | 8 | **248.125** | **204.569** |
+| `SUM(id)` | 1 | **12.056** | **12.088** |
+| `SUM(id)` | 4 | **25.826** | **22.723** |
+| `SUM(id)` | 8 | **17.718** | **14.568** |
+
+`COUNT(*)` uses MiniSQL's validated row-count fast path. `SUM(id)` scans and
+decodes the projected integer column across all 1,024 rows; projection pushdown
+correctly avoids loading the unrelated 1 MiB payload. The scan-heavy workload
+peaks at four clients on both targets and regresses at eight, while the cheap
+count path plateaus around four to eight clients.
+
+One-shot `COUNT(*)`, including client process startup, connect, request, result,
+and close, measured:
+
+| Concurrent clients | Windows requests/s | Linux/WSL2 requests/s |
+| ---: | ---: | ---: |
+| 1 | 27.019 | 29.834 |
+| 4 | 47.600 | 35.968 |
+| 8 | 49.743 | 36.917 |
+
+Applications should retain or pool connections when latency matters.
+
+### Peak private memory
+
+| Process/phase, median peak | Windows x64 | Linux x64 under WSL2 |
+| --- | ---: | ---: |
+| One 32 MiB durable insert worker | 332.52 MiB | 270.11 MiB |
+| First fresh-process semantic verification | 130.67 MiB | 65.62 MiB |
+| Warm restart semantic verification | 114.39 MiB | 54.94 MiB |
+| Indexed 1 MiB value lookup | 98.11 MiB | 31.82 MiB |
+| Full offline integrity checker | 146.91 MiB | 81.36 MiB |
+| Server during persistent `COUNT(*)` | 115.21 MiB | 58.52 MiB |
+| Server during persistent `SUM(id)` | 164.05 MiB | 119.98 MiB |
+
+Windows memory is `PROCESS_MEMORY_COUNTERS_EX.PrivateUsage`; Linux is the sum
+of private mappings from `/proc/<pid>/smaps_rollup`. They are the closest
+practical per-process counters available to the harness, not identical kernel
+accounting definitions. Every phase remained below the 512 MiB regression
+ceiling.
+
+The reproducible driver is
+[`tests/performance/platform_compare.py`](tests/performance/platform_compare.py).
+It accepts `--storage-mib 1024 --storage-chunk-mib 32` for this workload. The
+raw reference reports had SHA-256
+`0651EE2E78E80DF4478211F63BADD5806C1E045AFE5608B3C9356902592FDE60`
+(Windows) and
+`FBFE55085946D36D4C1BA4AEF184D2BBE8F671CE68198806081B916F308B1E5B`
+(Linux). See the dated
+[`Windows/Linux comparison`](tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md)
+for the earlier 64 MiB baseline, historical Linux transport failure, its
+verified fix, and additional WSL2 limitations.
 
 ## Build the binary distribution
 

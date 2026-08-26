@@ -3,10 +3,11 @@
 Repeatable storage and query benchmarks live here. Correctness tests remain mandatory;
 performance measurements may never replace durability or semantic validation.
 
-The current measured reference is documented in
-[`PERFORMANCE_BASELINE_2026-08-23.md`](PERFORMANCE_BASELINE_2026-08-23.md). It
-covers bounded large-value writes, repeated fresh-process reads, the full 1 GiB
-offline checker, native CRC32C throughput, and 1/2/4/8-client loopback scaling.
+The current 1 GiB Windows/Linux reference, test-system description, storage and
+checker speed, CRC-32C throughput, SQL request rates, and memory peaks are in the
+root README's [Performance evaluation](../../README.md#performance-evaluation).
+[`PERFORMANCE_BASELINE_2026-08-23.md`](PERFORMANCE_BASELINE_2026-08-23.md)
+retains the earlier optimization baseline and implementation history.
 
 The current compiler performance-fix verification is documented in
 [`COMPILER_UPDATE_21C1BEA_2026-08-25.md`](COMPILER_UPDATE_21C1BEA_2026-08-25.md).
@@ -20,6 +21,11 @@ retained in
 persistent loopback workloads for one already-built native target. Invoke it
 once from Windows Python and once from Linux Python, using target-native data
 directories, then retain the two raw JSON files with the comparison report.
+Large storage workloads are split into restart-sized processes with
+`--storage-chunk-mib` (32 MiB by default), so a 1/5/10 GiB comparison does not
+construct one multi-gigabyte SQL statement or confuse statement-building memory
+with database capacity. Each report retains the per-chunk timings as well as
+their total engine time, wall time, and maximum private-memory usage.
 The Linux memory sampler uses private mappings from `/proc/PID/smaps_rollup`;
 Windows continues to use `PROCESS_MEMORY_COUNTERS_EX.PrivateUsage`.
 The measured 2026-08-26 Windows/WSL2 comparison retains the original Linux

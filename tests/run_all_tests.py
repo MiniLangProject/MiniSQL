@@ -1182,6 +1182,35 @@ def validate_platform_compare_cache_hygiene() -> None:
                     f"rc={completed.returncode} stdout={completed.stdout.strip()!r} "
                     f"stderr={completed.stderr.strip()!r}"
                 )
+        chunk_probe = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                "-c",
+                (
+                    "import platform_compare as p; "
+                    "chunks=p.storage_chunks(1024,1048576,32); "
+                    "assert len(chunks)==32 and chunks[0]==(1,32) "
+                    "and chunks[-1]==(993,32) and sum(n for _,n in chunks)==1024; "
+                    "assert p.storage_chunks(65,1048576,32)==[(1,32),(33,32),(65,1)]"
+                ),
+            ],
+            cwd=probe_root,
+            env=environment,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=30,
+        )
+        if chunk_probe.returncode != 0:
+            raise AcceptanceFailure(
+                "Platform comparison chunk planner failed: "
+                f"rc={chunk_probe.returncode} stdout={chunk_probe.stdout.strip()!r} "
+                f"stderr={chunk_probe.stderr.strip()!r}"
+            )
         forbidden = sorted(
             path.relative_to(probe_root).as_posix()
             for path in probe_root.rglob("*")

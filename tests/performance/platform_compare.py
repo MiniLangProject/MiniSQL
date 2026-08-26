@@ -105,6 +105,23 @@ def output_integer(output: str, name: str) -> int:
     return int(match.group(1))
 
 
+def storage_chunks(
+    total_rows: int, payload_bytes: int, maximum_chunk_mib: int
+) -> list[tuple[int, int]]:
+    """Split a large payload into bounded restart-sized worker invocations."""
+
+    rows_per_chunk = max(
+        1, (maximum_chunk_mib * 1024 * 1024) // payload_bytes
+    )
+    chunks: list[tuple[int, int]] = []
+    first_id = 1
+    while first_id <= total_rows:
+        row_count = min(rows_per_chunk, total_rows - first_id + 1)
+        chunks.append((first_id, row_count))
+        first_id += row_count
+    return chunks
+
+
 def database_path(output: str) -> Path:
     """Read the initialized database path emitted by the native worker."""
 
@@ -183,6 +200,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--trials", type=int, default=3)
     parser.add_argument("--storage-mib", type=int, default=64)
+    parser.add_argument("--storage-chunk-mib", type=int, default=32)
     parser.add_argument("--payload-kib", type=int, default=1024)
     parser.add_argument("--verify-trials", type=int, default=5)
     parser.add_argument("--concurrency", default="1,4,8")
@@ -198,10 +216,17 @@ def main() -> int:
     for artifact in (worker, server, client):
         if not artifact.is_file():
             raise ComparisonFailure(f"benchmark artifact is missing: {artifact}")
-    if min(args.trials, args.storage_mib, args.payload_kib, args.verify_trials) < 1:
+    if min(
+        args.trials,
+        args.storage_mib,
+        args.storage_chunk_mib,
+        args.payload_kib,
+        args.verify_trials,
+    ) < 1:
         raise ComparisonFailure("trial counts and storage sizes must be positive")
     rows = math.ceil((args.storage_mib * 1024) / args.payload_kib)
     payload_bytes = args.payload_kib * 1024
+    chunks = storage_chunks(rows, payload_bytes, args.storage_chunk_mib)
     data_root = args.data_root.resolve()
     if data_root.exists() and any(data_root.iterdir()):
         raise ComparisonFailure(f"data root must be empty or absent: {data_root}")
@@ -217,17 +242,28 @@ def main() -> int:
             [str(worker), "init", str(trial_root), f"platform_{trial}"], 300.0
         )
         database = database_path(str(initialized["stdout"]))
-        inserted = run_monitored(
-            [
-                str(worker),
-                "insert",
-                str(database),
-                "1",
-                str(rows),
-                str(payload_bytes),
-            ],
-            900.0,
-        )
+        inserted_chunks: list[dict[str, object]] = []
+        for first_id, row_count in chunks:
+            inserted = run_monitored(
+                [
+                    str(worker),
+                    "insert",
+                    str(database),
+                    str(first_id),
+                    str(row_count),
+                    str(payload_bytes),
+                ],
+                900.0,
+            )
+            inserted_chunks.append(
+                {
+                    "firstId": first_id,
+                    "rows": row_count,
+                    "wallSeconds": inserted["wallSeconds"],
+                    "engineMs": output_integer(str(inserted["stdout"]), "elapsedMs"),
+                    "peakPrivateBytes": inserted["peakPrivateBytes"],
+                }
+            )
         verified = run_monitored(
             [str(worker), "verify", str(database), str(rows), str(payload_bytes)],
             900.0,
@@ -237,9 +273,14 @@ def main() -> int:
                 "trial": trial,
                 "database": str(database),
                 "initializeWallSeconds": initialized["wallSeconds"],
-                "insertWallSeconds": inserted["wallSeconds"],
-                "insertEngineMs": output_integer(str(inserted["stdout"]), "elapsedMs"),
-                "insertPeakPrivateBytes": inserted["peakPrivateBytes"],
+                "insertWallSeconds": round(
+                    sum(float(chunk["wallSeconds"]) for chunk in inserted_chunks), 6
+                ),
+                "insertEngineMs": sum(int(chunk["engineMs"]) for chunk in inserted_chunks),
+                "insertPeakPrivateBytes": max(
+                    int(chunk["peakPrivateBytes"]) for chunk in inserted_chunks
+                ),
+                "insertChunks": inserted_chunks,
                 "coldVerifyWallSeconds": verified["wallSeconds"],
                 "coldVerifyEngineMs": output_integer(str(verified["stdout"]), "elapsedMs"),
                 "coldVerifyPeakPrivateBytes": verified["peakPrivateBytes"],
@@ -314,6 +355,7 @@ def main() -> int:
         "parameters": {
             "trials": args.trials,
             "storageMiB": args.storage_mib,
+            "storageChunkMiB": args.storage_chunk_mib,
             "payloadKiB": args.payload_kib,
             "rows": rows,
             "verifyTrials": args.verify_trials,
