@@ -44,11 +44,12 @@ paths.
 
 ## Query planning and diagnostics
 
-`ANALYZE [table]` refreshes exact row/page counts and bounded sampled column
-statistics. `EXPLAIN SELECT ...` returns the chosen executable operator tree.
+`ANALYZE [table]` refreshes exact row/page counts, bounded sampled column
+histograms/most-common values, and joint distinct counts for composite index
+keys. `EXPLAIN SELECT ...` returns the chosen executable operator tree.
 `EXPLAIN ANALYZE SELECT ...` executes it and appends elapsed milliseconds,
 buffer-cache hit/read deltas, and actual row count. Plans may contain
-`Index Scan`, `Hash Join`, `Index Nested Loop Join`, `Streaming Aggregate`,
+`Index Scan`, `Index Only Scan`, `Dynamic Join Order`, `Hash Join`, `Index Nested Loop Join`, `Streaming Aggregate`,
 `Streaming Join Count`, `Count Slots`, `Top-N`, or `External Merge Sort` operators.
 
 ## Schemas and metadata

@@ -2370,6 +2370,7 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
   if requiredColumns is not void then firstMask = requiredColumns[0] end if
   output = void
   usedPlannedIndex = false
+  if firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then output = dml.plannedIndexOnlyRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
   if firstPlan.accessKind == execution_plan.ACCESS_INDEX then output = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
   if output is void then
     output = scanBoundSource(engine, bound.sources[0], pageTransaction, sourceOffset, sourceLimit, firstMask)
@@ -2758,8 +2759,9 @@ function selectProjected(engine, bound, pageTransaction)
   if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_STREAM then
     if optimized.execution.constantEmpty then return aggregate.projectStreamingRows([], bound.items, optimized.execution.wherePredicate) end if
     firstPlan = optimized.execution.sources[0]
-    if firstPlan.accessKind == execution_plan.ACCESS_INDEX then
-      indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName)
+    if firstPlan.accessKind == execution_plan.ACCESS_INDEX or firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then
+      indexedRows = void
+      if firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then indexedRows = dml.plannedIndexOnlyRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) else indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
       if indexedRows is not void then return aggregate.projectStreamingRows(indexedRows, bound.items, optimized.execution.wherePredicate) end if
     end if
     mask = void
@@ -2924,13 +2926,50 @@ end function
 // Implements analyze table for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
+// Returns distinct composite index keys eligible for joint NDV statistics.
+// ANALYZE limits persisted groups to eight columns so the v4 catalog remains
+// compact and deterministic even when applications define very wide indexes.
+function analyzeColumnGroups(engine, table)
+  schemas = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  tableSchema = schema_history.findTableSchema(schemas, table.tableId)
+  if tableSchema is void then return [] end if
+  output = []
+  for each constraint in tableSchema.constraints
+    if constraint.indexId > 0 and len(constraint.columns) >= 2 and len(constraint.columns) <= 8 then
+      indexes = []
+      valid = true
+      for each columnName in constraint.columns
+        columnIndex = binder.findColumnIndex(table, columnName)
+        if columnIndex < 0 then valid = false; break end if
+        indexes = indexes + [columnIndex]
+      end for
+      duplicate = false
+      if valid then
+        for each existing in output
+          same = len(existing) == len(indexes)
+          if same and len(indexes) > 0 then
+            for index = 0 to len(indexes) - 1
+              if existing[index] != indexes[index] then same = false; break end if
+            end for
+          end if
+          if same then duplicate = true; break end if
+        end for
+      end if
+      if valid and not duplicate then output = output + [indexes] end if
+    end if
+  end for
+  return output
+end function
+
+// Refreshes one table's exact population, bounded sample distributions, joint
+// composite-key statistics, and physical page count in the supplied catalog.
 function analyzeTable(engine, state, table)
   populationRows = scan.countTableRowsCached(engine.database.path, table, void, engine.database.readCache)
   rows = scan.sampleTableRowsCached(engine.database.path, table, populationRows, ANALYZE_SAMPLE_ROWS, engine.database.readCache)
   tableFile = paged_file.open(catalog.tableFilePath(engine.database.path, table.tableId))
   pageCount = tableFile.pageCount
   paged_file.close(tableFile)
-  return statistics.replaceTable(state, statistics.analyzeSample(table, populationRows, rows, pageCount))
+  return statistics.replaceTable(state, statistics.analyzeSampleWithGroups(table, populationRows, rows, pageCount, analyzeColumnGroups(engine, table)))
 end function
 
 // Executes analyze using the supplied inputs.
@@ -2983,7 +3022,7 @@ function executeExplain(engine, statement)
   lines = [prefix] + lines
   // Preserve the established first-line contract consumed by the CLI and GUI
   // while the following rows expose the richer physical plan.
-  if len(optimized.execution.sources) > 0 and optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX then
+  if len(optimized.execution.sources) > 0 and (optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX or optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX_ONLY) then
     lines = ["Index Seek rows=" + optimized.execution.sources[0].estimatedRows] + lines
   end if
   if statement.analyze then

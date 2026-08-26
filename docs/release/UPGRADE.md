@@ -14,10 +14,12 @@ The native CRC-32C acceleration is an executable-only change. It preserves the
 Castagnoli polynomial, initial/final XOR, and incremental state exactly, so it
 requires no database rewrite and remains readable by earlier format-1 binaries.
 
-Optimizer statistics use sidecar format 3 to persist the bounded sample count
-and compact signed-32-bit integral/date range bounds. The current reader accepts
-format 1 as an exact full-table sample and format 2 as sampled statistics without
-range bounds. A subsequent `ANALYZE` atomically writes format 3. This does not
+Optimizer statistics use sidecar format 4 to persist the bounded sample count,
+compact signed-32-bit integral/date range bounds, cumulative histograms,
+most-common values, and joint distinct counts for composite index keys. The
+current reader accepts format 1 as an exact full-table sample, format 2 as
+sampled statistics without range bounds, and format 3 as bounds without the new
+distributions. A subsequent `ANALYZE` atomically writes format 4. This does not
 change database page format 1 or wire protocol 1. Older MiniSQL binaries do not
-understand a format-3 statistics sidecar; remove only
+understand a format-4 statistics sidecar; remove only
 `catalog/statistics.tbl` and rerun `ANALYZE` after a deliberate downgrade.

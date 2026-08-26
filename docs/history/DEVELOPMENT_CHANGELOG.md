@@ -1,5 +1,18 @@
 # MiniSQL changelog
 
+## 1.0.0 — advanced optimizer statistics and access paths
+
+- upgraded the CRC-protected advisory statistics sidecar to format 4 with
+  bounded integral/date histograms, most-common values, and joint distinct
+  counts for composite index keys while retaining readers for formats 1–3;
+- replaced greedy join selection through eight sources with a bounded
+  Selinger-style subset dynamic program and retained a deterministic fallback
+  for larger or unsupported graphs;
+- added costed key-covering `Index Only Scan` execution that reconstructs typed
+  rows from B+ tree keys without opening heap or overflow pages;
+- added skew, correlation, migration, covering-scan, and dynamic-join regression
+  coverage without changing database page format 1 or wire protocol 1.
+
 ## 1.0.0 — cost-based optimizer and bounded execution update
 
 - added a typed executable plan shared by `EXPLAIN` and runtime execution;

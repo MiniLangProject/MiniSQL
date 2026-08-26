@@ -32,6 +32,21 @@ struct OptimizedPlan
   execution
 end struct
 
+// Best known left-deep join prefix for one source subset. The bounded dynamic
+// program stores one state per bit mask and therefore avoids factorial search.
+struct JoinOrderState
+  // Bit set for every source already present in the prefix.
+  sourceMask
+  // Source that seeds the executable left-deep plan.
+  startSource
+  // Bound join predicates in physical attachment order.
+  joinIndexes
+  // Source attached by each corresponding join predicate.
+  sourceIndexes
+  // Cumulative cost and cardinality of this prefix.
+  estimate
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -95,6 +110,22 @@ function columnStats(found, columnIndex)
   return void
 end function
 
+// Finds exact ordered joint-column statistics, normally produced for a
+// composite index key by ANALYZE.
+function columnGroupStats(found, columnIndexes)
+  if found is void or typeof(found.columnGroups) != "array" then return void end if
+  for each group in found.columnGroups
+    same = len(group.columnIndexes) == len(columnIndexes)
+    if same and len(columnIndexes) > 0 then
+      for index = 0 to len(columnIndexes) - 1
+        if group.columnIndexes[index] != columnIndexes[index] then same = false; break end if
+      end for
+    end if
+    if same then return group end if
+  end for
+  return void
+end function
+
 // Multiplies a cardinality by a bounded fraction without overflowing the
 // native integer. Dividing the remainder and denominator together only occurs
 // in the exceptional near-limit case and preserves a close conservative ratio.
@@ -113,10 +144,60 @@ function scaleFraction(value, numerator, denominator)
   return result
 end function
 
-// Estimates an integral inequality from persisted sampled bounds. The result
-// first removes the estimated NULL fraction and then assumes a uniform value
-// distribution inside the observed range. Histograms can replace this local
-// policy later without changing the physical-plan contract.
+// Interpolates an inclusive integral boundary within the persisted cumulative
+// histogram and returns a whole-table population estimate.
+function histogramLessOrEqual(current, candidate)
+  if typeof(current.histogramBounds) != "array" or len(current.histogramBounds) == 0 then return void end if
+  if candidate < current.minimumIntegral then return 0 end if
+  if candidate >= current.maximumIntegral then return current.histogramCounts[len(current.histogramCounts) - 1] end if
+  previousBound = current.minimumIntegral - 1
+  previousCount = 0
+  for index = 0 to len(current.histogramBounds) - 1
+    upperBound = current.histogramBounds[index]
+    upperCount = current.histogramCounts[index]
+    if candidate <= upperBound then
+      width = upperBound - previousBound
+      position = candidate - previousBound
+      bucketRows = upperCount - previousCount
+      return previousCount + scaleFraction(bucketRows, position, width)
+    end if
+    previousBound = upperBound
+    previousCount = upperCount
+  end for
+  return previousCount
+end function
+
+// Estimates equality from the MCV list and distributes the remaining
+// population uniformly across non-MCV distinct values.
+function equalityRows(inputRows, tableRows, current, literal)
+  if current is void or literal is void or literal.isNull or tableRows <= 0 then return void end if
+  if typeof(literal.value) == "int" and typeof(current.mostCommonValues) == "array" then
+    for index = 0 to len(current.mostCommonValues) - 1
+      if current.mostCommonValues[index] == literal.value then return scaleFraction(current.mostCommonCounts[index], inputRows, tableRows) end if
+    end for
+  end if
+  if current.distinctCount <= 0 then return void end if
+  nonNullRows = tableRows - current.nullCount
+  commonRows = 0
+  commonDistinct = 0
+  if typeof(current.mostCommonCounts) == "array" then
+    commonDistinct = len(current.mostCommonCounts)
+    for each count in current.mostCommonCounts
+      commonRows = commonRows + count
+    end for
+  end if
+  remainingDistinct = current.distinctCount - commonDistinct
+  if remainingDistinct <= 0 then return 0 end if
+  remainingRows = nonNullRows - commonRows
+  if remainingRows < 0 then remainingRows = 0 end if
+  estimate = integerDivide(remainingRows, remainingDistinct)
+  estimate = scaleFraction(estimate, inputRows, tableRows)
+  if estimate == 0 and inputRows > 0 and remainingRows > 0 then estimate = 1 end if
+  return estimate
+end function
+
+// Estimates an integral inequality from a cumulative histogram, with a uniform
+// interpolation inside each bucket and a bounds-only fallback for v1-v3 data.
 function integralRangeRows(inputRows, tableRows, current, operator, literal)
   if current is void or not current.hasIntegralBounds or literal is void or literal.isNull or typeof(literal.value) != "int" then return void end if
   if tableRows <= 0 then return 0 end if
@@ -124,6 +205,21 @@ function integralRangeRows(inputRows, tableRows, current, operator, literal)
   minimum = current.minimumIntegral
   maximum = current.maximumIntegral
   candidate = literal.value
+  histogramEstimate = void
+  if operator == "<=" then histogramEstimate = histogramLessOrEqual(current, candidate) end if
+  if operator == "<" then histogramEstimate = histogramLessOrEqual(current, candidate - 1) end if
+  if operator == ">" then
+    lessOrEqual = histogramLessOrEqual(current, candidate)
+    if lessOrEqual is not void then histogramEstimate = tableRows - current.nullCount - lessOrEqual end if
+  end if
+  if operator == ">=" then
+    less = histogramLessOrEqual(current, candidate - 1)
+    if less is not void then histogramEstimate = tableRows - current.nullCount - less end if
+  end if
+  if histogramEstimate is not void then
+    if histogramEstimate < 0 then histogramEstimate = 0 end if
+    return scaleFraction(histogramEstimate, inputRows, tableRows)
+  end if
   span = maximum - minimum + 1
   numerator = 0
   if operator == ">=" then
@@ -150,22 +246,51 @@ function integralRangeRows(inputRows, tableRows, current, operator, literal)
   return estimated
 end function
 
+// Selects the widest complete equality group available for a predicate.
+function equalityColumnGroup(source, found, predicate)
+  if found is void or typeof(found.columnGroups) != "array" then return void end if
+  selected = void
+  for each group in found.columnGroups
+    complete = true
+    for each localIndex in group.columnIndexes
+      comparison = rewrites.comparisonForColumn(predicate, source.offset + localIndex)
+      if not comparison[0] or comparison[1] != "=" or comparison[2] is void or comparison[2].isNull then complete = false; break end if
+    end for
+    if complete and group.distinctCount > 0 and (selected is void or len(group.columnIndexes) > len(selected.columnIndexes)) then selected = group end if
+  end for
+  return selected
+end function
+
 // Estimates a pushed predicate with available NDV statistics, retaining the
 // conservative M17 heuristic for unsupported expression shapes.
 function predicateRows(source, found, predicate, fallbackRows)
   if predicate is void then return fallbackRows end if
   if found is void then return rewrites.estimateFilteredRows(fallbackRows, predicate) end if
   output = fallbackRows
+  matchedGroup = equalityColumnGroup(source, found, predicate)
+  if matchedGroup is not void then
+    output = integerDivide(fallbackRows, matchedGroup.distinctCount)
+    if output == 0 and fallbackRows > 0 then output = 1 end if
+  end if
   for each conjunct in rewrites.conjuncts(predicate)
     estimated = false
     for localIndex = 0 to len(source.table.columns) - 1
       comparison = rewrites.comparisonForColumn(conjunct, source.offset + localIndex)
       if comparison[0] then
+        coveredByGroup = false
+        if matchedGroup is not void and comparison[1] == "=" then
+          for each groupIndex in matchedGroup.columnIndexes
+            if groupIndex == localIndex then coveredByGroup = true; break end if
+          end for
+        end if
+        if coveredByGroup then estimated = true; break end if
         if comparison[2] is not void and comparison[2].isNull then return 0 end if
         current = columnStats(found, localIndex)
         if current is not void and comparison[1] == "=" and current.distinctCount > 0 then
-          output = integerDivide(output, current.distinctCount)
-          if output == 0 and fallbackRows > 0 then output = 1 end if
+          equalityEstimate = equalityRows(output, found.rowCount, current, comparison[2])
+          if equalityEstimate is void then equalityEstimate = integerDivide(output, current.distinctCount) end if
+          output = equalityEstimate
+          if output == 0 and fallbackRows > 0 and comparison[2] is not void and not comparison[2].isNull then output = 1 end if
         else if current is not void then
           ranged = integralRangeRows(output, found.rowCount, current, comparison[1], comparison[2])
           if ranged is void then output = rewrites.estimateFilteredRows(output, conjunct) else output = ranged end if
@@ -181,15 +306,57 @@ function predicateRows(source, found, predicate, fallbackRows)
   return output
 end function
 
+// Returns whether every column referenced by one expression belongs to an
+// index key. Global bound indexes are translated into the source-local domain.
+function expressionCoveredByIndex(expression, source, index)
+  if expression is void then return true end if
+  referenced = rewrites.collectColumnIndexes(expression, [])
+  if typeof(referenced) == "bool" then return false end if
+  for each boundIndex in referenced
+    localIndex = boundIndex - source.offset
+    if localIndex < 0 or localIndex >= len(source.table.columns) then return false end if
+    covered = false
+    for each keyIndex in index.columnIndexes
+      if keyIndex == localIndex then covered = true; break end if
+    end for
+    if not covered then return false end if
+  end for
+  return true
+end function
+
+// Recognizes a query fully answerable from an existing B+-tree key. MiniSQL
+// currently has no INCLUDE clause, so covering columns are exactly key columns.
+function indexCoversBound(bound, source, index, predicate)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or source.query is not void or len(bound.setOperations) != 0 or bound.windowQuery then return false end if
+  for each columnIndex in index.columnIndexes
+    if columnIndex < 0 or columnIndex >= len(source.table.columns) then return false end if
+    typeCode = source.table.columns[columnIndex].typeCode
+    decodable = typeCode == types.SqlTypeKind.Boolean or types.isIntegralKind(typeCode) or typeCode == types.SqlTypeKind.Decimal or typeCode == types.SqlTypeKind.Date or typeCode == types.SqlTypeKind.Time or typeCode == types.SqlTypeKind.Timestamp or types.isTextKind(typeCode) or types.isBinaryKind(typeCode)
+    if not decodable then return false end if
+  end for
+  if not expressionCoveredByIndex(predicate, source, index) or not expressionCoveredByIndex(bound.havingExpression, source, index) then return false end if
+  for each item in bound.items
+    if not expressionCoveredByIndex(item, source, index) then return false end if
+  end for
+  for each item in bound.groupExpressions
+    if not expressionCoveredByIndex(item, source, index) then return false end if
+  end for
+  for each item in bound.orderExpressions
+    if not expressionCoveredByIndex(item, source, index) then return false end if
+  end for
+  return true
+end function
+
 // Chooses the longest usable B+-tree prefix for a source predicate. Equality
 // may consume every index column; a range may consume only the leading column
 // because the current storage integration does not yet expose prefix ranges.
-function indexCandidate(source, predicate, state, found, rows, outputRows)
+function indexCandidate(bound, source, predicate, state, found, rows, outputRows)
   selected = void
   selectedPrefix = 0
   selectedUniqueLookup = false
   selectedRows = rows
   selectedCost = endian.MAX_MINILANG_INT
+  selectedCovering = false
   for each index in tableIndexes(state, source.table.tableId)
     prefix = 0
     allEquality = true
@@ -202,7 +369,9 @@ function indexCandidate(source, predicate, state, found, rows, outputRows)
         prefix = prefix + 1
         current = columnStats(found, localIndex)
         if current is not void and current.distinctCount > 0 then
-          candidateRows = integerDivide(candidateRows, current.distinctCount)
+          estimatedEquality = equalityRows(candidateRows, rows, current, comparison[2])
+          if estimatedEquality is void then estimatedEquality = integerDivide(candidateRows, current.distinctCount) end if
+          candidateRows = estimatedEquality
           if candidateRows == 0 and rows > 0 then candidateRows = 1 end if
         else
           candidateRows = rewrites.estimateFilteredRows(candidateRows, predicate)
@@ -221,27 +390,37 @@ function indexCandidate(source, predicate, state, found, rows, outputRows)
     end for
     usable = prefix > 0
     if len(index.columnIndexes) > 1 and (prefix != len(index.columnIndexes) or not allEquality) then usable = false end if
+    if usable and allEquality and prefix == len(index.columnIndexes) and len(index.columnIndexes) > 1 then
+      group = columnGroupStats(found, index.columnIndexes)
+      if group is not void and group.distinctCount > 0 then
+        candidateRows = integerDivide(rows, group.distinctCount)
+        if candidateRows == 0 and rows > 0 then candidateRows = 1 end if
+      end if
+    end if
     uniqueLookup = index.unique and allEquality and prefix == len(index.columnIndexes)
     if uniqueLookup then candidateRows = 1 end if
     if usable then
+      covering = indexCoversBound(bound, source, index, predicate)
       candidateCost = cost.indexScan(3, candidateRows, outputRows, uniqueLookup).total
+      if covering then candidateCost = cost.indexOnlyScan(3, candidateRows, outputRows, uniqueLookup).total end if
       if selected is void or candidateCost < selectedCost or (candidateCost == selectedCost and prefix > selectedPrefix) then
         selected = index
         selectedPrefix = prefix
         selectedUniqueLookup = uniqueLookup
         selectedRows = candidateRows
         selectedCost = candidateCost
+        selectedCovering = covering
       end if
     end if
   end for
-  return [selected, selectedPrefix, selectedUniqueLookup, selectedRows]
+  return [selected, selectedPrefix, selectedUniqueLookup, selectedRows, selectedCovering]
 end function
 
 // Scans plan using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function scanPlan(source, state, predicate, sourceIndex)
+function scanPlan(bound, source, state, predicate, sourceIndex)
   found = tableStats(state, source.table.tableId)
   rows = 1000
   pages = 100
@@ -258,16 +437,18 @@ function scanPlan(source, state, predicate, sourceIndex)
   selected = sequential
   accessKind = execution_plan.ACCESS_SEQUENTIAL
   indexName = ""
-  candidate = indexCandidate(source, predicate, state, found, rows, outputRows)
+  candidate = indexCandidate(bound, source, predicate, state, found, rows, outputRows)
   if candidate[0] is not void then
     // A complete equality probe of a unique index returns at most one row even
     // when ANALYZE statistics are absent. This semantic bound is stronger than
     // the generic predicate selectivity heuristic.
     if candidate[2] then outputRows = 1 end if
     indexed = cost.indexScan(3, candidate[3], outputRows, candidate[2])
+    if candidate[4] then indexed = cost.indexOnlyScan(3, candidate[3], outputRows, candidate[2]) end if
     if indexed.total < sequential.total then
       selected = indexed
       accessKind = execution_plan.ACCESS_INDEX
+      if candidate[4] then accessKind = execution_plan.ACCESS_INDEX_ONLY end if
       indexName = candidate[0].name
       detail = source.table.name + " index=" + indexName
     end if
@@ -417,7 +598,7 @@ end function
 // search. The smallest estimated source seeds the tree; each step attaches the
 // smallest unjoined source connected by one eligible equality edge. Outer,
 // cross, cyclic and non-binary predicates retain SQL order.
-function chooseJoinSequence(bound, sourceScans)
+function chooseJoinSequenceGreedy(bound, sourceScans)
   original = originalJoinSequence(bound)
   originalSources = originalJoinSources(bound)
   for each joined in bound.joins
@@ -474,6 +655,99 @@ function chooseJoinSequence(bound, sourceScans)
   return [output, outputSources, startSource, reordered]
 end function
 
+// Counts set source bits in a small join-enumeration mask.
+function sourceMaskCount(mask)
+  count = 0
+  remaining = mask
+  while remaining > 0
+    if (remaining & 1) != 0 then count = count + 1 end if
+    remaining = remaining >> 1
+  end while
+  return count
+end function
+
+// Finds a join edge that connects one candidate source to the current subset.
+// Pure tree-shaped INNER equijoin graphs have one such edge; when more than one
+// exists the lowest estimated output cardinality wins deterministically.
+function connectingJoin(bound, state, sourceIndex)
+  selected = -1
+  selectedRows = endian.MAX_MINILANG_INT
+  for joinIndex = 0 to len(bound.joins) - 1
+    references = rewrites.referencedSources(bound.joins[joinIndex].condition, bound.sources)
+    if references is not void and len(references) == 2 then
+      other = -1
+      if references[0] == sourceIndex and (state.sourceMask & (1 << references[1])) != 0 then other = references[1] end if
+      if references[1] == sourceIndex and (state.sourceMask & (1 << references[0])) != 0 then other = references[0] end if
+      if other >= 0 then
+        candidateRows = joinRows(bound, void, state.estimate.rows, 1, ast.JOIN_INNER, bound.joins[joinIndex].condition)
+        if selected < 0 or candidateRows < selectedRows then selected = joinIndex; selectedRows = candidateRows end if
+      end if
+    end if
+  end for
+  return selected
+end function
+
+// Enumerates the cheapest connected left-deep order for up to eight sources.
+// This is the classic Selinger subset dynamic program adapted to MiniSQL's
+// executor contract, which attaches one source per JoinPlan. Unsupported or
+// larger graphs retain the deterministic greedy implementation above.
+function chooseJoinSequence(bound, sourceScans, state)
+  original = originalJoinSequence(bound)
+  originalSources = originalJoinSources(bound)
+  sourceCount = len(bound.sources)
+  if sourceCount == 0 then return [original, originalSources, 0, false] end if
+  if sourceCount > 8 or len(bound.joins) != sourceCount - 1 then return chooseJoinSequenceGreedy(bound, sourceScans) end if
+  for each joined in bound.joins
+    if joined.joinType != ast.JOIN_INNER or not rewrites.isColumnEquality(joined.condition) then return [original, originalSources, 0, false] end if
+  end for
+  stateCount = 1 << sourceCount
+  best = array(stateCount, void)
+  for sourceIndex = 0 to sourceCount - 1
+    sourceEstimate = sourceScans[sourceIndex][1]
+    best[1 << sourceIndex] = JoinOrderState(1 << sourceIndex, sourceIndex, [], [], sourceEstimate)
+  end for
+  if sourceCount > 1 then
+    for prefixSize = 1 to sourceCount - 1
+      for mask = 1 to stateCount - 1
+      current = best[mask]
+      if current is not void and sourceMaskCount(mask) == prefixSize then
+        for sourceIndex = 0 to sourceCount - 1
+          sourceBit = 1 << sourceIndex
+          if (mask & sourceBit) == 0 then
+            joinIndex = connectingJoin(bound, current, sourceIndex)
+            if joinIndex >= 0 then
+              right = sourceScans[sourceIndex][1]
+              joined = bound.joins[joinIndex]
+              outputRows = joinRows(bound, state, current.estimate.rows, right.rows, joined.joinType, joined.condition)
+              nested = cost.nestedLoop(current.estimate, right, outputRows)
+              candidate = nested
+              if types.sameBase(joined.condition.left.typeInfo, joined.condition.right.typeInfo) then
+                hashed = cost.hashJoin(current.estimate, right, outputRows)
+                if hashed.total <= candidate.total then candidate = hashed end if
+              end if
+              nextMask = mask | sourceBit
+              existing = best[nextMask]
+              if existing is void or candidate.total < existing.estimate.total then
+                best[nextMask] = JoinOrderState(nextMask, current.startSource, current.joinIndexes + [joinIndex], current.sourceIndexes + [sourceIndex], candidate)
+              end if
+            end if
+          end if
+        end for
+      end if
+      end for
+    end for
+  end if
+  selected = best[stateCount - 1]
+  if selected is void then return chooseJoinSequenceGreedy(bound, sourceScans) end if
+  reordered = selected.startSource != 0
+  if len(selected.joinIndexes) > 0 then
+    for index = 0 to len(selected.joinIndexes) - 1
+      if selected.joinIndexes[index] != original[index] or selected.sourceIndexes[index] != originalSources[index] then reordered = true end if
+    end for
+  end if
+  return [selected.joinIndexes, selected.sourceIndexes, selected.startSource, reordered, true]
+end function
+
 // Builds the scan/join spine and its cumulative deterministic cost estimate.
 // Equality INNER/LEFT joins compare hash and nested-loop costs; unsupported join
 // shapes retain the semantic nested-loop fallback. Returns plan, cost, and stats-use flag.
@@ -484,9 +758,9 @@ function buildBase(bound, state, sourcePredicates)
   end if
   sourceScans = []
   for sourceIndex = 0 to len(bound.sources) - 1
-    sourceScans = sourceScans + [scanPlan(bound.sources[sourceIndex], state, sourcePredicates[sourceIndex], sourceIndex)]
+    sourceScans = sourceScans + [scanPlan(bound, bound.sources[sourceIndex], state, sourcePredicates[sourceIndex], sourceIndex)]
   end for
-  sequence = chooseJoinSequence(bound, sourceScans)
+  sequence = chooseJoinSequence(bound, sourceScans, state)
   first = sourceScans[sequence[2]]
   root = first[0]
   currentCost = first[1]
@@ -550,6 +824,9 @@ function buildBase(bound, state, sourcePredicates)
     used = used or right[2]
     stepIndex = stepIndex + 1
   end for
+  if len(sequence) > 4 and sequence[4] and len(bound.joins) > 0 then
+    root = physical_plan.PhysicalPlan("Dynamic Join Order", "sources=" + len(bound.sources), currentCost.rows, currentCost.total, [root])
+  end if
   return [root, currentCost, used, sourcePlans, joinPlans, sequence[3], sequence[2]]
 end function
 

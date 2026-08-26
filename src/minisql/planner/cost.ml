@@ -82,6 +82,19 @@ function indexScan(height, heapRows, outputRows, uniqueLookup)
   return estimate(startup, work, outputRows, "Index Scan")
 end function
 
+// Estimates an index-only scan whose key contains every column needed by the
+// predicate and projection. No heap page or overflow value is fetched.
+function indexOnlyScan(height, indexRows, outputRows, uniqueLookup)
+  validateRows(height, "indexOnlyScan", "height")
+  validateRows(indexRows, "indexOnlyScan", "indexRows")
+  validateRows(outputRows, "indexOnlyScan", "outputRows")
+  if typeof(uniqueLookup) != "bool" then return fail(INVALID_ARGUMENT, "indexOnlyScan", "uniqueLookup must be bool") end if
+  startup = 1 + height * 12
+  work = startup + indexRows + outputRows
+  if uniqueLookup and work > startup + 2 then work = startup + 2 end if
+  return estimate(startup, work, outputRows, "Index Only Scan")
+end function
+
 // Implements filter for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.

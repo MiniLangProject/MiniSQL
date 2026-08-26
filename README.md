@@ -88,15 +88,18 @@ intentionally retains a single physical writer per database.
 
 Every bound `SELECT` is lowered to a typed executable plan; `EXPLAIN` renders
 that same plan, so execution does not independently guess a different operator.
-The cost model uses persisted `ANALYZE` row/page counts and per-column null,
-distinct-value, width, and compact integral/date range estimates to choose sequential or B+ tree access,
+The cost model uses persisted `ANALYZE` row/page counts, per-column null,
+distinct-value and width estimates, integral/date histograms and most-common
+values, plus joint distinct counts for composite index keys to choose sequential or B+ tree access,
 nested-loop, index nested-loop or hash joins, hash aggregation, Top-N,
-in-memory sort or external merge sort. Pure inner equijoin graphs start with the
-smallest estimated relation and add the cheapest connected source while outer
-joins retain SQL order.
+in-memory sort or external merge sort. Connected inner-equijoin graphs of up to
+eight sources use a bounded Selinger-style subset search; larger graphs use the
+deterministic connected greedy fallback while outer joins retain SQL order.
 
 Deterministic predicates are folded and pushed to their single source;
-unreferenced external `TEXT`/`BLOB` columns are not materialized. Simple
+unreferenced external `TEXT`/`BLOB` columns are not materialized. A B+ tree key
+that contains every referenced column executes as an index-only scan without
+opening heap or overflow pages. Simple
 single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
 reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/
 `BOOL_AND`/`BOOL_OR` use fixed-size streaming accumulators, including eligible
@@ -109,7 +112,7 @@ attached sessions by DDL, `ANALYZE`, `VACUUM`, or `REINDEX`.
 `ANALYZE` counts the exact live population but samples at most 8,192 uniformly
 spaced rows for column distributions. `EXPLAIN ANALYZE` adds actual row count,
 elapsed milliseconds and buffer-cache hit/read deltas. Statistics remain
-advisory and CRC-32C protected; the version-3 reader accepts versions 1 and 2.
+advisory and CRC-32C protected; the version-4 reader accepts versions 1–3.
 
 ## Requirements
 
@@ -353,6 +356,19 @@ and close, measured:
 | 8 | 49.743 | 36.917 |
 
 Applications should retain or pool connections when latency matters.
+
+### Optimizer access-path microbenchmark
+
+The advanced optimizer revision was additionally measured on Windows against
+the same warm persistent-loopback fixture used during optimizer development:
+8,000 rows, one client, 200 statements per session, three independent server
+runs, and identical 200-row integer result shapes. Selecting only the filtered
+B+ tree key (`SELECT category ... WHERE category = 3`) used `Index Only Scan`
+and reached a median **98.899 statements/s**. Selecting `id` through the same
+filter required heap dereference and reached **80.140 statements/s**. Avoiding
+heap and overflow access was therefore **1.234x faster (+23.4%)** in this
+focused workload. This microbenchmark isolates access-path cost and is not a
+replacement for the 1 GiB end-to-end figures above.
 
 ### Peak private memory
 

@@ -17,12 +17,15 @@
 * Replication is asynchronous and operator-managed.
 * The external sort reduces peak memory but final query results are still
   materialized.
-* The cost optimizer uses row/page/null/distinct/width estimates plus sampled
-  signed-32-bit minimum/maximum bounds for integral and date ranges. It does not
-  yet persist equi-depth histograms, most-common-value lists, wide numeric/text
-  bounds, or multi-column correlation
-  statistics. Inner-equijoin ordering is a deterministic greedy graph search,
-  not exhaustive dynamic programming; outer joins retain SQL order. Execution
+* The cost optimizer uses row/page/null/distinct/width estimates, eight-bucket
+  cumulative histograms and eight most-common values for signed-32-bit integral
+  and date columns, plus joint distinct counts for composite index keys through
+  eight columns. It does not yet persist wide numeric/text distributions,
+  equi-depth histograms, multi-column MCV lists, or functional-dependency
+  statistics. Inner-equijoin ordering uses bounded left-deep dynamic programming
+  through eight sources and a deterministic greedy fallback above that limit;
+  bushy trees and outer-join reordering are not implemented. Index-only scans
+  cover B+ tree key columns; SQL `INCLUDE` columns are not implemented. Execution
   uses bounded batches and streaming fast paths where supported, including
   filtered scalar aggregates, fused single-table Top-N, and the final edge of
   reordered inner-equijoin `COUNT(*)`; other blocking joins/groups and

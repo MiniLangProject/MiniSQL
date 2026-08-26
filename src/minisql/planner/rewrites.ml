@@ -165,8 +165,9 @@ function collectColumnIndexes(expression, indexes)
   if not expressions.isBoundExpression(expression) then return false end if
   if expressions.isBoundAggregate(expression) then
     if expression.countStar then return indexes end if
-    if not collectColumnIndexes(expression.argument, indexes) then return false end if
-    return collectColumnIndexes(expression.separator, indexes)
+    current = collectColumnIndexes(expression.argument, indexes)
+    if typeof(current) == "bool" and not current then return false end if
+    return collectColumnIndexes(expression.separator, current)
   end if
   if expressions.isBaseBoundExpression(expression) then
     if expression.kind == expressions.BOUND_LITERAL then return indexes end if

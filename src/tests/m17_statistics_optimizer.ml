@@ -60,12 +60,30 @@ function main(args)
   testkit.record(state, not tableStats.columns[1].hasIntegralBounds, "text column omits compact integral bounds")
   testkit.equal(state, tableStats.columns[2].minimumIntegral, 10, "nullable integral minimum")
   testkit.equal(state, tableStats.columns[2].maximumIntegral, 40, "nullable integral maximum")
+  testkit.equal(state, len(tableStats.columns[0].histogramBounds), 8, "v4 integral histogram bucket count")
+  testkit.equal(state, tableStats.columns[0].histogramCounts[7], 4, "v4 histogram cumulative population")
+  testkit.equal(state, tableStats.columns[0].mostCommonValues[0], 1, "v4 deterministic MCV ordering")
+  testkit.equal(state, tableStats.columns[0].mostCommonCounts[0], 1, "v4 MCV population frequency")
+  testkit.equal(state, len(tableStats.columns[1].histogramBounds), 0, "text histogram remains deferred")
 
   encoded = statistics.encode(stats)
   decoded = statistics.decode(encoded)
   testkit.equal(state, decoded.generation, 1, "statistics roundtrip generation")
-  v2Payload = checksum.decodeEnvelope(encoded, statistics.magic(), 3, 50).payload
-  columnCount = endian.readU16LE(v2Payload, 32 + 24)
+  v4Payload = checksum.decodeEnvelope(encoded, statistics.magic(), 4, 50).payload
+  columnCount = endian.readU16LE(v4Payload, 32 + 24)
+  v3Payload = bytes(64 + columnCount * 32, 0)
+  copyBytes(v3Payload, 0, v4Payload, 0, 64)
+  endian.writeU16LE(v3Payload, 32 + 26, 0)
+  if columnCount > 0 then
+    for columnIndex = 0 to columnCount - 1
+      copyBytes(v3Payload, 64 + columnIndex * 32, v4Payload, 64 + columnIndex * 232, 32)
+    end for
+  end if
+  v3 = checksum.encodeEnvelope(statistics.magic(), 3, 50, 0, v3Payload)
+  v3Decoded = statistics.decode(v3)
+  testkit.record(state, v3Decoded.tables[0].columns[0].hasIntegralBounds, "v3 bounds remain readable")
+  testkit.equal(state, len(v3Decoded.tables[0].columns[0].histogramBounds), 0, "v3 migration does not invent histograms")
+  v2Payload = bytes(v3Payload)
   if columnCount > 0 then
     for columnIndex = 0 to columnCount - 1
       columnOffset = 64 + columnIndex * 32
@@ -90,9 +108,9 @@ function main(args)
   damaged = bytes(encoded)
   damaged[len(damaged) - 1] = damaged[len(damaged) - 1] ^ 1
   testkit.errorCode(state, try(statistics.decode(damaged)), 9004, "statistics CRC detects corruption")
-  invalidCountsPayload = checksum.decodeEnvelope(encoded, statistics.magic(), 3, 50).payload
+  invalidCountsPayload = checksum.decodeEnvelope(encoded, statistics.magic(), 4, 50).payload
   endian.writeU64LE(invalidCountsPayload, 64 + 4, endian.uint64FromInt(5))
-  invalidCounts = checksum.encodeEnvelope(statistics.magic(), 3, 50, 0, invalidCountsPayload)
+  invalidCounts = checksum.encodeEnvelope(statistics.magic(), 4, 50, 0, invalidCountsPayload)
   testkit.errorCode(state, try(statistics.decode(invalidCounts)), 9004, "statistics reject column counts beyond table population")
 
   after = executeOne(engine, "EXPLAIN SELECT category, reading FROM measurement WHERE reading >= 20 ORDER BY category")

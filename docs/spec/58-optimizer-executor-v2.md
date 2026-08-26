@@ -14,7 +14,11 @@ subqueries, and outer-join predicates remain at their semantic position.
 The optimizer compares sequential and B+ tree scan cost. Equality and range
 predicates may select indexes; complete unique equality probes have a semantic
 upper bound of one row. Non-covering index candidates reuse one heap/schema
-reader for the complete lookup instead of reopening it per entry. Repeated
+reader for the complete lookup instead of reopening it per entry. When every
+column referenced by the predicate, projection, grouping, aggregate, and order
+key belongs to the selected B+ tree key, an `Index Only Scan` decodes those key
+values directly and does not open heap or overflow pages. Floating-point key
+encodings conservatively retain the heap fallback. Repeated
 top-level plans use their exact SQL text while nested plans use canonical AST
 text in a bounded 64-entry per-session cache. A shared planning epoch invalidates every attached session
 after DDL, ANALYZE, VACUUM, or REINDEX.
@@ -24,9 +28,10 @@ after DDL, ANALYZE, VACUUM, or REINDEX.
 INNER and LEFT joins whose predicate is a supported equality between one left
 and one right column may use a deterministic hash table or an index nested
 loop. The smaller hash input is selected as build side without changing bound
-column order. Pure binary INNER equijoin graphs use a deterministic greedy
-enumerator: the smallest estimated source seeds the plan, followed by the
-smallest connected source. Rows with SQL `NULL` join keys do not match. Other
+column order. Connected INNER equijoin graphs through eight sources use a
+Selinger-style subset dynamic program that retains the cheapest left-deep plan
+for each source mask. Larger connected graphs use a deterministic greedy
+fallback. Rows with SQL `NULL` join keys do not match. Other
 predicates and outer joins retain the nested-loop implementation and SQL order.
 
 ## Hash aggregation

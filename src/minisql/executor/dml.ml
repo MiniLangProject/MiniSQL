@@ -1136,6 +1136,85 @@ function decodeRowReference(tableId, encoded)
   return scan.RowReference(endian.readU32LE(encoded, 0), endian.readU16LE(encoded, 4), endian.readU16LE(encoded, 6))
 end function
 
+// Decodes one zero-escaped variable-width key component and returns its bytes
+// plus the first cursor position after the 0,0 terminator.
+function decodeEscapedKeyBytes(encoded, startOffset)
+  output = bytes()
+  cursor = startOffset
+  while cursor < len(encoded)
+    current = encoded[cursor]
+    cursor = cursor + 1
+    if current == 0 then
+      if cursor >= len(encoded) then return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "truncated escape sequence") end if
+      marker = encoded[cursor]
+      cursor = cursor + 1
+      if marker == 0 then return [output, cursor] end if
+      if marker != 255 then return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "invalid escape sequence") end if
+      output = output + bytes([0])
+    else
+      output = output + bytes([current])
+    end if
+  end while
+  return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "missing component terminator")
+end function
+
+// Reconstructs table-typed SQL values from an index key. Non-key positions are
+// typed NULL placeholders and are safe because the optimizer proves they are
+// not referenced before selecting an index-only plan. Floating encodings retain
+// their textual ordering representation and therefore conservatively fall back.
+function decodeCoveredIndexKey(table, constraint, encoded)
+  if typeof(encoded) != "bytes" or len(encoded) == 0 or encoded[0] != 127 then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid index key prefix") end if
+  output = []
+  for each column in table.columns
+    output = output + [values.nullValue(column.typeCode)]
+  end for
+  cursor = 1
+  for each columnName in constraint.columns
+    columnIndex = binder.findColumnIndex(table, columnName)
+    if columnIndex < 0 or cursor >= len(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "index key shape does not match catalog") end if
+    column = table.columns[columnIndex]
+    tag = encoded[cursor]
+    cursor = cursor + 1
+    decodedValue = void
+    if tag == 1 then
+      decodedValue = values.nullValue(column.typeCode)
+    else if tag == 2 then
+      if cursor >= len(encoded) or (encoded[cursor] != 0 and encoded[cursor] != 1) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid Boolean key") end if
+      decodedValue = values.of(column.typeCode, encoded[cursor] == 1)
+      cursor = cursor + 1
+    else if tag == 3 then
+      if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "truncated integral key") end if
+      words = endian.makeInt64(endian.readU32BE(encoded, cursor) ^ 2147483648, endian.readU32BE(encoded, cursor + 4))
+      cursor = cursor + 8
+      if column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date then
+        decodedValue = values.of(column.typeCode, endian.int64ToInt(words))
+      else
+        decodedValue = values.of(column.typeCode, words)
+      end if
+    else if tag == 5 or tag == 6 then
+      part = decodeEscapedKeyBytes(encoded, cursor)
+      cursor = part[1]
+      if tag == 5 then decodedValue = values.of(column.typeCode, decode(part[0])) else decodedValue = values.of(column.typeCode, part[0]) end if
+    else
+      return void
+    end if
+    output[columnIndex] = decodedValue
+  end for
+  if cursor != len(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "trailing index key bytes") end if
+  return output
+end function
+
+// Converts B+-tree entries into heap-shaped rows without opening the heap.
+function coveredRowsFromIndexEntries(table, constraint, entries)
+  output = []
+  for each entry in entries
+    rowValues = decodeCoveredIndexKey(table, constraint, entry.key)
+    if rowValues is void then return void end if
+    output = output + [scan.ScannedRow(decodeRowReference(table.tableId, entry.value), rowValues)]
+  end for
+  return output
+end function
+
 // Implements indexed constraints for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -1621,6 +1700,109 @@ end function
 // Finds the first executable single-column predicate for legacy callers.
 function singleIndexRows(database, table, expression, pageTransaction)
   return namedSingleIndexRows(database, table, expression, pageTransaction, "")
+end function
+
+// Finds the exact persistent index selected by the physical plan.
+function constraintForIndexName(database, table, indexName)
+  for each constraint in indexedConstraints(database, table)
+    if constraint.indexName == indexName then return constraint end if
+  end for
+  return void
+end function
+
+// Finds and normalizes a comparison between one bound column and a literal.
+function comparisonLiteralForColumn(expression, columnIndex)
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
+  if expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then
+    left = comparisonLiteralForColumn(expression.left, columnIndex)
+    if left[0] then return left end if
+    return comparisonLiteralForColumn(expression.right, columnIndex)
+  end if
+  if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
+  operator = expression.operator
+  if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operator, expression.right.literal] end if
+  if expression.right.kind == expressions.BOUND_COLUMN and expression.right.columnIndex == columnIndex and expression.left.kind == expressions.BOUND_LITERAL then
+    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+    return [true, operator, expression.left.literal]
+  end if
+  return [false, "", void]
+end function
+
+// Reads B+-tree entries for the exact equality/range shape accepted by the
+// optimizer. Unlike ordinary index access this helper deliberately stops before
+// heap dereference so a covering plan can reconstruct rows from key bytes.
+function plannedCoveredIndexEntries(database, table, expression, constraint)
+  if len(constraint.columns) > 1 then
+    keyValues = []
+    for each columnName in constraint.columns
+      columnIndex = binder.findColumnIndex(table, columnName)
+      found = equalityLiteralForColumn(expression, columnIndex)
+      if not found[0] then return void end if
+      converted = values.convert(found[1], types.fromColumn(table.columns[columnIndex]))
+      if converted.isNull then return [] end if
+      keyValues = keyValues + [converted]
+    end for
+    encodedKey = encodeIndexKey(keyValues)
+    tree = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+    foundValues = try(btree.find(tree, encodedKey))
+    closeResult = try(btree.close(tree))
+    if typeof(foundValues) == "error" then return foundValues end if
+    if typeof(closeResult) == "error" then return closeResult end if
+    entries = []
+    for each rowValue in foundValues
+      entries = entries + [btree.entry(encodedKey, rowValue)]
+    end for
+    return entries
+  end if
+
+  columnIndex = binder.findColumnIndex(table, constraint.columns[0])
+  found = comparisonLiteralForColumn(expression, columnIndex)
+  if not found[0] then return void end if
+  operator = found[1]
+  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  converted = values.convert(found[2], types.fromColumn(table.columns[columnIndex]))
+  if converted.isNull then return [] end if
+  if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
+  encodedKey = encodeIndexKey([converted])
+  tree = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+  entries = void
+  if operator == "=" then
+    foundValues = try(btree.find(tree, encodedKey))
+    if typeof(foundValues) != "error" then
+      entries = []
+      for each rowValue in foundValues
+        entries = entries + [btree.entry(encodedKey, rowValue)]
+      end for
+    else
+      entries = foundValues
+    end if
+  else
+    lower = void
+    upper = void
+    lowerInclusive = true
+    upperInclusive = true
+    if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
+    entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
+  end if
+  closeResult = try(btree.close(tree))
+  if typeof(entries) == "error" then return entries end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return entries
+end function
+
+// Executes a planned covering scan without touching table or overflow pages.
+function plannedIndexOnlyRowsForBound(database, bound, pageTransaction, indexName)
+  if typeof(indexName) != "string" or indexName == "" then return void end if
+  if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
+  if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
+  expression = bound.whereExpression
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
+  table = bound.sources[0].table
+  constraint = constraintForIndexName(database, table, indexName)
+  if constraint is void then return void end if
+  entries = plannedCoveredIndexEntries(database, table, expression, constraint)
+  if entries is void then return void end if
+  return coveredRowsFromIndexEntries(table, constraint, entries)
 end function
 
 // Executes exactly the optimizer-selected access path for a single-table
