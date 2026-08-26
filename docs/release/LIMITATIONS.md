@@ -17,6 +17,18 @@
 * Replication is asynchronous and operator-managed.
 * The external sort reduces peak memory but final query results are still
   materialized.
+* The cost optimizer uses row/page/null/distinct/width estimates plus sampled
+  signed-32-bit minimum/maximum bounds for integral and date ranges. It does not
+  yet persist equi-depth histograms, most-common-value lists, wide numeric/text
+  bounds, or multi-column correlation
+  statistics. Inner-equijoin ordering is a deterministic greedy graph search,
+  not exhaustive dynamic programming; outer joins retain SQL order. Execution
+  uses bounded batches and streaming fast paths where supported, including
+  filtered scalar aggregates, fused single-table Top-N, and the final edge of
+  reordered inner-equijoin `COUNT(*)`; other blocking joins/groups and
+  protocol-v1 result delivery can still materialize large row
+  sets. One query is not divided among multiple worker threads; parallelism is
+  currently across independent read-only queries/connections.
 * Table, column, schema-extension, statistics, and authorization metadata are
   not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
   finite at the storage format's integer representation, process address space,

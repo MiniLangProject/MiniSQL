@@ -1,5 +1,24 @@
 # MiniSQL changelog
 
+## 1.0.0 — cost-based optimizer and bounded execution update
+
+- added a typed executable plan shared by `EXPLAIN` and runtime execution;
+- added constant folding, safe predicate pushdown, costed B+ tree scans,
+  distinct-value join estimates, smaller-side hash builds, greedy inner-equijoin
+  ordering, Top-N, streaming scalar aggregates, and 128-row scan batches;
+- added exact live-row counting with bounded 8,192-row `ANALYZE` sampling and a
+  backward-compatible CRC-protected statistics sidecar format 3 with compact
+  integral/date bounds;
+- added a 64-entry per-session plan cache with allocation-free exact-SQL hot
+  keys, canonical nested-plan keys, and shared DDL/maintenance
+  invalidation and richer `EXPLAIN ANALYZE` timing/buffer metrics;
+- fixed non-unique B+ trees whose duplicate keys span multiple leaves;
+- reused one heap/schema reader per index candidate set, streamed filtered
+  scalar aggregates, fused single-table Top-N, and counted the final edge of
+  reordered inner-equijoin `COUNT(*)` without materializing it;
+- added the M75 optimizer regression suite and retained database page format 1
+  and wire protocol 1.
+
 ## 1.0.0 — M48-M50R3 release candidate
 
 - evaluated `MiniSQL_M48_M50R2_RESULTS_20260730-124722.zip`: 60 of 61 executed phases passed; M0-M47 remained accepted and no M48-M50 candidate phase ran;

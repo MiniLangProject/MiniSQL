@@ -6,6 +6,7 @@ package minisql.catalog.statistics
 import minisql.catalog.catalog as catalog
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
+import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.checksum as checksum
 
@@ -19,10 +20,15 @@ const UNSUPPORTED_FORMAT = 9003
 const CORRUPT_DATA = 9004
 const IO_FAILURE = 9005
 
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = 3
+const SAMPLED_FORMAT_VERSION = 2
+const LEGACY_FORMAT_VERSION = 1
 const RECORD_KIND = 50
 const TABLE_HEADER_BYTES = 32
 const COLUMN_BYTES = 32
+const DISTINCT_BUCKET_COUNT = 257
+const HASH_MASK = 2147483647
+const COLUMN_FLAG_INTEGRAL_BOUNDS = 1
 
 // Defines the column statistics record used by this module.
 struct ColumnStatistics
@@ -34,6 +40,12 @@ struct ColumnStatistics
   distinctCount
   // Average width field of the column statistics.
   averageWidth
+  // True when the sample supplied a comparable signed 32-bit minimum/maximum.
+  hasIntegralBounds
+  // Smallest sampled SMALLINT, INTEGER, or DATE representation.
+  minimumIntegral
+  // Largest sampled SMALLINT, INTEGER, or DATE representation.
+  maximumIntegral
 end struct
 
 // Defines the table statistics record used by this module.
@@ -44,6 +56,8 @@ struct TableStatistics
   rowCount
   // Page count field of the table statistics.
   pageCount
+  // Number of decoded rows contributing column distribution statistics.
+  sampleCount
   // Columns field of the table statistics.
   columns
 end struct
@@ -183,49 +197,146 @@ function sameValue(left, right)
   return values.compareNonNull(left, right) == 0
 end function
 
+// Hashes SQL values into deterministic collision buckets. Full SQL comparison
+// below remains authoritative, so hash collisions can only affect performance.
+function hashBytes(input, seed)
+  result = seed & HASH_MASK
+  if len(input) > 0 then
+    for index = 0 to len(input) - 1
+      result = ((result ^ input[index]) * 16777619) & HASH_MASK
+    end for
+  end if
+  return result
+end function
+
+// Hashes one non-NULL SQL payload consistently with sameValue comparison.
+function hashValue(value)
+  if value.isNull then return 0 end if
+  result = (2166136261 ^ value.typeKind) & HASH_MASK
+  if typeof(value.value) == "string" then return hashBytes(bytes(value.value), result) end if
+  if typeof(value.value) == "bytes" then return hashBytes(value.value, result) end if
+  if typeof(value.value) == "bool" then
+    if value.value then return ((result ^ 1) * 16777619) & HASH_MASK end if
+    return ((result ^ 0) * 16777619) & HASH_MASK
+  end if
+  if typeof(value.value) == "float" and value.value == 0.0 then return hashBytes(bytes("0.0"), result) end if
+  if typeof(value.value) == "int" then
+    result = ((result ^ (value.value & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value >> 8) & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value >> 16) & 255)) * 16777619) & HASH_MASK
+    return ((result ^ ((value.value >> 24) & 255)) * 16777619) & HASH_MASK
+  end if
+  if endian.isInt64Words(value.value) then
+    result = ((result ^ (value.value.low & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value.low >> 8) & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value.low >> 16) & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value.low >> 24) & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ (value.value.high & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value.high >> 8) & 255)) * 16777619) & HASH_MASK
+    result = ((result ^ ((value.value.high >> 16) & 255)) * 16777619) & HASH_MASK
+    return ((result ^ ((value.value.high >> 24) & 255)) * 16777619) & HASH_MASK
+  end if
+  return hashBytes(bytes("" + value.value), result)
+end function
+
 // Performs the distinct count operation for this module.
 // Inputs: `columnIndex`, `rows`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function distinctCount(columnIndex, rows)
-  distinct = []
+  buckets = array(DISTINCT_BUCKET_COUNT, void)
+  count = 0
   for each row in rows
     candidate = row.values[columnIndex]
     if not candidate.isNull then
+      bucketIndex = hashValue(candidate) % DISTINCT_BUCKET_COUNT
+      bucket = buckets[bucketIndex]
+      if bucket is void then bucket = [] end if
       duplicate = false
-      for each existing in distinct
+      for each existing in bucket
         if sameValue(candidate, existing) then duplicate = true; break end if
       end for
-      if not duplicate then distinct = distinct + [candidate] end if
+      if not duplicate then
+        bucket = bucket + [candidate]
+        buckets[bucketIndex] = bucket
+        count = count + 1
+      end if
     end if
   end for
-  return len(distinct)
+  return count
+end function
+
+// Reports whether a catalog column uses the signed 32-bit representation that
+// fits the compact v3 statistics record. BIGINT and wider numeric encodings are
+// intentionally left for a future variable-length histogram extension.
+function supportsIntegralBounds(column)
+  return column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date
+end function
+
+// Finds sampled minimum and maximum values for a compact integral column. The
+// boolean prefix distinguishes an all-NULL sample from a legitimate [0, 0]
+// domain and keeps older statistics versions unambiguous.
+function integralBounds(columnIndex, rows)
+  found = false
+  minimum = 0
+  maximum = 0
+  for each row in rows
+    candidate = row.values[columnIndex]
+    if not candidate.isNull then
+      if typeof(candidate.value) != "int" then return [false, 0, 0] end if
+      if not found or candidate.value < minimum then minimum = candidate.value end if
+      if not found or candidate.value > maximum then maximum = candidate.value end if
+      found = true
+    end if
+  end for
+  return [found, minimum, maximum]
+end function
+
+// Scales a sample count without overflowing MiniLang's native integer range.
+function scaleSampleCount(sampleValue, populationRows, sampleRows)
+  if sampleRows == 0 then return 0 end if
+  quotient = integerDivide(populationRows, sampleRows)
+  remainder = populationRows - quotient * sampleRows
+  return quotient * sampleValue + integerDivide(remainder * sampleValue, sampleRows)
+end function
+
+// Builds bounded-memory statistics from a uniformly spaced sample. Small
+// tables, whose sample contains every row, remain exact. Low-cardinality values
+// seen repeatedly are treated as saturated; high-cardinality samples are scaled
+// conservatively and capped by the estimated non-NULL population.
+function analyzeSample(table, populationRows, rows, pageCount)
+  if typeof(table) != "struct" or typeof(populationRows) != "int" or populationRows < 0 or typeof(rows) != "array" or typeof(pageCount) != "int" or pageCount < 0 then return fail(INVALID_ARGUMENT, "analyzeSample", "invalid arguments") end if
+  sampleCount = len(rows)
+  columns = []
+  if len(table.columns) > 0 then
+    for columnIndex = 0 to len(table.columns) - 1
+      sampleNulls = 0
+      width = 0
+      sampleNonNull = 0
+      for each row in rows
+        if typeof(row) != "struct" or typeof(row.values) != "array" or len(row.values) != len(table.columns) then return fail(INVALID_ARGUMENT, "analyzeSample", "row shape mismatch") end if
+        value = row.values[columnIndex]
+        if value.isNull then sampleNulls = sampleNulls + 1 else sampleNonNull = sampleNonNull + 1; width = width + valueWidth(value) end if
+      end for
+      nullCount = scaleSampleCount(sampleNulls, populationRows, sampleCount)
+      if nullCount > populationRows then nullCount = populationRows end if
+      averageWidth = 0
+      if sampleNonNull > 0 then averageWidth = integerDivide(width, sampleNonNull) end if
+      sampledDistinct = distinctCount(columnIndex, rows)
+      distinctEstimate = sampledDistinct
+      if sampleCount < populationRows and sampleNonNull > 0 and sampledDistinct * 10 > sampleNonNull then distinctEstimate = scaleSampleCount(sampledDistinct, populationRows, sampleCount) end if
+      nonNullPopulation = populationRows - nullCount
+      if distinctEstimate > nonNullPopulation then distinctEstimate = nonNullPopulation end if
+      bounds = [false, 0, 0]
+      if supportsIntegralBounds(table.columns[columnIndex]) then bounds = integralBounds(columnIndex, rows) end if
+      columns = columns + [ColumnStatistics(columnIndex, nullCount, distinctEstimate, averageWidth, bounds[0], bounds[1], bounds[2])]
+    end for
+  end if
+  return TableStatistics(table.tableId, populationRows, pageCount, sampleCount, columns)
 end function
 
 // Performs the analyze table operation for this module.
 // Inputs: `table`, `rows`, `pageCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function analyzeTable(table, rows, pageCount)
-  if typeof(table) != "struct" or typeof(rows) != "array" or typeof(pageCount) != "int" or pageCount < 0 then return fail(INVALID_ARGUMENT, "analyzeTable", "invalid arguments") end if
-  columns = []
-  if len(table.columns) > 0 then
-    for columnIndex = 0 to len(table.columns) - 1
-      nullCount = 0
-      width = 0
-      nonNull = 0
-      for each row in rows
-        if typeof(row) != "struct" or typeof(row.values) != "array" or len(row.values) != len(table.columns) then return fail(INVALID_ARGUMENT, "analyzeTable", "row shape mismatch") end if
-        value = row.values[columnIndex]
-        if value.isNull then
-          nullCount = nullCount + 1
-        else
-          nonNull = nonNull + 1
-          width = width + valueWidth(value)
-        end if
-      end for
-      averageWidth = 0
-      if nonNull > 0 then averageWidth = integerDivide(width, nonNull) end if
-      columns = columns + [ColumnStatistics(columnIndex, nullCount, distinctCount(columnIndex, rows), averageWidth)]
-    end for
-  end if
-  return TableStatistics(table.tableId, len(rows), pageCount, columns)
+  return analyzeSample(table, len(rows), rows, pageCount)
 end function
 
 // Encodes the d size.
@@ -263,27 +374,40 @@ function encode(state)
     validateNative(table.tableId, "encode", "tableId")
     validateNative(table.rowCount, "encode", "rowCount")
     validateNative(table.pageCount, "encode", "pageCount")
+    validateNative(table.sampleCount, "encode", "sampleCount")
+    if table.sampleCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "sampleCount cannot exceed rowCount") end if
+    if table.sampleCount > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "sampleCount must fit U32") end if
     if len(table.columns) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many column statistics") end if
     endian.writeU64LE(payload, cursor, endian.uint64FromInt(table.tableId))
     endian.writeU64LE(payload, cursor + 8, endian.uint64FromInt(table.rowCount))
     endian.writeU64LE(payload, cursor + 16, endian.uint64FromInt(table.pageCount))
     endian.writeU16LE(payload, cursor + 24, len(table.columns))
     endian.writeU16LE(payload, cursor + 26, 0)
-    endian.writeU32LE(payload, cursor + 28, 0)
+    endian.writeU32LE(payload, cursor + 28, table.sampleCount)
     cursor = cursor + TABLE_HEADER_BYTES
     for each column in table.columns
       if column is not ColumnStatistics then return fail(INVALID_ARGUMENT, "encode", "invalid column statistics") end if
       if typeof(column.columnIndex) != "int" or column.columnIndex < 0 or column.columnIndex > 65535 then return fail(INVALID_ARGUMENT, "encode", "columnIndex must fit U16") end if
       validateNative(column.nullCount, "encode", "nullCount")
       validateNative(column.distinctCount, "encode", "distinctCount")
+      if column.nullCount > table.rowCount or column.distinctCount > table.rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "column counts exceed table population") end if
       if typeof(column.averageWidth) != "int" or column.averageWidth < 0 or column.averageWidth > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "averageWidth must fit U32") end if
+      if typeof(column.hasIntegralBounds) != "bool" then return fail(INVALID_ARGUMENT, "encode", "hasIntegralBounds must be bool") end if
+      if column.hasIntegralBounds and (typeof(column.minimumIntegral) != "int" or typeof(column.maximumIntegral) != "int" or column.minimumIntegral < endian.MIN_I32 or column.maximumIntegral > endian.MAX_I32 or column.minimumIntegral > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "invalid integral bounds") end if
       endian.writeU16LE(payload, cursor, column.columnIndex)
-      endian.writeU16LE(payload, cursor + 2, 0)
+      flags = 0
+      if column.hasIntegralBounds then flags = COLUMN_FLAG_INTEGRAL_BOUNDS end if
+      endian.writeU16LE(payload, cursor + 2, flags)
       endian.writeU64LE(payload, cursor + 4, endian.uint64FromInt(column.nullCount))
       endian.writeU64LE(payload, cursor + 12, endian.uint64FromInt(column.distinctCount))
       endian.writeU32LE(payload, cursor + 20, column.averageWidth)
-      endian.writeU32LE(payload, cursor + 24, 0)
-      endian.writeU32LE(payload, cursor + 28, 0)
+      if column.hasIntegralBounds then
+        endian.writeI32LE(payload, cursor + 24, column.minimumIntegral)
+        endian.writeI32LE(payload, cursor + 28, column.maximumIntegral)
+      else
+        endian.writeU32LE(payload, cursor + 24, 0)
+        endian.writeU32LE(payload, cursor + 28, 0)
+      end if
       cursor = cursor + COLUMN_BYTES
     end for
   end for
@@ -300,7 +424,10 @@ end function
 // Decodes the catalog.
 // Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function decodeCatalog(encoded)
-  envelope = checksum.decodeEnvelope(encoded, magic(), FORMAT_VERSION, RECORD_KIND)
+  if typeof(encoded) != "bytes" or len(encoded) < 32 then return fail(CORRUPT_DATA, "decode", "encoded statistics are truncated") end if
+  encodedVersion = endian.readU16LE(encoded, 8)
+  if encodedVersion != LEGACY_FORMAT_VERSION and encodedVersion != SAMPLED_FORMAT_VERSION and encodedVersion != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decode", "unsupported statistics version") end if
+  envelope = checksum.decodeEnvelope(encoded, magic(), encodedVersion, RECORD_KIND)
   payload = envelope.payload
   if len(payload) < 32 then return fail(CORRUPT_DATA, "decode", "payload size is invalid") end if
   if endian.readU32LE(payload, 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved header is non-zero") end if
@@ -315,23 +442,49 @@ function decodeCatalog(encoded)
     rowCount = decodeNative(endian.readU64LE(payload, cursor + 8), "decode", "rowCount")
     pageCount = decodeNative(endian.readU64LE(payload, cursor + 16), "decode", "pageCount")
     columnCount = endian.readU16LE(payload, cursor + 24)
-    if endian.readU16LE(payload, cursor + 26) != 0 or endian.readU32LE(payload, cursor + 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved table fields are non-zero") end if
+    if endian.readU16LE(payload, cursor + 26) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved table fields are non-zero") end if
+    sampleCount = rowCount
+    if sampleCount > endian.MAX_U32 then sampleCount = endian.MAX_U32 end if
+    if encodedVersion >= SAMPLED_FORMAT_VERSION then
+      sampleCount = endian.readU32LE(payload, cursor + 28)
+      if sampleCount > rowCount then return fail(CORRUPT_DATA, "decode", "sampleCount exceeds rowCount") end if
+    else if endian.readU32LE(payload, cursor + 28) != 0 then
+      return fail(UNSUPPORTED_FORMAT, "decode", "legacy reserved table field is non-zero")
+    end if
     cursor = cursor + TABLE_HEADER_BYTES
       columns = array(columnCount)
       if columnCount > 0 then
         for columnNumber = 0 to columnCount - 1
           if cursor > len(payload) - COLUMN_BYTES then return fail(CORRUPT_DATA, "decode", "column record is truncated") end if
-          if endian.readU16LE(payload, cursor + 2) != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved column fields are non-zero") end if
+          columnFlags = endian.readU16LE(payload, cursor + 2)
+          if encodedVersion < FORMAT_VERSION and (columnFlags != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then return fail(UNSUPPORTED_FORMAT, "decode", "legacy reserved column fields are non-zero") end if
+          if encodedVersion == FORMAT_VERSION and (columnFlags & ~COLUMN_FLAG_INTEGRAL_BOUNDS) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "unknown column statistic flags") end if
+          hasIntegralBounds = encodedVersion == FORMAT_VERSION and (columnFlags & COLUMN_FLAG_INTEGRAL_BOUNDS) != 0
+          minimumIntegral = 0
+          maximumIntegral = 0
+          if hasIntegralBounds then
+            minimumIntegral = endian.readI32LE(payload, cursor + 24)
+            maximumIntegral = endian.readI32LE(payload, cursor + 28)
+            if minimumIntegral > maximumIntegral then return fail(CORRUPT_DATA, "decode", "integral bounds are inverted") end if
+          else if encodedVersion == FORMAT_VERSION and (endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then
+            return fail(UNSUPPORTED_FORMAT, "decode", "unflagged integral bounds are non-zero")
+          end if
+          decodedNullCount = decodeNative(endian.readU64LE(payload, cursor + 4), "decode", "nullCount")
+          decodedDistinctCount = decodeNative(endian.readU64LE(payload, cursor + 12), "decode", "distinctCount")
+          if decodedNullCount > rowCount or decodedDistinctCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "column counts exceed table population") end if
           columns[columnNumber] = ColumnStatistics(
             endian.readU16LE(payload, cursor),
-            decodeNative(endian.readU64LE(payload, cursor + 4), "decode", "nullCount"),
-            decodeNative(endian.readU64LE(payload, cursor + 12), "decode", "distinctCount"),
-            endian.readU32LE(payload, cursor + 20)
+            decodedNullCount,
+            decodedDistinctCount,
+            endian.readU32LE(payload, cursor + 20),
+            hasIntegralBounds,
+            minimumIntegral,
+            maximumIntegral
           )
           cursor = cursor + COLUMN_BYTES
         end for
       end if
-      state.tables[tableIndex] = TableStatistics(tableId, rowCount, pageCount, columns)
+      state.tables[tableIndex] = TableStatistics(tableId, rowCount, pageCount, sampleCount, columns)
     end for
   end if
   if cursor != len(payload) then return fail(CORRUPT_DATA, "decode", "trailing statistics bytes") end if

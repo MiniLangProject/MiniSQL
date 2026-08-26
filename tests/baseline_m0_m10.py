@@ -372,7 +372,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M10",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 80,
+        "moduleCount": 81,
         "acceptancePhaseCount": 30,
         "userFacingTestRunner": "test.ps1",
     }
@@ -432,8 +432,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_doc = load_json(ROOT / "docs" / "module-catalog.json")
     modules = catalog_doc.get("modules") if isinstance(catalog_doc, dict) else None
-    if not isinstance(modules, list) or len(modules) != 80:
-        raise AcceptanceFailure("Module catalog must contain exactly 80 source modules")
+    if not isinstance(modules, list) or len(modules) != 81:
+        raise AcceptanceFailure("Module catalog must contain exactly 81 source modules")
     if catalog_doc.get("version") not in (1, "1"):
         raise AcceptanceFailure("Unsupported module catalog version")
 

@@ -249,16 +249,30 @@ class SwitchingProxy:
                 continue
             except OSError:
                 break
+            # Publish a served connection only after its selected backend is
+            # borrowed and its bridge thread is registered and running. The
+            # owner waits on ``served`` before joining handlers; publishing the
+            # counter earlier allowed the final client to be reset during
+            # standby shutdown. Holding the publication mutex also prevents a
+            # generation switch from retiring the selected backend between
+            # lookup and acquire().
             with self._lock:
                 backend = self._backend
+                if backend is None:
+                    self._served += 1
+                    client.close()
+                    continue
+                backend.acquire()
+                thread = threading.Thread(target=self._bridge, args=(client, backend), daemon=True)
+                self._handlers.append(thread)
+                try:
+                    thread.start()
+                except BaseException:
+                    self._handlers.remove(thread)
+                    backend.release()
+                    client.close()
+                    raise
                 self._served += 1
-            if backend is None:
-                client.close()
-                continue
-            backend.acquire()
-            thread = threading.Thread(target=self._bridge, args=(client, backend), daemon=True)
-            self._handlers.append(thread)
-            thread.start()
         self._accept_done.set()
 
     def _pump(self, source: socket.socket, destination: socket.socket) -> None:

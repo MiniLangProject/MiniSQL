@@ -65,6 +65,23 @@ function sequentialScan(pageCount, rowCount)
   return estimate(1, 1 + pageCount * 8 + rowCount, rowCount, "Sequential Scan")
 end function
 
+// Estimates a B+-tree lookup plus the heap fetches expected for qualifying
+// rows. `height` models random index-page reads; `heapRows` distinguishes a
+// covering/unique lookup from a broad range that would be cheaper to scan.
+function indexScan(height, heapRows, outputRows, uniqueLookup)
+  validateRows(height, "indexScan", "height")
+  validateRows(heapRows, "indexScan", "heapRows")
+  validateRows(outputRows, "indexScan", "outputRows")
+  if typeof(uniqueLookup) != "bool" then return fail(INVALID_ARGUMENT, "indexScan", "uniqueLookup must be bool") end if
+  startup = 1 + height * 12
+  // One heap reader is shared by the complete candidate set. Warm index-order
+  // fetches therefore cost less than independent random opens while output-row
+  // decode remains explicit. Persisted bounds still supply the true range size.
+  work = startup + heapRows * 4 + outputRows
+  if uniqueLookup and work > startup + 8 then work = startup + 8 end if
+  return estimate(startup, work, outputRows, "Index Scan")
+end function
+
 // Implements filter for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -95,6 +112,19 @@ function hashJoin(left, right, outputRows)
   validateRows(outputRows, "hashJoin", "outputRows")
   work = left.total + right.total + (left.rows + right.rows) * 3
   return estimate(left.startup + right.startup + right.rows, work, outputRows, "Hash Join")
+end function
+
+// Estimates a parameterized nested loop whose inner side performs one B+-tree
+// lookup per outer row. This is attractive for a small outer input but loses to
+// a hash join once repeated random access dominates.
+function indexNestedLoop(left, indexHeight, expectedMatchesPerProbe, outputRows)
+  if left is not CostEstimate then return fail(INVALID_ARGUMENT, "indexNestedLoop", "left must be CostEstimate") end if
+  validateRows(indexHeight, "indexNestedLoop", "indexHeight")
+  validateRows(expectedMatchesPerProbe, "indexNestedLoop", "expectedMatchesPerProbe")
+  validateRows(outputRows, "indexNestedLoop", "outputRows")
+  probe = 1 + indexHeight * 12 + expectedMatchesPerProbe * 10
+  work = left.total + left.rows * probe + outputRows
+  return estimate(left.startup + probe, work, outputRows, "Index Nested Loop Join")
 end function
 
 // Implements aggregate for this module.
@@ -137,6 +167,21 @@ function externalSort(input)
   // Run generation plus pairwise merge I/O. Costs are deterministic abstract
   // work units rather than wall-clock estimates.
   return estimate(input.startup + input.rows * 2, input.total + input.rows * factor * 2, input.rows, "External Merge Sort")
+end function
+
+// Estimates a bounded top-N heap/insertion set. The executor uses this only for
+// small LIMIT+OFFSET windows, so work depends on log(window) rather than
+// log(input rows), and retained memory is bounded by the requested window.
+function topN(input, windowRows)
+  if input is not CostEstimate then return fail(INVALID_ARGUMENT, "topN", "input must be CostEstimate") end if
+  validateRows(windowRows, "topN", "windowRows")
+  factor = 1
+  remaining = windowRows
+  while remaining > 1
+    remaining = remaining >> 1
+    factor = factor + 1
+  end while
+  return estimate(input.startup, input.total + input.rows * factor, input.rows, "Top-N")
 end function
 
 // Implements project for this module.

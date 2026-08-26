@@ -1625,6 +1625,78 @@ function formatFunction(expression)
   return output + ")"
 end function
 
+// Reports whether an expression tree embeds an executor-created typed literal.
+// These values intentionally format opaquely and therefore cannot participate
+// in a value-sensitive physical-plan cache key.
+function containsTypedLiteral(expression)
+  if expression is TypedLiteralExpression then return true end if
+  if expression is LiteralExpression or expression is ColumnExpression or expression is StarExpression or expression is ParameterExpression then return false end if
+  if expression is UnaryExpression or expression is IsNullExpression or expression is CastExpression then return containsTypedLiteral(expression.operand) end if
+  if expression is BinaryExpression then return containsTypedLiteral(expression.left) or containsTypedLiteral(expression.right) end if
+  if expression is CaseExpression then
+    for each branch in expression.branches
+      if containsTypedLiteral(branch.condition) or containsTypedLiteral(branch.result) then return true end if
+    end for
+    return expression.elseExpression is not void and containsTypedLiteral(expression.elseExpression)
+  end if
+  if expression is InExpression then
+    if containsTypedLiteral(expression.operand) then return true end if
+    for each candidate in expression.values
+      if containsTypedLiteral(candidate) then return true end if
+    end for
+    return false
+  end if
+  if expression is BetweenExpression then return containsTypedLiteral(expression.operand) or containsTypedLiteral(expression.lower) or containsTypedLiteral(expression.upper) end if
+  if expression is TruthTestExpression then return containsTypedLiteral(expression.operand) end if
+  if expression is FunctionExpression then
+    for each argument in expression.arguments
+      if containsTypedLiteral(argument) then return true end if
+    end for
+    return false
+  end if
+  if expression is SubqueryExpression or expression is ExistsExpression then return selectContainsTypedLiteral(expression.query) end if
+  if expression is InSubqueryExpression then return containsTypedLiteral(expression.operand) or selectContainsTypedLiteral(expression.query) end if
+  if expression is WindowExpression then
+    for each argument in expression.arguments
+      if containsTypedLiteral(argument) then return true end if
+    end for
+    for each partition in expression.partitionBy
+      if containsTypedLiteral(partition) then return true end if
+    end for
+    for each order in expression.orderBy
+      if containsTypedLiteral(order.expression) then return true end if
+    end for
+    return false
+  end if
+  return false
+end function
+
+// Reports whether any clause of a SELECT embeds a typed literal.
+function selectContainsTypedLiteral(statement)
+  if statement is not SelectStatement then return false end if
+  for each item in statement.items
+    if containsTypedLiteral(item.expression) then return true end if
+  end for
+  for each join in statement.joins
+    if join.condition is not void and containsTypedLiteral(join.condition) then return true end if
+  end for
+  if statement.whereExpression is not void and containsTypedLiteral(statement.whereExpression) then return true end if
+  for each expression in statement.groupBy
+    if containsTypedLiteral(expression) then return true end if
+  end for
+  if statement.havingExpression is not void and containsTypedLiteral(statement.havingExpression) then return true end if
+  for each operation in statement.setOperations
+    if selectContainsTypedLiteral(operation.query) then return true end if
+  end for
+  for each order in statement.orderBy
+    if containsTypedLiteral(order.expression) then return true end if
+  end for
+  for each cte in statement.ctes
+    if selectContainsTypedLiteral(cte.query) then return true end if
+  end for
+  return false
+end function
+
 // Formats expression using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.

@@ -146,6 +146,45 @@ function sortProjected(rows, orderItems)
   return merge(sortProjected(left, orderItems), sortProjected(right, orderItems), orderItems)
 end function
 
+// Retains only the best `count` rows in stable ORDER BY order. The optimizer
+// limits this O(rows*count) implementation to small windows, avoiding external
+// runs and a complete result sort for interactive ORDER BY ... LIMIT queries.
+function topNProjected(rows, orderItems, count)
+  if typeof(rows) != "array" or typeof(orderItems) != "array" or typeof(count) != "int" or count < 0 then return fail(INVALID_ARGUMENT, "topNProjected", "invalid arguments") end if
+  if count == 0 or len(rows) == 0 then return [] end if
+  if len(orderItems) == 0 then
+    output = []
+    for index = 0 to len(rows) - 1
+      if index < count then output = output + [rows[index]] end if
+    end for
+    return output
+  end if
+  selected = []
+  for each row in rows
+    insertion = len(selected)
+    if len(selected) > 0 then
+      for index = 0 to len(selected) - 1
+        if compareRows(row, selected[index], orderItems) < 0 then insertion = index; break end if
+      end for
+    end if
+    if insertion < count then
+      next = []
+      inserted = false
+      if len(selected) > 0 then
+        for index = 0 to len(selected) - 1
+          if not inserted and index == insertion then next = next + [row]; inserted = true end if
+          if len(next) < count then next = next + [selected[index]] end if
+        end for
+      end if
+      if not inserted and len(next) < count then next = next + [row] end if
+      selected = next
+    else if len(selected) < count then
+      selected = selected + [row]
+    end if
+  end for
+  return selected
+end function
+
 // Implements spill type for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.

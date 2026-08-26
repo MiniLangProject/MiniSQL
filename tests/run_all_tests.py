@@ -748,7 +748,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 80,
+        "moduleCount": 81,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -813,8 +813,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 80:
-        raise AcceptanceFailure("Module catalog must contain exactly 80 source modules")
+    if not isinstance(modules, list) or len(modules) != 81:
+        raise AcceptanceFailure("Module catalog must contain exactly 81 source modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1707,7 +1707,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 80-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 81-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -1819,7 +1819,7 @@ def main() -> int:
             ("M50 release contract and compatibility freeze", lambda: run_simple(compiler,"src/tests/m50_release_contract.ml","minisql-m50-release-contract.exe","MiniSQL M50 release contract tests: SUCCESS",args.verbose,[str(data_root('m50-root'))],3600)),
             ("M50 deterministic Windows-x64 distribution build and verification", lambda: run_m50_release_distribution(args.verbose)),
             ("M50 78-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (78 modules)",args.verbose,timeout=2400)),
-            ("M50 final cumulative gate", lambda: run_m74_workbench(compiler, args.verbose)),
+            ("M50 final cumulative gate", lambda: (run_m74_workbench(compiler, args.verbose), run_simple(compiler,"src/tests/m75_cost_based_optimizer.ml","minisql-m75-optimizer.exe","MiniSQL M75 cost-based optimizer: SUCCESS",args.verbose,[str(data_root('m75-root'))],3600))),
         ]
         if len(actions) != PHASE_COUNT:
             raise AcceptanceFailure(f"Internal phase count mismatch: {len(actions)} != {PHASE_COUNT}")

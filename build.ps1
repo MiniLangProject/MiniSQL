@@ -215,7 +215,8 @@ $Targets = @(
   @{ Input = "src\tests\m73_tls_server_worker.ml"; Output = "minisql-m73-tls-server-worker.exe" },
   @{ Input = "src\tests\m73_tls_client_worker.ml"; Output = "minisql-m73-tls-client-worker.exe" },
   @{ Input = "src\tests\m74_workbench.ml"; Output = "minisql-m74-workbench.exe" },
-  @{ Input = "src\tests\m74_workbench_network_worker.ml"; Output = "minisql-m74-workbench-network-worker.exe" }
+  @{ Input = "src\tests\m74_workbench_network_worker.ml"; Output = "minisql-m74-workbench-network-worker.exe" },
+  @{ Input = "src\tests\m75_cost_based_optimizer.ml"; Output = "minisql-m75-optimizer.exe" }
 )
 
 if ($AppsOnly) {

@@ -42,6 +42,15 @@ The core `MERGE` form accepts one source table, a match predicate, one matched
 in one database transaction and use the ordinary constraint, index and trigger
 paths.
 
+## Query planning and diagnostics
+
+`ANALYZE [table]` refreshes exact row/page counts and bounded sampled column
+statistics. `EXPLAIN SELECT ...` returns the chosen executable operator tree.
+`EXPLAIN ANALYZE SELECT ...` executes it and appends elapsed milliseconds,
+buffer-cache hit/read deltas, and actual row count. Plans may contain
+`Index Scan`, `Hash Join`, `Index Nested Loop Join`, `Streaming Aggregate`,
+`Streaming Join Count`, `Count Slots`, `Top-N`, or `External Merge Sort` operators.
+
 ## Schemas and metadata
 
 Two-part `schema.object` names are supported for database objects. `public` and

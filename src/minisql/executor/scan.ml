@@ -94,6 +94,14 @@ struct TableRowCursor
   finished
 end struct
 
+// Bounded group of rows transferred between streaming physical operators.
+// The batch itself owns no storage handles; rows remain ordinary ScannedRow
+// values and may safely outlive the cursor.
+struct RowBatch
+  // Ordered rows contained in this bounded transfer unit.
+  rows
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -125,6 +133,11 @@ end function
 // Returns whether value is a forward-only table row cursor.
 function isTableRowCursor(value)
   return value is TableRowCursor
+end function
+
+// Reports whether a value is a bounded RowBatch.
+function isRowBatch(value)
+  return value is RowBatch
 end function
 
 // Appends array value using the supplied inputs.
@@ -401,6 +414,21 @@ function nextRow(cursor)
   return void
 end function
 
+// Reads at most maximumRows from a forward-only cursor. A void result denotes
+// end-of-input; every non-void batch contains at least one row.
+function nextBatch(cursor, maximumRows)
+  if cursor is not TableRowCursor or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "nextBatch", "invalid arguments") end if
+  output = list.List.new()
+  while output.len() < maximumRows
+    row = try(nextRow(cursor))
+    if typeof(row) == "error" then return row end if
+    if row is void then break end if
+    output.add(row)
+  end while
+  if output.len() == 0 then return void end if
+  return RowBatch(output.toArray())
+end function
+
 // Fully decodes and validates every live row while retaining only one row. This
 // includes external TEXT/BLOB chains, UTF-8 conversion, schema compatibility,
 // generated/default column handling, page checksums, and slot generations.
@@ -436,6 +464,48 @@ function countLiveRows(reader)
     end if
   end for
   return rowCount
+end function
+
+// Decodes at most `maximumRows` uniformly spaced live rows while visiting each
+// heap page once. ANALYZE obtains the exact population from slot headers first,
+// then uses this pass to bound external-value I/O and retained memory.
+function sampleRows(reader, populationRows, maximumRows)
+  validateOpen(reader, "sampleRows")
+  if typeof(populationRows) != "int" or populationRows < 0 or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "sampleRows", "invalid arguments") end if
+  if populationRows == 0 then return [] end if
+  stride = 1
+  spacingRemainder = 0
+  spacingError = 0
+  if populationRows > maximumRows then
+    stride = populationRows / maximumRows
+    spacingRemainder = populationRows - stride * maximumRows
+  end if
+  output = list.List.new()
+  visibleIndex = 0
+  nextSample = 0
+  heapPages = heap_file.heapPageNumbers(reader.file)
+  for each pageNumber in heapPages
+    encoded = visiblePage(reader, pageNumber)
+    header = page.verify(encoded)
+    if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "sampleRows", "table page has wrong type") end if
+    count = slotted_page.slotCount(encoded)
+    if count > 0 then
+      for slotId = 0 to count - 1
+        current = slotted_page.entry(encoded, slotId)
+        if current.flags == slotted_page.SLOT_FLAG_LIVE then
+          if visibleIndex == nextSample and output.len() < maximumRows then
+            rowValues = decodeRecord(reader, slotted_page.read(encoded, slotId))
+            output.add(ScannedRow(RowReference(pageNumber, slotId, current.generation), rowValues))
+            nextSample = nextSample + stride
+            spacingError = spacingError + spacingRemainder
+            if spacingError >= maximumRows then nextSample = nextSample + 1; spacingError = spacingError - maximumRows end if
+          end if
+          visibleIndex = visibleIndex + 1
+        end if
+      end for
+    end if
+  end for
+  return output.toArray()
 end function
 
 // Opens, streams, and closes one table for the offline consistency checker.
@@ -614,6 +684,16 @@ function countTableRowsCached(databasePath, table, pageTransaction, readCache)
     remembered = try(buffer_pool.rememberRowCount(readCache, tablePath, result))
     if typeof(remembered) == "error" then return remembered end if
   end if
+  return result
+end function
+
+// Opens one cached reader for the bounded ANALYZE sampling pass.
+function sampleTableRowsCached(databasePath, table, populationRows, maximumRows, readCache)
+  reader = openCached(databasePath, table, void, readCache)
+  result = try(sampleRows(reader, populationRows, maximumRows))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
   return result
 end function
 

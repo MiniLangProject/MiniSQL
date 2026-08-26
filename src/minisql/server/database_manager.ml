@@ -87,6 +87,8 @@ struct ManagedDatabase
   readCache
   // Indicates that process-local index readiness checks or repair completed.
   indexesReady
+  // Process-local generation invalidating optimizer metadata across sessions.
+  planningEpoch
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -538,7 +540,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes)
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readCache
   end if
-  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, false)
+  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -629,6 +631,27 @@ function markIndexesReady(database)
   database.indexesReady = true
   database.executionGate.stateLock.release()
   return true
+end function
+
+// Returns the process-local optimizer invalidation generation shared by every
+// session attached to this managed database.
+function planningGeneration(database)
+  validateOpen(database, "planningGeneration")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "planningGeneration", "database execution state is unavailable") end if
+  value = database.planningEpoch
+  database.executionGate.stateLock.release()
+  return value
+end function
+
+// Advances the shared generation after committed DDL or statistics maintenance.
+function advancePlanningGeneration(database)
+  validateOpen(database, "advancePlanningGeneration")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "advancePlanningGeneration", "database execution state is unavailable") end if
+  database.planningEpoch = database.planningEpoch + 1
+  if database.planningEpoch < 0 then database.planningEpoch = 0 end if
+  value = database.planningEpoch
+  database.executionGate.stateLock.release()
+  return value
 end function
 
 // Acquires statement read using the supplied inputs.

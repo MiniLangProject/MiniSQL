@@ -29,7 +29,7 @@ SQL text MUST pass through distinct stages:
 4. logical relational plan
 5. logical rewrites
 6. physical plan selection
-7. batch-oriented execution
+7. hybrid batch/stream and blocking execution
 
 Logical operators include table scan, selection, projection, join, aggregate,
 distinct, sort, limit and set operation.
@@ -40,7 +40,10 @@ sort and external merge sort.
 
 ## 5.4 Performance rules
 
-The executor SHOULD process reusable row batches rather than allocate one MiniLang
-object per cell. The optimizer SHOULD support predicate pushdown, projection pruning,
-constant folding and statistics-based scan/join selection. `EXPLAIN` and
-`EXPLAIN ANALYZE` MUST expose chosen plans.
+Non-blocking single-table scans MUST use bounded row batches; blocking operators
+may materialize their input when required by SQL semantics. The optimizer MUST
+support safe predicate pushdown, projection pruning, constant folding and
+statistics-based scan/join selection. `EXPLAIN` and `EXPLAIN ANALYZE` MUST expose
+the same typed plan consumed by execution. Eligible scalar aggregates and small
+single-table Top-N windows SHOULD fuse with their scan; a join aggregate MAY
+consume final-edge match counts without constructing final joined rows.

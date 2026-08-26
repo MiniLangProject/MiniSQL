@@ -40,8 +40,10 @@ Persisted database and wire formats remain shared across both targets.
   grants, prepared statements, views, recursive CTEs, correlated subqueries,
   window functions, `MERGE`, triggers, typed single-statement procedures,
   sequences, and generated columns;
-- joins, aggregates, set operations, optimizer statistics, hash operators, and
-  external merge-sort runs;
+- joins, aggregates, set operations, sampled optimizer statistics, predicate
+  pushdown, constant folding, projection pruning, costed index/sequential scans,
+  inner-equijoin reordering, hash/index/nested-loop joins, streaming scalar
+  aggregates, Top-N, external merge-sort runs, and a generation-safe plan cache;
 - `AUTO_INCREMENT` / `AUTOINCREMENT`, exact `DECIMAL(p,s)` input, and floating
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
@@ -81,6 +83,33 @@ one. This behavior is fully validated on Windows. The Linux gate additionally
 runs two consecutive waves of four simultaneous native clients, proving both
 parallel execution and completed-connection job reaping. The design
 intentionally retains a single physical writer per database.
+
+## Query optimizer
+
+Every bound `SELECT` is lowered to a typed executable plan; `EXPLAIN` renders
+that same plan, so execution does not independently guess a different operator.
+The cost model uses persisted `ANALYZE` row/page counts and per-column null,
+distinct-value, width, and compact integral/date range estimates to choose sequential or B+ tree access,
+nested-loop, index nested-loop or hash joins, hash aggregation, Top-N,
+in-memory sort or external merge sort. Pure inner equijoin graphs start with the
+smallest estimated relation and add the cheapest connected source while outer
+joins retain SQL order.
+
+Deterministic predicates are folded and pushed to their single source;
+unreferenced external `TEXT`/`BLOB` columns are not materialized. Simple
+single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
+reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/
+`BOOL_AND`/`BOOL_OR` use fixed-size streaming accumulators, including eligible
+filtered index/scan inputs. Small ordered limits fuse scan, projection, and
+Top-N retention; reordered inner-equijoin `COUNT(*)` plans count final matches
+without retaining the final joined rowset. A per-session 64-entry plan cache
+uses exact top-level SQL keys and canonical nested-AST keys and is invalidated across all
+attached sessions by DDL, `ANALYZE`, `VACUUM`, or `REINDEX`.
+
+`ANALYZE` counts the exact live population but samples at most 8,192 uniformly
+spaced rows for column distributions. `EXPLAIN ANALYZE` adds actual row count,
+elapsed milliseconds and buffer-cache hit/read deltas. Statistics remain
+advisory and CRC-32C protected; the version-3 reader accepts versions 1 and 2.
 
 ## Requirements
 

@@ -547,7 +547,10 @@ function decodeInternal(tree, pageNumber)
     if child < 2 or child >= tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "decodeInternal", "child is outside file") end if
     if cursor > len(encoded) - 12 - keyLength then return fail(CORRUPT_DATA, "decodeInternal", "internal key is truncated") end if
     key = slice(encoded, cursor + 12, keyLength)
-    if previous is not void and compareKeys(previous, key) >= 0 then return fail(CORRUPT_DATA, "decodeInternal", "separator keys are not strictly increasing") end if
+    if previous is not void then
+      separatorOrder = compareKeys(previous, key)
+      if separatorOrder > 0 or (separatorOrder == 0 and tree.meta.unique) then return fail(CORRUPT_DATA, "decodeInternal", "separator keys violate index ordering") end if
+    end if
     separators = separators + [key]
     children = children + [child]
     previous = key
@@ -720,8 +723,9 @@ function auditLeafChain(tree)
 end function
 
 // Descends through separator keys to the leaf that owns the rightmost range
-// beginning at or before key. Duplicate keys can straddle adjacent leaves, so
-// containsEntry subsequently walks backward over equal-key predecessors.
+// beginning at or before key. Non-unique indexes deliberately allow equal
+// separators when a duplicate run spans leaves, so containsEntry subsequently
+// walks backward over equal-key predecessors.
 function locateLeaf(tree, key)
   validateOpen(tree, "locateLeaf")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "locateLeaf", "key must contain 1..256 bytes") end if
@@ -888,7 +892,10 @@ function auditNode(tree, pageNumber, expectedLevel, state)
   for index = 0 to len(node.children) - 1
     child = auditNode(tree, node.children[index], expectedLevel - 1, state)
     if firstKey is void then firstKey = bytes(child.firstKey) end if
-    if previousLast is not void and compareKeys(previousLast, child.firstKey) >= 0 then return fail(CORRUPT_DATA, "auditNode", "child key ranges overlap") end if
+    if previousLast is not void then
+      childOrder = compareKeys(previousLast, child.firstKey)
+      if childOrder > 0 or (childOrder == 0 and tree.meta.unique) then return fail(CORRUPT_DATA, "auditNode", "child key ranges violate index ordering") end if
+    end if
     if index > 0 and compareKeys(node.separators[index - 1], child.firstKey) != 0 then return fail(CORRUPT_DATA, "auditNode", "separator does not equal right-child first key") end if
     previousLast = bytes(child.lastKey)
     lastKey = bytes(child.lastKey)

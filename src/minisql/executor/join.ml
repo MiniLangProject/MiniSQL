@@ -163,7 +163,7 @@ end function
 // Executes an INNER or LEFT equi-join with a right-side hash table.
 // NULL keys never match, full value comparison resolves collisions, and the
 // original predicate is rechecked before emission. Unsupported shapes fall back.
-function applyHash(leftRows, rightRows, boundJoin)
+function applyHashRight(leftRows, rightRows, boundJoin)
   if not canHash(boundJoin) then return apply(leftRows, rightRows, boundJoin) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHash", "row inputs must be arrays") end if
   columns = equalityColumns(boundJoin)
@@ -208,6 +208,59 @@ function applyHash(leftRows, rightRows, boundJoin)
     end if
   end for
   return output
+end function
+
+// Executes an INNER equi-join with the left input as the hash-build side. The
+// emitted row remains `left.values + right.values`, so choosing the smaller
+// build side never changes bound column indexes.
+function applyHashLeft(leftRows, rightRows, boundJoin)
+  if not canHash(boundJoin) or boundJoin.joinType != ast.JOIN_INNER then return applyHashRight(leftRows, rightRows, boundJoin) end if
+  if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHashLeft", "row inputs must be arrays") end if
+  columns = equalityColumns(boundJoin)
+  leftColumn = columns[0]
+  rightColumn = columns[1]
+  buckets = array(HASH_BUCKET_COUNT, void)
+  for each left in leftRows
+    if not scan.isScannedRow(left) then return fail(INVALID_ARGUMENT, "applyHashLeft", "left input contains non-row") end if
+    key = left.values[leftColumn]
+    if not key.isNull then
+      bucketIndex = hashValue(key) % HASH_BUCKET_COUNT
+      bucket = buckets[bucketIndex]
+      if bucket is void then bucket = [] end if
+      bucket = bucket + [HashJoinEntry(key, left)]
+      buckets[bucketIndex] = bucket
+    end if
+  end for
+  output = []
+  for each right in rightRows
+    if not scan.isScannedRow(right) then return fail(INVALID_ARGUMENT, "applyHashLeft", "right input contains non-row") end if
+    key = right.values[rightColumn]
+    if not key.isNull then
+      bucket = buckets[hashValue(key) % HASH_BUCKET_COUNT]
+      if bucket is not void then
+        for each entry in bucket
+          if values.compareNonNull(entry.key, key) == 0 then
+            candidate = combine(entry.row, right)
+            if conditionPasses(boundJoin.condition, candidate) then output = output + [candidate] end if
+          end if
+        end for
+      end if
+    end if
+  end for
+  return output
+end function
+
+// Executes the optimizer-selected hash build orientation. LEFT joins keep the
+// right build side because unmatched-left tracking is part of that algorithm.
+function applyHashBuild(leftRows, rightRows, boundJoin, buildRight)
+  if typeof(buildRight) != "bool" then return fail(INVALID_ARGUMENT, "applyHashBuild", "buildRight must be bool") end if
+  if not buildRight and boundJoin.joinType == ast.JOIN_INNER then return applyHashLeft(leftRows, rightRows, boundJoin) end if
+  return applyHashRight(leftRows, rightRows, boundJoin)
+end function
+
+// Backward-compatible entry point used by direct executor tests.
+function applyHash(leftRows, rightRows, boundJoin)
+  return applyHashBuild(leftRows, rightRows, boundJoin, true)
 end function
 
 // Executes the semantic nested-loop fallback for every supported join type.

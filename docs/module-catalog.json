@@ -320,6 +320,12 @@
       "targetMilestone": "M16"
     },
     {
+      "path": "src/minisql/planner/execution_plan.ml",
+      "package": "minisql.planner.execution_plan",
+      "component": "planner.execution_plan",
+      "targetMilestone": "M46"
+    },
+    {
       "path": "src/minisql/planner/optimizer.ml",
       "package": "minisql.planner.optimizer",
       "component": "planner.optimizer",

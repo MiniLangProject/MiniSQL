@@ -38,6 +38,22 @@ struct HashGroupEntry
   groupIndex
 end struct
 
+// Fixed-size state for one direct scalar aggregate in the streaming fast path.
+struct AggregateAccumulator
+  // Bound aggregate whose semantics this state implements.
+  expression
+  // Number of contributing non-NULL values, or input rows for COUNT(*).
+  count
+  // Running numeric SUM used by SUM and AVG.
+  total
+  // Current extremum used by MIN and MAX.
+  selected
+  // Current boolean fold used by BOOL_AND and BOOL_OR.
+  booleanValue
+  // Indicates whether any non-NULL input contributed.
+  hasValue
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -235,6 +251,173 @@ function aggregateValue(expression, rows)
     return values.convert(source, expression.typeInfo)
   end if
   return fail(BINDING_ERROR, "aggregateValue", "unknown aggregate " + expression.name)
+end function
+
+// Creates an accumulator whose neutral state matches SQL empty-input rules.
+function createAccumulator(expression)
+  booleanValue = false
+  if expression.name == "BOOL_AND" then booleanValue = true end if
+  return AggregateAccumulator(expression, 0, 0, void, booleanValue, false)
+end function
+
+// Updates one accumulator from one row without retaining the row.
+function accumulate(state, row)
+  expression = state.expression
+  if expression.countStar then state.count = state.count + 1; return true end if
+  // Direct column aggregates are the dominant streaming case. Reading the
+  // already decoded slot avoids allocating a RowContext and dispatching the
+  // general expression evaluator once per input row; complex arguments retain
+  // the full evaluator and identical SQL semantics.
+  value = void
+  if expressions.isBaseBoundExpression(expression.argument) and expression.argument.kind == expressions.BOUND_COLUMN then
+    value = row.values[expression.argument.columnIndex]
+  else
+    value = evaluateArgument(expression.argument, row)
+  end if
+  if value.isNull then return true end if
+  state.count = state.count + 1
+  state.hasValue = true
+  if expression.name == "COUNT" then return true end if
+  if expression.name == "MIN" or expression.name == "MAX" then
+    if state.selected is void then
+      state.selected = value
+    else
+      comparison = values.compareNonNull(value, state.selected)
+      if (expression.name == "MIN" and comparison < 0) or (expression.name == "MAX" and comparison > 0) then state.selected = value end if
+    end if
+    return true
+  end if
+  if expression.name == "BOOL_AND" then state.booleanValue = state.booleanValue and value.value; return true end if
+  if expression.name == "BOOL_OR" then state.booleanValue = state.booleanValue or value.value; return true end if
+  state.total = state.total + values.asNumber(value)
+  return true
+end function
+
+// Converts an accumulator into the same SqlValue produced by aggregateValue.
+function finishAccumulator(state)
+  expression = state.expression
+  if expression.name == "COUNT" then return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(state.count)) end if
+  if not state.hasValue then return values.nullValue(expression.typeInfo.kind) end if
+  if expression.name == "MIN" or expression.name == "MAX" then return state.selected end if
+  if expression.name == "BOOL_AND" or expression.name == "BOOL_OR" then return values.boolean(state.booleanValue) end if
+  if expression.name == "AVG" then return values.doubleValue((state.total + 0.0) / state.count) end if
+  source = void
+  if typeof(state.total) == "float" then source = values.doubleValue(state.total) else source = values.integer(state.total) end if
+  return values.convert(source, expression.typeInfo)
+end function
+
+// Builds the narrowest safe source-column mask for direct aggregate arguments.
+// Complex scalar arguments retain full decoding while still avoiding row
+// materialization; direct column aggregates skip unrelated external values.
+function streamingRequiredColumns(table, selectExpressions)
+  required = array(len(table.columns), false)
+  for each expression in selectExpressions
+    if expression.countStar then
+      // COUNT(*) requires no decoded column values.
+    else if expressions.isBaseBoundExpression(expression.argument) and expression.argument.kind == expressions.BOUND_COLUMN then
+      index = expression.argument.columnIndex
+      if index < 0 or index >= len(required) then return void end if
+      required[index] = true
+    else
+      return void
+    end if
+  end for
+  return required
+end function
+
+// Creates accumulator state for a validated streaming scalar aggregate list.
+function streamingAccumulators(selectExpressions, operation)
+  states = []
+  for each expression in selectExpressions
+    if not expressions.isBoundAggregate(expression) or expression.distinct or expression.name == "STRING_AGG" then return fail(INVALID_ARGUMENT, operation, "unsupported streaming aggregate") end if
+    states = states + [createAccumulator(expression)]
+  end for
+  return states
+end function
+
+// Finalizes fixed-size accumulators into the ordinary one-row projection shape.
+function finishStreaming(states)
+  output = []
+  for each state in states
+    output = output + [finishAccumulator(state)]
+  end for
+  return [projection.ProjectedRow(void, output, [])]
+end function
+
+// Streams already selected rows through a predicate and fixed-size scalar
+// aggregate state. This is used by planned index scans without rebuilding the
+// general grouping structures.
+function projectStreamingRows(rows, selectExpressions, predicate)
+  if typeof(rows) != "array" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingRows", "invalid arguments") end if
+  states = streamingAccumulators(selectExpressions, "projectStreamingRows")
+  for each row in rows
+    if not scan.isScannedRow(row) then return fail(INVALID_ARGUMENT, "projectStreamingRows", "rows contain non-ScannedRow") end if
+    if predicate is void or expressions.predicatePasses(predicate, expressions.rowContext(row.values)) then
+      for each state in states
+        updated = try(accumulate(state, row))
+        if typeof(updated) == "error" then return updated end if
+      end for
+    end if
+  end for
+  return finishStreaming(states)
+end function
+
+// Streams one filtered base table through fixed-size scalar aggregate
+// accumulators. The caller-supplied mask includes both aggregate and predicate
+// columns, and the reader closes on every reported failure path.
+function projectStreamingTableFiltered(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns)
+  if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableFiltered", "invalid arguments") end if
+  states = streamingAccumulators(selectExpressions, "projectStreamingTableFiltered")
+  reader = try(scan.openCached(databasePath, table, pageTransaction, readCache))
+  if typeof(reader) == "error" then return reader end if
+  cursor = scan.openCursor(reader, requiredColumns)
+  operationError = void
+  while operationError is void
+    row = try(scan.nextRow(cursor))
+    if typeof(row) == "error" then
+      operationError = row
+    else if row is void then
+      break
+    else if predicate is void or expressions.predicatePasses(predicate, expressions.rowContext(row.values)) then
+      for each state in states
+        updated = try(accumulate(state, row))
+        if typeof(updated) == "error" then operationError = updated; break end if
+      end for
+    end if
+  end while
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return finishStreaming(states)
+end function
+
+// Keeps the unfiltered hot path branch-free inside the row loop. This function
+// is intentionally separate from projectStreamingTableFiltered because scalar
+// whole-table aggregates are common and execute the loop once per stored row.
+function projectStreamingTable(databasePath, table, pageTransaction, readCache, selectExpressions)
+  if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTable", "invalid arguments") end if
+  states = streamingAccumulators(selectExpressions, "projectStreamingTable")
+  reader = try(scan.openCached(databasePath, table, pageTransaction, readCache))
+  if typeof(reader) == "error" then return reader end if
+  cursor = scan.openCursor(reader, streamingRequiredColumns(table, selectExpressions))
+  operationError = void
+  while operationError is void
+    row = try(scan.nextRow(cursor))
+    if typeof(row) == "error" then
+      operationError = row
+    else if row is void then
+      break
+    else
+      for each state in states
+        updated = try(accumulate(state, row))
+        if typeof(updated) == "error" then operationError = updated; break end if
+      end for
+    end if
+  end while
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return finishStreaming(states)
 end function
 
 // Evaluates group using the supplied inputs.

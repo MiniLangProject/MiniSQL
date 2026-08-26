@@ -1428,16 +1428,22 @@ function ensureIndexes(database)
   return true
 end function
 
-// Implements constraint for single column for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
-function constraintForSingleColumn(database, table, columnIndex)
+// Finds a single-column index, optionally requiring the optimizer's stable
+// catalog index name. An empty name retains the legacy first-match behavior.
+function namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if columnIndex < 0 or columnIndex >= len(table.columns) then return void end if
   columnName = table.columns[columnIndex].name
   for each constraint in indexedConstraints(database, table)
-    if len(constraint.columns) == 1 and constraint.columns[0] == columnName then return constraint end if
+    nameMatches = indexName == "" or constraint.indexName == indexName
+    if nameMatches and len(constraint.columns) == 1 and constraint.columns[0] == columnName then return constraint end if
   end for
   return void
+end function
+
+// Retains the original first-match lookup used by joins and compatibility
+// diagnostics that do not carry a typed optimizer decision.
+function constraintForSingleColumn(database, table, columnIndex)
+  return namedConstraintForSingleColumn(database, table, columnIndex, "")
 end function
 
 // Implements rows from index entries for this module.
@@ -1445,21 +1451,29 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function rowsFromIndexEntries(database, table, pageTransaction, entries)
+  // Reuse one table reader for the complete candidate set. Opening the heap,
+  // schema history, and generated-column metadata once per index entry made a
+  // selective lookup pay connection-like setup cost for every matching row.
+  reader = try(scan.openCached(database.path, table, pageTransaction, database.readCache))
+  if typeof(reader) == "error" then return reader end if
   output = []
+  operationError = void
   for each value in entries
     reference = decodeRowReference(table.tableId, value.value)
-    row = scan.readTableReference(database.path, table, pageTransaction, reference)
+    row = try(scan.readReference(reader, reference))
+    if typeof(row) == "error" then operationError = row; break end if
     if row is not void then output = output + [row] end if
   end for
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
   return output
 end function
 
-// Implements equality index rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
-function equalityIndexRows(database, table, columnIndex, literalValue, pageTransaction)
-  constraint = constraintForSingleColumn(database, table, columnIndex)
+// Executes an equality lookup through one explicitly named single-column
+// index, or through the first matching index when indexName is empty.
+function namedEqualityIndexRows(database, table, columnIndex, literalValue, pageTransaction, indexName)
+  constraint = namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
@@ -1475,12 +1489,15 @@ function equalityIndexRows(database, table, columnIndex, literalValue, pageTrans
   return rowsFromIndexEntries(database, table, pageTransaction, entries)
 end function
 
-// Implements range index rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
-function rangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction)
-  constraint = constraintForSingleColumn(database, table, columnIndex)
+// Preserves the legacy equality-index API for join probes and older callers.
+function equalityIndexRows(database, table, columnIndex, literalValue, pageTransaction)
+  return namedEqualityIndexRows(database, table, columnIndex, literalValue, pageTransaction, "")
+end function
+
+// Executes a range lookup through one explicitly named single-column index,
+// or through the first matching index when indexName is empty.
+function namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, indexName)
+  constraint = namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
@@ -1505,6 +1522,11 @@ function rangeIndexRows(database, table, columnIndex, literalValue, operator, pa
   return rowsFromIndexEntries(database, table, pageTransaction, found)
 end function
 
+// Preserves the legacy range-index API for callers without a physical plan.
+function rangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction)
+  return namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, "")
+end function
+
 // Implements equality literal for column for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -1522,13 +1544,12 @@ function equalityLiteralForColumn(expression, columnIndex)
   return [false, void]
 end function
 
-// Implements composite equality index rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
-function compositeEqualityIndexRows(database, table, expression, pageTransaction)
+// Executes a complete equality probe against a named composite index, or the
+// first usable composite index when indexName is empty.
+function namedCompositeEqualityIndexRows(database, table, expression, pageTransaction, indexName)
   for each constraint in indexedConstraints(database, table)
-    if len(constraint.columns) > 1 then
+    nameMatches = indexName == "" or constraint.indexName == indexName
+    if nameMatches and len(constraint.columns) > 1 then
       keyValues = []
       complete = true
       for each columnName in constraint.columns
@@ -1560,17 +1581,25 @@ function compositeEqualityIndexRows(database, table, expression, pageTransaction
   return void
 end function
 
+// Preserves the legacy composite-index API for unplanned callers.
+function compositeEqualityIndexRows(database, table, expression, pageTransaction)
+  return namedCompositeEqualityIndexRows(database, table, expression, pageTransaction, "")
+end function
+
 // Implements index rows for bound for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function indexRowsForBound(database, bound, pageTransaction)
-  if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
-  if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
-  expression = bound.whereExpression
+// Finds one executable single-column index predicate inside an AND tree. The
+// caller retains the complete WHERE predicate as a post-filter, so using one
+// conjunct here is semantically equivalent to a database index candidate scan.
+function namedSingleIndexRows(database, table, expression, pageTransaction, indexName)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
-  composite = compositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction)
-  if composite is not void then return composite end if
+  if expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then
+    left = namedSingleIndexRows(database, table, expression.left, pageTransaction, indexName)
+    if left is not void then return left end if
+    return namedSingleIndexRows(database, table, expression.right, pageTransaction, indexName)
+  end if
   if expression.kind != expressions.BOUND_BINARY then return void end if
   columnExpression = void
   literalExpression = void
@@ -1584,9 +1613,40 @@ function indexRowsForBound(database, bound, pageTransaction)
     if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
   end if
   if columnExpression is void or literalExpression is void then return void end if
-  if operator == "=" then return equalityIndexRows(database, bound.sources[0].table, columnExpression.columnIndex, literalExpression.literal, pageTransaction) end if
-  if operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then return rangeIndexRows(database, bound.sources[0].table, columnExpression.columnIndex, literalExpression.literal, operator, pageTransaction) end if
+  if operator == "=" then return namedEqualityIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, pageTransaction, indexName) end if
+  if operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then return namedRangeIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, operator, pageTransaction, indexName) end if
   return void
+end function
+
+// Finds the first executable single-column predicate for legacy callers.
+function singleIndexRows(database, table, expression, pageTransaction)
+  return namedSingleIndexRows(database, table, expression, pageTransaction, "")
+end function
+
+// Executes exactly the optimizer-selected access path for a single-table
+// SELECT. Returning void lets the executor fall back safely if catalog or
+// transaction visibility changed after planning.
+function plannedIndexRowsForBound(database, bound, pageTransaction, indexName)
+  if typeof(indexName) != "string" or indexName == "" then return void end if
+  if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
+  if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
+  expression = bound.whereExpression
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
+  composite = namedCompositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
+  if composite is not void then return composite end if
+  return namedSingleIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
+end function
+
+// Returns index candidates for one bound, single-table SELECT or void when the
+// query shape or transaction visibility requires a sequential fallback.
+function indexRowsForBound(database, bound, pageTransaction)
+  if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
+  if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
+  expression = bound.whereExpression
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
+  composite = compositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction)
+  if composite is not void then return composite end if
+  return singleIndexRows(database, bound.sources[0].table, expression, pageTransaction)
 end function
 
 // Implements index access description for this module.

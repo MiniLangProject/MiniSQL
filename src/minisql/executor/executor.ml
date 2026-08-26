@@ -18,9 +18,11 @@ import minisql.executor.projection as projection
 import minisql.executor.scan as scan
 import minisql.executor.sort as sort
 import minisql.planner.logical_plan as logical_plan
+import minisql.planner.execution_plan as execution_plan
 import minisql.planner.optimizer as optimizer
 import minisql.planner.physical_plan as physical_plan
 import minisql.platform.file as file_api
+import minisql.platform.clock as clock
 import minisql.server.database_manager as database_manager
 import minisql.sql.ast as ast
 import minisql.sql.binder as binder
@@ -29,7 +31,9 @@ import minisql.sql.parser as parser
 import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.paged_file as paged_file
+import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.transaction as transaction
+import std.ds.list as list
 
 // SQL execution facade. M16 extends the accepted M15 scan/filter/projection
 // pipeline with joins, grouping, aggregates, set operations and explicit logical
@@ -43,6 +47,7 @@ const TRANSACTION_STATE = 9011
 const BINDING_ERROR = 9020
 const CONSTRAINT_VIOLATION = 9021
 const SORT_SPILL_THRESHOLD = 128
+const ANALYZE_SAMPLE_ROWS = 8192
 const DDL_STATE = 9023
 const UNSUPPORTED_SQL = 9025
 const AUTHENTICATION_REQUIRED = 9028
@@ -54,6 +59,8 @@ const MODE_DDL = 2
 
 const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
+const PLAN_CACHE_CAPACITY = 64
+const EXECUTION_BATCH_ROWS = 128
 
 // Identifies the flattened, versioned parameter metadata stored with procedures.
 const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
@@ -102,6 +109,21 @@ struct RecursiveCteFrame
   rows
 end struct
 
+// Session-local reusable physical plan. Entries are generation-bound and the
+// cache is invalidated atomically with local DDL or statistics maintenance.
+struct CachedPlan
+  // Canonical formatted SELECT text used for lookup.
+  key
+  // Shared catalog/maintenance generation at planning time.
+  schemaGeneration
+  // Persistent statistics generation at planning time.
+  statisticsGeneration
+  // Costed physical and executable plan.
+  optimized
+  // Number of successful reuses since insertion.
+  hits
+end struct
+
 // Groups the engine state and preserves the field relationships documented below.
 struct Engine
   // Stores the database associated with this value.
@@ -134,6 +156,13 @@ struct Engine
   triggerDepth
   // Contains nested recursive-CTE working tables for this isolated session.
   recursiveCteFrames
+  // Caches advisory statistics and index metadata for physical planning.
+  planningContext
+  // Contains bounded reusable physical plans for normalized SELECT text.
+  planCache
+  // Exact caller SQL consumed by the first/top-level physical-plan lookup.
+  // Nested SELECTs fall back to canonical AST keys after this value is cleared.
+  activePlanKey
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -155,6 +184,22 @@ end function
 // Does not modify its inputs.
 function isEngine(value)
   return value is Engine
+end function
+
+// Exposes non-sensitive optimizer cache counters for diagnostics and tests.
+function planCacheEntryCount(engine)
+  validateOpen(engine, "planCacheEntryCount")
+  return len(engine.planCache)
+end function
+
+// Returns cumulative hits of entries still resident in the session cache.
+function planCacheHitCount(engine)
+  validateOpen(engine, "planCacheHitCount")
+  hits = 0
+  for each cached in engine.planCache
+    hits = hits + cached.hits
+  end for
+  return hits
 end function
 
 // Implements command result for this module.
@@ -197,7 +242,7 @@ function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then return prepared end if
-  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
+  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "")
 end function
 
 // Opens open using the supplied inputs.
@@ -208,7 +253,7 @@ function open(databasePath)
   database = database_manager.open(databasePath)
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then database_manager.close(database); return prepared end if
-  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [])
+  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "")
 end function
 
 // Implements set principal for this module.
@@ -1997,27 +2042,364 @@ function scanBoundSource(engine, source, pageTransaction, offset, limit, require
   return output
 end function
 
+// Applies a predicate assigned by the optimizer before a source participates in
+// an inner join. Bound column indexes are global, so non-leading sources receive
+// an offset-sized placeholder prefix during evaluation while retaining their
+// compact local row representation for the join operator.
+function filterSourceRows(source, rows, predicate)
+  if predicate is void then return rows end if
+  output = []
+  prefix = array(source.offset, void)
+  for each row in rows
+    context = expressions.rowContext(prefix + row.values)
+    if expressions.predicatePasses(predicate, context) then output = output + [row] end if
+  end for
+  return output
+end function
+
+// Computes the global flattened column width of all bound sources.
+function boundColumnCount(bound)
+  count = 0
+  for each source in bound.sources
+    endOffset = source.offset + len(source.table.columns)
+    if endOffset > count then count = endOffset end if
+  end for
+  return count
+end function
+
+// Creates a complete, type-correct canonical row. Typed SQL NULL placeholders
+// keep global bound-column positions evaluable while a reordered join has not
+// yet attached every source.
+function canonicalNullValues(bound)
+  output = array(boundColumnCount(bound))
+  for each source in bound.sources
+    if len(source.table.columns) > 0 then
+      for localIndex = 0 to len(source.table.columns) - 1
+        output[source.offset + localIndex] = values.nullValue(source.table.columns[localIndex].typeCode)
+      end for
+    end if
+  end for
+  return output
+end function
+
+// Expands one local source row into canonical bound-column positions. The
+// membership/reference array lets a reordered join fill sources without
+// inferring presence from SQL NULL values.
+function canonicalSourceRow(bound, sourceIndex, row)
+  source = bound.sources[sourceIndex]
+  output = canonicalNullValues(bound)
+  if len(row.values) > 0 then
+    for localIndex = 0 to len(row.values) - 1
+      value = row.values[localIndex]
+      if value is not void then output[source.offset + localIndex] = value end if
+    end for
+  end if
+  references = array(len(bound.sources), void)
+  if row.reference is not void then references[sourceIndex] = row.reference end if
+  return scan.ScannedRow(references, output)
+end function
+
+// Expands a compact source row set into stable global bound-column positions.
+function canonicalizeRows(bound, sourceIndex, rows)
+  output = []
+  for each row in rows
+    output = output + [canonicalSourceRow(bound, sourceIndex, row)]
+  end for
+  return output
+end function
+
+// Adds one compact source row to an already canonical join row.
+function combineCanonical(bound, left, sourceIndex, right)
+  source = bound.sources[sourceIndex]
+  output = canonicalNullValues(bound)
+  if len(left.values) > 0 then
+    for index = 0 to len(left.values) - 1
+      value = left.values[index]
+      if value is not void then output[index] = value end if
+    end for
+  end if
+  if len(right.values) > 0 then
+    for localIndex = 0 to len(right.values) - 1
+      value = right.values[localIndex]
+      if value is not void then output[source.offset + localIndex] = value end if
+    end for
+  end if
+  references = array(len(bound.sources), void)
+  if typeof(left.reference) == "array" then
+    for index = 0 to len(left.reference) - 1
+      reference = left.reference[index]
+      if reference is not void then references[index] = reference end if
+    end for
+  end if
+  if right.reference is not void then references[sourceIndex] = right.reference end if
+  return scan.ScannedRow(references, output)
+end function
+
+// Applies the semantic nested-loop fallback to one reordered INNER join edge.
+function canonicalNestedJoin(bound, leftRows, rightRows, sourceIndex, condition)
+  output = []
+  for each left in leftRows
+    for each right in rightRows
+      candidate = combineCanonical(bound, left, sourceIndex, right)
+      if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then output = output + [candidate] end if
+    end for
+  end for
+  return output
+end function
+
+// Returns [joined-side global column, new-source local column] for a canonical
+// equality join, or void for an unsupported condition.
+function canonicalEqualityColumns(condition, source)
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
+  if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return void end if
+  leftInSource = condition.left.columnIndex >= source.offset and condition.left.columnIndex < source.offset + len(source.table.columns)
+  rightInSource = condition.right.columnIndex >= source.offset and condition.right.columnIndex < source.offset + len(source.table.columns)
+  if leftInSource and not rightInSource then return [condition.right.columnIndex, condition.left.columnIndex - source.offset] end if
+  if rightInSource and not leftInSource then return [condition.left.columnIndex, condition.right.columnIndex - source.offset] end if
+  return void
+end function
+
+// Hash-joins a reordered INNER source while preserving canonical SQL column
+// positions. Full key equality and predicate rechecks resolve collisions.
+function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, buildRight)
+  source = bound.sources[sourceIndex]
+  columns = canonicalEqualityColumns(condition, source)
+  if columns is void then return canonicalNestedJoin(bound, leftRows, rightRows, sourceIndex, condition) end if
+  joinedColumn = columns[0]
+  localColumn = columns[1]
+  buckets = array(257, void)
+  if buildRight then
+    for each right in rightRows
+      key = right.values[localColumn]
+      if not key.isNull then
+        bucketIndex = join.hashValue(key) % 257
+        bucket = buckets[bucketIndex]
+        if bucket is void then bucket = [] end if
+        buckets[bucketIndex] = bucket + [[key, right]]
+      end if
+    end for
+    output = []
+    for each left in leftRows
+      key = left.values[joinedColumn]
+      if not key.isNull then
+        bucket = buckets[join.hashValue(key) % 257]
+        if bucket is not void then
+          for each entry in bucket
+            if values.compareNonNull(key, entry[0]) == 0 then
+              candidate = combineCanonical(bound, left, sourceIndex, entry[1])
+              if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then output = output + [candidate] end if
+            end if
+          end for
+        end if
+      end if
+    end for
+    return output
+  end if
+  for each left in leftRows
+    key = left.values[joinedColumn]
+    if not key.isNull then
+      bucketIndex = join.hashValue(key) % 257
+      bucket = buckets[bucketIndex]
+      if bucket is void then bucket = [] end if
+      buckets[bucketIndex] = bucket + [[key, left]]
+    end if
+  end for
+  output = []
+  for each right in rightRows
+    key = right.values[localColumn]
+    if not key.isNull then
+      bucket = buckets[join.hashValue(key) % 257]
+      if bucket is not void then
+        for each entry in bucket
+          if values.compareNonNull(entry[0], key) == 0 then
+            candidate = combineCanonical(bound, entry[1], sourceIndex, right)
+            if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then output = output + [candidate] end if
+          end if
+        end for
+      end if
+    end if
+  end for
+  return output
+end function
+
+// Counts a final reordered nested-loop join without retaining its joined rows.
+function canonicalNestedJoinCount(bound, leftRows, rightRows, sourceIndex, condition)
+  count = 0
+  for each left in leftRows
+    for each right in rightRows
+      candidate = combineCanonical(bound, left, sourceIndex, right)
+      if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
+    end for
+  end for
+  return count
+end function
+
+// Counts a final reordered hash join. Hash buckets and collision rechecks are
+// identical to canonicalHashJoin, but successful matches increment a scalar
+// instead of extending a cardinality-sized output array.
+function canonicalHashJoinCount(bound, leftRows, rightRows, sourceIndex, condition, buildRight)
+  source = bound.sources[sourceIndex]
+  columns = canonicalEqualityColumns(condition, source)
+  if columns is void then return canonicalNestedJoinCount(bound, leftRows, rightRows, sourceIndex, condition) end if
+  joinedColumn = columns[0]
+  localColumn = columns[1]
+  buckets = array(257, void)
+  if buildRight then
+    for each right in rightRows
+      key = right.values[localColumn]
+      if not key.isNull then
+        bucketIndex = join.hashValue(key) % 257
+        bucket = buckets[bucketIndex]
+        if bucket is void then bucket = [] end if
+        buckets[bucketIndex] = bucket + [[key, right]]
+      end if
+    end for
+    count = 0
+    for each left in leftRows
+      key = left.values[joinedColumn]
+      if not key.isNull then
+        bucket = buckets[join.hashValue(key) % 257]
+        if bucket is not void then
+          for each entry in bucket
+            if values.compareNonNull(key, entry[0]) == 0 then
+              candidate = combineCanonical(bound, left, sourceIndex, entry[1])
+              if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
+            end if
+          end for
+        end if
+      end if
+    end for
+    return count
+  end if
+  for each left in leftRows
+    key = left.values[joinedColumn]
+    if not key.isNull then
+      bucketIndex = join.hashValue(key) % 257
+      bucket = buckets[bucketIndex]
+      if bucket is void then bucket = [] end if
+      buckets[bucketIndex] = bucket + [[key, left]]
+    end if
+  end for
+  count = 0
+  for each right in rightRows
+    key = right.values[localColumn]
+    if not key.isNull then
+      bucket = buckets[join.hashValue(key) % 257]
+      if bucket is not void then
+        for each entry in bucket
+          if values.compareNonNull(entry[0], key) == 0 then
+            candidate = combineCanonical(bound, entry[1], sourceIndex, right)
+            if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
+          end if
+        end for
+      end if
+    end if
+  end for
+  return count
+end function
+
+// Executes all reordered joins except the final edge normally, then turns that
+// edge directly into a cardinality. This bounds retained memory by the largest
+// intermediate before the final fan-out rather than the final result size.
+function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColumns, executable)
+  if executable.constantEmpty then return 0 end if
+  startSource = executable.startSource
+  firstMask = void
+  if requiredColumns is not void then firstMask = requiredColumns[startSource] end if
+  firstRows = scanBoundSource(engine, bound.sources[startSource], pageTransaction, 0, -1, firstMask)
+  firstRows = filterSourceRows(bound.sources[startSource], firstRows, executable.sources[startSource].pushedPredicate)
+  output = canonicalizeRows(bound, startSource, firstRows)
+  stepIndex = 0
+  for each plannedJoin in executable.joins
+    sourceIndex = plannedJoin.sourceIndex
+    source = bound.sources[sourceIndex]
+    mask = void
+    if requiredColumns is not void then mask = requiredColumns[sourceIndex] end if
+    right = scanBoundSource(engine, source, pageTransaction, 0, -1, mask)
+    right = filterSourceRows(source, right, executable.sources[sourceIndex].pushedPredicate)
+    boundJoin = bound.joins[plannedJoin.joinIndex]
+    finalStep = stepIndex == len(executable.joins) - 1
+    if finalStep then
+      if plannedJoin.algorithm == execution_plan.JOIN_HASH then return canonicalHashJoinCount(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight) end if
+      return canonicalNestedJoinCount(bound, output, right, sourceIndex, boundJoin.condition)
+    end if
+    if plannedJoin.algorithm == execution_plan.JOIN_HASH then
+      output = canonicalHashJoin(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight)
+    else
+      output = canonicalNestedJoin(bound, output, right, sourceIndex, boundJoin.condition)
+    end if
+    stepIndex = stepIndex + 1
+  end for
+  return len(output)
+end function
+
+// Executes the optimizer's canonicalized order for a pure INNER equijoin graph.
+function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
+  startSource = executable.startSource
+  firstMask = void
+  if requiredColumns is not void then firstMask = requiredColumns[startSource] end if
+  firstRows = scanBoundSource(engine, bound.sources[startSource], pageTransaction, sourceOffset, sourceLimit, firstMask)
+  firstRows = filterSourceRows(bound.sources[startSource], firstRows, executable.sources[startSource].pushedPredicate)
+  output = canonicalizeRows(bound, startSource, firstRows)
+  for each plannedJoin in executable.joins
+    sourceIndex = plannedJoin.sourceIndex
+    source = bound.sources[sourceIndex]
+    mask = void
+    if requiredColumns is not void then mask = requiredColumns[sourceIndex] end if
+    right = scanBoundSource(engine, source, pageTransaction, 0, -1, mask)
+    right = filterSourceRows(source, right, executable.sources[sourceIndex].pushedPredicate)
+    boundJoin = bound.joins[plannedJoin.joinIndex]
+    if plannedJoin.algorithm == execution_plan.JOIN_HASH then
+      output = canonicalHashJoin(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight)
+    else
+      output = canonicalNestedJoin(bound, output, right, sourceIndex, boundJoin.condition)
+    end if
+  end for
+  return output
+end function
+
 // Implements joined source for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns)
+function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
   if len(bound.sources) == 0 then return [scan.ScannedRow(void, [])] end if
-  output = dml.indexRowsForBound(engine.database, bound, pageTransaction)
-  if output is void then output = scanBoundSource(engine, bound.sources[0], pageTransaction, sourceOffset, sourceLimit, requiredColumns) end if
+  if executable.constantEmpty then return [] end if
+  if executable.reorderedJoins then return joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable) end if
+  firstPlan = executable.sources[0]
+  firstMask = void
+  if requiredColumns is not void then firstMask = requiredColumns[0] end if
+  output = void
+  usedPlannedIndex = false
+  if firstPlan.accessKind == execution_plan.ACCESS_INDEX then output = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
+  if output is void then
+    output = scanBoundSource(engine, bound.sources[0], pageTransaction, sourceOffset, sourceLimit, firstMask)
+  else
+    usedPlannedIndex = true
+  end if
+  // Index integration has already enforced its search predicate. Remaining
+  // conjuncts are evaluated by the ordinary final WHERE filter below.
+  if not usedPlannedIndex then output = filterSourceRows(bound.sources[0], output, firstPlan.pushedPredicate) end if
+  joinIndex = 0
   for each boundJoin in bound.joins
+    plannedJoin = executable.joins[joinIndex]
+    rightPlan = executable.sources[joinIndex + 1]
+    rightMask = void
+    if requiredColumns is not void then rightMask = requiredColumns[joinIndex + 1] end if
     // RIGHT and FULL joins must see every row on the right so unmatched rows can
     // be emitted. Equality-index shortcuts are therefore reserved for inner and
     // left joins until the index executor can also enumerate the complement.
     outerRight = boundJoin.joinType == ast.JOIN_RIGHT or boundJoin.joinType == ast.JOIN_FULL
     usedIndex = false
     joinedRows = []
-    if not outerRight then
+    if plannedJoin.algorithm == execution_plan.JOIN_INDEX_NESTED_LOOP and not outerRight then
+      if len(output) == 0 then usedIndex = true end if
       for each leftRow in output
         matches = dml.joinIndexRows(engine.database, boundJoin.source, boundJoin.condition, leftRow, pageTransaction)
         if matches is void then
           usedIndex = false
           break
         end if
+        matches = filterSourceRows(boundJoin.source, matches, rightPlan.pushedPredicate)
         usedIndex = true
         joinedRows = joinedRows + join.apply([leftRow], matches, boundJoin)
       end for
@@ -2025,13 +2407,15 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
     if usedIndex and not outerRight then
       output = joinedRows
     else
-      right = scanBoundSource(engine, boundJoin.source, pageTransaction, 0, -1, void)
-      if join.canHash(boundJoin) then
-        output = join.applyHash(output, right, boundJoin)
+      right = scanBoundSource(engine, boundJoin.source, pageTransaction, 0, -1, rightMask)
+      right = filterSourceRows(boundJoin.source, right, rightPlan.pushedPredicate)
+      if plannedJoin.algorithm == execution_plan.JOIN_HASH and join.canHash(boundJoin) then
+        output = join.applyHashBuild(output, right, boundJoin, plannedJoin.buildRight)
       else
         output = join.apply(output, right, boundJoin)
       end if
     end if
+    joinIndex = joinIndex + 1
   end for
   return output
 end function
@@ -2211,21 +2595,24 @@ function collectRequiredColumns(expression, requiredColumns)
   return false
 end function
 
-// Computes a stable source-column mask for a one-table SELECT. Join column
-// indexes span multiple sources, and nested queries own separate bindings, so
-// those query forms deliberately retain complete row materialization.
+// Computes one stable local column mask per source. Global bound indexes are
+// collected before slicing at source offsets, allowing joins to avoid fetching
+// unrelated external values while retaining canonical flattened row positions.
 function selectRequiredColumns(bound)
-  if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void or len(bound.setOperations) != 0 then return void end if
-  requiredColumns = array(len(bound.sources[0].table.columns))
-  if len(requiredColumns) > 0 then
-    for index = 0 to len(requiredColumns) - 1
-      requiredColumns[index] = false
-    end for
-  end if
+  if len(bound.sources) == 0 then return void end if
+  totalColumns = 0
+  for each source in bound.sources
+    endOffset = source.offset + len(source.table.columns)
+    if endOffset > totalColumns then totalColumns = endOffset end if
+  end for
+  requiredColumns = array(totalColumns, false)
   for each item in bound.items
     if not collectRequiredColumns(item, requiredColumns) then return void end if
   end for
   if not collectRequiredColumns(bound.whereExpression, requiredColumns) then return void end if
+  for each joined in bound.joins
+    if not collectRequiredColumns(joined.condition, requiredColumns) then return void end if
+  end for
   for each item in bound.groupExpressions
     if not collectRequiredColumns(item, requiredColumns) then return void end if
   end for
@@ -2233,7 +2620,17 @@ function selectRequiredColumns(bound)
   for each item in bound.orderExpressions
     if not collectRequiredColumns(item, requiredColumns) then return void end if
   end for
-  return requiredColumns
+  output = []
+  for each source in bound.sources
+    local = array(len(source.table.columns), false)
+    if len(local) > 0 then
+      for localIndex = 0 to len(local) - 1
+        local[localIndex] = requiredColumns[source.offset + localIndex]
+      end for
+    end if
+    output = output + [local]
+  end for
+  return output
 end function
 
 // Recognizes the exact aggregate shape whose result depends only on live-slot
@@ -2256,11 +2653,122 @@ function simpleCountStarProjected(engine, bound, pageTransaction)
   return [projection.ProjectedRow(void, [countValue], [])]
 end function
 
+// Identifies a pipeline that can filter, project and apply LIMIT directly over
+// bounded scan batches. Blocking relational operators retain their specialized
+// materializing paths.
+function simpleBatchEligible(bound, executable)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
+  if bound.aggregateQuery or bound.windowQuery or bound.statement.distinct or len(bound.setOperations) != 0 or len(bound.statement.orderBy) != 0 then return false end if
+  if expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(executable.wherePredicate) then return false end if
+  return executable.sources[0].accessKind == execution_plan.ACCESS_SEQUENTIAL
+end function
+
+// Executes a non-blocking single-table query with at most one source batch and
+// the final result resident at once. This removes the former full scanned-row
+// materialization while preserving the QueryResult API required by protocol v1.
+function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, wherePredicate)
+  if bound.statement.limit == 0 then return [] end if
+  mask = void
+  if requiredColumns is not void then mask = requiredColumns[0] end if
+  reader = scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache)
+  cursor = scan.openCursor(reader, mask)
+  output = list.List.new()
+  skipped = 0
+  stopped = false
+  operationError = void
+  while not stopped
+    batch = try(scan.nextBatch(cursor, EXECUTION_BATCH_ROWS))
+    if typeof(batch) == "error" then operationError = batch; break end if
+    if batch is void then break end if
+    for each row in batch.rows
+      context = expressions.rowContext(row.values)
+      if expressions.predicatePasses(wherePredicate, context) then
+        if skipped < bound.statement.offset then
+          skipped = skipped + 1
+        else
+          projected = projection.ProjectedRow(row, projection.evaluateList(bound.items, context, "batch.select"), [])
+          output.add(projected)
+          if bound.statement.limit >= 0 and output.len() >= bound.statement.limit then stopped = true; break end if
+        end if
+      end if
+    end for
+  end while
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return output.toArray()
+end function
+
+// Recognizes an ordered single-table LIMIT that can maintain only the current
+// best window while scanning. Projection and ORDER BY expressions must be
+// row-local because subqueries require the general materializing pipeline.
+function simpleTopNEligible(bound, executable)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
+  if executable.sortAlgorithm != execution_plan.SORT_TOP_N or executable.sources[0].accessKind != execution_plan.ACCESS_SEQUENTIAL then return false end if
+  if bound.aggregateQuery or bound.windowQuery or bound.statement.distinct or len(bound.setOperations) != 0 then return false end if
+  if expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(executable.wherePredicate) or expressions.containsSubqueryList(bound.orderExpressions) then return false end if
+  return true
+end function
+
+// Fuses scan, filter, projection, and bounded Top-N retention. At most one scan
+// batch plus LIMIT+OFFSET projected rows are resident, so large source tables
+// no longer dominate memory for small ordered result windows.
+function simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, wherePredicate)
+  windowRows = bound.statement.limit + bound.statement.offset
+  if windowRows == 0 then return [] end if
+  mask = void
+  if requiredColumns is not void then mask = requiredColumns[0] end if
+  reader = try(scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache))
+  if typeof(reader) == "error" then return reader end if
+  cursor = scan.openCursor(reader, mask)
+  retained = []
+  operationError = void
+  while true
+    batch = try(scan.nextBatch(cursor, EXECUTION_BATCH_ROWS))
+    if typeof(batch) == "error" then operationError = batch; break end if
+    if batch is void then break end if
+    batchCandidates = list.List.new()
+    for each row in batch.rows
+      context = expressions.rowContext(row.values)
+      if expressions.predicatePasses(wherePredicate, context) then
+        batchCandidates.add(projection.ProjectedRow(row, projection.evaluateList(bound.items, context, "topN.select"), projection.evaluateList(bound.orderExpressions, context, "topN.order")))
+      end if
+    end for
+    candidates = retained + batchCandidates.toArray()
+    retained = sort.topNProjected(candidates, bound.statement.orderBy, windowRows)
+  end while
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return projection.sliceRows(retained, bound.statement.offset, bound.statement.limit)
+end function
+
 // Implements select projected for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
-  if simpleCountStarEligible(bound) then return simpleCountStarProjected(engine, bound, pageTransaction) end if
+  optimized = optimizedPlanFor(engine, bound)
+  if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_COUNT_SLOTS then return simpleCountStarProjected(engine, bound, pageTransaction) end if
+  requiredColumns = selectRequiredColumns(bound)
+  if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_JOIN_COUNT then
+    joinedCount = joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColumns, optimized.execution)
+    countValue = values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(joinedCount))
+    return [projection.ProjectedRow(void, [countValue], [])]
+  end if
+  if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_STREAM then
+    if optimized.execution.constantEmpty then return aggregate.projectStreamingRows([], bound.items, optimized.execution.wherePredicate) end if
+    firstPlan = optimized.execution.sources[0]
+    if firstPlan.accessKind == execution_plan.ACCESS_INDEX then
+      indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName)
+      if indexedRows is not void then return aggregate.projectStreamingRows(indexedRows, bound.items, optimized.execution.wherePredicate) end if
+    end if
+    mask = void
+    if requiredColumns is not void then mask = requiredColumns[0] end if
+    if optimized.execution.wherePredicate is void then return aggregate.projectStreamingTable(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items) end if
+    return aggregate.projectStreamingTableFiltered(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items, optimized.execution.wherePredicate, mask)
+  end if
+  if simpleTopNEligible(bound, optimized.execution) then return simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, optimized.execution.wherePredicate) end if
+  if simpleBatchEligible(bound, optimized.execution) then return simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, optimized.execution.wherePredicate) end if
   // A single unordered, unfiltered source preserves physical row order. Apply
   // LIMIT/OFFSET while scanning that source so rows outside the requested page
   // are neither decoded nor retained. Complex queries keep the full pipeline
@@ -2277,20 +2785,20 @@ function selectProjected(engine, bound, pageTransaction)
     sourceLimit = bound.statement.limit
     resultOffset = 0
   end if
-  requiredColumns = selectRequiredColumns(bound)
-  source = joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns)
+  source = joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, optimized.execution)
   projected = []
-  hasSubqueries = expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(bound.whereExpression) or expressions.containsSubqueryList(bound.orderExpressions)
+  wherePredicate = optimized.execution.wherePredicate
+  hasSubqueries = expressions.containsSubqueryList(bound.items) or expressions.containsSubquery(wherePredicate) or expressions.containsSubqueryList(bound.orderExpressions)
   if hasSubqueries then
     projected = projectSubqueryRows(engine, bound, source, pageTransaction)
   else if bound.aggregateQuery then
-    filtered = filter.apply(source, bound.whereExpression)
+    filtered = filter.apply(source, wherePredicate)
     projected = aggregate.project(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions)
   else if bound.windowQuery then
-    filtered = filter.apply(source, bound.whereExpression)
+    filtered = filter.apply(source, wherePredicate)
     projected = projection.applyWindows(filtered, bound.items, bound.orderExpressions)
   else
-    filtered = filter.apply(source, bound.whereExpression)
+    filtered = filter.apply(source, wherePredicate)
     projected = projection.apply(filtered, bound.items, bound.orderExpressions)
   end if
   if bound.statement.distinct then projected = projection.distinct(projected) end if
@@ -2300,7 +2808,13 @@ function selectProjected(engine, bound, pageTransaction)
   end for
   projected = normalizeCompoundOrder(projected, bound)
   temporaryRoot = file_api.joinPath(engine.database.path, "tmp")
-  projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, SORT_SPILL_THRESHOLD)
+  if optimized.execution.sortAlgorithm == execution_plan.SORT_TOP_N then
+    projected = sort.topNProjected(projected, bound.statement.orderBy, bound.statement.limit + bound.statement.offset)
+  else
+    // Actual cardinality remains the memory-safety guard when estimates are
+    // stale: the sorter may spill even when the plan expected an in-memory run.
+    projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, SORT_SPILL_THRESHOLD)
+  end if
   projected = projection.sliceRows(projected, resultOffset, bound.statement.limit)
   return projected
 end function
@@ -2323,18 +2837,100 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function loadStatistics(engine)
+  if engine.planningContext is not void then return engine.planningContext.statistics end if
   return statistics.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+end function
+
+// Builds the optimizer's catalog snapshot without giving planner modules direct
+// access to files or mutable database handles. The snapshot is advisory; an
+// index disappearing between planning and execution causes a semantic fallback
+// rather than a failed or incorrect query.
+function loadPlanningContext(engine)
+  planningGeneration = database_manager.planningGeneration(engine.database)
+  if engine.planningContext is not void and engine.planningContext.schemaGeneration == planningGeneration then return engine.planningContext end if
+  if engine.planningContext is not void then engine.planningContext = void; engine.planCache = [] end if
+  state = statistics.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  schemas = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+  indexes = []
+  for each table in engine.database.catalogHandle.catalog.tables
+    tableSchema = schema_history.findTableSchema(schemas, table.tableId)
+    if tableSchema is not void then
+      for each constraint in tableSchema.constraints
+        if constraint.indexId > 0 then
+          columnIndexes = []
+          valid = true
+          for each columnName in constraint.columns
+            columnIndex = binder.findColumnIndex(table, columnName)
+            if columnIndex < 0 then valid = false else columnIndexes = columnIndexes + [columnIndex] end if
+          end for
+          if valid and len(columnIndexes) > 0 then
+            unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
+            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, unique)]
+          end if
+        end if
+      end for
+    end if
+  end for
+  engine.planningContext = execution_plan.context(state, indexes, planningGeneration)
+  return engine.planningContext
+end function
+
+// Returns a generation-safe cached physical plan or optimizes and records a new
+// one. Executor-created typed literals format opaquely, so correlated and
+// parameter-materialized SELECTs bypass caching rather than reusing a plan that
+// embeds another invocation's literal value.
+function optimizedPlanFor(engine, bound)
+  context = loadPlanningContext(engine)
+  key = ""
+  if len(engine.activePlanKey) > 0 then
+    key = engine.activePlanKey
+    engine.activePlanKey = ""
+  else
+    key = "AST|" + ast.formatSelect(bound.statement)
+  end if
+  statisticsGeneration = context.statistics.generation
+  cacheable = not ast.selectContainsTypedLiteral(bound.statement)
+  if cacheable and len(engine.planCache) > 0 then
+    for index = 0 to len(engine.planCache) - 1
+      cached = engine.planCache[index]
+      if cached.key == key and cached.schemaGeneration == context.schemaGeneration and cached.statisticsGeneration == statisticsGeneration then
+        cached.hits = cached.hits + 1
+        engine.planCache[index] = cached
+        return cached.optimized
+      end if
+    end for
+  end if
+  optimized = optimizer.optimize(bound, context)
+  if not cacheable then return optimized end if
+  if len(engine.planCache) >= PLAN_CACHE_CAPACITY then
+    retained = []
+    for index = 1 to len(engine.planCache) - 1
+      retained = retained + [engine.planCache[index]]
+    end for
+    engine.planCache = retained
+  end if
+  engine.planCache = engine.planCache + [CachedPlan(key, context.schemaGeneration, statisticsGeneration, optimized, 0)]
+  return optimized
+end function
+
+// Invalidates only advisory state. Query correctness never depends on the cache,
+// but local DDL/ANALYZE must expose new access paths and estimates immediately.
+function invalidatePlanningContext(engine)
+  engine.planningContext = void
+  engine.planCache = []
+  return true
 end function
 
 // Implements analyze table for this module.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function analyzeTable(engine, state, table)
-  rows = scan.scanTable(engine.database.path, table, void)
+  populationRows = scan.countTableRowsCached(engine.database.path, table, void, engine.database.readCache)
+  rows = scan.sampleTableRowsCached(engine.database.path, table, populationRows, ANALYZE_SAMPLE_ROWS, engine.database.readCache)
   tableFile = paged_file.open(catalog.tableFilePath(engine.database.path, table.tableId))
   pageCount = tableFile.pageCount
   paged_file.close(tableFile)
-  return statistics.replaceTable(state, statistics.analyzeTable(table, rows, pageCount))
+  return statistics.replaceTable(state, statistics.analyzeSample(table, populationRows, rows, pageCount))
 end function
 
 // Executes analyze using the supplied inputs.
@@ -2356,6 +2952,7 @@ function executeAnalyze(engine, statement)
     analyzed = 1
   end if
   statistics.save(engine.database.path, state)
+  invalidatePlanningContext(engine)
   return commandResult("ANALYZE", analyzed, "statistics generation " + state.generation)
 end function
 
@@ -2379,13 +2976,23 @@ function executeExplain(engine, statement)
   if engine.explicitTransaction and engine.transactionMode == MODE_DML then pageTransaction = engine.pageTransaction end if
   materializedStatement = materializeSelectStatement(engine, statement.statement, pageTransaction)
   bound = binder.bindSelect(materializedStatement, engine.database.catalogHandle)
-  state = loadStatistics(engine)
-  lines = optimizer.explain(bound, state)
-  access = try(dml.indexAccessDescription(engine.database, bound))
-  if typeof(access) != "error" and access is not void then lines = [access] + lines end if
+  optimized = optimizedPlanFor(engine, bound)
+  lines = physical_plan.render(optimized.root)
+  prefix = "statistics=defaults"
+  if optimized.usedStatistics then prefix = "statistics=analyzed" end if
+  lines = [prefix] + lines
+  // Preserve the established first-line contract consumed by the CLI and GUI
+  // while the following rows expose the richer physical plan.
+  if len(optimized.execution.sources) > 0 and optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX then
+    lines = ["Index Seek rows=" + optimized.execution.sources[0].estimatedRows] + lines
+  end if
   if statement.analyze then
+    before = buffer_pool.readCacheStats(engine.database.readCache)
+    started = clock.monotonicMilliseconds()
     actual = selectRows(engine, bound, pageTransaction)
-    lines = lines + ["actual rows=" + len(actual.rows)]
+    elapsed = clock.monotonicMilliseconds() - started
+    after = buffer_pool.readCacheStats(engine.database.readCache)
+    lines = lines + ["execution timeMs=" + elapsed + " buffers hit=" + (after.hits - before.hits) + " read=" + (after.misses - before.misses), "actual rows=" + len(actual.rows)]
   end if
   rows = []
   for each line in lines
@@ -2422,6 +3029,8 @@ function commitExplicit(engine)
     schema_history.commit(engine.ddlTransaction)
     rebuilt = try(dml.rebuildAllIndexes(engine.database))
     if typeof(rebuilt) != "error" then dml.clearIndexesDirty(engine.database) end if
+    database_manager.advancePlanningGeneration(engine.database)
+    invalidatePlanningContext(engine)
   end if
   database_manager.releaseLocks(engine.database, engine.sessionId)
   resetTransaction(engine)
@@ -3339,6 +3948,10 @@ function executeStatementCore(engine, statement)
     ignoredAudit = appendAuditOutcome(engine, statement, false, "execution error " + result.code)
     return result
   end if
+  if ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) or ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) then
+    database_manager.advancePlanningGeneration(engine.database)
+    invalidatePlanningContext(engine)
+  end if
   ignoredAudit = appendAuditOutcome(engine, statement, true, result.command)
   return result
 end function
@@ -3414,7 +4027,18 @@ function executeSql(engine, sqlText)
   statements = parser.parseSql(sqlText)
   results = []
   for each statement in statements
-    results = results + [executeStatement(engine, statement)]
+    engine.activePlanKey = ""
+    if len(statements) == 1 then
+      if ast.isSelectStatement(statement) then
+        engine.activePlanKey = "SQL|" + sqlText
+      else if ast.isExplainStatement(statement) and ast.isSelectStatement(statement.statement) then
+        engine.activePlanKey = "SQL|" + sqlText
+      end if
+    end if
+    executed = try(executeStatement(engine, statement))
+    engine.activePlanKey = ""
+    if typeof(executed) == "error" then return executed end if
+    results = results + [executed]
   end for
   return results
 end function
