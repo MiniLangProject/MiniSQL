@@ -1820,8 +1820,20 @@ end function
 function bindCreateIndex(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "table not found: " + statement.tableName) end if
+  seen = []
   for each columnName in statement.columns
     if findColumnIndex(table, columnName) < 0 then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "unknown index column " + columnName) end if
+    for each existing in seen
+      if existing == columnName then return fail(BINDING_ERROR, "bindCreateIndex", "duplicate index column " + columnName) end if
+    end for
+    seen = seen + [columnName]
+  end for
+  for each columnName in statement.includeColumns
+    if findColumnIndex(table, columnName) < 0 then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "unknown included column " + columnName) end if
+    for each existing in seen
+      if existing == columnName then return fail(BINDING_ERROR, "bindCreateIndex", "included column duplicates an index column " + columnName) end if
+    end for
+    seen = seen + [columnName]
   end for
   return BoundCreateIndex(statement, table)
 end function

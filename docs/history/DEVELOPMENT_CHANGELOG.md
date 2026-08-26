@@ -1,5 +1,17 @@
 # MiniSQL changelog
 
+## 1.0.0 — covering index payloads
+
+- added `CREATE [UNIQUE] INDEX ... INCLUDE (...)` parsing, binding, durable
+  catalog metadata, introspection, and key/INCLUDE overlap validation;
+- added versioned covering leaf payloads after the stable row-reference prefix,
+  retaining transparent reads of legacy 12-byte index values;
+- extended costed `Index Only Scan` selection and typed reconstruction across
+  key plus INCLUDE columns without opening heap or overflow pages;
+- maintained and verified complete payloads through INSERT, UPDATE, startup
+  repair, `REINDEX`, and `VACUUM`, with focused parser, persistence, planner,
+  and corruption-safe fallback coverage.
+
 ## 1.0.0 — advanced optimizer statistics and access paths
 
 - upgraded the CRC-protected advisory statistics sidecar to format 4 with

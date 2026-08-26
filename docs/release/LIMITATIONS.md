@@ -25,7 +25,9 @@
   statistics. Inner-equijoin ordering uses bounded left-deep dynamic programming
   through eight sources and a deterministic greedy fallback above that limit;
   bushy trees and outer-join reordering are not implemented. Index-only scans
-  cover B+ tree key columns; SQL `INCLUDE` columns are not implemented. Execution
+  cover B+ tree key columns and explicit `INCLUDE` payload columns. One encoded
+  B+ tree key is limited to 256 bytes and one leaf payload to 3,584 bytes so an
+  individual entry always fits the minimum supported 4 KiB database page. Execution
   uses bounded batches and streaming fast paths where supported, including
   filtered scalar aggregates, fused single-table Top-N, and the final edge of
   reordered inner-equijoin `COUNT(*)`; other blocking joins/groups and

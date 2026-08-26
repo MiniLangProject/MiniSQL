@@ -414,6 +414,8 @@ struct CreateIndexStatement
   tableName
   // Contains the ordered columns collection.
   columns
+  // Ordered non-key columns persisted in each leaf entry for covering scans.
+  includeColumns
   // Indicates whether the unique condition is active.
   unique
   // Stores the if not exists associated with this value.

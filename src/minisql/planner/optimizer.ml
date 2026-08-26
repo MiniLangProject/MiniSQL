@@ -316,7 +316,7 @@ function expressionCoveredByIndex(expression, source, index)
     localIndex = boundIndex - source.offset
     if localIndex < 0 or localIndex >= len(source.table.columns) then return false end if
     covered = false
-    for each keyIndex in index.columnIndexes
+    for each keyIndex in index.columnIndexes + index.includedColumnIndexes
       if keyIndex == localIndex then covered = true; break end if
     end for
     if not covered then return false end if
@@ -324,11 +324,10 @@ function expressionCoveredByIndex(expression, source, index)
   return true
 end function
 
-// Recognizes a query fully answerable from an existing B+-tree key. MiniSQL
-// currently has no INCLUDE clause, so covering columns are exactly key columns.
+// Recognizes a query fully answerable from B+-tree key and INCLUDE payloads.
 function indexCoversBound(bound, source, index, predicate)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or source.query is not void or len(bound.setOperations) != 0 or bound.windowQuery then return false end if
-  for each columnIndex in index.columnIndexes
+  for each columnIndex in index.columnIndexes + index.includedColumnIndexes
     if columnIndex < 0 or columnIndex >= len(source.table.columns) then return false end if
     typeCode = source.table.columns[columnIndex].typeCode
     decodable = typeCode == types.SqlTypeKind.Boolean or types.isIntegralKind(typeCode) or typeCode == types.SqlTypeKind.Decimal or typeCode == types.SqlTypeKind.Date or typeCode == types.SqlTypeKind.Time or typeCode == types.SqlTypeKind.Timestamp or types.isTextKind(typeCode) or types.isBinaryKind(typeCode)

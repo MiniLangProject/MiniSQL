@@ -39,6 +39,8 @@ struct IndexInfo
   name
   // Ordered table-local key columns.
   columnIndexes
+  // Ordered table-local non-key columns stored in leaf payloads.
+  includedColumnIndexes
   // Whether the complete key enforces uniqueness.
   unique
 end struct
@@ -114,12 +116,15 @@ function fail(code, operation, message)
 end function
 
 // Validates and constructs catalog-independent index metadata.
-function indexInfo(tableId, name, columnIndexes, unique)
-  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
+function indexInfo(tableId, name, columnIndexes, includedColumnIndexes, unique)
+  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(includedColumnIndexes) != "array" or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
   for each columnIndex in columnIndexes
     if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "column indexes must be non-negative integers") end if
   end for
-  return IndexInfo(tableId, name, columnIndexes, unique)
+  for each columnIndex in includedColumnIndexes
+    if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "included column indexes must be non-negative integers") end if
+  end for
+  return IndexInfo(tableId, name, columnIndexes, includedColumnIndexes, unique)
 end function
 
 // Builds an immutable optimizer input snapshot.

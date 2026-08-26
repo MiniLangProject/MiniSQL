@@ -620,7 +620,9 @@ function parseCreateIndex(state, unique)
   expectKeyword(state, "ON")
   tableName = parseObjectName(state, "table name")
   columns = parseIdentifierList(state)
-  return ast.CreateIndexStatement(name, tableName, columns, unique, ifNotExists)
+  includeColumns = []
+  if matchKeyword(state, "INCLUDE") then includeColumns = parseIdentifierList(state) end if
+  return ast.CreateIndexStatement(name, tableName, columns, includeColumns, unique, ifNotExists)
 end function
 
 // Parses create view using the supplied inputs.

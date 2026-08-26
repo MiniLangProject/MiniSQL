@@ -4,8 +4,9 @@
 
 MiniSQL index files are paged files of type INDEX. Pages 0 and 1 are redundant metadata
 pages; tree nodes begin at page 2. Keys and payloads are opaque byte strings. The M11
-format limits keys to 256 bytes and payloads to 64 bytes so every v1 entry has a bounded
-physical representation.
+format limits keys to 256 bytes and payloads to 3,584 bytes. The payload ceiling is
+derived from the minimum 4 KiB page after the largest key and fixed headers, so every
+accepted v1 entry has a bounded physical representation and fits one leaf page.
 
 ## Ordering and uniqueness
 

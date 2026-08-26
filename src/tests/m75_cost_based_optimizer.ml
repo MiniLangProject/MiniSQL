@@ -27,16 +27,18 @@ function main(args)
   if len(args) != 1 then print "MiniSQL M75 cost-based optimizer: FAIL args"; return 2 end if
   state = testkit.create()
   managed = database_manager.create(args[0], "m75_optimizer", config_model.defaultDatabaseSettings(4096))
+  databasePath = managed.path
   engine = executor.attach(managed)
 
   executeOne(engine, "CREATE TABLE optimizer_fact (id INTEGER PRIMARY KEY, category INTEGER NOT NULL, payload TEXT)")
+  payloadText = "covering-payload-that-exceeds-the-old-sixty-four-byte-leaf-value-limit-0123456789-abcdefghijklmnopqrstuvwxyz"
   insertSql = "INSERT INTO optimizer_fact(id, category, payload) VALUES "
   for index = 1 to 300
     if index > 1 then insertSql = insertSql + ", " end if
-    insertSql = insertSql + "(" + index + ", " + (index % 10) + ", 'payload-value')"
+    insertSql = insertSql + "(" + index + ", " + (index % 10) + ", '" + payloadText + "')"
   end for
   executeOne(engine, insertSql)
-  executeOne(engine, "CREATE INDEX idx_optimizer_category ON optimizer_fact(category)")
+  executeOne(engine, "CREATE INDEX idx_optimizer_category ON optimizer_fact(category) INCLUDE (payload)")
   executeOne(engine, "ANALYZE optimizer_fact")
 
   countPlan = executeOne(engine, "EXPLAIN SELECT COUNT(*) FROM optimizer_fact")
@@ -56,6 +58,15 @@ function main(args)
   covered = executeOne(engine, "SELECT category FROM optimizer_fact WHERE category = 3")
   testkit.equal(state, len(covered.rows), 30, "index-only scan row count")
   testkit.equal(state, covered.rows[0][0].value, 3, "index-only scan decodes key value")
+  includedPlan = executeOne(engine, "EXPLAIN SELECT category, payload FROM optimizer_fact WHERE category = 3")
+  testkit.record(state, planContains(includedPlan, "Index Only Scan"), "INCLUDE projection selects index-only scan")
+  included = executeOne(engine, "SELECT category, payload FROM optimizer_fact WHERE category = 3")
+  testkit.equal(state, len(included.rows), 30, "INCLUDE index-only row count")
+  testkit.equal(state, included.rows[0][1].value, payloadText, "INCLUDE payload above legacy leaf limit decodes without heap")
+  executeOne(engine, "UPDATE optimizer_fact SET payload = 'updated-payload' WHERE id = 3")
+  updatedIncluded = executeOne(engine, "SELECT payload FROM optimizer_fact WHERE category = 3 AND payload = 'updated-payload'")
+  testkit.equal(state, len(updatedIncluded.rows), 1, "updated INCLUDE predicate finds one row")
+  testkit.equal(state, updatedIncluded.rows[0][0].value, "updated-payload", "updated INCLUDE payload is maintained")
   filteredAggregatePlan = executeOne(engine, "EXPLAIN SELECT SUM(id) FROM optimizer_fact WHERE category = 3")
   testkit.record(state, planContains(filteredAggregatePlan, "Streaming Aggregate"), "filtered scalar aggregate streams")
   filteredAggregate = executeOne(engine, "SELECT SUM(id) FROM optimizer_fact WHERE category = 3")
@@ -174,5 +185,12 @@ function main(args)
 
   executor.close(engine)
   database_manager.close(managed)
+  reopened = executor.open(databasePath)
+  reopenedPlan = executeOne(reopened, "EXPLAIN SELECT category, payload FROM optimizer_fact WHERE category = 3")
+  testkit.record(state, planContains(reopenedPlan, "Index Only Scan"), "persisted INCLUDE metadata restores index-only plan")
+  reopenedIncluded = executeOne(reopened, "SELECT payload FROM optimizer_fact WHERE category = 3 AND payload = 'updated-payload'")
+  testkit.equal(state, len(reopenedIncluded.rows), 1, "persisted INCLUDE payload survives reopen")
+  testkit.equal(state, reopenedIncluded.rows[0][0].value, "updated-payload", "reopened INCLUDE payload value")
+  executor.close(reopened)
   return testkit.finish(state, "MiniSQL M75 cost-based optimizer: SUCCESS", "MiniSQL M75 cost-based optimizer: FAIL")
 end function

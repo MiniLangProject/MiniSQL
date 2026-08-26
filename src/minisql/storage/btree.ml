@@ -31,7 +31,10 @@ const META_DATA_SIZE = 64
 const LEAF_DATA_OFFSET = 96
 const INTERNAL_DATA_OFFSET = 88
 const MAX_KEY_BYTES = 256
-const MAX_VALUE_BYTES = 64
+// A leaf value may use the space remaining on the minimum supported 4 KiB
+// page after the largest key and fixed page/entry headers. This supports
+// covering-index payloads while guaranteeing that every accepted entry fits.
+const MAX_VALUE_BYTES = 3584
 const MAX_LEAF_ENTRIES = 10
 const MAX_INTERNAL_CHILDREN = 12
 const FLAG_UNIQUE = 1
@@ -193,7 +196,7 @@ end function
 // Inputs: `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function entry(key, value)
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "entry", "key must contain 1..256 bytes") end if
-  if typeof(value) != "bytes" or len(value) == 0 or len(value) > MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "entry", "value must contain 1..64 bytes") end if
+  if typeof(value) != "bytes" or len(value) == 0 or len(value) > MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "entry", "value must contain 1..3584 bytes") end if
   return BTreeEntry(bytes(key), bytes(value))
 end function
 

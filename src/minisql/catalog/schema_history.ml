@@ -96,7 +96,8 @@ struct ConstraintDefinition
   expressionSql
   // Reference table field of the constraint definition.
   referenceTable
-  // Reference columns field of the constraint definition.
+  // Referenced columns for foreign keys. For index-backed local constraints,
+  // this backwards-compatible extension slot stores ordered INCLUDE columns.
   referenceColumns
   // On delete field of the constraint definition.
   onDelete
@@ -1088,6 +1089,7 @@ function buildAlterTable(prepared, databasePath, bound)
       for each value in schemaValue.constraints
         if schemaValue.tableId == table.tableId then
           value.columns = stringArrayReplace(value.columns, statement.oldName, statement.newName)
+          if value.indexId > 0 then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
           if value.kind == CONSTRAINT_CHECK then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
         end if
         if value.referenceTable == table.name then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
@@ -1187,6 +1189,7 @@ function buildAlterTable(prepared, databasePath, bound)
         if schemaValue.tableId == table.tableId then
           if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
           if stringArrayContains(value.columns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
+          if value.indexId > 0 and stringArrayContains(value.referenceColumns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is included by index " + value.indexName) end if
         end if
         if value.kind == CONSTRAINT_FOREIGN_KEY and value.referenceTable == table.name and stringArrayContains(value.referenceColumns, statement.oldName) then
           return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by foreign key " + value.name)
@@ -1379,7 +1382,7 @@ function buildCreateIndex(prepared, databasePath, bound)
   end for
   kind = CONSTRAINT_INDEX
   if bound.statement.unique then kind = CONSTRAINT_UNIQUE end if
-  value = constraint(bound.statement.name, kind, bound.statement.columns, "", "", [], "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
+  value = constraint(bound.statement.name, kind, bound.statement.columns, "", "", bound.statement.includeColumns, "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
   schema.constraints = schema.constraints + [value]
   indexFinal = indexFilePath(databasePath, value.indexId)
   prepared.createFiles = prepared.createFiles + [CreateFilePlan(indexFinal + ".ddl.new", indexFinal, superblock.FILE_TYPE_INDEX, value.indexId, bound.statement.unique)]

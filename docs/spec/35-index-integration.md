@@ -22,7 +22,15 @@ deferred. Floating-point range
 predicates deliberately use heap scans until a canonical sortable IEEE-754 key
 encoding exists. Unique constraints continue to allow multiple SQL NULL values.
 
-`EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen.
+Explicit `CREATE [UNIQUE] INDEX ... INCLUDE (...)` definitions persist ordered
+non-key columns in each leaf entry. The key alone controls ordering and unique
+enforcement. A covering plan may reconstruct a table-width typed row from both
+the key and payload and skip heap/overflow access. DML maintenance, startup
+repair, `REINDEX`, `VACUUM`, and the consistency checker compare the complete
+leaf value so stale payload data cannot remain valid silently.
+
+`EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen
+and `Index Only Scan` when no heap fetch is required.
 The consistency checker compares each derived tree with the logical heap rows.
 
 Explicit indexes may be removed with `DROP INDEX [IF EXISTS] name`. The binder

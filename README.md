@@ -98,8 +98,10 @@ deterministic connected greedy fallback while outer joins retain SQL order.
 
 Deterministic predicates are folded and pushed to their single source;
 unreferenced external `TEXT`/`BLOB` columns are not materialized. A B+ tree key
-that contains every referenced column executes as an index-only scan without
-opening heap or overflow pages. Simple
+plus optional `CREATE INDEX ... INCLUDE (...)` leaf payloads that contain every
+referenced column execute as an index-only scan without opening heap or overflow
+pages. Included values use a versioned, backwards-compatible leaf format and
+are maintained through insert, update, recovery, `REINDEX`, and `VACUUM`. Simple
 single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
 reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/
 `BOOL_AND`/`BOOL_OR` use fixed-size streaming accumulators, including eligible
@@ -369,6 +371,15 @@ filter required heap dereference and reached **80.140 statements/s**. Avoiding
 heap and overflow access was therefore **1.234x faster (+23.4%)** in this
 focused workload. This microbenchmark isolates access-path cost and is not a
 replacement for the 1 GiB end-to-end figures above.
+
+The `INCLUDE` extension was measured separately on Windows with three fresh
+native in-process database runs: 4,000 rows, a 108-byte `TEXT` payload, 200
+identical result rows, 10 warm-ups, and 30 measured statements per access path.
+`SELECT payload ... WHERE category = 3` reached a median **22.866 statements/s**
+with `CREATE INDEX ... (category) INCLUDE (payload)`, versus **14.881
+statements/s** through the same non-covering category index and heap/overflow
+lookups. The covering leaf payload was therefore **1.537x faster (+53.7%)** in
+this deliberately payload-sensitive microbenchmark.
 
 ### Peak private memory
 

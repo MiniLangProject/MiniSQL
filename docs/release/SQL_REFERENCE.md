@@ -14,6 +14,18 @@ table, and changing a column's default or `NOT NULL` property. `DROP INDEX [IF
 EXISTS] name` removes an explicit index; constraint-owned indexes must be
 removed through their constraint.
 
+Explicit indexes support non-key covering columns:
+
+```sql
+CREATE [UNIQUE] INDEX index_name ON table_name(key_column [, ...])
+  INCLUDE (payload_column [, ...]);
+```
+
+INCLUDE columns do not participate in key ordering or uniqueness. They are
+stored in B+ tree leaves and may satisfy projections, filters, grouping, and
+ordering without a heap lookup when every referenced value is decodable from
+the index. Key and INCLUDE column lists may not overlap.
+
 Column features include SQL NULL, defaults, `NOT NULL`, `CHECK`, primary and
 unique keys, foreign keys, stored generated columns, identity columns and the
 `AUTO_INCREMENT`/`AUTOINCREMENT` compatibility aliases.
@@ -51,6 +63,9 @@ keys. `EXPLAIN SELECT ...` returns the chosen executable operator tree.
 buffer-cache hit/read deltas, and actual row count. Plans may contain
 `Index Scan`, `Index Only Scan`, `Dynamic Join Order`, `Hash Join`, `Index Nested Loop Join`, `Streaming Aggregate`,
 `Streaming Join Count`, `Count Slots`, `Top-N`, or `External Merge Sort` operators.
+
+`SHOW INDEXES FROM table_name` returns `index_name`, `index_kind`, `unique`,
+`columns`, and `included_columns`.
 
 ## Schemas and metadata
 

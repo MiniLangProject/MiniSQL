@@ -29,11 +29,37 @@ function main(args)
   engine = executor.attach(managed)
 
   executeOne(engine, "CREATE TABLE inventory (id INTEGER PRIMARY KEY, sku VARCHAR(40) NOT NULL UNIQUE, category VARCHAR(20) NOT NULL, code INTEGER NOT NULL, value INTEGER NOT NULL)")
-  executeOne(engine, "CREATE INDEX idx_inventory_category_code ON inventory(category, code)")
+  executeOne(engine, "CREATE INDEX idx_inventory_category_code ON inventory(category, code) INCLUDE (value)")
   executeOne(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (1, 'a-1', 'a', 1, 10), (2, 'a-2', 'a', 2, 20), (3, 'b-1', 'b', 1, 30), (4, 'b-2', 'b', 2, 40)")
 
   verified = dml.verifyAllIndexes(managed)
   testkit.record(state, verified >= 3, "primary, unique and explicit indexes verify")
+  listed = executeOne(engine, "SHOW INDEXES FROM inventory")
+  listedExplicit = -1
+  if len(listed.rows) > 0 then
+    for rowIndex = 0 to len(listed.rows) - 1
+      if listed.rows[rowIndex][0].value == "idx_inventory_category_code" then listedExplicit = rowIndex end if
+    end for
+  end if
+  testkit.record(state, listedExplicit >= 0, "SHOW INDEXES lists covering index")
+  if listedExplicit >= 0 then testkit.equal(state, listed.rows[listedExplicit][4].value, "value", "SHOW INDEXES exposes INCLUDE columns") end if
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_bad_overlap ON inventory(category) INCLUDE (category)")), 9020, "INCLUDE rejects key overlap")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_bad_missing ON inventory(category) INCLUDE (missing_column)")), 9014, "INCLUDE rejects missing columns")
+  executeOne(engine, "CREATE TABLE include_ddl (id INTEGER PRIMARY KEY, lookup_key INTEGER NOT NULL, payload VARCHAR(80))")
+  executeOne(engine, "INSERT INTO include_ddl(id, lookup_key, payload) VALUES (1, 7, 'rename-safe')")
+  executeOne(engine, "CREATE INDEX idx_include_ddl ON include_ddl(lookup_key) INCLUDE (payload)")
+  executeOne(engine, "ALTER TABLE include_ddl RENAME COLUMN payload TO label")
+  renamedIndexes = executeOne(engine, "SHOW INDEXES FROM include_ddl")
+  renamedFound = false
+  for each row in renamedIndexes.rows
+    if row[0].value == "idx_include_ddl" and row[4].value == "label" then renamedFound = true end if
+  end for
+  testkit.record(state, renamedFound, "column rename updates INCLUDE metadata")
+  renamedPayload = executeOne(engine, "SELECT label FROM include_ddl WHERE lookup_key = 7")
+  testkit.equal(state, renamedPayload.rows[0][0].value, "rename-safe", "renamed INCLUDE column remains readable")
+  executeOne(engine, "CREATE TABLE include_drop_guard (id INTEGER PRIMARY KEY, lookup_key INTEGER, payload INTEGER)")
+  executeOne(engine, "CREATE INDEX idx_include_drop_guard ON include_drop_guard(lookup_key) INCLUDE (payload)")
+  testkit.errorCode(state, try(executor.executeSql(engine, "ALTER TABLE include_drop_guard DROP COLUMN payload")), 9021, "DROP COLUMN rejects INCLUDE dependency")
 
   explain = executeOne(engine, "EXPLAIN SELECT sku FROM inventory WHERE id = 2")
   testkit.record(state, len(explain.rows) > 0, "EXPLAIN has rows")
@@ -88,7 +114,7 @@ function main(args)
   testkit.equal(state, ignoredMissing.affectedRows, 0, "DROP INDEX IF EXISTS is idempotent")
   testkit.equal(state, executeOne(engine, "SELECT id FROM inventory WHERE category = 'c' AND code = 9").rows[0][0].value, 2, "queries remain correct after explicit index removal")
 
-  executeOne(engine, "CREATE UNIQUE INDEX idx_inventory_value ON inventory(value)")
+  executeOne(engine, "CREATE UNIQUE INDEX idx_inventory_value ON inventory(value) INCLUDE (category)")
   testkit.errorCode(state, try(executor.executeSql(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (5, 'duplicate-value', 'a', 5, 10)")), 9022, "explicit unique index enforces uniqueness")
   executeOne(engine, "DROP INDEX idx_inventory_value")
   executeOne(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (5, 'duplicate-value', 'a', 5, 10)")

@@ -137,7 +137,7 @@ function scanRowsColumns(database, table, pageTransaction, existingFile, require
   return scan.scanUsingColumns(database.path, table, pageTransaction, existingFile, requiredColumns)
 end function
 
-// Builds a table-width mask for one or more unique constraints.
+// Builds a table-width mask for local constraint key columns.
 function constraintColumnMask(table, constraints)
   mask = array(len(table.columns), false)
   for each constraint in constraints
@@ -146,6 +146,17 @@ function constraintColumnMask(table, constraints)
       if index < 0 then return fail(CORRUPT_DATA, "constraintColumnMask", "constraint references missing column") end if
       mask[index] = true
     end for
+  end for
+  return mask
+end function
+
+// Extends a key mask with non-key values persisted in covering-index leaves.
+function indexColumnMask(table, constraint)
+  mask = constraintColumnMask(table, [constraint])
+  for each columnName in constraint.referenceColumns
+    index = binder.findColumnIndex(table, columnName)
+    if index < 0 then return fail(CORRUPT_DATA, "indexColumnMask", "index INCLUDE references missing column") end if
+    mask[index] = true
   end for
   return mask
 end function
@@ -1131,9 +1142,24 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function decodeRowReference(tableId, encoded)
-  if typeof(tableId) != "int" or typeof(encoded) != "bytes" or len(encoded) != 12 then return fail(CORRUPT_DATA, "decodeRowReference", "invalid index row reference") end if
+  // The stable 12-byte reference is the prefix of both legacy leaf values and
+  // v1 covering values, so older indexes remain readable without migration.
+  if typeof(tableId) != "int" or typeof(encoded) != "bytes" or len(encoded) < 12 then return fail(CORRUPT_DATA, "decodeRowReference", "invalid index row reference") end if
   if endian.readU32LE(encoded, 8) != tableId then return fail(CORRUPT_DATA, "decodeRowReference", "index row reference belongs to another table") end if
   return scan.RowReference(endian.readU32LE(encoded, 0), endian.readU16LE(encoded, 4), endian.readU16LE(encoded, 6))
+end function
+
+// Validates the leaf-value shape before a heap-backed scan consumes only its
+// row-reference prefix. Full payload decoding remains exclusive to index-only
+// scans, while ordinary legacy values still require an exact 12-byte length.
+function validateIndexEntryValueShape(constraint, encoded)
+  if typeof(encoded) != "bytes" then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "index leaf value must be bytes") end if
+  if len(constraint.referenceColumns) == 0 then
+    if len(encoded) != 12 then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "legacy index leaf value has trailing bytes") end if
+    return true
+  end if
+  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != 1 then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "invalid INCLUDE payload header") end if
+  return true
 end function
 
 // Decodes one zero-escaped variable-width key component and returns its bytes
@@ -1158,6 +1184,39 @@ function decodeEscapedKeyBytes(encoded, startOffset)
   return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "missing component terminator")
 end function
 
+// Decodes one self-delimiting typed value shared by ordered keys and INCLUDE
+// payloads. Floating-point key text is not reversible and deliberately returns
+// void, which makes execution fall back to a heap-backed index scan.
+function decodeIndexPart(column, encoded, cursor, operation)
+  if cursor >= len(encoded) then return fail(CORRUPT_DATA, operation, "truncated typed index value") end if
+  tag = encoded[cursor]
+  cursor = cursor + 1
+  decodedValue = void
+  if tag == 1 then
+    decodedValue = values.nullValue(column.typeCode)
+  else if tag == 2 then
+    if cursor >= len(encoded) or (encoded[cursor] != 0 and encoded[cursor] != 1) then return fail(CORRUPT_DATA, operation, "invalid Boolean index value") end if
+    decodedValue = values.of(column.typeCode, encoded[cursor] == 1)
+    cursor = cursor + 1
+  else if tag == 3 then
+    if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, operation, "truncated integral index value") end if
+    words = endian.makeInt64(endian.readU32BE(encoded, cursor) ^ 2147483648, endian.readU32BE(encoded, cursor + 4))
+    cursor = cursor + 8
+    if column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date then
+      decodedValue = values.of(column.typeCode, endian.int64ToInt(words))
+    else
+      decodedValue = values.of(column.typeCode, words)
+    end if
+  else if tag == 5 or tag == 6 then
+    escaped = decodeEscapedKeyBytes(encoded, cursor)
+    cursor = escaped[1]
+    if tag == 5 then decodedValue = values.of(column.typeCode, decode(escaped[0])) else decodedValue = values.of(column.typeCode, escaped[0]) end if
+  else
+    return void
+  end if
+  return [decodedValue, cursor]
+end function
+
 // Reconstructs table-typed SQL values from an index key. Non-key positions are
 // typed NULL placeholders and are safe because the optimizer proves they are
 // not referenced before selecting an index-only plan. Floating encodings retain
@@ -1173,34 +1232,46 @@ function decodeCoveredIndexKey(table, constraint, encoded)
     columnIndex = binder.findColumnIndex(table, columnName)
     if columnIndex < 0 or cursor >= len(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "index key shape does not match catalog") end if
     column = table.columns[columnIndex]
-    tag = encoded[cursor]
-    cursor = cursor + 1
-    decodedValue = void
-    if tag == 1 then
-      decodedValue = values.nullValue(column.typeCode)
-    else if tag == 2 then
-      if cursor >= len(encoded) or (encoded[cursor] != 0 and encoded[cursor] != 1) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid Boolean key") end if
-      decodedValue = values.of(column.typeCode, encoded[cursor] == 1)
-      cursor = cursor + 1
-    else if tag == 3 then
-      if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "truncated integral key") end if
-      words = endian.makeInt64(endian.readU32BE(encoded, cursor) ^ 2147483648, endian.readU32BE(encoded, cursor + 4))
-      cursor = cursor + 8
-      if column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date then
-        decodedValue = values.of(column.typeCode, endian.int64ToInt(words))
-      else
-        decodedValue = values.of(column.typeCode, words)
-      end if
-    else if tag == 5 or tag == 6 then
-      part = decodeEscapedKeyBytes(encoded, cursor)
-      cursor = part[1]
-      if tag == 5 then decodedValue = values.of(column.typeCode, decode(part[0])) else decodedValue = values.of(column.typeCode, part[0]) end if
-    else
-      return void
-    end if
-    output[columnIndex] = decodedValue
+    part = decodeIndexPart(column, encoded, cursor, "decodeCoveredIndexKey")
+    if part is void then return void end if
+    output[columnIndex] = part[0]
+    cursor = part[1]
   end for
   if cursor != len(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "trailing index key bytes") end if
+  return output
+end function
+
+// Encodes a leaf value as a stable row-reference prefix followed, when needed,
+// by the MSI v1 marker and self-delimiting typed INCLUDE values.
+function encodeIndexEntryValue(table, constraint, rowValues, reference)
+  output = encodeRowReference(table.tableId, reference)
+  if len(constraint.referenceColumns) == 0 then return output end if
+  output = output + bytes([77, 83, 73, 1])
+  for each columnName in constraint.referenceColumns
+    columnIndex = binder.findColumnIndex(table, columnName)
+    if columnIndex < 0 then return fail(CORRUPT_DATA, "encodeIndexEntryValue", "index INCLUDE references missing column") end if
+    output = output + indexKeyPart(rowValues[columnIndex])
+    if len(output) > btree.MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "encodeIndexEntryValue", "encoded INCLUDE payload exceeds one B+ tree leaf entry") end if
+  end for
+  return output
+end function
+
+// Merges a validated MSI v1 payload into the table-width row reconstructed
+// from the key. Missing legacy payloads return void and trigger a safe fallback.
+function decodeIncludedIndexValues(table, constraint, encoded, output)
+  if len(constraint.referenceColumns) == 0 then return output end if
+  if len(encoded) == 12 then return void end if
+  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != 1 then return fail(CORRUPT_DATA, "decodeIncludedIndexValues", "invalid INCLUDE payload header") end if
+  cursor = 16
+  for each columnName in constraint.referenceColumns
+    columnIndex = binder.findColumnIndex(table, columnName)
+    if columnIndex < 0 then return fail(CORRUPT_DATA, "decodeIncludedIndexValues", "index INCLUDE shape does not match catalog") end if
+    part = decodeIndexPart(table.columns[columnIndex], encoded, cursor, "decodeIncludedIndexValues")
+    if part is void then return void end if
+    output[columnIndex] = part[0]
+    cursor = part[1]
+  end for
+  if cursor != len(encoded) then return fail(CORRUPT_DATA, "decodeIncludedIndexValues", "trailing INCLUDE payload bytes") end if
   return output
 end function
 
@@ -1209,6 +1280,8 @@ function coveredRowsFromIndexEntries(table, constraint, entries)
   output = []
   for each entry in entries
     rowValues = decodeCoveredIndexKey(table, constraint, entry.key)
+    if rowValues is void then return void end if
+    rowValues = decodeIncludedIndexValues(table, constraint, entry.value, rowValues)
     if rowValues is void then return void end if
     output = output + [scan.ScannedRow(decodeRowReference(table.tableId, entry.value), rowValues)]
   end for
@@ -1259,7 +1332,7 @@ function buildIndexEntries(database, table, constraint, pageTransaction)
   // Index construction needs only key columns plus the physical RowReference.
   // Avoid fetching unrelated external values during startup verification,
   // REINDEX, and VACUUM on wide multi-gigabyte tables.
-  rows = scan.scanTableRangeColumns(database.path, table, pageTransaction, 0, -1, constraintColumnMask(table, [constraint]))
+  rows = scan.scanTableRangeColumns(database.path, table, pageTransaction, 0, -1, indexColumnMask(table, constraint))
   entryCount = 0
   for each row in rows
     keyValues = constraintKey(row.values, table, constraint)
@@ -1272,7 +1345,7 @@ function buildIndexEntries(database, table, constraint, pageTransaction)
   for each row in rows
     keyValues = constraintKey(row.values, table, constraint)
     if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
-      entries[entryIndex] = btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, row.reference))
+      entries[entryIndex] = btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, row.values, row.reference))
       entryIndex = entryIndex + 1
     end if
   end for
@@ -1347,7 +1420,7 @@ function applyInsertedIndexes(database, table, result)
       for rowIndex = 0 to len(result.newRows) - 1
         keyValues = constraintKey(result.newRows[rowIndex], table, constraint)
         if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
-          combined[outputIndex] = btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, result.references[rowIndex]))
+          combined[outputIndex] = btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, result.newRows[rowIndex], result.references[rowIndex]))
           outputIndex = outputIndex + 1
         end if
       end for
@@ -1377,7 +1450,7 @@ end function
 // every unique row-reference entry proves that the tree has neither missing nor
 // additional entries, without retaining either complete collection.
 function verifyIndexStreaming(database, table, constraint, tree, reader)
-  cursorResult = try(scan.openCursor(reader, constraintColumnMask(table, [constraint])))
+  cursorResult = try(scan.openCursor(reader, indexColumnMask(table, constraint)))
   if typeof(cursorResult) == "error" then return cursorResult end if
   expectedCount = 0
   operationError = void
@@ -1391,7 +1464,7 @@ function verifyIndexStreaming(database, table, constraint, tree, reader)
     else
       keyValues = constraintKey(row.values, table, constraint)
       if not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
-        expected = try(btree.entry(encodeIndexKey(keyValues), encodeRowReference(table.tableId, row.reference)))
+        expected = try(btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, row.values, row.reference)))
         if typeof(expected) == "error" then
           operationError = expected
         else
@@ -1529,7 +1602,7 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function rowsFromIndexEntries(database, table, pageTransaction, entries)
+function rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
   // Reuse one table reader for the complete candidate set. Opening the heap,
   // schema history, and generated-column metadata once per index entry made a
   // selective lookup pay connection-like setup cost for every matching row.
@@ -1538,6 +1611,7 @@ function rowsFromIndexEntries(database, table, pageTransaction, entries)
   output = []
   operationError = void
   for each value in entries
+    validateIndexEntryValueShape(constraint, value.value)
     reference = decodeRowReference(table.tableId, value.value)
     row = try(scan.readReference(reader, reference))
     if typeof(row) == "error" then operationError = row; break end if
@@ -1565,7 +1639,7 @@ function namedEqualityIndexRows(database, table, columnIndex, literalValue, page
   for each rowValue in found
     entries = entries + [btree.entry(encodeIndexKey([converted]), rowValue)]
   end for
-  return rowsFromIndexEntries(database, table, pageTransaction, entries)
+  return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
 end function
 
 // Preserves the legacy equality-index API for join probes and older callers.
@@ -1598,7 +1672,7 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
   closeResult = try(btree.close(tree))
   if typeof(found) == "error" then return found end if
   if typeof(closeResult) == "error" then return closeResult end if
-  return rowsFromIndexEntries(database, table, pageTransaction, found)
+  return rowsFromIndexEntries(database, table, constraint, pageTransaction, found)
 end function
 
 // Preserves the legacy range-index API for callers without a physical plan.
@@ -1653,7 +1727,7 @@ function namedCompositeEqualityIndexRows(database, table, expression, pageTransa
         for each rowValue in foundValues
           entries = entries + [btree.entry(encodedKey, rowValue)]
         end for
-        return rowsFromIndexEntries(database, table, pageTransaction, entries)
+        return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
       end if
     end if
   end for

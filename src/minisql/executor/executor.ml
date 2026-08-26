@@ -2860,14 +2860,19 @@ function loadPlanningContext(engine)
       for each constraint in tableSchema.constraints
         if constraint.indexId > 0 then
           columnIndexes = []
+          includedColumnIndexes = []
           valid = true
           for each columnName in constraint.columns
             columnIndex = binder.findColumnIndex(table, columnName)
             if columnIndex < 0 then valid = false else columnIndexes = columnIndexes + [columnIndex] end if
           end for
+          for each columnName in constraint.referenceColumns
+            columnIndex = binder.findColumnIndex(table, columnName)
+            if columnIndex < 0 then valid = false else includedColumnIndexes = includedColumnIndexes + [columnIndex] end if
+          end for
           if valid and len(columnIndexes) > 0 then
             unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, unique)]
+            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, includedColumnIndexes, unique)]
           end if
         end if
       end for
@@ -3703,11 +3708,11 @@ function executeShowIndexes(engine, statement)
     for each constraint in tableSchema.constraints
       if constraint.indexId > 0 then
         unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinNames(constraint.columns))]]
+        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinNames(constraint.columns)), values.text(joinNames(constraint.referenceColumns))]]
       end if
     end for
   end if
-  return rowResult(["index_name", "index_kind", "unique", "columns"], rows)
+  return rowResult(["index_name", "index_kind", "unique", "columns", "included_columns"], rows)
 end function
 
 // Executes statement inner using the supplied inputs.
