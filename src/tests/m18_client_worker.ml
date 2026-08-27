@@ -35,6 +35,11 @@ function main(args)
   testkit.equal(state, len(selected.rows), 2, "SELECT after INSERT rows")
   testkit.equal(state, selected.rows[1][0], "from-client", "SELECT after INSERT value")
 
+  streamed = client.query(connection, "SELECT id, body FROM streamed_result ORDER BY id")
+  testkit.equal(state, len(streamed.rows), 1200, "multi-frame SELECT row count")
+  testkit.equal(state, streamed.rows[0][1], "row-1", "multi-frame SELECT first row")
+  testkit.equal(state, streamed.rows[1199][1], "row-1200", "multi-frame SELECT final row")
+
   rejected = client.query(connection, "SELECT 1; SELECT 2")
   testkit.equal(state, rejected.status, constants.STATUS_ERROR, "multiple statements rejected")
   testkit.equal(state, rejected.errorCode, 9025, "multiple statements error code")

@@ -5,7 +5,11 @@ package minisql.executor.join
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.endian as endian
+import std.concurrent.thread_pool as thread_pool
+import minisql.executor.projection as projection
 import minisql.executor.scan as scan
+import minisql.executor.sort as sort
+import minisql.platform.file as file_api
 import minisql.sql.ast as ast
 import minisql.sql.expressions as expressions
 import minisql.sql.types as types
@@ -18,6 +22,7 @@ import minisql.sql.values as values
 const INVALID_ARGUMENT = 9001
 const HASH_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
+const INTRA_QUERY_WORKERS = 4
 
 // Stores one build-side row in a hash-bucket collision chain.
 struct HashJoinEntry
@@ -27,11 +32,29 @@ struct HashJoinEntry
   row
 end struct
 
+// Immutable work package for one independent grace-hash-join partition.
+struct JoinPartitionTask
+  // Optional validated spill run for the left input partition.
+  leftRun
+  // Optional validated spill run for the right input partition.
+  rightRun
+  // Bound join metadata used for equality and residual-predicate checks.
+  boundJoin
+  // Optimizer-selected hash-table build orientation.
+  buildRight
+end struct
+
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function fail(code, operation, message)
   return error(code, "executor.join." + operation + ": " + message)
+end function
+
+// Computes non-negative truncating integer division without losing precision.
+function integerDivide(numerator, denominator)
+  if numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
+  return (numerator - (numerator % denominator)) / denominator
 end function
 
 // Implements combine for this module.
@@ -256,6 +279,136 @@ function applyHashBuild(leftRows, rightRows, boundJoin, buildRight)
   if typeof(buildRight) != "bool" then return fail(INVALID_ARGUMENT, "applyHashBuild", "buildRight must be bool") end if
   if not buildRight and boundJoin.joinType == ast.JOIN_INNER then return applyHashLeft(leftRows, rightRows, boundJoin) end if
   return applyHashRight(leftRows, rightRows, boundJoin)
+end function
+
+// Converts scanned rows to the generic validated spill-run representation.
+function projectedSpillRows(rows)
+  output = []
+  for each row in rows
+    if not scan.isScannedRow(row) then return fail(INVALID_ARGUMENT, "projectedSpillRows", "input contains non-row") end if
+    output = output + [projection.ProjectedRow(void, row.values, [])]
+  end for
+  return output
+end function
+
+// Restores value-only scanned rows after a validated spill-run read.
+function scannedSpillRows(rows)
+  output = []
+  for each row in rows
+    output = output + [scan.ScannedRow(void, row.values)]
+  end for
+  return output
+end function
+
+// Reads and joins one pair of hash partitions on a native worker. Runs are
+// deleted by their owning task on both successful and failed reads.
+function applySpilledPartition(task)
+  runs = []
+  leftRows = []
+  rightRows = []
+  if task.leftRun is not void then
+    runs = runs + [task.leftRun]
+    restoredLeft = try(sort.readRun(task.leftRun))
+    if typeof(restoredLeft) == "error" then sort.cleanupRuns(runs); return restoredLeft end if
+    leftRows = scannedSpillRows(restoredLeft)
+  end if
+  if task.rightRun is not void then
+    runs = runs + [task.rightRun]
+    restoredRight = try(sort.readRun(task.rightRun))
+    if typeof(restoredRight) == "error" then sort.cleanupRuns(runs); return restoredRight end if
+    rightRows = scannedSpillRows(restoredRight)
+  end if
+  output = try(applyHashBuild(leftRows, rightRows, task.boundJoin, task.buildRight))
+  cleanup = try(sort.cleanupRuns(runs))
+  if typeof(output) == "error" then return output end if
+  if typeof(cleanup) == "error" then return cleanup end if
+  return output
+end function
+
+// Executes a grace-style partitioned hash join when the selected build input
+// exceeds the row threshold. Each partition is CRC/shape validated by the
+// shared spill codec and removed on both success and failure paths.
+function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold)
+  if typeof(temporaryRoot) != "string" or typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "applyHashBuildWithSpill", "invalid spill configuration") end if
+  buildRows = rightRows
+  if not buildRight then buildRows = leftRows end if
+  if len(buildRows) <= threshold or not canHash(boundJoin) then return applyHashBuild(leftRows, rightRows, boundJoin, buildRight) end if
+  if not file_api.directoryExists(temporaryRoot) then
+    created = try(file_api.createDirectory(temporaryRoot))
+    if typeof(created) == "error" then return created end if
+  end if
+  columns = equalityColumns(boundJoin)
+  partitionCount = integerDivide(len(buildRows) + threshold - 1, threshold)
+  if partitionCount < 2 then partitionCount = 2 end if
+  if partitionCount > HASH_BUCKET_COUNT then partitionCount = HASH_BUCKET_COUNT end if
+  token = sort.nextSpillToken()
+  tasks = []
+  for partitionIndex = 0 to partitionCount - 1
+    leftPartition = []
+    rightPartition = []
+    for each row in leftRows
+      key = row.values[columns[0]]
+      if (key.isNull and boundJoin.joinType == ast.JOIN_LEFT and partitionIndex == 0) or (not key.isNull and hashValue(key) % partitionCount == partitionIndex) then leftPartition = leftPartition + [row] end if
+    end for
+    for each row in rightRows
+      key = row.values[columns[1]]
+      if not key.isNull and hashValue(key) % partitionCount == partitionIndex then rightPartition = rightPartition + [row] end if
+    end for
+    leftRun = void
+    rightRun = void
+    if len(leftPartition) > 0 then
+      leftRun = try(sort.writeRun(sort.runPath(temporaryRoot, "join-left-" + token, partitionIndex), projectedSpillRows(leftPartition), len(leftPartition[0].values), 0))
+      if typeof(leftRun) == "error" then return leftRun end if
+    end if
+    if len(rightPartition) > 0 then
+      rightRun = try(sort.writeRun(sort.runPath(temporaryRoot, "join-right-" + token, partitionIndex), projectedSpillRows(rightPartition), len(rightPartition[0].values), 0))
+      if typeof(rightRun) == "error" then
+        if leftRun is not void then sort.cleanupRuns([leftRun]) end if
+        return rightRun
+      end if
+    end if
+    tasks = tasks + [JoinPartitionTask(leftRun, rightRun, boundJoin, buildRight)]
+  end for
+  workerCount = len(tasks)
+  if workerCount > INTRA_QUERY_WORKERS then workerCount = INTRA_QUERY_WORKERS end if
+  pool = try(thread_pool.ThreadPool.withQueueCapacity(workerCount, len(tasks)))
+  if typeof(pool) == "error" then
+    for each task in tasks
+      runs = []
+      if task.leftRun is not void then runs = runs + [task.leftRun] end if
+      if task.rightRun is not void then runs = runs + [task.rightRun] end if
+      sort.cleanupRuns(runs)
+    end for
+    return pool
+  end if
+  jobs = []
+  for each task in tasks
+    job = pool.Submit(applySpilledPartition, task)
+    if job is void then
+      pool.ShutdownNow()
+      pool.AwaitTermination()
+      for each pending in tasks
+        runs = []
+        if pending.leftRun is not void then runs = runs + [pending.leftRun] end if
+        if pending.rightRun is not void then runs = runs + [pending.rightRun] end if
+        sort.cleanupRuns(runs)
+      end for
+      pool.Dispose()
+      return fail(INVALID_ARGUMENT, "applyHashBuildWithSpill", "join partition task was rejected")
+    end if
+    jobs = jobs + [job]
+  end for
+  pool.Shutdown()
+  pool.AwaitTermination()
+  output = []
+  for each job in jobs
+    partitionOutput = try(job.GetResult())
+    disposed = job.Dispose()
+    if typeof(partitionOutput) == "error" then pool.Dispose(); return partitionOutput end if
+    output = output + partitionOutput
+  end for
+  pool.Dispose()
+  return output
 end function
 
 // Backward-compatible entry point used by direct executor tests.

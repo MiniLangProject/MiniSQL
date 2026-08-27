@@ -47,6 +47,7 @@ const TRANSACTION_STATE = 9011
 const BINDING_ERROR = 9020
 const CONSTRAINT_VIOLATION = 9021
 const SORT_SPILL_THRESHOLD = 128
+const HASH_SPILL_THRESHOLD = 128
 const ANALYZE_SAMPLE_ROWS = 8192
 const DDL_STATE = 9023
 const UNSUPPORTED_SQL = 9025
@@ -2049,7 +2050,10 @@ end function
 function filterSourceRows(source, rows, predicate)
   if predicate is void then return rows end if
   output = []
-  prefix = array(source.offset, void)
+  // Earlier sources are intentionally unavailable during source-local
+  // pushdown. Typed UNKNOWN NULL placeholders satisfy RowContext validation;
+  // the predicate is proven to reference only the current source.
+  prefix = array(source.offset, values.nullValue(types.SqlTypeKind.Unknown))
   for each row in rows
     context = expressions.rowContext(prefix + row.values)
     if expressions.predicatePasses(predicate, context) then output = output + [row] end if
@@ -2358,6 +2362,38 @@ function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sou
   return output
 end function
 
+// Proves that one parameterized equality-index probe already guarantees a
+// pushed right-source predicate for the current left row. This removes only
+// simple typed column=literal predicates (and AND trees composed of them);
+// every other source filter retains ordinary evaluation.
+function joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate)
+  if predicate is void then return true end if
+  if not expressions.isBaseBoundExpression(predicate) then return false end if
+  if predicate.kind == expressions.BOUND_BINARY and predicate.operator == "AND" then
+    return joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate.left) and joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate.right)
+  end if
+  if predicate.kind != expressions.BOUND_BINARY or predicate.operator != "=" then return false end if
+  predicateColumn = predicate.left
+  predicateLiteral = predicate.right
+  if predicateColumn.kind == expressions.BOUND_LITERAL then predicateColumn = predicate.right; predicateLiteral = predicate.left end if
+  if predicateColumn.kind != expressions.BOUND_COLUMN or predicateLiteral.kind != expressions.BOUND_LITERAL or predicateLiteral.literal.isNull then return false end if
+  condition = boundJoin.condition
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return false end if
+  if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return false end if
+  source = boundJoin.source
+  rightColumn = condition.left
+  leftColumn = condition.right
+  if rightColumn.columnIndex < source.offset or rightColumn.columnIndex >= source.offset + len(source.table.columns) then
+    rightColumn = condition.right
+    leftColumn = condition.left
+  end if
+  if rightColumn.columnIndex < source.offset or rightColumn.columnIndex >= source.offset + len(source.table.columns) then return false end if
+  if not expressions.sameBinding(predicateColumn, rightColumn) or leftColumn.columnIndex < 0 or leftColumn.columnIndex >= len(leftRow.values) then return false end if
+  leftValue = leftRow.values[leftColumn.columnIndex]
+  if leftValue is void or leftValue.isNull then return false end if
+  return values.compareNonNull(leftValue, predicateLiteral.literal) == 0
+end function
+
 // Implements joined source for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -2372,6 +2408,8 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
   usedPlannedIndex = false
   if firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then output = dml.plannedIndexOnlyRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
   if firstPlan.accessKind == execution_plan.ACCESS_INDEX then output = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
+  if firstPlan.accessKind == execution_plan.ACCESS_INDEX_INTERSECTION then output = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, false) end if
+  if firstPlan.accessKind == execution_plan.ACCESS_INDEX_UNION then output = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, true) end if
   if output is void then
     output = scanBoundSource(engine, bound.sources[0], pageTransaction, sourceOffset, sourceLimit, firstMask)
   else
@@ -2400,7 +2438,9 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
           usedIndex = false
           break
         end if
-        matches = filterSourceRows(boundJoin.source, matches, rightPlan.pushedPredicate)
+        if not joinProbeGuaranteesPredicate(boundJoin, leftRow, rightPlan.pushedPredicate) then
+          matches = filterSourceRows(boundJoin.source, matches, rightPlan.pushedPredicate)
+        end if
         usedIndex = true
         joinedRows = joinedRows + join.apply([leftRow], matches, boundJoin)
       end for
@@ -2411,7 +2451,7 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
       right = scanBoundSource(engine, boundJoin.source, pageTransaction, 0, -1, rightMask)
       right = filterSourceRows(boundJoin.source, right, rightPlan.pushedPredicate)
       if plannedJoin.algorithm == execution_plan.JOIN_HASH and join.canHash(boundJoin) then
-        output = join.applyHashBuild(output, right, boundJoin, plannedJoin.buildRight)
+        output = join.applyHashBuildWithSpill(output, right, boundJoin, plannedJoin.buildRight, file_api.joinPath(engine.database.path, "tmp"), HASH_SPILL_THRESHOLD)
       else
         output = join.apply(output, right, boundJoin)
       end if
@@ -2759,9 +2799,12 @@ function selectProjected(engine, bound, pageTransaction)
   if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_STREAM then
     if optimized.execution.constantEmpty then return aggregate.projectStreamingRows([], bound.items, optimized.execution.wherePredicate) end if
     firstPlan = optimized.execution.sources[0]
-    if firstPlan.accessKind == execution_plan.ACCESS_INDEX or firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then
+    if firstPlan.accessKind == execution_plan.ACCESS_INDEX or firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY or firstPlan.accessKind == execution_plan.ACCESS_INDEX_INTERSECTION or firstPlan.accessKind == execution_plan.ACCESS_INDEX_UNION then
       indexedRows = void
-      if firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then indexedRows = dml.plannedIndexOnlyRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) else indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
+      if firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY then indexedRows = dml.plannedIndexOnlyRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
+      if firstPlan.accessKind == execution_plan.ACCESS_INDEX then indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
+      if firstPlan.accessKind == execution_plan.ACCESS_INDEX_INTERSECTION then indexedRows = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, false) end if
+      if firstPlan.accessKind == execution_plan.ACCESS_INDEX_UNION then indexedRows = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, true) end if
       if indexedRows is not void then return aggregate.projectStreamingRows(indexedRows, bound.items, optimized.execution.wherePredicate) end if
     end if
     mask = void
@@ -2795,7 +2838,7 @@ function selectProjected(engine, bound, pageTransaction)
     projected = projectSubqueryRows(engine, bound, source, pageTransaction)
   else if bound.aggregateQuery then
     filtered = filter.apply(source, wherePredicate)
-    projected = aggregate.project(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions)
+    projected = aggregate.projectWithSpill(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions, file_api.joinPath(engine.database.path, "tmp"), HASH_SPILL_THRESHOLD)
   else if bound.windowQuery then
     filtered = filter.apply(source, wherePredicate)
     projected = projection.applyWindows(filtered, bound.items, bound.orderExpressions)
@@ -3036,7 +3079,7 @@ function executeExplain(engine, statement)
   lines = [prefix] + lines
   // Preserve the established first-line contract consumed by the CLI and GUI
   // while the following rows expose the richer physical plan.
-  if len(optimized.execution.sources) > 0 and (optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX or optimized.execution.sources[0].accessKind == execution_plan.ACCESS_INDEX_ONLY) then
+  if len(optimized.execution.sources) > 0 and optimized.execution.sources[0].accessKind != execution_plan.ACCESS_SEQUENTIAL then
     lines = ["Index Seek rows=" + optimized.execution.sources[0].estimatedRows] + lines
   end if
   if statement.analyze then

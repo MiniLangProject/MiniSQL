@@ -135,7 +135,10 @@ function indexNestedLoop(left, indexHeight, expectedMatchesPerProbe, outputRows)
   validateRows(indexHeight, "indexNestedLoop", "indexHeight")
   validateRows(expectedMatchesPerProbe, "indexNestedLoop", "expectedMatchesPerProbe")
   validateRows(outputRows, "indexNestedLoop", "outputRows")
-  probe = 1 + indexHeight * 12 + expectedMatchesPerProbe * 10
+  // The executor keeps one index/heap reader open for the complete probe, so
+  // each matching heap row has the same warm-fetch weight as a regular
+  // non-covering index scan rather than paying a fresh random-open penalty.
+  probe = 1 + indexHeight * 12 + expectedMatchesPerProbe * 4
   work = left.total + left.rows * probe + outputRows
   return estimate(left.startup + probe, work, outputRows, "Index Nested Loop Join")
 end function

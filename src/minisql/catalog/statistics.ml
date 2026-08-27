@@ -20,7 +20,8 @@ const UNSUPPORTED_FORMAT = 9003
 const CORRUPT_DATA = 9004
 const IO_FAILURE = 9005
 
-const FORMAT_VERSION = 4
+const FORMAT_VERSION = 5
+const DISTRIBUTION_FORMAT_VERSION = 4
 const BOUNDS_FORMAT_VERSION = 3
 const SAMPLED_FORMAT_VERSION = 2
 const LEGACY_FORMAT_VERSION = 1
@@ -28,10 +29,12 @@ const RECORD_KIND = 50
 const TABLE_HEADER_BYTES = 32
 const LEGACY_COLUMN_BYTES = 32
 const COLUMN_BYTES = 232
-const COLUMN_GROUP_BYTES = 32
+const LEGACY_COLUMN_GROUP_BYTES = 32
+const COLUMN_GROUP_BYTES = 128
 const DISTINCT_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
 const COLUMN_FLAG_INTEGRAL_BOUNDS = 1
+const COLUMN_FLAG_HASHED_MCV = 2
 const HISTOGRAM_BUCKET_COUNT = 8
 const MOST_COMMON_VALUE_COUNT = 8
 const MAX_COLUMN_GROUP_WIDTH = 8
@@ -60,6 +63,8 @@ struct ColumnStatistics
   mostCommonValues
   // Estimated table-population frequency paired with mostCommonValues.
   mostCommonCounts
+  // True when mostCommonValues contains stable value hashes rather than values.
+  mostCommonHashed
 end struct
 
 // Captures joint distinctness for columns that form a composite index key.
@@ -70,6 +75,10 @@ struct ColumnGroupStatistics
   columnIndexes
   // Estimated number of distinct non-NULL tuples in the table population.
   distinctCount
+  // Stable hashes for the most frequent complete tuples.
+  mostCommonHashes
+  // Population-scaled frequencies paired with mostCommonHashes.
+  mostCommonCounts
 end struct
 
 // Defines the table statistics record used by this module.
@@ -295,11 +304,20 @@ function distinctCount(columnIndex, rows)
   return count
 end function
 
-// Reports whether a catalog column uses the signed 32-bit representation that
-// fits the compact v3 statistics record. BIGINT and wider numeric encodings are
-// intentionally left for a future variable-length histogram extension.
+// Reports whether a catalog column has an ordered numeric representation that
+// can use compact signed-32-bit quantile bounds when its sampled values fit.
 function supportsIntegralBounds(column)
-  return column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date
+  return column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date or column.typeCode == types.SqlTypeKind.Decimal
+end function
+
+// Converts one ordered SQL value to the compact histogram scalar when possible.
+function compactStatisticScalar(candidate)
+  if typeof(candidate.value) == "int" then return candidate.value end if
+  if endian.isInt64Words(candidate.value) then
+    native = try(endian.int64ToInt(candidate.value))
+    if typeof(native) != "error" then return native end if
+  end if
+  return void
 end function
 
 // Finds sampled minimum and maximum values for a compact integral column. The
@@ -312,34 +330,65 @@ function integralBounds(columnIndex, rows)
   for each row in rows
     candidate = row.values[columnIndex]
     if not candidate.isNull then
-      if typeof(candidate.value) != "int" then return [false, 0, 0] end if
-      if not found or candidate.value < minimum then minimum = candidate.value end if
-      if not found or candidate.value > maximum then maximum = candidate.value end if
+      scalar = compactStatisticScalar(candidate)
+      if scalar is void or scalar < endian.MIN_I32 or scalar > endian.MAX_I32 then return [false, 0, 0] end if
+      if not found or scalar < minimum then minimum = scalar end if
+      if not found or scalar > maximum then maximum = scalar end if
       found = true
     end if
   end for
   return [found, minimum, maximum]
 end function
 
-// Builds an equi-width cumulative histogram and an exact top-frequency list
+// In-place quicksort for the bounded ANALYZE scalar sample.
+function sortStatisticScalars(items, left, right)
+  if left >= right then return items end if
+  low = left
+  high = right
+  pivot = items[left + integerDivide(right - left, 2)]
+  while low <= high
+    while items[low] < pivot
+      low = low + 1
+    end while
+    while items[high] > pivot
+      high = high - 1
+    end while
+    if low <= high then
+      temporary = items[low]
+      items[low] = items[high]
+      items[high] = temporary
+      low = low + 1
+      high = high - 1
+    end if
+  end while
+  if left < high then sortStatisticScalars(items, left, high) end if
+  if low < right then sortStatisticScalars(items, low, right) end if
+  return items
+end function
+
+// Builds an equi-depth cumulative histogram and an exact top-frequency list
 // from the bounded ANALYZE sample. Population frequencies are scaled once here,
 // allowing the optimizer hot path to use only small fixed arrays.
 function integralDistribution(columnIndex, rows, populationRows, bounds)
   if not bounds[0] or len(rows) == 0 then return [[], [], [], []] end if
   minimum = bounds[1]
   maximum = bounds[2]
-  span = maximum - minimum + 1
+  sorted = []
+  for each row in rows
+    candidate = row.values[columnIndex]
+    if not candidate.isNull then sorted = sorted + [compactStatisticScalar(candidate)] end if
+  end for
+  if len(sorted) == 0 then return [[], [], [], []] end if
+  sortStatisticScalars(sorted, 0, len(sorted) - 1)
   histogramBounds = []
   histogramCounts = []
   for bucketIndex = 0 to HISTOGRAM_BUCKET_COUNT - 1
-    upper = maximum
-    if bucketIndex < HISTOGRAM_BUCKET_COUNT - 1 then upper = minimum + integerDivide(span * (bucketIndex + 1), HISTOGRAM_BUCKET_COUNT) - 1 end if
-    if upper < minimum then upper = minimum end if
-    if len(histogramBounds) > 0 and upper < histogramBounds[len(histogramBounds) - 1] then upper = histogramBounds[len(histogramBounds) - 1] end if
+    quantileIndex = integerDivide((len(sorted) - 1) * (bucketIndex + 1), HISTOGRAM_BUCKET_COUNT)
+    upper = sorted[quantileIndex]
+    if bucketIndex == HISTOGRAM_BUCKET_COUNT - 1 then upper = maximum end if
     cumulative = 0
-    for each row in rows
-      candidate = row.values[columnIndex]
-      if not candidate.isNull and typeof(candidate.value) == "int" and candidate.value <= upper then cumulative = cumulative + 1 end if
+    for each scalar in sorted
+      if scalar <= upper then cumulative = cumulative + 1 end if
     end for
     histogramBounds = histogramBounds + [upper]
     histogramCounts = histogramCounts + [scaleSampleCount(cumulative, populationRows, len(rows))]
@@ -348,18 +397,19 @@ function integralDistribution(columnIndex, rows, populationRows, bounds)
   frequencyBuckets = array(DISTINCT_BUCKET_COUNT, void)
   for each row in rows
     candidate = row.values[columnIndex]
-    if not candidate.isNull and typeof(candidate.value) == "int" then
-      bucketIndex = (candidate.value & HASH_MASK) % DISTINCT_BUCKET_COUNT
+    if not candidate.isNull then
+      scalar = compactStatisticScalar(candidate)
+      bucketIndex = (scalar & HASH_MASK) % DISTINCT_BUCKET_COUNT
       bucket = frequencyBuckets[bucketIndex]
       if bucket is void then bucket = [] end if
       found = false
       if len(bucket) > 0 then
         for entryIndex = 0 to len(bucket) - 1
           entry = bucket[entryIndex]
-          if entry[0] == candidate.value then entry[1] = entry[1] + 1; bucket[entryIndex] = entry; found = true; break end if
+          if entry[0] == scalar then entry[1] = entry[1] + 1; bucket[entryIndex] = entry; found = true; break end if
         end for
       end if
-      if not found then bucket = bucket + [[candidate.value, 1]] end if
+      if not found then bucket = bucket + [[scalar, 1]] end if
       frequencyBuckets[bucketIndex] = bucket
     end if
   end for
@@ -405,6 +455,84 @@ function integralDistribution(columnIndex, rows, populationRows, bounds)
   return [histogramBounds, histogramCounts, mostCommonValues, mostCommonCounts]
 end function
 
+// Selects the eight most frequent stable hashes from a bounded sample.
+function topHashFrequencies(hashes, populationRows, sampleRows)
+  buckets = array(DISTINCT_BUCKET_COUNT, void)
+  for each currentHash in hashes
+    bucketIndex = currentHash % DISTINCT_BUCKET_COUNT
+    bucket = buckets[bucketIndex]
+    if bucket is void then bucket = [] end if
+    matched = false
+    if len(bucket) > 0 then
+      for index = 0 to len(bucket) - 1
+        if bucket[index][0] == currentHash then bucket[index][1] = bucket[index][1] + 1; matched = true; break end if
+      end for
+    end if
+    if not matched then bucket = bucket + [[currentHash, 1]] end if
+    buckets[bucketIndex] = bucket
+  end for
+  selected = []
+  for each bucket in buckets
+    if bucket is not void then
+      for each entry in bucket
+        insertAt = len(selected)
+        if len(selected) > 0 then
+          for index = 0 to len(selected) - 1
+            if entry[1] > selected[index][1] or (entry[1] == selected[index][1] and entry[0] < selected[index][0]) then insertAt = index; break end if
+          end for
+        end if
+        if insertAt < MOST_COMMON_VALUE_COUNT then
+          next = []
+          inserted = false
+          outputIndex = 0
+          while len(next) < MOST_COMMON_VALUE_COUNT and (outputIndex < len(selected) or not inserted)
+            if not inserted and len(next) == insertAt then next = next + [entry]; inserted = true else next = next + [selected[outputIndex]]; outputIndex = outputIndex + 1 end if
+          end while
+          selected = next
+        end if
+      end for
+    end if
+  end for
+  outputHashes = []
+  outputCounts = []
+  for each entry in selected
+    outputHashes = outputHashes + [entry[0]]
+    outputCounts = outputCounts + [scaleSampleCount(entry[1], populationRows, sampleRows)]
+  end for
+  return [outputHashes, outputCounts]
+end function
+
+// Builds hash-based equality MCVs for text, binary, and wide decimal values.
+function hashedDistribution(columnIndex, rows, populationRows)
+  hashes = []
+  for each row in rows
+    candidate = row.values[columnIndex]
+    if not candidate.isNull then hashes = hashes + [hashValue(candidate)] end if
+  end for
+  return topHashFrequencies(hashes, populationRows, len(rows))
+end function
+
+// Computes the stable hash shared by group ANALYZE and optimizer probes.
+function tupleHash(columnIndexes, sqlValues)
+  result = 2166136261 & HASH_MASK
+  for each columnIndex in columnIndexes
+    candidate = sqlValues[columnIndex]
+    if candidate.isNull then return void end if
+    result = ((result ^ hashValue(candidate)) * 16777619) & HASH_MASK
+  end for
+  return result
+end function
+
+// Builds a bounded most-common tuple list for one analyzed column group.
+function groupDistribution(columnIndexes, rows, populationRows)
+  hashes = []
+  for each row in rows
+    currentHash = tupleHash(columnIndexes, row.values)
+    if currentHash is not void then hashes = hashes + [currentHash] end if
+  end for
+  return topHashFrequencies(hashes, populationRows, len(rows))
+end function
+
 // Counts distinct non-NULL tuples for one bounded-width column group. A hash
 // bucket narrows comparisons, while complete SQL value comparison remains the
 // authority and therefore makes collisions harmless.
@@ -413,16 +541,16 @@ function groupDistinctCount(columnIndexes, rows)
   count = 0
   for each row in rows
     tuple = []
-    tupleHash = 2166136261 & HASH_MASK
+      tupleHashValue = 2166136261 & HASH_MASK
     complete = true
     for each columnIndex in columnIndexes
       candidate = row.values[columnIndex]
       if candidate.isNull then complete = false; break end if
       tuple = tuple + [candidate]
-      tupleHash = ((tupleHash ^ hashValue(candidate)) * 16777619) & HASH_MASK
+      tupleHashValue = ((tupleHashValue ^ hashValue(candidate)) * 16777619) & HASH_MASK
     end for
     if complete then
-      bucketIndex = tupleHash % DISTINCT_BUCKET_COUNT
+      bucketIndex = tupleHashValue % DISTINCT_BUCKET_COUNT
       bucket = buckets[bucketIndex]
       if bucket is void then bucket = [] end if
       duplicate = false
@@ -479,7 +607,14 @@ function analyzeSampleWithGroups(table, populationRows, rows, pageCount, columnG
       bounds = [false, 0, 0]
       if supportsIntegralBounds(table.columns[columnIndex]) then bounds = integralBounds(columnIndex, rows) end if
       distribution = integralDistribution(columnIndex, rows, populationRows, bounds)
-      columns = columns + [ColumnStatistics(columnIndex, nullCount, distinctEstimate, averageWidth, bounds[0], bounds[1], bounds[2], distribution[0], distribution[1], distribution[2], distribution[3])]
+      mostCommonHashed = false
+      supportsHashed = types.isTextKind(table.columns[columnIndex].typeCode) or types.isBinaryKind(table.columns[columnIndex].typeCode) or table.columns[columnIndex].typeCode == types.SqlTypeKind.Decimal
+      if not bounds[0] and supportsHashed then
+        hashed = hashedDistribution(columnIndex, rows, populationRows)
+        distribution = [[], [], hashed[0], hashed[1]]
+        mostCommonHashed = true
+      end if
+      columns = columns + [ColumnStatistics(columnIndex, nullCount, distinctEstimate, averageWidth, bounds[0], bounds[1], bounds[2], distribution[0], distribution[1], distribution[2], distribution[3], mostCommonHashed)]
     end for
   end if
   groups = []
@@ -492,7 +627,8 @@ function analyzeSampleWithGroups(table, populationRows, rows, pageCount, columnG
     distinctEstimate = sampledDistinct
     if sampleCount < populationRows and sampleCount > 0 and sampledDistinct * 10 > sampleCount then distinctEstimate = scaleSampleCount(sampledDistinct, populationRows, sampleCount) end if
     if distinctEstimate > populationRows then distinctEstimate = populationRows end if
-    groups = groups + [ColumnGroupStatistics(columnIndexes, distinctEstimate)]
+    groupMcv = groupDistribution(columnIndexes, rows, populationRows)
+    groups = groups + [ColumnGroupStatistics(columnIndexes, distinctEstimate, groupMcv[0], groupMcv[1])]
   end for
   return TableStatistics(table.tableId, populationRows, pageCount, sampleCount, columns, groups)
 end function
@@ -566,10 +702,13 @@ function encode(state)
       if column.hasIntegralBounds and (typeof(column.minimumIntegral) != "int" or typeof(column.maximumIntegral) != "int" or column.minimumIntegral < endian.MIN_I32 or column.maximumIntegral > endian.MAX_I32 or column.minimumIntegral > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "invalid integral bounds") end if
       if typeof(column.histogramBounds) != "array" or typeof(column.histogramCounts) != "array" or len(column.histogramBounds) != len(column.histogramCounts) or len(column.histogramBounds) > HISTOGRAM_BUCKET_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid integral histogram") end if
       if typeof(column.mostCommonValues) != "array" or typeof(column.mostCommonCounts) != "array" or len(column.mostCommonValues) != len(column.mostCommonCounts) or len(column.mostCommonValues) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid most-common-values list") end if
-      if (len(column.histogramBounds) > 0 or len(column.mostCommonValues) > 0) and not column.hasIntegralBounds then return fail(INVALID_ARGUMENT, "encode", "integral distributions require bounds") end if
+      if typeof(column.mostCommonHashed) != "bool" then return fail(INVALID_ARGUMENT, "encode", "mostCommonHashed must be bool") end if
+      if len(column.histogramBounds) > 0 and not column.hasIntegralBounds then return fail(INVALID_ARGUMENT, "encode", "histograms require bounds") end if
+      if len(column.mostCommonValues) > 0 and not column.hasIntegralBounds and not column.mostCommonHashed then return fail(INVALID_ARGUMENT, "encode", "unhashed most-common values require bounds") end if
       endian.writeU16LE(payload, cursor, column.columnIndex)
       flags = 0
       if column.hasIntegralBounds then flags = COLUMN_FLAG_INTEGRAL_BOUNDS end if
+      if column.mostCommonHashed then flags = flags | COLUMN_FLAG_HASHED_MCV end if
       endian.writeU16LE(payload, cursor + 2, flags)
       endian.writeU64LE(payload, cursor + 4, endian.uint64FromInt(column.nullCount))
       endian.writeU64LE(payload, cursor + 12, endian.uint64FromInt(column.distinctCount))
@@ -603,7 +742,9 @@ function encode(state)
         for index = 0 to len(column.mostCommonValues) - 1
           commonValue = column.mostCommonValues[index]
           commonCount = column.mostCommonCounts[index]
-          if typeof(commonValue) != "int" or commonValue < column.minimumIntegral or commonValue > column.maximumIntegral then return fail(INVALID_ARGUMENT, "encode", "most-common value is outside bounds") end if
+          if typeof(commonValue) != "int" then return fail(INVALID_ARGUMENT, "encode", "most-common value must be an integer representation") end if
+          if column.mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(INVALID_ARGUMENT, "encode", "most-common hash is outside range") end if
+          if not column.mostCommonHashed and (commonValue < column.minimumIntegral or commonValue > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "most-common value is outside bounds") end if
           validateNative(commonCount, "encode", "most-common count")
           if commonCount > table.rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "most-common count exceeds population") end if
           endian.writeI32LE(payload, cursor + 132 + index * 12, commonValue)
@@ -615,6 +756,7 @@ function encode(state)
     end for
     for each group in table.columnGroups
       if group is not ColumnGroupStatistics or typeof(group.columnIndexes) != "array" or len(group.columnIndexes) < 2 or len(group.columnIndexes) > MAX_COLUMN_GROUP_WIDTH then return fail(INVALID_ARGUMENT, "encode", "invalid column-group statistics") end if
+      if typeof(group.mostCommonHashes) != "array" or typeof(group.mostCommonCounts) != "array" or len(group.mostCommonHashes) != len(group.mostCommonCounts) or len(group.mostCommonHashes) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid column-group MCV list") end if
       validateNative(group.distinctCount, "encode", "column-group distinctCount")
       if group.distinctCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group distinctCount exceeds table population") end if
       payload[cursor] = len(group.columnIndexes)
@@ -626,7 +768,20 @@ function encode(state)
         endian.writeU16LE(payload, cursor + 4 + index * 2, columnIndex)
       end for
       endian.writeU64LE(payload, cursor + 20, endian.uint64FromInt(group.distinctCount))
-      endian.writeU32LE(payload, cursor + 28, 0)
+      payload[cursor + 28] = len(group.mostCommonHashes)
+      payload[cursor + 29] = 0
+      endian.writeU16LE(payload, cursor + 30, 0)
+      if len(group.mostCommonHashes) > 0 then
+        for index = 0 to len(group.mostCommonHashes) - 1
+          currentHash = group.mostCommonHashes[index]
+          currentCount = group.mostCommonCounts[index]
+          if typeof(currentHash) != "int" or currentHash < 0 or currentHash > HASH_MASK then return fail(INVALID_ARGUMENT, "encode", "column-group MCV hash is outside range") end if
+          validateNative(currentCount, "encode", "column-group MCV count")
+          if currentCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group MCV count exceeds population") end if
+          endian.writeU32LE(payload, cursor + 32 + index * 12, currentHash)
+          endian.writeU64LE(payload, cursor + 36 + index * 12, endian.uint64FromInt(currentCount))
+        end for
+      end if
       cursor = cursor + COLUMN_GROUP_BYTES
     end for
   end for
@@ -645,7 +800,7 @@ end function
 function decodeCatalog(encoded)
   if typeof(encoded) != "bytes" or len(encoded) < 32 then return fail(CORRUPT_DATA, "decode", "encoded statistics are truncated") end if
   encodedVersion = endian.readU16LE(encoded, 8)
-  if encodedVersion != LEGACY_FORMAT_VERSION and encodedVersion != SAMPLED_FORMAT_VERSION and encodedVersion != BOUNDS_FORMAT_VERSION and encodedVersion != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decode", "unsupported statistics version") end if
+  if encodedVersion != LEGACY_FORMAT_VERSION and encodedVersion != SAMPLED_FORMAT_VERSION and encodedVersion != BOUNDS_FORMAT_VERSION and encodedVersion != DISTRIBUTION_FORMAT_VERSION and encodedVersion != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decode", "unsupported statistics version") end if
   envelope = checksum.decodeEnvelope(encoded, magic(), encodedVersion, RECORD_KIND)
   payload = envelope.payload
   if len(payload) < 32 then return fail(CORRUPT_DATA, "decode", "payload size is invalid") end if
@@ -662,7 +817,7 @@ function decodeCatalog(encoded)
     pageCount = decodeNative(endian.readU64LE(payload, cursor + 16), "decode", "pageCount")
     columnCount = endian.readU16LE(payload, cursor + 24)
     columnGroupCount = 0
-    if encodedVersion == FORMAT_VERSION then
+    if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then
       columnGroupCount = endian.readU16LE(payload, cursor + 26)
     else if endian.readU16LE(payload, cursor + 26) != 0 then
       return fail(UNSUPPORTED_FORMAT, "decode", "reserved table fields are non-zero")
@@ -680,12 +835,15 @@ function decodeCatalog(encoded)
       if columnCount > 0 then
         for columnNumber = 0 to columnCount - 1
           columnBytes = LEGACY_COLUMN_BYTES
-          if encodedVersion == FORMAT_VERSION then columnBytes = COLUMN_BYTES end if
+          if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then columnBytes = COLUMN_BYTES end if
           if cursor > len(payload) - columnBytes then return fail(CORRUPT_DATA, "decode", "column record is truncated") end if
           columnFlags = endian.readU16LE(payload, cursor + 2)
           if encodedVersion < BOUNDS_FORMAT_VERSION and (columnFlags != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then return fail(UNSUPPORTED_FORMAT, "decode", "legacy reserved column fields are non-zero") end if
-          if encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & ~COLUMN_FLAG_INTEGRAL_BOUNDS) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "unknown column statistic flags") end if
+          allowedFlags = COLUMN_FLAG_INTEGRAL_BOUNDS
+          if encodedVersion >= FORMAT_VERSION then allowedFlags = allowedFlags | COLUMN_FLAG_HASHED_MCV end if
+          if encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & ~allowedFlags) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "unknown column statistic flags") end if
           hasIntegralBounds = encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & COLUMN_FLAG_INTEGRAL_BOUNDS) != 0
+          mostCommonHashed = encodedVersion >= FORMAT_VERSION and (columnFlags & COLUMN_FLAG_HASHED_MCV) != 0
           minimumIntegral = 0
           maximumIntegral = 0
           if hasIntegralBounds then
@@ -699,7 +857,7 @@ function decodeCatalog(encoded)
           histogramCounts = []
           mostCommonValues = []
           mostCommonCounts = []
-          if encodedVersion == FORMAT_VERSION then
+          if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then
             histogramCount = payload[cursor + 32]
             mostCommonCount = payload[cursor + 33]
             if histogramCount > HISTOGRAM_BUCKET_COUNT or mostCommonCount > MOST_COMMON_VALUE_COUNT or endian.readU16LE(payload, cursor + 34) != 0 or endian.readU32LE(payload, cursor + 228) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid distribution header") end if
@@ -718,11 +876,12 @@ function decodeCatalog(encoded)
               end for
             end if
             if mostCommonCount > 0 then
-              if not hasIntegralBounds then return fail(CORRUPT_DATA, "decode", "most-common values lack integral bounds") end if
+              if not hasIntegralBounds and not mostCommonHashed then return fail(CORRUPT_DATA, "decode", "most-common values lack a representation flag") end if
               for index = 0 to mostCommonCount - 1
                 commonValue = endian.readI32LE(payload, cursor + 132 + index * 12)
                 commonCount = decodeNative(endian.readU64LE(payload, cursor + 136 + index * 12), "decode", "most-common count")
-                if commonValue < minimumIntegral or commonValue > maximumIntegral then return fail(CORRUPT_DATA, "decode", "most-common value is outside bounds") end if
+                if mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(CORRUPT_DATA, "decode", "most-common hash is outside range") end if
+                if not mostCommonHashed and (commonValue < minimumIntegral or commonValue > maximumIntegral) then return fail(CORRUPT_DATA, "decode", "most-common value is outside bounds") end if
                 mostCommonValues = mostCommonValues + [commonValue]
                 mostCommonCounts = mostCommonCounts + [commonCount]
               end for
@@ -748,7 +907,8 @@ function decodeCatalog(encoded)
             histogramBounds,
             histogramCounts,
             mostCommonValues,
-            mostCommonCounts
+            mostCommonCounts,
+            mostCommonHashed
           )
           cursor = cursor + columnBytes
         end for
@@ -756,17 +916,36 @@ function decodeCatalog(encoded)
       columnGroups = []
       if columnGroupCount > 0 then
         for groupIndex = 0 to columnGroupCount - 1
-          if cursor > len(payload) - COLUMN_GROUP_BYTES then return fail(CORRUPT_DATA, "decode", "column-group record is truncated") end if
+          groupBytes = LEGACY_COLUMN_GROUP_BYTES
+          if encodedVersion >= FORMAT_VERSION then groupBytes = COLUMN_GROUP_BYTES end if
+          if cursor > len(payload) - groupBytes then return fail(CORRUPT_DATA, "decode", "column-group record is truncated") end if
           groupWidth = payload[cursor]
-          if groupWidth < 2 or groupWidth > MAX_COLUMN_GROUP_WIDTH or payload[cursor + 1] != 0 or endian.readU16LE(payload, cursor + 2) != 0 or endian.readU32LE(payload, cursor + 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group header") end if
+          if groupWidth < 2 or groupWidth > MAX_COLUMN_GROUP_WIDTH or payload[cursor + 1] != 0 or endian.readU16LE(payload, cursor + 2) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group header") end if
           columnIndexes = []
           for index = 0 to groupWidth - 1
             columnIndexes = columnIndexes + [endian.readU16LE(payload, cursor + 4 + index * 2)]
           end for
           groupDistinct = decodeNative(endian.readU64LE(payload, cursor + 20), "decode", "column-group distinctCount")
           if groupDistinct > rowCount then return fail(CORRUPT_DATA, "decode", "column-group distinctCount exceeds population") end if
-          columnGroups = columnGroups + [ColumnGroupStatistics(columnIndexes, groupDistinct)]
-          cursor = cursor + COLUMN_GROUP_BYTES
+          groupHashes = []
+          groupCounts = []
+          if encodedVersion >= FORMAT_VERSION then
+            mcvCount = payload[cursor + 28]
+            if mcvCount > MOST_COMMON_VALUE_COUNT or payload[cursor + 29] != 0 or endian.readU16LE(payload, cursor + 30) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group MCV header") end if
+            if mcvCount > 0 then
+              for index = 0 to mcvCount - 1
+                currentHash = endian.readU32LE(payload, cursor + 32 + index * 12)
+                currentCount = decodeNative(endian.readU64LE(payload, cursor + 36 + index * 12), "decode", "column-group MCV count")
+                if currentHash > HASH_MASK or currentCount > rowCount then return fail(CORRUPT_DATA, "decode", "column-group MCV value is invalid") end if
+                groupHashes = groupHashes + [currentHash]
+                groupCounts = groupCounts + [currentCount]
+              end for
+            end if
+          else if endian.readU32LE(payload, cursor + 28) != 0 then
+            return fail(UNSUPPORTED_FORMAT, "decode", "legacy column-group reserved field is non-zero")
+          end if
+          columnGroups = columnGroups + [ColumnGroupStatistics(columnIndexes, groupDistinct, groupHashes, groupCounts)]
+          cursor = cursor + groupBytes
         end for
       end if
       state.tables[tableIndex] = TableStatistics(tableId, rowCount, pageCount, sampleCount, columns, columnGroups)

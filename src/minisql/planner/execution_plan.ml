@@ -16,6 +16,8 @@ const INVALID_ARGUMENT = 9001
 const ACCESS_SEQUENTIAL = 1
 const ACCESS_INDEX = 2
 const ACCESS_INDEX_ONLY = 3
+const ACCESS_INDEX_INTERSECTION = 4
+const ACCESS_INDEX_UNION = 5
 
 const JOIN_NESTED_LOOP = 1
 const JOIN_HASH = 2
@@ -69,6 +71,8 @@ struct SourcePlan
   accessKind
   // Selected index name or an empty string for a sequential scan.
   indexName
+  // Stable names participating in an intersection/union access path.
+  indexNames
   // Estimated rows surviving source-local predicates.
   estimatedRows
   // Deterministic integer cost of this access path.

@@ -64,6 +64,35 @@ function responseFromResult(result)
   return messages.rowResponse(result.columns, rows)
 end function
 
+// Converts a query result into bounded protocol responses. Row conversion and
+// payload construction are limited to one transport batch at a time, avoiding
+// the former second full-result string representation on the server heap.
+function responsesFromResult(result)
+  if not executor.isQueryResult(result) then return fail("responsesFromResult", "result must be QueryResult") end if
+  if result.kind == executor.RESULT_COMMAND then return [messages.commandResponse(result.command, result.affectedRows, result.message)] end if
+  if result.kind != executor.RESULT_ROWS then return fail("responsesFromResult", "unknown result kind") end if
+  responses = []
+  batch = []
+  for each sourceRow in result.rows
+    row = array(len(sourceRow))
+    valueIndex = 0
+    for each value in sourceRow
+      row[valueIndex] = valueText(value)
+      valueIndex = valueIndex + 1
+    end for
+    candidate = batch + [row]
+    candidateResponse = messages.rowResponse(result.columns, candidate)
+    if len(batch) > 0 and (len(candidate) > constants.DEFAULT_RESULT_BATCH_ROWS or messages.responsePayloadSize(candidateResponse) > constants.MAX_SECURE_PLAINTEXT_BYTES) then
+      responses = responses + [messages.rowResponse(result.columns, batch)]
+      batch = [row]
+    else
+      batch = candidate
+    end if
+  end for
+  if len(batch) > 0 or len(responses) == 0 then responses = responses + [messages.rowResponse(result.columns, batch)] end if
+  return responses
+end function
+
 // Formats response using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.

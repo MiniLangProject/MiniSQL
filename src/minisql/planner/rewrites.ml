@@ -277,6 +277,13 @@ function conjuncts(expression)
   return [expression]
 end function
 
+// Flattens an OR tree without changing predicate order.
+function disjuncts(expression)
+  if expression is void then return [] end if
+  if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operator == "OR" then return disjuncts(expression.left) + disjuncts(expression.right) end if
+  return [expression]
+end function
+
 // Normalizes a column/literal comparison so the column is always on the left.
 function comparisonConstraint(expression)
   if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
@@ -363,6 +370,91 @@ function combineConjuncts(items)
   return output
 end function
 
+// Adds undirected column-equality edges from top-level AND conjuncts. Bound
+// column types are retained so propagated constants can construct typed source
+// predicates without returning to parser or catalog representations.
+function collectEqualityLinks(expression, links, columnTypes)
+  for each predicate in conjuncts(expression)
+    if isColumnEquality(predicate) then
+      leftIndex = predicate.left.columnIndex
+      rightIndex = predicate.right.columnIndex
+      if leftIndex >= 0 and leftIndex < len(links) and rightIndex >= 0 and rightIndex < len(links) then
+        if not intContains(links[leftIndex], rightIndex) then links[leftIndex] = links[leftIndex] + [rightIndex] end if
+        if not intContains(links[rightIndex], leftIndex) then links[rightIndex] = links[rightIndex] + [leftIndex] end if
+        columnTypes[leftIndex] = predicate.left.typeInfo
+        columnTypes[rightIndex] = predicate.right.typeInfo
+      end if
+    end if
+  end for
+end function
+
+// Reports whether one predicate bucket already contains the same typed binding.
+function predicateBucketContains(bucket, predicate)
+  if bucket is void then return false end if
+  for each existing in bucket
+    if expressions.sameBinding(existing, predicate) then return true end if
+  end for
+  return false
+end function
+
+// Propagates non-NULL equality constants through INNER/CROSS join equality
+// classes. The inferred expressions are execution hints only: the original
+// WHERE remains the final semantic guard and outer joins are never rewritten.
+function propagateJoinConstants(whereExpression, sources, joins, buckets)
+  for each joined in joins
+    if joined.joinType != ast.JOIN_INNER and joined.joinType != ast.JOIN_CROSS then return buckets end if
+  end for
+  totalColumns = 0
+  for each source in sources
+    sourceEnd = source.offset + len(source.table.columns)
+    if sourceEnd > totalColumns then totalColumns = sourceEnd end if
+  end for
+  if totalColumns == 0 then return buckets end if
+  links = array(totalColumns, void)
+  columnTypes = array(totalColumns, void)
+  for columnIndex = 0 to totalColumns - 1
+    links[columnIndex] = []
+  end for
+  for each joined in joins
+    collectEqualityLinks(joined.condition, links, columnTypes)
+  end for
+  collectEqualityLinks(whereExpression, links, columnTypes)
+  for each predicate in conjuncts(whereExpression)
+    if not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY or predicate.operator != "=" then continue end if
+    columnExpression = predicate.left
+    literalExpression = predicate.right
+    if columnExpression.kind == expressions.BOUND_LITERAL and literalExpression.kind == expressions.BOUND_COLUMN then columnExpression = predicate.right; literalExpression = predicate.left end if
+    if columnExpression.kind != expressions.BOUND_COLUMN or literalExpression.kind != expressions.BOUND_LITERAL or literalExpression.literal.isNull then continue end if
+    startIndex = columnExpression.columnIndex
+    if startIndex < 0 or startIndex >= totalColumns then continue end if
+    columnTypes[startIndex] = columnExpression.typeInfo
+    visited = array(totalColumns, false)
+    queue = [startIndex]
+    visited[startIndex] = true
+    queueIndex = 0
+    while queueIndex < len(queue)
+      currentIndex = queue[queueIndex]
+      queueIndex = queueIndex + 1
+      if currentIndex != startIndex and columnTypes[currentIndex] is not void then
+        target = expressions.column(currentIndex, columnTypes[currentIndex])
+        inferredType = types.create(types.SqlTypeKind.Boolean, 0, 0, 0, target.typeInfo.nullable or literalExpression.typeInfo.nullable)
+        inferred = expressions.binary("=", target, literalExpression, inferredType)
+        sourceIndex = singleSource(inferred, sources)
+        if sourceIndex >= 0 then
+          bucket = buckets[sourceIndex]
+          if bucket is void then bucket = [] end if
+          if not predicateBucketContains(bucket, inferred) then bucket = bucket + [inferred] end if
+          buckets[sourceIndex] = bucket
+        end if
+      end if
+      for each neighbor in links[currentIndex]
+        if not visited[neighbor] then visited[neighbor] = true; queue = queue + [neighbor] end if
+      end for
+    end while
+  end for
+  return buckets
+end function
+
 // Predicate pushdown must not duplicate observable evaluation of volatile
 // nested query expressions. Deterministic scalar and cast trees are safe when
 // each argument is itself source-local, which also enables functional indexes.
@@ -402,6 +494,7 @@ function sourcePredicates(whereExpression, sources, joins)
       buckets[sourceIndex] = bucket
     end if
   end for
+  buckets = propagateJoinConstants(whereExpression, sources, joins, buckets)
   if len(sources) > 0 then
     for sourceIndex = 0 to len(sources) - 1
       if buckets[sourceIndex] is not void then output[sourceIndex] = combineConjuncts(buckets[sourceIndex]) end if

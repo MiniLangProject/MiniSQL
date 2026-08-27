@@ -30,11 +30,18 @@ function main(args)
   engine = executor.attach(managed)
   executeOne(engine, "CREATE TABLE message (id INTEGER PRIMARY KEY, body VARCHAR(80) NOT NULL)")
   executeOne(engine, "INSERT INTO message(id, body) VALUES (1, 'from-server')")
+  executeOne(engine, "CREATE TABLE streamed_result (id INTEGER PRIMARY KEY, body VARCHAR(80) NOT NULL)")
+  streamInsert = "INSERT INTO streamed_result(id, body) VALUES "
+  for index = 1 to 1200
+    if index > 1 then streamInsert = streamInsert + ", " end if
+    streamInsert = streamInsert + "(" + index + ", 'row-" + index + "')"
+  end for
+  executeOne(engine, streamInsert)
   executor.close(engine)
   database_manager.close(managed)
 
   handled = listener.serveOneWithReadyFile(databasePath, port, 16, args[2])
-  if handled != 7 then
+  if handled != 8 then
     print "MiniSQL M18 server worker: FAIL (handled=" + handled + ")"
     return 1
   end if

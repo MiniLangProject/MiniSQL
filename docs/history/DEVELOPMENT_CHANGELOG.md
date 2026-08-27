@@ -1,5 +1,20 @@
 # MiniSQL changelog
 
+## 1.0.0 — optimizer and execution expansion
+
+- propagated typed non-NULL constants through top-level INNER/CROSS equality
+  graphs while retaining original predicates as semantic guards;
+- added costed row-reference intersection for independently indexed conjunctions
+  and deduplicating union for fully indexed disjunctions;
+- upgraded the advisory statistics sidecar to format 5 with numeric/date
+  equi-depth histograms, hashed text/binary/wide-decimal MCVs, and composite
+  tuple MCVs while retaining readers for formats 1–4;
+- added validated disk partitions for large hash joins and grouped aggregates,
+  processed by up to four native intra-query workers;
+- added bounded protocol-v1 continuation frames, transparent client reassembly,
+  and a 1,200-row independent server/client regression;
+- retained database page format 1 and wire protocol version 1.
+
 ## 1.0.0 — comma-separated FROM sources
 
 - accepted optional-`AS` aliases on every source in a comma-separated FROM list;

@@ -1818,7 +1818,7 @@ end function
 // conjunct here is semantically equivalent to a database index candidate scan.
 function namedSingleIndexRows(database, table, expression, pageTransaction, indexName)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
-  if expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then
+  if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
     left = namedSingleIndexRows(database, table, expression.left, pageTransaction, indexName)
     if left is not void then return left end if
     return namedSingleIndexRows(database, table, expression.right, pageTransaction, indexName)
@@ -1910,7 +1910,7 @@ end function
 // Finds and normalizes a comparison between one bound column and a literal.
 function comparisonLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
-  if expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then
+  if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
     left = comparisonLiteralForColumn(expression.left, columnIndex)
     if left[0] then return left end if
     return comparisonLiteralForColumn(expression.right, columnIndex)
@@ -2016,6 +2016,81 @@ function plannedIndexRowsForBound(database, bound, pageTransaction, indexName)
   composite = namedCompositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
   if composite is not void then return composite end if
   return namedSingleIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
+end function
+
+// Reports whether two durable heap references identify the same row version.
+function sameRowReference(left, right)
+  return left.pageNumber == right.pageNumber and left.slotId == right.slotId and left.generation == right.generation
+end function
+
+// Reports whether a reference collection already contains one row identity.
+function rowReferenceContains(references, candidate)
+  for each reference in references
+    if sameRowReference(reference, candidate) then return true end if
+  end for
+  return false
+end function
+
+// Reads encoded row identities from one optimizer-selected ordinary index.
+// Functional keys retain their safe single-index fallback until their entry
+// codec exposes the same generic reference-only interface.
+function plannedIndexReferencesForBound(database, bound, indexName)
+  table = bound.sources[0].table
+  constraint = constraintForIndexName(database, table, indexName)
+  if constraint is void or schema_history.isIndexExpressionKey(constraint.columns[0]) then return void end if
+  entries = plannedCoveredIndexEntries(database, table, bound.whereExpression, constraint)
+  if entries is void then return void end if
+  references = []
+  for each entry in entries
+    validateIndexEntryValueShape(constraint, entry.value)
+    references = references + [decodeRowReference(table.tableId, entry.value)]
+  end for
+  return references
+end function
+
+// Materializes one combined identity set through one shared table reader.
+function rowsFromReferences(database, table, pageTransaction, references)
+  reader = try(scan.openCached(database.path, table, pageTransaction, database.readCache))
+  if typeof(reader) == "error" then return reader end if
+  output = []
+  operationError = void
+  for each reference in references
+    row = try(scan.readReference(reader, reference))
+    if typeof(row) == "error" then operationError = row; break end if
+    if row is not void then output = output + [row] end if
+  end for
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return output
+end function
+
+// Executes a planned intersection or union of independently safe index probes.
+// Combining durable row identities preserves one heap row per result even when
+// duplicate OR branches or overlapping indexes return the same entry.
+function plannedCombinedIndexRowsForBound(database, bound, pageTransaction, indexNames, unionMode)
+  if typeof(indexNames) != "array" or len(indexNames) < 2 or typeof(unionMode) != "bool" then return void end if
+  if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
+  if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
+  combined = void
+  for each indexName in indexNames
+    references = plannedIndexReferencesForBound(database, bound, indexName)
+    if references is void then return void end if
+    if combined is void then
+      combined = references
+    else if unionMode then
+      for each reference in references
+        if not rowReferenceContains(combined, reference) then combined = combined + [reference] end if
+      end for
+    else
+      retained = []
+      for each reference in combined
+        if rowReferenceContains(references, reference) then retained = retained + [reference] end if
+      end for
+      combined = retained
+    end if
+  end for
+  return rowsFromReferences(database, bound.sources[0].table, pageTransaction, combined)
 end function
 
 // Returns index candidates for one bound, single-table SELECT or void when the

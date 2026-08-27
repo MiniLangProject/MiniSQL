@@ -24,6 +24,11 @@ The optimized spelling is at parity with an explicit `INNER JOIN` in the
 persistent loopback workload while avoiding the former duplicate predicate
 evaluation.
 
+The six-part optimizer/executor expansion and its focused multi-index,
+transitive-join, spill, intra-query-worker, and continuation-frame results are
+documented in
+[`OPTIMIZER_EXPANSION_2026-08-27.md`](OPTIMIZER_EXPANSION_2026-08-27.md).
+
 `platform_compare.py` runs the same bounded storage, restart, one-shot and
 persistent loopback workloads for one already-built native target. Invoke it
 once from Windows Python and once from Linux Python, using target-native data

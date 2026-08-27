@@ -13,6 +13,8 @@ const MAX_COLUMNS = 1024
 const MAX_ROWS_PER_MESSAGE = 512
 const DEFAULT_RESULT_BATCH_ROWS = 512
 const FLAG_SECURE = 1
+// Indicates that another response frame with the same request identifier follows.
+const FLAG_MORE = 2
 const SECURE_OVERHEAD_BYTES = 24
 const MAX_SECURE_PLAINTEXT_BYTES = MAX_PAYLOAD_BYTES - SECURE_OVERHEAD_BYTES
 

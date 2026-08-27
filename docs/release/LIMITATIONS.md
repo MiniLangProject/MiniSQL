@@ -15,22 +15,24 @@
   strict profile supports TLS 1.3 with `TLS_AES_256_GCM_SHA384` and X25519 only;
   peers offering only different suites or groups are rejected.
 * Replication is asynchronous and operator-managed.
-* The external sort reduces peak memory but final query results are still
-  materialized.
+* External sort and partitioned hash operators reduce working-set memory, but
+  the executor's final `QueryResult` array is still materialized before the
+  server emits its bounded continuation frames.
 * The cost optimizer uses row/page/null/distinct/width estimates, eight-bucket
-  cumulative histograms and eight most-common values for signed-32-bit integral
-  and date columns, plus joint distinct counts for composite index keys through
-  eight columns. It does not yet persist wide numeric/text distributions,
-  equi-depth histograms, multi-column MCV lists, or functional-dependency
-  statistics. Inner-equijoin ordering uses bounded left-deep dynamic programming
+  equi-depth histograms for compact numeric/date values, integral or hashed
+  most-common values, plus joint distinct counts and tuple MCVs for composite
+  index keys through eight columns. It does not yet persist full wide-value
+  ordering, expression distributions, or functional-dependency statistics.
+  Inner-equijoin ordering uses bounded left-deep dynamic programming
   through eight sources and a deterministic greedy fallback above that limit;
   bushy trees and outer-join reordering are not implemented. Index-only scans
   cover B+ tree key columns and explicit `INCLUDE` payload columns. Partial
   indexes support immutable base expressions. Predicate implication is
   deliberately bounded to identical typed conjuncts and stronger typed
   single-column literal bounds in single-table plans; equivalent general
-  expressions, floating-point bounds, disjunctions, and join inference are not
-  yet proven. The current `ON CONFLICT(column)` syntax cannot
+  expressions and floating-point bounds are not yet proven. Top-level inner
+  equality graphs propagate non-NULL constants, while outer-join inference is
+  deliberately excluded. The current `ON CONFLICT(column)` syntax cannot
   name a partial predicate, so it does not infer a partial unique index.
   Functional indexes currently accept exactly one deterministic expression key;
   mixed/composite expression keys, expression statistics, expression-aware
@@ -42,10 +44,10 @@
   individual entry always fits the minimum supported 4 KiB database page. Execution
   uses bounded batches and streaming fast paths where supported, including
   filtered scalar aggregates, fused single-table Top-N, and the final edge of
-  reordered inner-equijoin `COUNT(*)`; other blocking joins/groups and
-  protocol-v1 result delivery can still materialize large row
-  sets. One query is not divided among multiple worker threads; parallelism is
-  currently across independent read-only queries/connections.
+  reordered inner-equijoin `COUNT(*)`. Large eligible hash joins and grouped
+  aggregates use disk-backed partitions on up to four native workers. Other
+  blocking operators and the final result array may still materialize large row
+  sets; protocol-v1 sends that array in bounded continuation frames.
 * Table, column, schema-extension, statistics, and authorization metadata are
   not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
   finite at the storage format's integer representation, process address space,

@@ -5,8 +5,11 @@ package minisql.executor.aggregate
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.endian as endian
+import std.concurrent.thread_pool as thread_pool
 import minisql.executor.projection as projection
 import minisql.executor.scan as scan
+import minisql.executor.sort as sort
+import minisql.platform.file as file_api
 import minisql.sql.ast as ast
 import minisql.sql.expressions as expressions
 import minisql.sql.types as types
@@ -21,6 +24,13 @@ const TYPE_MISMATCH = 9017
 const BINDING_ERROR = 9020
 const HASH_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
+const INTRA_QUERY_WORKERS = 4
+
+// Computes non-negative truncating integer division for spill partition sizing.
+function integerDivide(numerator, denominator)
+  if numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
+  return (numerator - (numerator % denominator)) / denominator
+end function
 
 // Owns one SQL grouping key and all input rows assigned to that key.
 struct AggregateGroup
@@ -36,6 +46,20 @@ struct HashGroupEntry
   keyValues
   // Index of the corresponding AggregateGroup.
   groupIndex
+end struct
+
+// Immutable work package for one independent aggregate hash partition.
+struct AggregatePartitionTask
+  // Validated spill run containing every row for this hash partition.
+  run
+  // Bound SELECT expressions evaluated for each completed group.
+  selectExpressions
+  // Bound grouping expressions whose hash selected this partition.
+  groupExpressions
+  // Optional bound HAVING predicate.
+  havingExpression
+  // Bound ORDER BY expressions retained for the final merge/sort stage.
+  orderExpressions
 end struct
 
 // Fixed-size state for one direct scalar aggregate in the streaming fast path.
@@ -601,6 +625,109 @@ function project(rows, selectExpressions, groupExpressions, havingExpression, or
       output = output + [projection.ProjectedRow(source, evaluateList(selectExpressions, group.rows, representative), evaluateList(orderExpressions, group.rows, representative))]
     end if
   end for
+  return output
+end function
+
+// Converts scanned rows to the shared validated spill representation.
+function projectedSpillRows(rows)
+  output = []
+  for each row in rows
+    output = output + [projection.ProjectedRow(void, row.values, [])]
+  end for
+  return output
+end function
+
+// Restores value-only scanned rows from a validated spill partition.
+function scannedSpillRows(rows)
+  output = []
+  for each row in rows
+    output = output + [scan.ScannedRow(void, row.values)]
+  end for
+  return output
+end function
+
+// Reads, aggregates, and removes one partition. Different tasks own disjoint
+// files and disjoint hash tables, so native workers require no shared lock.
+function projectSpilledPartition(task)
+  restored = try(sort.readRun(task.run))
+  if typeof(restored) == "error" then sort.cleanupRuns([task.run]); return restored end if
+  output = try(project(scannedSpillRows(restored), task.selectExpressions, task.groupExpressions, task.havingExpression, task.orderExpressions))
+  cleanup = try(sort.cleanupRuns([task.run]))
+  if typeof(output) == "error" then return output end if
+  if typeof(cleanup) == "error" then return cleanup end if
+  return output
+end function
+
+// Executes grouped aggregation one hash partition at a time when the input
+// exceeds the configured threshold. Equal group keys always select the same
+// partition; final ORDER BY, when present, restores requested output ordering.
+function projectWithSpill(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions, temporaryRoot, threshold)
+  if typeof(temporaryRoot) != "string" or typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "projectWithSpill", "invalid spill configuration") end if
+  if len(rows) <= threshold or len(groupExpressions) == 0 then return project(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions) end if
+  if not file_api.directoryExists(temporaryRoot) then
+    created = try(file_api.createDirectory(temporaryRoot))
+    if typeof(created) == "error" then return created end if
+  end if
+  partitionCount = integerDivide(len(rows) + threshold - 1, threshold)
+  if partitionCount < 2 then partitionCount = 2 end if
+  if partitionCount > HASH_BUCKET_COUNT then partitionCount = HASH_BUCKET_COUNT end if
+  token = sort.nextSpillToken()
+  partitions = array(partitionCount)
+  for partitionIndex = 0 to partitionCount - 1
+    partitions[partitionIndex] = []
+  end for
+  for each row in rows
+    context = expressions.rowContext(row.values)
+    key = []
+    for each expression in groupExpressions
+      key = key + [expressions.evaluate(expression, context)]
+    end for
+    partitionIndex = hashValues(key) % partitionCount
+    partitions[partitionIndex] = partitions[partitionIndex] + [row]
+  end for
+  tasks = []
+  for partitionIndex = 0 to partitionCount - 1
+    partition = partitions[partitionIndex]
+    if len(partition) > 0 then
+      run = try(sort.writeRun(sort.runPath(temporaryRoot, "aggregate-" + token, partitionIndex), projectedSpillRows(partition), len(partition[0].values), 0))
+      if typeof(run) == "error" then return run end if
+      tasks = tasks + [AggregatePartitionTask(run, selectExpressions, groupExpressions, havingExpression, orderExpressions)]
+    end if
+    partitions[partitionIndex] = []
+  end for
+  workerCount = len(tasks)
+  if workerCount > INTRA_QUERY_WORKERS then workerCount = INTRA_QUERY_WORKERS end if
+  pool = try(thread_pool.ThreadPool.withQueueCapacity(workerCount, len(tasks)))
+  if typeof(pool) == "error" then
+    for each task in tasks
+      sort.cleanupRuns([task.run])
+    end for
+    return pool
+  end if
+  jobs = []
+  for each task in tasks
+    job = pool.Submit(projectSpilledPartition, task)
+    if job is void then
+      pool.ShutdownNow()
+      pool.AwaitTermination()
+      for each pending in tasks
+        sort.cleanupRuns([pending.run])
+      end for
+      pool.Dispose()
+      return fail(INVALID_ARGUMENT, "projectWithSpill", "aggregate partition task was rejected")
+    end if
+    jobs = jobs + [job]
+  end for
+  pool.Shutdown()
+  pool.AwaitTermination()
+  output = []
+  for each job in jobs
+    partitionOutput = try(job.GetResult())
+    disposed = job.Dispose()
+    if typeof(partitionOutput) == "error" then pool.Dispose(); return partitionOutput end if
+    output = output + partitionOutput
+  end for
+  pool.Dispose()
   return output
 end function
 

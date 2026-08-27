@@ -612,6 +612,7 @@
     "tests/performance/COMMA_JOIN_RESIDUAL_2026-08-27.md",
     "tests/performance/COMPILER_UPDATE_21C1BEA_2026-08-25.md",
     "tests/performance/COMPILER_UPDATE_A5597F7_2026-08-24.md",
+    "tests/performance/OPTIMIZER_EXPANSION_2026-08-27.md",
     "tests/performance/PERFORMANCE_BASELINE_2026-08-23.md",
     "tests/performance/README.md",
     "tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md",

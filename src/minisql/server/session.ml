@@ -169,6 +169,21 @@ function responseMessage(request, response)
   return messages.create(kind, 0, request.requestId, payload)
 end function
 
+// Encodes bounded result batches and marks every non-final frame for the client.
+function responseMessages(request, responses)
+  if typeof(responses) != "array" or len(responses) == 0 then return fail(INVALID_ARGUMENT, "responseMessages", "responses must be non-empty") end if
+  output = []
+  for index = 0 to len(responses) - 1
+    payload = messages.encodeResponse(responses[index])
+    kind = constants.TYPE_RESPONSE
+    if responses[index].status == constants.STATUS_ERROR then kind = constants.TYPE_ERROR end if
+    flags = 0
+    if index < len(responses) - 1 then flags = constants.FLAG_MORE end if
+    output = output + [messages.create(kind, flags, request.requestId, payload)]
+  end for
+  return output
+end function
+
 // Implements authentication error for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -382,10 +397,12 @@ function handleQuery(session, request)
     end if
     return responseMessage(request, messages.errorResponse(result.code, result.message))
   end if
-  converted = try(formatter.responseFromResult(result))
+  converted = try(formatter.responsesFromResult(result))
   if typeof(converted) == "error" then return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
-  ignoredLog = logger.info("minisql.server.session.handleQuery", "SQL completed session=" + sessionId + " command=" + converted.command + " rows=" + converted.affectedRows)
-  return responseMessage(request, converted)
+  ignoredLog = logger.info("minisql.server.session.handleQuery", "SQL completed session=" + sessionId + " command=" + converted[0].command + " rows=" + result.affectedRows + " frames=" + len(converted))
+  framed = responseMessages(request, converted)
+  if len(framed) == 1 then return framed[0] end if
+  return framed
 end function
 
 // Handles unlocked using the supplied inputs.

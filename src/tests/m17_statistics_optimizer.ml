@@ -60,17 +60,33 @@ function main(args)
   testkit.record(state, not tableStats.columns[1].hasIntegralBounds, "text column omits compact integral bounds")
   testkit.equal(state, tableStats.columns[2].minimumIntegral, 10, "nullable integral minimum")
   testkit.equal(state, tableStats.columns[2].maximumIntegral, 40, "nullable integral maximum")
-  testkit.equal(state, len(tableStats.columns[0].histogramBounds), 8, "v4 integral histogram bucket count")
-  testkit.equal(state, tableStats.columns[0].histogramCounts[7], 4, "v4 histogram cumulative population")
-  testkit.equal(state, tableStats.columns[0].mostCommonValues[0], 1, "v4 deterministic MCV ordering")
-  testkit.equal(state, tableStats.columns[0].mostCommonCounts[0], 1, "v4 MCV population frequency")
+  testkit.equal(state, len(tableStats.columns[0].histogramBounds), 8, "v5 equi-depth histogram bucket count")
+  testkit.equal(state, tableStats.columns[0].histogramCounts[7], 4, "v5 histogram cumulative population")
+  testkit.equal(state, tableStats.columns[0].mostCommonValues[0], 1, "v5 deterministic MCV ordering")
+  testkit.equal(state, tableStats.columns[0].mostCommonCounts[0], 1, "v5 MCV population frequency")
   testkit.equal(state, len(tableStats.columns[1].histogramBounds), 0, "text histogram remains deferred")
+  testkit.record(state, tableStats.columns[1].mostCommonHashed, "text equality MCVs use stable hashes")
+  testkit.equal(state, len(tableStats.columns[1].mostCommonValues), 3, "text MCV list records sampled values")
 
   encoded = statistics.encode(stats)
   decoded = statistics.decode(encoded)
   testkit.equal(state, decoded.generation, 1, "statistics roundtrip generation")
-  v4Payload = checksum.decodeEnvelope(encoded, statistics.magic(), 4, 50).payload
+  v5Payload = checksum.decodeEnvelope(encoded, statistics.magic(), 5, 50).payload
+  v4Payload = bytes(v5Payload)
   columnCount = endian.readU16LE(v4Payload, 32 + 24)
+  if columnCount > 0 then
+    for columnIndex = 0 to columnCount - 1
+      columnOffset = 64 + columnIndex * 232
+      flags = endian.readU16LE(v4Payload, columnOffset + 2)
+      if (flags & 2) != 0 then
+        endian.writeU16LE(v4Payload, columnOffset + 2, flags & 1)
+        v4Payload[columnOffset + 33] = 0
+      end if
+    end for
+  end if
+  v4 = checksum.encodeEnvelope(statistics.magic(), 4, 50, 0, v4Payload)
+  v4Decoded = statistics.decode(v4)
+  testkit.record(state, not v4Decoded.tables[0].columns[1].mostCommonHashed, "v4 statistics remain readable without invented text MCVs")
   v3Payload = bytes(64 + columnCount * 32, 0)
   copyBytes(v3Payload, 0, v4Payload, 0, 64)
   endian.writeU16LE(v3Payload, 32 + 26, 0)
@@ -108,10 +124,24 @@ function main(args)
   damaged = bytes(encoded)
   damaged[len(damaged) - 1] = damaged[len(damaged) - 1] ^ 1
   testkit.errorCode(state, try(statistics.decode(damaged)), 9004, "statistics CRC detects corruption")
-  invalidCountsPayload = checksum.decodeEnvelope(encoded, statistics.magic(), 4, 50).payload
+  invalidCountsPayload = checksum.decodeEnvelope(encoded, statistics.magic(), 5, 50).payload
   endian.writeU64LE(invalidCountsPayload, 64 + 4, endian.uint64FromInt(5))
-  invalidCounts = checksum.encodeEnvelope(statistics.magic(), 4, 50, 0, invalidCountsPayload)
+  invalidCounts = checksum.encodeEnvelope(statistics.magic(), 5, 50, 0, invalidCountsPayload)
   testkit.errorCode(state, try(statistics.decode(invalidCounts)), 9004, "statistics reject column counts beyond table population")
+
+  executeOne(engine, "CREATE TABLE statistics_rich (id INTEGER PRIMARY KEY, price DECIMAL(10,2) NOT NULL, region VARCHAR(20) NOT NULL, segment VARCHAR(20) NOT NULL)")
+  executeOne(engine, "INSERT INTO statistics_rich(id, price, region, segment) VALUES (1, 10.00, 'eu', 'retail'), (2, 10.00, 'eu', 'retail'), (3, 12.50, 'eu', 'retail'), (4, 12.50, 'eu', 'retail'), (5, 15.00, 'eu', 'retail'), (6, 99.99, 'us', 'enterprise'), (7, 99.99, 'us', 'enterprise'), (8, 42.25, 'apac', 'retail')")
+  executeOne(engine, "CREATE INDEX idx_statistics_rich_group ON statistics_rich(region, segment)")
+  executeOne(engine, "ANALYZE statistics_rich")
+  richCatalog = statistics.loadOrCreate(databasePath, managed.catalogHandle.metadata.databaseId)
+  richTable = catalog.findTable(managed.catalogHandle, "statistics_rich")
+  richStats = statistics.findTable(richCatalog, richTable.tableId)
+  testkit.record(state, richStats.columns[1].hasIntegralBounds, "compact DECIMAL values receive ordered statistics")
+  testkit.equal(state, len(richStats.columns[1].histogramBounds), 8, "DECIMAL equi-depth histogram persisted")
+  testkit.record(state, richStats.columns[2].mostCommonHashed, "text MCV representation is hashed")
+  testkit.equal(state, richStats.columns[2].mostCommonCounts[0], 5, "text MCV population frequency")
+  testkit.equal(state, len(richStats.columnGroups), 1, "composite index creates one column group")
+  testkit.equal(state, richStats.columnGroups[0].mostCommonCounts[0], 5, "multi-column MCV frequency persisted")
 
   after = executeOne(engine, "EXPLAIN SELECT category, reading FROM measurement WHERE reading >= 20 ORDER BY category")
   testkit.equal(state, after.rows[0][0].value, "statistics=analyzed", "EXPLAIN uses persisted statistics")

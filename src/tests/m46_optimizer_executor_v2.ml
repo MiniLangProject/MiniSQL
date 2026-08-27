@@ -37,7 +37,7 @@ function main(args)
     if index > 1 then leftSql = leftSql + ", " end if
     leftSql = leftSql + "(" + index + ", " + (index % 50) + ", " + (201 - index) + ")"
   end for
-  for index = 1 to 100
+  for index = 1 to 200
     if index > 1 then rightSql = rightSql + ", " end if
     rightSql = rightSql + "(" + index + ", " + (index % 50) + ", " + index + ")"
   end for
@@ -46,9 +46,12 @@ function main(args)
   executeOne(engine, "ANALYZE")
 
   joined = executeOne(engine, "SELECT COUNT(*) AS c FROM left_hash l INNER JOIN right_hash r ON l.join_key = r.join_key")
-  testkit.equal(state, endian.int64ToInt(joined.rows[0][0].value), 400, "hash join result")
+  testkit.equal(state, endian.int64ToInt(joined.rows[0][0].value), 800, "hash join result")
   joinPlan = executeOne(engine, "EXPLAIN SELECT l.id FROM left_hash l INNER JOIN right_hash r ON l.join_key = r.join_key")
   testkit.record(state, planContains(joinPlan, "Hash Join"), "optimizer selects Hash Join")
+
+  spilledJoin = executeOne(engine, "SELECT COUNT(*) AS c FROM left_hash l LEFT JOIN right_hash r ON l.join_key = r.join_key")
+  testkit.equal(state, endian.int64ToInt(spilledJoin.rows[0][0].value), 800, "spillable left hash join result")
 
   grouped = executeOne(engine, "SELECT join_key, COUNT(*) AS c FROM left_hash GROUP BY join_key ORDER BY join_key")
   testkit.equal(state, len(grouped.rows), 50, "hash aggregate group count")

@@ -22,6 +22,24 @@ import minisql.sql.types as types
 
 const INVALID_ARGUMENT = 9001
 
+// Reports whether a stable index-name list contains one name.
+function indexNameContains(items, name)
+  for each item in items
+    if item == name then return true end if
+  end for
+  return false
+end function
+
+// Renders a deterministic comma-separated index-name list for EXPLAIN.
+function indexNameListText(items)
+  output = ""
+  for each item in items
+    if len(output) > 0 then output = output + "," end if
+    output = output + item
+  end for
+  return output
+end function
+
 // Groups the optimized plan state and preserves the field relationships documented below.
 struct OptimizedPlan
   // Stores the root associated with this value.
@@ -171,9 +189,11 @@ end function
 // population uniformly across non-MCV distinct values.
 function equalityRows(inputRows, tableRows, current, literal)
   if current is void or literal is void or literal.isNull or tableRows <= 0 then return void end if
-  if typeof(literal.value) == "int" and typeof(current.mostCommonValues) == "array" then
+  lookupValue = literal.value
+  if current.mostCommonHashed then lookupValue = statistics.hashValue(literal) end if
+  if typeof(lookupValue) == "int" and typeof(current.mostCommonValues) == "array" then
     for index = 0 to len(current.mostCommonValues) - 1
-      if current.mostCommonValues[index] == literal.value then return scaleFraction(current.mostCommonCounts[index], inputRows, tableRows) end if
+      if current.mostCommonValues[index] == lookupValue then return scaleFraction(current.mostCommonCounts[index], inputRows, tableRows) end if
     end for
   end if
   if current.distinctCount <= 0 then return void end if
@@ -194,6 +214,16 @@ function equalityRows(inputRows, tableRows, current, literal)
   estimate = scaleFraction(estimate, inputRows, tableRows)
   if estimate == 0 and inputRows > 0 and remainingRows > 0 then estimate = 1 end if
   return estimate
+end function
+
+// Computes the persisted tuple hash used by multi-column MCV statistics.
+function tupleHashForLiterals(literals)
+  result = 2166136261 & 2147483647
+  for each literal in literals
+    if literal.isNull then return void end if
+    result = ((result ^ statistics.hashValue(literal)) * 16777619) & 2147483647
+  end for
+  return result
 end function
 
 // Estimates an integral inequality from a cumulative histogram, with a uniform
@@ -359,6 +389,7 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
   for each index in tableIndexes(state, source.table.tableId)
     prefix = 0
     allEquality = true
+    keyLiterals = []
     candidateRows = rows
     for keyPosition = 0 to len(index.columnIndexes) - 1
       localIndex = index.columnIndexes[keyPosition]
@@ -368,6 +399,7 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
       operator = comparison[1]
       if operator == "=" then
         prefix = prefix + 1
+        keyLiterals = keyLiterals + [comparison[2]]
         current = void
         if localIndex >= 0 then current = columnStats(found, localIndex) end if
         if current is not void and current.distinctCount > 0 then
@@ -398,6 +430,12 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
       group = columnGroupStats(found, index.columnIndexes)
       if group is not void and group.distinctCount > 0 then
         candidateRows = integerDivide(rows, group.distinctCount)
+        tupleHash = tupleHashForLiterals(keyLiterals)
+        if tupleHash is not void and typeof(group.mostCommonHashes) == "array" and len(group.mostCommonHashes) > 0 then
+          for groupIndex = 0 to len(group.mostCommonHashes) - 1
+            if group.mostCommonHashes[groupIndex] == tupleHash then candidateRows = group.mostCommonCounts[groupIndex]; break end if
+          end for
+        end if
         if candidateRows == 0 and rows > 0 then candidateRows = 1 end if
       end if
     end if
@@ -418,6 +456,51 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
     end if
   end for
   return [selected, selectedPrefix, selectedUniqueLookup, selectedRows, selectedCovering]
+end function
+
+// Chooses a bounded multi-index path for a single base table. AND may use every
+// independently indexable conjunct and intersect row identities; OR is eligible
+// only when every disjunct has an index so no qualifying branch can be lost.
+function combinedIndexCandidate(bound, source, predicate, state, found, rows)
+  if len(bound.sources) != 1 or len(bound.joins) != 0 or predicate is void or not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
+  accessKind = execution_plan.ACCESS_SEQUENTIAL
+  parts = []
+  if predicate.operator == "AND" then accessKind = execution_plan.ACCESS_INDEX_INTERSECTION; parts = rewrites.conjuncts(predicate) end if
+  if predicate.operator == "OR" then accessKind = execution_plan.ACCESS_INDEX_UNION; parts = rewrites.disjuncts(predicate) end if
+  if accessKind == execution_plan.ACCESS_SEQUENTIAL or len(parts) < 2 then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
+  names = []
+  estimates = []
+  totalCost = 0
+  for each part in parts
+    partRows = rewrites.estimateFilteredRows(rows, part)
+    candidate = indexCandidate(bound, source, part, state, found, rows, partRows)
+    if candidate[0] is void then
+      if accessKind == execution_plan.ACCESS_INDEX_UNION then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
+      continue
+    end if
+    if not indexNameContains(names, candidate[0].name) then
+      names = names + [candidate[0].name]
+      estimates = estimates + [candidate[3]]
+      // Multi-index execution intersects/unions encoded row references before
+      // opening the heap, so each component pays index-entry rather than heap-row cost.
+      totalCost = totalCost + cost.indexOnlyScan(3, candidate[3], 0, candidate[2]).total
+    end if
+  end for
+  if len(names) < 2 then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
+  estimatedRows = 0
+  if accessKind == execution_plan.ACCESS_INDEX_INTERSECTION then
+    estimatedRows = rows
+    for each currentRows in estimates
+      estimatedRows = scaleFraction(estimatedRows, currentRows, rows)
+    end for
+  else
+    for each currentRows in estimates
+      estimatedRows = estimatedRows + currentRows
+      if estimatedRows > rows then estimatedRows = rows end if
+    end for
+  end if
+  if estimatedRows == 0 and rows > 0 then estimatedRows = 1 end if
+  return [accessKind, names, estimatedRows, totalCost + estimatedRows * 5]
 end function
 
 // Scans plan using the supplied inputs.
@@ -457,8 +540,20 @@ function scanPlan(bound, source, state, predicate, sourceIndex)
       detail = source.table.name + " index=" + indexName
     end if
   end if
+  combined = combinedIndexCandidate(bound, source, predicate, state, found, rows)
+  if combined[0] != execution_plan.ACCESS_SEQUENTIAL and combined[3] < selected.total then
+    accessKind = combined[0]
+    indexName = ""
+    outputRows = combined[2]
+    algorithm = "Index Intersection"
+    if accessKind == execution_plan.ACCESS_INDEX_UNION then algorithm = "Index Union" end if
+    selected = cost.estimate(1, combined[3], outputRows, algorithm)
+    detail = source.table.name + " indexes=" + indexNameListText(combined[1])
+  end if
   if accessKind == execution_plan.ACCESS_SEQUENTIAL and predicate is not void then selected = cost.filter(sequential, outputRows) end if
-  sourcePlan = execution_plan.SourcePlan(sourceIndex, accessKind, indexName, outputRows, selected.total, predicate)
+  indexNames = []
+  if combined[0] == accessKind then indexNames = combined[1] end if
+  sourcePlan = execution_plan.SourcePlan(sourceIndex, accessKind, indexName, indexNames, outputRows, selected.total, predicate)
   return [physical_plan.PhysicalPlan(selected.algorithm, detail, outputRows, selected.total, []), selected, used, sourcePlan]
 end function
 

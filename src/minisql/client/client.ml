@@ -86,6 +86,18 @@ function request(client, message)
   return response
 end function
 
+// Compares response schemas across continuation frames without relying on
+// aggregate-array identity semantics.
+function sameColumns(left, right)
+  if typeof(left) != "array" or typeof(right) != "array" or len(left) != len(right) then return false end if
+  if len(left) > 0 then
+    for index = 0 to len(left) - 1
+      if left[index] != right[index] then return false end if
+    end for
+  end if
+  return true
+end function
+
 // Implements hello handshake for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -269,9 +281,28 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function query(client, sqlText)
   validateOpen(client, "query")
-  responseMessage = request(client, messages.query(client.nextRequestId, sqlText))
-  if responseMessage.messageType != constants.TYPE_RESPONSE and responseMessage.messageType != constants.TYPE_ERROR then return fail(INVALID_ARGUMENT, "query", "unexpected response type") end if
-  return messages.decodeResponse(responseMessage.payload)
+  requestId = client.nextRequestId
+  sent = try(connection.sendMessage(client.connection, messages.query(requestId, sqlText)))
+  if typeof(sent) == "error" then return sent end if
+  combined = void
+  while true
+    responseMessage = try(connection.receiveMessage(client.connection))
+    if typeof(responseMessage) == "error" then return responseMessage end if
+    if responseMessage.requestId != requestId then return fail(INVALID_ARGUMENT, "query", "response request ID mismatch") end if
+    if responseMessage.messageType != constants.TYPE_RESPONSE and responseMessage.messageType != constants.TYPE_ERROR then return fail(INVALID_ARGUMENT, "query", "unexpected response type") end if
+    decoded = try(messages.decodeResponse(responseMessage.payload))
+    if typeof(decoded) == "error" then return decoded end if
+    if combined is void then
+      combined = decoded
+    else
+      if combined.status != constants.STATUS_ROWS or decoded.status != constants.STATUS_ROWS or not sameColumns(combined.columns, decoded.columns) then return fail(INVALID_ARGUMENT, "query", "inconsistent result batch") end if
+      combined.rows = combined.rows + decoded.rows
+      combined.affectedRows = combined.affectedRows + decoded.affectedRows
+    end if
+    if (responseMessage.flags & constants.FLAG_MORE) == 0 then break end if
+  end while
+  client.nextRequestId = client.nextRequestId + 1
+  return combined
 end function
 
 // Implements ping for this module.

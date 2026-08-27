@@ -40,10 +40,13 @@ Persisted database and wire formats remain shared across both targets.
   grants, prepared statements, views, recursive CTEs, correlated subqueries,
   window functions, `MERGE`, triggers, typed single-statement procedures,
   sequences, and generated columns;
-- joins (including aliased comma-separated `FROM` lists), aggregates, set operations, sampled optimizer statistics, predicate
+- joins (including aliased comma-separated `FROM` lists), aggregates, set operations,
+  sampled optimizer statistics, transitive constant propagation, predicate
   pushdown, constant folding, projection pruning, costed index/sequential scans,
+  index intersection/union,
   inner-equijoin reordering, hash/index/nested-loop joins, streaming scalar
-  aggregates, Top-N, external merge-sort runs, and a generation-safe plan cache;
+  aggregates, spillable and parallel hash operators, Top-N, external merge-sort
+  runs, and a generation-safe plan cache;
 - `AUTO_INCREMENT` / `AUTOINCREMENT`, exact `DECIMAL(p,s)` input, and floating
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
@@ -51,8 +54,9 @@ Persisted database and wire formats remain shared across both targets.
 - scalable multi-page catalog and security metadata, a thread-safe singleton
   logger with stdout plus time-rolled files, and an optional complete SQL binlog;
 - native per-connection concurrency through a bounded MiniLang thread pool, with
-  parallel network/framing work, parallel read-only query plans on one database,
-  and exclusive, writer-prioritized mutation execution;
+  bounded multi-frame result delivery, parallel network/framing work, parallel
+  read-only query plans on one database, intra-query hash-partition workers, and
+  exclusive, writer-prioritized mutation execution;
 - a native Windows MiniSQL Workbench with saved aliases, TLS/pinning, object
   browsing, multiple syntax-colored SQL worksheets, current/selection and
   whole-script execution, searchable history, CSV export, native metadata/data
@@ -89,8 +93,9 @@ intentionally retains a single physical writer per database.
 Every bound `SELECT` is lowered to a typed executable plan; `EXPLAIN` renders
 that same plan, so execution does not independently guess a different operator.
 The cost model uses persisted `ANALYZE` row/page counts, per-column null,
-distinct-value and width estimates, integral/date histograms and most-common
-values, plus joint distinct counts for composite index keys to choose sequential or B+ tree access,
+distinct-value and width estimates, equi-depth numeric/date histograms, integral
+and hashed text most-common values, plus joint distinct counts and tuple MCVs
+for composite index keys to choose sequential or B+ tree access,
 nested-loop, index nested-loop or hash joins, hash aggregation, Top-N,
 in-memory sort or external merge sort. Connected inner-equijoin graphs of up to
 eight sources use a bounded Selinger-style subset search; larger graphs use the
@@ -122,10 +127,18 @@ without retaining the final joined rowset. A per-session 64-entry plan cache
 uses exact top-level SQL keys and canonical nested-AST keys and is invalidated across all
 attached sessions by DDL, `ANALYZE`, `VACUUM`, or `REINDEX`.
 
+Independent indexed conjunctions and fully indexable disjunctions may use row-reference
+intersection or deduplicating union before one shared heap read. Inner equality
+graphs propagate typed non-NULL constants to peer sources without changing the
+residual correctness predicate. Large grouped aggregates and eligible hash joins
+are partitioned into validated spill runs and processed on up to four native
+workers. Result rows travel as bounded continuation frames; clients reassemble
+them transparently while each wire payload remains below the protocol limit.
+
 `ANALYZE` counts the exact live population but samples at most 8,192 uniformly
 spaced rows for column distributions. `EXPLAIN ANALYZE` adds actual row count,
 elapsed milliseconds and buffer-cache hit/read deltas. Statistics remain
-advisory and CRC-32C protected; the version-4 reader accepts versions 1–3.
+advisory and CRC-32C protected; the version-5 reader accepts versions 1–4.
 
 ## Requirements
 

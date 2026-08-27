@@ -65,7 +65,7 @@ function serveListenerMode(databasePath, listener, maximumRequests, secure)
     if typeof(request) == "error" then failure = request; break end if
     response = try(session.handle(active, request))
     if typeof(response) == "error" then failure = response; break end if
-    sent = try(connection.sendMessage(client, response))
+    sent = try(sendResponse(client, response))
     if typeof(sent) == "error" then failure = sent; break end if
     if session.transportReady(active) then session.activateTransport(active, client) end if
     handled = handled + 1
@@ -198,10 +198,24 @@ end function
 // Returns its result or propagates a structured error from validation or a dependency.
 // Any side effects are limited to the explicitly invoked dependencies.
 function responseErrorCode(response)
+  if typeof(response) == "array" then
+    if len(response) == 0 then return 0 end if
+    response = response[0]
+  end if
   if response.messageType != constants.TYPE_ERROR then return 0 end if
   decoded = try(messages.decodeResponse(response.payload))
   if typeof(decoded) == "error" then return 0 end if
   return decoded.errorCode
+end function
+
+// Sends either an ordinary response or a bounded sequence of result frames.
+function sendResponse(client, response)
+  if typeof(response) != "array" then return connection.sendMessage(client, response) end if
+  for each frame in response
+    sent = try(connection.sendMessage(client, frame))
+    if typeof(sent) == "error" then return sent end if
+  end for
+  return true
 end function
 
 // Creates an error for message for using the supplied inputs.
@@ -455,7 +469,7 @@ function serveConcurrentClient(task)
       continue
     end if
 
-    sent = try(connection.sendMessage(slot.client, response))
+    sent = try(sendResponse(slot.client, response))
     if typeof(sent) == "error" then
       if claimed then concurrentFinishRequest(task.state, false); claimed = false end if
       break
