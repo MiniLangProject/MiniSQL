@@ -29,7 +29,7 @@ function main(args)
     "parent_id BIGINT, " +
     "CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES customer(id) ON DELETE RESTRICT" +
     "); " +
-    "CREATE UNIQUE INDEX ux_customer_email ON customer(email) INCLUDE (balance); " +
+    "CREATE UNIQUE INDEX ux_customer_email ON customer(email) INCLUDE (balance) WHERE balance >= 0; " +
     "INSERT INTO customer(email, balance) VALUES ('a@example.org', 10), ('b@example.org', 20); " +
     "UPDATE customer SET balance = balance + 5 WHERE email LIKE '%@example.org'; " +
     "DELETE FROM customer WHERE balance < 0; " +
@@ -55,6 +55,8 @@ function main(args)
   testkit.record(state, statements[1].unique, "unique index flag")
   testkit.equal(state, len(statements[1].includeColumns), 1, "CREATE INDEX INCLUDE column count")
   testkit.equal(state, statements[1].includeColumns[0], "balance", "CREATE INDEX INCLUDE canonical column")
+  testkit.record(state, statements[1].whereExpression is not void, "CREATE INDEX partial predicate")
+  testkit.equal(state, ast.formatExpression(statements[1].whereExpression), "(balance >= 0)", "CREATE INDEX predicate formatting")
   testkit.record(state, ast.isInsertStatement(statements[2]), "INSERT AST")
   testkit.equal(state, len(statements[2].rows), 2, "multi-row INSERT")
   testkit.record(state, ast.isUpdateStatement(statements[3]), "UPDATE AST")

@@ -1506,7 +1506,9 @@ function conflictConstraint(database, table, target)
   if tableSchema is void then return fail(BINDING_ERROR, "conflictConstraint", "table has no persisted constraints") end if
   for each constraint in tableSchema.constraints
     unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-    if unique and sameNameArray(constraint.columns, target) then return constraint end if
+    // MiniSQL's ON CONFLICT target syntax cannot state an index predicate yet,
+    // so it must not infer a partial unique index as a table-wide arbiter.
+    if unique and len(constraint.expressionSql) == 0 and sameNameArray(constraint.columns, target) then return constraint end if
   end for
   return fail(BINDING_ERROR, "conflictConstraint", "conflict target does not match a PRIMARY KEY or UNIQUE constraint")
 end function
@@ -1814,9 +1816,16 @@ function bindCreateTable(statement, database)
   return BoundCreateTable(statement, columnTypes)
 end function
 
-// Binds create index using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+// Accepts only immutable row-local expression nodes for partial indexes.
+function indexPredicateSafe(expression)
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return false end if
+  if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return true end if
+  if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return indexPredicateSafe(expression.left) end if
+  if expression.kind == expressions.BOUND_BINARY then return indexPredicateSafe(expression.left) and indexPredicateSafe(expression.right) end if
+  return false
+end function
+
+// Binds index columns and validates an optional immutable row predicate.
 function bindCreateIndex(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "table not found: " + statement.tableName) end if
@@ -1835,6 +1844,10 @@ function bindCreateIndex(statement, database)
     end for
     seen = seen + [columnName]
   end for
+  if statement.whereExpression is not void then
+    predicate = bindWhere(statement.whereExpression, table, void)
+    if not indexPredicateSafe(predicate) then return fail(BINDING_ERROR, "bindCreateIndex", "partial index predicate must be a deterministic base expression") end if
+  end if
   return BoundCreateIndex(statement, table)
 end function
 

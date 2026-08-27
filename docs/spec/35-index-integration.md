@@ -29,6 +29,20 @@ the key and payload and skip heap/overflow access. DML maintenance, startup
 repair, `REINDEX`, `VACUUM`, and the consistency checker compare the complete
 leaf value so stale payload data cannot remain valid silently.
 
+Explicit `CREATE [UNIQUE] INDEX ... WHERE predicate` definitions are partial
+indexes. Construction, INSERT delta maintenance, UPDATE/DELETE rebuilds,
+startup repair, `REINDEX`, `VACUUM`, and streaming verification evaluate the
+same persisted canonical predicate with SQL WHERE semantics: only `TRUE` rows
+have leaf entries. Partial UNIQUE checks compare qualifying rows only. Partial
+predicates may use deterministic bound base-expression nodes and may be
+combined with INCLUDE columns.
+
+The optimizer proves eligibility conservatively. For a single-table plan, each
+typed conjunct of the persisted index predicate must be binding-identical to a
+query conjunct. Additional and reordered query conjuncts are allowed. Partial
+indexes are not selected for joins or legacy unnamed lookup paths. This bounded
+contract prefers a heap plan over any access path that could omit a legal row.
+
 `EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen
 and `Index Only Scan` when no heap fetch is required.
 The consistency checker compares each derived tree with the logical heap rows.

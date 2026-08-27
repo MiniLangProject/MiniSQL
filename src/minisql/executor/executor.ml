@@ -2861,6 +2861,7 @@ function loadPlanningContext(engine)
         if constraint.indexId > 0 then
           columnIndexes = []
           includedColumnIndexes = []
+          indexPredicate = void
           valid = true
           for each columnName in constraint.columns
             columnIndex = binder.findColumnIndex(table, columnName)
@@ -2870,9 +2871,10 @@ function loadPlanningContext(engine)
             columnIndex = binder.findColumnIndex(table, columnName)
             if columnIndex < 0 then valid = false else includedColumnIndexes = includedColumnIndexes + [columnIndex] end if
           end for
+          if len(constraint.expressionSql) > 0 then indexPredicate = binder.bindWhere(parser.parseExpressionText(constraint.expressionSql), table, void) end if
           if valid and len(columnIndexes) > 0 then
             unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, includedColumnIndexes, unique)]
+            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, includedColumnIndexes, indexPredicate, unique)]
           end if
         end if
       end for
@@ -3708,11 +3710,11 @@ function executeShowIndexes(engine, statement)
     for each constraint in tableSchema.constraints
       if constraint.indexId > 0 then
         unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinNames(constraint.columns)), values.text(joinNames(constraint.referenceColumns))]]
+        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinNames(constraint.columns)), values.text(joinNames(constraint.referenceColumns)), values.text(constraint.expressionSql)]]
       end if
     end for
   end if
-  return rowResult(["index_name", "index_kind", "unique", "columns", "included_columns"], rows)
+  return rowResult(["index_name", "index_kind", "unique", "columns", "included_columns", "predicate"], rows)
 end function
 
 // Executes statement inner using the supplied inputs.

@@ -1,5 +1,20 @@
 # MiniSQL changelog
 
+## 1.0.0 — partial indexes
+
+- added `CREATE [UNIQUE] INDEX ... [INCLUDE (...)] WHERE predicate` parsing,
+  immutable base-expression binding, canonical durable metadata, rename/drop
+  dependency handling, and `SHOW INDEXES` predicate introspection;
+- filtered construction, insert deltas, unique validation, updates, deletes,
+  startup repair, `REINDEX`, `VACUUM`, and streaming consistency verification
+  with SQL `TRUE`/`FALSE`/`NULL` predicate semantics;
+- added conservative typed-conjunct implication so only proven single-table
+  plans select partial index or partial index-only scans, while joins and
+  unqualified legacy paths retain complete-row access;
+- prevented partial unique indexes from being inferred as table-wide foreign
+  key or predicate-free `ON CONFLICT` arbiters and added parser, DDL, DML,
+  persistence, negative-path, and optimizer regression coverage.
+
 ## 1.0.0 — covering index payloads
 
 - added `CREATE [UNIQUE] INDEX ... INCLUDE (...)` parsing, binding, durable

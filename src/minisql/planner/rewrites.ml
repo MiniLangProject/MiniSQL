@@ -276,6 +276,24 @@ function conjuncts(expression)
   return [expression]
 end function
 
+// Proves the deliberately bounded partial-index implication contract. Every
+// required index conjunct must occur with an identical typed binding in the
+// query predicate. This recognizes additional query conjuncts and reordered
+// AND trees without attempting unsound general Boolean theorem proving.
+function predicateImplies(queryPredicate, requiredPredicate)
+  if requiredPredicate is void then return true end if
+  if queryPredicate is void then return false end if
+  queryConjuncts = conjuncts(queryPredicate)
+  for each required in conjuncts(requiredPredicate)
+    matched = false
+    for each candidate in queryConjuncts
+      if expressions.sameBinding(candidate, required) then matched = true; break end if
+    end for
+    if not matched then return false end if
+  end for
+  return true
+end function
+
 // Reassembles predicates with SQL boolean semantics intact.
 function combineConjuncts(items)
   if len(items) == 0 then return void end if

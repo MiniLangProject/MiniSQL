@@ -6,6 +6,13 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-26
 
+- added durable partial indexes through `CREATE [UNIQUE] INDEX ... WHERE`,
+  including optional INCLUDE payloads, predicate introspection, complete DML/
+  recovery/maintenance verification, partial uniqueness, and conservative
+  typed-conjunct optimizer implication;
+- prevented partial unique indexes from acting as table-wide foreign-key or
+  predicate-free `ON CONFLICT` arbiters and added focused parser, schema-change,
+  mutation, reopen, and costed index-only regression coverage;
 - expanded the native Workbench with multiple SQL worksheets, keyboard
   accelerators, context menus, searchable history, CSV result export, and
   persistent top-level window geometry;

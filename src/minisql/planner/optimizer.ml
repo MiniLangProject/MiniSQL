@@ -388,6 +388,7 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
       end if
     end for
     usable = prefix > 0
+    if index.predicate is not void and (len(bound.sources) != 1 or not rewrites.predicateImplies(predicate, index.predicate)) then usable = false end if
     if len(index.columnIndexes) > 1 and (prefix != len(index.columnIndexes) or not allEquality) then usable = false end if
     if usable and allEquality and prefix == len(index.columnIndexes) and len(index.columnIndexes) > 1 then
       group = columnGroupStats(found, index.columnIndexes)
@@ -555,7 +556,7 @@ function joinIndexCandidate(joined, state)
   if joined.condition.right.columnIndex >= joined.source.offset then rightColumn = joined.condition.right.columnIndex - joined.source.offset end if
   if rightColumn < 0 or rightColumn >= len(joined.source.table.columns) then return void end if
   for each index in tableIndexes(state, joined.source.table.tableId)
-    if len(index.columnIndexes) == 1 and index.columnIndexes[0] == rightColumn then return index end if
+    if index.predicate is void and len(index.columnIndexes) == 1 and index.columnIndexes[0] == rightColumn then return index end if
   end for
   return void
 end function

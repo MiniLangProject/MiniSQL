@@ -416,6 +416,8 @@ struct CreateIndexStatement
   columns
   // Ordered non-key columns persisted in each leaf entry for covering scans.
   includeColumns
+  // Optional deterministic predicate selecting rows stored by a partial index.
+  whereExpression
   // Indicates whether the unique condition is active.
   unique
   // Stores the if not exists associated with this value.

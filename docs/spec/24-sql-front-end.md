@@ -5,7 +5,8 @@ column positions. Line comments (`--`), block comments, quoted identifiers with 
 quotes and strings with doubled apostrophes are supported. Unquoted identifiers are
 canonicalized to lower case while keywords are canonical upper case.
 
-M12 parses CREATE TABLE, CREATE [UNIQUE] INDEX, DROP TABLE, INSERT, UPDATE, DELETE,
+M12 parses CREATE TABLE, CREATE [UNIQUE] INDEX with optional INCLUDE and WHERE
+clauses, DROP TABLE, INSERT, UPDATE, DELETE,
 SELECT, BEGIN, COMMIT and ROLLBACK. SELECT supports a single FROM relation, aliases,
 DISTINCT, WHERE, ORDER BY with NULL placement, LIMIT and OFFSET. Expressions support
 literals, columns, `*`, unary NOT/+/-; arithmetic, comparison, Boolean, concatenation and

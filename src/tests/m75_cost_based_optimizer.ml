@@ -117,6 +117,26 @@ function main(args)
   testkit.equal(state, correlated.rows[0][0].value, 3, "composite index-only first key")
   testkit.equal(state, correlated.rows[0][1].value, 3, "composite index-only second key")
 
+  executeOne(engine, "CREATE TABLE optimizer_partial (id INTEGER PRIMARY KEY, category INTEGER NOT NULL, active BOOLEAN NOT NULL, payload TEXT)")
+  partialSql = "INSERT INTO optimizer_partial(id, category, active, payload) VALUES "
+  for index = 1 to 300
+    if index > 1 then partialSql = partialSql + ", " end if
+    activeSql = "FALSE"
+    if index <= 30 then activeSql = "TRUE" end if
+    partialSql = partialSql + "(" + index + ", " + (index % 10) + ", " + activeSql + ", 'partial-" + index + "')"
+  end for
+  executeOne(engine, partialSql)
+  executeOne(engine, "CREATE INDEX idx_optimizer_partial_active ON optimizer_partial(category) INCLUDE (active, payload) WHERE active = TRUE")
+  executeOne(engine, "ANALYZE optimizer_partial")
+  partialPlan = executeOne(engine, "EXPLAIN SELECT category, active, payload FROM optimizer_partial WHERE category = 3 AND active = TRUE")
+  testkit.record(state, planContains(partialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_active"), "implied predicate selects partial index-only scan")
+  partialRows = executeOne(engine, "SELECT category, active, payload FROM optimizer_partial WHERE category = 3 AND active = TRUE")
+  testkit.equal(state, len(partialRows.rows), 3, "partial index scans only qualifying rows")
+  unqualifiedPartialPlan = executeOne(engine, "EXPLAIN SELECT category, payload FROM optimizer_partial WHERE category = 3")
+  testkit.record(state, not planContains(unqualifiedPartialPlan, "Index Scan [optimizer_partial index=idx_optimizer_partial_active") and not planContains(unqualifiedPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_active"), "missing predicate implication excludes partial index")
+  unqualifiedPartial = executeOne(engine, "SELECT category, payload FROM optimizer_partial WHERE category = 3")
+  testkit.equal(state, len(unqualifiedPartial.rows), 30, "unqualified query preserves rows outside partial index")
+
   topPlan = executeOne(engine, "EXPLAIN SELECT id FROM optimizer_fact ORDER BY id DESC LIMIT 5")
   testkit.record(state, planContains(topPlan, "Top-N"), "optimizer selects bounded Top-N")
   top = executeOne(engine, "SELECT id FROM optimizer_fact ORDER BY id DESC LIMIT 5")

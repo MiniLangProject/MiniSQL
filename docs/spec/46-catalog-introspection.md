@@ -27,12 +27,13 @@ ordinal, column_name, data_type, nullable, default_sql, identity
 constraints:
 
 ```text
-index_name, index_kind, unique, columns, included_columns
+index_name, index_kind, unique, columns, included_columns, predicate
 ```
 
 `columns` lists ordered B+ tree key columns; `included_columns` lists ordered
 non-key leaf payload columns and is empty for ordinary and constraint-owned
-indexes.
+indexes. `predicate` contains canonical SQL for a partial index and is empty
+for an index containing every table row.
 
 The statements acquire a read lease. Authenticated users may list table names;
 `DESCRIBE` and `SHOW INDEXES` require `SELECT` on the target table. Unknown

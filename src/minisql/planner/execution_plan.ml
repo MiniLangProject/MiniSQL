@@ -9,6 +9,8 @@ package minisql.planner.execution_plan
 // module is the executable contract that prevents the executor from choosing a
 // second, potentially different, algorithm after optimization.
 
+import minisql.sql.expressions as expressions
+
 const INVALID_ARGUMENT = 9001
 
 const ACCESS_SEQUENTIAL = 1
@@ -41,6 +43,8 @@ struct IndexInfo
   columnIndexes
   // Ordered table-local non-key columns stored in leaf payloads.
   includedColumnIndexes
+  // Optional bound predicate restricting rows physically present in the index.
+  predicate
   // Whether the complete key enforces uniqueness.
   unique
 end struct
@@ -116,15 +120,15 @@ function fail(code, operation, message)
 end function
 
 // Validates and constructs catalog-independent index metadata.
-function indexInfo(tableId, name, columnIndexes, includedColumnIndexes, unique)
-  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(includedColumnIndexes) != "array" or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
+function indexInfo(tableId, name, columnIndexes, includedColumnIndexes, predicate, unique)
+  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(includedColumnIndexes) != "array" or (predicate is not void and not expressions.isBoundExpression(predicate)) or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
   for each columnIndex in columnIndexes
     if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "column indexes must be non-negative integers") end if
   end for
   for each columnIndex in includedColumnIndexes
     if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "included column indexes must be non-negative integers") end if
   end for
-  return IndexInfo(tableId, name, columnIndexes, includedColumnIndexes, unique)
+  return IndexInfo(tableId, name, columnIndexes, includedColumnIndexes, predicate, unique)
 end function
 
 // Builds an immutable optimizer input snapshot.

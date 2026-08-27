@@ -102,7 +102,12 @@ plus optional `CREATE INDEX ... INCLUDE (...)` leaf payloads that contain every
 referenced column execute as an index-only scan without opening heap or overflow
 pages. Included values use a versioned, backwards-compatible leaf format and
 are maintained through insert, update, recovery, `REINDEX`, and `VACUUM`. Simple
-single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
+`CREATE INDEX ... WHERE predicate` definitions physically retain only rows for
+which the immutable row-local predicate is `TRUE`. The optimizer admits a
+partial index only for a single-table plan whose query predicate contains every
+typed index-predicate conjunct, preventing rows outside the index from being
+silently omitted. Partial predicates and INCLUDE payloads may be combined.
+Simple single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
 reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/
 `BOOL_AND`/`BOOL_OR` use fixed-size streaming accumulators, including eligible
 filtered index/scan inputs. Small ordered limits fuse scan, projection, and

@@ -14,17 +14,28 @@ table, and changing a column's default or `NOT NULL` property. `DROP INDEX [IF
 EXISTS] name` removes an explicit index; constraint-owned indexes must be
 removed through their constraint.
 
-Explicit indexes support non-key covering columns:
+Explicit indexes support non-key covering columns and an optional row
+predicate:
 
 ```sql
 CREATE [UNIQUE] INDEX index_name ON table_name(key_column [, ...])
-  INCLUDE (payload_column [, ...]);
+  [INCLUDE (payload_column [, ...])]
+  [WHERE deterministic_row_predicate];
 ```
 
 INCLUDE columns do not participate in key ordering or uniqueness. They are
 stored in B+ tree leaves and may satisfy projections, filters, grouping, and
 ordering without a heap lookup when every referenced value is decodable from
 the index. Key and INCLUDE column lists may not overlap.
+
+A partial index stores only rows for which its `WHERE` predicate evaluates to
+`TRUE`; `FALSE` and `NULL` are omitted. Predicates are Boolean, deterministic,
+table-local combinations of columns, literals, unary/binary operators and `IS
+NULL`; functions, aggregates, windows and subqueries are rejected. A partial
+`UNIQUE` index enforces uniqueness only among qualifying rows. It cannot be
+inferred by the current `ON CONFLICT(column)` syntax or used as a foreign-key
+target. The optimizer uses a partial index only when every predicate conjunct
+occurs with an identical typed binding in a single-table query predicate.
 
 Column features include SQL NULL, defaults, `NOT NULL`, `CHECK`, primary and
 unique keys, foreign keys, stored generated columns, identity columns and the
@@ -65,7 +76,8 @@ buffer-cache hit/read deltas, and actual row count. Plans may contain
 `Streaming Join Count`, `Count Slots`, `Top-N`, or `External Merge Sort` operators.
 
 `SHOW INDEXES FROM table_name` returns `index_name`, `index_kind`, `unique`,
-`columns`, and `included_columns`.
+`columns`, `included_columns`, and `predicate`. `predicate` is empty for a full
+index.
 
 ## Schemas and metadata
 

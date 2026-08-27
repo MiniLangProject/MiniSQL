@@ -92,7 +92,7 @@ struct ConstraintDefinition
   kind
   // Columns field of the constraint definition.
   columns
-  // Expression sql field of the constraint definition.
+  // CHECK expression or partial-index predicate in canonical SQL form.
   expressionSql
   // Reference table field of the constraint definition.
   referenceTable
@@ -913,7 +913,9 @@ end function
 function uniqueConstraintForColumns(tableSchemaValue, columns)
   if tableSchemaValue is void then return false end if
   for each value in tableSchemaValue.constraints
-    if value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE then
+    // A partial unique index does not prove uniqueness for rows outside its
+    // predicate and therefore cannot back a foreign-key target.
+    if (value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE) and len(value.expressionSql) == 0 then
       if len(value.columns) == len(columns) then
         same = true
         if len(columns) > 0 then
@@ -995,6 +997,21 @@ end function
 function renameExpressionSql(sqlText, oldName, newName)
   if typeof(sqlText) != "string" or len(sqlText) == 0 then return sqlText end if
   return ast.formatExpression(renameExpression(parser.parseExpressionText(sqlText), oldName, newName))
+end function
+
+// Reports whether a persisted row expression refers to one unqualified column.
+function expressionReferencesColumn(expression, columnName)
+  if ast.isColumnExpression(expression) then return expression.qualifier is void and expression.name == columnName end if
+  if ast.isLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return false end if
+  if ast.isUnaryExpression(expression) or ast.isIsNullExpression(expression) then return expressionReferencesColumn(expression.operand, columnName) end if
+  if ast.isBinaryExpression(expression) then return expressionReferencesColumn(expression.left, columnName) or expressionReferencesColumn(expression.right, columnName) end if
+  return false
+end function
+
+// Parses canonical SQL before checking a partial-index column dependency.
+function expressionSqlReferencesColumn(sqlText, columnName)
+  if typeof(sqlText) != "string" or len(sqlText) == 0 then return false end if
+  return expressionReferencesColumn(parser.parseExpressionText(sqlText), columnName)
 end function
 
 // Compares the string array.
@@ -1090,6 +1107,7 @@ function buildAlterTable(prepared, databasePath, bound)
         if schemaValue.tableId == table.tableId then
           value.columns = stringArrayReplace(value.columns, statement.oldName, statement.newName)
           if value.indexId > 0 then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
+          if value.indexId > 0 and len(value.expressionSql) > 0 then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
           if value.kind == CONSTRAINT_CHECK then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
         end if
         if value.referenceTable == table.name then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
@@ -1190,6 +1208,7 @@ function buildAlterTable(prepared, databasePath, bound)
           if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
           if stringArrayContains(value.columns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
           if value.indexId > 0 and stringArrayContains(value.referenceColumns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is included by index " + value.indexName) end if
+          if value.indexId > 0 and expressionSqlReferencesColumn(value.expressionSql, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by partial index " + value.indexName) end if
         end if
         if value.kind == CONSTRAINT_FOREIGN_KEY and value.referenceTable == table.name and stringArrayContains(value.referenceColumns, statement.oldName) then
           return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by foreign key " + value.name)
@@ -1382,7 +1401,9 @@ function buildCreateIndex(prepared, databasePath, bound)
   end for
   kind = CONSTRAINT_INDEX
   if bound.statement.unique then kind = CONSTRAINT_UNIQUE end if
-  value = constraint(bound.statement.name, kind, bound.statement.columns, "", "", bound.statement.includeColumns, "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
+  predicateSql = ""
+  if bound.statement.whereExpression is not void then predicateSql = ast.formatExpression(bound.statement.whereExpression) end if
+  value = constraint(bound.statement.name, kind, bound.statement.columns, predicateSql, "", bound.statement.includeColumns, "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
   schema.constraints = schema.constraints + [value]
   indexFinal = indexFilePath(databasePath, value.indexId)
   prepared.createFiles = prepared.createFiles + [CreateFilePlan(indexFinal + ".ddl.new", indexFinal, superblock.FILE_TYPE_INDEX, value.indexId, bound.statement.unique)]

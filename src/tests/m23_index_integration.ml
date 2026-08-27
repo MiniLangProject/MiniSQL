@@ -120,6 +120,44 @@ function main(args)
   executeOne(engine, "INSERT INTO inventory(id, sku, category, code, value) VALUES (5, 'duplicate-value', 'a', 5, 10)")
   testkit.equal(state, len(executeOne(engine, "SELECT id FROM inventory WHERE value = 10 ORDER BY id").rows), 2, "DROP INDEX removes explicit unique enforcement")
 
+  executeOne(engine, "CREATE TABLE partial_item (id INTEGER PRIMARY KEY, code INTEGER NOT NULL, active BOOLEAN NOT NULL, payload VARCHAR(80))")
+  executeOne(engine, "INSERT INTO partial_item(id, code, active, payload) VALUES (1, 7, TRUE, 'visible'), (2, 7, FALSE, 'hidden'), (3, 8, TRUE, 'other')")
+  executeOne(engine, "CREATE INDEX idx_partial_active_code ON partial_item(code) INCLUDE (active, payload) WHERE active = TRUE")
+  partialIndexes = executeOne(engine, "SHOW INDEXES FROM partial_item")
+  partialFound = false
+  for each row in partialIndexes.rows
+    if row[0].value == "idx_partial_active_code" and row[5].value == "(active = TRUE)" then partialFound = true end if
+  end for
+  testkit.record(state, partialFound, "SHOW INDEXES exposes partial predicate")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM partial_item WHERE code = 7 AND active = TRUE").rows), 1, "partial index returns qualifying row")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM partial_item WHERE code = 7").rows), 2, "query without implication retains non-indexed row")
+  executeOne(engine, "UPDATE partial_item SET active = TRUE WHERE id = 2")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM partial_item WHERE code = 7 AND active = TRUE ORDER BY id").rows), 2, "UPDATE enters partial index")
+  executeOne(engine, "DELETE FROM partial_item WHERE id = 1")
+  testkit.equal(state, executeOne(engine, "SELECT id FROM partial_item WHERE code = 7 AND active = TRUE").rows[0][0].value, 2, "DELETE removes partial-index entry")
+  testkit.record(state, dml.verifyAllIndexes(managed) >= 5, "partial index matches filtered heap after mutations")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_partial_function ON partial_item(code) WHERE LOWER(payload) = 'visible'")), 9020, "partial predicate rejects function calls")
+
+  executeOne(engine, "CREATE TABLE partial_unique (id INTEGER PRIMARY KEY, code INTEGER NOT NULL, active BOOLEAN NOT NULL)")
+  executeOne(engine, "CREATE UNIQUE INDEX ux_partial_unique_code ON partial_unique(code) WHERE active = TRUE")
+  executeOne(engine, "INSERT INTO partial_unique(id, code, active) VALUES (1, 9, TRUE)")
+  executeOne(engine, "INSERT INTO partial_unique(id, code, active) VALUES (2, 9, FALSE)")
+  testkit.errorCode(state, try(executor.executeSql(engine, "INSERT INTO partial_unique(id, code, active) VALUES (3, 9, TRUE)")), 9022, "partial unique index rejects qualifying duplicate")
+  testkit.errorCode(state, try(executor.executeSql(engine, "INSERT INTO partial_unique(id, code, active) VALUES (4, 10, TRUE) ON CONFLICT(code) DO NOTHING")), 9020, "ON CONFLICT does not infer partial unique index")
+
+  executeOne(engine, "CREATE TABLE partial_ddl (id INTEGER PRIMARY KEY, active BOOLEAN NOT NULL, code INTEGER, unused INTEGER)")
+  executeOne(engine, "CREATE INDEX idx_partial_ddl ON partial_ddl(code) WHERE active = TRUE")
+  executeOne(engine, "ALTER TABLE partial_ddl RENAME COLUMN active TO enabled")
+  renamedPartial = executeOne(engine, "SHOW INDEXES FROM partial_ddl")
+  renamedPredicate = false
+  for each row in renamedPartial.rows
+    if row[0].value == "idx_partial_ddl" and row[5].value == "(enabled = TRUE)" then renamedPredicate = true end if
+  end for
+  testkit.record(state, renamedPredicate, "column rename updates partial predicate")
+  executeOne(engine, "ALTER TABLE partial_ddl DROP COLUMN unused")
+  testkit.equal(state, len(executeOne(engine, "DESCRIBE partial_ddl").rows), 3, "DROP COLUMN permits unrelated partial-index column")
+  testkit.errorCode(state, try(executor.executeSql(engine, "ALTER TABLE partial_ddl DROP COLUMN enabled")), 9021, "DROP COLUMN protects partial predicate dependencies")
+
   executor.close(engine)
   database_manager.close(managed)
 
