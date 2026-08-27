@@ -39,8 +39,10 @@ struct IndexInfo
   tableId
   // Stable catalog index name used by execution diagnostics.
   name
-  // Ordered table-local key columns.
+  // Ordered table-local key columns; -1 marks an expression-key position.
   columnIndexes
+  // Position-aligned bound expression keys; ordinary column positions are void.
+  keyExpressions
   // Ordered table-local non-key columns stored in leaf payloads.
   includedColumnIndexes
   // Optional bound predicate restricting rows physically present in the index.
@@ -120,15 +122,17 @@ function fail(code, operation, message)
 end function
 
 // Validates and constructs catalog-independent index metadata.
-function indexInfo(tableId, name, columnIndexes, includedColumnIndexes, predicate, unique)
-  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(includedColumnIndexes) != "array" or (predicate is not void and not expressions.isBoundExpression(predicate)) or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
-  for each columnIndex in columnIndexes
-    if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "column indexes must be non-negative integers") end if
+function indexInfo(tableId, name, columnIndexes, keyExpressions, includedColumnIndexes, predicate, unique)
+  if typeof(tableId) != "int" or tableId < 0 or typeof(name) != "string" or typeof(columnIndexes) != "array" or len(columnIndexes) == 0 or typeof(keyExpressions) != "array" or len(keyExpressions) != len(columnIndexes) or typeof(includedColumnIndexes) != "array" or (predicate is not void and not expressions.isBoundExpression(predicate)) or typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "indexInfo", "invalid index metadata") end if
+  for index = 0 to len(columnIndexes) - 1
+    columnIndex = columnIndexes[index]
+    keyExpression = keyExpressions[index]
+    if typeof(columnIndex) != "int" or columnIndex < -1 or (columnIndex < 0 and not expressions.isBoundExpression(keyExpression)) or (columnIndex >= 0 and keyExpression is not void) then return fail(INVALID_ARGUMENT, "indexInfo", "invalid column/expression key position") end if
   end for
   for each columnIndex in includedColumnIndexes
     if typeof(columnIndex) != "int" or columnIndex < 0 then return fail(INVALID_ARGUMENT, "indexInfo", "included column indexes must be non-negative integers") end if
   end for
-  return IndexInfo(tableId, name, columnIndexes, includedColumnIndexes, predicate, unique)
+  return IndexInfo(tableId, name, columnIndexes, keyExpressions, includedColumnIndexes, predicate, unique)
 end function
 
 // Builds an immutable optimizer input snapshot.

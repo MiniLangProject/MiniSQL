@@ -142,9 +142,11 @@ function constraintColumnMask(table, constraints)
   mask = array(len(table.columns), false)
   for each constraint in constraints
     for each columnName in constraint.columns
-      index = binder.findColumnIndex(table, columnName)
-      if index < 0 then return fail(CORRUPT_DATA, "constraintColumnMask", "constraint references missing column") end if
-      mask[index] = true
+      if not schema_history.isIndexExpressionKey(columnName) then
+        index = binder.findColumnIndex(table, columnName)
+        if index < 0 then return fail(CORRUPT_DATA, "constraintColumnMask", "constraint references missing column") end if
+        mask[index] = true
+      end if
     end for
     // Predicate evaluation is uncommon and correctness-sensitive. Retaining
     // the complete row avoids external-value or newly added expression shapes
@@ -154,6 +156,13 @@ function constraintColumnMask(table, constraints)
         mask[index] = true
       end for
     end if
+    for each keyValue in constraint.columns
+      if schema_history.isIndexExpressionKey(keyValue) then
+        for index = 0 to len(mask) - 1
+          mask[index] = true
+        end for
+      end if
+    end for
   end for
   return mask
 end function
@@ -434,16 +443,38 @@ end function
 // Implements constraint key for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function constraintKey(row, table, constraint)
+function bindConstraintKeyExpressions(table, constraint)
+  output = []
+  for each keyValue in constraint.columns
+    if schema_history.isIndexExpressionKey(keyValue) then
+      output = output + [binder.bindExpression(parser.parseExpressionText(schema_history.indexExpressionSql(keyValue)), table, void)]
+    else
+      output = output + [void]
+    end if
+  end for
+  return output
+end function
+
+// Evaluates persisted expression keys and reads ordinary column keys.
+function constraintKeyBound(row, table, constraint, boundKeys)
   output = array(len(constraint.columns))
   if len(constraint.columns) > 0 then
     for keyIndex = 0 to len(constraint.columns) - 1
-      index = binder.findColumnIndex(table, constraint.columns[keyIndex])
-      if index < 0 then return fail(CORRUPT_DATA, "constraintKey", "constraint references missing column") end if
-      output[keyIndex] = row[index]
+      if boundKeys[keyIndex] is not void then
+        output[keyIndex] = expressions.evaluate(boundKeys[keyIndex], expressions.rowContext(row))
+      else
+        index = binder.findColumnIndex(table, constraint.columns[keyIndex])
+        if index < 0 then return fail(CORRUPT_DATA, "constraintKey", "constraint references missing column") end if
+        output[keyIndex] = row[index]
+      end if
     end for
   end if
   return output
+end function
+
+// Resolves key metadata for compatibility callers outside index hot loops.
+function constraintKey(row, table, constraint)
+  return constraintKeyBound(row, table, constraint, bindConstraintKeyExpressions(table, constraint))
 end function
 
 // Implements key has null for this module.
@@ -497,13 +528,14 @@ end function
 function validateUnique(database, table, constraint, row, pageTransaction, excludedReference, file)
   indexPredicate = bindIndexPredicate(table, constraint)
   if not indexPredicatePasses(indexPredicate, row) then return true end if
-  key = constraintKey(row, table, constraint)
+  boundKeys = bindConstraintKeyExpressions(table, constraint)
+  key = constraintKeyBound(row, table, constraint, boundKeys)
   if constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY and keyHasNull(key) then return fail(CONSTRAINT_VIOLATION, "validateUnique", "PRIMARY KEY contains NULL: " + constraint.name) end if
   if keyHasNull(key) then return true end if
   existingRows = scanRowsColumns(database, table, pageTransaction, file, constraintColumnMask(table, [constraint]))
   for each existing in existingRows
     if indexPredicatePasses(indexPredicate, existing.values) and (excludedReference is void or not sameReference(existing.reference, excludedReference)) then
-      if keysEqual(key, constraintKey(existing.values, table, constraint)) then return fail(DUPLICATE_KEY, "validateUnique", "duplicate key for " + constraint.name) end if
+      if keysEqual(key, constraintKeyBound(existing.values, table, constraint, boundKeys)) then return fail(DUPLICATE_KEY, "validateUnique", "duplicate key for " + constraint.name) end if
     end if
   end for
   return true
@@ -563,17 +595,18 @@ function validateUniqueBatch(database, table, rows, pageTransaction, file)
   existingRows = scanRowsColumns(database, table, pageTransaction, file, constraintColumnMask(table, constraints))
   for each constraint in constraints
     indexPredicate = bindIndexPredicate(table, constraint)
+    boundKeys = bindConstraintKeyExpressions(table, constraint)
     seen = hashmap.HashMap.new()
     if len(existingRows) > 0 then
       for existingIndex = 0 to len(existingRows) - 1
         if indexPredicatePasses(indexPredicate, existingRows[existingIndex].values) then
-          existingKey = constraintKey(existingRows[existingIndex].values, table, constraint)
+          existingKey = constraintKeyBound(existingRows[existingIndex].values, table, constraint, boundKeys)
           if not keyHasNull(existingKey) then seen.set(encodeConstraintHashKey(existingKey), true) end if
         end if
       end for
     end if
     for rowIndex = 0 to len(rows) - 1
-      key = constraintKey(rows[rowIndex], table, constraint)
+      key = constraintKeyBound(rows[rowIndex], table, constraint, boundKeys)
       if constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY and keyHasNull(key) then return fail(CONSTRAINT_VIOLATION, "validateUniqueBatch", "PRIMARY KEY contains NULL: " + constraint.name) end if
       if indexPredicatePasses(indexPredicate, rows[rowIndex]) and not keyHasNull(key) then
         encoded = encodeConstraintHashKey(key)
@@ -764,10 +797,11 @@ function findConflict(database, bound, row, pageTransaction, file)
   existingRows = scanRows(database, bound.table, pageTransaction, file)
   for each constraint in constraints
     indexPredicate = bindIndexPredicate(bound.table, constraint)
-    key = constraintKey(row, bound.table, constraint)
+    boundKeys = bindConstraintKeyExpressions(bound.table, constraint)
+    key = constraintKeyBound(row, bound.table, constraint, boundKeys)
     if indexPredicatePasses(indexPredicate, row) and not keyHasNull(key) then
       for each existing in existingRows
-        if indexPredicatePasses(indexPredicate, existing.values) and keysEqual(key, constraintKey(existing.values, bound.table, constraint)) then return ConflictMatch(existing.reference, existing.values, constraint) end if
+        if indexPredicatePasses(indexPredicate, existing.values) and keysEqual(key, constraintKeyBound(existing.values, bound.table, constraint, boundKeys)) then return ConflictMatch(existing.reference, existing.values, constraint) end if
       end for
     end if
   end for
@@ -1360,9 +1394,10 @@ function buildIndexEntries(database, table, constraint, pageTransaction)
   // REINDEX, and VACUUM on wide multi-gigabyte tables.
   rows = scan.scanTableRangeColumns(database.path, table, pageTransaction, 0, -1, indexColumnMask(table, constraint))
   indexPredicate = bindIndexPredicate(table, constraint)
+  boundKeys = bindConstraintKeyExpressions(table, constraint)
   entryCount = 0
   for each row in rows
-    keyValues = constraintKey(row.values, table, constraint)
+    keyValues = constraintKeyBound(row.values, table, constraint, boundKeys)
     // SQL UNIQUE permits multiple NULL keys. They are intentionally omitted
     // from unique indexes and remain visible through the heap scan.
     if indexPredicatePasses(indexPredicate, row.values) and not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then entryCount = entryCount + 1 end if
@@ -1370,7 +1405,7 @@ function buildIndexEntries(database, table, constraint, pageTransaction)
   entries = array(entryCount)
   entryIndex = 0
   for each row in rows
-    keyValues = constraintKey(row.values, table, constraint)
+    keyValues = constraintKeyBound(row.values, table, constraint, boundKeys)
     if indexPredicatePasses(indexPredicate, row.values) and not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
       entries[entryIndex] = btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, row.values, row.reference))
       entryIndex = entryIndex + 1
@@ -1389,7 +1424,9 @@ function rebuildIndex(database, table, constraint)
   temporaryPath = finalPath + ".rebuild.new"
   if file_api.pathExists(temporaryPath) then file_api.deletePath(temporaryPath) end if
   tree = btree.create(temporaryPath, database.catalogHandle.metadata.pageSize, constraint.indexId, database.catalogHandle.metadata.databaseId, isUniqueIndexConstraint(constraint))
-  result = try(btree.bulkLoad(tree, buildIndexEntries(database, table, constraint, void)))
+  entries = try(buildIndexEntries(database, table, constraint, void))
+  if typeof(entries) == "error" then ignoredClose = try(btree.close(tree)); ignoredDelete = try(file_api.deletePath(temporaryPath)); return entries end if
+  result = try(btree.bulkLoad(tree, entries))
   closeResult = try(btree.close(tree))
   if typeof(result) == "error" then
     ignoredDelete = try(file_api.deletePath(temporaryPath))
@@ -1424,6 +1461,7 @@ function applyInsertedIndexes(database, table, result)
   updated = 0
   for each constraint in indexedConstraints(database, table)
     indexPredicate = bindIndexPredicate(table, constraint)
+    boundKeys = bindConstraintKeyExpressions(table, constraint)
     tree = try(btree.open(indexPath(database, constraint)))
     if typeof(tree) == "error" then return tree end if
     existing = try(btree.allEntries(tree))
@@ -1431,7 +1469,7 @@ function applyInsertedIndexes(database, table, result)
     additions = 0
     if len(result.newRows) > 0 then
       for rowIndex = 0 to len(result.newRows) - 1
-        keyValues = constraintKey(result.newRows[rowIndex], table, constraint)
+        keyValues = constraintKeyBound(result.newRows[rowIndex], table, constraint, boundKeys)
         if indexPredicatePasses(indexPredicate, result.newRows[rowIndex]) and not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then additions = additions + 1 end if
       end for
     end if
@@ -1446,7 +1484,7 @@ function applyInsertedIndexes(database, table, result)
     outputIndex = len(existing)
     if len(result.newRows) > 0 then
       for rowIndex = 0 to len(result.newRows) - 1
-        keyValues = constraintKey(result.newRows[rowIndex], table, constraint)
+        keyValues = constraintKeyBound(result.newRows[rowIndex], table, constraint, boundKeys)
         if indexPredicatePasses(indexPredicate, result.newRows[rowIndex]) and not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
           combined[outputIndex] = btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, result.newRows[rowIndex], result.references[rowIndex]))
           outputIndex = outputIndex + 1
@@ -1482,6 +1520,7 @@ function verifyIndexStreaming(database, table, constraint, tree, reader)
   if typeof(cursorResult) == "error" then return cursorResult end if
   expectedCount = 0
   indexPredicate = bindIndexPredicate(table, constraint)
+  boundKeys = bindConstraintKeyExpressions(table, constraint)
   operationError = void
   finished = false
   while not finished and operationError is void
@@ -1491,7 +1530,7 @@ function verifyIndexStreaming(database, table, constraint, tree, reader)
     else if row is void then
       finished = true
     else
-      keyValues = constraintKey(row.values, table, constraint)
+      keyValues = constraintKeyBound(row.values, table, constraint, boundKeys)
       if indexPredicatePasses(indexPredicate, row.values) and not (isUniqueIndexConstraint(constraint) and keyHasNull(keyValues)) then
         expected = try(btree.entry(encodeIndexKey(keyValues), encodeIndexEntryValue(table, constraint, row.values, row.reference)))
         if typeof(expected) == "error" then
@@ -1815,6 +1854,59 @@ function constraintForIndexName(database, table, indexName)
   return void
 end function
 
+// Finds a literal comparison against one exact bound functional-index key.
+function comparisonLiteralForBoundKey(expression, keyExpression)
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
+  if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
+  if expression.operator == "AND" then
+    left = comparisonLiteralForBoundKey(expression.left, keyExpression)
+    if left[0] then return left end if
+    return comparisonLiteralForBoundKey(expression.right, keyExpression)
+  end if
+  operator = expression.operator
+  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operator, expression.right.literal] end if
+  if expressions.sameBinding(expression.right, keyExpression) and expressions.isBoundLiteral(expression.left) then
+    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+    return [true, operator, expression.left.literal]
+  end if
+  return [false, "", void]
+end function
+
+// Executes an equality/range probe against one named expression index.
+function namedExpressionIndexRows(database, table, expression, pageTransaction, indexName)
+  constraint = constraintForIndexName(database, table, indexName)
+  if constraint is void or len(constraint.columns) != 1 or not schema_history.isIndexExpressionKey(constraint.columns[0]) then return void end if
+  keyExpression = binder.bindExpression(parser.parseExpressionText(schema_history.indexExpressionSql(constraint.columns[0])), table, void)
+  found = comparisonLiteralForBoundKey(expression, keyExpression)
+  if not found[0] then return void end if
+  operator = found[1]
+  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  converted = values.convert(found[2], keyExpression.typeInfo)
+  if converted.isNull then return [] end if
+  if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
+  encodedKey = encodeIndexKey([converted])
+  tree = openReadOnlyIndex(database, constraint, "expressionIndexRows")
+  entries = []
+  if operator == "=" then
+    foundValues = try(btree.find(tree, encodedKey))
+    if typeof(foundValues) == "error" then btree.close(tree); return foundValues end if
+    for each rowValue in foundValues
+      entries = entries + [btree.entry(encodedKey, rowValue)]
+    end for
+  else
+    lower = void
+    upper = void
+    lowerInclusive = true
+    upperInclusive = true
+    if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
+    entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
+  end if
+  closeResult = try(btree.close(tree))
+  if typeof(entries) == "error" then return entries end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
+end function
+
 // Finds and normalizes a comparison between one bound column and a literal.
 function comparisonLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
@@ -1919,6 +2011,8 @@ function plannedIndexRowsForBound(database, bound, pageTransaction, indexName)
   if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
   expression = bound.whereExpression
   if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
+  functional = namedExpressionIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
+  if functional is not void then return functional end if
   composite = namedCompositeEqualityIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
   if composite is not void then return composite end if
   return namedSingleIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)

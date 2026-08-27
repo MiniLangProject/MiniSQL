@@ -610,6 +610,17 @@ function parseCreateSchema(state)
   return ast.CreateSchemaStatement(parseIdentifierName(state, "schema name"), ifNotExists)
 end function
 
+// Parses the parenthesized expression list used by CREATE INDEX keys.
+function parseIndexKeyList(state)
+  expectKind(state, token.TokenKind.LeftParen, "'('")
+  keys = [parseExpression(state, 0)]
+  while matchKind(state, token.TokenKind.Comma)
+    keys = keys + [parseExpression(state, 0)]
+  end while
+  expectKind(state, token.TokenKind.RightParen, "')'")
+  return keys
+end function
+
 // Parses create index using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -619,7 +630,7 @@ function parseCreateIndex(state, unique)
   name = parseObjectName(state, "index name")
   expectKeyword(state, "ON")
   tableName = parseObjectName(state, "table name")
-  columns = parseIdentifierList(state)
+  columns = parseIndexKeyList(state)
   includeColumns = []
   if matchKeyword(state, "INCLUDE") then includeColumns = parseIdentifierList(state) end if
   whereExpression = void

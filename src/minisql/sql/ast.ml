@@ -412,7 +412,7 @@ struct CreateIndexStatement
   name
   // Stores the table name associated with this value.
   tableName
-  // Contains the ordered columns collection.
+  // Contains ordered column or deterministic expression key AST nodes.
   columns
   // Ordered non-key columns persisted in each leaf entry for covering scans.
   includeColumns

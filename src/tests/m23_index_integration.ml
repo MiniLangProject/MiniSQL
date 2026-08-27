@@ -4,6 +4,7 @@
 
 import minisql.catalog.catalog as catalog
 import minisql.config.model as config_model
+import minisql.common.endian as endian
 import minisql.executor.dml as dml
 import minisql.executor.executor as executor
 import minisql.platform.file as file_api
@@ -158,6 +159,54 @@ function main(args)
   testkit.equal(state, len(executeOne(engine, "DESCRIBE partial_ddl").rows), 3, "DROP COLUMN permits unrelated partial-index column")
   testkit.errorCode(state, try(executor.executeSql(engine, "ALTER TABLE partial_ddl DROP COLUMN enabled")), 9021, "DROP COLUMN protects partial predicate dependencies")
 
+  executeOne(engine, "CREATE TABLE functional_customer (id INTEGER PRIMARY KEY, email VARCHAR(120) NOT NULL, active BOOLEAN NOT NULL)")
+  executeOne(engine, "INSERT INTO functional_customer(id, email, active) VALUES (1, 'Alice@Example.Test', TRUE), (2, 'bob@example.test', TRUE), (3, 'carol@example.test', FALSE)")
+  executeOne(engine, "CREATE INDEX idx_functional_lower_email ON functional_customer(LOWER(email)) INCLUDE (email) WHERE active = TRUE")
+  functionalIndexes = executeOne(engine, "SHOW INDEXES FROM functional_customer")
+  functionalFound = false
+  for each row in functionalIndexes.rows
+    if row[0].value == "idx_functional_lower_email" and row[3].value == "LOWER(email)" and row[4].value == "email" and row[5].value == "(active = TRUE)" then functionalFound = true end if
+  end for
+  testkit.record(state, functionalFound, "SHOW INDEXES renders functional key without internal marker")
+  functionalMatch = executeOne(engine, "SELECT id FROM functional_customer WHERE LOWER(email) = 'alice@example.test' AND active = TRUE")
+  testkit.equal(state, functionalMatch.rows[0][0].value, 1, "functional index equality returns canonicalized match")
+  functionalRange = executeOne(engine, "SELECT id FROM functional_customer WHERE LOWER(email) >= 'bob@example.test' AND active = TRUE ORDER BY id")
+  testkit.equal(state, len(functionalRange.rows), 1, "functional index range respects partial membership")
+  testkit.equal(state, functionalRange.rows[0][0].value, 2, "functional index range returns ordered match")
+  executeOne(engine, "CREATE INDEX idx_functional_tagged_email ON functional_customer(CONCAT(LOWER(email), ':v1'))")
+  taggedMatch = executeOne(engine, "SELECT id FROM functional_customer WHERE CONCAT(LOWER(email), ':v1') = 'bob@example.test:v1'")
+  testkit.equal(state, taggedMatch.rows[0][0].value, 2, "functional index permits literals inside a row-dependent expression")
+  executeOne(engine, "UPDATE functional_customer SET email = 'ALICIA@example.test' WHERE id = 1")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM functional_customer WHERE LOWER(email) = 'alice@example.test' AND active = TRUE").rows), 0, "functional index removes old computed key")
+  testkit.equal(state, executeOne(engine, "SELECT id FROM functional_customer WHERE LOWER(email) = 'alicia@example.test' AND active = TRUE").rows[0][0].value, 1, "functional index stores updated computed key")
+  executeOne(engine, "UPDATE functional_customer SET active = FALSE WHERE id = 1")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM functional_customer WHERE LOWER(email) = 'alicia@example.test' AND active = TRUE").rows), 0, "partial functional index removes nonqualifying update")
+  testkit.record(state, dml.verifyAllIndexes(managed) >= 11, "functional and partial indexes verify after updates")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_functional_constant ON functional_customer(LOWER('constant'))")), 9020, "functional index rejects row-independent key")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_functional_volatile ON functional_customer(CONCAT(email, CAST(CURRENT_TIMESTAMP AS VARCHAR(40))))")), 9020, "functional index rejects volatile current timestamp key")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_functional_composite ON functional_customer(LOWER(email), id)")), 9020, "functional index rejects unsupported composite key")
+  executeOne(engine, "CREATE TABLE functional_quoted (\"Mixed Name\" VARCHAR(30))")
+  testkit.errorCode(state, try(executor.executeSql(engine, "CREATE INDEX idx_functional_quoted ON functional_quoted(LOWER(\"Mixed Name\"))")), 9020, "functional index rejects lossy quoted identifier persistence")
+
+  executeOne(engine, "CREATE TABLE functional_unique (id INTEGER PRIMARY KEY, email VARCHAR(120))")
+  executeOne(engine, "CREATE UNIQUE INDEX ux_functional_unique_lower ON functional_unique(LOWER(email))")
+  executeOne(engine, "INSERT INTO functional_unique(id, email) VALUES (1, 'Case@Example.Test')")
+  testkit.errorCode(state, try(executor.executeSql(engine, "INSERT INTO functional_unique(id, email) VALUES (2, 'case@example.test')")), 9022, "unique functional index rejects equivalent computed key")
+  executeOne(engine, "INSERT INTO functional_unique(id, email) VALUES (2, NULL), (3, NULL)")
+  testkit.equal(state, endian.int64ToInt(executeOne(engine, "SELECT COUNT(*) FROM functional_unique WHERE email IS NULL").rows[0][0].value), 2, "unique functional index retains SQL NULL semantics")
+
+  executeOne(engine, "CREATE TABLE functional_ddl (id INTEGER PRIMARY KEY, email VARCHAR(120), unused INTEGER)")
+  executeOne(engine, "CREATE INDEX idx_functional_ddl ON functional_ddl(LOWER(email))")
+  executeOne(engine, "ALTER TABLE functional_ddl RENAME COLUMN email TO address")
+  renamedFunctional = executeOne(engine, "SHOW INDEXES FROM functional_ddl")
+  renamedFunctionalFound = false
+  for each row in renamedFunctional.rows
+    if row[0].value == "idx_functional_ddl" and row[3].value == "LOWER(address)" then renamedFunctionalFound = true end if
+  end for
+  testkit.record(state, renamedFunctionalFound, "column rename updates functional index expression")
+  executeOne(engine, "ALTER TABLE functional_ddl DROP COLUMN unused")
+  testkit.errorCode(state, try(executor.executeSql(engine, "ALTER TABLE functional_ddl DROP COLUMN address")), 9021, "DROP COLUMN protects functional index dependency")
+
   executor.close(engine)
   database_manager.close(managed)
 
@@ -165,6 +214,8 @@ function main(args)
   persistent = executeOne(reopened, "SELECT id, sku FROM inventory WHERE sku = 'c-9'")
   testkit.equal(state, persistent.rows[0][0].value, 2, "index survives reopen")
   testkit.record(state, dml.verifyAllIndexes(reopened.database) >= 3, "remaining reopened indexes match heaps")
+  reopenedFunctional = executeOne(reopened, "SELECT id FROM functional_customer WHERE LOWER(email) = 'bob@example.test' AND active = TRUE")
+  testkit.equal(state, reopenedFunctional.rows[0][0].value, 2, "functional index metadata and key survive reopen")
   executor.close(reopened)
 
   return testkit.finish(state, "MiniSQL M23 index integration tests: SUCCESS", "MiniSQL M23 index integration tests: FAIL")

@@ -1,5 +1,16 @@
 # MiniSQL changelog
 
+## 1.0.0 — functional indexes
+
+- added deterministic single-expression keys for `CREATE [UNIQUE] INDEX`, with
+  optional INCLUDE payloads and partial predicates;
+- persisted canonical keys through a reserved marker in the existing
+  schema-history array, retaining format 1 and ordinary-index compatibility;
+- evaluated computed keys in unique validation, inserts, rebuild, repair,
+  REINDEX, VACUUM, and streaming verification;
+- added exact-expression costed B+ tree probes, SHOW rendering, rename/drop
+  dependencies, reopen, mutation, uniqueness, and negative-path tests.
+
 ## 1.0.0 — partial indexes
 
 - added `CREATE [UNIQUE] INDEX ... [INCLUDE (...)] WHERE predicate` parsing,

@@ -16,7 +16,7 @@ CREATE TABLE name (...);
 ALTER TABLE name ...;
 DROP TABLE name;
 TRUNCATE TABLE name;
-CREATE [UNIQUE] INDEX name ON table (...)
+CREATE [UNIQUE] INDEX name ON table (column_or_expression [, ...])
   [INCLUDE (...)] [WHERE deterministic_row_predicate];
 DROP INDEX name;
 ANALYZE [table];

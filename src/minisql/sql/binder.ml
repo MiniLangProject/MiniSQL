@@ -1825,24 +1825,107 @@ function indexPredicateSafe(expression)
   return false
 end function
 
+// Accepts scalar AST shapes whose value is stable for a stored row. This check
+// runs before binding because CURRENT_TIMESTAMP otherwise becomes an ordinary
+// literal and loses the information needed to reject the volatile source.
+function indexKeyAstDeterministic(expression)
+  if ast.isLiteralExpression(expression) then return expression.literalKind != ast.LITERAL_CURRENT_TIMESTAMP end if
+  // CREATE INDEX keys are table-local; rejecting qualifiers also keeps later
+  // ALTER TABLE column dependency rewrites unambiguous.
+  if ast.isColumnExpression(expression) then return expression.qualifier is void end if
+  if ast.isUnaryExpression(expression) or ast.isIsNullExpression(expression) or ast.isCastExpression(expression) then return indexKeyAstDeterministic(expression.operand) end if
+  if ast.isBinaryExpression(expression) then return indexKeyAstDeterministic(expression.left) and indexKeyAstDeterministic(expression.right) end if
+  if ast.isFunctionExpression(expression) then
+    if len(expression.arguments) == 0 then return false end if
+    for each argument in expression.arguments
+      if not indexKeyAstDeterministic(argument) then return false end if
+    end for
+    return true
+  end if
+  return false
+end function
+
+// Accepts the bound scalar shapes that the row evaluator can reproduce during
+// inserts, updates, uniqueness checks, rebuilds, and index verification.
+function indexKeyExpressionShapeSafe(expression)
+  if expressions.isBaseBoundExpression(expression) then
+    if expression.kind == expressions.BOUND_COLUMN or expression.kind == expressions.BOUND_LITERAL then return true end if
+    if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return indexKeyExpressionShapeSafe(expression.left) end if
+    if expression.kind == expressions.BOUND_BINARY then return indexKeyExpressionShapeSafe(expression.left) and indexKeyExpressionShapeSafe(expression.right) end if
+    return false
+  end if
+  if expressions.isBoundCast(expression) then return indexKeyExpressionShapeSafe(expression.operand) end if
+  if expressions.isBoundScalar(expression) then
+    if len(expression.arguments) == 0 then return false end if
+    for each argument in expression.arguments
+      if not indexKeyExpressionShapeSafe(argument) then return false end if
+    end for
+    return true
+  end if
+  return false
+end function
+
+// Requires at least one table column so constant scalar expressions cannot
+// create a redundant index whose single key changes between rebuilds.
+function indexKeyExpressionReferencesColumn(expression)
+  if expressions.isBaseBoundExpression(expression) then
+    if expression.kind == expressions.BOUND_COLUMN then return true end if
+    if expression.kind == expressions.BOUND_LITERAL then return false end if
+    if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return indexKeyExpressionReferencesColumn(expression.left) end if
+    if expression.kind == expressions.BOUND_BINARY then return indexKeyExpressionReferencesColumn(expression.left) or indexKeyExpressionReferencesColumn(expression.right) end if
+    return false
+  end if
+  if expressions.isBoundCast(expression) then return indexKeyExpressionReferencesColumn(expression.operand) end if
+  if expressions.isBoundScalar(expression) then
+    for each argument in expression.arguments
+      if indexKeyExpressionReferencesColumn(argument) then return true end if
+    end for
+  end if
+  return false
+end function
+
+// Combines reproducible scalar-shape and row-dependency validation.
+function indexKeyExpressionSafe(expression)
+  return indexKeyExpressionShapeSafe(expression) and indexKeyExpressionReferencesColumn(expression)
+end function
+
+// Verifies that canonical catalog SQL reparses to the same typed expression.
+// Column-expression AST nodes intentionally store canonical names rather than
+// quoting state, so an identifier that still needs quotes must be rejected
+// before it could make persisted index metadata ambiguous after a restart.
+function indexKeyExpressionRoundTrips(expression, boundExpression, table)
+  sqlText = ast.formatExpression(expression)
+  reparsed = try(parser.parseExpressionText(sqlText))
+  if typeof(reparsed) == "error" then return false end if
+  rebound = try(bindExpression(reparsed, table, void))
+  if typeof(rebound) == "error" then return false end if
+  return expressions.sameBinding(boundExpression, rebound)
+end function
+
 // Binds index columns and validates an optional immutable row predicate.
 function bindCreateIndex(statement, database)
   table = catalog.findTable(database, statement.tableName)
   if table is void then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "table not found: " + statement.tableName) end if
   seen = []
-  for each columnName in statement.columns
-    if findColumnIndex(table, columnName) < 0 then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "unknown index column " + columnName) end if
+  expressionKeys = 0
+  for each keyExpression in statement.columns
+    if not indexKeyAstDeterministic(keyExpression) then return fail(BINDING_ERROR, "bindCreateIndex", "index key must be a deterministic row-local expression") end if
+    boundKey = bindExpression(keyExpression, table, void)
+    if not indexKeyExpressionSafe(boundKey) then return fail(BINDING_ERROR, "bindCreateIndex", "index key must be a deterministic row-local expression") end if
+    if not ast.isColumnExpression(keyExpression) and not indexKeyExpressionRoundTrips(keyExpression, boundKey, table) then return fail(BINDING_ERROR, "bindCreateIndex", "index expression cannot be persisted without changing its identifier binding") end if
+    keySql = ast.formatExpression(keyExpression)
+    if not ast.isColumnExpression(keyExpression) then expressionKeys = expressionKeys + 1 end if
     for each existing in seen
-      if existing == columnName then return fail(BINDING_ERROR, "bindCreateIndex", "duplicate index column " + columnName) end if
+      if existing == keySql then return fail(BINDING_ERROR, "bindCreateIndex", "duplicate index key " + keySql) end if
     end for
-    seen = seen + [columnName]
+    seen = seen + [keySql]
   end for
+  if expressionKeys > 0 and len(statement.columns) != 1 then return fail(BINDING_ERROR, "bindCreateIndex", "expression indexes currently require exactly one key expression") end if
   for each columnName in statement.includeColumns
     if findColumnIndex(table, columnName) < 0 then return fail(OBJECT_NOT_FOUND, "bindCreateIndex", "unknown included column " + columnName) end if
-    for each existing in seen
-      if existing == columnName then return fail(BINDING_ERROR, "bindCreateIndex", "included column duplicates an index column " + columnName) end if
+    for each keyExpression in statement.columns
+      if ast.isColumnExpression(keyExpression) and keyExpression.qualifier is void and keyExpression.name == columnName then return fail(BINDING_ERROR, "bindCreateIndex", "included column duplicates an index column " + columnName) end if
     end for
-    seen = seen + [columnName]
   end for
   if statement.whereExpression is not void then
     predicate = bindWhere(statement.whereExpression, table, void)

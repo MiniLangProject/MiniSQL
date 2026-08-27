@@ -170,6 +170,24 @@ function main(args)
   weakerPartialPlan = executeOne(engine, "EXPLAIN SELECT category, id FROM optimizer_partial WHERE category = 3 AND id >= 99")
   testkit.record(state, not planContains(weakerPartialPlan, "Index Scan [optimizer_partial index=idx_optimizer_partial_high") and not planContains(weakerPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_high"), "weaker range cannot prove partial-index predicate")
 
+  executeOne(engine, "CREATE TABLE optimizer_functional (id INTEGER PRIMARY KEY, email VARCHAR(120) NOT NULL, payload TEXT)")
+  functionalSql = "INSERT INTO optimizer_functional(id, email, payload) VALUES "
+  for index = 1 to 300
+    if index > 1 then functionalSql = functionalSql + ", " end if
+    functionalSql = functionalSql + "(" + index + ", 'User-" + index + "@Example.Test', 'functional-" + index + "')"
+  end for
+  executeOne(engine, functionalSql)
+  executeOne(engine, "CREATE INDEX idx_optimizer_lower_email ON optimizer_functional(LOWER(email))")
+  executeOne(engine, "ANALYZE optimizer_functional")
+  functionalPlan = executeOne(engine, "EXPLAIN SELECT id, payload FROM optimizer_functional WHERE LOWER(email) = 'user-203@example.test'")
+  testkit.record(state, planContains(functionalPlan, "Index Scan [optimizer_functional index=idx_optimizer_lower_email"), "cost model selects functional index scan")
+  functionalRows = executeOne(engine, "SELECT id, payload FROM optimizer_functional WHERE LOWER(email) = 'user-203@example.test'")
+  testkit.equal(state, len(functionalRows.rows), 1, "functional index planned row count")
+  testkit.equal(state, functionalRows.rows[0][0].value, 203, "functional index planned row value")
+  executeOne(engine, "UPDATE optimizer_functional SET email = 'Renamed@Example.Test' WHERE id = 203")
+  testkit.equal(state, len(executeOne(engine, "SELECT id FROM optimizer_functional WHERE LOWER(email) = 'user-203@example.test'").rows), 0, "functional optimizer path removes updated key")
+  testkit.equal(state, executeOne(engine, "SELECT id FROM optimizer_functional WHERE LOWER(email) = 'renamed@example.test'").rows[0][0].value, 203, "functional optimizer path finds updated key")
+
   topPlan = executeOne(engine, "EXPLAIN SELECT id FROM optimizer_fact ORDER BY id DESC LIMIT 5")
   testkit.record(state, planContains(topPlan, "Top-N"), "optimizer selects bounded Top-N")
   top = executeOne(engine, "SELECT id FROM optimizer_fact ORDER BY id DESC LIMIT 5")

@@ -6,6 +6,12 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-26
 
+- added deterministic functional indexes such as `CREATE INDEX ...
+  (LOWER(email))`, with compatible durable metadata, SHOW rendering, costed
+  exact-expression scans, optional INCLUDE/WHERE, and computed UNIQUE keys;
+- maintained functional keys through mutation, repair, REINDEX, VACUUM,
+  rename, dependency checks, and reopen, with focused parser, DML, persistence,
+  negative-path, and optimizer regression coverage;
 - added durable partial indexes through `CREATE [UNIQUE] INDEX ... WHERE`,
   including optional INCLUDE payloads, predicate introspection, complete DML/
   recovery/maintenance verification, partial uniqueness, and conservative

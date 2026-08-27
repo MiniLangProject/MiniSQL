@@ -30,7 +30,8 @@ constraints:
 index_name, index_kind, unique, columns, included_columns, predicate
 ```
 
-`columns` lists ordered B+ tree key columns; `included_columns` lists ordered
+`columns` lists ordered B+ tree key columns or canonical functional expressions
+without internal storage markers; `included_columns` lists ordered
 non-key leaf payload columns and is empty for ordinary and constraint-owned
 indexes. `predicate` contains canonical SQL for a partial index and is empty
 for an index containing every table row.

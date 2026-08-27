@@ -971,6 +971,39 @@ function stringArrayReplace(values, oldValue, newValue)
   return output
 end function
 
+// Returns a binary catalog marker that cannot collide with a SQL identifier
+// accepted from normal text input. Keeping the marker out of the schema format
+// itself preserves v1 compatibility for older column-only index histories.
+function indexExpressionPrefix()
+  return decode(bytes([0, 77, 83, 73, 88, 1]))
+end function
+
+// Encodes a canonical expression in the backwards-compatible index key array.
+function indexExpressionKey(sqlText)
+  if typeof(sqlText) != "string" or len(sqlText) == 0 then return fail(INVALID_ARGUMENT, "indexExpressionKey", "expression SQL must be non-empty") end if
+  return indexExpressionPrefix() + sqlText
+end function
+
+// Reports whether one persisted index key is a canonical expression marker.
+function isIndexExpressionKey(value)
+  prefix = indexExpressionPrefix()
+  if typeof(value) != "string" or len(value) < len(prefix) then return false end if
+  return slice(bytes(value), 0, len(prefix)) == bytes(prefix)
+end function
+
+// Returns canonical SQL from an expression key or an empty string otherwise.
+function indexExpressionSql(value)
+  if not isIndexExpressionKey(value) then return "" end if
+  prefixLength = len(indexExpressionPrefix())
+  return decode(slice(bytes(value), prefixLength, len(bytes(value)) - prefixLength))
+end function
+
+// Returns the user-facing key text without the internal compatibility marker.
+function indexKeyDisplay(value)
+  if isIndexExpressionKey(value) then return indexExpressionSql(value) end if
+  return value
+end function
+
 // Performs the rename expression operation for this module.
 // Inputs: `expression`, `oldName`, `newName`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function renameExpression(expression, oldName, newName)
@@ -982,6 +1015,7 @@ function renameExpression(expression, oldName, newName)
   if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, renameExpression(expression.operand, oldName, newName)) end if
   if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, renameExpression(expression.left, oldName, newName), renameExpression(expression.right, oldName, newName)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(renameExpression(expression.operand, oldName, newName), expression.negated) end if
+  if ast.isCastExpression(expression) then return ast.castExpression(renameExpression(expression.operand, oldName, newName), expression.targetType) end if
   if ast.isFunctionExpression(expression) then
     arguments = []
     for each argument in expression.arguments
@@ -1005,6 +1039,12 @@ function expressionReferencesColumn(expression, columnName)
   if ast.isLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return false end if
   if ast.isUnaryExpression(expression) or ast.isIsNullExpression(expression) then return expressionReferencesColumn(expression.operand, columnName) end if
   if ast.isBinaryExpression(expression) then return expressionReferencesColumn(expression.left, columnName) or expressionReferencesColumn(expression.right, columnName) end if
+  if ast.isCastExpression(expression) then return expressionReferencesColumn(expression.operand, columnName) end if
+  if ast.isFunctionExpression(expression) then
+    for each argument in expression.arguments
+      if expressionReferencesColumn(argument, columnName) then return true end if
+    end for
+  end if
   return false
 end function
 
@@ -1105,7 +1145,17 @@ function buildAlterTable(prepared, databasePath, bound)
     for each schemaValue in prepared.newState.tables
       for each value in schemaValue.constraints
         if schemaValue.tableId == table.tableId then
-          value.columns = stringArrayReplace(value.columns, statement.oldName, statement.newName)
+          renamedKeys = []
+          for each keyValue in value.columns
+            if value.indexId > 0 and isIndexExpressionKey(keyValue) then
+              renamedKeys = renamedKeys + [indexExpressionKey(renameExpressionSql(indexExpressionSql(keyValue), statement.oldName, statement.newName))]
+            else if keyValue == statement.oldName then
+              renamedKeys = renamedKeys + [statement.newName]
+            else
+              renamedKeys = renamedKeys + [keyValue]
+            end if
+          end for
+          value.columns = renamedKeys
           if value.indexId > 0 then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
           if value.indexId > 0 and len(value.expressionSql) > 0 then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
           if value.kind == CONSTRAINT_CHECK then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
@@ -1207,6 +1257,11 @@ function buildAlterTable(prepared, databasePath, bound)
         if schemaValue.tableId == table.tableId then
           if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
           if stringArrayContains(value.columns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
+          if value.indexId > 0 then
+            for each keyValue in value.columns
+              if isIndexExpressionKey(keyValue) and expressionSqlReferencesColumn(indexExpressionSql(keyValue), statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by expression index " + value.indexName) end if
+            end for
+          end if
           if value.indexId > 0 and stringArrayContains(value.referenceColumns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is included by index " + value.indexName) end if
           if value.indexId > 0 and expressionSqlReferencesColumn(value.expressionSql, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by partial index " + value.indexName) end if
         end if
@@ -1403,7 +1458,11 @@ function buildCreateIndex(prepared, databasePath, bound)
   if bound.statement.unique then kind = CONSTRAINT_UNIQUE end if
   predicateSql = ""
   if bound.statement.whereExpression is not void then predicateSql = ast.formatExpression(bound.statement.whereExpression) end if
-  value = constraint(bound.statement.name, kind, bound.statement.columns, predicateSql, "", bound.statement.includeColumns, "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
+  keyValues = []
+  for each keyExpression in bound.statement.columns
+    if ast.isColumnExpression(keyExpression) and keyExpression.qualifier is void then keyValues = keyValues + [keyExpression.name] else keyValues = keyValues + [indexExpressionKey(ast.formatExpression(keyExpression))] end if
+  end for
+  value = constraint(bound.statement.name, kind, keyValues, predicateSql, "", bound.statement.includeColumns, "NO ACTION", "NO ACTION", allocateId(prepared.newMetadata), bound.statement.name)
   schema.constraints = schema.constraints + [value]
   indexFinal = indexFilePath(databasePath, value.indexId)
   prepared.createFiles = prepared.createFiles + [CreateFilePlan(indexFinal + ".ddl.new", indexFinal, superblock.FILE_TYPE_INDEX, value.indexId, bound.statement.unique)]

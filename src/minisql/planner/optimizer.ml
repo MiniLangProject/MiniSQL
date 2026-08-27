@@ -360,13 +360,16 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
     prefix = 0
     allEquality = true
     candidateRows = rows
-    for each localIndex in index.columnIndexes
-      comparison = rewrites.comparisonForColumn(predicate, source.offset + localIndex)
+    for keyPosition = 0 to len(index.columnIndexes) - 1
+      localIndex = index.columnIndexes[keyPosition]
+      comparison = void
+      if localIndex >= 0 then comparison = rewrites.comparisonForColumn(predicate, source.offset + localIndex) else comparison = rewrites.comparisonForExpression(predicate, index.keyExpressions[keyPosition]) end if
       if not comparison[0] then break end if
       operator = comparison[1]
       if operator == "=" then
         prefix = prefix + 1
-        current = columnStats(found, localIndex)
+        current = void
+        if localIndex >= 0 then current = columnStats(found, localIndex) end if
         if current is not void and current.distinctCount > 0 then
           estimatedEquality = equalityRows(candidateRows, rows, current, comparison[2])
           if estimatedEquality is void then estimatedEquality = integerDivide(candidateRows, current.distinctCount) end if
@@ -378,7 +381,8 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
       else if prefix == 0 and (operator == "<" or operator == "<=" or operator == ">" or operator == ">=") then
         prefix = 1
         allEquality = false
-        current = columnStats(found, localIndex)
+        current = void
+        if localIndex >= 0 then current = columnStats(found, localIndex) end if
         candidateRows = integralRangeRows(candidateRows, rows, current, operator, comparison[2])
         if candidateRows is void then candidateRows = integerDivide(rows, 3) end if
         if candidateRows == 0 and rows > 0 then candidateRows = 1 end if

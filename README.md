@@ -108,6 +108,11 @@ partial index only for a single-table plan whose query predicate proves every
 typed index-predicate conjunct. Proofs cover identical conjuncts and stronger
 single-column literal bounds, preventing rows outside the index from being
 silently omitted. Partial predicates and INCLUDE payloads may be combined.
+Deterministic functional keys such as `CREATE INDEX ... ON customer
+(LOWER(email))` are evaluated from complete typed rows during every maintenance
+path and selected only for an exact typed expression/literal comparison.
+Functional keys may be combined with `INCLUDE`, `WHERE`, and `UNIQUE`; the
+current implementation supports one expression key and a heap-backed scan.
 Simple single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
 reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/
 `BOOL_AND`/`BOOL_OR` use fixed-size streaming accumulators, including eligible

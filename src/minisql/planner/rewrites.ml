@@ -364,13 +364,23 @@ function combineConjuncts(items)
 end function
 
 // Predicate pushdown must not duplicate observable evaluation of volatile
-// scalar functions or nested query expressions. The initial rewrite surface is
-// therefore intentionally restricted to deterministic base predicates.
+// nested query expressions. Deterministic scalar and cast trees are safe when
+// each argument is itself source-local, which also enables functional indexes.
 function pushdownSafe(expression)
-  if expression is void or not expressions.isBaseBoundExpression(expression) then return false end if
-  if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return true end if
-  if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return pushdownSafe(expression.left) end if
-  if expression.kind == expressions.BOUND_BINARY then return pushdownSafe(expression.left) and pushdownSafe(expression.right) end if
+  if expression is void then return false end if
+  if expressions.isBaseBoundExpression(expression) then
+    if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return true end if
+    if expression.kind == expressions.BOUND_UNARY or expression.kind == expressions.BOUND_IS_NULL then return pushdownSafe(expression.left) end if
+    if expression.kind == expressions.BOUND_BINARY then return pushdownSafe(expression.left) and pushdownSafe(expression.right) end if
+    return false
+  end if
+  if expressions.isBoundCast(expression) then return pushdownSafe(expression.operand) end if
+  if expressions.isBoundScalar(expression) then
+    for each argument in expression.arguments
+      if not pushdownSafe(argument) then return false end if
+    end for
+    return len(expression.arguments) > 0
+  end if
   return false
 end function
 
@@ -436,6 +446,24 @@ function comparisonForColumn(expression, columnIndex)
   operator = expression.operator
   if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operator, expression.right.literal] end if
   if expression.right.kind == expressions.BOUND_COLUMN and expression.right.columnIndex == columnIndex and expression.left.kind == expressions.BOUND_LITERAL then
+    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+    return [true, operator, expression.left.literal]
+  end if
+  return [false, "", void]
+end function
+
+// Finds a literal comparison whose other side matches one bound key expression.
+function comparisonForExpression(expression, keyExpression)
+  if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
+  if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
+  if expression.operator == "AND" then
+    left = comparisonForExpression(expression.left, keyExpression)
+    if left[0] then return left end if
+    return comparisonForExpression(expression.right, keyExpression)
+  end if
+  operator = expression.operator
+  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operator, expression.right.literal] end if
+  if expressions.sameBinding(expression.right, keyExpression) and expressions.isBoundLiteral(expression.left) then
     if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
     return [true, operator, expression.left.literal]
   end if

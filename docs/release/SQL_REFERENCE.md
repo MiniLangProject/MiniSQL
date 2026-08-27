@@ -18,7 +18,7 @@ Explicit indexes support non-key covering columns and an optional row
 predicate:
 
 ```sql
-CREATE [UNIQUE] INDEX index_name ON table_name(key_column [, ...])
+CREATE [UNIQUE] INDEX index_name ON table_name(key_column_or_expression [, ...])
   [INCLUDE (payload_column [, ...])]
   [WHERE deterministic_row_predicate];
 ```
@@ -37,6 +37,22 @@ inferred by the current `ON CONFLICT(column)` syntax or used as a foreign-key
 target. The optimizer uses a partial index only when every predicate conjunct
 is identical to a typed single-table query conjunct or follows from a stronger
 typed equality/range bound on the same column and literal domain.
+
+A functional index accepts one deterministic row-local scalar expression:
+
+```sql
+CREATE INDEX idx_customer_lower_email ON customer(LOWER(email));
+CREATE UNIQUE INDEX ux_customer_normalized_email
+  ON customer(LOWER(TRIM(email))) WHERE active = TRUE;
+```
+
+Supported trees use columns, deterministic scalar functions, casts, literals
+inside a row-dependent expression, and unary/binary operators. Aggregate,
+window, subquery, parameter, constant-only, and mixed expression/composite keys
+are rejected. Access requires the same typed expression compared with a
+literal. Functional scans currently fetch matching heap rows. Before catalog
+persistence, MiniSQL formats, reparses, and rebinds the expression; identifiers
+whose meaning depends on SQL quoting are rejected rather than stored ambiguously.
 
 Column features include SQL NULL, defaults, `NOT NULL`, `CHECK`, primary and
 unique keys, foreign keys, stored generated columns, identity columns and the

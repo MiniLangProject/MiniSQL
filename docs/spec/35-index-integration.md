@@ -47,6 +47,21 @@ ordered. Partial indexes are not selected for joins or legacy unnamed
 lookup paths. This bounded contract prefers a heap plan over any access path
 that could omit a legal row.
 
+One explicit index key may instead be a deterministic row-local expression.
+Canonical SQL is stored with a reserved marker inside the existing key array,
+preserving schema-history format 1 and byte-identical metadata for ordinary
+indexes. Construction and every mutation, recovery, and maintenance path bind
+the expression once per operation and evaluate it against complete typed rows.
+UNIQUE compares computed non-NULL keys; a partial functional index applies its
+predicate before key insertion.
+
+Planning requires an identical typed expression on one side of an equality or
+range comparison with a literal. The B+ tree probe returns heap references;
+expression statistics, functional joins, composite expression keys, and
+expression-aware index-only reconstruction are deferred. Rename and DROP
+COLUMN dependency analysis recursively traverses functions, casts, unary, and
+binary nodes.
+
 `EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen
 and `Index Only Scan` when no heap fetch is required.
 The consistency checker compares each derived tree with the logical heap rows.

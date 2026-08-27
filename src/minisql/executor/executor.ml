@@ -2860,12 +2860,19 @@ function loadPlanningContext(engine)
       for each constraint in tableSchema.constraints
         if constraint.indexId > 0 then
           columnIndexes = []
+          keyExpressions = []
           includedColumnIndexes = []
           indexPredicate = void
           valid = true
           for each columnName in constraint.columns
-            columnIndex = binder.findColumnIndex(table, columnName)
-            if columnIndex < 0 then valid = false else columnIndexes = columnIndexes + [columnIndex] end if
+            if schema_history.isIndexExpressionKey(columnName) then
+              keyExpression = binder.bindExpression(parser.parseExpressionText(schema_history.indexExpressionSql(columnName)), table, void)
+              columnIndexes = columnIndexes + [-1]
+              keyExpressions = keyExpressions + [keyExpression]
+            else
+              columnIndex = binder.findColumnIndex(table, columnName)
+              if columnIndex < 0 then valid = false else columnIndexes = columnIndexes + [columnIndex]; keyExpressions = keyExpressions + [void] end if
+            end if
           end for
           for each columnName in constraint.referenceColumns
             columnIndex = binder.findColumnIndex(table, columnName)
@@ -2874,7 +2881,7 @@ function loadPlanningContext(engine)
           if len(constraint.expressionSql) > 0 then indexPredicate = binder.bindWhere(parser.parseExpressionText(constraint.expressionSql), table, void) end if
           if valid and len(columnIndexes) > 0 then
             unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, includedColumnIndexes, indexPredicate, unique)]
+            indexes = indexes + [execution_plan.indexInfo(table.tableId, constraint.indexName, columnIndexes, keyExpressions, includedColumnIndexes, indexPredicate, unique)]
           end if
         end if
       end for
@@ -3659,6 +3666,16 @@ function joinNames(names)
   return output
 end function
 
+// Renders expression-index keys without their internal compatibility marker.
+function joinIndexKeys(keys)
+  output = ""
+  for each keyValue in keys
+    if len(output) > 0 then output = output + ", " end if
+    output = output + schema_history.indexKeyDisplay(keyValue)
+  end for
+  return output
+end function
+
 // Executes show tables using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -3710,7 +3727,7 @@ function executeShowIndexes(engine, statement)
     for each constraint in tableSchema.constraints
       if constraint.indexId > 0 then
         unique = constraint.kind == schema_history.CONSTRAINT_PRIMARY_KEY or constraint.kind == schema_history.CONSTRAINT_UNIQUE
-        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinNames(constraint.columns)), values.text(joinNames(constraint.referenceColumns)), values.text(constraint.expressionSql)]]
+        rows = rows + [[values.text(constraint.indexName), values.text(constraintKindName(constraint.kind)), values.boolean(unique), values.text(joinIndexKeys(constraint.columns)), values.text(joinNames(constraint.referenceColumns)), values.text(constraint.expressionSql)]]
       end if
     end for
   end if

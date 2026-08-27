@@ -31,7 +31,13 @@
   single-column literal bounds in single-table plans; equivalent general
   expressions, floating-point bounds, disjunctions, and join inference are not
   yet proven. The current `ON CONFLICT(column)` syntax cannot
-  name a partial predicate, so it does not infer a partial unique index. One encoded
+  name a partial predicate, so it does not infer a partial unique index.
+  Functional indexes currently accept exactly one deterministic expression key;
+  mixed/composite expression keys, expression statistics, expression-aware
+  index-only decoding, and functional join probes are not implemented. The
+  query expression must have an identical typed binding. Expression identifiers
+  that lose their meaning without SQL quoting are rejected until expression ASTs
+  preserve quoting in canonical catalog SQL. One encoded
   B+ tree key is limited to 256 bytes and one leaf payload to 3,584 bytes so an
   individual entry always fits the minimum supported 4 KiB database page. Execution
   uses bounded batches and streaming fast paths where supported, including
