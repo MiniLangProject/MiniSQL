@@ -392,6 +392,34 @@ function appendPage(pagedFile, pageBytes)
   return pageNumber
 end function
 
+// Appends a complete copy-on-write page generation with one data durability
+// barrier and one redundant-superblock publication. Page identity is validated
+// before I/O; bounded 512 KiB writes avoid a second generation-sized buffer.
+function appendPages(pagedFile, pageImages)
+  validateOpen(pagedFile, "appendPages")
+  if typeof(pageImages) != "array" or len(pageImages) == 0 then return fail(INVALID_ARGUMENT, "appendPages", "pageImages must be non-empty") end if
+  firstPage = pagedFile.pageCount
+  if firstPage > maxPageCountFor(pagedFile.pageSize) - len(pageImages) then return fail(INVALID_ARGUMENT, "appendPages", "page append exceeds the native file-size range") end if
+  for index = 0 to len(pageImages) - 1
+    validatePageIdentity(pagedFile, pageImages[index], firstPage + index, "appendPages")
+  end for
+  offset = 0
+  while offset < len(pageImages)
+    count = len(pageImages) - offset
+    if count > 128 then count = 128 end if
+    output = bytes(count * pagedFile.pageSize, 0)
+    for index = 0 to count - 1
+      copyBytes(output, index * pagedFile.pageSize, pageImages[offset + index], 0, pagedFile.pageSize)
+    end for
+    file_api.writeAt(pagedFile.file, pageOffset(pagedFile, firstPage + offset), output, 0, len(output))
+    offset = offset + count
+  end while
+  // New page bytes are stable before either superblock advertises the range.
+  file_api.flush(pagedFile.file)
+  commitMetadata(pagedFile, firstPage + len(pageImages))
+  return firstPage
+end function
+
 // Allocates the page.
 // Inputs: `pagedFile`, `pageType`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function allocatePage(pagedFile, pageType)
@@ -426,6 +454,23 @@ function writePage(pagedFile, pageNumber, pageBytes)
   validatePageIdentity(pagedFile, pageBytes, pageNumber, "writePage")
   file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), pageBytes, 0, len(pageBytes))
   return true
+end function
+
+// Publishes a bounded sequence of consecutive page images with one positioned
+// operating-system write. Every image is validated before any byte is written,
+// so a malformed batch cannot partially modify the base file.
+function writeContiguousPages(pagedFile, firstPageNumber, pageImages)
+  validateOpen(pagedFile, "writeContiguousPages")
+  validateNativeId(firstPageNumber, "writeContiguousPages", "firstPageNumber")
+  if typeof(pageImages) != "array" or len(pageImages) == 0 or len(pageImages) > 1024 then return fail(INVALID_ARGUMENT, "writeContiguousPages", "pageImages must contain 1..1024 pages") end if
+  if firstPageNumber >= pagedFile.pageCount or len(pageImages) > pagedFile.pageCount - firstPageNumber then return fail(INVALID_ARGUMENT, "writeContiguousPages", "page range is outside the file") end if
+  output = bytes(len(pageImages) * pagedFile.pageSize, 0)
+  for index = 0 to len(pageImages) - 1
+    validatePageIdentity(pagedFile, pageImages[index], firstPageNumber + index, "writeContiguousPages")
+    copyBytes(output, index * pagedFile.pageSize, pageImages[index], 0, pagedFile.pageSize)
+  end for
+  file_api.writeAt(pagedFile.file, pageOffset(pagedFile, firstPageNumber), output, 0, len(output))
+  return len(pageImages)
 end function
 
 // Flushes the requested value.

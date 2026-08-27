@@ -15,9 +15,12 @@
   strict profile supports TLS 1.3 with `TLS_AES_256_GCM_SHA384` and X25519 only;
   peers offering only different suites or groups are rejected.
 * Replication is asynchronous and operator-managed.
-* External sort and partitioned hash operators reduce working-set memory, but
-  the executor's final `QueryResult` array is still materialized before the
-  server emits its bounded continuation frames.
+* External sort and partitioned hash operators reduce working-set memory. The
+  configured `runtime.temporaryMemoryBytes` value supplies a soft per-session,
+  per-query budget and `EXPLAIN ANALYZE` reports estimated peak and spill
+  counters. Eligible simple single-table queries stream directly from a storage
+  cursor; blocking and unsupported shapes plus the compatibility client API
+  still materialize the final `QueryResult` array.
 * The cost optimizer uses row/page/null/distinct/width estimates, eight-bucket
   equi-depth histograms for compact numeric/date values, integral or hashed
   most-common values, plus joint distinct counts and tuple MCVs for composite
@@ -43,11 +46,13 @@
   B+ tree key is limited to 256 bytes and one leaf payload to 3,584 bytes so an
   individual entry always fits the minimum supported 4 KiB database page. Execution
   uses bounded batches and streaming fast paths where supported, including
-  filtered scalar aggregates, fused single-table Top-N, and the final edge of
+  filtered scalar aggregates, page-range parallel scalar aggregates, fused
+  single-table Top-N, and the final edge of
   reordered inner-equijoin `COUNT(*)`. Large eligible hash joins and grouped
   aggregates use disk-backed partitions on up to four native workers. Other
   blocking operators and the final result array may still materialize large row
-  sets; protocol-v1 sends that array in bounded continuation frames.
+  sets; protocol-v1 sends that array in bounded continuation frames. The query
+  memory budget is a spill policy, not a hard process-memory cap.
 * Table, column, schema-extension, statistics, and authorization metadata are
   not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
   finite at the storage format's integer representation, process address space,

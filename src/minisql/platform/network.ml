@@ -22,7 +22,9 @@ const SOCKET_ERROR_U32 = 4294967295
 const SD_BOTH = 2
 const WSA_VERSION_2_2 = 0x0202
 const SOCKADDR_IN_SIZE = 16
-const MAX_RECEIVE_BYTES = 1048576
+// Matches the protocol's exceptional-frame guard. Ordinary polling remains
+// fixed at small chunks; only an already validated wide frame allocates more.
+const MAX_RECEIVE_BYTES = 16777216
 #if TARGET_OS == "windows"
 const SOL_SOCKET = 0xFFFF
 const SO_REUSEADDR = 4

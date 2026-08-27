@@ -10,6 +10,7 @@ import minisql.sql.expressions as expressions
 import minisql.sql.parser as parser
 import minisql.sql.types as types
 import minisql.sql.values as values
+import std.string as string_api
 import tests.support.testkit as testkit
 
 // Runs the binding values test scenario. It returns zero only after all required invariants pass; invalid arguments, setup failures, or failed assertions produce a non-zero status.
@@ -62,6 +63,10 @@ function main(args)
 
   likeBound = binder.bindExpression(parser.parseExpressionText("name LIKE 'A%'"), table, void)
   testkit.equal(state, values.truth(expressions.evaluate(likeBound, row)), 1, "LIKE evaluation")
+  largeText = string_api.repeat("x", 10000) + "needle"
+  testkit.equal(state, values.truth(expressions.likeResult(values.text(largeText), values.text("%needle"))), 1, "large suffix LIKE has no policy cap")
+  testkit.equal(state, values.truth(expressions.likeResult(values.text(largeText), values.text("%need_e"))), 1, "large wildcard LIKE uses bounded iterative matching")
+  testkit.equal(state, values.truth(expressions.likeResult(values.text(largeText), values.text("%missing%"))), 0, "large SIMD contains LIKE miss")
   checkBound = binder.bindExpression(parser.parseExpressionText("active = TRUE"), table, void)
   testkit.record(state, expressions.checkPasses(checkBound, rowUnknown), "CHECK accepts UNKNOWN")
   testkit.errorCode(state, try(binder.bindExpression(parser.parseExpressionText("missing = 1"), table, void)), binder.OBJECT_NOT_FOUND, "unknown column rejected")

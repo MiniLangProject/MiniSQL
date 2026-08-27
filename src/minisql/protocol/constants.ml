@@ -8,7 +8,10 @@ const PROTOCOL_MAGIC = "MSQL"
 const PROTOCOL_VERSION = 1
 const HEADER_BYTES = 32
 const HEADER_CRC_OFFSET = 24
-const MAX_PAYLOAD_BYTES = 1048576
+// Hard framing guard for one exceptionally wide SQL value or SQL statement.
+// Ordinary result batching targets one MiB below, so increasing this guard does
+// not increase steady-state cursor memory or socket buffering.
+const MAX_PAYLOAD_BYTES = 16777216
 const MAX_COLUMNS = 1024
 const MAX_ROWS_PER_MESSAGE = 512
 const DEFAULT_RESULT_BATCH_ROWS = 512
@@ -17,6 +20,8 @@ const FLAG_SECURE = 1
 const FLAG_MORE = 2
 const SECURE_OVERHEAD_BYTES = 24
 const MAX_SECURE_PLAINTEXT_BYTES = MAX_PAYLOAD_BYTES - SECURE_OVERHEAD_BYTES
+// Preferred response payload size used for backpressure-friendly batching.
+const TARGET_RESULT_FRAME_BYTES = 1048576 - SECURE_OVERHEAD_BYTES
 
 const TYPE_HELLO = 1
 const TYPE_QUERY = 2

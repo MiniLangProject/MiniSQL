@@ -7,6 +7,7 @@ import minisql.common.endian as endian
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
+import std.ds.list as list
 
 // Persistent B+ tree v1.
 //
@@ -566,21 +567,21 @@ end function
 // Performs the chunk entries operation for this module.
 // Inputs: `values`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function chunkEntries(values, pageSize)
-  chunks = []
+  chunks = list.List.new()
   current = []
   currentBytes = LEAF_DATA_OFFSET
   for each value in values
     required = 4 + len(value.key) + len(value.value)
     if len(current) > 0 and (len(current) >= MAX_LEAF_ENTRIES or currentBytes > pageSize - required) then
-      chunks = chunks + [current]
+      chunks.add(current)
       current = []
       currentBytes = LEAF_DATA_OFFSET
     end if
     current = current + [value]
     currentBytes = currentBytes + required
   end for
-  if len(current) > 0 then chunks = chunks + [current] end if
-  return chunks
+  if len(current) > 0 then chunks.add(current) end if
+  return chunks.toArray()
 end function
 
 // Performs the slice array operation for this module.
@@ -620,7 +621,8 @@ function commitSorted(tree, values)
 
   chunks = chunkEntries(values, tree.pagedFile.pageSize)
   leafStart = tree.pagedFile.pageCount
-  descriptors = []
+  descriptorList = list.List.new()
+  generationPages = list.List.new()
   for index = 0 to len(chunks) - 1
     pageNumber = leafStart + index
     previousPage = 0
@@ -628,13 +630,14 @@ function commitSorted(tree, values)
     if index > 0 then previousPage = pageNumber - 1 end if
     if index < len(chunks) - 1 then nextPage = pageNumber + 1 end if
     encoded = encodeLeaf(tree, pageNumber, previousPage, nextPage, chunks[index])
-    paged_file.appendPage(tree.pagedFile, encoded)
-    descriptors = descriptors + [NodeDescriptor(pageNumber, bytes(chunks[index][0].key), 0)]
+    generationPages.add(encoded)
+    descriptorList.add(NodeDescriptor(pageNumber, bytes(chunks[index][0].key), 0))
   end for
+  descriptors = descriptorList.toArray()
 
   level = 1
   while len(descriptors) > 1
-    nextLevel = []
+    nextLevelList = list.List.new()
     offset = 0
     while offset < len(descriptors)
       remaining = len(descriptors) - offset
@@ -642,17 +645,19 @@ function commitSorted(tree, values)
       if take > MAX_INTERNAL_CHILDREN then take = MAX_INTERNAL_CHILDREN end if
       if remaining - take == 1 and take > 2 then take = take - 1 end if
       group = sliceArray(descriptors, offset, take)
-      pageNumber = tree.pagedFile.pageCount
+      pageNumber = leafStart + generationPages.len()
       encoded = encodeInternal(tree, pageNumber, level, group)
-      paged_file.appendPage(tree.pagedFile, encoded)
-      nextLevel = nextLevel + [NodeDescriptor(pageNumber, bytes(group[0].firstKey), level)]
+      generationPages.add(encoded)
+      nextLevelList.add(NodeDescriptor(pageNumber, bytes(group[0].firstKey), level))
       offset = offset + take
     end while
-    descriptors = nextLevel
+    descriptors = nextLevelList.toArray()
     level = level + 1
   end while
 
   root = descriptors[0]
+  appendedStart = paged_file.appendPages(tree.pagedFile, generationPages.toArray())
+  if appendedStart != leafStart then return fail(CORRUPT_DATA, "commitSorted", "copy-on-write generation started at an unexpected page") end if
   publish(tree, root.pageNumber, leafStart, leafStart + len(chunks) - 1, root.level + 1, len(values))
   return true
 end function
@@ -671,26 +676,26 @@ end function
 function allEntries(tree)
   validateOpen(tree, "allEntries")
   if tree.meta.entryCount == 0 then return [] end if
-  result = []
+  result = list.List.new()
   currentPage = tree.meta.firstLeaf
   previousPage = 0
-  visited = []
+  visitedLeaves = 0
+  previousEntry = void
   while currentPage != 0
-    for each seen in visited
-      if seen == currentPage then return fail(CORRUPT_DATA, "allEntries", "leaf chain contains a cycle") end if
-    end for
-    visited = visited + [currentPage]
+    visitedLeaves = visitedLeaves + 1
+    if visitedLeaves > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "allEntries", "leaf chain contains a cycle") end if
     leaf = decodeLeaf(tree, currentPage)
     if leaf.previousPage != previousPage then return fail(CORRUPT_DATA, "allEntries", "leaf backward link mismatch") end if
     for each value in leaf.entries
-      if len(result) > 0 and compareEntries(result[len(result) - 1], value) > 0 then return fail(CORRUPT_DATA, "allEntries", "global leaf order is invalid") end if
-      result = result + [value]
+      if previousEntry is not void and compareEntries(previousEntry, value) > 0 then return fail(CORRUPT_DATA, "allEntries", "global leaf order is invalid") end if
+      result.add(value)
+      previousEntry = value
     end for
     previousPage = currentPage
     currentPage = leaf.nextPage
   end while
-  if previousPage != tree.meta.lastLeaf or len(result) != tree.meta.entryCount then return fail(CORRUPT_DATA, "allEntries", "leaf chain does not match metadata") end if
-  return result
+  if previousPage != tree.meta.lastLeaf or result.len() != tree.meta.entryCount then return fail(CORRUPT_DATA, "allEntries", "leaf chain does not match metadata") end if
+  return result.toArray()
 end function
 
 // Walks the active leaf generation one page at a time. Only the previous entry

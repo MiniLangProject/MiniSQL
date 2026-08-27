@@ -87,19 +87,19 @@ function runConfiguredServer(mode, databasePath, configPath)
   if mode == "tls" then
     if not config.tls.enabled then ignoredClose = try(logger.close()); print "ERROR 9002: tls.enabled must be true for --serve-tls-config"; return 1 end if
     announceServer("native-tls1.3-authenticated", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
-    return serverResult(try(server.serveTlsAddressWithRuntime(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0, config.tls.certificateReference, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes)))
+    return serverResult(try(server.serveTlsAddressWithRuntime(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0, config.tls.certificateReference, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes, config.runtime.temporaryMemoryBytes)))
   end if
   if mode == "authenticated" then
     announceServer("authenticated-encrypted", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
-    return serverResult(try(server.serveSecureAddressWithRuntime(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes)))
+    return serverResult(try(server.serveSecureAddressWithRuntime(databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes, config.runtime.temporaryMemoryBytes)))
   end if
   if config.server.bindAddress != "127.0.0.1" then ignoredClose = try(logger.close()); print "ERROR 9002: trusted and standby config servers must bind 127.0.0.1"; return 1 end if
   if mode == "standby" then
     announceServer("read-only-hot-standby", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
-    return serverResult(try(server.serveStandbyConcurrentWithRuntime(databasePath, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes)))
+    return serverResult(try(server.serveStandbyConcurrentWithRuntime(databasePath, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes, config.runtime.temporaryMemoryBytes)))
   end if
   announceServer("trusted-local", databasePath, config.server.bindAddress, config.server.port, config.server.maxConnections, 0)
-  return serverResult(try(server.serveConcurrentWithRuntime(databasePath, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes)))
+  return serverResult(try(server.serveConcurrentWithRuntime(databasePath, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes, config.runtime.temporaryMemoryBytes)))
 end function
 
 // Enables documented default logging for legacy explicit-argument server modes.

@@ -26,6 +26,7 @@ const CLOSED_HANDLE = 9008
 const STANDBY_NOT_PROMOTED = 9033
 const DEFAULT_CHECKPOINT_WAL_BYTES = 67108864
 const DEFAULT_BUFFER_POOL_BYTES = 268435456
+const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 
 // Durable marker formats used to make physical WAL reset crash-safe. The epoch
 // marker remains for the lifetime of a database after its first reset and tells
@@ -89,6 +90,8 @@ struct ManagedDatabase
   indexesReady
   // Process-local generation invalidating optimizer metadata across sessions.
   planningEpoch
+  // Soft per-query memory budget inherited by every attached session.
+  queryMemoryBytes
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -316,11 +319,12 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes)
+function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   if typeof(allowStandby) != "bool" then return fail(INVALID_ARGUMENT, "open", "allowStandby must be bool") end if
   if typeof(checkpointWalBytes) != "int" or checkpointWalBytes < 4096 then return fail(INVALID_ARGUMENT, "open", "checkpointWalBytes must be at least 4096") end if
   if typeof(bufferPoolBytes) != "int" or bufferPoolBytes < 4096 then return fail(INVALID_ARGUMENT, "open", "bufferPoolBytes must be at least one 4096-byte page") end if
+  if typeof(queryMemoryBytes) != "int" or queryMemoryBytes < 1048576 then return fail(INVALID_ARGUMENT, "open", "queryMemoryBytes must be at least 1 MiB") end if
   ignoredLog = logger.debug("minisql.server.database_manager.openInternal", "opening database path=" + path + " standbyAllowed=" + allowStandby)
   standbyMarker = file_api.fileExists(catalog.joinPath(path, "standby.state"))
   if standbyMarker and not allowStandby then return fail(STANDBY_NOT_PROMOTED, "open", "standby is not promoted") end if
@@ -540,7 +544,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes)
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readCache
   end if
-  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, false)
+  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, queryMemoryBytes, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -549,35 +553,59 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function open(path)
-  return openInternal(path, false, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES)
+  return openInternal(path, false, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES, DEFAULT_QUERY_MEMORY_BYTES)
 end function
 
 // Opens a primary database with a configured maximum current-WAL size.
 function openWithCheckpoint(path, checkpointWalBytes)
-  return openInternal(path, false, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES)
+  return openInternal(path, false, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES, DEFAULT_QUERY_MEMORY_BYTES)
 end function
 
 // Opens a primary database with configured WAL and buffer-pool budgets.
 function openWithRuntime(path, checkpointWalBytes, bufferPoolBytes)
-  return openInternal(path, false, checkpointWalBytes, bufferPoolBytes)
+  return openInternal(path, false, checkpointWalBytes, bufferPoolBytes, DEFAULT_QUERY_MEMORY_BYTES)
+end function
+
+// Opens a writable database with explicit WAL, cache, and per-query budgets.
+function openWithBudgets(path, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return openInternal(path, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Opens standby using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function openStandby(path)
-  return openInternal(path, true, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES)
+  return openInternal(path, true, DEFAULT_CHECKPOINT_WAL_BYTES, DEFAULT_BUFFER_POOL_BYTES, DEFAULT_QUERY_MEMORY_BYTES)
 end function
 
 // Opens a standby with the configured checkpoint threshold. Standbys never
 // initiate a reset, but retaining the value keeps promotion configuration exact.
 function openStandbyWithCheckpoint(path, checkpointWalBytes)
-  return openInternal(path, true, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES)
+  return openInternal(path, true, checkpointWalBytes, DEFAULT_BUFFER_POOL_BYTES, DEFAULT_QUERY_MEMORY_BYTES)
 end function
 
 // Opens a standby with configured WAL and buffer-pool budgets.
 function openStandbyWithRuntime(path, checkpointWalBytes, bufferPoolBytes)
-  return openInternal(path, true, checkpointWalBytes, bufferPoolBytes)
+  return openInternal(path, true, checkpointWalBytes, bufferPoolBytes, DEFAULT_QUERY_MEMORY_BYTES)
+end function
+
+// Opens a standby database with explicit WAL, cache, and per-query budgets.
+function openStandbyWithBudgets(path, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return openInternal(path, true, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+end function
+
+// Returns the soft blocking-operator budget inherited by a new session.
+function queryMemoryLimit(database)
+  validateOpen(database, "queryMemoryLimit")
+  return database.queryMemoryBytes
+end function
+
+// Configures the per-session query budget before a listener accepts clients.
+function setQueryMemoryLimit(database, queryMemoryBytes)
+  validateOpen(database, "setQueryMemoryLimit")
+  if typeof(queryMemoryBytes) != "int" or queryMemoryBytes < 1048576 then return fail(INVALID_ARGUMENT, "setQueryMemoryLimit", "queryMemoryBytes must be at least 1 MiB") end if
+  database.queryMemoryBytes = queryMemoryBytes
+  return true
 end function
 
 // Creates create using the supplied inputs.

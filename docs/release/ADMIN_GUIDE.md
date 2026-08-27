@@ -39,6 +39,15 @@ mutations remain exclusive behind a writer-prioritized gate. Size the limit for
 the expected connection count, read parallelism and available memory. Increasing
 it does not add write parallelism.
 
+`runtime.temporaryMemoryBytes` is the soft blocking-operator budget inherited
+by every new session (minimum 1 MiB). Hash joins, grouped aggregation, and sort
+derive row thresholds from sampled byte width rather than a fixed row count and
+spill to the database temporary directory when appropriate. `EXPLAIN ANALYZE`
+prints `peakBytes`, `limitBytes`, `spillBytes`, and `spillRuns`. This setting is
+not a hard process-memory ceiling: parser state, unsupported materializing
+operators, one exceptionally wide row, and the compatibility result API can
+temporarily exceed it.
+
 The `max-clients` concurrency behavior in this section is validated end-to-end
 on Windows and Linux.
 

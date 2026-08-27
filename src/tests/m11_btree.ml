@@ -41,8 +41,10 @@ function main(args)
   end if
   path = args[0]
   nonUniquePath = path + ".nonunique"
+  bulkPath = path + ".bulk"
   cleanup(path)
   cleanup(nonUniquePath)
+  cleanup(bulkPath)
   state = testkit.create()
 
   tree = btree.create(path, 4096, 7001, databaseId(), true)
@@ -107,7 +109,20 @@ function main(args)
   testkit.record(state, btree.verify(nonUnique), "non-unique tree verifies")
   btree.close(nonUnique)
 
+  // More than 128 leaf pages exercises bounded multi-write generation append
+  // followed by one superblock publication instead of per-page durability.
+  bulk = btree.create(bulkPath, 4096, 7003, databaseId(), true)
+  bulkEntries = array(2048)
+  for value = 0 to len(bulkEntries) - 1
+    bulkEntries[value] = btree.entry(bytes("bulk-key-" + value), bytes("bulk-row-" + value))
+  end for
+  testkit.equal(state, btree.bulkLoad(bulk, bulkEntries), 2048, "bulk generation entry count")
+  testkit.record(state, btree.verify(bulk), "multi-write bulk generation verifies")
+  testkit.equal(state, len(btree.find(bulk, bytes("bulk-key-1024"))), 1, "bulk generation lookup")
+  btree.close(bulk)
+
   cleanup(path)
   cleanup(nonUniquePath)
+  cleanup(bulkPath)
   return testkit.finish(state, "MiniSQL M11 B+ tree tests: SUCCESS", "MiniSQL M11 B+ tree tests: FAIL")
 end function

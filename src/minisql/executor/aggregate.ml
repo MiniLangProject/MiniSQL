@@ -25,6 +25,8 @@ const BINDING_ERROR = 9020
 const HASH_BUCKET_COUNT = 257
 const HASH_MASK = 2147483647
 const INTRA_QUERY_WORKERS = 4
+const VECTOR_BATCH_ROWS = 256
+const PARALLEL_SCAN_MINIMUM_PAGES = 128
 
 // Computes non-negative truncating integer division for spill partition sizing.
 function integerDivide(numerator, denominator)
@@ -76,6 +78,25 @@ struct AggregateAccumulator
   booleanValue
   // Indicates whether any non-NULL input contributed.
   hasValue
+end struct
+
+// Immutable input for one page-range partial aggregate. Workers open private
+// read handles while sharing only the database's thread-safe read cache.
+struct ParallelAggregateTask
+  // Filesystem root containing the table file and schema history.
+  databasePath
+  // Immutable catalog metadata for the scanned table.
+  table
+  // Database-owned concurrent read cache shared by worker readers.
+  readCache
+  // Direct scalar aggregates updated by this worker.
+  selectExpressions
+  // Column mask that prevents unrelated overflow-value reads.
+  requiredColumns
+  // Inclusive index into the persistent heap-page directory.
+  firstPageIndex
+  // Exclusive index into the persistent heap-page directory.
+  endPageIndex
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -317,6 +338,64 @@ function accumulate(state, row)
   return true
 end function
 
+// Updates all aggregate lanes from one bounded row batch. Keeping accumulator
+// dispatch outside the storage cursor makes the operator batch-at-a-time and
+// gives the native compiler a compact, allocation-free numeric inner loop.
+function accumulateBatch(states, rows)
+  for each row in rows
+    for each state in states
+      updated = try(accumulate(state, row))
+      if typeof(updated) == "error" then return updated end if
+    end for
+  end for
+  return true
+end function
+
+// Merges one worker's fixed-size partial aggregate into the coordinator state.
+// AVG is represented by SUM+COUNT, while extrema and boolean folds preserve
+// SQL NULL behavior through the explicit hasValue bit.
+function mergeAccumulator(target, partial)
+  target.count = target.count + partial.count
+  target.total = target.total + partial.total
+  if not partial.hasValue then return true end if
+  expression = target.expression
+  if expression.name == "MIN" or expression.name == "MAX" then
+    if not target.hasValue then
+      target.selected = partial.selected
+    else
+      comparison = values.compareNonNull(partial.selected, target.selected)
+      if (expression.name == "MIN" and comparison < 0) or (expression.name == "MAX" and comparison > 0) then target.selected = partial.selected end if
+    end if
+  else if expression.name == "BOOL_AND" then
+    target.booleanValue = target.booleanValue and partial.booleanValue
+  else if expression.name == "BOOL_OR" then
+    target.booleanValue = target.booleanValue or partial.booleanValue
+  end if
+  target.hasValue = true
+  return true
+end function
+
+// Scans one disjoint heap-page range and returns mergeable partial states.
+function aggregatePageRange(task)
+  states = streamingAccumulators(task.selectExpressions, "aggregatePageRange")
+  reader = try(scan.openCached(task.databasePath, task.table, void, task.readCache))
+  if typeof(reader) == "error" then return reader end if
+  cursor = try(scan.openCursorRange(reader, task.requiredColumns, task.firstPageIndex, task.endPageIndex))
+  if typeof(cursor) == "error" then scan.close(reader); return cursor end if
+  operationError = void
+  while true
+    batch = try(scan.nextBatch(cursor, VECTOR_BATCH_ROWS))
+    if typeof(batch) == "error" then operationError = batch; break end if
+    if batch is void then break end if
+    updated = try(accumulateBatch(states, batch.rows))
+    if typeof(updated) == "error" then operationError = updated; break end if
+  end while
+  closeResult = try(scan.close(reader))
+  if operationError is not void then return operationError end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return states
+end function
+
 // Converts an accumulator into the same SqlValue produced by aggregateValue.
 function finishAccumulator(state)
   expression = state.expression
@@ -426,22 +505,65 @@ function projectStreamingTable(databasePath, table, pageTransaction, readCache, 
   cursor = scan.openCursor(reader, streamingRequiredColumns(table, selectExpressions))
   operationError = void
   while operationError is void
-    row = try(scan.nextRow(cursor))
-    if typeof(row) == "error" then
-      operationError = row
-    else if row is void then
-      break
-    else
-      for each state in states
-        updated = try(accumulate(state, row))
-        if typeof(updated) == "error" then operationError = updated; break end if
-      end for
-    end if
+    batch = try(scan.nextBatch(cursor, VECTOR_BATCH_ROWS))
+    if typeof(batch) == "error" then operationError = batch; break end if
+    if batch is void then break end if
+    updated = try(accumulateBatch(states, batch.rows))
+    if typeof(updated) == "error" then operationError = updated end if
   end while
   closeResult = try(scan.close(reader))
   if operationError is not void then return operationError end if
   if typeof(closeResult) == "error" then return closeResult end if
   return finishStreaming(states)
+end function
+
+// Executes an unfiltered scalar aggregate with page-partitioned native workers.
+// Small tables and transactional readers stay on the lower-overhead serial path;
+// every worker sees committed pages only and returns constant-size state.
+function projectStreamingTableParallel(databasePath, table, readCache, selectExpressions)
+  if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableParallel", "invalid arguments") end if
+  probe = try(scan.openCached(databasePath, table, void, readCache))
+  if typeof(probe) == "error" then return probe end if
+  pageCount = scan.heapPageCount(probe)
+  closedProbe = try(scan.close(probe))
+  if typeof(closedProbe) == "error" then return closedProbe end if
+  if pageCount < PARALLEL_SCAN_MINIMUM_PAGES then return projectStreamingTable(databasePath, table, void, readCache, selectExpressions) end if
+
+  workerCount = INTRA_QUERY_WORKERS
+  if pageCount < workerCount then workerCount = pageCount end if
+  requiredColumns = streamingRequiredColumns(table, selectExpressions)
+  tasks = []
+  for workerIndex = 0 to workerCount - 1
+    firstPage = integerDivide(pageCount * workerIndex, workerCount)
+    endPage = integerDivide(pageCount * (workerIndex + 1), workerCount)
+    tasks = tasks + [ParallelAggregateTask(databasePath, table, readCache, selectExpressions, requiredColumns, firstPage, endPage)]
+  end for
+  pool = try(thread_pool.ThreadPool.withQueueCapacity(workerCount, workerCount))
+  if typeof(pool) == "error" then return pool end if
+  jobs = []
+  for each task in tasks
+    job = pool.Submit(aggregatePageRange, task)
+    if job is void then
+      pool.ShutdownNow()
+      pool.AwaitTermination()
+      pool.Dispose()
+      return fail(INVALID_ARGUMENT, "projectStreamingTableParallel", "parallel aggregate task was rejected")
+    end if
+    jobs = jobs + [job]
+  end for
+  pool.Shutdown()
+  pool.AwaitTermination()
+  merged = streamingAccumulators(selectExpressions, "projectStreamingTableParallel")
+  for each job in jobs
+    partial = try(job.GetResult())
+    disposed = job.Dispose()
+    if typeof(partial) == "error" then pool.Dispose(); return partial end if
+    for index = 0 to len(merged) - 1
+      mergeAccumulator(merged[index], partial[index])
+    end for
+  end for
+  pool.Dispose()
+  return finishStreaming(merged)
 end function
 
 // Evaluates group using the supplied inputs.

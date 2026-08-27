@@ -82,7 +82,7 @@ function responsesFromResult(result)
     end for
     candidate = batch + [row]
     candidateResponse = messages.rowResponse(result.columns, candidate)
-    if len(batch) > 0 and (len(candidate) > constants.DEFAULT_RESULT_BATCH_ROWS or messages.responsePayloadSize(candidateResponse) > constants.MAX_SECURE_PLAINTEXT_BYTES) then
+    if len(batch) > 0 and (len(candidate) > constants.DEFAULT_RESULT_BATCH_ROWS or messages.responsePayloadSize(candidateResponse) > constants.TARGET_RESULT_FRAME_BYTES) then
       responses = responses + [messages.rowResponse(result.columns, batch)]
       batch = [row]
     else

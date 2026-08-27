@@ -27,6 +27,22 @@ struct Client
   authenticated
   // Stores the username associated with this value.
   username
+  // Forward-only query cursor currently owning the protocol response stream.
+  activeQuery
+end struct
+
+// Owns one request's continuation frames. Only the current batch is exposed,
+// allowing callers such as the GUI to render or export large results without
+// combining every row in the MiniLang heap.
+struct QueryCursor
+  // Client whose connection supplies the response frames.
+  client
+  // Request identifier repeated by every continuation frame.
+  requestId
+  // Column schema established by the first row frame.
+  columns
+  // True after the frame without FLAG_MORE has been consumed.
+  finished
 end struct
 
 // Implements m0 self test line for this module.
@@ -64,6 +80,11 @@ function isClient(value)
   return value is Client
 end function
 
+// Reports whether a value is a forward-only client query cursor.
+function isQueryCursor(value)
+  return value is QueryCursor
+end function
+
 // Validates open using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -79,6 +100,7 @@ end function
 // May mutate supplied state and perform I/O through its dependencies.
 function request(client, message)
   validateOpen(client, "request")
+  if client.activeQuery is not void then return fail(INVALID_ARGUMENT, "request", "query cursor must be consumed before another request") end if
   connection.sendMessage(client.connection, message)
   response = connection.receiveMessage(client.connection)
   if response.requestId != message.requestId then return fail(INVALID_ARGUMENT, "request", "response request ID mismatch") end if
@@ -131,7 +153,7 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function openLoopback(port)
   connectionValue = connection.connectLoopback(port)
-  client = Client(connectionValue, 1, false, true, "trusted-local")
+  client = Client(connectionValue, 1, false, true, "trusted-local", void)
   handshake = try(helloHandshake(client, "openLoopback"))
   if typeof(handshake) == "error" then return closeFailedOpen(client, handshake) end if
   return client
@@ -154,7 +176,7 @@ end function
 // May mutate supplied state and perform I/O through its dependencies.
 function openAuthenticatedConnection(connectionValue, username, passwordBytes, operation)
   if typeof(username) != "string" or len(bytes(username)) == 0 or len(bytes(username)) > 128 then return fail(INVALID_ARGUMENT, operation, "username is invalid") end if
-  client = Client(connectionValue, 1, false, false, username)
+  client = Client(connectionValue, 1, false, false, username, void)
   handshake = try(helloHandshake(client, operation))
   if typeof(handshake) == "error" then return closeFailedOpen(client, handshake) end if
 
@@ -280,18 +302,14 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function query(client, sqlText)
-  validateOpen(client, "query")
-  requestId = client.nextRequestId
-  sent = try(connection.sendMessage(client.connection, messages.query(requestId, sqlText)))
-  if typeof(sent) == "error" then return sent end if
+  cursor = try(beginQuery(client, sqlText))
+  if typeof(cursor) == "error" then return cursor end if
   combined = void
   while true
-    responseMessage = try(connection.receiveMessage(client.connection))
-    if typeof(responseMessage) == "error" then return responseMessage end if
-    if responseMessage.requestId != requestId then return fail(INVALID_ARGUMENT, "query", "response request ID mismatch") end if
-    if responseMessage.messageType != constants.TYPE_RESPONSE and responseMessage.messageType != constants.TYPE_ERROR then return fail(INVALID_ARGUMENT, "query", "unexpected response type") end if
-    decoded = try(messages.decodeResponse(responseMessage.payload))
+    decoded = try(nextQueryBatch(cursor))
     if typeof(decoded) == "error" then return decoded end if
+    if decoded is void then break end if
+    if decoded.status == constants.STATUS_ERROR then return decoded end if
     if combined is void then
       combined = decoded
     else
@@ -299,10 +317,62 @@ function query(client, sqlText)
       combined.rows = combined.rows + decoded.rows
       combined.affectedRows = combined.affectedRows + decoded.affectedRows
     end if
-    if (responseMessage.flags & constants.FLAG_MORE) == 0 then break end if
   end while
-  client.nextRequestId = client.nextRequestId + 1
   return combined
+end function
+
+// Sends one SQL request and transfers ownership of its response stream to a
+// cursor. A connection permits one active query because protocol v1 preserves
+// response ordering and intentionally does not interleave request frames.
+function beginQuery(client, sqlText)
+  validateOpen(client, "beginQuery")
+  if typeof(sqlText) != "string" then return fail(INVALID_ARGUMENT, "beginQuery", "sqlText must be string") end if
+  if client.activeQuery is not void then return fail(INVALID_ARGUMENT, "beginQuery", "another query cursor is active") end if
+  requestId = client.nextRequestId
+  sent = try(connection.sendMessage(client.connection, messages.query(requestId, sqlText)))
+  if typeof(sent) == "error" then return sent end if
+  cursor = QueryCursor(client, requestId, void, false)
+  client.activeQuery = cursor
+  return cursor
+end function
+
+// Invalidates a connection after a response-stream failure. Once a frame has
+// been lost or rejected, protocol v1 cannot safely locate the next request
+// boundary, so the original error is returned and the socket is not reused.
+function failQueryCursor(cursor, failure)
+  client = cursor.client
+  ignoredAbort = try(connection.abort(client.connection))
+  cursor.finished = true
+  client.activeQuery = void
+  client.closed = true
+  return failure
+end function
+
+// Receives and decodes one bounded continuation frame. Returning void denotes
+// end-of-stream; the final response itself is returned before that sentinel.
+function nextQueryBatch(cursor)
+  if cursor is not QueryCursor then return fail(INVALID_ARGUMENT, "nextQueryBatch", "cursor must be QueryCursor") end if
+  if cursor.finished then return void end if
+  client = cursor.client
+  validateOpen(client, "nextQueryBatch")
+  if client.activeQuery is void or client.activeQuery.requestId != cursor.requestId then return fail(INVALID_ARGUMENT, "nextQueryBatch", "cursor does not own the active response stream") end if
+  responseMessage = try(connection.receiveMessage(client.connection))
+  if typeof(responseMessage) == "error" then return failQueryCursor(cursor, responseMessage) end if
+  if responseMessage.requestId != cursor.requestId then return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "nextQueryBatch", "response request ID mismatch")) end if
+  if responseMessage.messageType != constants.TYPE_RESPONSE and responseMessage.messageType != constants.TYPE_ERROR then return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "nextQueryBatch", "unexpected response type")) end if
+  decoded = try(messages.decodeResponse(responseMessage.payload))
+  if typeof(decoded) == "error" then return failQueryCursor(cursor, decoded) end if
+  if cursor.columns is void then
+    cursor.columns = decoded.columns
+  else if decoded.status == constants.STATUS_ROWS and not sameColumns(cursor.columns, decoded.columns) then
+    return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "nextQueryBatch", "inconsistent result batch"))
+  end if
+  if (responseMessage.flags & constants.FLAG_MORE) == 0 then
+    cursor.finished = true
+    client.activeQuery = void
+    client.nextRequestId = client.nextRequestId + 1
+  end if
+  return decoded
 end function
 
 // Implements ping for this module.
@@ -320,6 +390,13 @@ end function
 // May mutate supplied state and perform I/O through its dependencies.
 function close(client)
   validateOpen(client, "close")
+  if client.activeQuery is not void then
+    connection.abort(client.connection)
+    client.activeQuery.finished = true
+    client.activeQuery = void
+    client.closed = true
+    return true
+  end if
   response = try(request(client, messages.closeRequest(client.nextRequestId)))
   connection.close(client.connection)
   client.closed = true
@@ -332,6 +409,8 @@ function abort(client)
   if client is not Client then return fail(INVALID_ARGUMENT, "abort", "client must be Client") end if
   if client.closed then return true end if
   result = try(connection.abort(client.connection))
+  if client.activeQuery is not void then client.activeQuery.finished = true end if
+  client.activeQuery = void
   client.closed = true
   return result
 end function

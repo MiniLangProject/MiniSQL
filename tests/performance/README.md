@@ -29,6 +29,12 @@ transitive-join, spill, intra-query-worker, and continuation-frame results are
 documented in
 [`OPTIMIZER_EXPANSION_2026-08-27.md`](OPTIMIZER_EXPANSION_2026-08-27.md).
 
+The subsequent execution-pipeline pass, including the before/after 1 GiB
+storage result, page-range scalar aggregates, true 1 GiB cursor transport,
+query-memory accounting, contiguous B+ tree publication, and high-cardinality
+findings, is documented in
+[`EXECUTION_PIPELINE_2026-08-28.md`](EXECUTION_PIPELINE_2026-08-28.md).
+
 `platform_compare.py` runs the same bounded storage, restart, one-shot and
 persistent loopback workloads for one already-built native target. Invoke it
 once from Windows Python and once from Linux Python, using target-native data

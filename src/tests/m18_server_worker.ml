@@ -41,7 +41,7 @@ function main(args)
   database_manager.close(managed)
 
   handled = listener.serveOneWithReadyFile(databasePath, port, 16, args[2])
-  if handled != 8 then
+  if handled != 10 then
     print "MiniSQL M18 server worker: FAIL (handled=" + handled + ")"
     return 1
   end if

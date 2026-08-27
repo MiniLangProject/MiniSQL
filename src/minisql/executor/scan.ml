@@ -86,6 +86,9 @@ struct TableRowCursor
   heapPages
   // Index of the heap page currently being visited.
   pageIndex
+  // Exclusive heap-page index at which this cursor stops. Keeping the bound in
+  // the cursor lets independent read-only workers scan disjoint page ranges.
+  endPageIndex
   // Checksummed bytes for the current heap page, or void between pages.
   pageBytes
   // Next slot to inspect within pageBytes.
@@ -374,7 +377,26 @@ end function
 function openCursor(reader, requiredColumns)
   validateOpen(reader, "openCursor")
   if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "openCursor", "required column mask must match the table") end if
-  return TableRowCursor(reader, requiredColumns, heap_file.heapPageNumbers(reader.file), 0, void, 0, false)
+  heapPages = heap_file.heapPageNumbers(reader.file)
+  return TableRowCursor(reader, requiredColumns, heapPages, 0, len(heapPages), void, 0, false)
+end function
+
+// Returns the number of physical heap pages advertised by the persistent page
+// directory. Parallel operators use this metadata-only count to choose ranges.
+function heapPageCount(reader)
+  validateOpen(reader, "heapPageCount")
+  return len(heap_file.heapPageNumbers(reader.file))
+end function
+
+// Creates a cursor over the half-open physical heap-page range [first, end).
+// The range addresses entries in the persistent heap-page directory rather
+// than raw file page numbers, so overflow and metadata pages are never scanned.
+function openCursorRange(reader, requiredColumns, firstPageIndex, endPageIndex)
+  validateOpen(reader, "openCursorRange")
+  if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "openCursorRange", "required column mask must match the table") end if
+  heapPages = heap_file.heapPageNumbers(reader.file)
+  if typeof(firstPageIndex) != "int" or typeof(endPageIndex) != "int" or firstPageIndex < 0 or endPageIndex < firstPageIndex or endPageIndex > len(heapPages) then return fail(INVALID_ARGUMENT, "openCursorRange", "page range is outside the heap-page directory") end if
+  return TableRowCursor(reader, requiredColumns, heapPages, firstPageIndex, endPageIndex, void, 0, firstPageIndex == endPageIndex)
 end function
 
 // Returns the next live row or void at end-of-table. Advancing before returning
@@ -384,7 +406,7 @@ function nextRow(cursor)
   if cursor is not TableRowCursor then return fail(INVALID_ARGUMENT, "nextRow", "cursor must be TableRowCursor") end if
   validateOpen(cursor.reader, "nextRow")
   if cursor.finished then return void end if
-  while cursor.pageIndex < len(cursor.heapPages)
+  while cursor.pageIndex < cursor.endPageIndex
     if cursor.pageBytes is void then
       pageNumber = cursor.heapPages[cursor.pageIndex]
       encoded = visiblePage(cursor.reader, pageNumber)

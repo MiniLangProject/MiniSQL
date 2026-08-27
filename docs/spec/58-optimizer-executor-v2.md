@@ -63,13 +63,23 @@ penultimate edge and counts matches from the final edge directly.
 When the estimated and actual projected row count exceeds the configured
 threshold, sorted chunks are written to temporary `MSSPILL1` run files and
 merged pairwise. Run files are validated on read and removed on success and
-handled failure paths. The final `QueryResult` is still materialized in memory;
-blocking working sets are bounded independently from network delivery.
+handled failure paths. Blocking working sets use the byte-derived threshold
+configured by `runtime.temporaryMemoryBytes`; `EXPLAIN ANALYZE` reports the
+estimated peak, spill bytes, and spill-run count. The final `QueryResult` for
+blocking shapes is still materialized in memory, independently from the bounded
+operator working set.
 
 A small single-table `ORDER BY ... LIMIT/OFFSET` fuses scan, filter, projection,
 and bounded Top-N selection, retaining at most one 128-row input batch plus the
-requested window. Simple unordered single-table queries use the same bounded
-cursor batches. Protocol v1 splits the final result into continuation frames of
-at most 512 rows and less than one MiB each. This removes the former single-frame
-limit and avoids a second complete server-side string result, but the executor's
-typed final row array is still materialized.
+requested window. Simple unordered single-table queries use a forward-only
+storage cursor. The server retains one 16-row executor batch plus one look-ahead
+frame and sends it before producing more rows. Protocol v1 targets continuation
+frames below one MiB, with a 16 MiB exceptional-row guard. Cursor-aware clients
+therefore avoid the executor's typed final row array; the compatibility client
+API and ineligible query shapes still materialize it.
+
+Eligible persistent scalar aggregates divide the heap-page directory into at
+most four ranges, run fixed-size partial accumulators on the native thread pool,
+and merge them deterministically. Each worker evaluates values in 256-row
+vectors. When the database has already observed concurrent readers, statements
+remain serial internally to avoid nested client/query oversubscription.

@@ -26,6 +26,9 @@ const IO_FAILURE = 9005
 const AUTHENTICATION_REQUIRED = 9028
 const AUTH_HANDSHAKE_TIMEOUT_MS = 30000
 const SESSION_IDLE_TIMEOUT_MS = 300000
+// A server cursor retains at most this many arbitrarily wide SQL rows before
+// formatting. Payload-size framing may split the batch further.
+const STREAM_RESULT_ROWS = 16
 
 // Groups the session state and preserves the field relationships documented below.
 struct Session
@@ -79,6 +82,8 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function createSession(engine, secure, authenticated)
+  configured = try(executor.setQueryMemoryLimit(engine, database_manager.queryMemoryLimit(engine.database)))
+  if typeof(configured) == "error" then return configured end if
   now = clock.monotonicMilliseconds()
   return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now)
 end function
@@ -387,8 +392,16 @@ function handleQuery(session, request)
   parsed = try(parser.parseSql(sqlText))
   if typeof(parsed) == "error" then ignoredLog = logger.warning("minisql.server.session.handleQuery", "SQL parse failed session=" + sessionId + " code=" + parsed.code); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
   if len(parsed) != 1 then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
+  return executeParsedQuery(session, request, parsed[0])
+end function
+
+// Executes an already parsed statement through the ordinary materializing API.
+// Keeping this tail separate lets the network streaming path reuse parsing,
+// authorization errors, and the exact fallback response contract.
+function executeParsedQuery(session, request, statement)
+  sessionId = executor.sessionIdentifier(session.engine)
   // The executor centrally selects the shared-reader or exclusive-writer path.
-  result = try(executor.executeStatement(session.engine, parsed[0]))
+  result = try(executor.executeStatement(session.engine, statement))
   if typeof(result) == "error" then
     if result.code == 9007 then
       ignoredLog = logger.debug("minisql.server.session.handleQuery", "SQL waiting for logical lock session=" + sessionId)
@@ -403,6 +416,73 @@ function handleQuery(session, request)
   framed = responseMessages(request, converted)
   if len(framed) == 1 then return framed[0] end if
   return framed
+end function
+
+// Streams an eligible non-blocking SELECT directly to one connection. One
+// protocol frame plus one look-ahead frame are retained, so both server and
+// cursor-aware client memory remain bounded while FLAG_MORE stays exact.
+function handleQueryStreaming(session, request, connection)
+  if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
+  sqlText = decode(request.payload)
+  if typeof(sqlText) != "string" then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "query payload is not valid UTF-8")) end if
+  sessionId = executor.sessionIdentifier(session.engine)
+  if not logger.binlog("minisql.server.session.handleQueryStreaming session=" + sessionId, sqlText) then
+    ignoredLog = logger.errorLog("minisql.server.session.handleQueryStreaming", "binlog persistence failed; statement rejected session=" + sessionId)
+    return responseMessage(request, messages.errorResponse(IO_FAILURE, "SQL binlog persistence failed; statement was not executed"))
+  end if
+  parsed = try(parser.parseSql(sqlText))
+  if typeof(parsed) == "error" then return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
+  if len(parsed) != 1 then return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
+  cursor = try(executor.openSelectCursor(session.engine, parsed[0]))
+  if typeof(cursor) == "error" then return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
+  if cursor is void then return executeParsedQuery(session, request, parsed[0]) end if
+
+  pending = void
+  frameCount = 0
+  rowCount = 0
+  while true
+    batch = try(executor.nextSelectBatch(cursor, STREAM_RESULT_ROWS))
+    if typeof(batch) == "error" then
+      executor.closeSelectCursor(cursor)
+      if pending is not void then
+        pending.flags = constants.FLAG_MORE
+        sentPending = try(protocol_connection.sendMessage(connection, pending))
+        if typeof(sentPending) == "error" then return sentPending end if
+      end if
+      failure = responseMessage(request, messages.errorResponse(batch.code, batch.message))
+      sentFailure = try(protocol_connection.sendMessage(connection, failure))
+      if typeof(sentFailure) == "error" then return sentFailure end if
+      return []
+    end if
+    if batch is void then break end if
+    rowCount = rowCount + len(batch.rows)
+    converted = try(formatter.responsesFromResult(batch))
+    if typeof(converted) == "error" then executor.closeSelectCursor(cursor); return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
+    for each response in converted
+      frame = responseMessage(request, response)
+      if pending is not void then
+        pending.flags = constants.FLAG_MORE
+        sent = try(protocol_connection.sendMessage(connection, pending))
+        if typeof(sent) == "error" then executor.closeSelectCursor(cursor); return sent end if
+        frameCount = frameCount + 1
+      end if
+      pending = frame
+    end for
+  end while
+  if pending is void then pending = responseMessage(request, messages.rowResponse(cursor.bound.itemNames, [])) end if
+  sentFinal = try(protocol_connection.sendMessage(connection, pending))
+  if typeof(sentFinal) == "error" then return sentFinal end if
+  frameCount = frameCount + 1
+  ignoredLog = logger.info("minisql.server.session.handleQueryStreaming", "SQL streamed session=" + sessionId + " rows=" + rowCount + " frames=" + frameCount)
+  return []
+end function
+
+// Handles a request and, for eligible SELECTs, writes response batches directly
+// to the supplied protocol connection. An empty array means delivery completed.
+function handleToConnection(session, request, connection)
+  validateOpen(session, "handleToConnection")
+  if messages.isMessage(request) and request.messageType == constants.TYPE_QUERY then return handleQueryStreaming(session, request, connection) end if
+  return handle(session, request)
 end function
 
 // Handles unlocked using the supplied inputs.

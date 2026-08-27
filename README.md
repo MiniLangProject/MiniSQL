@@ -300,6 +300,27 @@ large overflow values, and post-`VACUUM` data integrity. See
 
 ## Performance evaluation
 
+### 2026-08-28 execution-pipeline update
+
+The latest Windows execution pass retains the exact 1 GiB workload below and
+adds bounded forward-only result cursors, page-range parallel scalar
+aggregation, vector batches, byte-aware query memory/spill decisions, SIMD byte
+search for common `LIKE` patterns, and contiguous base/B+ tree publication.
+Against revision `1af5ed15ebeaf15b0ce8247891361dc1f2233b2b`, durable insert
+wall time fell from 92.610 s to **69.689 s (1.329x)**, cold semantic verification
+from 1.228 s to **0.262 s (4.69x)**, and warm restart verification from a 1.172 s
+median to **0.184 s (6.38x)**. Single-client `SUM(id)` rose from 8.723 to
+**28.794 statements/s (3.30x)**.
+
+A complete `SELECT id, payload` transported all 1,024 one-MiB rows through the
+new cursor in **6.048 s (169.3 MiB/s)** while peaking at **146.99 MiB** client
+and **212.29 MiB** server private memory. The full methodology, before/after
+tables, multi-client regressions, narrow-row findings, raw-report hashes, and
+next actions are in the
+[`2026-08-28 execution-pipeline report`](tests/performance/EXECUTION_PIPELINE_2026-08-28.md).
+The Windows/Linux table below remains the most recent matched cross-platform
+reference; it predates this Windows-only execution pass.
+
 The current reference was measured on 2026-08-26 from MiniSQL revision
 `12997258408e27ab2f4839f52782b844eeade5a5` and MiniLangCompilerPy revision
 `21dbc2e99097099ee1d8e9e8168e46836e49b6a3` (compiler version 1.1.0). Both

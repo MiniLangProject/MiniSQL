@@ -5,6 +5,7 @@ package minisql.sql.expressions
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import std.math as math
+import std.bytes as bytes_api
 import minisql.common.endian as endian
 import minisql.sql.types as types
 import minisql.sql.values as values
@@ -787,32 +788,6 @@ function comparisonResult(left, right, operator)
   return values.boolean(result)
 end function
 
-// Implements like recursive for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
-function likeRecursive(textBytes, patternBytes, textIndex, patternIndex)
-  while patternIndex < len(patternBytes)
-    patternByte = patternBytes[patternIndex]
-    if patternByte == 37 then
-      while patternIndex + 1 < len(patternBytes) and patternBytes[patternIndex + 1] == 37
-        patternIndex = patternIndex + 1
-      end while
-      if patternIndex + 1 >= len(patternBytes) then return true end if
-      candidate = textIndex
-      while candidate <= len(textBytes)
-        if likeRecursive(textBytes, patternBytes, candidate, patternIndex + 1) then return true end if
-        candidate = candidate + 1
-      end while
-      return false
-    end if
-    if textIndex >= len(textBytes) then return false end if
-    if patternByte != 95 and patternByte != textBytes[textIndex] then return false end if
-    textIndex = textIndex + 1
-    patternIndex = patternIndex + 1
-  end while
-  return textIndex == len(textBytes)
-end function
-
 // Implements like result for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -820,8 +795,51 @@ end function
 function likeResult(left, right)
   if left.isNull or right.isNull then return values.nullValue(types.SqlTypeKind.Boolean) end if
   if typeof(left.value) != "string" or typeof(right.value) != "string" then return fail(TYPE_MISMATCH, "likeResult", "LIKE requires text operands") end if
-  if len(bytes(left.value)) > 4096 or len(bytes(right.value)) > 4096 then return fail(INVALID_ARGUMENT, "likeResult", "LIKE input exceeds 4096 bytes") end if
-  return values.boolean(likeRecursive(bytes(left.value), bytes(right.value), 0, 0))
+  textBytes = bytes(left.value)
+  patternBytes = bytes(right.value)
+  wildcardCount = 0
+  underscore = false
+  for each patternByte in patternBytes
+    if patternByte == 37 then wildcardCount = wildcardCount + 1 end if
+    if patternByte == 95 then underscore = true end if
+  end for
+  // The compiler's std.bytes searches dispatch to SSE2/AVX2. Common literal,
+  // prefix, suffix, and contains shapes therefore avoid the general matcher.
+  if not underscore and wildcardCount == 0 then return values.boolean(bytes_api.equals(textBytes, patternBytes)) end if
+  if not underscore and wildcardCount == 1 and len(patternBytes) > 0 then
+    if patternBytes[0] == 37 then return values.boolean(bytes_api.endsWith(textBytes, slice(patternBytes, 1, len(patternBytes) - 1))) end if
+    if patternBytes[len(patternBytes) - 1] == 37 then return values.boolean(bytes_api.startsWith(textBytes, slice(patternBytes, 0, len(patternBytes) - 1))) end if
+  end if
+  if not underscore and wildcardCount == 2 and len(patternBytes) >= 2 and patternBytes[0] == 37 and patternBytes[len(patternBytes) - 1] == 37 then
+    needle = slice(patternBytes, 1, len(patternBytes) - 2)
+    return values.boolean(bytes_api.indexOf(textBytes, needle, 0) >= 0)
+  end if
+  // Greedy wildcard matching uses constant memory and cannot exhaust the call
+  // stack. It replaces the former recursive backtracking and its 4096-byte cap.
+  textIndex = 0
+  patternIndex = 0
+  starPattern = -1
+  starText = -1
+  while textIndex < len(textBytes)
+    if patternIndex < len(patternBytes) and (patternBytes[patternIndex] == 95 or patternBytes[patternIndex] == textBytes[textIndex]) then
+      textIndex = textIndex + 1
+      patternIndex = patternIndex + 1
+    else if patternIndex < len(patternBytes) and patternBytes[patternIndex] == 37 then
+      starPattern = patternIndex
+      patternIndex = patternIndex + 1
+      starText = textIndex
+    else if starPattern >= 0 then
+      patternIndex = starPattern + 1
+      starText = starText + 1
+      textIndex = starText
+    else
+      return values.boolean(false)
+    end if
+  end while
+  while patternIndex < len(patternBytes) and patternBytes[patternIndex] == 37
+    patternIndex = patternIndex + 1
+  end while
+  return values.boolean(patternIndex == len(patternBytes))
 end function
 
 // Evaluates case using the supplied inputs.

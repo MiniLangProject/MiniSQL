@@ -46,8 +46,6 @@ const CLOSED_HANDLE = 9008
 const TRANSACTION_STATE = 9011
 const BINDING_ERROR = 9020
 const CONSTRAINT_VIOLATION = 9021
-const SORT_SPILL_THRESHOLD = 128
-const HASH_SPILL_THRESHOLD = 128
 const ANALYZE_SAMPLE_ROWS = 8192
 const DDL_STATE = 9023
 const UNSUPPORTED_SQL = 9025
@@ -62,6 +60,7 @@ const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
 const PLAN_CACHE_CAPACITY = 64
 const EXECUTION_BATCH_ROWS = 128
+const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 
 // Identifies the flattened, versioned parameter metadata stored with procedures.
 const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
@@ -164,6 +163,45 @@ struct Engine
   // Exact caller SQL consumed by the first/top-level physical-plan lookup.
   // Nested SELECTs fall back to canonical AST keys after this value is cleared.
   activePlanKey
+  // Soft-limit policy and diagnostics for the current or most recent statement.
+  queryMemory
+end struct
+
+// Holds the resources of a simple forward-only SELECT. The physical read gate
+// and logical statement lease remain owned until exhaustion or explicit close,
+// preventing writers from changing pages while protocol batches are emitted.
+struct SelectCursor
+  // Session engine that owns permissions, locks, and database handles.
+  engine
+  // Bound SELECT expressions and LIMIT/OFFSET metadata.
+  bound
+  // Optimizer-normalized predicate evaluated for every source row.
+  wherePredicate
+  // Open table reader retained for the cursor lifetime.
+  reader
+  // Bounded storage cursor over the selected source columns.
+  scanCursor
+  // Logical statement read lease released at cursor completion.
+  readLease
+  // Number of qualifying rows discarded for OFFSET.
+  skipped
+  // Number of projected rows returned to the caller.
+  emitted
+  // True after resources have been released.
+  closed
+end struct
+
+// Per-session query memory policy and last-statement diagnostics. Operators use
+// byte-derived row thresholds instead of assuming that every row has one size.
+struct QueryMemoryManager
+  // Configured soft memory limit for blocking operators.
+  limitBytes
+  // Largest estimated resident operator input observed by the statement.
+  peakBytes
+  // Estimated bytes delegated to temporary spill runs.
+  spillBytes
+  // Number of blocking operators that selected a spill path.
+  spillRuns
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -217,6 +255,76 @@ function rowResult(columns, rows)
   return QueryResult(RESULT_ROWS, "SELECT", columns, rows, len(rows), "")
 end function
 
+// Configures the soft per-query memory budget used by blocking operators.
+function setQueryMemoryLimit(engine, limitBytes)
+  validateOpen(engine, "setQueryMemoryLimit")
+  if typeof(limitBytes) != "int" or limitBytes < 1048576 then return fail(INVALID_ARGUMENT, "setQueryMemoryLimit", "limit must be at least 1 MiB") end if
+  engine.queryMemory.limitBytes = limitBytes
+  return true
+end function
+
+// Clears last-statement accounting without changing the configured policy.
+function resetQueryMemory(engine)
+  engine.queryMemory.peakBytes = 0
+  engine.queryMemory.spillBytes = 0
+  engine.queryMemory.spillRuns = 0
+  return true
+end function
+
+// Estimates the retained representation of one SQL value. This is a soft
+// accounting model, not a heap allocator contract; variable payload bytes are
+// nevertheless measured exactly so wide-row spill decisions are meaningful.
+function estimatedValueBytes(value)
+  if value.isNull then return 16 end if
+  if typeof(value.value) == "string" then return 32 + len(bytes(value.value)) end if
+  if typeof(value.value) == "bytes" then return 32 + len(value.value) end if
+  return 24
+end function
+
+// Estimates an array of scanned/projected rows and updates the peak diagnostic.
+function estimatedOperatorBytes(engine, rows)
+  if typeof(rows) != "array" then return 0 end if
+  total = 24 * len(rows)
+  for each row in rows
+    rowValues = row
+    if scan.isScannedRow(row) or projection.isProjectedRow(row) then rowValues = row.values end if
+    if typeof(rowValues) == "array" then
+      total = total + 24 * len(rowValues)
+      for each value in rowValues
+        if values.isSqlValue(value) then total = total + estimatedValueBytes(value) end if
+      end for
+    end if
+  end for
+  if total > engine.queryMemory.peakBytes then engine.queryMemory.peakBytes = total end if
+  return total
+end function
+
+// Derives a spill row threshold from sampled row width and the byte budget.
+function queryRowThreshold(engine, rows)
+  if len(rows) == 0 then return 128 end if
+  sampleCount = len(rows)
+  if sampleCount > 32 then sampleCount = 32 end if
+  sample = array(sampleCount)
+  for index = 0 to sampleCount - 1
+    sample[index] = rows[index]
+  end for
+  sampleBytes = estimatedOperatorBytes(engine, sample)
+  average = (sampleBytes - (sampleBytes % sampleCount)) / sampleCount
+  if average < 1 then average = 1 end if
+  budgetHalf = (engine.queryMemory.limitBytes - (engine.queryMemory.limitBytes % 2)) / 2
+  threshold = (budgetHalf - (budgetHalf % average)) / average
+  if threshold < 2 then threshold = 2 end if
+  if threshold > 65536 then threshold = 65536 end if
+  return threshold
+end function
+
+// Records a spill decision using the measured input representation.
+function noteQuerySpill(engine, rows)
+  engine.queryMemory.spillRuns = engine.queryMemory.spillRuns + 1
+  engine.queryMemory.spillBytes = engine.queryMemory.spillBytes + estimatedOperatorBytes(engine, rows)
+  return true
+end function
+
 // Performs the index readiness pass once for an opened database. Clean marker
 // state needs only derived-file existence checks; a dirty marker or missing
 // file performs the expensive rebuild/verification path. A double check inside
@@ -243,7 +351,7 @@ function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then return prepared end if
-  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "")
+  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0))
 end function
 
 // Opens open using the supplied inputs.
@@ -254,7 +362,7 @@ function open(databasePath)
   database = database_manager.open(databasePath)
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then database_manager.close(database); return prepared end if
-  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "")
+  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0))
 end function
 
 // Implements set principal for this module.
@@ -2451,7 +2559,11 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
       right = scanBoundSource(engine, boundJoin.source, pageTransaction, 0, -1, rightMask)
       right = filterSourceRows(boundJoin.source, right, rightPlan.pushedPredicate)
       if plannedJoin.algorithm == execution_plan.JOIN_HASH and join.canHash(boundJoin) then
-        output = join.applyHashBuildWithSpill(output, right, boundJoin, plannedJoin.buildRight, file_api.joinPath(engine.database.path, "tmp"), HASH_SPILL_THRESHOLD)
+        hashInput = output
+        if plannedJoin.buildRight then hashInput = right end if
+        hashThreshold = queryRowThreshold(engine, hashInput)
+        if len(hashInput) > hashThreshold then noteQuerySpill(engine, hashInput) end if
+        output = join.applyHashBuildWithSpill(output, right, boundJoin, plannedJoin.buildRight, file_api.joinPath(engine.database.path, "tmp"), hashThreshold)
       else
         output = join.apply(output, right, boundJoin)
       end if
@@ -2740,6 +2852,105 @@ function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, w
   return output.toArray()
 end function
 
+// Releases every resource held by a forward-only SELECT cursor. Cleanup is
+// idempotent so protocol disconnect and normal exhaustion can share this path.
+function closeSelectCursor(cursor)
+  if cursor is not SelectCursor then return fail(INVALID_ARGUMENT, "closeSelectCursor", "cursor must be SelectCursor") end if
+  if cursor.closed then return true end if
+  cursor.closed = true
+  firstError = void
+  closedReader = try(scan.close(cursor.reader))
+  if typeof(closedReader) == "error" then firstError = closedReader end if
+  finishedRead = try(database_manager.finishStatement(cursor.engine.database, cursor.readLease))
+  if typeof(finishedRead) == "error" and firstError is void then firstError = finishedRead end if
+  leftGate = try(database_manager.leaveReadExecution(cursor.engine.database))
+  if typeof(leftGate) == "error" and firstError is void then firstError = leftGate end if
+  if firstError is not void then return firstError end if
+  return true
+end function
+
+// Opens the non-blocking single-table physical pipeline as a forward-only
+// result cursor. Unsupported/blocking shapes return void so callers can use the
+// ordinary executor without changing SQL semantics.
+function openSelectCursor(engine, statement)
+  validateOpen(engine, "openSelectCursor")
+  if not ast.isSelectStatement(statement) then return void end if
+  resetQueryMemory(engine)
+  if engine.explicitTransaction and engine.failed then return fail(TRANSACTION_STATE, "openSelectCursor", "transaction is failed; ROLLBACK required") end if
+  if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "openSelectCursor", "SELECT after staged DDL is not supported") end if
+  entered = try(database_manager.enterReadExecution(engine.database))
+  if typeof(entered) == "error" then return entered end if
+  dirtyIndexes = try(dml.indexesNeedRepair(engine.database))
+  if typeof(dirtyIndexes) == "error" then database_manager.leaveReadExecution(engine.database); return dirtyIndexes end if
+  if dirtyIndexes then database_manager.leaveReadExecution(engine.database); return void end if
+  authorized = try(authorizeStatement(engine, statement))
+  if typeof(authorized) == "error" then database_manager.leaveReadExecution(engine.database); return authorized end if
+  readLease = try(database_manager.acquireStatementRead(engine.database, engine.sessionId, statementIsolation(engine)))
+  if typeof(readLease) == "error" then database_manager.leaveReadExecution(engine.database); return readLease end if
+  pageTransaction = void
+  if engine.explicitTransaction and engine.transactionMode == MODE_DML then pageTransaction = engine.pageTransaction end if
+  materialized = try(materializeSelectStatement(engine, statement, pageTransaction))
+  if typeof(materialized) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return materialized end if
+  bound = try(binder.bindSelect(materialized, engine.database.catalogHandle))
+  if typeof(bound) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return bound end if
+  optimized = try(optimizedPlanFor(engine, bound))
+  if typeof(optimized) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return optimized end if
+  if not simpleBatchEligible(bound, optimized.execution) then
+    database_manager.finishStatement(engine.database, readLease)
+    database_manager.leaveReadExecution(engine.database)
+    return void
+  end if
+  requiredColumns = selectRequiredColumns(bound)
+  mask = void
+  if requiredColumns is not void then mask = requiredColumns[0] end if
+  reader = try(scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache))
+  if typeof(reader) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return reader end if
+  scanCursor = try(scan.openCursor(reader, mask))
+  if typeof(scanCursor) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return scanCursor end if
+  return SelectCursor(engine, bound, optimized.execution.wherePredicate, reader, scanCursor, readLease, 0, 0, false)
+end function
+
+// Produces at most maximumRows projected rows while retaining no earlier batch.
+// Void denotes end-of-stream and guarantees that the read lease is released.
+function nextSelectBatch(cursor, maximumRows)
+  if cursor is not SelectCursor or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "nextSelectBatch", "invalid arguments") end if
+  if cursor.closed then return void end if
+  output = list.List.new()
+  limit = cursor.bound.statement.limit
+  if limit == 0 then closeSelectCursor(cursor); return void end if
+  operationError = void
+  exhausted = false
+  while output.len() < maximumRows and not exhausted
+    readRows = maximumRows - output.len()
+    if limit >= 0 and limit - cursor.emitted < readRows then readRows = limit - cursor.emitted end if
+    if readRows <= 0 then exhausted = true; break end if
+    sourceBatch = try(scan.nextBatch(cursor.scanCursor, readRows))
+    if typeof(sourceBatch) == "error" then operationError = sourceBatch; break end if
+    if sourceBatch is void then exhausted = true; break end if
+    for each row in sourceBatch.rows
+      context = expressions.rowContext(row.values)
+      if expressions.predicatePasses(cursor.wherePredicate, context) then
+        if cursor.skipped < cursor.bound.statement.offset then
+          cursor.skipped = cursor.skipped + 1
+        else
+          output.add(projection.evaluateList(cursor.bound.items, context, "cursor.select"))
+          cursor.emitted = cursor.emitted + 1
+          if limit >= 0 and cursor.emitted >= limit then exhausted = true; break end if
+        end if
+      end if
+    end for
+  end while
+  if operationError is not void then closeSelectCursor(cursor); return operationError end if
+  if exhausted then
+    closed = try(closeSelectCursor(cursor))
+    if typeof(closed) == "error" then return closed end if
+  end if
+  if output.len() == 0 then return void end if
+  rows = output.toArray()
+  estimatedOperatorBytes(cursor.engine, rows)
+  return rowResult(cursor.bound.itemNames, rows)
+end function
+
 // Recognizes an ordered single-table LIMIT that can maintain only the current
 // best window while scanning. Projection and ORDER BY expressions must be
 // row-local because subqueries require the general materializing pipeline.
@@ -2809,7 +3020,14 @@ function selectProjected(engine, bound, pageTransaction)
     end if
     mask = void
     if requiredColumns is not void then mask = requiredColumns[0] end if
-    if optimized.execution.wherePredicate is void then return aggregate.projectStreamingTable(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items) end if
+    if optimized.execution.wherePredicate is void then
+      // Intra-query workers consume the shared CPU budget only until this
+      // database has observed concurrent readers. Thereafter inter-query
+      // parallelism wins and every session stays serial internally, preventing
+      // synchronized request waves from repeatedly creating N x DOP workers.
+      if pageTransaction is void and database_manager.peakConcurrentReaders(engine.database) <= 1 then return aggregate.projectStreamingTableParallel(engine.database.path, bound.sources[0].table, engine.database.readCache, bound.items) end if
+      return aggregate.projectStreamingTable(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items)
+    end if
     return aggregate.projectStreamingTableFiltered(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items, optimized.execution.wherePredicate, mask)
   end if
   if simpleTopNEligible(bound, optimized.execution) then return simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, optimized.execution.wherePredicate) end if
@@ -2838,7 +3056,9 @@ function selectProjected(engine, bound, pageTransaction)
     projected = projectSubqueryRows(engine, bound, source, pageTransaction)
   else if bound.aggregateQuery then
     filtered = filter.apply(source, wherePredicate)
-    projected = aggregate.projectWithSpill(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions, file_api.joinPath(engine.database.path, "tmp"), HASH_SPILL_THRESHOLD)
+    aggregateThreshold = queryRowThreshold(engine, filtered)
+    if len(bound.groupExpressions) > 0 and len(filtered) > aggregateThreshold then noteQuerySpill(engine, filtered) end if
+    projected = aggregate.projectWithSpill(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions, file_api.joinPath(engine.database.path, "tmp"), aggregateThreshold)
   else if bound.windowQuery then
     filtered = filter.apply(source, wherePredicate)
     projected = projection.applyWindows(filtered, bound.items, bound.orderExpressions)
@@ -2858,7 +3078,9 @@ function selectProjected(engine, bound, pageTransaction)
   else
     // Actual cardinality remains the memory-safety guard when estimates are
     // stale: the sorter may spill even when the plan expected an in-memory run.
-    projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, SORT_SPILL_THRESHOLD)
+    sortThreshold = queryRowThreshold(engine, projected)
+    if len(bound.statement.orderBy) > 0 and len(projected) > sortThreshold then noteQuerySpill(engine, projected) end if
+    projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, sortThreshold)
   end if
   projected = projection.sliceRows(projected, resultOffset, bound.statement.limit)
   return projected
@@ -2875,6 +3097,7 @@ function selectRows(engine, bound, pageTransaction)
       rows[index] = projected[index].values
     end for
   end if
+  estimatedOperatorBytes(engine, rows)
   return rowResult(bound.itemNames, rows)
 end function
 
@@ -3088,7 +3311,7 @@ function executeExplain(engine, statement)
     actual = selectRows(engine, bound, pageTransaction)
     elapsed = clock.monotonicMilliseconds() - started
     after = buffer_pool.readCacheStats(engine.database.readCache)
-    lines = lines + ["execution timeMs=" + elapsed + " buffers hit=" + (after.hits - before.hits) + " read=" + (after.misses - before.misses), "actual rows=" + len(actual.rows)]
+    lines = lines + ["execution timeMs=" + elapsed + " buffers hit=" + (after.hits - before.hits) + " read=" + (after.misses - before.misses), "query memory peakBytes=" + engine.queryMemory.peakBytes + " limitBytes=" + engine.queryMemory.limitBytes + " spillBytes=" + engine.queryMemory.spillBytes + " spillRuns=" + engine.queryMemory.spillRuns, "actual rows=" + len(actual.rows)]
   end if
   rows = []
   for each line in lines
@@ -4012,6 +4235,7 @@ end function
 // on every outcome. Errors mark explicit transactions failed and are audited.
 function executeStatementCore(engine, statement)
   validateOpen(engine, "executeStatement")
+  resetQueryMemory(engine)
   if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
   if database_manager.isStandby(engine.database) and statementUsesWriteLock(statement) then
     return fail(database_manager.STANDBY_NOT_PROMOTED, "executeStatement", "standby is read-only until promotion")

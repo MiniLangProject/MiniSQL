@@ -40,6 +40,29 @@ function main(args)
   testkit.equal(state, streamed.rows[0][1], "row-1", "multi-frame SELECT first row")
   testkit.equal(state, streamed.rows[1199][1], "row-1200", "multi-frame SELECT final row")
 
+  cursor = client.beginQuery(connection, "SELECT id, body FROM streamed_result")
+  testkit.record(state, client.isQueryCursor(cursor), "streaming query returns a cursor")
+  testkit.errorCode(state, try(client.ping(connection)), 9001, "active cursor prevents interleaved requests")
+  cursorRows = 0
+  cursorBatches = 0
+  firstCursorValue = ""
+  finalCursorValue = ""
+  while true
+    batch = client.nextQueryBatch(cursor)
+    if batch is void then break end if
+    cursorBatches = cursorBatches + 1
+    cursorRows = cursorRows + len(batch.rows)
+    if len(batch.rows) > 0 then
+      if firstCursorValue == "" then firstCursorValue = batch.rows[0][1] end if
+      finalCursorValue = batch.rows[len(batch.rows) - 1][1]
+    end if
+  end while
+  testkit.equal(state, cursorRows, 1200, "cursor consumes every continuation row")
+  testkit.record(state, cursorBatches >= 75, "server cursor exposes bounded sixteen-row batches")
+  testkit.equal(state, firstCursorValue, "row-1", "cursor first row")
+  testkit.equal(state, finalCursorValue, "row-1200", "cursor final row")
+  testkit.record(state, client.ping(connection), "connection is reusable after cursor completion")
+
   rejected = client.query(connection, "SELECT 1; SELECT 2")
   testkit.equal(state, rejected.status, constants.STATUS_ERROR, "multiple statements rejected")
   testkit.equal(state, rejected.errorCode, 9025, "multiple statements error code")

@@ -17,8 +17,12 @@ Initial message families:
 - ERROR
 - PING / PONG
 
-Rows are streamed in bounded batches. A query result MUST NOT require full result
-materialization in server memory.
+Eligible single-table rows are streamed from a storage cursor in bounded
+batches. The server applies socket backpressure before asking the executor for
+the next batch, and cursor-aware clients retain only the current frame. Blocking
+or currently ineligible query shapes may still materialize before bounded wire
+framing; this explicit implementation boundary is documented in the release
+limitations.
 
 Before DCL, the listener MUST bind only to loopback. External binding without
 authentication is a startup error.

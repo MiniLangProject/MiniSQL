@@ -48,8 +48,8 @@ function serveConcurrentWithLockWait(databasePath, port, maximumClients, maximum
 end function
 
 // Serves trusted clients with all configured runtime durability thresholds.
-function serveConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
-  return listener.serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return listener.serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Serves authenticated concurrent using the supplied inputs.
@@ -77,8 +77,8 @@ function serveStandbyConcurrentWithLockWait(databasePath, port, maximumClients, 
 end function
 
 // Serves standby clients with configured lock and WAL thresholds.
-function serveStandbyConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
-  return listener.serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveStandbyConcurrentWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return listener.serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Serves secure address using the supplied inputs.
@@ -94,8 +94,8 @@ function serveSecureAddressWithLockWait(databasePath, address, port, maximumClie
 end function
 
 // Serves authenticated clients with configured lock and WAL thresholds.
-function serveSecureAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
-  return listener.serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveSecureAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return listener.serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Serves authenticated MiniSQL over native TLS 1.3 using a store or PFX certificate.
@@ -109,8 +109,8 @@ function serveTlsAddressWithLockWait(databasePath, address, port, maximumClients
 end function
 
 // Serves native TLS clients with configured lock and WAL thresholds.
-function serveTlsAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
-  return listener.serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveTlsAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return listener.serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Serves native TLS with an explicit in-memory PFX password for controlled callers.

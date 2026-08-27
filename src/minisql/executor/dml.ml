@@ -1044,6 +1044,16 @@ function closePublishedFiles(files)
   return firstError
 end function
 
+// Writes one consecutive publication batch. Keeping batches below 512 KiB
+// amortizes Win32 seek/write calls without allowing a large transaction to
+// duplicate an unbounded number of committed page images.
+function writePublicationBatch(file, firstPageNumber, images)
+  if len(images) == 0 then return true end if
+  written = try(paged_file.writeContiguousPages(file, firstPageNumber, images))
+  if typeof(written) == "error" then return written end if
+  return true
+end function
+
 // Implements publish committed for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -1057,6 +1067,9 @@ function publishCommitted(database, pageTransaction, commitLsn)
   openedIds = []
   openedFiles = []
   operationError = void
+  batchFileIndex = -1
+  batchFirstPage = 0
+  batchImages = []
   for each change in changes
     if operationError is void then
       fileIndex = -1
@@ -1078,11 +1091,23 @@ function publishCommitted(database, pageTransaction, commitLsn)
       if operationError is void then
         image = bytes(change.pageBytes)
         page.setLsn(image, endian.uint64FromInt(commitLsn))
-        written = try(paged_file.writePage(openedFiles[fileIndex], change.pageNumber, image))
-        if typeof(written) == "error" then operationError = written end if
+        consecutive = batchFileIndex == fileIndex and len(batchImages) > 0 and change.pageNumber == batchFirstPage + len(batchImages)
+        if len(batchImages) > 0 and (not consecutive or len(batchImages) >= 128) then
+          written = try(writePublicationBatch(openedFiles[batchFileIndex], batchFirstPage, batchImages))
+          if typeof(written) == "error" then operationError = written end if
+          batchImages = []
+        end if
+        if operationError is void then
+          if len(batchImages) == 0 then batchFileIndex = fileIndex; batchFirstPage = change.pageNumber end if
+          batchImages = batchImages + [image]
+        end if
       end if
     end if
   end for
+  if operationError is void and len(batchImages) > 0 then
+    finalWrite = try(writePublicationBatch(openedFiles[batchFileIndex], batchFirstPage, batchImages))
+    if typeof(finalWrite) == "error" then operationError = finalWrite end if
+  end if
   if operationError is void then
     for each file in openedFiles
       flushed = try(paged_file.flush(file))

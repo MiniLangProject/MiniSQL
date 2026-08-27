@@ -63,7 +63,7 @@ function serveListenerMode(databasePath, listener, maximumRequests, secure)
   while (maximumRequests == 0 or handled < maximumRequests) and not active.closeRequested
     request = try(connection.receiveMessage(client))
     if typeof(request) == "error" then failure = request; break end if
-    response = try(session.handle(active, request))
+    response = try(session.handleToConnection(active, request, client))
     if typeof(response) == "error" then failure = response; break end if
     sent = try(sendResponse(client, response))
     if typeof(sent) == "error" then failure = sent; break end if
@@ -241,7 +241,7 @@ function processRequest(slot, request, lockWaitMs)
     if typeof(waiting) == "error" then return waiting end if
     if waiting then return void end if
   end if
-  response = try(session.handle(slot.activeSession, request))
+  response = try(session.handleToConnection(slot.activeSession, request, slot.client))
   if typeof(response) == "error" then return response end if
   code = responseErrorCode(response)
   if code == 9007 then
@@ -461,7 +461,9 @@ function serveConcurrentClient(task)
     response = try(processRequest(slot, request, task.lockWaitMs))
     if typeof(response) == "error" then
       if claimed then concurrentFinishRequest(task.state, false); claimed = false end if
-      concurrentSetFailure(task.state, response)
+      // A reset/broken client socket is scoped to this connection. Database,
+      // executor, and listener failures remain fatal to the server process.
+      if response.code != network.NETWORK_ERROR then concurrentSetFailure(task.state, response) end if
       break
     end if
     if response is void then
@@ -513,11 +515,11 @@ end function
 // Opens and completes recovery/index preparation before a TCP listener becomes
 // visible, preventing early clients from timing out against a bound-but-unready port.
 function openPreparedDatabaseWithCheckpoint(databasePath, standby, checkpointWalBytes)
-  return openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, 268435456)
+  return openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, 268435456, 67108864)
 end function
 
-// Opens and prepares a shared database using both runtime storage budgets.
-function openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, bufferPoolBytes)
+// Opens and prepares a shared database using storage and query-memory budgets.
+function openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   shared = void
   if standby then
     shared = try(database_manager.openStandbyWithRuntime(databasePath, checkpointWalBytes, bufferPoolBytes))
@@ -525,6 +527,8 @@ function openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalByt
     shared = try(database_manager.openWithRuntime(databasePath, checkpointWalBytes, bufferPoolBytes))
   end if
   if typeof(shared) == "error" then return shared end if
+  configuredMemory = try(database_manager.setQueryMemoryLimit(shared, queryMemoryBytes))
+  if typeof(configuredMemory) == "error" then database_manager.close(shared); return configuredMemory end if
   prepared = try(session.prepareAttachedDatabase(shared))
   if typeof(prepared) == "error" then database_manager.close(shared); return prepared end if
   return shared
@@ -657,9 +661,9 @@ function serveConcurrentLoopbackWithLockWait(databasePath, port, maximumClients,
 end function
 
 // Serves trusted loopback clients with configured lock and WAL thresholds.
-function serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackWithRuntime")
-  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes))
   if typeof(shared) == "error" then return shared end if
   listener = try(network.listenLoopback(port, maximumClients))
   if typeof(listener) == "error" then database_manager.close(shared); return listener end if
@@ -738,9 +742,9 @@ function serveStandbyConcurrentLoopbackWithLockWait(databasePath, port, maximumC
 end function
 
 // Serves a standby with configured lock and WAL thresholds.
-function serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   validateArguments(databasePath, maximumRequests, "serveStandbyConcurrentLoopbackWithRuntime")
-  shared = try(openPreparedDatabaseWithRuntime(databasePath, true, checkpointWalBytes, bufferPoolBytes))
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, true, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes))
   if typeof(shared) == "error" then return shared end if
   listener = try(network.listenLoopback(port, maximumClients))
   if typeof(listener) == "error" then database_manager.close(shared); return listener end if
@@ -776,9 +780,9 @@ function serveAuthenticatedConcurrentAddressWithLockWait(databasePath, address, 
 end function
 
 // Serves authenticated address clients with configured lock and WAL thresholds.
-function serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddressWithRuntime")
-  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes))
   if typeof(shared) == "error" then return shared end if
   listener = try(network.listenAddress(address, port, maximumClients, true))
   if typeof(listener) == "error" then database_manager.close(shared); return listener end if
@@ -805,12 +809,12 @@ function serveAuthenticatedConcurrentAddressWithReadyFile(databasePath, address,
 end function
 
 // Serves concurrent authenticated sessions over native TLS 1.3 and Schannel.
-function serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   validateArguments(databasePath, maximumRequests, "serveTlsConcurrentAddressWithPassword")
   if typeof(certificateReference) != "string" or len(certificateReference) == 0 then return fail("serveTlsConcurrentAddressWithPassword", "certificateReference must be non-empty") end if
   credential = try(tls_schannel.acquireServerCredentialWithPassword(certificateReference, passwordBytes))
   if typeof(credential) == "error" then return credential end if
-  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes))
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes))
   if typeof(shared) == "error" then ignoredCredential = try(tls_schannel.closeCredential(credential)); return shared end if
   listener = try(network.listenAddress(address, port, maximumClients, true))
   if typeof(listener) == "error" then database_manager.close(shared); ignoredCredential = try(tls_schannel.closeCredential(credential)); return listener end if
@@ -829,12 +833,12 @@ end function
 
 // Serves TLS with the legacy 64 MiB automatic checkpoint threshold.
 function serveTlsConcurrentAddressWithPasswordAndLockWait(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs)
-  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, 67108864, 268435456)
+  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, passwordBytes, readyPath, lockWaitMs, 67108864, 268435456, 67108864)
 end function
 
 // Serves TLS with configured lock and WAL thresholds.
-function serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
-  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void, lockWaitMs, checkpointWalBytes, bufferPoolBytes)
+function serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+  return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
 // Serves TLS with the legacy five-second logical-lock timeout.
