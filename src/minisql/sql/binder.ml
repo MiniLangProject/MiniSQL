@@ -1167,8 +1167,8 @@ function bindExpression(expression, table, alias)
 end function
 
 // Finds one WHERE equality connecting a newly introduced CROSS/comma source to
-// any source already present on its left. Retaining the complete WHERE later in
-// the pipeline keeps this promotion a semantics-preserving planning hint.
+// any source already present on its left. Only top-level AND conjuncts are
+// eligible, so the equality may safely become the mandatory INNER-join edge.
 function crossJoinEqualityForSource(expression, source)
   if expression is void or not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
   if expression.operator == "AND" then
@@ -1186,16 +1186,38 @@ function crossJoinEqualityForSource(expression, source)
   return void
 end function
 
+// Removes every exact occurrence of one guaranteed conjunct from an AND tree.
+// Rebuilding only affected branches preserves every unrelated predicate and
+// its SQL three-valued evaluation semantics.
+function removeBoundConjunct(expression, target)
+  if expression is void then return void end if
+  if expressions.sameBinding(expression, target) then return void end if
+  if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY or expression.operator != "AND" then return expression end if
+  left = removeBoundConjunct(expression.left, target)
+  right = removeBoundConjunct(expression.right, target)
+  if left is void then return right end if
+  if right is void then return left end if
+  return expressions.binary("AND", left, right, expression.typeInfo)
+end function
+
 // Promotes a WHERE-restricted cartesian edge to an INNER equality edge so the
 // existing hash/index join cost model avoids materializing the full product.
+// The returned pair contains the promoted joins and the residual WHERE tree;
+// consumed equalities are enforced by the join and must not be evaluated twice.
 function promoteCrossJoinEqualities(joins, whereExpression)
   output = []
+  remaining = whereExpression
   for each joined in joins
     equality = void
-    if joined.joinType == ast.JOIN_CROSS then equality = crossJoinEqualityForSource(whereExpression, joined.source) end if
-    if equality is void then output = output + [joined] else output = output + [BoundJoin(ast.JOIN_INNER, joined.source, equality, joined.leftTypes)] end if
+    if joined.joinType == ast.JOIN_CROSS then equality = crossJoinEqualityForSource(remaining, joined.source) end if
+    if equality is void then
+      output = output + [joined]
+    else
+      output = output + [BoundJoin(ast.JOIN_INNER, joined.source, equality, joined.leftTypes)]
+      remaining = removeBoundConjunct(remaining, equality)
+    end if
   end for
-  return output
+  return [output, remaining]
 end function
 
 // Binds where using the supplied inputs.
@@ -1396,7 +1418,9 @@ function bindSelectInternal(statement, database, inheritedQueries, viewStack)
   end for
 
   whereExpression = bindWhereSources(statement.whereExpression, sources, "bindSelect.where", database)
-  joins = promoteCrossJoinEqualities(joins, whereExpression)
+  promoted = promoteCrossJoinEqualities(joins, whereExpression)
+  joins = promoted[0]
+  whereExpression = promoted[1]
   groupExpressions = []
   for each groupExpression in statement.groupBy
     boundGroup = bindExpressionInternal(groupExpression, sources, false, database)

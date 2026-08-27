@@ -17,6 +17,13 @@ allocation churn, memory, and binary size. The preceding regression report is
 retained in
 [`COMPILER_UPDATE_A5597F7_2026-08-24.md`](COMPILER_UPDATE_A5597F7_2026-08-24.md).
 
+The legacy comma-FROM equality promotion and residual-filter elimination are
+measured in
+[`COMMA_JOIN_RESIDUAL_2026-08-27.md`](COMMA_JOIN_RESIDUAL_2026-08-27.md).
+The optimized spelling is at parity with an explicit `INNER JOIN` in the
+persistent loopback workload while avoiding the former duplicate predicate
+evaluation.
+
 `platform_compare.py` runs the same bounded storage, restart, one-shot and
 persistent loopback workloads for one already-built native target. Invoke it
 once from Windows Python and once from Linux Python, using target-native data

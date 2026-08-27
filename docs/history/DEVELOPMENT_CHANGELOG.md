@@ -9,6 +9,8 @@
 - promoted a connecting typed WHERE equality to an INNER edge so large legacy
   joins use the existing costed hash/index algorithms instead of materializing
   their cartesian product;
+- removed each promoted equality from the residual WHERE tree so execution and
+  cost estimation do not apply an already guaranteed join condition twice;
 - added parser and relational execution regressions for cartesian and
   WHERE-restricted equijoin forms.
 
