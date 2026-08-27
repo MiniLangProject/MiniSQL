@@ -5,7 +5,10 @@
 import minisql.client.console as console
 import minisql.config.model as config_model
 import minisql.executor.executor as executor
+import minisql.planner.rewrites as rewrites
 import minisql.server.database_manager as database_manager
+import minisql.sql.expressions as expressions
+import minisql.sql.types as types
 import minisql.sql.values as values
 import tests.support.testkit as testkit
 
@@ -22,10 +25,30 @@ function planContains(result, prefix)
   return false
 end function
 
+// Constructs one typed integer comparison for implication boundary tests.
+function integerComparison(columnIndex, operator, literalValue)
+  integerType = types.create(types.SqlTypeKind.Integer, 0, 0, 0, false)
+  booleanType = types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false)
+  return expressions.binary(operator, expressions.column(columnIndex, integerType), expressions.literal(values.integer(literalValue), integerType), booleanType)
+end function
+
 // Exercises physical planning, bounded execution, caching, and regressions.
 function main(args)
   if len(args) != 1 then print "MiniSQL M75 cost-based optimizer: FAIL args"; return 2 end if
   state = testkit.create()
+  lowerInclusive = integerComparison(0, ">=", 100)
+  testkit.record(state, rewrites.comparisonImplies(integerComparison(0, ">=", 200), lowerInclusive), "stronger inclusive lower bound implies partial predicate")
+  testkit.record(state, rewrites.comparisonImplies(integerComparison(0, ">", 100), lowerInclusive), "strict lower bound implies inclusive boundary")
+  testkit.record(state, not rewrites.comparisonImplies(lowerInclusive, integerComparison(0, ">", 100)), "inclusive lower bound does not imply strict boundary")
+  testkit.record(state, rewrites.comparisonImplies(integerComparison(0, "<=", 100), integerComparison(0, "<", 250)), "stronger upper bound implies partial predicate")
+  testkit.record(state, not rewrites.comparisonImplies(integerComparison(0, "<=", 250), integerComparison(0, "<", 250)), "inclusive upper bound does not imply strict boundary")
+  testkit.record(state, rewrites.comparisonImplies(integerComparison(0, "=", 150), lowerInclusive), "equality within range implies partial predicate")
+  testkit.record(state, not rewrites.comparisonImplies(integerComparison(0, "=", 100), integerComparison(0, ">", 100)), "boundary equality does not imply strict range")
+  integerType = types.create(types.SqlTypeKind.Integer, 0, 0, 0, false)
+  booleanType = types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false)
+  reversedLower = expressions.binary("<=", expressions.literal(values.integer(200), integerType), expressions.column(0, integerType), booleanType)
+  testkit.record(state, rewrites.comparisonImplies(reversedLower, lowerInclusive), "reversed literal comparison is normalized")
+  testkit.record(state, rewrites.conjunctImplies(integerComparison(0, "=", 7), expressions.isNull(expressions.column(0, integerType), true)), "non-null comparison implies IS NOT NULL")
   managed = database_manager.create(args[0], "m75_optimizer", config_model.defaultDatabaseSettings(4096))
   databasePath = managed.path
   engine = executor.attach(managed)
@@ -136,6 +159,16 @@ function main(args)
   testkit.record(state, not planContains(unqualifiedPartialPlan, "Index Scan [optimizer_partial index=idx_optimizer_partial_active") and not planContains(unqualifiedPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_active"), "missing predicate implication excludes partial index")
   unqualifiedPartial = executeOne(engine, "SELECT category, payload FROM optimizer_partial WHERE category = 3")
   testkit.equal(state, len(unqualifiedPartial.rows), 30, "unqualified query preserves rows outside partial index")
+  executeOne(engine, "CREATE INDEX idx_optimizer_partial_high ON optimizer_partial(category) INCLUDE (id, payload) WHERE id >= 100")
+  executeOne(engine, "ANALYZE optimizer_partial")
+  strongerPartialPlan = executeOne(engine, "EXPLAIN SELECT category, id, payload FROM optimizer_partial WHERE category = 3 AND id >= 200")
+  testkit.record(state, planContains(strongerPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_high"), "stronger range proves partial-index predicate")
+  strongerPartial = executeOne(engine, "SELECT category, id, payload FROM optimizer_partial WHERE category = 3 AND id >= 200")
+  testkit.equal(state, len(strongerPartial.rows), 10, "stronger range partial scan preserves boundary rows")
+  strictPartialPlan = executeOne(engine, "EXPLAIN SELECT category, id FROM optimizer_partial WHERE category = 3 AND id > 100")
+  testkit.record(state, planContains(strictPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_high"), "strict bound implies inclusive partial predicate")
+  weakerPartialPlan = executeOne(engine, "EXPLAIN SELECT category, id FROM optimizer_partial WHERE category = 3 AND id >= 99")
+  testkit.record(state, not planContains(weakerPartialPlan, "Index Scan [optimizer_partial index=idx_optimizer_partial_high") and not planContains(weakerPartialPlan, "Index Only Scan [optimizer_partial index=idx_optimizer_partial_high"), "weaker range cannot prove partial-index predicate")
 
   topPlan = executeOne(engine, "EXPLAIN SELECT id FROM optimizer_fact ORDER BY id DESC LIMIT 5")
   testkit.record(state, planContains(topPlan, "Top-N"), "optimizer selects bounded Top-N")

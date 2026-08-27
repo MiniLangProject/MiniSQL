@@ -27,9 +27,10 @@
   bushy trees and outer-join reordering are not implemented. Index-only scans
   cover B+ tree key columns and explicit `INCLUDE` payload columns. Partial
   indexes support immutable base expressions. Predicate implication is
-  deliberately bounded to identical typed conjuncts in single-table plans;
-  algebraically stronger ranges, equivalent rewritten expressions, and join
-  inference are not yet proven. The current `ON CONFLICT(column)` syntax cannot
+  deliberately bounded to identical typed conjuncts and stronger typed
+  single-column literal bounds in single-table plans; equivalent general
+  expressions, floating-point bounds, disjunctions, and join inference are not
+  yet proven. The current `ON CONFLICT(column)` syntax cannot
   name a partial predicate, so it does not infer a partial unique index. One encoded
   B+ tree key is limited to 256 bytes and one leaf payload to 3,584 bytes so an
   individual entry always fits the minimum supported 4 KiB database page. Execution

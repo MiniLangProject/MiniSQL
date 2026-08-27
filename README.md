@@ -104,8 +104,9 @@ pages. Included values use a versioned, backwards-compatible leaf format and
 are maintained through insert, update, recovery, `REINDEX`, and `VACUUM`. Simple
 `CREATE INDEX ... WHERE predicate` definitions physically retain only rows for
 which the immutable row-local predicate is `TRUE`. The optimizer admits a
-partial index only for a single-table plan whose query predicate contains every
-typed index-predicate conjunct, preventing rows outside the index from being
+partial index only for a single-table plan whose query predicate proves every
+typed index-predicate conjunct. Proofs cover identical conjuncts and stronger
+single-column literal bounds, preventing rows outside the index from being
 silently omitted. Partial predicates and INCLUDE payloads may be combined.
 Simple single-table queries flow through bounded 128-row scan batches. `COUNT(*)`
 reads verified live-slot metadata and scalar `COUNT`/`SUM`/`AVG`/`MIN`/`MAX`/

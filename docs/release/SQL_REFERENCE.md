@@ -35,7 +35,8 @@ NULL`; functions, aggregates, windows and subqueries are rejected. A partial
 `UNIQUE` index enforces uniqueness only among qualifying rows. It cannot be
 inferred by the current `ON CONFLICT(column)` syntax or used as a foreign-key
 target. The optimizer uses a partial index only when every predicate conjunct
-occurs with an identical typed binding in a single-table query predicate.
+is identical to a typed single-table query conjunct or follows from a stronger
+typed equality/range bound on the same column and literal domain.
 
 Column features include SQL NULL, defaults, `NOT NULL`, `CHECK`, primary and
 unique keys, foreign keys, stored generated columns, identity columns and the

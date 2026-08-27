@@ -8,6 +8,7 @@ import minisql.common.endian as endian
 
 import minisql.sql.ast as ast
 import minisql.sql.expressions as expressions
+import minisql.sql.types as types
 import minisql.sql.values as values
 
 // Safe, semantics-preserving planner rewrites and selectivity helpers. Literal
@@ -276,10 +277,66 @@ function conjuncts(expression)
   return [expression]
 end function
 
+// Normalizes a column/literal comparison so the column is always on the left.
+function comparisonConstraint(expression)
+  if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
+  operator = expression.operator
+  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  column = expression.left
+  literal = expression.right
+  if column.kind == expressions.BOUND_LITERAL and literal.kind == expressions.BOUND_COLUMN then
+    column = expression.right
+    literal = expression.left
+    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+  end if
+  if column.kind != expressions.BOUND_COLUMN or literal.kind != expressions.BOUND_LITERAL or literal.literal.isNull then return void end if
+  return [column.columnIndex, operator, literal.literal]
+end function
+
+// Proves implication between two normalized single-column literal bounds.
+function comparisonImplies(candidate, required)
+  candidateBound = comparisonConstraint(candidate)
+  requiredBound = comparisonConstraint(required)
+  if candidateBound is void or requiredBound is void or candidateBound[0] != requiredBound[0] then return false end if
+  candidateOperator = candidateBound[1]
+  requiredOperator = requiredBound[1]
+  // IEEE NaN does not provide the total ordering required by this proof.
+  if candidateBound[2].typeKind == types.SqlTypeKind.Real or candidateBound[2].typeKind == types.SqlTypeKind.Double or requiredBound[2].typeKind == types.SqlTypeKind.Real or requiredBound[2].typeKind == types.SqlTypeKind.Double then return false end if
+  comparison = values.compareNonNull(candidateBound[2], requiredBound[2])
+  if typeof(comparison) != "int" then return false end if
+  if candidateOperator == "=" then
+    if requiredOperator == "=" then return comparison == 0 end if
+    if requiredOperator == ">" then return comparison > 0 end if
+    if requiredOperator == ">=" then return comparison >= 0 end if
+    if requiredOperator == "<" then return comparison < 0 end if
+    if requiredOperator == "<=" then return comparison <= 0 end if
+  end if
+  if candidateOperator == ">" or candidateOperator == ">=" then
+    if requiredOperator != ">" and requiredOperator != ">=" then return false end if
+    return comparison > 0 or (comparison == 0 and (candidateOperator == ">" or requiredOperator == ">="))
+  end if
+  if candidateOperator == "<" or candidateOperator == "<=" then
+    if requiredOperator != "<" and requiredOperator != "<=" then return false end if
+    return comparison < 0 or (comparison == 0 and (candidateOperator == "<" or requiredOperator == "<="))
+  end if
+  return false
+end function
+
+// Proves one required conjunct from one query conjunct without widening either.
+function conjunctImplies(candidate, required)
+  if expressions.sameBinding(candidate, required) then return true end if
+  if comparisonImplies(candidate, required) then return true end if
+  if expressions.isBaseBoundExpression(required) and required.kind == expressions.BOUND_IS_NULL and required.operator == "IS NOT NULL" and expressions.isBaseBoundExpression(required.left) and required.left.kind == expressions.BOUND_COLUMN then
+    candidateBound = comparisonConstraint(candidate)
+    return candidateBound is not void and candidateBound[0] == required.left.columnIndex
+  end if
+  return false
+end function
+
 // Proves the deliberately bounded partial-index implication contract. Every
-// required index conjunct must occur with an identical typed binding in the
-// query predicate. This recognizes additional query conjuncts and reordered
-// AND trees without attempting unsound general Boolean theorem proving.
+// required index conjunct must occur identically or follow from a stronger
+// typed single-column literal bound in the query predicate. This recognizes
+// additional/reordered conjuncts without general Boolean theorem proving.
 function predicateImplies(queryPredicate, requiredPredicate)
   if requiredPredicate is void then return true end if
   if queryPredicate is void then return false end if
@@ -287,7 +344,7 @@ function predicateImplies(queryPredicate, requiredPredicate)
   for each required in conjuncts(requiredPredicate)
     matched = false
     for each candidate in queryConjuncts
-      if expressions.sameBinding(candidate, required) then matched = true; break end if
+      if conjunctImplies(candidate, required) then matched = true; break end if
     end for
     if not matched then return false end if
   end for

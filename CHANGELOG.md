@@ -13,6 +13,9 @@ and repair-candidate log from development is preserved in
 - prevented partial unique indexes from acting as table-wide foreign-key or
   predicate-free `ON CONFLICT` arbiters and added focused parser, schema-change,
   mutation, reopen, and costed index-only regression coverage;
+- strengthened partial-index implication with typed equality/range boundary
+  proofs, including strict/inclusive edges and comparison-to-`IS NOT NULL`,
+  while retaining conservative fallback for unproved expressions;
 - expanded the native Workbench with multiple SQL worksheets, keyboard
   accelerators, context menus, searchable history, CSV result export, and
   persistent top-level window geometry;

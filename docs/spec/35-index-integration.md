@@ -39,9 +39,13 @@ combined with INCLUDE columns.
 
 The optimizer proves eligibility conservatively. For a single-table plan, each
 typed conjunct of the persisted index predicate must be binding-identical to a
-query conjunct. Additional and reordered query conjuncts are allowed. Partial
-indexes are not selected for joins or legacy unnamed lookup paths. This bounded
-contract prefers a heap plan over any access path that could omit a legal row.
+query conjunct or follow from a stronger equality/range bound on the same
+column. Strict/inclusive boundaries are compared explicitly; a comparison also
+proves `IS NOT NULL` for its column. Additional and reordered query conjuncts
+are allowed. IEEE floating-point bounds are excluded because NaN is not totally
+ordered. Partial indexes are not selected for joins or legacy unnamed
+lookup paths. This bounded contract prefers a heap plan over any access path
+that could omit a legal row.
 
 `EXPLAIN` reports `Index Seek rows=N` when the supported access path is chosen
 and `Index Only Scan` when no heap fetch is required.

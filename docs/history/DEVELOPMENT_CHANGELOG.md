@@ -11,6 +11,9 @@
 - added conservative typed-conjunct implication so only proven single-table
   plans select partial index or partial index-only scans, while joins and
   unqualified legacy paths retain complete-row access;
+- extended the proof with stronger typed single-column equality/range bounds,
+  strict/inclusive boundary handling, and comparison-to-`IS NOT NULL` without
+  introducing general Boolean theorem proving;
 - prevented partial unique indexes from being inferred as table-wide foreign
   key or predicate-free `ON CONFLICT` arbiters and added parser, DDL, DML,
   persistence, negative-path, and optimizer regression coverage.
