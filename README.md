@@ -40,7 +40,7 @@ Persisted database and wire formats remain shared across both targets.
   grants, prepared statements, views, recursive CTEs, correlated subqueries,
   window functions, `MERGE`, triggers, typed single-statement procedures,
   sequences, and generated columns;
-- joins, aggregates, set operations, sampled optimizer statistics, predicate
+- joins (including aliased comma-separated `FROM` lists), aggregates, set operations, sampled optimizer statistics, predicate
   pushdown, constant folding, projection pruning, costed index/sequential scans,
   inner-equijoin reordering, hash/index/nested-loop joins, streaming scalar
   aggregates, Top-N, external merge-sort runs, and a generation-safe plan cache;

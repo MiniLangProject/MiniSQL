@@ -1,5 +1,17 @@
 # MiniSQL changelog
 
+## 1.0.0 — comma-separated FROM sources
+
+- accepted optional-`AS` aliases on every source in a comma-separated FROM list;
+- lowered comma sources to the existing typed CROSS-join representation so
+  execution, WHERE filtering, qualified binding, and derived tables reuse one
+  relational path;
+- promoted a connecting typed WHERE equality to an INNER edge so large legacy
+  joins use the existing costed hash/index algorithms instead of materializing
+  their cartesian product;
+- added parser and relational execution regressions for cartesian and
+  WHERE-restricted equijoin forms.
+
 ## 1.0.0 — functional indexes
 
 - added deterministic single-expression keys for `CREATE [UNIQUE] INDEX`, with

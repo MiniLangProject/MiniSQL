@@ -6,6 +6,10 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-26
 
+- accepted aliased comma-separated FROM lists such as `FROM customers c,
+  orders o`, lowering each comma to a typed CROSS join while retaining WHERE
+  predicates and normal qualified-name binding, and promoting connecting WHERE
+  equalities to the costed inner/hash/index-join path;
 - added deterministic functional indexes such as `CREATE INDEX ...
   (LOWER(email))`, with compatible durable metadata, SHOW rendering, costed
   exact-expression scans, optional INCLUDE/WHERE, and computed UNIQUE keys;

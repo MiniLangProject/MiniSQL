@@ -60,6 +60,12 @@ function main(args)
   functionalIndex = parser.parseSql("CREATE INDEX idx_customer_lower_email ON customer(LOWER(email)) INCLUDE (balance)")[0]
   testkit.record(state, ast.isFunctionExpression(functionalIndex.columns[0]), "CREATE INDEX functional key AST")
   testkit.equal(state, ast.formatExpression(functionalIndex.columns[0]), "LOWER(email)", "CREATE INDEX functional key formatting")
+  commaSelect = parser.parseSql("SELECT c.id, o.id FROM customers c, orders AS o WHERE o.customer_id = c.id")[0]
+  testkit.equal(state, commaSelect.tableAlias, "c", "comma FROM first table alias")
+  testkit.equal(state, len(commaSelect.joins), 1, "comma FROM creates one join source")
+  testkit.equal(state, commaSelect.joins[0].joinType, ast.JOIN_CROSS, "comma FROM lowers to CROSS JOIN")
+  testkit.equal(state, commaSelect.joins[0].tableAlias, "o", "comma FROM second table alias")
+  testkit.record(state, commaSelect.whereExpression is not void, "comma FROM retains WHERE predicate")
   testkit.record(state, ast.isInsertStatement(statements[2]), "INSERT AST")
   testkit.equal(state, len(statements[2].rows), 2, "multi-row INSERT")
   testkit.record(state, ast.isUpdateStatement(statements[3]), "UPDATE AST")

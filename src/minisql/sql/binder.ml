@@ -1166,6 +1166,38 @@ function bindExpression(expression, table, alias)
   return bindExpressionInternal(expression, sources, false, void)
 end function
 
+// Finds one WHERE equality connecting a newly introduced CROSS/comma source to
+// any source already present on its left. Retaining the complete WHERE later in
+// the pipeline keeps this promotion a semantics-preserving planning hint.
+function crossJoinEqualityForSource(expression, source)
+  if expression is void or not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
+  if expression.operator == "AND" then
+    left = crossJoinEqualityForSource(expression.left, source)
+    if left is not void then return left end if
+    return crossJoinEqualityForSource(expression.right, source)
+  end if
+  if expression.operator != "=" or expression.left.kind != expressions.BOUND_COLUMN or expression.right.kind != expressions.BOUND_COLUMN then return void end if
+  sourceStart = source.offset
+  sourceEnd = sourceStart + len(source.table.columns)
+  leftInSource = expression.left.columnIndex >= sourceStart and expression.left.columnIndex < sourceEnd
+  rightInSource = expression.right.columnIndex >= sourceStart and expression.right.columnIndex < sourceEnd
+  if leftInSource and expression.right.columnIndex < sourceStart then return expression end if
+  if rightInSource and expression.left.columnIndex < sourceStart then return expression end if
+  return void
+end function
+
+// Promotes a WHERE-restricted cartesian edge to an INNER equality edge so the
+// existing hash/index join cost model avoids materializing the full product.
+function promoteCrossJoinEqualities(joins, whereExpression)
+  output = []
+  for each joined in joins
+    equality = void
+    if joined.joinType == ast.JOIN_CROSS then equality = crossJoinEqualityForSource(whereExpression, joined.source) end if
+    if equality is void then output = output + [joined] else output = output + [BoundJoin(ast.JOIN_INNER, joined.source, equality, joined.leftTypes)] end if
+  end for
+  return output
+end function
+
 // Binds where using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -1364,6 +1396,7 @@ function bindSelectInternal(statement, database, inheritedQueries, viewStack)
   end for
 
   whereExpression = bindWhereSources(statement.whereExpression, sources, "bindSelect.where", database)
+  joins = promoteCrossJoinEqualities(joins, whereExpression)
   groupExpressions = []
   for each groupExpression in statement.groupBy
     boundGroup = bindExpressionInternal(groupExpression, sources, false, database)

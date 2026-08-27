@@ -12,7 +12,8 @@ VALUES (...);
 
 ## 5.2 SELECT target
 
-MiniSQL SQL 1.0 targets projections, aliases, WHERE, INNER/LEFT/CROSS JOIN,
+MiniSQL SQL 1.0 targets projections, optional `AS` table aliases, legacy
+comma-separated FROM lists, WHERE, INNER/LEFT/CROSS JOIN,
 GROUP BY, HAVING, DISTINCT, ORDER BY, LIMIT/OFFSET, FETCH FIRST, CASE, CAST,
 LIKE, IN, BETWEEN and the aggregates COUNT/SUM/AVG/MIN/MAX.
 

@@ -44,6 +44,13 @@ function main(args)
   cross = executeOne(engine, "SELECT e.id, d.id FROM employee e CROSS JOIN department d")
   testkit.equal(state, len(cross.rows), 9, "cross join cardinality")
 
+  commaCross = executeOne(engine, "SELECT e.id, d.id FROM employee e, department d")
+  testkit.equal(state, len(commaCross.rows), 9, "comma FROM has cross join cardinality")
+  commaJoined = executeOne(engine, "SELECT e.name, d.name FROM employee e, department d WHERE e.department_id = d.id ORDER BY e.id")
+  testkit.equal(state, len(commaJoined.rows), 3, "comma FROM WHERE equijoin row count")
+  testkit.equal(state, commaJoined.rows[0][0].value, "Ada", "comma FROM resolves first table alias")
+  testkit.equal(state, commaJoined.rows[2][1].value, "Sales", "comma FROM resolves second table alias")
+
   grouped = executeOne(engine, "SELECT d.name, COUNT(e.id) AS employees, SUM(e.salary) AS payroll, AVG(e.salary) AS average_salary, MIN(e.salary) AS minimum_salary, MAX(e.salary) AS maximum_salary FROM department d LEFT JOIN employee e ON e.department_id = d.id GROUP BY d.name ORDER BY d.name")
   testkit.equal(state, len(grouped.rows), 3, "left join group count")
   testkit.equal(state, grouped.rows[0][0].value, "Engineering", "grouped first name")

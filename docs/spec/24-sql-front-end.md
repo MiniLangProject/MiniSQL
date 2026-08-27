@@ -7,8 +7,9 @@ canonicalized to lower case while keywords are canonical upper case.
 
 M12 parses CREATE TABLE, CREATE [UNIQUE] INDEX with column/expression keys and
 optional INCLUDE and WHERE clauses, DROP TABLE, INSERT, UPDATE, DELETE,
-SELECT, BEGIN, COMMIT and ROLLBACK. SELECT supports a single FROM relation, aliases,
-DISTINCT, WHERE, ORDER BY with NULL placement, LIMIT and OFFSET. Expressions support
+SELECT, BEGIN, COMMIT and ROLLBACK. SELECT supports an initial FROM relation,
+explicit joins and comma-separated sources, aliases, DISTINCT, WHERE, ORDER BY
+with NULL placement, LIMIT and OFFSET. Expressions support
 literals, columns, `*`, unary NOT/+/-; arithmetic, comparison, Boolean, concatenation and
 LIKE operators; and IS [NOT] NULL.
 

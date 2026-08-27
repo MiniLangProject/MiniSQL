@@ -1068,10 +1068,21 @@ function parseSelectCore(state)
     tableName = source[0]
     tableAlias = source[1]
     if source[2] is not void then derivedTables = derivedTables + [source[2]] end if
-    while startsJoin(state)
-      parsedJoin = parseJoinClause(state)
-      joins = joins + [parsedJoin[0]]
-      if parsedJoin[1] is not void then derivedTables = derivedTables + [parsedJoin[1]] end if
+    parsingSources = true
+    while parsingSources
+      if matchKind(state, token.TokenKind.Comma) then
+        // SQL's legacy comma-separated FROM list is a cartesian product. The
+        // ordinary WHERE pipeline may subsequently restrict it to an equijoin.
+        commaSource = parseTableSource(state, "table name after ','")
+        joins = joins + [ast.JoinClause(ast.JOIN_CROSS, commaSource[0], commaSource[1], void)]
+        if commaSource[2] is not void then derivedTables = derivedTables + [commaSource[2]] end if
+      else if startsJoin(state) then
+        parsedJoin = parseJoinClause(state)
+        joins = joins + [parsedJoin[0]]
+        if parsedJoin[1] is not void then derivedTables = derivedTables + [parsedJoin[1]] end if
+      else
+        parsingSources = false
+      end if
     end while
   end if
   whereExpression = void

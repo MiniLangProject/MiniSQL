@@ -65,6 +65,14 @@ CONFLICT DO NOTHING`, UPSERT, joins including full outer joins, grouping,
 aggregates, set operations, derived tables, correlated subqueries, views,
 recursive CTEs and window functions are supported.
 
+Table aliases accept both `FROM customer c` and `FROM customer AS c`.
+Comma-separated sources are the legacy spelling of a cartesian product, so
+`FROM customers c, orders o WHERE o.customer_id = c.id` has the same result
+semantics as an explicit cross join followed by the same `WHERE` predicate. A
+typed column equality connecting the new source to an earlier source is
+promoted to the normal costed inner/hash/index-join path while the complete
+`WHERE` remains the final correctness filter.
+
 Derived tables require an alias. Scalar, `EXISTS`, `IN` and `NOT IN` subqueries
 may use explicitly qualified outer references. Recursive CTEs use an anchor
 followed by `UNION` or `UNION ALL` and a recursive term. `UNION` terminates at a
