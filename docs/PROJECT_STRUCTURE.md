@@ -4,6 +4,7 @@
 MiniSQL/
 ├── config/  # configuration schema and example
 ├── clients/jdbc/  # dependency-free Java 11+ JDBC driver, build, and live tests
+├── clients/python/  # Python 3.10+ DB-API connector, packaging, and live tests
 ├── docs/  # specifications, formats, ADRs, release and acceptance documentation
 ├── src/apps/  # six entry points; five portable CLIs plus the Windows Workbench
 ├── src/minisql/  # 80 shared and target-specific database/workbench modules

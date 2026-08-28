@@ -1,5 +1,18 @@
 # MiniSQL changelog
 
+## 1.0.0 — Python DB-API connector
+
+- added a Python 3.10+ PEP 249 connector for trusted-local, authenticated, and
+  TLS 1.3 sessions with exact SHA-256 certificate pinning;
+- implemented protocol-v1 CRC-32C framing, continuation streaming, secure
+  challenge/response, and inner AES-256-GCM through `cryptography`;
+- added qmark parameter binding, a bounded server-side prepared-plan LRU, lazy
+  transactions, automatic DDL transaction boundaries, and incremental bounded
+  multi-row `executemany()` inserts with savepoint-backed failure semantics;
+- added packaging, English usage/security documentation, seven unit tests, and
+  1,216 live checks in each trusted, authenticated, and pinned self-signed TLS
+  mode.
+
 ## 1.0.0 — JDBC latency and batching update
 
 - moved JDBC `PreparedStatement` execution onto session-local MiniSQL

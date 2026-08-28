@@ -10,6 +10,11 @@
   binary literal or the wire protocol gains typed parameter binding. Callable
   statements, generated keys, scrollable/updatable results, XA, and JDBC
   savepoint objects are not implemented in driver 1.0.
+* The Python 3.10+ DB-API connector exposes forward-only string/`None` rows,
+  because protocol v1 has no SQL type or null bitmap. Text containing exactly
+  `NULL` is ambiguous, binary parameter binding is unavailable, and one
+  connection can own only one unread result stream. Stored procedures, multiple
+  result sets, scrollable cursors, and two-phase commit are not implemented.
 * Linux offline tools, TLS, and bounded concurrent server/client operation pass
   the portable acceptance gate. The original `EAGAIN`/`EWOULDBLOCK` multi-client
   failure is retained as historical evidence in

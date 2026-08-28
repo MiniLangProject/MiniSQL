@@ -54,6 +54,9 @@ Persisted database and wire formats remain shared across both targets.
 - a dependency-free Java 11+ JDBC 4.3 driver with trusted/password sessions,
   TLS and certificate pinning, prepared statements, transactions, streaming
   results, batches, and live catalog metadata;
+- a Python 3.10+ DB-API 2.0 connector with trusted/password sessions, TLS and
+  certificate pinning, lazy transactions, prepared-plan caching, streaming
+  cursors, and bounded `executemany()` inserts;
 - scalable multi-page catalog and security metadata, a thread-safe singleton
   logger with stdout plus time-rolled files, and an optional complete SQL binlog;
 - native per-connection concurrency through a bounded MiniLang thread pool, with
@@ -250,6 +253,27 @@ try (Connection connection = DriverManager.getConnection(
 The JAR is written to `build/jdbc/minisql-jdbc-1.0.0.jar`. See the
 [`JDBC driver guide`](docs/release/JDBC.md) for authenticated/TLS URLs,
 certificate pinning, supported interfaces, and protocol-v1 limitations.
+
+Python applications can install and use the DB-API 2.0 connector directly from
+the checkout:
+
+```powershell
+python -m pip install .\clients\python
+```
+
+```python
+import minisql
+
+with minisql.connect("minisql://127.0.0.1:7432/main") as connection:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT id, name FROM customer WHERE id >= ?", (100,))
+        for row in cursor:
+            print(row)
+```
+
+See the [`Python connector guide`](docs/release/PYTHON.md) for password/TLS
+configuration, self-signed certificate pinning, transaction boundaries,
+batches, and protocol-v1 limitations.
 
 Example SQL:
 
