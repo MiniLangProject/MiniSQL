@@ -2,6 +2,14 @@
 
 * Windows x64 PE and Linux x64 ELF are native targets. The graphical Workbench
   remains Windows-only.
+* The portable Java 11+ JDBC driver implements core connections, statements,
+  prepared statements, transactions, forward-only results, and catalog
+  metadata. Protocol v1 carries result cells as text without SQL type or NULL
+  metadata, so ordinary result metadata is conservative, the text token `NULL`
+  is ambiguous, and `setBytes` is unavailable until the SQL grammar gains a
+  binary literal or the wire protocol gains typed parameter binding. Callable
+  statements, generated keys, scrollable/updatable results, XA, and JDBC
+  savepoint objects are not implemented in driver 1.0.
 * Linux offline tools, TLS, and bounded concurrent server/client operation pass
   the portable acceptance gate. The original `EAGAIN`/`EWOULDBLOCK` multi-client
   failure is retained as historical evidence in

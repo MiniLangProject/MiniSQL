@@ -9,6 +9,7 @@ system written in MiniLang. The Windows distribution contains:
 * `minisql-backup.exe` – backup, PITR and standby tools;
 * `minisql-migrate.exe` – offline page-size rewrite;
 * `minisql-admin.exe` – native Windows MiniSQL Workbench;
+* `clients/jdbc` – source and build scripts for the portable Java 11+ JDBC driver;
 * native Windows Schannel TLS 1.3/X.509 transport;
 * a Python sidecar for continuous hot replication.
 
@@ -23,6 +24,7 @@ remains the packaged binary-distribution target. See
 before deploying Linux builds.
 
 Start with the [client/server quickstart](../quickstart-client-server.md).
+Java applications should also read the [JDBC driver guide](JDBC.md).
 Python 3.11 or newer is recommended when replication or the development tooling
 is used.
 

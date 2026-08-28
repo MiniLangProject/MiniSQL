@@ -6,6 +6,15 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-26
 
+- added a dependency-free Java 11+ JDBC 4.3 driver with service discovery,
+  trusted-local and password-authenticated connections, TLS 1.3/X.509 and
+  certificate pinning, statements, client-side prepared statements, batches,
+  transactions, lazy continuation-frame result sets, typed getters, and live
+  table/column/index metadata;
+- added reproducible JDBC build tooling plus unit, trusted-local, multi-frame,
+  transaction, temporal-binding, catalog, challenge-response, and authenticated
+  AES-256-GCM live integration coverage, including a self-signed TLS 1.3 server
+  accepted only through its exact SHA-256 certificate pin;
 - accepted aliased comma-separated FROM lists such as `FROM customers c,
   orders o`, lowering each comma to a typed CROSS join while retaining WHERE
   predicates and normal qualified-name binding, and promoting connecting WHERE

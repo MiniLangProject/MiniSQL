@@ -51,6 +51,9 @@ Persisted database and wire formats remain shared across both targets.
   literals such as `3.3`, `-4.75`, and `1.25e2`;
 - persistent server, stateful shell, script client, authenticated transport,
   native TLS 1.3/X.509 transport, audit chain, WAL shipping, and read-only hot standby;
+- a dependency-free Java 11+ JDBC 4.3 driver with trusted/password sessions,
+  TLS and certificate pinning, prepared statements, transactions, streaming
+  results, batches, and live catalog metadata;
 - scalable multi-page catalog and security metadata, a thread-safe singleton
   logger with stdout plus time-rolled files, and an optional complete SQL binlog;
 - native per-connection concurrency through a bounded MiniLang thread pool, with
@@ -228,6 +231,25 @@ Or open the graphical MiniSQL Workbench:
 See [`docs/release/WORKBENCH.md`](docs/release/WORKBENCH.md) for its
 SQuirreL-style MiniSQL workflow, data and schema editors, aliases, native TLS,
 and certificate pinning.
+
+Java applications can build and use the JDBC driver as follows:
+
+```powershell
+.\clients\jdbc\build.ps1
+```
+
+```java
+try (Connection connection = DriverManager.getConnection(
+        "jdbc:minisql://127.0.0.1:7432/main")) {
+    try (ResultSet rows = connection.createStatement().executeQuery("SHOW TABLES")) {
+        while (rows.next()) System.out.println(rows.getString("table_name"));
+    }
+}
+```
+
+The JAR is written to `build/jdbc/minisql-jdbc-1.0.0.jar`. See the
+[`JDBC driver guide`](docs/release/JDBC.md) for authenticated/TLS URLs,
+certificate pinning, supported interfaces, and protocol-v1 limitations.
 
 Example SQL:
 
