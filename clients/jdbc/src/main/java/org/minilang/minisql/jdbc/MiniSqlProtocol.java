@@ -218,8 +218,12 @@ final class MiniSqlProtocol implements AutoCloseable {
                 .putInt(message.flags).putInt(message.requestId).putInt(message.payload.length)
                 .putInt(crc(message.payload)).putInt(0).putInt(0);
         wrap(header).putInt(24, crc(header));
-        output.write(header);
-        output.write(message.payload);
+        // One write produces one TLS application record for ordinary frames.
+        // Writing header and payload separately makes JSSE emit two tiny TLS
+        // records and can trigger a delayed-ACK round trip on Windows.
+        byte[] frame = Arrays.copyOf(header, header.length + message.payload.length);
+        System.arraycopy(message.payload, 0, frame, header.length, message.payload.length);
+        output.write(frame);
         output.flush();
     }
 

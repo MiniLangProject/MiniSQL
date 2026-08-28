@@ -3,7 +3,8 @@
 The dependency-free MiniSQL JDBC 4.3 driver targets Java 11 or newer and speaks
 the native MiniSQL v1 protocol directly. It supports trusted-local and password
 authentication, TLS 1.3, exact SHA-256 certificate pinning, statements,
-client-side prepared statements, batches, transactions, forward-only streaming
+server-backed prepared statements, bounded multi-row insert batches,
+transactions, forward-only streaming
 result sets, and the catalog metadata commonly used by IDEs and connection
 pools.
 

@@ -1,5 +1,20 @@
 # MiniSQL changelog
 
+## 1.0.0 — JDBC latency and batching update
+
+- moved JDBC `PreparedStatement` execution onto session-local MiniSQL
+  `PREPARE`/`EXECUTE` plans, retaining a compatibility fallback for unsupported
+  statements and older servers;
+- coalesced compatible single-row JDBC insert batches into bounded 256-row,
+  768-KiB multi-row requests while preserving per-entry update counts and
+  first-failure behavior through atomic retry and internal savepoints;
+- enabled `TCP_NODELAY` on native connected and accepted sockets and emitted
+  complete Java protocol frames with one write, eliminating the Windows TLS
+  delayed-record latency;
+- expanded the trusted, authenticated, and pinned self-signed TLS integration
+  suite to 1,669 checks per mode, including server-plan lifecycle and a
+  quote-sensitive 600-row batch.
+
 ## 1.0.0 — optimizer and execution expansion
 
 - propagated typed non-NULL constants through top-level INNER/CROSS equality

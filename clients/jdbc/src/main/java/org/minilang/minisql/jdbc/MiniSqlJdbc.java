@@ -10,6 +10,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.BatchUpdateException;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.ParameterMetaData;
@@ -92,6 +93,8 @@ final class MiniSqlJdbc {
         boolean readOnly;
         int isolation = Connection.TRANSACTION_SERIALIZABLE;
         int networkTimeout;
+        long nextPreparedStatementId;
+        long nextBatchSavepointId;
         final Properties clientInfo = new Properties();
 
         ConnectionHandler(MiniSqlUrl url, MiniSqlProtocol protocol) {
@@ -193,6 +196,14 @@ final class MiniSqlJdbc {
             } finally { query.close(); }
         }
 
+        String allocatePreparedStatementName() {
+            return "jdbc_ps_" + (++nextPreparedStatementId);
+        }
+
+        String allocateBatchSavepointName() {
+            return "jdbc_batch_" + (++nextBatchSavepointId);
+        }
+
         private void setClientInfo(Object[] args) {
             if (args.length == 2) clientInfo.setProperty((String) args[0], (String) args[1]);
             else { clientInfo.clear(); clientInfo.putAll((Properties) args[0]); }
@@ -217,8 +228,10 @@ final class MiniSqlJdbc {
         return (Statement) proxy;
     }
 
-    /** Implements both Statement and client-side PreparedStatement parameter binding. */
+    /** Implements statements, server-backed prepared statements, and bounded insert batching. */
     private static final class StatementHandler extends BaseHandler {
+        private static final int MAX_COALESCED_INSERT_ROWS = 256;
+        private static final int MAX_COALESCED_INSERT_BYTES = 768 * 1024;
         final ConnectionHandler connection;
         final String template;
         final List<Integer> markers;
@@ -232,6 +245,9 @@ final class MiniSqlJdbc {
         int queryTimeout;
         int fetchSize = 512;
         boolean poolable;
+        boolean prepareAttempted;
+        boolean serverPrepared;
+        String preparedName;
 
         StatementHandler(ConnectionHandler connection, String template) {
             super(template == null ? "MiniSQLStatement" : "MiniSQLPreparedStatement");
@@ -241,7 +257,7 @@ final class MiniSqlJdbc {
 
         @Override Object call(Object ignored, Method method, Object[] args) throws Throwable {
             String name = method.getName();
-            if (name.equals("close")) { closeCurrent(); closed = true; return null; }
+            if (name.equals("close")) { closeStatement(); return null; }
             if (name.equals("isClosed")) return closed;
             ensureOpen();
             switch (name) {
@@ -309,7 +325,33 @@ final class MiniSqlJdbc {
             if (template == null) return (String) args[0];
             if (args.length != 0) throw new SQLException(
                     "SQL text cannot be supplied to an already prepared statement", "HY000");
-            return boundSql();
+            return executablePreparedSql();
+        }
+
+        /** Lazily prepares supported DML on the server and falls back for older servers or unsupported SQL. */
+        private String executablePreparedSql() throws SQLException {
+            requireAllParameters();
+            if (!prepareAttempted) {
+                prepareAttempted = true;
+                preparedName = connection.allocatePreparedStatementName();
+                try {
+                    connection.executeCommand("PREPARE " + preparedName + " AS " + template);
+                    serverPrepared = true;
+                } catch (SQLException failure) {
+                    if (failure.getSQLState() != null && failure.getSQLState().startsWith("08")) throw failure;
+                    preparedName = null;
+                }
+            }
+            if (!serverPrepared) return boundSql();
+            StringBuilder sql = new StringBuilder("EXECUTE ").append(preparedName);
+            if (!markers.isEmpty()) {
+                sql.append(" USING ");
+                for (int index = 1; index <= markers.size(); index++) {
+                    if (index > 1) sql.append(',');
+                    sql.append(parameters.get(index));
+                }
+            }
+            return sql.toString();
         }
 
         private boolean execute(String sql) throws SQLException {
@@ -325,12 +367,70 @@ final class MiniSqlJdbc {
 
         private Object executeBatch(boolean large) throws SQLException {
             long[] counts = new long[batch.size()];
-            for (int index = 0; index < batch.size(); index++) {
-                execute(batch.get(index));
-                counts[index] = currentResult == null ? updateCount : Statement.SUCCESS_NO_INFO;
-                closeCurrent();
+            int completed = 0;
+            try {
+                while (completed < batch.size()) {
+                    InsertParts first = InsertParts.parse(batch.get(completed));
+                    if (first == null) {
+                        execute(batch.get(completed));
+                        counts[completed++] = currentResult == null ? updateCount : Statement.SUCCESS_NO_INFO;
+                        closeCurrent();
+                        continue;
+                    }
+
+                    StringBuilder sql = new StringBuilder(first.prefix).append(first.tuple);
+                    int chunkRows = 1;
+                    int encodedBytes = sql.toString().getBytes(StandardCharsets.UTF_8).length;
+                    while (completed + chunkRows < batch.size() && chunkRows < MAX_COALESCED_INSERT_ROWS) {
+                        InsertParts next = InsertParts.parse(batch.get(completed + chunkRows));
+                        if (next == null || !first.prefix.equals(next.prefix)) break;
+                        int tupleBytes = next.tuple.getBytes(StandardCharsets.UTF_8).length + 1;
+                        if (encodedBytes + tupleBytes > MAX_COALESCED_INSERT_BYTES) break;
+                        sql.append(',').append(next.tuple);
+                        encodedBytes += tupleBytes;
+                        chunkRows++;
+                    }
+
+                    String coalescedSql = sql.append(';').toString();
+                    String savepoint = null;
+                    if (chunkRows > 1 && !connection.autoCommit) {
+                        savepoint = connection.allocateBatchSavepointName();
+                        connection.executeCommand("SAVEPOINT " + savepoint);
+                    }
+                    try {
+                        execute(coalescedSql);
+                        if (savepoint != null) connection.executeCommand("RELEASE SAVEPOINT " + savepoint);
+                    } catch (SQLException coalescedFailure) {
+                        if (savepoint != null) {
+                            try {
+                                connection.executeCommand("ROLLBACK TO SAVEPOINT " + savepoint);
+                                connection.executeCommand("RELEASE SAVEPOINT " + savepoint);
+                            } catch (SQLException recoveryFailure) {
+                                coalescedFailure.addSuppressed(recoveryFailure);
+                                throw coalescedFailure;
+                            }
+                        }
+                        // A failed multi-row statement is atomic. Retrying the
+                        // original entries individually preserves JDBC's
+                        // partial-success counts and first-failure semantics.
+                        for (int offset = 0; offset < chunkRows; offset++) {
+                            execute(batch.get(completed));
+                            counts[completed++] = currentResult == null ? updateCount : Statement.SUCCESS_NO_INFO;
+                            closeCurrent();
+                        }
+                        continue;
+                    }
+                    long perStatement = currentResult == null ? 1L : Statement.SUCCESS_NO_INFO;
+                    for (int offset = 0; offset < chunkRows; offset++) counts[completed + offset] = perStatement;
+                    completed += chunkRows;
+                    closeCurrent();
+                }
+            } catch (SQLException failure) {
+                throw new BatchUpdateException(failure.getMessage(), failure.getSQLState(), failure.getErrorCode(),
+                        Arrays.copyOf(counts, completed), failure);
+            } finally {
+                batch.clear();
             }
-            batch.clear();
             if (large) return counts;
             int[] ordinary = new int[counts.length];
             for (int index = 0; index < counts.length; index++) ordinary[index] = (int) counts[index];
@@ -365,7 +465,7 @@ final class MiniSqlJdbc {
         }
 
         private String boundSql() throws SQLException {
-            if (parameters.size() != markers.size()) throw new SQLException("Not all prepared-statement parameters are bound", "07001");
+            requireAllParameters();
             StringBuilder output = new StringBuilder(template.length() + markers.size() * 8);
             int source = 0;
             for (int index = 0; index < markers.size(); index++) {
@@ -375,11 +475,127 @@ final class MiniSqlJdbc {
             return output.append(template, source, template.length()).toString();
         }
 
+        private void requireAllParameters() throws SQLException {
+            if (parameters.size() != markers.size()) {
+                throw new SQLException("Not all prepared-statement parameters are bound", "07001");
+            }
+        }
+
+        /** Releases both the active cursor and the session-local server plan. */
+        private void closeStatement() throws SQLException {
+            if (closed) return;
+            SQLException failure = null;
+            try { closeCurrent(); } catch (SQLException caught) { failure = caught; }
+            if (serverPrepared && !connection.closed) {
+                try { connection.executeCommand("DEALLOCATE PREPARE " + preparedName); }
+                catch (SQLException caught) { if (failure == null) failure = caught; }
+            }
+            serverPrepared = false;
+            closed = true;
+            if (failure != null) throw failure;
+        }
+
         private void closeCurrent() throws SQLException {
             if (currentResult != null) { currentResult.close(); currentResult = null; }
         }
         private void ensureOpen() throws SQLException { connection.ensureOpen(); if (closed) throw new SQLException("Statement is closed", "07000"); }
         private static int nonNegative(int value, String name) throws SQLException { if (value < 0) throw new SQLException(name + " must be non-negative", "S1009"); return value; }
+    }
+
+    /** A single-row INSERT split into its stable prefix and one VALUES tuple. */
+    private static final class InsertParts {
+        final String prefix;
+        final String tuple;
+
+        InsertParts(String prefix, String tuple) { this.prefix = prefix; this.tuple = tuple; }
+
+        static InsertParts parse(String sql) {
+            int values = findTopLevelKeyword(sql, "VALUES");
+            if (values < 0 || !startsWithKeyword(sql, "INSERT")) return null;
+            int tupleStart = values + 6;
+            while (tupleStart < sql.length() && Character.isWhitespace(sql.charAt(tupleStart))) tupleStart++;
+            if (tupleStart >= sql.length() || sql.charAt(tupleStart) != '(') return null;
+            int tupleEnd = matchingParenthesis(sql, tupleStart);
+            if (tupleEnd < 0) return null;
+            int suffix = tupleEnd + 1;
+            while (suffix < sql.length() && Character.isWhitespace(sql.charAt(suffix))) suffix++;
+            if (suffix < sql.length() && sql.charAt(suffix) == ';') suffix++;
+            while (suffix < sql.length() && Character.isWhitespace(sql.charAt(suffix))) suffix++;
+            if (suffix != sql.length()) return null;
+            return new InsertParts(sql.substring(0, tupleStart), sql.substring(tupleStart, tupleEnd + 1));
+        }
+
+        private static boolean startsWithKeyword(String sql, String keyword) {
+            int index = 0;
+            while (index < sql.length() && Character.isWhitespace(sql.charAt(index))) index++;
+            return index + keyword.length() <= sql.length()
+                    && sql.regionMatches(true, index, keyword, 0, keyword.length())
+                    && (index + keyword.length() == sql.length()
+                    || !Character.isJavaIdentifierPart(sql.charAt(index + keyword.length())));
+        }
+
+        /** Finds an unquoted keyword outside the INSERT column-list parentheses. */
+        private static int findTopLevelKeyword(String sql, String keyword) {
+            int depth = 0;
+            boolean single = false, quotedIdentifier = false, lineComment = false, blockComment = false;
+            for (int index = 0; index <= sql.length() - keyword.length(); index++) {
+                char current = sql.charAt(index);
+                char next = index + 1 < sql.length() ? sql.charAt(index + 1) : '\0';
+                if (lineComment) { if (current == '\n' || current == '\r') lineComment = false; continue; }
+                if (blockComment) { if (current == '*' && next == '/') { blockComment = false; index++; } continue; }
+                if (single) {
+                    if (current == '\'' && next == '\'') index++;
+                    else if (current == '\'') single = false;
+                    continue;
+                }
+                if (quotedIdentifier) {
+                    if (current == '"' && next == '"') index++;
+                    else if (current == '"') quotedIdentifier = false;
+                    continue;
+                }
+                if (current == '-' && next == '-') { lineComment = true; index++; continue; }
+                if (current == '/' && next == '*') { blockComment = true; index++; continue; }
+                if (current == '\'') { single = true; continue; }
+                if (current == '"') { quotedIdentifier = true; continue; }
+                if (current == '(') { depth++; continue; }
+                if (current == ')') { if (depth > 0) depth--; continue; }
+                if (depth == 0 && sql.regionMatches(true, index, keyword, 0, keyword.length())) {
+                    boolean left = index == 0 || !Character.isJavaIdentifierPart(sql.charAt(index - 1));
+                    int end = index + keyword.length();
+                    boolean right = end == sql.length() || !Character.isJavaIdentifierPart(sql.charAt(end));
+                    if (left && right) return index;
+                }
+            }
+            return -1;
+        }
+
+        private static int matchingParenthesis(String sql, int start) {
+            int depth = 0;
+            boolean single = false, quotedIdentifier = false, lineComment = false, blockComment = false;
+            for (int index = start; index < sql.length(); index++) {
+                char current = sql.charAt(index);
+                char next = index + 1 < sql.length() ? sql.charAt(index + 1) : '\0';
+                if (lineComment) { if (current == '\n' || current == '\r') lineComment = false; continue; }
+                if (blockComment) { if (current == '*' && next == '/') { blockComment = false; index++; } continue; }
+                if (single) {
+                    if (current == '\'' && next == '\'') index++;
+                    else if (current == '\'') single = false;
+                    continue;
+                }
+                if (quotedIdentifier) {
+                    if (current == '"' && next == '"') index++;
+                    else if (current == '"') quotedIdentifier = false;
+                    continue;
+                }
+                if (current == '-' && next == '-') { lineComment = true; index++; continue; }
+                if (current == '/' && next == '*') { blockComment = true; index++; continue; }
+                if (current == '\'') { single = true; continue; }
+                if (current == '"') { quotedIdentifier = true; continue; }
+                if (current == '(') depth++;
+                else if (current == ')' && --depth == 0) return index;
+            }
+            return -1;
+        }
     }
 
     /** Turns protocol frames into a forward-only, lazy ResultSet. */

@@ -4,6 +4,7 @@
  */
 package org.minilang.minisql.jdbc;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -50,7 +51,16 @@ public final class IntegrationTest {
                     }
                 }
                 equal(rows, 520, "result spans the 512-row protocol frame boundary");
+                boolean planNameIsReserved = false;
+                try {
+                    statement.executeUpdate("PREPARE jdbc_ps_1 AS SELECT 1");
+                } catch (java.sql.SQLException expected) {
+                    planNameIsReserved = true;
+                }
+                check(planNameIsReserved, "JDBC PreparedStatement owns a server-side plan");
             }
+            statement.executeUpdate("PREPARE jdbc_ps_1 AS SELECT 1");
+            statement.executeUpdate("DEALLOCATE PREPARE jdbc_ps_1");
 
             try (PreparedStatement insertOne = connection.prepareStatement(
                     "INSERT INTO jdbc_probe(id, label, active) VALUES (?, ?, ?)")) {
@@ -62,6 +72,46 @@ public final class IntegrationTest {
             try (ResultSet quoted = statement.executeQuery("SELECT label FROM jdbc_probe WHERE id = 521")) {
                 check(quoted.next(), "prepared string row");
                 equal(quoted.getString(1), "O'Reilly", "prepared string escaping");
+            }
+
+            try (PreparedStatement batched = connection.prepareStatement(
+                    "INSERT INTO jdbc_probe(id, label, active) VALUES (?, ?, ?)")) {
+                for (int id = 1000; id < 1600; id++) {
+                    batched.setInt(1, id);
+                    batched.setString(2, "batch VALUES ('" + id + ")");
+                    batched.setBoolean(3, (id & 1) == 0);
+                    batched.addBatch();
+                }
+                int[] counts = batched.executeBatch();
+                equal(counts.length, 600, "coalesced batch count length");
+                for (int count : counts) equal(count, 1, "coalesced batch row count");
+            }
+            try (ResultSet batchedRows = statement.executeQuery(
+                    "SELECT COUNT(*) AS count FROM jdbc_probe WHERE id >= 1000 AND id < 1600")) {
+                check(batchedRows.next(), "coalesced batch count row");
+                equal(batchedRows.getInt(1), 600, "coalesced batch persisted every row");
+            }
+
+            try (PreparedStatement failingBatch = connection.prepareStatement(
+                    "INSERT INTO jdbc_probe(id, label, active) VALUES (?, ?, ?)")) {
+                for (int duplicate = 0; duplicate < 2; duplicate++) {
+                    failingBatch.setInt(1, 2000);
+                    failingBatch.setString(2, "duplicate batch row");
+                    failingBatch.setBoolean(3, true);
+                    failingBatch.addBatch();
+                }
+                try {
+                    failingBatch.executeBatch();
+                    throw new AssertionError("duplicate batch must fail");
+                } catch (BatchUpdateException expected) {
+                    equal(expected.getUpdateCounts().length, 1, "failed batch exposes successful prefix");
+                    equal(expected.getUpdateCounts()[0], 1, "failed batch prefix count");
+                }
+            }
+            try (ResultSet partialBatch = statement.executeQuery(
+                    "SELECT COUNT(*) AS count FROM jdbc_probe WHERE id = 2000")) {
+                check(partialBatch.next(), "partial batch count row");
+                equal(partialBatch.getInt(1), 1, "failed auto-commit batch preserves successful prefix");
             }
 
             try (Statement competing = connection.createStatement();

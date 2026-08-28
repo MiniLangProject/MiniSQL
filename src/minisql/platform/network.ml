@@ -16,6 +16,7 @@ const INVALID_ARGUMENT = 9001
 const AF_INET = 2
 const SOCK_STREAM = 1
 const IPPROTO_TCP = 6
+const TCP_NODELAY = 1
 const INVALID_SOCKET = -1
 const SOCKET_ERROR = -1
 const SOCKET_ERROR_U32 = 4294967295
@@ -243,6 +244,11 @@ function connectTcp(host, port)
     closesocket(handle)
     return fail("connectTcp", "connect failed (" + code + ")")
   end if
+  noDelay = setNoDelay(handle, true)
+  if typeof(noDelay) == "error" then
+    closesocket(handle)
+    return noDelay
+  end if
   return handle
 end function
 
@@ -308,6 +314,20 @@ function setNonBlocking(handle, enabled)
   return true
 end function
 
+// Controls Nagle coalescing on an established TCP stream. MiniSQL exchanges
+// request/response frames synchronously, so delaying a small TLS record until a
+// later packet arrives can add an entire delayed-ACK interval to every query.
+function setNoDelay(handle, enabled)
+  if not isHandle(handle) then return error(INVALID_ARGUMENT, "platform.network.setNoDelay: handle must be socket") end if
+  if typeof(enabled) != "bool" then return error(INVALID_ARGUMENT, "platform.network.setNoDelay: enabled must be bool") end if
+  option = bytes(4, 0)
+  if enabled then option[0] = 1 end if
+  if setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, option, 4) != 0 then
+    return fail("setNoDelay", "TCP_NODELAY failed (" + nativeError() + ")")
+  end if
+  return true
+end function
+
 // Updates the timeouts.
 // Inputs: `handle`, `receiveMs`, `sendMs`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 function setTimeouts(handle, receiveMs, sendMs)
@@ -349,6 +369,11 @@ function tryAccept(listener)
     code = nativeError()
     if code == WSAEWOULDBLOCK or code == WSAEINTR then return void end if
     return fail("tryAccept", "accept failed (" + code + ")")
+  end if
+  noDelay = setNoDelay(client, true)
+  if typeof(noDelay) == "error" then
+    closesocket(client)
+    return noDelay
   end if
   return client
 end function
@@ -398,6 +423,11 @@ function acceptTcp(listener)
   if not isHandle(listener) then return error(INVALID_ARGUMENT, "platform.network.acceptTcp: listener must be socket handle") end if
   client = accept(listener, void, void)
   if client == INVALID_SOCKET then return fail("acceptTcp", "accept failed (" + nativeError() + ")") end if
+  noDelay = setNoDelay(client, true)
+  if typeof(noDelay) == "error" then
+    closesocket(client)
+    return noDelay
+  end if
   return client
 end function
 

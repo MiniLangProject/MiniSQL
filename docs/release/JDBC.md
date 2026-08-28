@@ -102,12 +102,21 @@ URL query properties take precedence over a supplied `Properties` object.
   lazily and closing a result drains pending frames before the connection is
   reused.
 - `READ_COMMITTED` and `SERIALIZABLE` map to MiniSQL transaction modes.
-- Prepared statements quote and bind values on the client. Parameter markers
-  inside strings, quoted identifiers, and comments are ignored.
+- Prepared statements lazily create a session-local MiniSQL `PREPARE` plan and
+  execute it through `EXECUTE ... USING`. Older servers and statement kinds
+  that cannot be prepared retain the safe quoted-literal fallback. Parameter
+  markers inside strings, quoted identifiers, and comments are ignored.
 - `DatabaseMetaData.getTables`, `getColumns`, and `getIndexInfo` use live
   `SHOW TABLES`, `DESCRIBE`, and `SHOW INDEXES` results.
-- JDBC batches execute statements in order and return one update count per
-  statement.
+- Consecutive compatible single-row `INSERT` batches are coalesced into bounded
+  multi-row statements (at most 256 rows and 768 KiB of UTF-8 SQL per request).
+  Other batches execute in order, and every path returns one update count per
+  original batch entry. A failed coalesced statement is retried entry by entry;
+  explicit transactions use an internal savepoint so JDBC partial-success and
+  first-failure semantics remain intact.
+- TCP uses `TCP_NODELAY`, and each protocol frame is emitted with one Java
+  socket write. This avoids splitting small TLS requests into separate header
+  and payload records.
 
 ## Protocol-v1 limitations
 
@@ -119,8 +128,8 @@ text value containing exactly `NULL` cannot currently be distinguished from a
 null value. Catalog metadata still reports declared SQL types because it is
 built from `DESCRIBE`.
 
-The SQL grammar currently has no binary literal, so client-side prepared
-statements cannot safely implement `setBytes`; that method reports
+The SQL grammar currently has no binary literal, so prepared statements cannot
+safely implement `setBytes`; that method reports
 `SQLFeatureNotSupportedException`. Binary query results remain readable through
 `getBytes` because the server renders them as `0x` followed by hexadecimal
 digits. Callable statements, generated keys, scrollable/updatable result sets,
@@ -133,7 +142,8 @@ property validation, a PBKDF2-HMAC-SHA-256 test vector, and SQL parameter
 scanning. It then creates a disposable MiniSQL database and runs the same live
 integration suite in trusted-local, authenticated, and self-signed TLS modes.
 Each live run crosses the 512-row continuation boundary and verifies
-transactions and rollback, prepared statements, typed getters, catalog
-metadata, and safe connection reuse. The authenticated runs additionally prove
+transactions and rollback, server-plan allocation/deallocation, a 600-row
+coalesced insert batch, typed getters, catalog metadata, and safe connection
+reuse. The authenticated runs additionally prove
 password/server proofs and inner AES-256-GCM framing; the TLS run creates a
 disposable certificate and verifies TLS 1.3 plus its exact SHA-256 leaf pin.

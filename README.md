@@ -343,6 +343,23 @@ next actions are in the
 The Windows/Linux table below remains the most recent matched cross-platform
 reference; it predates this Windows-only execution pass.
 
+### 2026-08-28 JDBC latency update
+
+The dependency-free Java driver now uses server-side `PREPARE`/`EXECUTE`,
+bounded multi-row insert batching, `TCP_NODELAY`, and one TLS application record
+per MiniSQL request frame. On the Windows reference system below, the matched
+loopback JDBC benchmark improved a prepared 200-row transactional batch from
+**50.36 to 513.37 rows/s (10.19x)**. TLS `SELECT 1` improved from **16.01 to
+198.91 statements/s (12.42x)** and its median latency fell from **105.4 to
+6.33 ms**. Trusted `SELECT 1` reached **265.44 statements/s**, prepared random
+primary-key lookup reached **25.13 statements/s**, and a 100,000-row streaming
+scan reached **5,459.69 rows/s** with a **32.50 MiB** measured Java-heap delta.
+
+These values use OpenJDK 21.0.10 with a 512 MiB heap and the same 5,000-row
+loopback dataset before and after the change. They isolate JDBC/protocol
+overhead and complement, rather than replace, the 1-GiB native Windows/Linux
+storage reference below.
+
 The current reference was measured on 2026-08-26 from MiniSQL revision
 `12997258408e27ab2f4839f52782b844eeade5a5` and MiniLangCompilerPy revision
 `21dbc2e99097099ee1d8e9e8168e46836e49b6a3` (compiler version 1.1.0). Both
