@@ -876,6 +876,24 @@ struct ShowTablesStatement
   marker
 end struct
 
+// Requests a snapshot of process-local server counters and resource limits.
+struct ShowStatusStatement
+  // Keeps the statement non-empty without attaching mutable execution state.
+  marker
+end struct
+
+// Requests the active session registry for operational diagnosis.
+struct ShowProcesslistStatement
+  // Keeps the statement non-empty without attaching mutable execution state.
+  marker
+end struct
+
+// Requests a cooperative, draining shutdown of the database listener.
+struct ShutdownStatement
+  // Keeps the statement non-empty without attaching mutable execution state.
+  marker
+end struct
+
 // Groups the describe table statement state and preserves the field relationships documented below.
 struct DescribeTableStatement
   // Stores the table name associated with this value.
@@ -1543,6 +1561,21 @@ function isShowTablesStatement(value)
   return value is ShowTablesStatement
 end function
 
+// Returns whether the value is a SHOW STATUS statement.
+function isShowStatusStatement(value)
+  return value is ShowStatusStatement
+end function
+
+// Returns whether the value is a SHOW PROCESSLIST statement.
+function isShowProcesslistStatement(value)
+  return value is ShowProcesslistStatement
+end function
+
+// Returns whether the value is a cooperative SHUTDOWN statement.
+function isShutdownStatement(value)
+  return value is ShutdownStatement
+end function
+
 // Returns whether the supplied value satisfies the describe table statement condition.
 // Returns the computed value or operation status.
 // Does not modify its inputs.
@@ -1561,14 +1594,14 @@ end function
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isMetadataStatement(value)
-  return value is ShowTablesStatement or value is DescribeTableStatement or value is ShowIndexesStatement
+  return value is ShowTablesStatement or value is ShowStatusStatement or value is ShowProcesslistStatement or value is DescribeTableStatement or value is ShowIndexesStatement
 end function
 
 // Returns whether the supplied value satisfies the statement condition.
 // Returns the computed value or operation status.
 // Does not modify its inputs.
 function isStatement(value)
-  return value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateSchemaStatement or value is DropSchemaStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTriggerStatement or value is CreateProcedureStatement or value is DropProcedureStatement or value is CallStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is MergeStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or isMetadataStatement(value) or isDclStatement(value)
+  return value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateSchemaStatement or value is DropSchemaStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTriggerStatement or value is CreateProcedureStatement or value is DropProcedureStatement or value is CallStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is MergeStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or value is ShutdownStatement or isMetadataStatement(value) or isDclStatement(value)
 end function
 
 // Implements expression kind for this module.

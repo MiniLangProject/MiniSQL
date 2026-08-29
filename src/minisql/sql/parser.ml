@@ -922,11 +922,13 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseShow(state)
   if matchKeyword(state, "TABLES") then return ast.ShowTablesStatement(1) end if
+  if matchKeyword(state, "STATUS") then return ast.ShowStatusStatement(1) end if
+  if matchKeyword(state, "PROCESSLIST") then return ast.ShowProcesslistStatement(1) end if
   if matchKeyword(state, "INDEXES") then
     if not matchKeyword(state, "FROM") then expectKeyword(state, "ON") end if
     return ast.ShowIndexesStatement(parseObjectName(state, "table name"))
   end if
-  return fail(state, "expected TABLES or INDEXES after SHOW")
+  return fail(state, "expected TABLES, STATUS, PROCESSLIST, or INDEXES after SHOW")
 end function
 
 // Parses describe using the supplied inputs.
@@ -1321,6 +1323,7 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function parseStatement(state)
+  if matchKeyword(state, "SHUTDOWN") then return ast.ShutdownStatement(1) end if
   if matchKeyword(state, "CALL") then return parseCall(state) end if
   if matchKeyword(state, "PREPARE") then return parsePrepare(state) end if
   if matchKeyword(state, "EXECUTE") then return parseExecutePrepared(state) end if

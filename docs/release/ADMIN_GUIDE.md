@@ -20,6 +20,20 @@ section enables stdout and/or the same records in a file under
 time. The logger is one process-wide synchronized singleton, so records from
 connection workers cannot interleave at the file boundary.
 
+The configured server also enforces these hard request/connection limits:
+
+* `server.maxConnections`: live connection and native worker ceiling;
+* `server.maxStatementBytes`: maximum encoded SQL request payload;
+* `server.maxFrameBytes`: maximum encoded response payload, up to the protocol
+  ceiling of 16 MiB;
+* `server.maxResultRows`: maximum rows returned by materialized or streaming
+  execution; and
+* `server.idleTimeoutMs`: inactive connection lifetime.
+
+Older version-1 configuration files remain valid; `maxResultRows` defaults to
+1,000,000 and `idleTimeoutMs` to 300,000 when omitted. The query-memory setting
+is still a spill budget, not a whole-process hard ceiling.
+
 The Windows daemon disables QuickEdit before it emits operational records.
 Legacy console hosts otherwise suspend a process while selected text remains in
 mark mode (`Select`/`Auswählen` in the window title), which can stop handshakes
@@ -58,10 +72,33 @@ operations. A waiting writer prevents new readers from entering. Existing
 readers finish before the writer proceeds; this bounds writer starvation without
 aborting valid reads.
 
-Each read scan owns an independent table/index handle and holds a compatible
-shared native file lock. Writers retain exclusive locks. If a durable index
-dirty marker appears, the reader leaves the shared gate and performs repair only
-after acquiring the exclusive gate.
+Read scans acquire database-owned persistent table/index handles and a
+query-local positioned-read context. Immutable positioned reads share those
+handles safely, while writers retain the exclusive execution gate and invalidate
+affected cached handles. If a durable index dirty marker appears, the reader
+leaves the shared gate and performs repair only after acquiring the exclusive
+gate.
+
+Use `SHOW STATUS` for cumulative uptime/session/statement/error/row/checkpoint
+counters and active limits. `SHOW PROCESSLIST` exposes a bounded 256-character
+statement summary for active sessions. Both operational views and `SHUTDOWN`
+require database `ADMIN` for authenticated users; trusted-local sessions are
+administrative. `SHUTDOWN` acknowledges its caller, accepts the protocol close,
+then drains workers and closes storage.
+
+Linux deployments can adapt `deploy/systemd/minisql.service`. On Windows use
+`deploy/windows/Start-MiniSQL.ps1` and `Stop-MiniSQL.ps1` from Task Scheduler or
+a service wrapper. These paired templates deliberately use trusted loopback so
+the stop script can authenticate through OS-local access without storing a
+database password. For authenticated or TLS listeners, use an operator-owned
+credential helper to issue `SHUTDOWN`. The compiler runtime does not currently expose the Windows
+Service Control Manager callback ABI, so these scripts do not claim to register
+the executable as a native SCM service.
+
+Before release, run `tests/soak/production_soak.py` for 1,440 minutes against a
+representative persistent workload. It fails on workload errors or configured
+RSS, handle/fd, and thread median drift. Keep the generated JSON as release
+evidence.
 
 Table scans maintain small `<table>.heap-pages` files next to table storage.
 These CRC-protected files are derived acceleration metadata, not user data: a

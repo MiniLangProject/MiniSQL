@@ -66,6 +66,12 @@
   blocking operators and the final result array may still materialize large row
   sets; protocol-v1 sends that array in bounded continuation frames. The query
   memory budget is a spill policy, not a hard process-memory cap.
+* Configured servers hard-limit live connections, SQL payload bytes, response
+  frame bytes, result rows, and idle lifetime. They do not yet enforce a single
+  global heap/RSS ceiling or a shared on-disk temporary-space quota. Statement
+  execution is cooperatively bounded by lock waits and operator-specific guards;
+  `runtime.queryTimeoutMs` is currently the logical lock-wait timeout rather
+  than an asynchronous kill timer for arbitrary CPU work.
 * Table, column, schema-extension, statistics, and authorization metadata are
   not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
   finite at the storage format's integer representation, process address space,

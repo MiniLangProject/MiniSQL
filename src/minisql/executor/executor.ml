@@ -3623,6 +3623,7 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function authorizeStatement(engine, statement)
   if engine.trusted then return true end if
+  if ast.isShowStatusStatement(statement) or ast.isShowProcesslistStatement(statement) or ast.isShutdownStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_ADMIN, "authorizeOperations") end if
   if ast.isDclStatement(statement) then return true end if
   if ast.isPrepareStatement(statement) or ast.isExecutePreparedStatement(statement) or ast.isDeallocateStatement(statement) then return true end if
   if ast.isBeginStatement(statement) or ast.isCommitStatement(statement) or ast.isRollbackStatement(statement) or ast.isSavepointStatement(statement) or ast.isRollbackToStatement(statement) or ast.isReleaseSavepointStatement(statement) then return true end if
@@ -3967,6 +3968,39 @@ function executeShowTables(engine)
   return rowResult(["table_name", "column_count", "schema_version"], rows)
 end function
 
+// Exposes bounded process-local counters and configured resource ceilings.
+function executeShowStatus(engine)
+  status = try(database_manager.operationalStatus(engine.database))
+  names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes"]
+  rows = []
+  for index = 0 to len(names) - 1
+    rows = rows + [[values.text(names[index]), values.text("" + status[index])]]
+  end for
+  return rowResult(["variable_name", "value"], rows)
+end function
+
+// Materializes a lock-safe snapshot of active sessions for administrators.
+function executeShowProcesslist(engine)
+  sessions = try(database_manager.operationalSessions(engine.database))
+  now = clock.monotonicMilliseconds()
+  rows = []
+  for each entry in sessions
+    principal = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, entry.principalId)
+    principalName = "principal-" + entry.principalId
+    if principal is not void then principalName = principal.name end if
+    age = now - entry.lastActivity
+    if entry.statementStartedAt > 0 then age = now - entry.statementStartedAt end if
+    rows = rows + [[values.integer(entry.sessionId), values.text(principalName), values.text(entry.peerEndpoint), values.boolean(entry.secure), values.text(entry.state), values.integer(age), values.text(entry.statementText), values.integer(entry.requestCount)]]
+  end for
+  return rowResult(["session_id", "principal", "peer", "tls", "state", "state_time_ms", "statement", "requests"], rows)
+end function
+
+// Publishes the stop request; the listener sends this response before draining.
+function executeShutdown(engine)
+  requested = try(database_manager.requestShutdown(engine.database))
+  return commandResult("SHUTDOWN", 0, "cooperative server shutdown requested")
+end function
+
 // Executes describe table using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -4030,6 +4064,9 @@ function executeStatementInner(engine, statement)
   if ast.isSavepointStatement(statement) then return executeSavepoint(engine, statement) end if
   if ast.isReleaseSavepointStatement(statement) then return executeReleaseSavepoint(engine, statement) end if
   if ast.isShowTablesStatement(statement) then return executeShowTables(engine) end if
+  if ast.isShowStatusStatement(statement) then return executeShowStatus(engine) end if
+  if ast.isShowProcesslistStatement(statement) then return executeShowProcesslist(engine) end if
+  if ast.isShutdownStatement(statement) then return executeShutdown(engine) end if
   if ast.isDescribeTableStatement(statement) then return executeDescribeTable(engine, statement) end if
   if ast.isShowIndexesStatement(statement) then return executeShowIndexes(engine, statement) end if
   if ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) then return executeSchemaDdl(engine, statement) end if
@@ -4212,6 +4249,9 @@ function auditAction(statement)
   if ast.isExecutePreparedStatement(statement) then return "EXECUTE" end if
   if ast.isDeallocateStatement(statement) then return "DEALLOCATE" end if
   if ast.isShowTablesStatement(statement) then return "SHOW TABLES" end if
+  if ast.isShowStatusStatement(statement) then return "SHOW STATUS" end if
+  if ast.isShowProcesslistStatement(statement) then return "SHOW PROCESSLIST" end if
+  if ast.isShutdownStatement(statement) then return "SHUTDOWN" end if
   if ast.isDescribeTableStatement(statement) then return "DESCRIBE" end if
   if ast.isShowIndexesStatement(statement) then return "SHOW INDEXES" end if
   return "STATEMENT"
@@ -4419,6 +4459,7 @@ function close(engine)
     ignored = try(rollbackExplicit(engine))
   end if
   ignoredLocks = try(database_manager.releaseLocks(engine.database, engine.sessionId))
+  ignoredSession = try(database_manager.unregisterSession(engine.database, engine.sessionId))
   if engine.ownsDatabase then database_manager.close(engine.database) end if
   engine.preparedStatements = []
   engine.sequenceValues = []

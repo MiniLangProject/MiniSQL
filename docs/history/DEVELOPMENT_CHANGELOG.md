@@ -1,5 +1,18 @@
 # MiniSQL changelog
 
+## 1.0.0 — production operations and reliability gate
+
+- added administrative `SHOW STATUS`, `SHOW PROCESSLIST`, and cooperative
+  `SHUTDOWN` with a synchronized active-session registry and cumulative server
+  counters;
+- enforced configured SQL payload, response-frame, result-row, connection, and
+  idle-lifetime limits on both materialized and streaming request paths;
+- added a 24-hour connection-wave resource-drift runner, systemd and Windows
+  start/stop integration templates, plus an evidence-producing backup/restore/
+  integrity-check drill;
+- validated 13 repeated eight-client waves (10,400 measured indexed reads), a
+  clean TCP shutdown handshake, and a 133,903,741-byte restore/check cycle.
+
 ## 1.0.0 — Python DB-API connector
 
 - added a Python 3.10+ PEP 249 connector for trusted-local, authenticated, and

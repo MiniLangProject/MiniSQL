@@ -105,6 +105,15 @@ buffer-cache hit/read deltas, and actual row count. Plans may contain
 `columns`, `included_columns`, and `predicate`. `predicate` is empty for a full
 index.
 
+`SHOW STATUS` returns process-local operational counters and configured hard
+limits as `variable_name` / `value` rows. `SHOW PROCESSLIST` returns one row per
+active session with principal, peer, TLS state, current state and bounded SQL
+summary. Authenticated users require database `ADMIN` for both statements.
+
+`SHUTDOWN` is an administrative statement that acknowledges the request and
+cooperatively drains the listener. It requires database `ADMIN` outside trusted
+local mode.
+
 ## Schemas and metadata
 
 Two-part `schema.object` names are supported for database objects. `public` and

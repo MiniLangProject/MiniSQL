@@ -218,6 +218,22 @@ function sendResponse(client, response)
   return true
 end function
 
+// Gives the SHUTDOWN caller one bounded opportunity to perform the protocol
+// CLOSE handshake before the listener drains all workers and closes sockets.
+function acknowledgeShutdownClose(slot)
+  readable = try(network.waitReadable(slot.client.socket, 1000))
+  if typeof(readable) == "error" or not readable then return true end if
+  polled = try(connection.pollMessage(slot.client))
+  if typeof(polled) == "error" or polled is void or polled.closed then return true end if
+  if polled.message.messageType != constants.TYPE_CLOSE then return true end if
+  response = try(session.handle(slot.activeSession, polled.message))
+  if typeof(response) == "error" then return response end if
+  sent = try(sendResponse(slot.client, response))
+  if typeof(sent) == "error" then return sent end if
+  slot.handled = slot.handled + 1
+  return true
+end function
+
 // Creates an error for message for using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -503,6 +519,14 @@ function serveConcurrentClient(task)
     slot.lastActivity = clock.monotonicMilliseconds()
     concurrentFinishRequest(task.state, true)
     claimed = false
+    // Publish the stop only after the SHUTDOWN response reached its caller.
+    // The acceptor therefore cannot close the socket before acknowledgement.
+    if database_manager.isShutdownRequested(slot.activeSession.engine.database) then
+      acknowledgedClose = try(acknowledgeShutdownClose(slot))
+      if typeof(acknowledgedClose) == "error" then concurrentSetFailure(task.state, acknowledgedClose) end if
+      concurrentRequestStop(task.state)
+      break
+    end if
     if slot.activeSession.closeRequested then break end if
   end while
 
@@ -531,6 +555,15 @@ function openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalByt
   if typeof(configuredMemory) == "error" then database_manager.close(shared); return configuredMemory end if
   prepared = try(session.prepareAttachedDatabase(shared))
   if typeof(prepared) == "error" then database_manager.close(shared); return prepared end if
+  return shared
+end function
+
+// Opens, prepares, and applies the hard per-connection operational limits.
+function openPreparedDatabaseWithOperationalLimits(databasePath, standby, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  shared = try(openPreparedDatabaseWithRuntime(databasePath, standby, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes))
+  if typeof(shared) == "error" then return shared end if
+  configured = try(database_manager.configureOperationalLimits(shared, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs))
+  if typeof(configured) == "error" then database_manager.close(shared); return configured end if
   return shared
 end function
 
@@ -589,6 +622,13 @@ function servePreparedConcurrentListenerMode(databasePath, listener, shared, max
     if typeof(active) == "error" then
       ignoredClient = try(connection.close(client))
       concurrentSetFailure(state, active)
+      break
+    end if
+    registeredPeer = try(database_manager.registerSessionPeer(shared, session.sessionIdentifier(active), peer, tlsCredential is not void, active.authenticated))
+    if typeof(registeredPeer) == "error" then
+      ignoredSession = try(session.close(active))
+      ignoredClient = try(connection.close(client))
+      concurrentSetFailure(state, registeredPeer)
       break
     end if
     now = clock.monotonicMilliseconds()
@@ -672,6 +712,16 @@ function serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, 
   return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, lockWaitMs)
 end function
 
+// Serves trusted clients with storage, memory, protocol, result, and idle limits.
+function serveConcurrentLoopbackWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackWithOperationalLimits")
+  shared = try(openPreparedDatabaseWithOperationalLimits(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, 0, false, void, lockWaitMs)
+end function
+
 // Serves authenticated concurrent loopback using the supplied inputs.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
@@ -753,6 +803,16 @@ function serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumCl
   return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, true, void, lockWaitMs)
 end function
 
+// Serves a standby with the complete configured operational limit set.
+function serveStandbyConcurrentLoopbackWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  validateArguments(databasePath, maximumRequests, "serveStandbyConcurrentLoopbackWithOperationalLimits")
+  shared = try(openPreparedDatabaseWithOperationalLimits(databasePath, true, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, 0, true, void, lockWaitMs)
+end function
+
 // Serves authenticated concurrent address using the supplied inputs.
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
@@ -789,6 +849,16 @@ function serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, p
   idleLimit = 60000
   if maximumRequests == 0 then idleLimit = 0 end if
   return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, idleLimit, false, void, lockWaitMs)
+end function
+
+// Serves authenticated clients with the complete configured operational limit set.
+function serveAuthenticatedConcurrentAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  validateArguments(databasePath, maximumRequests, "serveAuthenticatedConcurrentAddressWithOperationalLimits")
+  shared = try(openPreparedDatabaseWithOperationalLimits(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs))
+  if typeof(shared) == "error" then return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, 0, false, void, lockWaitMs)
 end function
 
 // Serves authenticated concurrent address with ready file using the supplied inputs.
@@ -839,6 +909,22 @@ end function
 // Serves TLS with configured lock and WAL thresholds.
 function serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   return serveTlsConcurrentAddressWithPasswordRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, void, void, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+end function
+
+// Serves native TLS with the complete configured operational limit set.
+function serveTlsConcurrentAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  validateArguments(databasePath, maximumRequests, "serveTlsConcurrentAddressWithOperationalLimits")
+  credential = try(tls_schannel.acquireServerCredentialWithPassword(certificateReference, void))
+  if typeof(credential) == "error" then return credential end if
+  shared = try(openPreparedDatabaseWithOperationalLimits(databasePath, false, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs))
+  if typeof(shared) == "error" then tls_schannel.closeCredential(credential); return shared end if
+  listener = try(network.listenAddress(address, port, maximumClients, true))
+  if typeof(listener) == "error" then database_manager.close(shared); tls_schannel.closeCredential(credential); return listener end if
+  result = try(servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, true, 0, false, credential, lockWaitMs))
+  closedCredential = try(tls_schannel.closeCredential(credential))
+  if typeof(result) == "error" then return result end if
+  if typeof(closedCredential) == "error" then return closedCredential end if
+  return result
 end function
 
 // Serves TLS with the legacy five-second logical-lock timeout.

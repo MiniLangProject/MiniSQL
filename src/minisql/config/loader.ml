@@ -309,6 +309,14 @@ function boolMember(object, key)
   return value.scalar
 end function
 
+// Reads an optional integer while preserving backwards-compatible defaults.
+function optionalIntMember(object, key, defaultValue)
+  value = optionalMember(object, key)
+  if value is void then return defaultValue end if
+  if value.kind != JSON_INT then return fail("optionalIntMember", key + " must be integer") end if
+  return value.scalar
+end function
+
 
 // Ensures only keys using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
@@ -342,7 +350,7 @@ function toConfig(root)
 
   ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "logging", "binlog", "tls", "databaseDefaults", "safety"], "root")
   ensureOnlyKeys(paths, ["dataRoot", "temporaryRoot", "logDirectory"], "paths")
-  ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes"], "server")
+  ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes", "maxResultRows", "idleTimeoutMs"], "server")
   ensureOnlyKeys(runtime, ["bufferPoolBytes", "queryTimeoutMs", "checkpointWalBytes", "temporaryMemoryBytes", "logLevel"], "runtime")
   logging = model.LoggingConfig(true, true, "minisql.log", 24)
   if loggingValue is not void then
@@ -373,7 +381,9 @@ function toConfig(root)
       intMember(server, "port"),
       intMember(server, "maxConnections"),
       intMember(server, "maxStatementBytes"),
-      intMember(server, "maxFrameBytes")
+      intMember(server, "maxFrameBytes"),
+      optionalIntMember(server, "maxResultRows", 1000000),
+      optionalIntMember(server, "idleTimeoutMs", 300000)
     ),
     model.RuntimeConfig(
       intMember(runtime, "bufferPoolBytes"),

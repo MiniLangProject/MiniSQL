@@ -52,6 +52,11 @@ function serveConcurrentWithRuntime(databasePath, port, maximumClients, maximumR
   return listener.serveConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
+// Serves trusted clients with all production runtime and hard result limits.
+function serveConcurrentWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  return listener.serveConcurrentLoopbackWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+end function
+
 // Serves authenticated concurrent using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -81,6 +86,11 @@ function serveStandbyConcurrentWithRuntime(databasePath, port, maximumClients, m
   return listener.serveStandbyConcurrentLoopbackWithRuntime(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
+// Serves standby clients with all production runtime and hard result limits.
+function serveStandbyConcurrentWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  return listener.serveStandbyConcurrentLoopbackWithOperationalLimits(databasePath, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+end function
+
 // Serves secure address using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
@@ -98,6 +108,11 @@ function serveSecureAddressWithRuntime(databasePath, address, port, maximumClien
   return listener.serveAuthenticatedConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
 end function
 
+// Serves authenticated clients with all production runtime and hard result limits.
+function serveSecureAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  return listener.serveAuthenticatedConcurrentAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+end function
+
 // Serves authenticated MiniSQL over native TLS 1.3 using a store or PFX certificate.
 function serveTlsAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
   return listener.serveTlsConcurrentAddress(databasePath, address, port, maximumClients, maximumRequests, certificateReference)
@@ -111,6 +126,11 @@ end function
 // Serves native TLS clients with configured lock and WAL thresholds.
 function serveTlsAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
   return listener.serveTlsConcurrentAddressWithRuntime(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes)
+end function
+
+// Serves native TLS clients with all production runtime and hard result limits.
+function serveTlsAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  return listener.serveTlsConcurrentAddressWithOperationalLimits(databasePath, address, port, maximumClients, maximumRequests, certificateReference, lockWaitMs, checkpointWalBytes, bufferPoolBytes, queryMemoryBytes, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
 end function
 
 // Serves native TLS with an explicit in-memory PFX password for controlled callers.

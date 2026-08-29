@@ -26,6 +26,10 @@ struct ServerConfig
   maxStatementBytes
   // Tracks the max frame bytes numeric value.
   maxFrameBytes
+  // Caps rows returned by one statement before the server rejects the result.
+  maxResultRows
+  // Disconnects inactive clients after this many milliseconds.
+  idleTimeoutMs
 end struct
 
 // Groups the runtime config state and preserves the field relationships documented below.
@@ -229,7 +233,7 @@ function defaultConfig(dataRoot)
   return MiniSqlConfig(
     1,
     PathsConfig(dataRoot, "./tmp", "./logs"),
-    ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608),
+    ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608, 1000000, 300000),
     RuntimeConfig(268435456, 30000, 67108864, 134217728, "info"),
     LoggingConfig(true, true, "minisql.log", 24),
     BinlogConfig(false, "minisql-bin.log"),

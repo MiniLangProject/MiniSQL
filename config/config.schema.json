@@ -45,7 +45,18 @@
         },
         "maxFrameBytes": {
           "type": "integer",
-          "minimum": 1024
+          "minimum": 1024,
+          "maximum": 16777216
+        },
+        "maxResultRows": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000
+        },
+        "idleTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "default": 300000
         }
       }
     },

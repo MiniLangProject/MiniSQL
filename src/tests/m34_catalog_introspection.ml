@@ -104,6 +104,16 @@ function main(args)
   testkit.errorCode(state, try(executor.executeSql(engine, "DESCRIBE missing_table")), 9020, "DESCRIBE unknown table rejected")
   testkit.errorCode(state, try(executor.executeSql(engine, "SHOW INDEXES FROM missing_table")), 9020, "SHOW INDEXES unknown table rejected")
 
+  // Operational metadata uses real result tables and includes the calling session.
+  status = executeOne(engine, "SHOW STATUS")
+  testkit.equal(state, status.columns[0], "variable_name", "SHOW STATUS variable column")
+  testkit.record(state, findRow(status.rows, 0, "active_sessions") >= 0, "SHOW STATUS exposes active session count")
+  testkit.record(state, findRow(status.rows, 0, "max_result_rows") >= 0, "SHOW STATUS exposes hard row limit")
+  processes = executeOne(engine, "SHOW PROCESSLIST")
+  testkit.equal(state, processes.columns[0], "session_id", "SHOW PROCESSLIST session identifier column")
+  testkit.equal(state, len(processes.rows), 1, "SHOW PROCESSLIST includes attached engine")
+  testkit.equal(state, processes.rows[0][2].value, "embedded", "embedded process-list peer is explicit")
+
   executeOne(engine, "DROP VIEW shop.product_names")
   executeOne(engine, "DROP TABLE shop.product")
   executeOne(engine, "CREATE TABLE schema_anchor (id INTEGER PRIMARY KEY)")
@@ -116,6 +126,10 @@ function main(args)
   executeOne(engine, "DROP SCHEMA shop")
   remainingSchemas = executeOne(engine, "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'shop'")
   testkit.equal(state, len(remainingSchemas.rows), 0, "DROP SCHEMA removes durable namespace")
+
+  shutdown = executeOne(engine, "SHUTDOWN")
+  testkit.equal(state, shutdown.command, "SHUTDOWN", "SHUTDOWN returns administrative command result")
+  testkit.record(state, database_manager.isShutdownRequested(managed), "SHUTDOWN publishes cooperative stop request")
 
   executor.close(engine)
   database_manager.close(managed)

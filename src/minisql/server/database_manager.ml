@@ -12,6 +12,7 @@ import minisql.catalog.schema_history as schema_history
 import minisql.common.diagnostics as diagnostics
 import minisql.common.logger as logger
 import minisql.platform.file as file_api
+import minisql.platform.clock as clock
 import minisql.platform.lock as file_lock
 import minisql.storage.paged_file as paged_file
 import minisql.storage.btree as btree
@@ -29,6 +30,34 @@ const STANDBY_NOT_PROMOTED = 9033
 const DEFAULT_CHECKPOINT_WAL_BYTES = 67108864
 const DEFAULT_BUFFER_POOL_BYTES = 268435456
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
+const DEFAULT_MAX_STATEMENT_BYTES = 1048576
+const DEFAULT_MAX_FRAME_BYTES = 8388608
+const DEFAULT_MAX_RESULT_ROWS = 1000000
+const DEFAULT_IDLE_TIMEOUT_MS = 300000
+
+// Mutable process-list entry protected by the database execution-state lock.
+struct OperationalSession
+  // Stable identifier allocated with the executor engine.
+  sessionId
+  // Remote endpoint or the literal "embedded" for local API users.
+  peerEndpoint
+  // Indicates whether native TLS protects the connection.
+  secure
+  // Current authenticated principal identifier.
+  principalId
+  // Monotonic connection creation time.
+  createdAt
+  // Monotonic time of the most recent request transition.
+  lastActivity
+  // Monotonic start time of the active statement, or zero while idle.
+  statementStartedAt
+  // Bounded statement summary suitable for an administrative process list.
+  statementText
+  // Human-readable connection state such as IDLE or EXECUTING.
+  state
+  // Number of statements completed by this session.
+  requestCount
+end struct
 
 // Durable marker formats used to make physical WAL reset crash-safe. The epoch
 // marker remains for the lifetime of a database after its first reset and tells
@@ -100,6 +129,28 @@ struct ManagedDatabase
   planningEpoch
   // Soft per-query memory budget inherited by every attached session.
   queryMemoryBytes
+  // Process-local operational registry and cumulative counters.
+  sessions
+  // Monotonic timestamp captured after successful database open.
+  startedAt
+  // Counts all engines attached since this database opened.
+  totalConnections
+  // Counts completed logical SQL statements.
+  totalStatements
+  // Counts logical SQL statements ending in an error.
+  failedStatements
+  // Counts result rows produced by completed statements.
+  rowsReturned
+  // Records a cooperative administrative listener-stop request.
+  shutdownRequested
+  // Hard protocol and result limits inherited by attached sessions.
+  maxStatementBytes
+  // Maximum encoded response payload accepted by the configured server.
+  maxFrameBytes
+  // Maximum number of rows produced by one network statement.
+  maxResultRows
+  // Maximum inactive lifetime for one network session.
+  idleTimeoutMs
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -795,7 +846,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readHandles
   end if
-  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, false)
+  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, [], clock.monotonicMilliseconds(), 0, 0, 0, 0, false, DEFAULT_MAX_STATEMENT_BYTES, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESULT_ROWS, DEFAULT_IDLE_TIMEOUT_MS, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -889,6 +940,155 @@ function allocateSessionId(database)
   value = database.nextSessionId
   database.nextSessionId = database.nextSessionId + 1
   if database.nextSessionId <= 0 then database.nextSessionId = 1 end if
+  now = clock.monotonicMilliseconds()
+  database.sessions = database.sessions + [OperationalSession(value, "embedded", false, 1, now, now, 0, "", "IDLE", 0)]
+  database.totalConnections = database.totalConnections + 1
+  database.executionGate.stateLock.release()
+  return value
+end function
+
+// Applies validated protocol and result limits before the listener accepts clients.
+function configureOperationalLimits(database, maxStatementBytes, maxFrameBytes, maxResultRows, idleTimeoutMs)
+  validateOpen(database, "configureOperationalLimits")
+  if typeof(maxStatementBytes) != "int" or maxStatementBytes < 1024 then return fail(INVALID_ARGUMENT, "configureOperationalLimits", "maxStatementBytes must be at least 1024") end if
+  if typeof(maxFrameBytes) != "int" or maxFrameBytes < 1024 or maxFrameBytes > 16777216 then return fail(INVALID_ARGUMENT, "configureOperationalLimits", "maxFrameBytes must be between 1024 and 16777216") end if
+  if typeof(maxResultRows) != "int" or maxResultRows < 1 then return fail(INVALID_ARGUMENT, "configureOperationalLimits", "maxResultRows must be positive") end if
+  if typeof(idleTimeoutMs) != "int" or idleTimeoutMs < 1000 then return fail(INVALID_ARGUMENT, "configureOperationalLimits", "idleTimeoutMs must be at least 1000") end if
+  database.maxStatementBytes = maxStatementBytes
+  database.maxFrameBytes = maxFrameBytes
+  database.maxResultRows = maxResultRows
+  database.idleTimeoutMs = idleTimeoutMs
+  return true
+end function
+
+// Returns the configured hard statement-size limit.
+function maxStatementBytes(database)
+  validateOpen(database, "maxStatementBytes")
+  return database.maxStatementBytes
+end function
+
+// Returns the configured hard response-frame limit.
+function maxFrameBytes(database)
+  validateOpen(database, "maxFrameBytes")
+  return database.maxFrameBytes
+end function
+
+// Returns the configured hard result-row limit.
+function maxResultRows(database)
+  validateOpen(database, "maxResultRows")
+  return database.maxResultRows
+end function
+
+// Returns the configured idle-connection timeout.
+function idleTimeoutMs(database)
+  validateOpen(database, "idleTimeoutMs")
+  return database.idleTimeoutMs
+end function
+
+// Updates connection metadata after the listener resolves the remote endpoint.
+function registerSessionPeer(database, sessionId, peerEndpoint, secure, authenticated)
+  validateOpen(database, "registerSessionPeer")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "registerSessionPeer", "database execution state is unavailable") end if
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then
+      entry.peerEndpoint = peerEndpoint
+      entry.secure = secure
+      if not authenticated then entry.principalId = 0 end if
+    end if
+  end for
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Publishes the principal selected by a successful authentication exchange.
+function setOperationalPrincipal(database, sessionId, principalId)
+  validateOpen(database, "setOperationalPrincipal")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "setOperationalPrincipal", "database execution state is unavailable") end if
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then entry.principalId = principalId end if
+  end for
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Marks a session as executing and stores only a bounded SQL summary.
+function beginOperationalStatement(database, sessionId, principalId, sqlText)
+  validateOpen(database, "beginOperationalStatement")
+  summary = sqlText
+  if len(summary) > 256 then summary = "[statement text exceeds process-list display limit]" end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "beginOperationalStatement", "database execution state is unavailable") end if
+  now = clock.monotonicMilliseconds()
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then entry.principalId = principalId; entry.lastActivity = now; entry.statementStartedAt = now; entry.statementText = summary; entry.state = "EXECUTING" end if
+  end for
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Completes one operational statement and advances cumulative counters.
+function finishOperationalStatement(database, sessionId, success, rowCount)
+  validateOpen(database, "finishOperationalStatement")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "finishOperationalStatement", "database execution state is unavailable") end if
+  now = clock.monotonicMilliseconds()
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then entry.lastActivity = now; entry.statementStartedAt = 0; entry.statementText = ""; entry.state = "IDLE"; entry.requestCount = entry.requestCount + 1 end if
+  end for
+  database.totalStatements = database.totalStatements + 1
+  if not success then database.failedStatements = database.failedStatements + 1 end if
+  if rowCount > 0 then database.rowsReturned = database.rowsReturned + rowCount end if
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Removes a closed session from the process list without changing cumulative totals.
+function unregisterSession(database, sessionId)
+  if not isManagedDatabase(database) or database.closed then return true end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "unregisterSession", "database execution state is unavailable") end if
+  retained = []
+  for each entry in database.sessions
+    if entry.sessionId != sessionId then retained = retained + [entry] end if
+  end for
+  database.sessions = retained
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Returns immutable copies of all active process-list entries.
+function operationalSessions(database)
+  validateOpen(database, "operationalSessions")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "operationalSessions", "database execution state is unavailable") end if
+  result = []
+  for each entry in database.sessions
+    result = result + [OperationalSession(entry.sessionId, entry.peerEndpoint, entry.secure, entry.principalId, entry.createdAt, entry.lastActivity, entry.statementStartedAt, entry.statementText, entry.state, entry.requestCount)]
+  end for
+  database.executionGate.stateLock.release()
+  return result
+end function
+
+// Returns a compact numeric snapshot used by SHOW STATUS.
+function operationalStatus(database)
+  validateOpen(database, "operationalStatus")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "operationalStatus", "database execution state is unavailable") end if
+  result = [clock.monotonicMilliseconds() - database.startedAt, len(database.sessions), database.totalConnections, database.totalStatements, database.failedStatements, database.rowsReturned, database.checkpointResets, database.maxStatementBytes, database.maxFrameBytes, database.maxResultRows, database.idleTimeoutMs, database.queryMemoryBytes]
+  database.executionGate.stateLock.release()
+  return result
+end function
+
+// Requests a cooperative listener stop after the current statement response.
+function requestShutdown(database)
+  validateOpen(database, "requestShutdown")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "requestShutdown", "database execution state is unavailable") end if
+  database.shutdownRequested = true
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Returns whether an administrator requested cooperative listener shutdown.
+function isShutdownRequested(database)
+  if not isManagedDatabase(database) then return false end if
+  if database.closed then return true end if
+  if not database.executionGate.stateLock.acquire() then return true end if
+  value = database.shutdownRequested
   database.executionGate.stateLock.release()
   return value
 end function

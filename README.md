@@ -344,7 +344,49 @@ large overflow values, and post-`VACUUM` data integrity. See
 `10` GiB commands and tunable guardrails. The earlier optimization history is in
 [`PERFORMANCE_BASELINE_2026-08-23.md`](tests/performance/PERFORMANCE_BASELINE_2026-08-23.md).
 
+### Production operations
+
+Configured servers enforce `server.maxConnections`, `maxStatementBytes`,
+`maxFrameBytes`, `maxResultRows`, and `idleTimeoutMs`. The result-row limit is
+checked for both materialized and streaming result paths; oversized requests and
+frames fail with a structured protocol error instead of growing without bound.
+`runtime.temporaryMemoryBytes` remains a spill-policy budget rather than a hard
+whole-process memory ceiling.
+
+Administrators can query `SHOW STATUS` for uptime, sessions, statement/error and
+row counters, checkpoint resets, and the active limits. `SHOW PROCESSLIST`
+returns the authenticated principal, peer, TLS state, current state/statement,
+age, and request count for every live session. `SHUTDOWN` acknowledges the
+request, completes the protocol close handshake, stops new accepts, drains the
+bounded worker pool, and closes the database.
+
+The systemd unit template is in [`deploy/systemd/minisql.service`](deploy/systemd/minisql.service).
+Windows Task Scheduler or a service wrapper can invoke the paired
+[`Start-MiniSQL.ps1`](deploy/windows/Start-MiniSQL.ps1) and
+[`Stop-MiniSQL.ps1`](deploy/windows/Stop-MiniSQL.ps1) scripts. The paired
+templates use trusted loopback so graceful stop needs no stored password. A release
+candidate should also pass the 24-hour resource-drift runner:
+
+```powershell
+python .\tests\soak\production_soak.py --pid $serverPid --duration-minutes 1440 -- `
+  .\build\performance\native-concurrent-final.exe 7551 32 2000 1
+```
+
+Run a non-destructive restore drill into new paths with:
+
+```powershell
+python .\tools\recovery\production_recovery_drill.py <database> <new-backup> <new-restore>
+```
+
 ## Performance evaluation
+
+The production-operations smoke on 2026-08-29 completed 13 measured waves of
+eight freshly connected clients and 100 indexed reads per client (10,400 SQL
+requests after warm-up). Throughput was 8,511-10,256 requests/s, server threads
+remained constant at 44, RSS median drift was 4.47 MiB, and handle median drift
+was 16 while the final samples stabilized. This short guard validates the soak
+runner and repeated connection cleanup; the documented 24-hour run remains a
+release gate, not a claim made by the short smoke.
 
 ### 2026-08-29 native concurrent-read profile
 

@@ -10,7 +10,9 @@
     "port": 7432,
     "maxConnections": 32,
     "maxStatementBytes": 1048576,
-    "maxFrameBytes": 8388608
+    "maxFrameBytes": 8388608,
+    "maxResultRows": 1000000,
+    "idleTimeoutMs": 300000
   },
   "runtime": {
     "bufferPoolBytes": 268435456,
