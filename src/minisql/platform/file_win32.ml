@@ -4,10 +4,11 @@ package minisql.platform.file_win32
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import std.threading as threading
 
-// Thin synchronous Win32 handle layer. The public platform.file module owns
-// validation and object lifetime. A handle must not be used concurrently because
-// positioned I/O is implemented with SetFilePointerEx followed by ReadFile/WriteFile.
+// Thin Win32 handle layer. The public platform.file module owns validation and
+// object lifetime. Read-only handles can opt into offset-based overlapped reads,
+// while serialized writers retain synchronous cursor operations.
 
 const INVALID_ARGUMENT = 9001
 const IO_FAILURE = 9005
@@ -25,6 +26,7 @@ const OPEN_ALWAYS = 4
 const TRUNCATE_EXISTING = 5
 const FILE_ATTRIBUTE_NORMAL = 0x00000080
 const FILE_FLAG_WRITE_THROUGH = 0x80000000
+const FILE_FLAG_OVERLAPPED = 0x40000000
 const FILE_BEGIN = 0
 const LOCKFILE_FAIL_IMMEDIATELY = 0x00000001
 const LOCKFILE_EXCLUSIVE_LOCK = 0x00000002
@@ -34,6 +36,8 @@ const ERROR_SHARING_VIOLATION = 32
 const ERROR_FILE_NOT_FOUND = 2
 const ERROR_PATH_NOT_FOUND = 3
 const ERROR_ALREADY_EXISTS = 183
+const ERROR_HANDLE_EOF = 38
+const ERROR_IO_PENDING = 997
 const INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
 const FILE_ATTRIBUTE_DIRECTORY = 0x00000010
 const MOVEFILE_REPLACE_EXISTING = 0x00000001
@@ -45,8 +49,12 @@ const MOVE_RETRY_DELAY_MS = 25
 extern function CreateFileW(path as wstr, desiredAccess as u32, shareMode as u32, security as ptr, creationDisposition as u32, flagsAndAttributes as u32, templateFile as ptr) from "kernel32.dll" symbol "CreateFileW" returns ptr
 // Reads synchronously into `buffer`, writing the transferred count to `bytesRead`.
 extern function ReadFile(handle as ptr, buffer as bytes, count as u32, bytesRead as bytes, overlapped as ptr) from "kernel32.dll" symbol "ReadFile" returns bool
+// Starts one read at the offset stored in a unique OVERLAPPED structure.
+extern function ReadFilePositioned(handle as ptr, buffer as bytes, count as u32, bytesRead as bytes, overlapped as bytes) from "kernel32.dll" symbol "ReadFile" returns bool
 // Writes synchronously from `buffer`, storing the transferred count in `bytesWritten`.
 extern function WriteFile(handle as ptr, buffer as bytes, count as u32, bytesWritten as bytes, overlapped as ptr) from "kernel32.dll" symbol "WriteFile" returns bool
+// Waits for one particular overlapped operation and returns its byte count.
+extern function GetOverlappedResult(handle as ptr, overlapped as bytes, bytesTransferred as bytes, wait as bool) from "kernel32.dll" symbol "GetOverlappedResult" returns bool
 // Repositions the file cursor by `distance` relative to `moveMethod`.
 extern function SetFilePointerEx(handle as ptr, distance as i64, newPosition as ptr, moveMethod as u32) from "kernel32.dll" symbol "SetFilePointerEx" returns bool
 // Writes the handle's current 64-bit byte length to `sizeOut`.
@@ -99,7 +107,7 @@ end function
 // MiniLang's extern wstr conversion currently uses process-wide UTF-16 scratch
 // buffers. Serialize only path-bearing native calls; positioned file I/O stays
 // parallel because it uses independent handles and byte buffers.
-function synchronized openNative(path, desiredAccess, shareMode, creationDisposition, writeThrough)
+function synchronized openNativeWithFlags(path, desiredAccess, shareMode, creationDisposition, writeThrough, extraFlags)
   if typeof(path) != "string" or len(path) == 0 then
     return fail(INVALID_ARGUMENT, "openNative", "path must be a non-empty string")
   end if
@@ -107,11 +115,23 @@ function synchronized openNative(path, desiredAccess, shareMode, creationDisposi
     return fail(INVALID_ARGUMENT, "openNative", "access, share and disposition must be int")
   end if
   if typeof(writeThrough) != "bool" then return fail(INVALID_ARGUMENT, "openNative", "writeThrough must be bool") end if
-  flags = FILE_ATTRIBUTE_NORMAL
+  if typeof(extraFlags) != "int" then return fail(INVALID_ARGUMENT, "openNative", "extraFlags must be int") end if
+  flags = FILE_ATTRIBUTE_NORMAL | extraFlags
   if writeThrough then flags = flags | FILE_FLAG_WRITE_THROUGH end if
   handle = CreateFileW(path, desiredAccess, shareMode, void, creationDisposition, flags, void)
   if isInvalidHandle(handle) then return lastError("openNative") end if
   return handle
+end function
+
+// Opens a conventional synchronous handle used by serialized write paths.
+function openNative(path, desiredAccess, shareMode, creationDisposition, writeThrough)
+  return openNativeWithFlags(path, desiredAccess, shareMode, creationDisposition, writeThrough, 0)
+end function
+
+// Opens a read-only handle whose operations carry explicit byte offsets and can
+// safely overlap on the same kernel file object.
+function openNativePositionedRead(path, desiredAccess, shareMode, creationDisposition, writeThrough)
+  return openNativeWithFlags(path, desiredAccess, shareMode, creationDisposition, writeThrough, FILE_FLAG_OVERLAPPED)
 end function
 
 // Performs the seek operation for this module.
@@ -137,6 +157,41 @@ function readCurrent(handle, destination, count)
   countOut = bytes(4, 0)
   if not ReadFile(handle, destination, count, countOut, void) then return lastError("readCurrent") end if
   return endian.readU32LE(countOut, 0)
+end function
+
+// Reads at an explicit byte offset without observing or changing a shared file
+// cursor. A unique manual-reset event makes completion unambiguous when several
+// threads concurrently use the same overlapped handle.
+function readAt(handle, fileOffset, destination, count)
+  if isInvalidHandle(handle) then return fail(INVALID_ARGUMENT, "readAt", "invalid handle") end if
+  if typeof(fileOffset) != "int" or fileOffset < 0 or fileOffset > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "readAt", "fileOffset must be non-negative") end if
+  if typeof(destination) != "bytes" then return fail(INVALID_ARGUMENT, "readAt", "destination must be bytes") end if
+  if typeof(count) != "int" or count < 0 or count > len(destination) or count > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "readAt", "count exceeds destination or U32") end if
+  if count == 0 then return 0 end if
+
+  completion = try(threading.Event.new(true, false))
+  if typeof(completion) == "error" then return fail(IO_FAILURE, "readAt", completion.message) end if
+  overlapped = bytes(32, 0)
+  offsetWords = endian.uint64FromInt(fileOffset)
+  endian.writeU32LE(overlapped, 16, offsetWords.low)
+  endian.writeU32LE(overlapped, 20, offsetWords.high)
+  endian.writeU64LE(overlapped, 24, endian.uint64FromInt(completion.handle))
+  immediateCount = bytes(4, 0)
+  started = ReadFilePositioned(handle, destination, count, immediateCount, overlapped)
+  if not started then
+    code = GetLastError()
+    if code == ERROR_HANDLE_EOF then completion.close(); return 0 end if
+    if code != ERROR_IO_PENDING then completion.close(); return fail(IO_FAILURE, "readAt", "Win32 error " + code) end if
+  end if
+  transferred = bytes(4, 0)
+  if not GetOverlappedResult(handle, overlapped, transferred, true) then
+    code = GetLastError()
+    completion.close()
+    if code == ERROR_HANDLE_EOF then return 0 end if
+    return fail(IO_FAILURE, "readAt", "Win32 completion error " + code)
+  end if
+  completion.close()
+  return endian.readU32LE(transferred, 0)
 end function
 
 // Writes the current.

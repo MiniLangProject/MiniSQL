@@ -126,6 +126,29 @@ statements/s at 1 / 2 / 4 / 8 / 16 clients. Use at least 1,000 statements per
 session and three trials when comparing this plateau; short low-concurrency runs
 are sensitive to Windows host activity.
 
+`concurrent_indexed_reads.py` isolates persistent prepared primary-key lookups
+across 1, 2, 4, 8, 16, and 32 sessions. On the 2026-08-29 Windows reference run,
+replacing the cached-handle cursor lock with native positioned reads changed the
+median matrix from 2,022 / 3,810 / 4,860 / 4,612 / 3,777 / 2,595 requests/s to
+1,971 / 3,821 / 5,551 / 8,343 / 6,737 / 4,339 requests/s. The eight-client peak
+improved by 71.7%; 16 and 32 clients improved by 78.4% and 67.2% respectively.
+The one-client delta was -2.5%, within the run-to-run variation observed on the
+host. A completion-event pool was rejected because it reduced eight-client
+throughput by 5.6% and retained additional kernel handles per open file.
+
+The same run sampled the server at 78.6 MiB working set / 132.3 MiB private bytes
+when idle and 168.3 / 215.1 MiB during 32-client load. The settled memory remained
+at the warm-cache level rather than returning to cold-start residency. Read-only
+storage retained one table and one index handle; transient completion and client
+job handles remained bounded by active or configured concurrency.
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path .\clients\python).Path
+python .\tests\performance\concurrent_indexed_reads.py `
+  minisql://127.0.0.1:7551/main `
+  --clients 1,2,4,8,16,32 --operations 250 --trials 3
+```
+
 ```powershell
 python .\tests\performance\network_baseline.py `
   --server .\build\performance\baseline\bin\minisqld.exe `

@@ -32,11 +32,15 @@ SHA/HMAC and AES-GCM provider lifecycles share a narrow process-wide
 synchronization gate because the native calls use compiler-managed argument
 buffers and AES descriptors contain pointers to managed temporary buffers.
 
-Each read scan owns its file handle and acquires a shared native file lock;
-table and B+ tree writers retain their exclusive locks. Only UTF-16 path
-marshalling is briefly serialized on Windows because the compiler runtime
-supplies process-wide scratch buffers for `wstr` extern arguments. Linux uses
-UTF-8 paths. Positioned reads on independent handles remain parallel.
+The managed database owns one persistent read-only handle per opened table or
+B+ tree generation. Concurrent scans share that immutable handle and issue
+explicit-offset reads: Windows uses an overlapped `ReadFile` operation with a
+unique completion record, while Linux uses `pread`. These operations neither
+observe nor change a shared file cursor. The database writer gate prevents a
+handle from being invalidated or closed while readers hold leases; writers keep
+their conventional serialized handles and exclusive native file locks. Only
+UTF-16 path marshalling is briefly serialized on Windows because the compiler
+runtime supplies process-wide scratch buffers for `wstr` extern arguments.
 
 The independently mutex-protected lock manager supports multiple logical readers
 and one writer. Wait edges are recorded as waiter-to-blocker relationships;
@@ -51,11 +55,12 @@ A positive global request budget is reserved atomically before dispatch and is
 counted only after a response is sent. Zero remains unlimited. First fatal
 server errors and shutdown state are published under a server-state mutex.
 
-Acceptance must demonstrate executor overlap rather than infer concurrency from
-multiple open sockets. The deterministic M27 gate starts two connection workers,
-holds both at a shared start gate, executes 100 indexed reads per worker and
-requires the observed peak number of simultaneously executing query sections to
-be greater than one.
+Acceptance must demonstrate storage and executor overlap rather than infer
+concurrency from multiple open sockets. The deterministic M27 gate starts two
+connection workers, holds both at a shared start gate, executes 100 indexed
+reads per worker, and requires both the executor peak and the persistent-handle
+lease peak to be greater than one. M3 additionally drives one Windows handle
+from eight threads at distinct offsets and checks every returned byte.
 
 The portable Linux gate exercises the scheduler scenario, a loopback session,
 and two successive waves of four simultaneous native clients. It requires exact

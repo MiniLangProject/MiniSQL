@@ -60,6 +60,10 @@ const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
 const PLAN_CACHE_CAPACITY = 64
 const EXECUTION_BATCH_ROWS = 128
+// Cursor scans retain at most the historical sixteen source rows at once, then
+// coalesce narrow projected rows until one preferred protocol frame is full.
+const CURSOR_SOURCE_BATCH_ROWS = 16
+const CURSOR_TARGET_BATCH_BYTES = 1048552
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 
 // Identifies the flattened, versioned parameter metadata stored with procedures.
@@ -2918,12 +2922,14 @@ function nextSelectBatch(cursor, maximumRows)
   if cursor is not SelectCursor or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "nextSelectBatch", "invalid arguments") end if
   if cursor.closed then return void end if
   output = list.List.new()
+  outputBytes = 0
   limit = cursor.bound.statement.limit
   if limit == 0 then closeSelectCursor(cursor); return void end if
   operationError = void
   exhausted = false
-  while output.len() < maximumRows and not exhausted
+  while output.len() < maximumRows and not exhausted and outputBytes < CURSOR_TARGET_BATCH_BYTES
     readRows = maximumRows - output.len()
+    if readRows > CURSOR_SOURCE_BATCH_ROWS then readRows = CURSOR_SOURCE_BATCH_ROWS end if
     if limit >= 0 and limit - cursor.emitted < readRows then readRows = limit - cursor.emitted end if
     if readRows <= 0 then exhausted = true; break end if
     sourceBatch = try(scan.nextBatch(cursor.scanCursor, readRows))
@@ -2935,7 +2941,12 @@ function nextSelectBatch(cursor, maximumRows)
         if cursor.skipped < cursor.bound.statement.offset then
           cursor.skipped = cursor.skipped + 1
         else
-          output.add(projection.evaluateList(cursor.bound.items, context, "cursor.select"))
+          projectedValues = projection.evaluateList(cursor.bound.items, context, "cursor.select")
+          output.add(projectedValues)
+          outputBytes = outputBytes + 24 + (24 * len(projectedValues))
+          for each projectedValue in projectedValues
+            outputBytes = outputBytes + estimatedValueBytes(projectedValue)
+          end for
           cursor.emitted = cursor.emitted + 1
           if limit >= 0 and cursor.emitted >= limit then exhausted = true; break end if
         end if

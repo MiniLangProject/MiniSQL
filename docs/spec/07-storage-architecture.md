@@ -45,6 +45,12 @@ The buffer pool owns page caching, pin counts, dirty state, eviction and control
 memory use. Durability policy remains in WAL/checkpoint code; eviction MUST NOT write
 uncommitted state.
 
+Read-only table and index generations are opened lazily and cached by the managed
+database. Page misses use explicit-offset I/O on the shared immutable handle
+(`ReadFile` with `OVERLAPPED` on Windows and `pread` on Linux), so parallel readers
+do not serialize on a process-level file cursor. The database execution gate owns
+generation lifetime and closes cached handles before a writer replaces storage.
+
 ## 7.6 Critical metadata
 
 `db.meta` uses two independently checksummed superblocks with monotonic generations.

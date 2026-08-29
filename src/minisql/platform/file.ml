@@ -35,6 +35,8 @@ struct FileHandle
   lockHeld
   // Write through field of the file handle.
   writeThrough
+  // True when readAt uses a native explicit-offset operation.
+  positionedRead
 end struct
 
 // Creates the module's structured error with operation context.
@@ -73,8 +75,8 @@ end function
 // Opens the read.
 // Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function openRead(path)
-  handle = native.openNative(path, native.GENERIC_READ, shareAll(), native.OPEN_EXISTING, false)
-  return FileHandle(path, handle, true, false, false, false, false)
+  handle = native.openNativePositionedRead(path, native.GENERIC_READ, shareAll(), native.OPEN_EXISTING, false)
+  return FileHandle(path, handle, true, false, false, false, false, true)
 end function
 
 // Opens the read write.
@@ -85,7 +87,7 @@ function openReadWrite(path, createIfMissing)
   if createIfMissing then disposition = native.OPEN_ALWAYS end if
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), disposition, false)
-  return FileHandle(path, handle, true, true, false, false, false)
+  return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
 // Creates the requested value.
@@ -93,7 +95,7 @@ end function
 function create(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_ALWAYS, false)
-  return FileHandle(path, handle, true, true, false, false, false)
+  return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
 // Creates the new.
@@ -101,7 +103,7 @@ end function
 function createNew(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_NEW, false)
-  return FileHandle(path, handle, true, true, false, false, false)
+  return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
 // Creates the durable.
@@ -109,7 +111,7 @@ end function
 function createDurable(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_ALWAYS, true)
-  return FileHandle(path, handle, true, true, false, false, true)
+  return FileHandle(path, handle, true, true, false, false, true, false)
 end function
 
 // Creates the new durable.
@@ -117,7 +119,7 @@ end function
 function createNewDurable(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_NEW, true)
-  return FileHandle(path, handle, true, true, false, false, true)
+  return FileHandle(path, handle, true, true, false, false, true, false)
 end function
 
 // Validates the file range.
@@ -147,6 +149,15 @@ function readAt(file, fileOffset, destination, destinationOffset, count)
 #if TARGET_OS == "linux"
   return native.readAt(file.nativeHandle, fileOffset, destination, destinationOffset, count)
 #else
+  if file.positionedRead then
+    target = destination
+    copyBack = destinationOffset != 0 or count != len(destination)
+    if copyBack then target = bytes(count, 0) end if
+    actual = try(native.readAt(file.nativeHandle, fileOffset, target, count))
+    if typeof(actual) == "error" then return actual end if
+    if actual > 0 and copyBack then copyBytes(destination, destinationOffset, target, 0, actual) end if
+    return actual
+  end if
   native.seek(file.nativeHandle, fileOffset)
   temporary = bytes(count, 0)
   total = 0

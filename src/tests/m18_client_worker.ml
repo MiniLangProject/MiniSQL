@@ -45,6 +45,7 @@ function main(args)
   testkit.errorCode(state, try(client.ping(connection)), 9001, "active cursor prevents interleaved requests")
   cursorRows = 0
   cursorBatches = 0
+  maximumCursorBatchRows = 0
   firstCursorValue = ""
   finalCursorValue = ""
   while true
@@ -52,13 +53,15 @@ function main(args)
     if batch is void then break end if
     cursorBatches = cursorBatches + 1
     cursorRows = cursorRows + len(batch.rows)
+    if len(batch.rows) > maximumCursorBatchRows then maximumCursorBatchRows = len(batch.rows) end if
     if len(batch.rows) > 0 then
       if firstCursorValue == "" then firstCursorValue = batch.rows[0][1] end if
       finalCursorValue = batch.rows[len(batch.rows) - 1][1]
     end if
   end while
   testkit.equal(state, cursorRows, 1200, "cursor consumes every continuation row")
-  testkit.record(state, cursorBatches >= 75, "server cursor exposes bounded sixteen-row batches")
+  testkit.record(state, cursorBatches >= 19, "server cursor exposes multiple bounded continuation frames")
+  testkit.record(state, maximumCursorBatchRows <= 64, "server cursor caps continuation frames at sixty-four rows")
   testkit.equal(state, firstCursorValue, "row-1", "cursor first row")
   testkit.equal(state, finalCursorValue, "row-1200", "cursor final row")
   testkit.record(state, client.ping(connection), "connection is reusable after cursor completion")

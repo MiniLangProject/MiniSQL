@@ -71,6 +71,12 @@ function openNative(path, desiredAccess, shareMode, creationDisposition, writeTh
   return NativeFile(opened, 0)
 end function
 
+// Linux descriptors already use pread for explicit-offset reads, so the
+// positioned-read constructor is identical to the ordinary native open.
+function openNativePositionedRead(path, desiredAccess, shareMode, creationDisposition, writeThrough)
+  return openNative(path, desiredAccess, shareMode, creationDisposition, writeThrough)
+end function
+
 // Moves the compatibility cursor without changing the native descriptor offset.
 function seek(handle, offset)
   if handle is not NativeFile or typeof(offset) != "int" or offset < 0 then return fail(INVALID_ARGUMENT, "seek", "invalid handle or offset") end if

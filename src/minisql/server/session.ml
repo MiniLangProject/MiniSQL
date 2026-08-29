@@ -28,7 +28,10 @@ const AUTH_HANDSHAKE_TIMEOUT_MS = 30000
 const SESSION_IDLE_TIMEOUT_MS = 300000
 // A server cursor retains at most this many arbitrarily wide SQL rows before
 // formatting. Payload-size framing may split the batch further.
-const STREAM_RESULT_ROWS = 16
+// Coalesce several bounded executor source batches into one protocol response.
+// Sixty-four rows amortize framing without the latency and decoder pressure of
+// very large continuation frames.
+const STREAM_RESULT_ROWS = 64
 
 // Groups the session state and preserves the field relationships documented below.
 struct Session

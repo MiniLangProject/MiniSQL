@@ -662,6 +662,7 @@
     "tests/performance/README.md",
     "tests/performance/WINDOWS_LINUX_COMPARISON_2026-08-26.md",
     "tests/performance/capacity_regression.py",
+    "tests/performance/concurrent_indexed_reads.py",
     "tests/performance/m49_baseline.json",
     "tests/performance/network_baseline.py",
     "tests/performance/platform_compare.py",

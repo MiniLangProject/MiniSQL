@@ -1413,7 +1413,7 @@ function openReadOnlyIndex(database, constraint, operation)
   return lease
 end function
 
-// Returns the guarded BTree owned by one active database handle lease.
+// Returns the immutable BTree owned by one active database handle lease.
 function readOnlyIndexTree(lease)
   return database_manager.readHandleValue(lease)
 end function
@@ -1706,8 +1706,8 @@ function constraintForSingleColumn(database, table, columnIndex)
 end function
 
 // Acquires a persistent table handle and creates a non-owning reader over it.
-// The returned lease keeps the Windows native cursor serialized until the
-// caller has completed every heap reference read.
+// The returned lease keeps the handle generation alive while positioned reads
+// materialize every heap reference.
 function openPersistentTableReader(database, table, pageTransaction)
   path = catalog.tableFilePath(database.path, table.tableId)
   lease = try(database_manager.acquireTableReadHandle(database, path))

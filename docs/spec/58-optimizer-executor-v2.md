@@ -73,10 +73,11 @@ A small single-table `ORDER BY ... LIMIT/OFFSET` fuses scan, filter, projection,
 and bounded Top-N selection, retaining at most one 128-row input batch plus the
 requested window. Simple unordered single-table queries use a forward-only
 storage cursor. The server retains one 16-row executor batch plus one look-ahead
-frame and sends it before producing more rows. Protocol v1 targets continuation
-frames below one MiB, with a 16 MiB exceptional-row guard. Cursor-aware clients
-therefore avoid the executor's typed final row array; the compatibility client
-API and ineligible query shapes still materialize it.
+source batch, coalesces at most 64 narrow rows into one wire frame, and sends the
+frame before producing more rows. Protocol v1 targets continuation frames below
+one MiB, with a 16 MiB exceptional-row guard. Cursor-aware clients therefore
+avoid the executor's typed final row array; the compatibility client API and
+ineligible query shapes still materialize it.
 
 Eligible persistent scalar aggregates divide the heap-page directory into at
 most four ranges, run fixed-size partial accumulators on the native thread pool,

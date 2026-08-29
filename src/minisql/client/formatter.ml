@@ -5,6 +5,7 @@ package minisql.client.formatter
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.endian as endian
+import std.ds.list as list
 import std.string_builder as string_builder
 import minisql.executor.executor as executor
 import minisql.protocol.constants as constants
@@ -71,26 +72,29 @@ function responsesFromResult(result)
   if not executor.isQueryResult(result) then return fail("responsesFromResult", "result must be QueryResult") end if
   if result.kind == executor.RESULT_COMMAND then return [messages.commandResponse(result.command, result.affectedRows, result.message)] end if
   if result.kind != executor.RESULT_ROWS then return fail("responsesFromResult", "unknown result kind") end if
-  responses = []
-  batch = []
+  responses = list.List.new()
+  batch = list.List.withCapacity(constants.DEFAULT_RESULT_BATCH_ROWS)
+  baseBytes = messages.responsePayloadSize(messages.rowResponse(result.columns, []))
+  batchBytes = baseBytes
   for each sourceRow in result.rows
     row = array(len(sourceRow))
+    rowBytes = 0
     valueIndex = 0
     for each value in sourceRow
       row[valueIndex] = valueText(value)
+      rowBytes = rowBytes + messages.fieldSize(row[valueIndex])
       valueIndex = valueIndex + 1
     end for
-    candidate = batch + [row]
-    candidateResponse = messages.rowResponse(result.columns, candidate)
-    if len(batch) > 0 and (len(candidate) > constants.DEFAULT_RESULT_BATCH_ROWS or messages.responsePayloadSize(candidateResponse) > constants.TARGET_RESULT_FRAME_BYTES) then
-      responses = responses + [messages.rowResponse(result.columns, batch)]
-      batch = [row]
-    else
-      batch = candidate
+    if batch.len() > 0 and (batch.len() >= constants.DEFAULT_RESULT_BATCH_ROWS or batchBytes + rowBytes > constants.TARGET_RESULT_FRAME_BYTES) then
+      responses.add(messages.rowResponse(result.columns, batch.toArray()))
+      batch.clear()
+      batchBytes = baseBytes
     end if
+    batch.add(row)
+    batchBytes = batchBytes + rowBytes
   end for
-  if len(batch) > 0 or len(responses) == 0 then responses = responses + [messages.rowResponse(result.columns, batch)] end if
-  return responses
+  if batch.len() > 0 or responses.len() == 0 then responses.add(messages.rowResponse(result.columns, batch.toArray())) end if
+  return responses.toArray()
 end function
 
 // Formats response using the supplied inputs.

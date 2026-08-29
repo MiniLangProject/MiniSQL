@@ -103,23 +103,23 @@ struct ManagedDatabase
   closed
 end struct
 
-// One persistent immutable table or index handle. The per-handle guard covers
-// the complete caller lease because positioned Windows reads use one shared
-// native file cursor; separate files remain independently concurrent.
+// One persistent immutable table or index handle. Native positioned reads let
+// all database readers use the same object concurrently without a shared file
+// cursor; the database writer gate still owns invalidation and close.
 struct CachedReadHandle
   // Stable absolute or database-relative path used as the registry key.
   path
   // Open PagedFile or BTree owned exclusively by the database registry.
   value
-  // Serializes operations using this native handle.
-  guard
   // Distinguishes BTree handles from PagedFile handles during close.
   indexHandle
 end struct
 
 // Caller ownership token for one acquired persistent read handle.
 struct ReadHandleLease
-  // Registry entry whose guard remains acquired until release.
+  // Owning registry whose concurrency counters track this lease.
+  cache
+  // Immutable registry entry kept alive by the database execution gate.
   entry
   // Prevents double release and use after release.
   released
@@ -139,6 +139,10 @@ struct ReadHandleCache
   hits
   // Counts acquisitions that opened and published a native handle.
   misses
+  // Number of query operations currently using cached handles.
+  activeLeases
+  // Highest simultaneous cached-handle lease count since open.
+  peakLeases
   // Prevents acquisitions after database shutdown.
   closed
 end struct
@@ -153,6 +157,10 @@ struct ReadHandleCacheStats
   tableHandles
   // Number of currently cached index BTree handles.
   indexHandles
+  // Number of handle leases active at snapshot time.
+  activeLeases
+  // Highest simultaneous handle lease count since database open.
+  peakLeases
 end struct
 
 // Returns whether the supplied value satisfies the managed database condition.
@@ -276,26 +284,37 @@ end function
 function createReadHandleCache()
   guard = threading.Lock.new()
   if typeof(guard) == "error" then return guard end if
-  return ReadHandleCache(hashmap.HashMap.withCapacity(64), hashmap.HashMap.withCapacity(64), guard, 0, 0, false)
+  return ReadHandleCache(hashmap.HashMap.withCapacity(64), hashmap.HashMap.withCapacity(64), guard, 0, 0, 0, 0, false)
 end function
 
-// Validates a caller lease and returns its guarded storage value.
+// Validates a caller lease and returns its storage value.
 function readHandleValue(lease)
   if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "readHandleValue", "lease must be active") end if
   return lease.entry.value
 end function
 
-// Releases one table or index lease after the complete storage operation.
+// Releases one table or index lease after the complete storage operation. The
+// owning execution-gate read lease prevents concurrent invalidation.
 function releaseReadHandle(lease)
   if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "releaseReadHandle", "lease must be active") end if
+  if not lease.cache.guard.acquire() then return fail(CLOSED_HANDLE, "releaseReadHandle", "registry guard is unavailable") end if
+  if lease.cache.activeLeases <= 0 then lease.cache.guard.release(); return fail(CORRUPT_DATA, "releaseReadHandle", "active lease counter underflow") end if
+  lease.cache.activeLeases = lease.cache.activeLeases - 1
   lease.released = true
-  if not lease.entry.guard.release() then return fail(CLOSED_HANDLE, "releaseReadHandle", "handle guard is unavailable") end if
+  lease.cache.guard.release()
   return true
 end function
 
+// Records one lease while the registry guard is held and returns its token.
+function publishReadHandleLease(cache, entry)
+  cache.activeLeases = cache.activeLeases + 1
+  if cache.activeLeases > cache.peakLeases then cache.peakLeases = cache.activeLeases end if
+  return ReadHandleLease(cache, entry, false)
+end function
+
 // Acquires or lazily opens one persistent read-only index tree. The registry
-// guard prevents duplicate opens, while the entry guard protects the shared
-// native cursor for the duration of the caller's complete B-tree probe.
+// guard prevents duplicate publication; explicit-offset native reads require no
+// per-query lock after the immutable tree has been published.
 function acquireIndexReadHandle(database, path)
   validateOpen(database, "acquireIndexReadHandle")
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "acquireIndexReadHandle", "path must be non-empty") end if
@@ -306,17 +325,15 @@ function acquireIndexReadHandle(database, path)
   if entry is void then
     tree = try(btree.openReadOnlyForManagedLookup(path))
     if typeof(tree) == "error" then cache.guard.release(); return tree end if
-    entryGuard = threading.Lock.new()
-    if typeof(entryGuard) == "error" then btree.close(tree); cache.guard.release(); return entryGuard end if
-    entry = CachedReadHandle(path, tree, entryGuard, true)
+    entry = CachedReadHandle(path, tree, true)
     cache.indexes.set(path, entry)
     cache.misses = cache.misses + 1
   else
     cache.hits = cache.hits + 1
   end if
-  if not entry.guard.acquire() then cache.guard.release(); return fail(CLOSED_HANDLE, "acquireIndexReadHandle", "index handle guard is unavailable") end if
+  lease = publishReadHandleLease(cache, entry)
   cache.guard.release()
-  return ReadHandleLease(entry, false)
+  return lease
 end function
 
 // Acquires or lazily opens one persistent read-only table PagedFile.
@@ -330,17 +347,15 @@ function acquireTableReadHandle(database, path)
   if entry is void then
     tableFile = try(paged_file.openReadOnlyManaged(path))
     if typeof(tableFile) == "error" then cache.guard.release(); return tableFile end if
-    entryGuard = threading.Lock.new()
-    if typeof(entryGuard) == "error" then paged_file.close(tableFile); cache.guard.release(); return entryGuard end if
-    entry = CachedReadHandle(path, tableFile, entryGuard, false)
+    entry = CachedReadHandle(path, tableFile, false)
     cache.tables.set(path, entry)
     cache.misses = cache.misses + 1
   else
     cache.hits = cache.hits + 1
   end if
-  if not entry.guard.acquire() then cache.guard.release(); return fail(CLOSED_HANDLE, "acquireTableReadHandle", "table handle guard is unavailable") end if
+  lease = publishReadHandleLease(cache, entry)
   cache.guard.release()
-  return ReadHandleLease(entry, false)
+  return lease
 end function
 
 // Closes every entry in one raw HashMap while the registry and writer gates are
@@ -351,12 +366,8 @@ function closeReadHandleMap(values)
     for index = 0 to values.cap - 1
       if values.states[index] == 1 then
         entry = values.values[index]
-        if entry.guard.acquire() then
-          if entry.indexHandle then ignoredClose = try(btree.close(entry.value)) else ignoredClose = try(paged_file.close(entry.value)) end if
-          entry.guard.release()
-          entry.guard.close()
-          closed = closed + 1
-        end if
+        if entry.indexHandle then ignoredClose = try(btree.close(entry.value)) else ignoredClose = try(paged_file.close(entry.value)) end if
+        closed = closed + 1
       end if
     end for
   end if
@@ -382,7 +393,7 @@ function readHandleStats(database)
   cache = database.readHandles
   if cache.closed then return fail(CLOSED_HANDLE, "readHandleStats", "read-handle cache is closed") end if
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readHandleStats", "registry guard is unavailable") end if
-  result = ReadHandleCacheStats(cache.hits, cache.misses, cache.tables.count(), cache.indexes.count())
+  result = ReadHandleCacheStats(cache.hits, cache.misses, cache.tables.count(), cache.indexes.count(), cache.activeLeases, cache.peakLeases)
   cache.guard.release()
   return result
 end function
