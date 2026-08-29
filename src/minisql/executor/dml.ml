@@ -1408,9 +1408,19 @@ function openReadOnlyIndex(database, constraint, operation)
   // Query probes validate redundant metadata plus every traversed node. A full
   // whole-tree audit here made one point lookup O(index pages); CHECK and the
   // explicit verification APIs retain that stronger offline operation.
-  tree = try(btree.openReadOnlyForLookup(path))
-  if typeof(tree) == "error" then return fail(tree.code, operation, "cannot open index file " + path + ": " + tree.message) end if
-  return tree
+  lease = try(database_manager.acquireIndexReadHandle(database, path))
+  if typeof(lease) == "error" then return fail(lease.code, operation, "cannot acquire index file " + path + ": " + lease.message) end if
+  return lease
+end function
+
+// Returns the guarded BTree owned by one active database handle lease.
+function readOnlyIndexTree(lease)
+  return database_manager.readHandleValue(lease)
+end function
+
+// Releases a persistent index lease without closing its database-owned tree.
+function closeReadOnlyIndex(lease)
+  return database_manager.releaseReadHandle(lease)
 end function
 
 // Builds index entries using the supplied inputs.
@@ -1695,6 +1705,27 @@ function constraintForSingleColumn(database, table, columnIndex)
   return namedConstraintForSingleColumn(database, table, columnIndex, "")
 end function
 
+// Acquires a persistent table handle and creates a non-owning reader over it.
+// The returned lease keeps the Windows native cursor serialized until the
+// caller has completed every heap reference read.
+function openPersistentTableReader(database, table, pageTransaction)
+  path = catalog.tableFilePath(database.path, table.tableId)
+  lease = try(database_manager.acquireTableReadHandle(database, path))
+  if typeof(lease) == "error" then return lease end if
+  reader = try(scan.openExistingCachedWithSchema(database.path, database_manager.readHandleValue(lease), table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database)))
+  if typeof(reader) == "error" then database_manager.releaseReadHandle(lease); return reader end if
+  return [lease, reader]
+end function
+
+// Closes a non-owning reader and then releases its persistent table lease.
+function closePersistentTableReader(opened)
+  readerClose = try(scan.close(opened[1]))
+  leaseClose = try(database_manager.releaseReadHandle(opened[0]))
+  if typeof(readerClose) == "error" then return readerClose end if
+  if typeof(leaseClose) == "error" then return leaseClose end if
+  return true
+end function
+
 // Implements rows from index entries for this module.
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
@@ -1703,8 +1734,9 @@ function rowsFromIndexEntries(database, table, constraint, pageTransaction, entr
   // Reuse one table reader for the complete candidate set. Opening the heap,
   // schema history, and generated-column metadata once per index entry made a
   // selective lookup pay connection-like setup cost for every matching row.
-  reader = try(scan.openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database)))
-  if typeof(reader) == "error" then return reader end if
+  openedReader = try(openPersistentTableReader(database, table, pageTransaction))
+  if typeof(openedReader) == "error" then return openedReader end if
+  reader = openedReader[1]
   output = []
   operationError = void
   for each value in entries
@@ -1714,7 +1746,7 @@ function rowsFromIndexEntries(database, table, constraint, pageTransaction, entr
     if typeof(row) == "error" then operationError = row; break end if
     if row is not void then output = output + [row] end if
   end for
-  closeResult = try(scan.close(reader))
+  closeResult = try(closePersistentTableReader(openedReader))
   if operationError is not void then return operationError end if
   if typeof(closeResult) == "error" then return closeResult end if
   return output
@@ -1727,9 +1759,10 @@ function namedEqualityIndexRows(database, table, columnIndex, literalValue, page
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
-  tree = openReadOnlyIndex(database, constraint, "equalityIndexRows")
+  indexLease = openReadOnlyIndex(database, constraint, "equalityIndexRows")
+  tree = readOnlyIndexTree(indexLease)
   found = try(btree.find(tree, encodeIndexKey([converted])))
-  closeResult = try(btree.close(tree))
+  closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(found) == "error" then return found end if
   if typeof(closeResult) == "error" then return closeResult end if
   entries = []
@@ -1764,9 +1797,10 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
     upper = key
     upperInclusive = operator == "<="
   end if
-  tree = openReadOnlyIndex(database, constraint, "rangeIndexRows")
+  indexLease = openReadOnlyIndex(database, constraint, "rangeIndexRows")
+  tree = readOnlyIndexTree(indexLease)
   found = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
-  closeResult = try(btree.close(tree))
+  closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(found) == "error" then return found end if
   if typeof(closeResult) == "error" then return closeResult end if
   return rowsFromIndexEntries(database, table, constraint, pageTransaction, found)
@@ -1816,9 +1850,10 @@ function namedCompositeEqualityIndexRows(database, table, expression, pageTransa
       end for
       if complete then
         encodedKey = encodeIndexKey(keyValues)
-        tree = openReadOnlyIndex(database, constraint, "compositeEqualityIndexRows")
+        indexLease = openReadOnlyIndex(database, constraint, "compositeEqualityIndexRows")
+        tree = readOnlyIndexTree(indexLease)
         foundValues = try(btree.find(tree, encodedKey))
-        closeResult = try(btree.close(tree))
+        closeResult = try(closeReadOnlyIndex(indexLease))
         if typeof(foundValues) == "error" then return foundValues end if
         if typeof(closeResult) == "error" then return closeResult end if
         entries = []
@@ -1913,11 +1948,12 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   if converted.isNull then return [] end if
   if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
   encodedKey = encodeIndexKey([converted])
-  tree = openReadOnlyIndex(database, constraint, "expressionIndexRows")
+  indexLease = openReadOnlyIndex(database, constraint, "expressionIndexRows")
+  tree = readOnlyIndexTree(indexLease)
   entries = []
   if operator == "=" then
     foundValues = try(btree.find(tree, encodedKey))
-    if typeof(foundValues) == "error" then btree.close(tree); return foundValues end if
+    if typeof(foundValues) == "error" then closeReadOnlyIndex(indexLease); return foundValues end if
     for each rowValue in foundValues
       entries = entries + [btree.entry(encodedKey, rowValue)]
     end for
@@ -1929,7 +1965,7 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
     if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
     entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
   end if
-  closeResult = try(btree.close(tree))
+  closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(entries) == "error" then return entries end if
   if typeof(closeResult) == "error" then return closeResult end if
   return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
@@ -1968,9 +2004,10 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
       keyValues = keyValues + [converted]
     end for
     encodedKey = encodeIndexKey(keyValues)
-    tree = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+    indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+    tree = readOnlyIndexTree(indexLease)
     foundValues = try(btree.find(tree, encodedKey))
-    closeResult = try(btree.close(tree))
+    closeResult = try(closeReadOnlyIndex(indexLease))
     if typeof(foundValues) == "error" then return foundValues end if
     if typeof(closeResult) == "error" then return closeResult end if
     entries = []
@@ -1989,7 +2026,8 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   if converted.isNull then return [] end if
   if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
   encodedKey = encodeIndexKey([converted])
-  tree = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+  indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
+  tree = readOnlyIndexTree(indexLease)
   entries = void
   if operator == "=" then
     foundValues = try(btree.find(tree, encodedKey))
@@ -2009,7 +2047,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
     if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
     entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
   end if
-  closeResult = try(btree.close(tree))
+  closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(entries) == "error" then return entries end if
   if typeof(closeResult) == "error" then return closeResult end if
   return entries
@@ -2078,8 +2116,9 @@ end function
 
 // Materializes one combined identity set through one shared table reader.
 function rowsFromReferences(database, table, pageTransaction, references)
-  reader = try(scan.openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database)))
-  if typeof(reader) == "error" then return reader end if
+  openedReader = try(openPersistentTableReader(database, table, pageTransaction))
+  if typeof(openedReader) == "error" then return openedReader end if
+  reader = openedReader[1]
   output = []
   operationError = void
   for each reference in references
@@ -2087,7 +2126,7 @@ function rowsFromReferences(database, table, pageTransaction, references)
     if typeof(row) == "error" then operationError = row; break end if
     if row is not void then output = output + [row] end if
   end for
-  closeResult = try(scan.close(reader))
+  closeResult = try(closePersistentTableReader(openedReader))
   if operationError is not void then return operationError end if
   if typeof(closeResult) == "error" then return closeResult end if
   return output

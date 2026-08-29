@@ -41,9 +41,11 @@ function main(args)
   end if
   path = args[0]
   nonUniquePath = path + ".nonunique"
+  duplicatePath = path + ".duplicates"
   bulkPath = path + ".bulk"
   cleanup(path)
   cleanup(nonUniquePath)
+  cleanup(duplicatePath)
   cleanup(bulkPath)
   state = testkit.create()
 
@@ -117,6 +119,24 @@ function main(args)
   testkit.record(state, btree.verify(nonUnique), "non-unique tree verifies")
   btree.close(nonUnique)
 
+  // A duplicate run wider than one leaf proves that logarithmic equality and
+  // range probes rewind and advance across only the relevant leaf segment.
+  duplicateTree = btree.create(duplicatePath, 4096, 7004, databaseId(), false)
+  duplicateEntries = array(31)
+  for value = 0 to 29
+    duplicateEntries[value] = btree.entry(bytes("duplicate"), bytes("value-" + value))
+  end for
+  duplicateEntries[30] = btree.entry(bytes("next"), bytes("after-run"))
+  testkit.equal(state, btree.bulkLoad(duplicateTree, duplicateEntries), 31, "multi-leaf duplicate fixture count")
+  duplicateValues = btree.find(duplicateTree, bytes("duplicate"))
+  testkit.equal(state, len(duplicateValues), 30, "equality traverses complete multi-leaf duplicate run")
+  duplicateRange = btree.range(duplicateTree, bytes("duplicate"), true, bytes("duplicate"), true, 0)
+  testkit.equal(state, len(duplicateRange), 30, "closed range traverses duplicate leaf boundaries")
+  exclusiveRange = btree.range(duplicateTree, bytes("duplicate"), false, bytes("next"), true, 0)
+  testkit.equal(state, len(exclusiveRange), 1, "exclusive lower bound skips duplicate run")
+  testkit.equal(state, decode(exclusiveRange[0].key), "next", "exclusive range retains following key")
+  btree.close(duplicateTree)
+
   // More than 128 leaf pages exercises bounded multi-write generation append
   // followed by one superblock publication instead of per-page durability.
   bulk = btree.create(bulkPath, 4096, 7003, databaseId(), true)
@@ -131,6 +151,7 @@ function main(args)
 
   cleanup(path)
   cleanup(nonUniquePath)
+  cleanup(duplicatePath)
   cleanup(bulkPath)
   return testkit.finish(state, "MiniSQL M11 B+ tree tests: SUCCESS", "MiniSQL M11 B+ tree tests: FAIL")
 end function

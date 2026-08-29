@@ -51,13 +51,20 @@ function Wait-MiniSqlServer([int]$TargetPort) {
   if (-not $ready) { throw "MiniSQL integration server did not become ready." }
 }
 
+# Stops one disposable server and waits until Windows has released its process,
+# database lock and listener before the same database and port are reused.
+function Stop-MiniSqlServer([Diagnostics.Process]$ServerProcess) {
+  if (-not $ServerProcess.HasExited) { Stop-Process -Id $ServerProcess.Id -Force }
+  Wait-Process -Id $ServerProcess.Id -ErrorAction SilentlyContinue
+}
+
 $process = Start-Process -FilePath $server -ArgumentList @("--serve", $databasePath, "$port", "4") -PassThru -WindowStyle Hidden
 try {
   Wait-MiniSqlServer $port
   & $javaPath -ea -cp $testClasspath org.minilang.minisql.jdbc.IntegrationTest "jdbc:minisql://127.0.0.1:$port/$databaseName" prepare-auth
   if ($LASTEXITCODE -ne 0) { throw "JDBC integration tests failed." }
 } finally {
-  if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+  Stop-MiniSqlServer $process
 }
 
 $process = Start-Process -FilePath $server -ArgumentList @("--serve-authenticated", $databasePath, "$port", "4") -PassThru -WindowStyle Hidden
@@ -66,7 +73,7 @@ try {
   & $javaPath -ea -cp $testClasspath org.minilang.minisql.jdbc.IntegrationTest "jdbc:minisql://127.0.0.1:$port/$databaseName`?user=admin&password=jdbc-test-password"
   if ($LASTEXITCODE -ne 0) { throw "JDBC authenticated integration tests failed." }
 } finally {
-  if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+  Stop-MiniSqlServer $process
 }
 
 # Build a disposable self-signed certificate and verify the JDBC TLS/pinning path.
@@ -93,7 +100,7 @@ try {
   & $javaPath -ea -cp $testClasspath org.minilang.minisql.jdbc.IntegrationTest $tlsUrl
   if ($LASTEXITCODE -ne 0) { throw "JDBC TLS integration tests failed." }
 } finally {
-  if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+  Stop-MiniSqlServer $process
   $env:MINISQL_TLS_PFX_PASSWORD = $previousPfxPassword
   $certificate.Dispose(); $rsa.Dispose(); $sha256.Dispose()
 }

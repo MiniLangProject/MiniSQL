@@ -350,6 +350,51 @@ function openReadOnly(path)
   )
 end function
 
+// Opens a persistent read handle without a per-file byte-range lock. This is
+// restricted to ManagedDatabase-owned caches: the database lock excludes other
+// owners and the physical execution gate excludes in-process writers. Avoiding
+// a long-lived shared file lock lets a later writer replace/rebuild the file
+// before the cache is invalidated at its statement boundary.
+function openReadOnlyManaged(path)
+  if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "openReadOnlyManaged", "path must be non-empty") end if
+  file = file_api.openRead(path)
+  actualSize = file_api.size(file)
+  if actualSize < DATA_OFFSET then
+    file_api.close(file)
+    return fail(CORRUPT_DATA, "openReadOnlyManaged", "file is shorter than the metadata region")
+  end if
+
+  first = try(readSlot(file, SLOT_A))
+  second = try(readSlot(file, SLOT_B))
+  selected = try(chooseMetadata(first, second))
+  if typeof(selected) == "error" then
+    file_api.close(file)
+    return selected
+  end if
+  metadata = selected[0]
+  activeSlot = selected[1]
+  requiredSize = committedSize(metadata.pageSize, metadata.pageCount)
+  if actualSize != requiredSize then
+    file_api.close(file)
+    return fail(CORRUPT_DATA, "openReadOnlyManaged", "file size does not match committed page count")
+  end if
+
+  return PagedFile(
+    path,
+    file,
+    metadata.pageSize,
+    metadata.fileType,
+    metadata.fileId,
+    bytes(metadata.databaseId),
+    metadata.pageCount,
+    metadata.generation,
+    activeSlot,
+    metadata.featureFlags,
+    metadata.pageCount,
+    false
+  )
+end function
+
 // Validates the page identity.
 // Inputs: `pagedFile`, `pageBytes`, `expectedPageNumber`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validatePageIdentity(pagedFile, pageBytes, expectedPageNumber, operation)

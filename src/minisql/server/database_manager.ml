@@ -13,6 +13,7 @@ import minisql.common.logger as logger
 import minisql.platform.file as file_api
 import minisql.platform.lock as file_lock
 import minisql.storage.paged_file as paged_file
+import minisql.storage.btree as btree
 import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.checkpoint as checkpoint
 import minisql.transaction.recovery as recovery
@@ -90,6 +91,8 @@ struct ManagedDatabase
   checkpointResets
   // Database-owned concurrent cache for committed table pages.
   readCache
+  // Database-owned persistent read handles for hot table and index paths.
+  readHandles
   // Indicates that process-local index readiness checks or repair completed.
   indexesReady
   // Process-local generation invalidating optimizer metadata across sessions.
@@ -98,6 +101,58 @@ struct ManagedDatabase
   queryMemoryBytes
   // Indicates whether the closed condition is active.
   closed
+end struct
+
+// One persistent immutable table or index handle. The per-handle guard covers
+// the complete caller lease because positioned Windows reads use one shared
+// native file cursor; separate files remain independently concurrent.
+struct CachedReadHandle
+  // Stable absolute or database-relative path used as the registry key.
+  path
+  // Open PagedFile or BTree owned exclusively by the database registry.
+  value
+  // Serializes operations using this native handle.
+  guard
+  // Distinguishes BTree handles from PagedFile handles during close.
+  indexHandle
+end struct
+
+// Caller ownership token for one acquired persistent read handle.
+struct ReadHandleLease
+  // Registry entry whose guard remains acquired until release.
+  entry
+  // Prevents double release and use after release.
+  released
+end struct
+
+// Thread-safe per-database registry. DDL and mutations invalidate it while the
+// physical writer gate excludes readers, so cached metadata never outlives a
+// published table or index generation.
+struct ReadHandleCache
+  // Maps table paths to CachedReadHandle values.
+  tables
+  // Maps index paths to CachedReadHandle values.
+  indexes
+  // Serializes registry lookup and first-open publication.
+  guard
+  // Counts acquisitions satisfied without opening a native handle.
+  hits
+  // Counts acquisitions that opened and published a native handle.
+  misses
+  // Prevents acquisitions after database shutdown.
+  closed
+end struct
+
+// Immutable diagnostic snapshot for handle-cache tests and performance logs.
+struct ReadHandleCacheStats
+  // Number of acquisitions served by an existing persistent handle.
+  hits
+  // Number of acquisitions that opened a new native storage handle.
+  misses
+  // Number of currently cached table PagedFile handles.
+  tableHandles
+  // Number of currently cached index BTree handles.
+  indexHandles
 end struct
 
 // Returns whether the supplied value satisfies the managed database condition.
@@ -214,6 +269,135 @@ function createExecutionGate()
   roomEmpty = try(threading.Semaphore.new(1, 1))
   if typeof(roomEmpty) == "error" then turnstile.close(); stateLock.close(); return roomEmpty end if
   return ExecutionGate(stateLock, turnstile, roomEmpty, 0, 0)
+end function
+
+// Creates an empty persistent read-handle registry. Handles are opened lazily
+// so databases with many cold tables consume no native handle resources.
+function createReadHandleCache()
+  guard = threading.Lock.new()
+  if typeof(guard) == "error" then return guard end if
+  return ReadHandleCache(hashmap.HashMap.withCapacity(64), hashmap.HashMap.withCapacity(64), guard, 0, 0, false)
+end function
+
+// Validates a caller lease and returns its guarded storage value.
+function readHandleValue(lease)
+  if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "readHandleValue", "lease must be active") end if
+  return lease.entry.value
+end function
+
+// Releases one table or index lease after the complete storage operation.
+function releaseReadHandle(lease)
+  if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "releaseReadHandle", "lease must be active") end if
+  lease.released = true
+  if not lease.entry.guard.release() then return fail(CLOSED_HANDLE, "releaseReadHandle", "handle guard is unavailable") end if
+  return true
+end function
+
+// Acquires or lazily opens one persistent read-only index tree. The registry
+// guard prevents duplicate opens, while the entry guard protects the shared
+// native cursor for the duration of the caller's complete B-tree probe.
+function acquireIndexReadHandle(database, path)
+  validateOpen(database, "acquireIndexReadHandle")
+  if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "acquireIndexReadHandle", "path must be non-empty") end if
+  cache = database.readHandles
+  if cache.closed then return fail(CLOSED_HANDLE, "acquireIndexReadHandle", "read-handle cache is closed") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "acquireIndexReadHandle", "registry guard is unavailable") end if
+  entry = cache.indexes.get(path)
+  if entry is void then
+    tree = try(btree.openReadOnlyForManagedLookup(path))
+    if typeof(tree) == "error" then cache.guard.release(); return tree end if
+    entryGuard = threading.Lock.new()
+    if typeof(entryGuard) == "error" then btree.close(tree); cache.guard.release(); return entryGuard end if
+    entry = CachedReadHandle(path, tree, entryGuard, true)
+    cache.indexes.set(path, entry)
+    cache.misses = cache.misses + 1
+  else
+    cache.hits = cache.hits + 1
+  end if
+  if not entry.guard.acquire() then cache.guard.release(); return fail(CLOSED_HANDLE, "acquireIndexReadHandle", "index handle guard is unavailable") end if
+  cache.guard.release()
+  return ReadHandleLease(entry, false)
+end function
+
+// Acquires or lazily opens one persistent read-only table PagedFile.
+function acquireTableReadHandle(database, path)
+  validateOpen(database, "acquireTableReadHandle")
+  if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "acquireTableReadHandle", "path must be non-empty") end if
+  cache = database.readHandles
+  if cache.closed then return fail(CLOSED_HANDLE, "acquireTableReadHandle", "read-handle cache is closed") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "acquireTableReadHandle", "registry guard is unavailable") end if
+  entry = cache.tables.get(path)
+  if entry is void then
+    tableFile = try(paged_file.openReadOnlyManaged(path))
+    if typeof(tableFile) == "error" then cache.guard.release(); return tableFile end if
+    entryGuard = threading.Lock.new()
+    if typeof(entryGuard) == "error" then paged_file.close(tableFile); cache.guard.release(); return entryGuard end if
+    entry = CachedReadHandle(path, tableFile, entryGuard, false)
+    cache.tables.set(path, entry)
+    cache.misses = cache.misses + 1
+  else
+    cache.hits = cache.hits + 1
+  end if
+  if not entry.guard.acquire() then cache.guard.release(); return fail(CLOSED_HANDLE, "acquireTableReadHandle", "table handle guard is unavailable") end if
+  cache.guard.release()
+  return ReadHandleLease(entry, false)
+end function
+
+// Closes every entry in one raw HashMap while the registry and writer gates are
+// held. Iterating occupied slots avoids allocating a temporary values array.
+function closeReadHandleMap(values)
+  closed = 0
+  if values.cap > 0 then
+    for index = 0 to values.cap - 1
+      if values.states[index] == 1 then
+        entry = values.values[index]
+        if entry.guard.acquire() then
+          if entry.indexHandle then ignoredClose = try(btree.close(entry.value)) else ignoredClose = try(paged_file.close(entry.value)) end if
+          entry.guard.release()
+          entry.guard.close()
+          closed = closed + 1
+        end if
+      end if
+    end for
+  end if
+  values.clear()
+  return closed
+end function
+
+// Invalidates persistent file and metadata handles after any successful writer.
+// The caller owns the database writer gate, so no active lease can race close.
+function invalidateReadHandles(database)
+  validateOpen(database, "invalidateReadHandles")
+  cache = database.readHandles
+  if cache.closed then return fail(CLOSED_HANDLE, "invalidateReadHandles", "read-handle cache is closed") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "invalidateReadHandles", "registry guard is unavailable") end if
+  closed = closeReadHandleMap(cache.tables) + closeReadHandleMap(cache.indexes)
+  cache.guard.release()
+  return closed
+end function
+
+// Returns synchronized persistent-handle cache counters.
+function readHandleStats(database)
+  validateOpen(database, "readHandleStats")
+  cache = database.readHandles
+  if cache.closed then return fail(CLOSED_HANDLE, "readHandleStats", "read-handle cache is closed") end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readHandleStats", "registry guard is unavailable") end if
+  result = ReadHandleCacheStats(cache.hits, cache.misses, cache.tables.count(), cache.indexes.count())
+  cache.guard.release()
+  return result
+end function
+
+// Permanently closes the database-owned registry during database shutdown.
+function closeReadHandleCache(database)
+  cache = database.readHandles
+  if cache.closed then return true end if
+  if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "closeReadHandleCache", "registry guard is unavailable") end if
+  closeReadHandleMap(cache.tables)
+  closeReadHandleMap(cache.indexes)
+  cache.closed = true
+  cache.guard.release()
+  cache.guard.close()
+  return true
 end function
 
 // Admits one shared reader through the writer-priority turnstile.
@@ -548,7 +732,13 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readCache
   end if
-  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, queryMemoryBytes, false)
+  readHandles = try(createReadHandleCache())
+  if typeof(readHandles) == "error" then
+    buffer_pool.closeReadCache(readCache); executionGate.roomEmpty.close(); executionGate.turnstile.close(); executionGate.stateLock.close()
+    diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+    return readHandles
+  end if
+  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -868,7 +1058,11 @@ end function
 // holds exclusive execution, so no reader can observe a stale/new mixture.
 function invalidateReadCache(database)
   validateOpen(database, "invalidateReadCache")
-  return buffer_pool.clearReadCache(database.readCache)
+  invalidated = try(invalidateReadHandles(database))
+  cleared = try(buffer_pool.clearReadCache(database.readCache))
+  if typeof(invalidated) == "error" then return invalidated end if
+  if typeof(cleared) == "error" then return cleared end if
+  return true
 end function
 
 // Returns synchronized buffer-cache diagnostics.
@@ -907,6 +1101,8 @@ function close(database)
   failure = void
   closedAudit = try(diagnostics.closeAudit(database.auditLog))
   if typeof(closedAudit) == "error" then failure = closedAudit end if
+  closedReadHandles = try(closeReadHandleCache(database))
+  if typeof(failure) != "error" and typeof(closedReadHandles) == "error" then failure = closedReadHandles end if
   closedReadCache = try(buffer_pool.closeReadCache(database.readCache))
   if typeof(failure) != "error" and typeof(closedReadCache) == "error" then failure = closedReadCache end if
   closedCheckpoint = try(checkpoint.close(database.checkpointFile))

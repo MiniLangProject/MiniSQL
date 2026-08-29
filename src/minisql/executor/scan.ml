@@ -230,6 +230,20 @@ function openExistingCached(databasePath, file, table, pageTransaction, readCach
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, false)
 end function
 
+// Creates a non-owning reader over a persistent database-owned table handle
+// and an already published immutable schema snapshot.
+function openExistingCachedWithSchema(databasePath, file, table, pageTransaction, readCache, state)
+  if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "databasePath must be non-empty") end if
+  if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "table must be TableMetadata") end if
+  if not schema_history.isSchemaState(state) then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "state must be SchemaState") end if
+  paged_file.validateOpen(file, "executor.scan.openExistingWithSchema")
+  if file.fileId != table.tableId then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "file/table identity mismatch") end if
+  if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.openExistingWithSchema") end if
+  tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
+  generatedColumns = schema_history.generatedForTable(state, table.tableId)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, false)
+end function
+
 // Opens a caller-owned file without a shared cache.
 function openExisting(databasePath, file, table, pageTransaction)
   return openExistingCached(databasePath, file, table, pageTransaction, void)

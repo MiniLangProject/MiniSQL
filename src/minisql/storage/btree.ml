@@ -433,6 +433,19 @@ function openReadOnlyForLookup(path)
   return BTree(treeFile, selected[0], selected[1], false)
 end function
 
+// ManagedDatabase cache variant of openReadOnlyForLookup. The owning database
+// lock and execution gate replace a long-lived per-index byte-range lock.
+function openReadOnlyForManagedLookup(path)
+  treeFile = try(paged_file.openReadOnlyManaged(path))
+  if treeFile.fileType != superblock.FILE_TYPE_INDEX then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForManagedLookup", "file is not an index") end if
+  if treeFile.pageCount < 2 then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForManagedLookup", "index is shorter than metadata pair") end if
+  first = try(decodeMetaPage(treeFile, META_PAGE_A))
+  second = try(decodeMetaPage(treeFile, META_PAGE_B))
+  selected = try(chooseMeta(first, second))
+  if typeof(selected) == "error" then paged_file.close(treeFile); return selected end if
+  return BTree(treeFile, selected[0], selected[1], false)
+end function
+
 // Validates the open.
 // Inputs: `tree`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateOpen(tree, operation)
@@ -856,12 +869,38 @@ end function
 function find(tree, key)
   validateOpen(tree, "find")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "find", "key must contain 1..256 bytes") end if
+  if tree.meta.entryCount == 0 then return [] end if
   result = []
-  for each current in allEntries(tree)
-    comparison = compareKeys(current.key, key)
-    if comparison == 0 then result = result + [bytes(current.value)] end if
-    if comparison > 0 then return result end if
-  end for
+  leaf = locateLeaf(tree, key)
+  // Equal non-unique keys may straddle leaf boundaries. Descend to the normal
+  // search leaf, then walk only the equal-key predecessor run before scanning
+  // forward. Unique lookups normally decode exactly one root-to-leaf path.
+  traversed = 0
+  while leaf.previousPage != 0
+    traversed = traversed + 1
+    if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "find", "leaf backward chain contains a cycle") end if
+    previous = decodeLeaf(tree, leaf.previousPage)
+    if previous.nextPage != leaf.pageNumber then return fail(CORRUPT_DATA, "find", "leaf forward link mismatch") end if
+    previousLast = previous.entries[len(previous.entries) - 1]
+    if compareKeys(previousLast.key, key) != 0 then break end if
+    leaf = previous
+  end while
+
+  traversed = 0
+  while leaf is not void
+    traversed = traversed + 1
+    if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "find", "leaf forward chain contains a cycle") end if
+    for each current in leaf.entries
+      comparison = compareKeys(current.key, key)
+      if comparison == 0 then result = result + [bytes(current.value)] end if
+      if comparison > 0 then return result end if
+    end for
+    if leaf.nextPage == 0 then return result end if
+    nextLeaf = decodeLeaf(tree, leaf.nextPage)
+    if nextLeaf.previousPage != leaf.pageNumber then return fail(CORRUPT_DATA, "find", "leaf backward link mismatch") end if
+    if compareKeys(nextLeaf.entries[0].key, key) > 0 then return result end if
+    leaf = nextLeaf
+  end while
   return result
 end function
 
@@ -873,22 +912,53 @@ function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
   if upper is not void and typeof(upper) != "bytes" then return fail(INVALID_ARGUMENT, "range", "upper must be bytes or void") end if
   if typeof(lowerInclusive) != "bool" or typeof(upperInclusive) != "bool" then return fail(INVALID_ARGUMENT, "range", "inclusive flags must be bool") end if
   if typeof(maximum) != "int" or maximum < 0 then return fail(INVALID_ARGUMENT, "range", "maximum must be non-negative") end if
+  if tree.meta.entryCount == 0 then return [] end if
   result = []
-  for each current in allEntries(tree)
-    accepted = true
-    if lower is not void then
-      comparison = compareKeys(current.key, lower)
-      if comparison < 0 or (comparison == 0 and not lowerInclusive) then accepted = false end if
-    end if
+  leaf = void
+  if lower is void then leaf = decodeLeaf(tree, tree.meta.firstLeaf) else leaf = locateLeaf(tree, lower) end if
+  // locateLeaf may land inside a duplicate run. Rewind only while the previous
+  // leaf can still contain a value admitted by the lower bound.
+  if lower is not void then
+    traversed = 0
+    rewinding = true
+    while rewinding and leaf.previousPage != 0
+      traversed = traversed + 1
+      if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "range", "leaf backward chain contains a cycle") end if
+      previous = decodeLeaf(tree, leaf.previousPage)
+      if previous.nextPage != leaf.pageNumber then return fail(CORRUPT_DATA, "range", "leaf forward link mismatch") end if
+      previousLastOrder = compareKeys(previous.entries[len(previous.entries) - 1].key, lower)
+      if previousLastOrder > 0 or (previousLastOrder == 0 and lowerInclusive) then leaf = previous else rewinding = false end if
+    end while
+  end if
+
+  traversed = 0
+  while leaf is not void
+    traversed = traversed + 1
+    if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "range", "leaf forward chain contains a cycle") end if
+    for each current in leaf.entries
+      accepted = true
+      if lower is not void then
+        comparison = compareKeys(current.key, lower)
+        if comparison < 0 or (comparison == 0 and not lowerInclusive) then accepted = false end if
+      end if
+      if upper is not void then
+        comparison = compareKeys(current.key, upper)
+        if comparison > 0 or (comparison == 0 and not upperInclusive) then return result end if
+      end if
+      if accepted then
+        result = result + [copyEntry(current)]
+        if maximum > 0 and len(result) >= maximum then return result end if
+      end if
+    end for
+    if leaf.nextPage == 0 then return result end if
+    nextLeaf = decodeLeaf(tree, leaf.nextPage)
+    if nextLeaf.previousPage != leaf.pageNumber then return fail(CORRUPT_DATA, "range", "leaf backward link mismatch") end if
     if upper is not void then
-      comparison = compareKeys(current.key, upper)
-      if comparison > 0 or (comparison == 0 and not upperInclusive) then accepted = false end if
+      firstOrder = compareKeys(nextLeaf.entries[0].key, upper)
+      if firstOrder > 0 or (firstOrder == 0 and not upperInclusive) then return result end if
     end if
-    if accepted then
-      result = result + [copyEntry(current)]
-      if maximum > 0 and len(result) >= maximum then return result end if
-    end if
-  end for
+    leaf = nextLeaf
+  end while
   return result
 end function
 
