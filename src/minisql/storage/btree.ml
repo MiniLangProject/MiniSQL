@@ -416,6 +416,23 @@ function openReadOnly(path)
   return openTreeFile(paged_file.openReadOnly(path))
 end function
 
+// Opens a read-only tree for an ordinary lookup without auditing unrelated
+// branches. The paged-file superblock and both redundant tree metadata pages
+// are still decoded and checksum validated here; find/range subsequently
+// verify every internal and leaf page they actually traverse. Full graph and
+// leaf-chain audits remain available through openReadOnly plus verify and are
+// used by explicit consistency checks.
+function openReadOnlyForLookup(path)
+  treeFile = try(paged_file.openReadOnly(path))
+  if treeFile.fileType != superblock.FILE_TYPE_INDEX then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForLookup", "file is not an index") end if
+  if treeFile.pageCount < 2 then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForLookup", "index is shorter than metadata pair") end if
+  first = try(decodeMetaPage(treeFile, META_PAGE_A))
+  second = try(decodeMetaPage(treeFile, META_PAGE_B))
+  selected = try(chooseMeta(first, second))
+  if typeof(selected) == "error" then paged_file.close(treeFile); return selected end if
+  return BTree(treeFile, selected[0], selected[1], false)
+end function
+
 // Validates the open.
 // Inputs: `tree`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 function validateOpen(tree, operation)

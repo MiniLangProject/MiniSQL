@@ -193,6 +193,22 @@ function openCached(databasePath, table, pageTransaction, readCache)
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, false)
 end function
 
+// Opens a table using a database-owned immutable schema snapshot. Managed
+// query execution uses this variant so point lookups do not reopen and verify
+// schema.history. The paged table itself is still opened and validated here.
+function openCachedWithSchema(databasePath, table, pageTransaction, readCache, state)
+  if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openWithSchema", "databasePath must be non-empty") end if
+  if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openWithSchema", "table must be TableMetadata") end if
+  if not schema_history.isSchemaState(state) then return fail(INVALID_ARGUMENT, "openWithSchema", "state must be SchemaState") end if
+  if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.openWithSchema") end if
+  tablePath = catalog.tableFilePath(databasePath, table.tableId)
+  file = try(paged_file.openReadOnly(tablePath))
+  if typeof(file) == "error" then return fail(file.code, "openWithSchema", "cannot open table file " + tablePath + ": " + file.message) end if
+  tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
+  generatedColumns = schema_history.generatedForTable(state, table.tableId)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, false)
+end function
+
 // Opens a table without a shared cache for storage tools and direct tests.
 function open(databasePath, table, pageTransaction)
   return openCached(databasePath, table, pageTransaction, void)

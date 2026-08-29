@@ -11,6 +11,7 @@ import minisql.catalog.schema_history as schema_history
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.executor.scan as scan
+import minisql.server.database_manager as database_manager
 import minisql.sql.ast as ast
 import minisql.sql.binder as binder
 import minisql.sql.expressions as expressions
@@ -318,15 +319,14 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function tableSchemaState(database, table)
-  state = schema_history.loadOrCreate(database.path, database.catalogHandle.metadata.databaseId)
-  return schema_history.findTableSchema(state, table.tableId)
+  return schema_history.findTableSchema(database_manager.schemaSnapshot(database), table.tableId)
 end function
 
 // Implements schema state for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function schemaState(database)
-  return schema_history.loadOrCreate(database.path, database.catalogHandle.metadata.databaseId)
+  return database_manager.schemaSnapshot(database)
 end function
 
 // Implements generated columns for this module.
@@ -1405,7 +1405,10 @@ end function
 // corruption behind a generic native CreateFile failure.
 function openReadOnlyIndex(database, constraint, operation)
   path = indexPath(database, constraint)
-  tree = try(btree.openReadOnly(path))
+  // Query probes validate redundant metadata plus every traversed node. A full
+  // whole-tree audit here made one point lookup O(index pages); CHECK and the
+  // explicit verification APIs retain that stronger offline operation.
+  tree = try(btree.openReadOnlyForLookup(path))
   if typeof(tree) == "error" then return fail(tree.code, operation, "cannot open index file " + path + ": " + tree.message) end if
   return tree
 end function
@@ -1700,7 +1703,7 @@ function rowsFromIndexEntries(database, table, constraint, pageTransaction, entr
   // Reuse one table reader for the complete candidate set. Opening the heap,
   // schema history, and generated-column metadata once per index entry made a
   // selective lookup pay connection-like setup cost for every matching row.
-  reader = try(scan.openCached(database.path, table, pageTransaction, database.readCache))
+  reader = try(scan.openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database)))
   if typeof(reader) == "error" then return reader end if
   output = []
   operationError = void
@@ -2075,7 +2078,7 @@ end function
 
 // Materializes one combined identity set through one shared table reader.
 function rowsFromReferences(database, table, pageTransaction, references)
-  reader = try(scan.openCached(database.path, table, pageTransaction, database.readCache))
+  reader = try(scan.openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database)))
   if typeof(reader) == "error" then return reader end if
   output = []
   operationError = void

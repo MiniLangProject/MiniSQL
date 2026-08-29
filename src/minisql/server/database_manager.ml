@@ -58,6 +58,10 @@ struct ManagedDatabase
   path
   // Stores the catalog handle associated with this value.
   catalogHandle
+  // Immutable process-local snapshot of the durable schema sidecar. DDL
+  // publishes a replacement snapshot after commit, allowing ordinary reads to
+  // avoid reopening and checksumming schema.history for every row operation.
+  schemaState
   // Stores the filesystem lock file.
   lockFile
   // Synchronizes access through the lock token.
@@ -544,7 +548,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readCache
   end if
-  opened = ManagedDatabase(path, catalogHandle, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, queryMemoryBytes, false)
+  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, false, 0, queryMemoryBytes, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -669,6 +673,30 @@ function planningGeneration(database)
   value = database.planningEpoch
   database.executionGate.stateLock.release()
   return value
+end function
+
+// Returns the immutable schema snapshot published for this database. Schema
+// states are never modified after publication, so readers may safely retain the
+// returned value for the duration of their physical execution-gate lease.
+function schemaSnapshot(database)
+  validateOpen(database, "schemaSnapshot")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "schemaSnapshot", "database execution state is unavailable") end if
+  value = database.schemaState
+  database.executionGate.stateLock.release()
+  return value
+end function
+
+// Reloads and atomically publishes durable schema metadata after successful
+// DDL. The relatively expensive file validation therefore occurs once per
+// schema change instead of once per query or affected row.
+function refreshSchemaSnapshot(database)
+  validateOpen(database, "refreshSchemaSnapshot")
+  refreshed = schema_history.loadOrCreate(database.path, database.catalogHandle.metadata.databaseId)
+  if typeof(refreshed) == "error" then return refreshed end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "refreshSchemaSnapshot", "database execution state is unavailable") end if
+  database.schemaState = refreshed
+  database.executionGate.stateLock.release()
+  return refreshed
 end function
 
 // Advances the shared generation after committed DDL or statistics maintenance.

@@ -90,6 +90,14 @@ function main(args)
   testkit.equal(state, decode(btree.find(reopened, key(35))[0]), "row-35", "last key survives reopen")
   btree.close(reopened)
 
+  // Online point/range probes validate metadata and only their traversed path;
+  // whole-tree verification above remains an explicit checker operation.
+  lookupTree = btree.openReadOnlyForLookup(path)
+  testkit.equal(state, btree.count(lookupTree), 35, "lookup open preserves metadata count")
+  testkit.equal(state, decode(btree.find(lookupTree, key(35))[0]), "row-35", "lookup open traverses verified path")
+  testkit.equal(state, len(btree.find(lookupTree, bytes("missing"))), 0, "lookup open reports missing key")
+  btree.close(lookupTree)
+
   nonUnique = btree.create(nonUniquePath, 4096, 7002, databaseId(), false)
   btree.insert(nonUnique, bytes("same"), bytes("b"))
   btree.insert(nonUnique, bytes("same"), bytes("a"))

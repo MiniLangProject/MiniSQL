@@ -167,6 +167,10 @@ function copyDatabaseState(source, target, targetName, targetPageSize)
   targetHandle.catalog = nextCatalog
   catalog.persistMetadata(targetHandle)
   schema_history.save(target.path, targetState)
+  // The target database was opened before its cloned schema was published.
+  // Refresh the managed snapshot before rebuilding derived indexes so the
+  // rebuild observes every migrated PRIMARY KEY, UNIQUE, and explicit index.
+  try(database_manager.refreshSchemaSnapshot(target))
 
   security = catalog.cloneSecurityState(sourceHandle.security)
   security.databaseId = targetId

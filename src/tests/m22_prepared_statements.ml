@@ -68,7 +68,11 @@ function main(args)
   testkit.errorCode(state, try(executor.executeSql(engine, "EXECUTE find_item USING id")), 9020, "non-constant USING expression rejected")
   testkit.errorCode(state, try(executor.executeSql(engine, "PREPARE find_item AS SELECT id FROM item")), 9020, "duplicate prepared name rejected")
 
-  executeOne(engine, "ALTER TABLE item ADD COLUMN active BOOLEAN NOT NULL DEFAULT TRUE")
+  // A second attached session publishes DDL through the shared in-memory
+  // planning generation; EXECUTE must observe it without polling schema files.
+  schemaSession = executor.attach(managed)
+  executeOne(schemaSession, "ALTER TABLE item ADD COLUMN active BOOLEAN NOT NULL DEFAULT TRUE")
+  executor.close(schemaSession)
   afterSchemaChange = executeOne(engine, "EXECUTE find_item USING 2")
   testkit.equal(state, afterSchemaChange.rows[0][0].value, "beta", "prepared statement rebinds after schema change")
   testkit.record(state, afterSchemaChange.rows[0][1].value == 20, "prepared statement retains projection after schema change")

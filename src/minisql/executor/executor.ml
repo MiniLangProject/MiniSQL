@@ -443,12 +443,13 @@ function currentSequenceValue(engine, name)
   return fail(BINDING_ERROR, "currval", "CURRVAL is not defined in this session for sequence " + name)
 end function
 
-// Implements current schema generation for this module.
+// Returns the process-local planning generation shared across attached
+// sessions. Committed DDL and statistics maintenance advance this counter while
+// the execution gate is held, avoiding a schema-history file read per EXECUTE.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function currentSchemaGeneration(engine)
-  state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
-  return state.generation
+function currentPlanningGeneration(engine)
+  return database_manager.planningGeneration(engine.database)
 end function
 
 // Finds prepared index using the supplied inputs.
@@ -1033,7 +1034,7 @@ end function
 // May mutate supplied state as documented by the operation name.
 function executePrepare(engine, statement)
   if findPreparedIndex(engine, statement.name) >= 0 then return fail(BINDING_ERROR, "prepare", "prepared statement already exists: " + statement.name) end if
-  engine.preparedStatements = engine.preparedStatements + [PreparedStatementState(statement.name, statement.statement, statement.parameterCount, currentSchemaGeneration(engine))]
+  engine.preparedStatements = engine.preparedStatements + [PreparedStatementState(statement.name, statement.statement, statement.parameterCount, currentPlanningGeneration(engine))]
   return commandResult("PREPARE", 0, statement.name + " parameters=" + statement.parameterCount)
 end function
 
@@ -1048,7 +1049,7 @@ function executePrepared(engine, statement)
   for each argument in statement.arguments
     if not constantParameterExpression(argument) then return fail(BINDING_ERROR, "executePrepared", "USING arguments must be constant expressions") end if
   end for
-  generation = currentSchemaGeneration(engine)
+  generation = currentPlanningGeneration(engine)
   if generation != prepared.schemaGeneration then
     prepared.schemaGeneration = generation
     engine.preparedStatements[index] = prepared
@@ -1752,6 +1753,7 @@ function executeDdl(engine, statement)
   dml.markIndexesDirty(engine.database)
   committed = try(schema_history.commit(ddlTransaction))
   if typeof(committed) == "error" then return committed end if
+  try(database_manager.refreshSchemaSnapshot(engine.database))
   rebuilt = try(rebuildIndexesForDdl(engine, bound, statement))
   if typeof(rebuilt) != "error" then dml.clearIndexesDirty(engine.database) end if
   if not engine.trusted and ast.isCreateTableStatement(statement) then
@@ -2823,7 +2825,7 @@ function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, w
   if bound.statement.limit == 0 then return [] end if
   mask = void
   if requiredColumns is not void then mask = requiredColumns[0] end if
-  reader = scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache)
+  reader = scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database))
   cursor = scan.openCursor(reader, mask)
   output = list.List.new()
   skipped = 0
@@ -2903,7 +2905,7 @@ function openSelectCursor(engine, statement)
   requiredColumns = selectRequiredColumns(bound)
   mask = void
   if requiredColumns is not void then mask = requiredColumns[0] end if
-  reader = try(scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache))
+  reader = try(scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database)))
   if typeof(reader) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return reader end if
   scanCursor = try(scan.openCursor(reader, mask))
   if typeof(scanCursor) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return scanCursor end if
@@ -2970,7 +2972,7 @@ function simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, wh
   if windowRows == 0 then return [] end if
   mask = void
   if requiredColumns is not void then mask = requiredColumns[0] end if
-  reader = try(scan.openCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache))
+  reader = try(scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database)))
   if typeof(reader) == "error" then return reader end if
   cursor = scan.openCursor(reader, mask)
   retained = []
@@ -3346,6 +3348,7 @@ function commitExplicit(engine)
   else if engine.transactionMode == MODE_DDL then
     dml.markIndexesDirty(engine.database)
     schema_history.commit(engine.ddlTransaction)
+    try(database_manager.refreshSchemaSnapshot(engine.database))
     rebuilt = try(dml.rebuildAllIndexes(engine.database))
     if typeof(rebuilt) != "error" then dml.clearIndexesDirty(engine.database) end if
     database_manager.advancePlanningGeneration(engine.database)
