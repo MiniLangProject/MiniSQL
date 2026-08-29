@@ -6,6 +6,7 @@ package minisql.server.database_manager
 
 import std.threading as threading
 import std.ds.hashmap as hashmap
+import std.ds.list as list
 import minisql.catalog.catalog as catalog
 import minisql.catalog.schema_history as schema_history
 import minisql.common.diagnostics as diagnostics
@@ -121,6 +122,8 @@ struct ReadHandleLease
   cache
   // Immutable registry entry kept alive by the database execution gate.
   entry
+  // Lazily allocated query-local positioned-read completion state.
+  readContext
   // Prevents double release and use after release.
   released
 end struct
@@ -143,6 +146,10 @@ struct ReadHandleCache
   activeLeases
   // Highest simultaneous cached-handle lease count since open.
   peakLeases
+  // Idle positioned-read contexts available for the next index lease.
+  availableReadContexts
+  // Total query contexts created by this database.
+  readContextCount
   // Prevents acquisitions after database shutdown.
   closed
 end struct
@@ -161,6 +168,10 @@ struct ReadHandleCacheStats
   activeLeases
   // Highest simultaneous handle lease count since database open.
   peakLeases
+  // Number of reusable positioned-read contexts owned by the database.
+  readContexts
+  // Number of contexts currently idle in the pool.
+  availableReadContexts
 end struct
 
 // Returns whether the supplied value satisfies the managed database condition.
@@ -284,7 +295,7 @@ end function
 function createReadHandleCache()
   guard = threading.Lock.new()
   if typeof(guard) == "error" then return guard end if
-  return ReadHandleCache(hashmap.HashMap.withCapacity(64), hashmap.HashMap.withCapacity(64), guard, 0, 0, 0, 0, false)
+  return ReadHandleCache(hashmap.HashMap.withCapacity(64), hashmap.HashMap.withCapacity(64), guard, 0, 0, 0, 0, list.List.new(), 0, false)
 end function
 
 // Validates a caller lease and returns its storage value.
@@ -293,12 +304,44 @@ function readHandleValue(lease)
   return lease.entry.value
 end function
 
+// Returns one context reused by every page read in this handle lease. Table
+// scans that remain entirely in the buffer pool never allocate the context.
+function readHandleContext(lease)
+  if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "readHandleContext", "lease must be active") end if
+#if TARGET_OS == "windows"
+  if lease.readContext is void then
+    cache = lease.cache
+    created = void
+    if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readHandleContext", "registry guard is unavailable") end if
+    if cache.availableReadContexts.len() > 0 then
+      lease.readContext = cache.availableReadContexts.pop()
+    else
+      created = try(file_api.createReadContext())
+      if typeof(created) != "error" then
+        cache.readContextCount = cache.readContextCount + 1
+        lease.readContext = created
+      end if
+    end if
+    cache.guard.release()
+    if typeof(created) == "error" then return created end if
+  end if
+  return lease.readContext
+#else
+  // Linux pread has no per-operation kernel event to amortize.
+  return void
+#endif
+end function
+
 // Releases one table or index lease after the complete storage operation. The
 // owning execution-gate read lease prevents concurrent invalidation.
 function releaseReadHandle(lease)
   if lease is not ReadHandleLease or lease.released then return fail(INVALID_ARGUMENT, "releaseReadHandle", "lease must be active") end if
   if not lease.cache.guard.acquire() then return fail(CLOSED_HANDLE, "releaseReadHandle", "registry guard is unavailable") end if
   if lease.cache.activeLeases <= 0 then lease.cache.guard.release(); return fail(CORRUPT_DATA, "releaseReadHandle", "active lease counter underflow") end if
+  if lease.readContext is not void then
+    lease.cache.availableReadContexts.add(lease.readContext)
+    lease.readContext = void
+  end if
   lease.cache.activeLeases = lease.cache.activeLeases - 1
   lease.released = true
   lease.cache.guard.release()
@@ -309,7 +352,7 @@ end function
 function publishReadHandleLease(cache, entry)
   cache.activeLeases = cache.activeLeases + 1
   if cache.activeLeases > cache.peakLeases then cache.peakLeases = cache.activeLeases end if
-  return ReadHandleLease(cache, entry, false)
+  return ReadHandleLease(cache, entry, void, false)
 end function
 
 // Acquires or lazily opens one persistent read-only index tree. The registry
@@ -393,7 +436,7 @@ function readHandleStats(database)
   cache = database.readHandles
   if cache.closed then return fail(CLOSED_HANDLE, "readHandleStats", "read-handle cache is closed") end if
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readHandleStats", "registry guard is unavailable") end if
-  result = ReadHandleCacheStats(cache.hits, cache.misses, cache.tables.count(), cache.indexes.count(), cache.activeLeases, cache.peakLeases)
+  result = ReadHandleCacheStats(cache.hits, cache.misses, cache.tables.count(), cache.indexes.count(), cache.activeLeases, cache.peakLeases, cache.readContextCount, cache.availableReadContexts.len())
   cache.guard.release()
   return result
 end function
@@ -405,6 +448,9 @@ function closeReadHandleCache(database)
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "closeReadHandleCache", "registry guard is unavailable") end if
   closeReadHandleMap(cache.tables)
   closeReadHandleMap(cache.indexes)
+  while cache.availableReadContexts.len() > 0
+    ignoredContextClose = try(file_api.closeReadContext(cache.availableReadContexts.pop()))
+  end while
   cache.closed = true
   cache.guard.release()
   cache.guard.close()

@@ -50,6 +50,10 @@ struct Connection
   tls
   // Schannel context that owns TLS keys and encrypted record buffers.
   tlsContext
+  // Framed protocol bytes successfully handed to the transport.
+  bytesSent
+  // Framed protocol bytes obtained from the transport.
+  bytesReceived
 end struct
 
 // Groups the poll result state and preserves the field relationships documented below.
@@ -79,7 +83,7 @@ end function
 // Performs I/O through its file, transport, or storage dependencies.
 function create(socketHandle)
   if not network.isHandle(socketHandle) then return fail(INVALID_ARGUMENT, "create", "socket handle is invalid") end if
-  return Connection(socketHandle, false, bytes(0), bytes(POLL_RECEIVE_BYTES, 0), false, false, void, void, 0, 0, false, void)
+  return Connection(socketHandle, false, bytes(0), bytes(POLL_RECEIVE_BYTES, 0), false, false, void, void, 0, 0, false, void, 0, 0)
 end function
 
 // Connects address using the supplied inputs.
@@ -340,6 +344,7 @@ function pollMessage(connection)
       if len(connection.receiveBuffer) != 0 then return fail(INVALID_ARGUMENT, "pollMessage", "TLS connection closed with a partial frame") end if
       return PollResult(void, true)
     end if
+    connection.bytesReceived = connection.bytesReceived + len(incoming)
     appendedTls = try(appendReceiveBytes(connection, incoming))
     if typeof(appendedTls) == "error" then return appendedTls end if
     return extractBufferedMessage(connection)
@@ -354,6 +359,7 @@ function pollMessage(connection)
     return PollResult(void, true)
   end if
 
+  connection.bytesReceived = connection.bytesReceived + count
   appended = try(appendReceiveScratch(connection, count))
   if typeof(appended) == "error" then return appended end if
   return extractBufferedMessage(connection)
@@ -371,6 +377,7 @@ function sendMessage(connection, message)
   else
     network.sendAll(connection.socket, encoded)
   end if
+  connection.bytesSent = connection.bytesSent + len(encoded)
   return len(encoded)
 end function
 
@@ -386,10 +393,24 @@ function receiveMessage(connection)
   if header.payloadLength > 0 then
     if connection.tls then payload = tls_schannel.receiveExact(connection.tlsContext, connection.socket, header.payloadLength) else payload = network.receiveExact(connection.socket, header.payloadLength) end if
   end if
+  connection.bytesReceived = connection.bytesReceived + constants.HEADER_BYTES + len(payload)
   frame = bytes(constants.HEADER_BYTES + len(payload), 0)
   copyBytes(frame, 0, headerBytes, 0, constants.HEADER_BYTES)
   if len(payload) > 0 then copyBytes(frame, constants.HEADER_BYTES, payload, 0, len(payload)) end if
   return decodeInbound(connection, frame)
+end function
+
+// Returns framed protocol bytes written by this connection. TLS record overhead
+// is deliberately excluded so plain and protected protocol workloads compare.
+function protocolBytesSent(connection)
+  validateOpen(connection, "protocolBytesSent")
+  return connection.bytesSent
+end function
+
+// Returns framed protocol bytes read by this connection.
+function protocolBytesReceived(connection)
+  validateOpen(connection, "protocolBytesReceived")
+  return connection.bytesReceived
 end function
 
 // Closes close using the supplied inputs.

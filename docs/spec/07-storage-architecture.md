@@ -50,6 +50,11 @@ database. Page misses use explicit-offset I/O on the shared immutable handle
 (`ReadFile` with `OVERLAPPED` on Windows and `pread` on Linux), so parallel readers
 do not serialize on a process-level file cursor. The database execution gate owns
 generation lifetime and closes cached handles before a writer replaces storage.
+On Windows, an index-handle lease borrows one manual-reset completion event from
+a database-owned pool and reuses it for the query's sequential page reads. Each
+simultaneous query retains a distinct event and a distinct `OVERLAPPED` record;
+the pool is bounded by observed query concurrency. Linux needs no equivalent
+state because `pread` has no per-operation completion event.
 
 ## 7.6 Critical metadata
 

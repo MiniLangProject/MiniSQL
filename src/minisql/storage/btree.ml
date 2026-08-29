@@ -493,8 +493,8 @@ end function
 
 // Decodes the leaf.
 // Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function decodeLeaf(tree, pageNumber)
-  encoded = paged_file.readPage(tree.pagedFile, pageNumber)
+function decodeLeafWithContext(tree, pageNumber, readContext)
+  encoded = paged_file.readPageWithContext(tree.pagedFile, pageNumber, readContext)
   header = page.verify(encoded)
   if header.pageType != page.TYPE_BTREE_LEAF or header.flags != 0 then return fail(CORRUPT_DATA, "decodeLeaf", "leaf page type or flags are invalid") end if
   if not bytesEqual(slice(encoded, 64, 4), leafMagic()) or endian.readU16LE(encoded, 68) != FORMAT_VERSION or endian.readU16LE(encoded, 70) != 0 or endian.readU16LE(encoded, 74) != 0 or endian.readU32LE(encoded, 92) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeLeaf", "leaf header is unsupported") end if
@@ -521,6 +521,11 @@ function decodeLeaf(tree, pageNumber)
   end for
   if header.freeStart != cursor or header.freeEnd != tree.pagedFile.pageSize then return fail(CORRUPT_DATA, "decodeLeaf", "leaf free-space header is inconsistent") end if
   return BTreeLeaf(pageNumber, previousPage, nextPage, values)
+end function
+
+// Decodes one leaf without retaining positioned-read setup across calls.
+function decodeLeaf(tree, pageNumber)
+  return decodeLeafWithContext(tree, pageNumber, void)
 end function
 
 // Encodes the internal.
@@ -559,8 +564,8 @@ end function
 
 // Decodes the internal.
 // Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function decodeInternal(tree, pageNumber)
-  encoded = paged_file.readPage(tree.pagedFile, pageNumber)
+function decodeInternalWithContext(tree, pageNumber, readContext)
+  encoded = paged_file.readPageWithContext(tree.pagedFile, pageNumber, readContext)
   header = page.verify(encoded)
   if header.pageType != page.TYPE_BTREE_INTERNAL or header.flags != 0 then return fail(CORRUPT_DATA, "decodeInternal", "internal page type or flags are invalid") end if
   if not bytesEqual(slice(encoded, 64, 4), internalMagic()) or endian.readU16LE(encoded, 68) != FORMAT_VERSION or endian.readU16LE(encoded, 74) != 0 or endian.readU32LE(encoded, 84) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeInternal", "internal header is unsupported") end if
@@ -592,6 +597,11 @@ function decodeInternal(tree, pageNumber)
   end for
   if header.freeStart != cursor or header.freeEnd != tree.pagedFile.pageSize then return fail(CORRUPT_DATA, "decodeInternal", "internal free-space header is inconsistent") end if
   return BTreeInternal(pageNumber, level, children, separators)
+end function
+
+// Decodes one internal node without retaining positioned-read setup.
+function decodeInternal(tree, pageNumber)
+  return decodeInternalWithContext(tree, pageNumber, void)
 end function
 
 // Performs the chunk entries operation for this module.
@@ -764,14 +774,14 @@ end function
 // beginning at or before key. Non-unique indexes deliberately allow equal
 // separators when a duplicate run spans leaves, so containsEntry subsequently
 // walks backward over equal-key predecessors.
-function locateLeaf(tree, key)
+function locateLeafWithContext(tree, key, readContext)
   validateOpen(tree, "locateLeaf")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "locateLeaf", "key must contain 1..256 bytes") end if
   if tree.meta.entryCount == 0 then return void end if
   pageNumber = tree.meta.rootPage
   expectedLevel = tree.meta.height - 1
   while expectedLevel > 0
-    node = decodeInternal(tree, pageNumber)
+    node = decodeInternalWithContext(tree, pageNumber, readContext)
     if node.level != expectedLevel then return fail(CORRUPT_DATA, "locateLeaf", "internal level mismatch") end if
     childIndex = 0
     for index = 0 to len(node.separators) - 1
@@ -781,7 +791,12 @@ function locateLeaf(tree, key)
     pageNumber = node.children[childIndex]
     expectedLevel = expectedLevel - 1
   end while
-  return decodeLeaf(tree, pageNumber)
+  return decodeLeafWithContext(tree, pageNumber, readContext)
+end function
+
+// Locates one leaf without a reusable positioned-read context.
+function locateLeaf(tree, key)
+  return locateLeafWithContext(tree, key, void)
 end function
 
 // Tests one complete key/value entry without building allEntries(). At most one
@@ -866,12 +881,13 @@ end function
 
 // Finds the requested value.
 // Inputs: `tree`, `key`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function find(tree, key)
+function findWithContext(tree, key, readContext)
+  if typeof(readContext) == "error" then return readContext end if
   validateOpen(tree, "find")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "find", "key must contain 1..256 bytes") end if
   if tree.meta.entryCount == 0 then return [] end if
   result = []
-  leaf = locateLeaf(tree, key)
+  leaf = locateLeafWithContext(tree, key, readContext)
   // Equal non-unique keys may straddle leaf boundaries. Descend to the normal
   // search leaf, then walk only the equal-key predecessor run before scanning
   // forward. Unique lookups normally decode exactly one root-to-leaf path.
@@ -879,7 +895,7 @@ function find(tree, key)
   while leaf.previousPage != 0
     traversed = traversed + 1
     if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "find", "leaf backward chain contains a cycle") end if
-    previous = decodeLeaf(tree, leaf.previousPage)
+    previous = decodeLeafWithContext(tree, leaf.previousPage, readContext)
     if previous.nextPage != leaf.pageNumber then return fail(CORRUPT_DATA, "find", "leaf forward link mismatch") end if
     previousLast = previous.entries[len(previous.entries) - 1]
     if compareKeys(previousLast.key, key) != 0 then break end if
@@ -896,7 +912,7 @@ function find(tree, key)
       if comparison > 0 then return result end if
     end for
     if leaf.nextPage == 0 then return result end if
-    nextLeaf = decodeLeaf(tree, leaf.nextPage)
+    nextLeaf = decodeLeafWithContext(tree, leaf.nextPage, readContext)
     if nextLeaf.previousPage != leaf.pageNumber then return fail(CORRUPT_DATA, "find", "leaf backward link mismatch") end if
     if compareKeys(nextLeaf.entries[0].key, key) > 0 then return result end if
     leaf = nextLeaf
@@ -904,9 +920,15 @@ function find(tree, key)
   return result
 end function
 
+// Finds values without retaining positioned-read setup across page reads.
+function find(tree, key)
+  return findWithContext(tree, key, void)
+end function
+
 // Performs the range operation for this module.
 // Inputs: `tree`, `lower`, `lowerInclusive`, `upper`, `upperInclusive`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
+function rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, maximum, readContext)
+  if typeof(readContext) == "error" then return readContext end if
   validateOpen(tree, "range")
   if lower is not void and typeof(lower) != "bytes" then return fail(INVALID_ARGUMENT, "range", "lower must be bytes or void") end if
   if upper is not void and typeof(upper) != "bytes" then return fail(INVALID_ARGUMENT, "range", "upper must be bytes or void") end if
@@ -915,7 +937,7 @@ function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
   if tree.meta.entryCount == 0 then return [] end if
   result = []
   leaf = void
-  if lower is void then leaf = decodeLeaf(tree, tree.meta.firstLeaf) else leaf = locateLeaf(tree, lower) end if
+  if lower is void then leaf = decodeLeafWithContext(tree, tree.meta.firstLeaf, readContext) else leaf = locateLeafWithContext(tree, lower, readContext) end if
   // locateLeaf may land inside a duplicate run. Rewind only while the previous
   // leaf can still contain a value admitted by the lower bound.
   if lower is not void then
@@ -924,7 +946,7 @@ function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
     while rewinding and leaf.previousPage != 0
       traversed = traversed + 1
       if traversed > tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "range", "leaf backward chain contains a cycle") end if
-      previous = decodeLeaf(tree, leaf.previousPage)
+      previous = decodeLeafWithContext(tree, leaf.previousPage, readContext)
       if previous.nextPage != leaf.pageNumber then return fail(CORRUPT_DATA, "range", "leaf forward link mismatch") end if
       previousLastOrder = compareKeys(previous.entries[len(previous.entries) - 1].key, lower)
       if previousLastOrder > 0 or (previousLastOrder == 0 and lowerInclusive) then leaf = previous else rewinding = false end if
@@ -951,7 +973,7 @@ function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
       end if
     end for
     if leaf.nextPage == 0 then return result end if
-    nextLeaf = decodeLeaf(tree, leaf.nextPage)
+    nextLeaf = decodeLeafWithContext(tree, leaf.nextPage, readContext)
     if nextLeaf.previousPage != leaf.pageNumber then return fail(CORRUPT_DATA, "range", "leaf backward link mismatch") end if
     if upper is not void then
       firstOrder = compareKeys(nextLeaf.entries[0].key, upper)
@@ -960,6 +982,11 @@ function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
     leaf = nextLeaf
   end while
   return result
+end function
+
+// Scans a range without retaining positioned-read setup across page reads.
+function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
+  return rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, maximum, void)
 end function
 
 // Performs the visit contains operation for this module.

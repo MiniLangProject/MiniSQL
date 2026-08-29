@@ -346,6 +346,23 @@ large overflow values, and post-`VACUUM` data integrity. See
 
 ## Performance evaluation
 
+### 2026-08-29 native concurrent-read profile
+
+A native MiniLang load generator now separates server scaling from Python
+interpreter effects. On the Windows reference system, persistent prepared
+primary-key reads reached **7,529 / 5,658 / 3,442 requests/s** at 8 / 16 / 32
+clients. Each median covers five fresh-server trials with 2,000 measured reads
+per client after warm-up.
+
+Windows query-local `OVERLAPPED` completion-event reuse improved the matched
+throughput by **0.75% / 2.76% / 1.35%**. At 16 clients it also reduced host
+context switches from 39.54 to 36.87 per request. The workload transfers 158.76
+framed-protocol bytes and performs about 5.16 physical reads (20.63 KiB) per
+request, so the continuing decline beyond eight clients is a scheduler/context-
+switch problem rather than network volume or Python's GIL. Methodology, CPU,
+memory, handle and I/O measurements are in the
+[`native concurrency report`](tests/performance/NATIVE_CONCURRENCY_2026-08-29.md).
+
 ### 2026-08-28 execution-pipeline update
 
 The latest Windows execution pass retains the exact 1 GiB workload below and

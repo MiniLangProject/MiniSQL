@@ -28,10 +28,12 @@ Read paths must not lazily mutate shared state. Schema history and the sort-temp
 directory are therefore initialized while opening the database, index repair is
 performed while attaching under the writer gate, and spill-name allocation is
 synchronized. A read that observes the durable dirty-index marker explicitly
-escalates to the writer gate for repair before running its plan. Read scans open
-independent table and index handles under
-compatible shared Win32 locks. The compiler's process-wide UTF-16 extern scratch
-buffers require a very short synchronization region around path-bearing Win32
+escalates to the writer gate for repair before running its plan. Read scans lease
+persistent database-owned table and index handles. Their explicit-offset reads
+remain independent; Windows index probes additionally lease separate reusable
+completion events, while Linux uses stateless `pread`. The compiler's
+process-wide UTF-16 extern scratch buffers require a very short synchronization
+region around path-bearing Win32
 calls; the actual positioned reads are not inside that region.
 
 All Windows CNG sequences (RNG, PBKDF2, SHA/HMAC and AES-GCM) share MiniLang's

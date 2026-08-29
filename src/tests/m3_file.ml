@@ -18,6 +18,8 @@ struct PositionedReadTask
   expected
   // Barrier aligning all native reads.
   start
+  // Worker-owned reusable completion context.
+  context
 end struct
 
 // Repeatedly reads a non-zero destination slice and validates that another
@@ -26,7 +28,7 @@ function runPositionedReads(task)
   if not task.start.waitFor(5000) then return error(9100, "positioned read start timed out") end if
   for iteration = 0 to 1999
     destination = bytes(80, 0xCC)
-    actual = try(file_api.readExactAt(task.file, task.offset + 13, destination, 7, 64))
+    actual = try(file_api.readExactAtWithContext(task.file, task.offset + 13, destination, 7, 64, task.context))
     if typeof(actual) == "error" then return actual end if
     for index = 7 to 70
       if destination[index] != task.expected then return error(9100, "positioned read observed another worker region") end if
@@ -106,14 +108,18 @@ function main(args)
   shared = file_api.openRead(concurrentPath)
   start = threading.Event.new(true, false)
   workers = array(8)
+  contexts = array(8)
   for workerIndex = 0 to 7
+    contexts[workerIndex] = file_api.createReadContext()
     workers[workerIndex] = Thread(runPositionedReads, "minisql-positioned-read-" + workerIndex)
-    test.record(state, workers[workerIndex].Start(PositionedReadTask(shared, workerIndex * 4096, workerIndex + 11, start)), "positioned worker starts " + workerIndex)
+    test.record(state, workers[workerIndex].Start(PositionedReadTask(shared, workerIndex * 4096, workerIndex + 11, start, contexts[workerIndex])), "positioned worker starts " + workerIndex)
   end for
   start.set()
   for workerIndex = 0 to 7
     joined = workers[workerIndex].Join(15000)
     test.record(state, joined and workers[workerIndex].Status() == "Completed", "positioned worker completes " + workerIndex)
+    test.equal(state, file_api.readContextOperations(contexts[workerIndex]), 2000, "positioned context reuses one event " + workerIndex)
+    test.record(state, file_api.closeReadContext(contexts[workerIndex]), "positioned context closes " + workerIndex)
     workers[workerIndex].Close()
   end for
   start.close()

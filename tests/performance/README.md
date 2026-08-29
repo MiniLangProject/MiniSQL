@@ -133,8 +133,11 @@ median matrix from 2,022 / 3,810 / 4,860 / 4,612 / 3,777 / 2,595 requests/s to
 1,971 / 3,821 / 5,551 / 8,343 / 6,737 / 4,339 requests/s. The eight-client peak
 improved by 71.7%; 16 and 32 clients improved by 78.4% and 67.2% respectively.
 The one-client delta was -2.5%, within the run-to-run variation observed on the
-host. A completion-event pool was rejected because it reduced eight-client
-throughput by 5.6% and retained additional kernel handles per open file.
+host. A per-file completion-event pool was rejected because its semaphore and
+registry traffic reduced eight-client throughput by 5.6%. The subsequently
+measured query-local pool avoids synchronization on every page read and is
+documented separately in
+[`NATIVE_CONCURRENCY_2026-08-29.md`](NATIVE_CONCURRENCY_2026-08-29.md).
 
 The same run sampled the server at 78.6 MiB working set / 132.3 MiB private bytes
 when idle and 168.3 / 215.1 MiB during 32-client load. The settled memory remained
@@ -147,6 +150,28 @@ $env:PYTHONPATH = (Resolve-Path .\clients\python).Path
 python .\tests\performance\concurrent_indexed_reads.py `
   minisql://127.0.0.1:7551/main `
   --clients 1,2,4,8,16,32 --operations 250 --trials 3
+```
+
+`native_concurrent_indexed_reads.ml` runs the same prepared lookup entirely in
+native MiniLang workers and reports exact framed-protocol byte counts. The
+Windows profiler starts a fresh server for every trial and records throughput,
+server CPU, host context switches, process I/O, TCP segments, memory and handle
+peaks. Its port and maximum concurrency are validated against the supplied
+server configuration.
+
+```powershell
+python ..\MiniLangCompilerPy\mlc_win64.py `
+  .\tests\performance\native_concurrent_indexed_reads.ml `
+  .\build\performance\native-concurrent-indexed-reads.exe `
+  -I .\src -I ..\MiniLangCompilerPy --target windows-x64
+
+.\tests\performance\profile_concurrent_reads.ps1 `
+  -Server .\build\bin\minisqld.exe `
+  -Benchmark .\build\performance\native-concurrent-indexed-reads.exe `
+  -Database .\build\performance\connector-comparison\data\db_<id> `
+  -Config .\build\performance\concurrent-read-config.json `
+  -Port 7551 -Clients 8,16,32 -Operations 2000 -Trials 5 `
+  -Output .\build\performance\native-profile.json
 ```
 
 ```powershell

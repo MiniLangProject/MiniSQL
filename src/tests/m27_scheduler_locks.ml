@@ -210,6 +210,12 @@ function main(args)
   handleStats = database_manager.readHandleStats(managed)
   testkit.record(state, handleStats.peakLeases >= 2, "positioned storage handle serves overlapping query leases")
   testkit.equal(state, handleStats.activeLeases, 0, "parallel queries release every storage handle lease")
+#if TARGET_OS == "windows"
+  testkit.record(state, handleStats.readContexts >= 2, "parallel index probes create independent read contexts")
+  testkit.equal(state, handleStats.availableReadContexts, handleStats.readContexts, "completed probes return every read context to the pool")
+#else
+  testkit.equal(state, handleStats.readContexts, 0, "Linux pread requires no positioned-read context")
+#endif
   queryOne.Close()
   queryTwo.Close()
   queryStart.close()

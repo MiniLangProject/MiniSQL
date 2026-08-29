@@ -384,6 +384,13 @@ function ping(client)
   return response.messageType == constants.TYPE_PONG
 end function
 
+// Returns sent and received framed-protocol byte counters for diagnostics and
+// reproducible connector benchmarks.
+function protocolByteCounts(client)
+  validateOpen(client, "protocolByteCounts")
+  return [connection.protocolBytesSent(client.connection), connection.protocolBytesReceived(client.connection)]
+end function
+
 // Closes close using the supplied inputs.
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.

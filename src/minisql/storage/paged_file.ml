@@ -415,11 +415,16 @@ end function
 // Reads the page.
 // Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readPage(pagedFile, pageNumber)
+  return readPageWithContext(pagedFile, pageNumber, void)
+end function
+
+// Reads and verifies one page while reusing the caller's positioned-I/O state.
+function readPageWithContext(pagedFile, pageNumber, readContext)
   validateOpen(pagedFile, "readPage")
   validateNativeId(pageNumber, "readPage", "pageNumber")
   if pageNumber >= pagedFile.pageCount then return fail(INVALID_ARGUMENT, "readPage", "page number is outside the file") end if
   output = bytes(pagedFile.pageSize, 0)
-  file_api.readExactAt(pagedFile.file, pageOffset(pagedFile, pageNumber), output, 0, len(output))
+  if readContext is void then file_api.readExactAt(pagedFile.file, pageOffset(pagedFile, pageNumber), output, 0, len(output)) else file_api.readExactAtWithContext(pagedFile.file, pageOffset(pagedFile, pageNumber), output, 0, len(output), readContext) end if
   validatePageIdentity(pagedFile, output, pageNumber, "readPage")
   return output
 end function

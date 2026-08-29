@@ -39,6 +39,16 @@ struct FileHandle
   positionedRead
 end struct
 
+// Cross-platform query-local state for amortizing positioned-read setup.
+struct PositionedReadContext
+  // Platform-owned state; a Win32 completion event and void on Linux.
+  nativeContext
+  // Successful explicit-offset operations performed through this context.
+  operations
+  // Prevents reuse after the native resources have been released.
+  closed
+end struct
+
 // Creates the module's structured error with operation context.
 // Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
@@ -77,6 +87,34 @@ end function
 function openRead(path)
   handle = native.openNativePositionedRead(path, native.GENERIC_READ, shareAll(), native.OPEN_EXISTING, false)
   return FileHandle(path, handle, true, false, false, false, false, true)
+end function
+
+// Creates a context reusable by sequential reads in one query or cursor lease.
+function createReadContext()
+#if TARGET_OS == "windows"
+  nativeContext = try(native.createReadContext())
+  if typeof(nativeContext) == "error" then return nativeContext end if
+  return PositionedReadContext(nativeContext, 0, false)
+#else
+  return PositionedReadContext(void, 0, false)
+#endif
+end function
+
+// Closes a reusable read context after every dependent I/O has completed.
+function closeReadContext(context)
+  if context is not PositionedReadContext or context.closed then return fail(INVALID_ARGUMENT, "closeReadContext", "context must be open") end if
+#if TARGET_OS == "windows"
+  closed = try(native.closeReadContext(context.nativeContext))
+  if typeof(closed) == "error" then return closed end if
+#endif
+  context.closed = true
+  return true
+end function
+
+// Reports successful positioned operations performed through this context.
+function readContextOperations(context)
+  if context is not PositionedReadContext or context.closed then return fail(INVALID_ARGUMENT, "readContextOperations", "context must be open") end if
+  return context.operations
 end function
 
 // Opens the read write.
@@ -139,23 +177,26 @@ end function
 
 // Reads the at.
 // Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function readAt(file, fileOffset, destination, destinationOffset, count)
+function readAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
   validateOpen(file, "readAt")
   if not file.readable then return fail(INVALID_ARGUMENT, "readAt", "file is not readable") end if
   validateSlice(destination, destinationOffset, count, "readAt")
   validateFileRange(fileOffset, count, "readAt")
   if count == 0 then return 0 end if
+  if context is not void and (context is not PositionedReadContext or context.closed) then return fail(INVALID_ARGUMENT, "readAt", "context must be open or void") end if
 
 #if TARGET_OS == "linux"
-  return native.readAt(file.nativeHandle, fileOffset, destination, destinationOffset, count)
+  actual = try(native.readAt(file.nativeHandle, fileOffset, destination, destinationOffset, count))
 #else
   if file.positionedRead then
     target = destination
     copyBack = destinationOffset != 0 or count != len(destination)
     if copyBack then target = bytes(count, 0) end if
-    actual = try(native.readAt(file.nativeHandle, fileOffset, target, count))
+    actual = void
+    if context is void then actual = try(native.readAt(file.nativeHandle, fileOffset, target, count)) else actual = try(native.readAtWithContext(file.nativeHandle, fileOffset, target, count, context.nativeContext)) end if
     if typeof(actual) == "error" then return actual end if
     if actual > 0 and copyBack then copyBytes(destination, destinationOffset, target, 0, actual) end if
+    if context is not void then context.operations = context.operations + 1 end if
     return actual
   end if
   native.seek(file.nativeHandle, fileOffset)
@@ -170,8 +211,15 @@ function readAt(file, fileOffset, destination, destinationOffset, count)
     total = total + actual
   end while
   if total > 0 then copyBytes(destination, destinationOffset, temporary, 0, total) end if
-  return total
+  actual = total
 #endif
+  if context is not void then context.operations = context.operations + 1 end if
+  return actual
+end function
+
+// Reads without retaining setup across calls.
+function readAt(file, fileOffset, destination, destinationOffset, count)
+  return readAtWithContext(file, fileOffset, destination, destinationOffset, count, void)
 end function
 
 // Reads the exact at.
@@ -179,6 +227,13 @@ end function
 function readExactAt(file, fileOffset, destination, destinationOffset, count)
   actual = readAt(file, fileOffset, destination, destinationOffset, count)
   if actual != count then return fail(IO_FAILURE, "readExactAt", "short read: expected=" + count + " actual=" + actual) end if
+  return actual
+end function
+
+// Reads one exact range through a caller-owned query-local context.
+function readExactAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
+  actual = readAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
+  if actual != count then return fail(IO_FAILURE, "readExactAtWithContext", "short read: expected=" + count + " actual=" + actual) end if
   return actual
 end function
 

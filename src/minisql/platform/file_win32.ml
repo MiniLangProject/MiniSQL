@@ -45,6 +45,16 @@ const MOVEFILE_WRITE_THROUGH = 0x00000008
 const MOVE_RETRY_ATTEMPTS = 40
 const MOVE_RETRY_DELAY_MS = 25
 
+// One manual-reset completion event reused by a sequential query or cursor.
+// ResetEvent is required before reuse because overlapped operations may finish
+// synchronously without consuming the event through a wait.
+struct PositionedReadContext
+  // Manual-reset event stored in each operation's OVERLAPPED record.
+  completion
+  // Prevents an event handle from being reused after close.
+  closed
+end struct
+
 // Opens or creates a Win32 file and returns its native handle or INVALID_HANDLE_VALUE.
 extern function CreateFileW(path as wstr, desiredAccess as u32, shareMode as u32, security as ptr, creationDisposition as u32, flagsAndAttributes as u32, templateFile as ptr) from "kernel32.dll" symbol "CreateFileW" returns ptr
 // Reads synchronously into `buffer`, writing the transferred count to `bytesRead`.
@@ -159,39 +169,64 @@ function readCurrent(handle, destination, count)
   return endian.readU32LE(countOut, 0)
 end function
 
-// Reads at an explicit byte offset without observing or changing a shared file
-// cursor. A unique manual-reset event makes completion unambiguous when several
-// threads concurrently use the same overlapped handle.
-function readAt(handle, fileOffset, destination, count)
+// Creates one reusable completion event for a query-local positioned-read lease.
+function createReadContext()
+  completion = try(threading.Event.new(true, false))
+  if typeof(completion) == "error" then return fail(IO_FAILURE, "createReadContext", completion.message) end if
+  return PositionedReadContext(completion, false)
+end function
+
+// Closes a query-local completion event after its final read has completed.
+function closeReadContext(context)
+  if context is not PositionedReadContext then return fail(INVALID_ARGUMENT, "closeReadContext", "context must be PositionedReadContext") end if
+  if context.closed then return fail(INVALID_ARGUMENT, "closeReadContext", "context is already closed") end if
+  if not context.completion.close() then return fail(IO_FAILURE, "closeReadContext", "could not close completion event") end if
+  context.closed = true
+  return true
+end function
+
+// Reads at an explicit byte offset with one caller-owned completion event. The
+// OVERLAPPED record remains unique to the operation while event creation is
+// amortized across every page read in the owning query lease.
+function readAtWithContext(handle, fileOffset, destination, count, context)
   if isInvalidHandle(handle) then return fail(INVALID_ARGUMENT, "readAt", "invalid handle") end if
   if typeof(fileOffset) != "int" or fileOffset < 0 or fileOffset > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "readAt", "fileOffset must be non-negative") end if
   if typeof(destination) != "bytes" then return fail(INVALID_ARGUMENT, "readAt", "destination must be bytes") end if
   if typeof(count) != "int" or count < 0 or count > len(destination) or count > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "readAt", "count exceeds destination or U32") end if
+  if context is not PositionedReadContext or context.closed then return fail(INVALID_ARGUMENT, "readAt", "context must be open") end if
   if count == 0 then return 0 end if
 
-  completion = try(threading.Event.new(true, false))
-  if typeof(completion) == "error" then return fail(IO_FAILURE, "readAt", completion.message) end if
+  if not context.completion.reset() then return fail(IO_FAILURE, "readAt", "could not reset completion event") end if
   overlapped = bytes(32, 0)
   offsetWords = endian.uint64FromInt(fileOffset)
   endian.writeU32LE(overlapped, 16, offsetWords.low)
   endian.writeU32LE(overlapped, 20, offsetWords.high)
-  endian.writeU64LE(overlapped, 24, endian.uint64FromInt(completion.handle))
+  endian.writeU64LE(overlapped, 24, endian.uint64FromInt(context.completion.handle))
   immediateCount = bytes(4, 0)
   started = ReadFilePositioned(handle, destination, count, immediateCount, overlapped)
   if not started then
     code = GetLastError()
-    if code == ERROR_HANDLE_EOF then completion.close(); return 0 end if
-    if code != ERROR_IO_PENDING then completion.close(); return fail(IO_FAILURE, "readAt", "Win32 error " + code) end if
+    if code == ERROR_HANDLE_EOF then return 0 end if
+    if code != ERROR_IO_PENDING then return fail(IO_FAILURE, "readAt", "Win32 error " + code) end if
   end if
   transferred = bytes(4, 0)
   if not GetOverlappedResult(handle, overlapped, transferred, true) then
     code = GetLastError()
-    completion.close()
     if code == ERROR_HANDLE_EOF then return 0 end if
     return fail(IO_FAILURE, "readAt", "Win32 completion error " + code)
   end if
-  completion.close()
   return endian.readU32LE(transferred, 0)
+end function
+
+// Compatibility positioned read whose temporary context owns exactly one read.
+function readAt(handle, fileOffset, destination, count)
+  context = try(createReadContext())
+  if typeof(context) == "error" then return context end if
+  result = try(readAtWithContext(handle, fileOffset, destination, count, context))
+  closed = try(closeReadContext(context))
+  if typeof(result) == "error" then return result end if
+  if typeof(closed) == "error" then return closed end if
+  return result
 end function
 
 // Writes the current.

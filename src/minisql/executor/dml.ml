@@ -1418,6 +1418,11 @@ function readOnlyIndexTree(lease)
   return database_manager.readHandleValue(lease)
 end function
 
+// Returns the event context amortized across this index probe's page reads.
+function readOnlyIndexContext(lease)
+  return database_manager.readHandleContext(lease)
+end function
+
 // Releases a persistent index lease without closing its database-owned tree.
 function closeReadOnlyIndex(lease)
   return database_manager.releaseReadHandle(lease)
@@ -1761,7 +1766,7 @@ function namedEqualityIndexRows(database, table, columnIndex, literalValue, page
   if converted.isNull then return [] end if
   indexLease = openReadOnlyIndex(database, constraint, "equalityIndexRows")
   tree = readOnlyIndexTree(indexLease)
-  found = try(btree.find(tree, encodeIndexKey([converted])))
+  found = try(btree.findWithContext(tree, encodeIndexKey([converted]), readOnlyIndexContext(indexLease)))
   closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(found) == "error" then return found end if
   if typeof(closeResult) == "error" then return closeResult end if
@@ -1799,7 +1804,7 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
   end if
   indexLease = openReadOnlyIndex(database, constraint, "rangeIndexRows")
   tree = readOnlyIndexTree(indexLease)
-  found = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
+  found = try(btree.rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, 0, readOnlyIndexContext(indexLease)))
   closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(found) == "error" then return found end if
   if typeof(closeResult) == "error" then return closeResult end if
@@ -1852,7 +1857,7 @@ function namedCompositeEqualityIndexRows(database, table, expression, pageTransa
         encodedKey = encodeIndexKey(keyValues)
         indexLease = openReadOnlyIndex(database, constraint, "compositeEqualityIndexRows")
         tree = readOnlyIndexTree(indexLease)
-        foundValues = try(btree.find(tree, encodedKey))
+        foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
         closeResult = try(closeReadOnlyIndex(indexLease))
         if typeof(foundValues) == "error" then return foundValues end if
         if typeof(closeResult) == "error" then return closeResult end if
@@ -1952,7 +1957,7 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   tree = readOnlyIndexTree(indexLease)
   entries = []
   if operator == "=" then
-    foundValues = try(btree.find(tree, encodedKey))
+    foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
     if typeof(foundValues) == "error" then closeReadOnlyIndex(indexLease); return foundValues end if
     for each rowValue in foundValues
       entries = entries + [btree.entry(encodedKey, rowValue)]
@@ -1963,7 +1968,7 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
     lowerInclusive = true
     upperInclusive = true
     if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
-    entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
+    entries = try(btree.rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, 0, readOnlyIndexContext(indexLease)))
   end if
   closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(entries) == "error" then return entries end if
@@ -2006,7 +2011,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
     encodedKey = encodeIndexKey(keyValues)
     indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
     tree = readOnlyIndexTree(indexLease)
-    foundValues = try(btree.find(tree, encodedKey))
+    foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
     closeResult = try(closeReadOnlyIndex(indexLease))
     if typeof(foundValues) == "error" then return foundValues end if
     if typeof(closeResult) == "error" then return closeResult end if
@@ -2030,7 +2035,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   tree = readOnlyIndexTree(indexLease)
   entries = void
   if operator == "=" then
-    foundValues = try(btree.find(tree, encodedKey))
+    foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
     if typeof(foundValues) != "error" then
       entries = []
       for each rowValue in foundValues
@@ -2045,7 +2050,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
     lowerInclusive = true
     upperInclusive = true
     if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
-    entries = try(btree.range(tree, lower, lowerInclusive, upper, upperInclusive, 0))
+    entries = try(btree.rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, 0, readOnlyIndexContext(indexLease)))
   end if
   closeResult = try(closeReadOnlyIndex(indexLease))
   if typeof(entries) == "error" then return entries end if

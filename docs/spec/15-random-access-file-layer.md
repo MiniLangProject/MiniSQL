@@ -8,7 +8,12 @@ delegates to MiniLang `std.io.file`, whose positioned operations use
 `pread`/`pwrite`; durability and locks map to `fsync` and `flock`.
 
 The implementation is synchronous. Positioned operations do not mutate a shared
-logical cursor and may be issued by independent reader handles concurrently.
+logical cursor and may be issued on one immutable shared reader handle
+concurrently. Each Windows caller supplies an independent `OVERLAPPED` record.
+Sequential reads belonging to one query may reuse a caller-owned manual-reset
+completion event after explicitly resetting it before every operation. The
+cross-platform context is intentionally empty on Linux, where `pread` already
+provides explicit-offset synchronous I/O without an event handle.
 
 ## 15.2 Exact I/O
 
@@ -16,6 +21,11 @@ logical cursor and may be issued by independent reader handles concurrently.
 `writeAt` MUST fail on a short write. Buffer and file ranges are validated before I/O.
 Offsets are non-negative native MiniLang integers; a future wider-offset layer may use
 explicit U64 words.
+
+`readAtWithContext` and `readExactAtWithContext` accept query-local reusable
+state. A context MUST NOT be shared by simultaneous operations, and it MUST be
+closed only after its last dependent read has completed. The compatibility
+functions retain the same result contract without exposing context lifetime.
 
 `truncate` changes the physical end of file. `append` obtains the current size and then
 writes at that offset; it is not a multi-writer atomic append primitive.
