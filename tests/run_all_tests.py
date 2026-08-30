@@ -870,6 +870,7 @@ def validate_config_and_docs() -> None:
         "docs/spec/61-hot-streaming-replication.md",
         "docs/spec/62-quality-hardening.md",
         "docs/spec/63-release-freeze.md",
+        "docs/spec/66-automatic-ha-fencing.md",
         "docs/adr/ADR-0077-durable-live-wal-export.md",
         "docs/adr/ADR-0078-double-buffer-hot-standby.md",
         "docs/adr/ADR-0079-deterministic-release-hardening.md",
@@ -877,7 +878,9 @@ def validate_config_and_docs() -> None:
         "docs/adr/ADR-0081-fragmentation-safe-network-byte-ranges.md",
         "docs/adr/ADR-0082-direct-offset-network-io.md",
         "docs/adr/ADR-0083-winsock-signed-i32-results.md",
+        "docs/adr/ADR-0085-single-host-leases-and-native-write-fencing.md",
         "docs/formats/wal-durable-marker-v1.md",
+        "docs/formats/ha-fencing-records-v1.md",
         "docs/formats/FORMAT_COMPATIBILITY.md",
         "docs/release/README.md",
         "docs/release/SQL_REFERENCE.md",
@@ -890,16 +893,20 @@ def validate_config_and_docs() -> None:
         "docs/release/upgrade-matrix.json",
         "docs/release/feature-matrix.json",
         "tools/replication/minisql_hot_replica.py",
+        "tools/replication/minisql_ha_controller.py",
         "tools/quality/minisql_quality.py",
         "tools/release/build_release.py",
         "tests/fuzz/m49_sql_corpus.json",
         "tests/recovery/m49_crash_matrix.json",
         "tests/performance/m49_baseline.json",
+        "tests/performance/AUTOMATIC_HA_2026-08-30.md",
         "tests/reference/m48_m50_layout.json",
         "src/tests/m48_hot_replication.ml",
         "src/tests/m49_hardening.ml",
         "src/tests/m50_release_contract.ml",
         "src/tests/m50_all_modules.ml",
+        "tests/ha/automatic_fencing_drill.py",
+        "tests/ha/automatic_controller_live.py",
         "release.ps1",
     ]
     for relative in required:
@@ -1012,6 +1019,9 @@ def validate_source_contracts() -> None:
             "function enterExecution",
             "threading.Lock.new()",
             "threading.Semaphore.new(1, 1)",
+            "function configureWriteFencing",
+            "function validateWriteFence",
+            "const WRITE_FENCED = 9038",
         ],
         "src/minisql/executor/executor.ml": [
             "function executeStatementCore",
@@ -1056,6 +1066,23 @@ def validate_source_contracts() -> None:
             "standby-materialize",
             "standby server did not listen",
             "MiniSQL hot standby: SUCCESS",
+        ],
+        "tools/replication/minisql_ha_controller.py": [
+            "class FileWitness",
+            "class HAController",
+            "def encode_lease",
+            '"--serve-fenced"',
+            "MiniSQL automatic HA controller self-test: SUCCESS",
+        ],
+        "tests/ha/automatic_fencing_drill.py": [
+            "expect_fenced",
+            "oldPrimaryDirectWriteError",
+            "MiniSQL automatic fencing drill: SUCCESS",
+        ],
+        "tests/ha/automatic_controller_live.py": [
+            "kill_pid",
+            "recoveryTimeSeconds",
+            "MiniSQL automatic HA controller live test: SUCCESS",
         ],
         "tools/quality/minisql_quality.py": [
             "def crash_matrix",
@@ -1289,6 +1316,12 @@ def validate_reference_vectors() -> None:
     )
     if output != "MiniSQL M48 replication sidecar self-test: SUCCESS":
         raise AcceptanceFailure(f"Unexpected M48 sidecar self-test output: {output!r}")
+    output = _run_python_static(
+        [sys.executable, "-B", str(ROOT / "tools/replication/minisql_ha_controller.py"), "self-test"],
+        "automatic HA controller self-test",
+    )
+    if output != "MiniSQL automatic HA controller self-test: SUCCESS":
+        raise AcceptanceFailure(f"Unexpected automatic HA controller self-test output: {output!r}")
     output = _run_python_static(
         [sys.executable, str(ROOT / "tools/quality/minisql_quality.py"), "self-test", "--root", str(ROOT)],
         "M49 quality self-test",

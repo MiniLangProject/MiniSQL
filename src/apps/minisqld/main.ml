@@ -25,6 +25,7 @@ function printUsage()
   print ""
   print "Operational servers (run until stopped with Ctrl+C):"
   print "  minisqld.exe --serve <database-path> <port> [max-clients]"
+  print "  minisqld.exe --serve-fenced <database-path> <port> <max-clients> <lease-file> <epoch> <node-id> <max-clock-skew-ms>"
   print "  minisqld.exe --serve-authenticated <database-path> <port> [max-clients]"
   print "  minisqld.exe --serve-standby <standby-path> <port> [max-clients]"
   print "  minisqld.exe --serve-secure <database-path> <address> <port> <max-clients> [max-requests]"
@@ -196,6 +197,20 @@ function main(args)
     if args[0] == "--serve-standby-config" then mode = "standby" end if
     if args[0] == "--serve-tls-config" then mode = "tls" end if
     return runConfiguredServer(mode, args[1], args[2])
+  end if
+
+  if len(args) == 8 and args[0] == "--serve-fenced" then
+    configured = try(configureDefaultLogger())
+    if typeof(configured) == "error" then return printAppError(configured) end if
+    port = toNumber(args[2])
+    maximumClients = toNumber(args[3])
+    epoch = toNumber(args[5])
+    nodeId = toNumber(args[6])
+    clockSkewMs = toNumber(args[7])
+    if typeof(port) != "int" or typeof(maximumClients) != "int" or typeof(epoch) != "int" or typeof(nodeId) != "int" or typeof(clockSkewMs) != "int" then printUsage(); return 2 end if
+    announceServer("trusted-local-fenced", args[1], "127.0.0.1", port, maximumClients, 0)
+    ignoredFenceLog = logger.info("minisql.main.main", "starting fenced primary epoch=" + epoch + " node=" + nodeId + " lease=" + args[4])
+    return serverResult(try(server.serveConcurrentFenced(args[1], port, maximumClients, 0, args[4], epoch, nodeId, clockSkewMs)))
   end if
 
   if (len(args) == 3 or len(args) == 4) and (args[0] == "--serve" or args[0] == "--serve-authenticated" or args[0] == "--serve-standby") then

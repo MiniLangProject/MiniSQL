@@ -19,9 +19,11 @@ function main(args)
   engine = executor.attach(managed)
   sessionId = executor.sessionIdentifier(engine)
 
-  database_manager.configureProductionControls(managed, 2, 1048576, 2147483648, 1048576, 1)
+  database_manager.configureProductionControls(managed, 5, 1048576, 2147483648, 1048576, 1)
   executor.beginQueryControl(engine)
-  clock.sleepMilliseconds(3)
+  // Keep a wide scheduler margin: a two-millisecond sleep can legally return
+  // in the same coarse monotonic tick on a busy Windows acceptance host.
+  clock.sleepMilliseconds(50)
   timedOut = try(executor.pollQueryControl(engine, "m77.deadline"))
   testkit.errorCode(state, timedOut, 9036, "absolute execution deadline")
   executor.finishQueryControl(engine)
@@ -54,7 +56,8 @@ function main(args)
   testkit.equal(state, messages.decodeCancelRequest(decodedCancel.payload), sessionId, "cancel target round trip")
 
   status = database_manager.operationalStatus(managed)
-  testkit.equal(state, len(status), 28, "production status metric count")
+  testkit.equal(state, len(status), 31, "production status metric count")
+  testkit.equal(state, status[28], 0, "write fencing is disabled for ordinary embedded databases")
   testkit.equal(state, database_manager.maxResultBytes(managed), 1048576, "result byte limit getter")
 
   executor.close(engine)

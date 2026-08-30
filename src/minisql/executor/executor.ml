@@ -1813,6 +1813,8 @@ function executeDdl(engine, statement)
   ddlTransaction = schema_history.begin(engine.database.catalogHandle)
   staged = try(stageDdl(ddlTransaction, bound))
   if typeof(staged) == "error" then schema_history.rollback(ddlTransaction); return staged end if
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then schema_history.rollback(ddlTransaction); return fenced end if
   dml.markIndexesDirty(engine.database)
   committed = try(schema_history.commit(ddlTransaction))
   if typeof(committed) == "error" then return committed end if
@@ -1857,6 +1859,8 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function commitPageTransaction(engine, pageTransaction, deltaBound, deltaResult)
   changedIds = []
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then return fenced end if
   if transaction.stagedPageCount(pageTransaction) > 0 then dml.markIndexesDirty(engine.database) end if
   commitLsn = transaction.commit(pageTransaction)
   for each change in transaction.committedPages(pageTransaction)
@@ -3489,6 +3493,8 @@ function executeAnalyze(engine, statement)
     analyzeTable(engine, state, table)
     analyzed = 1
   end if
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then return fenced end if
   statistics.save(engine.database.path, state)
   invalidatePlanningContext(engine)
   return commandResult("ANALYZE", analyzed, "statistics generation " + state.generation)
@@ -3561,10 +3567,14 @@ function commitExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "commit", "no explicit transaction") end if
   if engine.failed then return fail(TRANSACTION_STATE, "commit", "transaction is failed; ROLLBACK required") end if
   if engine.transactionMode == MODE_DML then
-    commitPageTransaction(engine, engine.pageTransaction, void, void)
+    committedPages = try(commitPageTransaction(engine, engine.pageTransaction, void, void))
+    if typeof(committedPages) == "error" then return committedPages end if
   else if engine.transactionMode == MODE_DDL then
+    fenced = try(database_manager.validateWriteFence(engine.database))
+    if typeof(fenced) == "error" then return fenced end if
     dml.markIndexesDirty(engine.database)
-    schema_history.commit(engine.ddlTransaction)
+    committedSchema = try(schema_history.commit(engine.ddlTransaction))
+    if typeof(committedSchema) == "error" then return committedSchema end if
     try(database_manager.refreshSchemaSnapshot(engine.database))
     rebuilt = try(dml.rebuildAllIndexes(engine.database))
     if typeof(rebuilt) != "error" then dml.clearIndexesDirty(engine.database) end if
@@ -4068,6 +4078,8 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function executeDcl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeDcl", "DCL is autocommit-only in M21") end if
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then return fenced end if
   if ast.isCreatePrincipalStatement(statement) then return executeCreatePrincipal(engine, statement) end if
   if ast.isAlterUserStatement(statement) then return executeAlterUser(engine, statement) end if
   if ast.isDropPrincipalStatement(statement) then return executeDropPrincipal(engine, statement) end if
@@ -4083,6 +4095,8 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function executeVacuum(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "vacuum", "VACUUM is autocommit-only") end if
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then return fenced end if
   affected = dml.vacuum(engine.database, statement.tableName)
   state = loadStatistics(engine)
   if statement.tableName is void then
@@ -4094,6 +4108,8 @@ function executeVacuum(engine, statement)
     if table is void then return fail(BINDING_ERROR, "vacuum", "unknown table " + statement.tableName) end if
     analyzeTable(engine, state, table)
   end if
+  fencedStatistics = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fencedStatistics) == "error" then return fencedStatistics end if
   statistics.save(engine.database.path, state)
   return commandResult("VACUUM", affected, "storage rewritten, indexes rebuilt, and statistics refreshed")
 end function
@@ -4103,6 +4119,8 @@ end function
 // Any side effects are limited to the explicitly invoked dependencies.
 function executeReindex(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "reindex", "REINDEX is autocommit-only") end if
+  fenced = try(database_manager.validateWriteFence(engine.database))
+  if typeof(fenced) == "error" then return fenced end if
   rebuilt = dml.reindex(engine.database, statement.name)
   return commandResult("REINDEX", rebuilt, "indexes rebuilt")
 end function
@@ -4177,7 +4195,7 @@ end function
 // Exposes bounded process-local counters and configured resource ceilings.
 function executeShowStatus(engine)
   status = try(database_manager.operationalStatus(engine.database))
-  names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes", "query_timeout_ms", "max_result_bytes", "process_memory_bytes", "heap_used_bytes", "heap_committed_bytes", "temporary_storage_bytes", "temporary_reserved_bytes", "temporary_peak_bytes", "cancelled_statements", "timed_out_statements", "resource_rejected_statements", "total_execution_ms", "maximum_execution_ms", "slow_query_count", "slow_query_ms", "result_bytes_returned"]
+  names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes", "query_timeout_ms", "max_result_bytes", "process_memory_bytes", "heap_used_bytes", "heap_committed_bytes", "temporary_storage_bytes", "temporary_reserved_bytes", "temporary_peak_bytes", "cancelled_statements", "timed_out_statements", "resource_rejected_statements", "total_execution_ms", "maximum_execution_ms", "slow_query_count", "slow_query_ms", "result_bytes_returned", "fencing_enabled", "fencing_epoch", "fencing_rejections"]
   rows = []
   for index = 0 to len(names) - 1
     rows = rows + [[values.text(names[index]), values.text("" + status[index])]]
@@ -4504,6 +4522,13 @@ function executeStatementCore(engine, statement)
   if typeof(authorized) == "error" then
     ignoredAudit = appendAuditOutcome(engine, statement, false, "authorization error " + authorized.code)
     return authorized
+  end if
+  if statementUsesWriteLock(statement) then
+    fenced = try(database_manager.validateWriteFence(engine.database))
+    if typeof(fenced) == "error" then
+      ignoredAudit = appendAuditOutcome(engine, statement, false, "write fence error " + fenced.code)
+      return fenced
+    end if
   end if
 
   readLease = void

@@ -6,6 +6,14 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased — 2026-08-26
 
+- added a single-host automatic HA controller with a stable loopback endpoint,
+  asynchronous standby refresh, controller-owned promotion, a serialized file
+  witness, dedicated lease renewal, and machine-readable status;
+- added native fail-closed write fencing with persistent leader epochs,
+  expiring CRC-32C leases, stable error 9038, pre-mutation and pre-commit checks,
+  `SHOW STATUS` metrics, and Python connector error mapping;
+- added destructive split-brain, double-promotion, stable-endpoint, automatic
+  leader-kill, post-promotion write, rejoin, and offline-integrity tests;
 - added a dependency-free Java 11+ JDBC 4.3 driver with service discovery,
   trusted-local and password-authenticated connections, TLS 1.3/X.509 and
   certificate pinning, statements, client-side prepared statements, batches,

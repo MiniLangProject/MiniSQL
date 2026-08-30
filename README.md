@@ -426,9 +426,44 @@ post-promotion writes, allocator continuity, and offline integrity checking:
 
 ```powershell
 python .\tests\ha\production_failover_drill.py --work-root .\build\ha-drill
+python .\tests\ha\automatic_fencing_drill.py --work-root .\build\ha-fencing-drill
+python .\tests\ha\automatic_controller_live.py --work-root .\build\ha-controller-live
 ```
 
+MiniSQL also includes a single-host automatic HA reference controller. It owns
+the server processes, continuously renews a fail-closed leader lease, maintains
+an offline WAL standby, and presents one stable loopback endpoint. Create the
+database and schema first, stop its server, then run:
+
+```powershell
+python .\tools\replication\minisql_ha_controller.py run `
+  --primary-db .\data\db_<id> `
+  --archive .\ha\archive `
+  --slot-root .\ha\slots `
+  --witness-dir .\ha\witness `
+  --server-exe .\build\bin\minisqld.exe `
+  --backup-exe .\build\bin\minisql-backup.exe `
+  --proxy-port 7432 `
+  --status-file .\ha\status.json
+```
+
+Applications always connect to port 7432. A retired primary remains readable
+but returns stable error 9038 for any attempted mutation. `SHOW STATUS` exposes
+`fencing_enabled`, `fencing_epoch`, and `fencing_rejections`. The file witness
+is safe only on atomic, single-writer storage and is not distributed consensus;
+multi-host deployments require an external consensus/witness service and a
+storage-level fencing policy. DDL still requires a new replication base.
+
 ## Performance evaluation
+
+The 2026-08-30 automatic-HA series completed 10/10 forced leader-loss trials
+and 5/5 destructive fencing/integrity drills. Leader-kill to a newly serving
+leader measured **1.469 / 1.508 / 1.583 / 2.234 seconds** minimum / median /
+mean / p95. Every trial advanced the epoch and retained pre- and post-failover
+data; every retired primary rejected its direct write as error 9038, while each
+rejoined standby remained read-only as error 9033. The complete raw series,
+host details, test boundaries, and methodology are in the
+[`automatic HA performance report`](tests/performance/AUTOMATIC_HA_2026-08-30.md).
 
 The production-operations smoke on 2026-08-29 completed 13 measured waves of
 eight freshly connected clients and 100 indexed reads per client (10,400 SQL

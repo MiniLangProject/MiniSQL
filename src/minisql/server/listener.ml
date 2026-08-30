@@ -691,6 +691,21 @@ function serveConcurrentLoopback(databasePath, port, maximumClients, maximumRequ
   return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, 5000)
 end function
 
+// Serves a writable loopback primary whose authority is continuously proven by
+// the controller-owned lease and persistent database epoch.
+function serveConcurrentLoopbackFenced(databasePath, port, maximumClients, maximumRequests, leasePath, epoch, nodeId, clockSkewMs)
+  validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackFenced")
+  shared = try(openPreparedDatabase(databasePath, false))
+  if typeof(shared) == "error" then return shared end if
+  fenced = try(database_manager.configureWriteFencing(shared, leasePath, epoch, nodeId, clockSkewMs))
+  if typeof(fenced) == "error" then database_manager.close(shared); return fenced end if
+  listener = try(network.listenLoopback(port, maximumClients))
+  if typeof(listener) == "error" then database_manager.close(shared); return listener end if
+  idleLimit = 60000
+  if maximumRequests == 0 then idleLimit = 0 end if
+  return servePreparedConcurrentListenerMode(databasePath, listener, shared, maximumClients, maximumRequests, false, idleLimit, false, void, 5000)
+end function
+
 // Serves trusted loopback clients with a configured logical-lock timeout.
 function serveConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
   validateArguments(databasePath, maximumRequests, "serveConcurrentLoopbackWithLockWait")

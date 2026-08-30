@@ -60,7 +60,17 @@ def atomic_json(path: Path | None, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".new")
     temp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temp, path)
+    # A Windows monitor may briefly hold the old file without delete sharing.
+    # Retrying the same complete temporary record preserves atomic publication
+    # without turning a harmless concurrent status read into controller death.
+    for attempt in range(50):
+        try:
+            os.replace(temp, path)
+            return
+        except PermissionError:
+            if attempt == 49:
+                raise
+            time.sleep(0.01)
 
 
 def touch_ready(path: Path | None) -> None:

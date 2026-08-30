@@ -42,6 +42,11 @@ function serveConcurrent(databasePath, port, maximumClients, maximumRequests)
   return listener.serveConcurrentLoopback(databasePath, port, maximumClients, maximumRequests)
 end function
 
+// Serves a controller-fenced writable primary on loopback.
+function serveConcurrentFenced(databasePath, port, maximumClients, maximumRequests, leasePath, epoch, nodeId, clockSkewMs)
+  return listener.serveConcurrentLoopbackFenced(databasePath, port, maximumClients, maximumRequests, leasePath, epoch, nodeId, clockSkewMs)
+end function
+
 // Serves trusted clients using the configured logical-lock wait timeout.
 function serveConcurrentWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)
   return listener.serveConcurrentLoopbackWithLockWait(databasePath, port, maximumClients, maximumRequests, lockWaitMs)

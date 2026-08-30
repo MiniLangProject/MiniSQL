@@ -25,9 +25,16 @@ without copying SQL literals into the ordinary log. The loopback monitoring
 bridge translates the same stable status rows into Prometheus text and reports
 scrape health.
 
-HA qualification is intentionally evidence-driven rather than automatic. The
+HA qualification includes both explicit and automatic paths. The production
 drill performs concurrent primary writes, durable-prefix export, materialized
 standby reads under concurrency, explicit promotion, a post-promotion write and
-an offline integrity check. Recovery also advances the transaction allocator
-past every replayed WAL transaction. Consensus, fencing and split-brain
-prevention remain external operational requirements.
+an offline integrity check. The fencing drill leaves the old primary reachable,
+proves that its direct writes fail as 9038, promotes a new term, switches a
+stable endpoint, and rejoins the retired copy as read-only. The controller live
+test kills a managed leader and verifies automatic promotion. Recovery also
+advances the transaction allocator past every replayed WAL transaction.
+
+The native write boundary validates a persistent database epoch and a shared
+expiring lease before mutations and immediately before durable DML/DDL commit.
+This is split-brain protection for the controller-owned single-host topology,
+not a distributed consensus or synchronous quorum protocol.

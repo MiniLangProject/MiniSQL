@@ -12,7 +12,8 @@ system written in MiniLang. The Windows distribution contains:
 * `clients/jdbc` – source and build scripts for the portable Java 11+ JDBC driver;
 * `clients/python` – Python 3.10+ DB-API 2.0 connector and live test harness;
 * native Windows Schannel TLS 1.3/X.509 transport;
-* a Python sidecar for continuous hot replication.
+* Python controllers for continuous hot replication and fenced single-host
+  automatic failover.
 
 Linux source builds provide the same five command-line applications without an
 `.exe` suffix and use OpenSSL 3 for native TLS; the Win32 Workbench is omitted.

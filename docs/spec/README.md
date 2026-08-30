@@ -70,3 +70,4 @@ Exact byte offsets are frozen by the documents under `docs/formats`.
 63. [MiniSQL 1.0 release freeze](63-release-freeze.md)
 64. [Production controls, observability and HA qualification](64-production-controls-observability-ha.md)
 65. [Production fault injection and endurance qualification](65-production-fault-injection.md)
+66. [Automatic HA and native write fencing](66-automatic-ha-fencing.md)

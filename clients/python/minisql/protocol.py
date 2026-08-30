@@ -506,7 +506,7 @@ class Protocol:
             return DataError(response.message, response.error_code)
         if response.error_code in {9013, 9014, 9019, 9020, 9025}:
             return ProgrammingError(response.message, response.error_code)
-        if response.error_code in {9011, 9012, 9023, 9027, 9028, 9029, 9030, 9033, 9034}:
+        if response.error_code in {9011, 9012, 9023, 9027, 9028, 9029, 9030, 9033, 9034, 9038}:
             return OperationalError(response.message, response.error_code)
         return DatabaseError(response.message, response.error_code)
 

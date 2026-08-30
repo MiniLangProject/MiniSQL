@@ -105,9 +105,12 @@
   writer per database. Long-running readers can delay a waiting writer until the
   current reader set completes; new readers do not bypass that writer.
   This concurrency contract is validated on both native targets.
-* There is no automatic leader election, fencing, distributed failover, or
-  cross-database transaction. The tested promotion drill remains an explicit
-  operator action and external orchestration must prevent split brain.
+* The bundled automatic HA controller is a single-host reference with a stable
+  loopback endpoint and native lease fencing. Its file witness is not distributed
+  consensus and must have exactly one writer plus atomic replacement semantics.
+  Multi-host election, quorum commit, synchronous replication, and storage-level
+  fencing remain deployment responsibilities. Cross-database transactions are
+  not implemented.
 * The M48 WAL stream covers committed table-page changes for an existing
   schema. DDL, DCL, VACUUM, migration or WAL rewind requires a new base archive.
 * One controller owns an archive directory; there is no multi-writer archive

@@ -1,5 +1,19 @@
 # MiniSQL changelog
 
+## 1.0.0 — automatic HA and write fencing
+
+- added controller-owned single-host automatic failover with a stable loopback
+  endpoint, asynchronous WAL standby refresh, dedicated lease renewal, and
+  atomic status publication;
+- added a persistent database term and shared expiring lease validated by the
+  native write path before mutations and immediately before durable DML/DDL
+  commits, returning stable error 9038 after revocation;
+- added CRC-32C protected versioned fencing records, fencing observability, and
+  live qualification for split brain, double promotion, automatic leader loss,
+  endpoint switching, post-promotion writes, and read-only rejoin;
+- documented that the file witness assumes one atomic single writer and is not
+  distributed consensus, synchronous quorum replication, or storage fencing.
+
 ## 1.0.0 — fault injection and endurance qualification
 
 - added a process-local, programmatic all-or-nothing storage-write failpoint for

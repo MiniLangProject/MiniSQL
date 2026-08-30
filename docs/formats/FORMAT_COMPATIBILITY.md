@@ -8,3 +8,8 @@ an existing file.
 The M48 `wal.log.durable` marker is auxiliary and may be recreated. It does not
 change `wal.log` encoding. Unknown future versions must be rejected rather than
 guessed.
+
+Automatic HA adds auxiliary `leader.epoch` and controller-owned `leader.lease`
+records. Their v1 layouts are documented in `ha-fencing-records-v1.md`. They do
+not alter database pages, WAL, backup archives, or wire protocol v1. Ordinary
+non-HA databases do not require either record.

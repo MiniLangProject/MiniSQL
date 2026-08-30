@@ -9,6 +9,12 @@ root README's [Performance evaluation](../../README.md#performance-evaluation).
 [`PERFORMANCE_BASELINE_2026-08-23.md`](PERFORMANCE_BASELINE_2026-08-23.md)
 retains the earlier optimization baseline and implementation history.
 
+The current availability series is documented in
+[`AUTOMATIC_HA_2026-08-30.md`](AUTOMATIC_HA_2026-08-30.md). It records ten
+forced automatic promotions and five destructive write-fencing/integrity
+drills, including raw recovery times, distribution statistics, host details,
+methodology, and the limits of the single-host file-witness design.
+
 The current compiler performance-fix verification is documented in
 [`COMPILER_UPDATE_21C1BEA_2026-08-25.md`](COMPILER_UPDATE_21C1BEA_2026-08-25.md).
 It confirms full compiler and MiniSQL correctness and rechecks bounded storage,

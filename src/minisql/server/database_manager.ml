@@ -7,9 +7,12 @@ package minisql.server.database_manager
 import std.threading as threading
 import std.ds.hashmap as hashmap
 import std.ds.list as list
+import std.time as time_api
 import minisql.catalog.catalog as catalog
 import minisql.catalog.schema_history as schema_history
+import minisql.common.crc32c as crc32c
 import minisql.common.diagnostics as diagnostics
+import minisql.common.endian as endian
 import minisql.common.logger as logger
 import minisql.platform.file as file_api
 import minisql.platform.clock as clock
@@ -42,6 +45,9 @@ const DEFAULT_SLOW_QUERY_MS = 1000
 const QUERY_CANCELLED = 9035
 const QUERY_TIMEOUT = 9036
 const RESOURCE_LIMIT = 9037
+const WRITE_FENCED = 9038
+const LEADER_EPOCH_BYTES = 32
+const LEADER_LEASE_BYTES = 64
 
 // Mutable process-list entry protected by the database execution-state lock.
 struct OperationalSession
@@ -189,6 +195,18 @@ struct ManagedDatabase
   slowQueryMs
   // Complete encoded response bytes returned by completed statements.
   resultBytesReturned
+  // Enables fail-closed validation of a controller-owned leader lease.
+  fencingEnabled
+  // Shared, atomically replaced lease record consulted before every write.
+  fencingLeasePath
+  // Immutable leadership term assigned when this server process starts.
+  fencingEpoch
+  // Immutable numeric identity of the node owning this server process.
+  fencingNodeId
+  // Clock-error allowance subtracted from the externally supplied expiry.
+  fencingClockSkewMs
+  // Counts write attempts rejected after a missing, stale, or foreign lease.
+  fencingRejections
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -288,6 +306,67 @@ function bytesEqual(left, right)
     if left[index] != right[index] then return false end if
   end for
   return true
+end function
+
+// Returns the durable per-database leadership-term record path. The HA
+// controller replaces this record while the database is offline before it
+// starts a process for a newer epoch.
+function leaderEpochPath(path)
+  return catalog.joinPath(path, "leader.epoch")
+end function
+
+// Reads one exact fencing record without accepting a prefix, trailing bytes,
+// or a partially replaced file.
+function readFenceBytes(path, expectedSize, operation)
+  if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, operation, "path must be non-empty") end if
+  handle = try(file_api.openRead(path))
+  if typeof(handle) == "error" then return fail(WRITE_FENCED, operation, "fencing record is unavailable: " + path) end if
+  actualSize = file_api.size(handle)
+  if actualSize != expectedSize then file_api.close(handle); return fail(WRITE_FENCED, operation, "fencing record size mismatch: " + path) end if
+  payload = bytes(expectedSize, 0)
+  read = try(file_api.readExactAt(handle, 0, payload, 0, expectedSize))
+  closed = try(file_api.close(handle))
+  if typeof(read) == "error" then return fail(WRITE_FENCED, operation, "fencing record could not be read: " + path) end if
+  if typeof(closed) == "error" then return fail(WRITE_FENCED, operation, "fencing record could not be closed: " + path) end if
+  return payload
+end function
+
+// Validates a fixed-size CRC-32C protected record header shared with the Python
+// HA controller. The checksum field is always the final four bytes.
+function validateFenceHeader(payload, magic, expectedSize, operation)
+  if not bytesEqual(slice(payload, 0, 8), bytes(magic)) then return fail(WRITE_FENCED, operation, "fencing record magic mismatch") end if
+  if endian.readU16LE(payload, 8) != 1 or endian.readU16LE(payload, 10) != expectedSize then return fail(WRITE_FENCED, operation, "unsupported fencing record version") end if
+  checksumOffset = expectedSize - 4
+  storedChecksum = endian.readU32LE(payload, checksumOffset)
+  checked = slice(payload, 0, expectedSize)
+  endian.writeU32LE(checked, checksumOffset, 0)
+  if crc32c.compute(checked) != storedChecksum then return fail(WRITE_FENCED, operation, "fencing record checksum mismatch") end if
+  return true
+end function
+
+// Decodes the persistent database term and node identity.
+function readLeaderEpoch(path)
+  payload = try(readFenceBytes(path, LEADER_EPOCH_BYTES, "readLeaderEpoch"))
+  if typeof(payload) == "error" then return payload end if
+  valid = try(validateFenceHeader(payload, "MSHAE001", LEADER_EPOCH_BYTES, "readLeaderEpoch"))
+  if typeof(valid) == "error" then return valid end if
+  epoch = try(endian.uint64ToInt(endian.readU64LE(payload, 12)))
+  nodeId = try(endian.uint64ToInt(endian.readU64LE(payload, 20)))
+  if typeof(epoch) == "error" or typeof(nodeId) == "error" or epoch < 1 or nodeId < 1 then return fail(WRITE_FENCED, "readLeaderEpoch", "epoch and node identity must be positive native integers") end if
+  return [epoch, nodeId]
+end function
+
+// Decodes the shared leader lease used as the online write-authority token.
+function readLeaderLease(path)
+  payload = try(readFenceBytes(path, LEADER_LEASE_BYTES, "readLeaderLease"))
+  if typeof(payload) == "error" then return payload end if
+  valid = try(validateFenceHeader(payload, "MSHAL001", LEADER_LEASE_BYTES, "readLeaderLease"))
+  if typeof(valid) == "error" then return valid end if
+  epoch = try(endian.uint64ToInt(endian.readU64LE(payload, 12)))
+  nodeId = try(endian.uint64ToInt(endian.readU64LE(payload, 20)))
+  expiresAt = try(endian.uint64ToInt(endian.readU64LE(payload, 28)))
+  if typeof(epoch) == "error" or typeof(nodeId) == "error" or typeof(expiresAt) == "error" then return fail(WRITE_FENCED, "readLeaderLease", "lease values exceed native integer range") end if
+  return [epoch, nodeId, expiresAt]
 end function
 
 // Returns the persistent marker path that selects bounded-WAL epoch recovery.
@@ -945,7 +1024,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readHandles
   end if
-  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, [], clock.monotonicMilliseconds(), 0, 0, 0, 0, false, DEFAULT_MAX_STATEMENT_BYTES, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESULT_ROWS, DEFAULT_IDLE_TIMEOUT_MS, DEFAULT_QUERY_TIMEOUT_MS, DEFAULT_MAX_RESULT_BYTES, DEFAULT_PROCESS_MEMORY_BYTES, DEFAULT_TEMPORARY_STORAGE_BYTES, 0, 0, 0, 0, 0, 0, 0, 0, DEFAULT_SLOW_QUERY_MS, 0, false)
+  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, [], clock.monotonicMilliseconds(), 0, 0, 0, 0, false, DEFAULT_MAX_STATEMENT_BYTES, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESULT_ROWS, DEFAULT_IDLE_TIMEOUT_MS, DEFAULT_QUERY_TIMEOUT_MS, DEFAULT_MAX_RESULT_BYTES, DEFAULT_PROCESS_MEMORY_BYTES, DEFAULT_TEMPORARY_STORAGE_BYTES, 0, 0, 0, 0, 0, 0, 0, 0, DEFAULT_SLOW_QUERY_MS, 0, false, "", 0, 0, 0, 0, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -1007,6 +1086,50 @@ function setQueryMemoryLimit(database, queryMemoryBytes)
   if typeof(queryMemoryBytes) != "int" or queryMemoryBytes < 1048576 then return fail(INVALID_ARGUMENT, "setQueryMemoryLimit", "queryMemoryBytes must be at least 1 MiB") end if
   database.queryMemoryBytes = queryMemoryBytes
   return true
+end function
+
+// Enables controller-backed write fencing for this process. Startup fails
+// closed unless the persistent database term exactly matches the process term;
+// this prevents an old command line from restarting a retired primary.
+function configureWriteFencing(database, leasePath, epoch, nodeId, clockSkewMs)
+  validateOpen(database, "configureWriteFencing")
+  if database.standby then return fail(INVALID_ARGUMENT, "configureWriteFencing", "a read-only standby cannot own a write lease") end if
+  if typeof(leasePath) != "string" or len(leasePath) == 0 then return fail(INVALID_ARGUMENT, "configureWriteFencing", "leasePath must be non-empty") end if
+  if typeof(epoch) != "int" or epoch < 1 then return fail(INVALID_ARGUMENT, "configureWriteFencing", "epoch must be positive") end if
+  if typeof(nodeId) != "int" or nodeId < 1 then return fail(INVALID_ARGUMENT, "configureWriteFencing", "nodeId must be positive") end if
+  if typeof(clockSkewMs) != "int" or clockSkewMs < 0 or clockSkewMs > 60000 then return fail(INVALID_ARGUMENT, "configureWriteFencing", "clockSkewMs must be between zero and 60000") end if
+  persistent = try(readLeaderEpoch(leaderEpochPath(database.path)))
+  if typeof(persistent) == "error" then return persistent end if
+  if persistent[0] != epoch or persistent[1] != nodeId then return fail(WRITE_FENCED, "configureWriteFencing", "persistent leader epoch does not match this process") end if
+  database.fencingLeasePath = leasePath
+  database.fencingEpoch = epoch
+  database.fencingNodeId = nodeId
+  database.fencingClockSkewMs = clockSkewMs
+  database.fencingEnabled = true
+  initial = try(validateWriteFence(database))
+  if typeof(initial) == "error" then database.fencingEnabled = false; return initial end if
+  ignoredLog = logger.info("minisql.server.database_manager.configureWriteFencing", "write fencing enabled epoch=" + epoch + " node=" + nodeId + " lease=" + leasePath)
+  return true
+end function
+
+// Validates persistent and live leadership immediately before a mutation or
+// durable commit. Missing, malformed, expired, foreign, and rolled-back terms
+// all reject writes while reads and rollback remain available.
+function validateWriteFence(database)
+  validateOpen(database, "validateWriteFence")
+  if not database.fencingEnabled then return true end if
+  persistent = try(readLeaderEpoch(leaderEpochPath(database.path)))
+  lease = void
+  if typeof(persistent) != "error" then lease = try(readLeaderLease(database.fencingLeasePath)) end if
+  now = time_api.datetime.nowUnixMillisUtc()
+  accepted = typeof(persistent) != "error" and typeof(lease) != "error" and now is not void
+  if accepted then
+    accepted = persistent[0] == database.fencingEpoch and persistent[1] == database.fencingNodeId and lease[0] == database.fencingEpoch and lease[1] == database.fencingNodeId and lease[2] - database.fencingClockSkewMs > now
+  end if
+  if accepted then return true end if
+  database.fencingRejections = database.fencingRejections + 1
+  ignoredLog = logger.warning("minisql.server.database_manager.validateWriteFence", "write rejected by leader fence epoch=" + database.fencingEpoch + " node=" + database.fencingNodeId)
+  return fail(WRITE_FENCED, "validateWriteFence", "write authority is missing, expired, or belongs to another leader")
 end function
 
 // Creates create using the supplied inputs.
@@ -1243,7 +1366,9 @@ end function
 function operationalStatus(database)
   validateOpen(database, "operationalStatus")
   if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "operationalStatus", "database execution state is unavailable") end if
-  result = [clock.monotonicMilliseconds() - database.startedAt, len(database.sessions), database.totalConnections, database.totalStatements, database.failedStatements, database.rowsReturned, database.checkpointResets, database.maxStatementBytes, database.maxFrameBytes, database.maxResultRows, database.idleTimeoutMs, database.queryMemoryBytes, database.queryTimeoutMs, database.maxResultBytes, database.processMemoryBytes, heap_bytes_used(), heap_bytes_committed(), database.temporaryStorageBytes, database.temporaryReservedBytes, database.temporaryPeakBytes, database.cancelledStatements, database.timedOutStatements, database.resourceRejectedStatements, database.totalExecutionMs, database.maximumExecutionMs, database.slowQueryCount, database.slowQueryMs, database.resultBytesReturned]
+  fencingFlag = 0
+  if database.fencingEnabled then fencingFlag = 1 end if
+  result = [clock.monotonicMilliseconds() - database.startedAt, len(database.sessions), database.totalConnections, database.totalStatements, database.failedStatements, database.rowsReturned, database.checkpointResets, database.maxStatementBytes, database.maxFrameBytes, database.maxResultRows, database.idleTimeoutMs, database.queryMemoryBytes, database.queryTimeoutMs, database.maxResultBytes, database.processMemoryBytes, heap_bytes_used(), heap_bytes_committed(), database.temporaryStorageBytes, database.temporaryReservedBytes, database.temporaryPeakBytes, database.cancelledStatements, database.timedOutStatements, database.resourceRejectedStatements, database.totalExecutionMs, database.maximumExecutionMs, database.slowQueryCount, database.slowQueryMs, database.resultBytesReturned, fencingFlag, database.fencingEpoch, database.fencingRejections]
   database.executionGate.stateLock.release()
   return result
 end function

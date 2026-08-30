@@ -240,6 +240,32 @@ python .\tools\replication\minisql_hot_replica.py standby `
 Connect read-only clients to port 7433. Replication is asynchronous and does not
 provide automatic promotion, quorum commits or split-brain prevention.
 
+## Automatic single-host HA
+
+For a controller-owned primary and standby, stop the ordinary primary and run:
+
+```powershell
+python .\tools\replication\minisql_ha_controller.py run `
+  --primary-db .\data\db_<uuid> `
+  --archive .\ha\archive `
+  --slot-root .\ha\slots `
+  --witness-dir .\ha\witness `
+  --server-exe .\build\bin\minisqld.exe `
+  --backup-exe .\build\bin\minisql-backup.exe `
+  --proxy-port 7432 `
+  --status-file .\ha\status.json
+```
+
+Connect every application to port 7432. The controller ships WAL, refreshes an
+offline standby, and automatically promotes it after the old lease is safely
+expired. Native error 9038 means the connected process no longer owns write
+authority; reconnect to the stable endpoint. Existing connections are not moved
+between processes.
+
+The bundled file witness is for one host or an equivalent single-writer atomic
+filesystem. It is not multi-host consensus or synchronous replication. Create a
+new base archive after DDL, DCL, VACUUM, migration, or WAL rewind.
+
 ## Build the MiniSQL 1.0 distribution
 
 ```powershell
