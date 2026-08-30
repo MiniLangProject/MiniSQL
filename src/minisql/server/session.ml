@@ -68,6 +68,10 @@ struct Session
   lastActivity
   // Prevents lock-wait retries from double-counting one logical statement.
   statementTracked
+  // Monotonic timestamp at which the tracked statement began.
+  statementStartedAt
+  // Complete encoded response bytes accumulated by the tracked statement.
+  statementResultBytes
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -93,7 +97,7 @@ function createSession(engine, secure, authenticated)
   registered = try(database_manager.registerSessionPeer(engine.database, executor.sessionIdentifier(engine), "embedded", false, authenticated))
   if typeof(registered) == "error" then return registered end if
   now = clock.monotonicMilliseconds()
-  return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now, false)
+  return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now, false, 0, 0)
 end function
 
 // Opens open using the supplied inputs.
@@ -165,18 +169,33 @@ end function
 // Begins metrics tracking exactly once across cooperative lock-wait retries.
 function beginTrackedStatement(session, sqlText)
   if session.statementTracked then return true end if
+  admitted = try(executor.beginQueryControl(session.engine))
+  if typeof(admitted) == "error" then return admitted end if
   started = try(database_manager.beginOperationalStatement(session.engine.database, executor.sessionIdentifier(session.engine), session.engine.principalId, sqlText))
-  if typeof(started) == "error" then return started end if
+  if typeof(started) == "error" then executor.finishQueryControl(session.engine); return started end if
   session.statementTracked = true
+  session.statementStartedAt = clock.monotonicMilliseconds()
+  session.statementResultBytes = 0
   return true
 end function
 
-// Completes metrics tracking and makes the session idle again.
-function finishTrackedStatement(session, success, rowCount)
+// Completes metrics, latency, budget and slow-query tracking.
+function finishTrackedStatementWithCode(session, success, rowCount, errorCode)
   if not session.statementTracked then return true end if
+  elapsed = clock.monotonicMilliseconds() - session.statementStartedAt
+  slow = try(database_manager.recordStatementDiagnostics(session.engine.database, elapsed, session.statementResultBytes, errorCode))
+  if slow == true then ignoredSlow = logger.warning("minisql.server.session.slowQuery", "session=" + executor.sessionIdentifier(session.engine) + " durationMs=" + elapsed + " rows=" + rowCount + " resultBytes=" + session.statementResultBytes + " success=" + success) end if
+  executor.finishQueryControl(session.engine)
   finished = try(database_manager.finishOperationalStatement(session.engine.database, executor.sessionIdentifier(session.engine), success, rowCount))
   session.statementTracked = false
+  session.statementStartedAt = 0
+  session.statementResultBytes = 0
   return finished
+end function
+
+// Compatibility helper for ordinary outcomes without a production-control code.
+function finishTrackedStatement(session, success, rowCount)
+  return finishTrackedStatementWithCode(session, success, rowCount, 0)
 end function
 
 // Validates open using the supplied inputs.
@@ -360,11 +379,16 @@ end function
 // Implements abort for concurrency unlocked for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function abortForConcurrencyUnlocked(session)
+function abortForConcurrencyUnlockedWithCode(session, errorCode)
   validateOpen(session, "abortForConcurrency")
   result = try(executor.abortForConcurrency(session.engine))
-  finishTrackedStatement(session, false, 0)
+  finishTrackedStatementWithCode(session, false, 0, errorCode)
   return result
+end function
+
+// Aborts an ordinary lock conflict without assigning a terminal control code.
+function abortForConcurrencyUnlocked(session)
+  return abortForConcurrencyUnlockedWithCode(session, 0)
 end function
 
 // Implements abort for concurrency for this module.
@@ -376,6 +400,18 @@ function abortForConcurrency(session)
   if session.engine.ownsDatabase then return abortForConcurrencyUnlocked(session) end if
   entered = try(database_manager.enterExecution(session.engine.database))
   result = try(abortForConcurrencyUnlocked(session))
+  released = try(database_manager.leaveExecution(session.engine.database))
+  if typeof(released) == "error" then return released end if
+  return result
+end function
+
+// Aborts a logical lock wait at the absolute statement deadline while keeping
+// the wire-compatible lock-timeout response code in the listener.
+function abortForConcurrencyTimeout(session)
+  validateOpen(session, "abortForConcurrencyTimeout")
+  if session.engine.ownsDatabase then return abortForConcurrencyUnlockedWithCode(session, 9036) end if
+  entered = try(database_manager.enterExecution(session.engine.database))
+  result = try(abortForConcurrencyUnlockedWithCode(session, 9036))
   released = try(database_manager.leaveExecution(session.engine.database))
   if typeof(released) == "error" then return released end if
   return result
@@ -441,12 +477,12 @@ function executeParsedQuery(session, request, statement)
     else
       ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message)
     end if
-    if result.code != 9007 then finishTrackedStatement(session, false, 0) end if
+    if result.code != 9007 then finishTrackedStatementWithCode(session, false, 0, result.code) end if
     return responseMessage(request, messages.errorResponse(result.code, result.message))
   end if
   if result.kind == executor.RESULT_ROWS and result.affectedRows > database_manager.maxResultRows(session.engine.database) then
-    finishTrackedStatement(session, false, 0)
-    return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "result exceeds configured maxResultRows"))
+    finishTrackedStatementWithCode(session, false, 0, 9037)
+    return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultRows"))
   end if
   converted = try(formatter.responsesFromResult(result))
   if typeof(converted) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
@@ -454,6 +490,8 @@ function executeParsedQuery(session, request, statement)
   framed = responseMessages(request, converted)
   for each frame in framed
     if len(frame.payload) > database_manager.maxFrameBytes(session.engine.database) then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "response exceeds configured maxFrameBytes")) end if
+    session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
+    if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then finishTrackedStatementWithCode(session, false, 0, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultBytes")) end if
   end for
   finishTrackedStatement(session, true, result.affectedRows)
   if len(framed) == 1 then return framed[0] end if
@@ -480,7 +518,7 @@ function handleQueryStreaming(session, request, connection)
   if typeof(parsed) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
   if len(parsed) != 1 then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   cursor = try(executor.openSelectCursor(session.engine, parsed[0]))
-  if typeof(cursor) == "error" then if cursor.code != 9007 then finishTrackedStatement(session, false, 0) end if; return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
+  if typeof(cursor) == "error" then if cursor.code != 9007 then finishTrackedStatementWithCode(session, false, 0, cursor.code) end if; return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
   if cursor is void then return executeParsedQuery(session, request, parsed[0]) end if
 
   pending = void
@@ -497,18 +535,20 @@ function handleQueryStreaming(session, request, connection)
       end if
       failure = responseMessage(request, messages.errorResponse(batch.code, batch.message))
       sentFailure = try(protocol_connection.sendMessage(connection, failure))
-      finishTrackedStatement(session, false, rowCount)
+      finishTrackedStatementWithCode(session, false, rowCount, batch.code)
       if typeof(sentFailure) == "error" then return sentFailure end if
       return []
     end if
     if batch is void then break end if
     rowCount = rowCount + len(batch.rows)
-    if rowCount > database_manager.maxResultRows(session.engine.database) then executor.closeSelectCursor(cursor); finishTrackedStatement(session, false, rowCount); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "result exceeds configured maxResultRows")) end if
+    if rowCount > database_manager.maxResultRows(session.engine.database) then executor.closeSelectCursor(cursor); finishTrackedStatementWithCode(session, false, rowCount, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultRows")) end if
     converted = try(formatter.responsesFromResult(batch))
     if typeof(converted) == "error" then executor.closeSelectCursor(cursor); finishTrackedStatement(session, false, rowCount); return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
     for each response in converted
       frame = responseMessage(request, response)
       if len(frame.payload) > database_manager.maxFrameBytes(session.engine.database) then executor.closeSelectCursor(cursor); finishTrackedStatement(session, false, rowCount); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "response exceeds configured maxFrameBytes")) end if
+      session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
+      if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then executor.closeSelectCursor(cursor); finishTrackedStatementWithCode(session, false, rowCount, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultBytes")) end if
       if pending is not void then
         pending.flags = constants.FLAG_MORE
         sent = try(protocol_connection.sendMessage(connection, pending))
@@ -544,7 +584,11 @@ function handleUnlocked(session, request)
   session.lastActivity = clock.monotonicMilliseconds()
   if not messages.isMessage(request) then return fail(INVALID_ARGUMENT, "handle", "request must be Message") end if
   if request.messageType == constants.TYPE_HELLO then
-    message = "MiniSQL protocol 1"
+    // Publish the server-assigned identifier so standards-based clients can
+    // cancel this session through an independent administrative connection.
+    // The semicolon-delimited suffix is backward compatible: legacy clients
+    // treat the HELLO message as informational text.
+    message = "MiniSQL protocol 1; session=" + executor.sessionIdentifier(session.engine)
     if session.secure and not session.authenticated then message = message + "; authentication required" end if
     return responseMessage(request, messages.commandResponse("HELLO", 0, message))
   end if
@@ -552,6 +596,16 @@ function handleUnlocked(session, request)
   if request.messageType == constants.TYPE_CLOSE then
     session.closeRequested = true
     return responseMessage(request, messages.commandResponse("CLOSE", 0, "session closing"))
+  end if
+  if request.messageType == constants.TYPE_CANCEL then
+    if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
+    if not executor.hasDatabaseAdmin(session.engine) then return responseMessage(request, messages.errorResponse(9029, "DATABASE ADMIN privilege is required")) end if
+    targetSessionId = try(messages.decodeCancelRequest(request.payload))
+    if typeof(targetSessionId) == "error" then return responseMessage(request, messages.errorResponse(targetSessionId.code, targetSessionId.message)) end if
+    cancelled = try(database_manager.requestSessionCancellation(session.engine.database, targetSessionId))
+    if typeof(cancelled) == "error" then return responseMessage(request, messages.errorResponse(cancelled.code, cancelled.message)) end if
+    ignoredCancelLog = logger.info("minisql.server.session.handleCancel", "requester=" + executor.sessionIdentifier(session.engine) + " target=" + targetSessionId)
+    return responseMessage(request, messages.commandResponse("CANCEL", 0, "cancellation requested for session " + targetSessionId))
   end if
   if request.messageType == constants.TYPE_AUTH_BEGIN then return handleAuthBegin(session, request) end if
   if request.messageType == constants.TYPE_AUTH_PROOF then return handleAuthProof(session, request) end if
@@ -568,8 +622,20 @@ function handle(session, request)
   if session.engine.ownsDatabase then return handleUnlocked(session, request) end if
   // Frame decoding, simple protocol control messages and SQL parsing do not
   // touch shared database state and therefore stay fully concurrent.
-  if messages.isMessage(request) and (request.messageType == constants.TYPE_HELLO or request.messageType == constants.TYPE_PING or request.messageType == constants.TYPE_CLOSE or request.messageType == constants.TYPE_QUERY) then
+  if messages.isMessage(request) and (request.messageType == constants.TYPE_HELLO or request.messageType == constants.TYPE_PING or request.messageType == constants.TYPE_CLOSE or request.messageType == constants.TYPE_QUERY or request.messageType == constants.TYPE_CANCEL) then
     return handleUnlocked(session, request)
+  end if
+  // Authentication reads immutable credential metadata and mutates only this
+  // session plus the append-only audit stream. A shared gate keeps it coherent
+  // with DCL writers while allowing a privileged control connection to
+  // authenticate and cancel a concurrently executing reader.
+  if messages.isMessage(request) and (request.messageType == constants.TYPE_AUTH_BEGIN or request.messageType == constants.TYPE_AUTH_PROOF) then
+    enteredRead = try(database_manager.enterReadExecution(session.engine.database))
+    if typeof(enteredRead) == "error" then return enteredRead end if
+    authResult = try(handleUnlocked(session, request))
+    releasedRead = try(database_manager.leaveReadExecution(session.engine.database))
+    if typeof(releasedRead) == "error" then return releasedRead end if
+    return authResult
   end if
   entered = try(database_manager.enterExecution(session.engine.database))
   result = try(handleUnlocked(session, request))

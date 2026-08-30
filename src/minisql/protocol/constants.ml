@@ -31,6 +31,8 @@ const TYPE_AUTH_BEGIN = 5
 const TYPE_AUTH_CHALLENGE = 6
 const TYPE_AUTH_PROOF = 7
 const TYPE_AUTH_OK = 8
+// Administrative request that cooperatively cancels another session's query.
+const TYPE_CANCEL = 9
 const TYPE_RESPONSE = 100
 const TYPE_PONG = 101
 const TYPE_ERROR = 102
@@ -43,7 +45,7 @@ const STATUS_ERROR = 3
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function knownType(value)
-  return value == TYPE_HELLO or value == TYPE_QUERY or value == TYPE_PING or value == TYPE_CLOSE or value == TYPE_AUTH_BEGIN or value == TYPE_AUTH_CHALLENGE or value == TYPE_AUTH_PROOF or value == TYPE_AUTH_OK or value == TYPE_RESPONSE or value == TYPE_PONG or value == TYPE_ERROR
+  return value == TYPE_HELLO or value == TYPE_QUERY or value == TYPE_PING or value == TYPE_CLOSE or value == TYPE_AUTH_BEGIN or value == TYPE_AUTH_CHALLENGE or value == TYPE_AUTH_PROOF or value == TYPE_AUTH_OK or value == TYPE_CANCEL or value == TYPE_RESPONSE or value == TYPE_PONG or value == TYPE_ERROR
 end function
 
 // Implements component name for this module.

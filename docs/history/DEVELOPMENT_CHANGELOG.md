@@ -1,5 +1,17 @@
 # MiniSQL changelog
 
+## 1.0.0 — production controls, monitoring and failover qualification
+
+- added cooperative statement cancellation and absolute deadlines across gate
+  waits, scans, DML loops, blocking operators and streaming results;
+- exposed self-cancellation through Python `Connection.cancel()` and JDBC
+  `Statement.cancel()` using independent authenticated control connections;
+- added aggregate result-byte, shared temporary-storage and managed-heap
+  admission controls with stable resource errors and `SHOW STATUS` counters;
+- added slow-query warnings plus a loopback Prometheus/health exporter;
+- added concurrent WAL failover qualification and fixed transaction-identifier
+  allocation after standby promotion.
+
 ## 1.0.0 — production operations and reliability gate
 
 - added administrative `SHOW STATUS`, `SHOW PROCESSLIST`, and cooperative
@@ -38,8 +50,8 @@
   complete Java protocol frames with one write, eliminating the Windows TLS
   delayed-record latency;
 - expanded the trusted, authenticated, and pinned self-signed TLS integration
-  suite to 1,669 checks per mode, including server-plan lifecycle and a
-  quote-sensitive 600-row batch.
+  suite to 1,671 checks per mode, including server-plan lifecycle, cooperative
+  cancellation, and a quote-sensitive 600-row batch.
 
 ## 1.0.0 — optimizer and execution expansion
 

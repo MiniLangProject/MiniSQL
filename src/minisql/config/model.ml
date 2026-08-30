@@ -28,6 +28,8 @@ struct ServerConfig
   maxFrameBytes
   // Caps rows returned by one statement before the server rejects the result.
   maxResultRows
+  // Caps the aggregate encoded response bytes returned by one statement.
+  maxResultBytes
   // Disconnects inactive clients after this many milliseconds.
   idleTimeoutMs
 end struct
@@ -42,6 +44,12 @@ struct RuntimeConfig
   checkpointWalBytes
   // Indicates whether the temporary memory bytes condition is active.
   temporaryMemoryBytes
+  // Rejects or cooperatively aborts work when managed heap reaches this budget.
+  processMemoryBytes
+  // Caps spill reservations shared by all concurrent queries.
+  temporaryStorageBytes
+  // Emits a warning for statements whose execution reaches this duration.
+  slowQueryMs
   // Stores the log level associated with this value.
   logLevel
 end struct
@@ -233,8 +241,8 @@ function defaultConfig(dataRoot)
   return MiniSqlConfig(
     1,
     PathsConfig(dataRoot, "./tmp", "./logs"),
-    ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608, 1000000, 300000),
-    RuntimeConfig(268435456, 30000, 67108864, 134217728, "info"),
+    ServerConfig("127.0.0.1", 7432, 32, 1048576, 8388608, 1000000, 268435456, 300000),
+    RuntimeConfig(268435456, 30000, 67108864, 134217728, 2147483648, 1073741824, 1000, "info"),
     LoggingConfig(true, true, "minisql.log", 24),
     BinlogConfig(false, "minisql-bin.log"),
     TlsConfig(false, "store:", "MINISQL_TLS_PFX_PASSWORD", "TLS_AES_256_GCM_SHA384", "X25519", "TLS1.3"),

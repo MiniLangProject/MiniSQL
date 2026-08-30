@@ -245,6 +245,7 @@ final class MiniSqlJdbc {
         int queryTimeout;
         int fetchSize = 512;
         boolean poolable;
+        volatile boolean executing;
         boolean prepareAttempted;
         boolean serverPrepared;
         String preparedName;
@@ -276,7 +277,7 @@ final class MiniSqlJdbc {
                 case "getLargeUpdateCount": return (long) updateCount;
                 case "getMoreResults": closeCurrent(); updateCount = -1; return false;
                 case "getConnection": return connection.proxy;
-                case "cancel": return null;
+                case "cancel": if (executing || currentResult != null) connection.protocol.cancelCurrentSession(); return null;
                 case "getWarnings": return null;
                 case "clearWarnings": return null;
                 case "setMaxRows": maxRows = nonNegative((Integer) args[0], "maxRows"); return null;
@@ -356,7 +357,10 @@ final class MiniSqlJdbc {
 
         private boolean execute(String sql) throws SQLException {
             closeCurrent();
-            MiniSqlProtocol.Query query = connection.protocol.query(sql);
+            MiniSqlProtocol.Query query;
+            executing = true;
+            try { query = connection.protocol.query(sql); }
+            finally { executing = false; }
             MiniSqlProtocol.Response first = query.first;
             if (first.status == MiniSqlProtocol.STATUS_ROWS) {
                 currentResult = resultSet(this, query, maxRows); updateCount = -1; return true;

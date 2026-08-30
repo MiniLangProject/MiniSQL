@@ -384,6 +384,16 @@ function ping(client)
   return response.messageType == constants.TYPE_PONG
 end function
 
+// Requests cooperative cancellation through a separate administrative client.
+// The target query connection remains protocol-aligned and receives error 9035.
+function cancelSession(client, sessionId)
+  validateOpen(client, "cancelSession")
+  if client.activeQuery is not void then return fail(INVALID_ARGUMENT, "cancelSession", "use a separate administrative connection while a query is active") end if
+  responseMessage = try(request(client, messages.cancelRequest(client.nextRequestId, sessionId)))
+  if typeof(responseMessage) == "error" then return responseMessage end if
+  return messages.decodeResponse(responseMessage.payload)
+end function
+
 // Returns sent and received framed-protocol byte counters for diagnostics and
 // reproducible connector benchmarks.
 function protocolByteCounts(client)

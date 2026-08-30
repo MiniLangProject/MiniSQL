@@ -346,6 +346,38 @@ class Connection:
         self._ensure_open()
         return self._protocol.ping()
 
+    def cancel_session(self, session_id: int) -> None:
+        """Requests cooperative cancellation using this administrative connection."""
+        self._ensure_open()
+        self._protocol.cancel_session(session_id)
+
+    def cancel(self) -> None:
+        """Cancels this connection's running statement through a control socket."""
+        self._ensure_open()
+        session_id = self._protocol.session_id
+        if session_id is None:
+            raise NotSupportedError(
+                "The MiniSQL server did not advertise a cancellable session identifier"
+            )
+        config = self._config
+        control = Protocol.open(
+            config.host,
+            config.port,
+            user=config.user,
+            password=config.password,
+            tls=config.tls,
+            server_name=config.server_name,
+            pin_sha256=config.pin_sha256,
+            trust_server_certificate=config.trust_server_certificate,
+            ca_file=config.ca_file,
+            connect_timeout=config.connect_timeout,
+            socket_timeout=config.socket_timeout,
+        )
+        try:
+            control.cancel_session(session_id)
+        finally:
+            control.close()
+
     def close(self) -> None:
         """Rolls back uncommitted work and closes the protocol transport."""
         if self._closed:

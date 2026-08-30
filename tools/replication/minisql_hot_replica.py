@@ -396,11 +396,14 @@ def primary_role(args: argparse.Namespace) -> int:
         atomic_json(status, {
             "role": "primary", "status": "ready", "cycle": 0,
             "generation": generation, "lsn": lsn, "database": str(database),
-            "archive": str(archive), "updatedUtc": now_utc(),
+            "archive": str(archive), "healthy": True, "sourceLsn": lsn,
+            "lagBytes": 0,
+            "cycleDurationMs": 0, "updatedUtc": now_utc(),
         })
     touch_ready(ready)
 
     while cycles == 0 or completed_cycles < cycles:
+        cycle_started = time.monotonic()
         completed = run_checked(
             command_for(backup_exe, "archive-wal-live", database, archive),
             timeout=args.command_timeout,
@@ -410,7 +413,10 @@ def primary_role(args: argparse.Namespace) -> int:
         atomic_json(status, {
             "role": "primary", "status": "streaming", "cycle": completed_cycles,
             "generation": generation, "lsn": lsn, "database": str(database),
-            "archive": str(archive), "updatedUtc": now_utc(),
+            "archive": str(archive), "healthy": True, "sourceLsn": lsn,
+            "lagBytes": 0,
+            "cycleDurationMs": round((time.monotonic() - cycle_started) * 1000, 3),
+            "updatedUtc": now_utc(),
         })
         print(f"MiniSQL hot primary: cycle={completed_cycles} generation={generation} lsn={lsn}", flush=True)
         if cycles == 0 or completed_cycles < cycles:
@@ -482,7 +488,8 @@ def standby_role(args: argparse.Namespace) -> int:
 
     try:
         while cycles == 0 or completed_cycles < cycles:
-            generation, _ = verify_archive(backup_exe, archive)
+            cycle_started = time.monotonic()
+            generation, archive_lsn = verify_archive(backup_exe, archive)
             if generation <= current_generation:
                 time.sleep(int(args.interval_ms) / 1000.0)
                 continue
@@ -508,6 +515,10 @@ def standby_role(args: argparse.Namespace) -> int:
             atomic_json(status, {
                 "role": "standby", "status": "serving", "cycle": completed_cycles,
                 "generation": backend.generation, "lsn": backend.lsn,
+                "sourceLsn": archive_lsn, "standbyLsn": backend.lsn,
+                "lagBytes": max(0, archive_lsn - backend.lsn),
+                "healthy": backend.process is not None and backend.process.poll() is None,
+                "cycleDurationMs": round((time.monotonic() - cycle_started) * 1000, 3),
                 "slot": str(slot), "listenHost": args.listen_host,
                 "listenPort": int(args.listen_port), "updatedUtc": now_utc(),
             })
@@ -662,6 +673,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             return standby_role(args)
         raise ReplicaError(f"unsupported mode: {args.mode}")
     except (ReplicaError, OSError, subprocess.SubprocessError) as exc:
+        status_name = getattr(args, "status_file", None)
+        if status_name:
+            try:
+                atomic_json(Path(status_name).resolve(), {
+                    "role": args.mode, "status": "failed", "healthy": False,
+                    "error": str(exc), "updatedUtc": now_utc(),
+                })
+            except OSError:
+                pass
         print(f"MiniSQL hot replication: FAIL {exc}", file=sys.stderr)
         return 1
 

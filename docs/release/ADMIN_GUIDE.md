@@ -27,12 +27,29 @@ The configured server also enforces these hard request/connection limits:
 * `server.maxFrameBytes`: maximum encoded response payload, up to the protocol
   ceiling of 16 MiB;
 * `server.maxResultRows`: maximum rows returned by materialized or streaming
-  execution; and
+  execution;
+* `server.maxResultBytes`: aggregate encoded wire bytes returned by one
+  statement; and
 * `server.idleTimeoutMs`: inactive connection lifetime.
 
-Older version-1 configuration files remain valid; `maxResultRows` defaults to
-1,000,000 and `idleTimeoutMs` to 300,000 when omitted. The query-memory setting
-is still a spill budget, not a whole-process hard ceiling.
+Older version-1 configuration files remain valid. Omitted production controls
+use the defaults in `config/minisql.example.json`.
+
+`runtime.queryTimeoutMs` is an absolute cooperative deadline from request
+admission through parsing, physical-gate waiting, execution, and streamed result
+production. Storage scans poll at heap-page boundaries and DML batches poll at
+row boundaries. Error `9035` denotes administrative cancellation, `9036` a
+deadline, and `9037` a memory, spill, result-row, or result-byte rejection.
+The established logical lock-wait response remains `9032` for compatibility;
+it consumes the same deadline and increments `timed_out_statements`.
+
+Python `Connection.cancel()` and JDBC `Statement.cancel()` create a separate
+control connection automatically, using the target session identifier from the
+HELLO response. Operational tools can instead read an identifier using `SHOW
+PROCESSLIST`, then call Python `cancel_session(id)` or native
+`cancelSession(client, id)`. Authenticated callers require database `ADMIN`;
+the cancellation transport never attempts to multiplex the blocked query
+socket.
 
 The Windows daemon disables QuickEdit before it emits operational records.
 Legacy console hosts otherwise suspend a process while selected text remains in
@@ -61,6 +78,27 @@ prints `peakBytes`, `limitBytes`, `spillBytes`, and `spillRuns`. This setting is
 not a hard process-memory ceiling: parser state, unsupported materializing
 operators, one exceptionally wide row, and the compatibility result API can
 temporarily exceed it.
+
+`runtime.temporaryStorageBytes` separately caps reservations for all concurrent
+spill runs. `runtime.processMemoryBytes` rejects new statements and aborts
+active work at cooperative poll boundaries when live MiniLang managed-heap use
+reaches the ceiling. It does not cap native TLS/socket stacks, mapped files, or
+total RSS; enforce the final process ceiling in the operating system.
+
+`runtime.slowQueryMs` increments `slow_query_count` and emits a `WARNING` record
+containing session ID, duration, rows, encoded result bytes and success state.
+SQL literals stay in the separately controlled binlog, not the slow-query
+record. `SHOW STATUS` also exposes cancellation, timeout, resource rejection,
+total/maximum execution time, managed heap, global spill reservations and result
+bytes. Run the loopback Prometheus bridge with:
+
+```powershell
+python .\tools\monitoring\minisql_exporter.py --database-port 7432
+```
+
+Its `/metrics` and `/healthz` endpoints return HTTP 503 with `minisql_up 0` when
+the database scrape fails. Put authentication and remote exposure in a
+protected reverse proxy; the exporter itself refuses non-loopback binds.
 
 The `max-clients` concurrency behavior in this section is validated end-to-end
 on Windows and Linux.

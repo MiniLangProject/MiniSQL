@@ -53,6 +53,11 @@
           "minimum": 1,
           "default": 1000000
         },
+        "maxResultBytes": {
+          "type": "integer",
+          "minimum": 1048576,
+          "default": 268435456
+        },
         "idleTimeoutMs": {
           "type": "integer",
           "minimum": 1000,
@@ -77,7 +82,7 @@
         },
         "queryTimeoutMs": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 1
         },
         "checkpointWalBytes": {
           "type": "integer",
@@ -86,6 +91,21 @@
         "temporaryMemoryBytes": {
           "type": "integer",
           "minimum": 1048576
+        },
+        "processMemoryBytes": {
+          "type": "integer",
+          "minimum": 16777216,
+          "default": 2147483648
+        },
+        "temporaryStorageBytes": {
+          "type": "integer",
+          "minimum": 1048576,
+          "default": 1073741824
+        },
+        "slowQueryMs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000
         },
         "logLevel": {
           "enum": [

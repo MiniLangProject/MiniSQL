@@ -51,12 +51,20 @@ function validate(config)
   positive(config.server.maxStatementBytes, "server.maxStatementBytes")
   positive(config.server.maxFrameBytes, "server.maxFrameBytes")
   positive(config.server.maxResultRows, "server.maxResultRows")
+  positive(config.server.maxResultBytes, "server.maxResultBytes")
+  if config.server.maxResultBytes < 1048576 then return fail("server.maxResultBytes must be at least 1048576") end if
   positive(config.server.idleTimeoutMs, "server.idleTimeoutMs")
   if config.server.maxFrameBytes > 16777216 then return fail("server.maxFrameBytes must not exceed protocol limit 16777216") end if
   positive(config.runtime.bufferPoolBytes, "runtime.bufferPoolBytes")
   positive(config.runtime.queryTimeoutMs, "runtime.queryTimeoutMs")
   positive(config.runtime.checkpointWalBytes, "runtime.checkpointWalBytes")
   positive(config.runtime.temporaryMemoryBytes, "runtime.temporaryMemoryBytes")
+  positive(config.runtime.processMemoryBytes, "runtime.processMemoryBytes")
+  positive(config.runtime.temporaryStorageBytes, "runtime.temporaryStorageBytes")
+  positive(config.runtime.slowQueryMs, "runtime.slowQueryMs")
+  if config.runtime.processMemoryBytes < 16777216 then return fail("runtime.processMemoryBytes must be at least 16777216") end if
+  if config.runtime.temporaryStorageBytes < 1048576 then return fail("runtime.temporaryStorageBytes must be at least 1048576") end if
+  if config.runtime.processMemoryBytes < config.runtime.bufferPoolBytes + config.runtime.temporaryMemoryBytes then return fail("runtime.processMemoryBytes must cover bufferPoolBytes plus temporaryMemoryBytes") end if
   if not limits.isSupportedPageSize(config.databaseDefaults.pageSize) then return fail("unsupported databaseDefaults.pageSize") end if
   if config.databaseDefaults.checksumAlgorithm != "crc32c" then return fail("only crc32c is supported") end if
   if config.databaseDefaults.textEncoding != "utf-8" then return fail("only utf-8 is supported") end if

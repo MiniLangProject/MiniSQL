@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Live trusted-local integration test, including a continuation-frame result set. */
 public final class IntegrationTest {
@@ -90,6 +91,29 @@ public final class IntegrationTest {
                     "SELECT COUNT(*) AS count FROM jdbc_probe WHERE id >= 1000 AND id < 1600")) {
                 check(batchedRows.next(), "coalesced batch count row");
                 equal(batchedRows.getInt(1), 600, "coalesced batch persisted every row");
+            }
+
+            // Statement.cancel must use a second protocol connection: the
+            // target connection is blocked waiting for this deliberately
+            // expensive cross product to produce its first response frame.
+            try (Statement cancellable = connection.createStatement()) {
+                AtomicReference<Throwable> cancellationResult = new AtomicReference<>();
+                Thread worker = new Thread(() -> {
+                    try (ResultSet ignored = cancellable.executeQuery(
+                            "SELECT SUM(a.id + b.id + c.id) FROM jdbc_probe a, jdbc_probe b, jdbc_probe c")) {
+                        cancellationResult.set(new AssertionError("expensive JDBC query completed before cancellation"));
+                    } catch (java.sql.SQLException expected) {
+                        if (expected.getErrorCode() != 9035) cancellationResult.set(expected);
+                    }
+                }, "minisql-jdbc-cancellation-test");
+                worker.start();
+                Thread.sleep(250);
+                cancellable.cancel();
+                worker.join(10_000);
+                check(!worker.isAlive(), "JDBC cancellation terminates the query promptly");
+                if (cancellationResult.get() != null) throw new AssertionError(
+                        "JDBC cancellation returned an unexpected result", cancellationResult.get());
+                check(connection.isValid(2), "connection remains valid after JDBC cancellation");
             }
 
             try (PreparedStatement failingBatch = connection.prepareStatement(

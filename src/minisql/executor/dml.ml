@@ -632,10 +632,11 @@ end function
 // Inserts a conflict-free batch using fixed-size result buffers and one unique
 // snapshot. Other constraints are checked again in insertion order so foreign
 // keys may still reference a preceding row from the same SQL statement.
-function insertBatchWithoutConflict(database, bound, pageTransaction, file)
+function insertBatchWithoutConflict(database, sessionId, bound, pageTransaction, file)
   preparedRows = array(len(bound.rows))
   if len(bound.rows) > 0 then
     for rowIndex = 0 to len(bound.rows) - 1
+      database_manager.pollSessionControl(database, sessionId)
       row = initialRow(database, bound, bound.rows[rowIndex], pageTransaction, file)
       // Conversion and CHECK validation do not depend on insertion order.
       if typeof(row) != "array" or len(row) != len(bound.table.columns) then return fail(INVALID_ARGUMENT, "insertBatchWithoutConflict", "row shape mismatch") end if
@@ -669,6 +670,7 @@ function insertBatchWithoutConflict(database, bound, pageTransaction, file)
   insertCursor = InsertCursor(cursorStart, allocationBatch, len(preparedRows))
   if len(preparedRows) > 0 then
     for rowIndex = 0 to len(preparedRows) - 1
+      database_manager.pollSessionControl(database, sessionId)
       row = preparedRows[rowIndex]
       schema = tableSchemaState(database, bound.table)
       if schema is not void then
@@ -848,9 +850,9 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function insertInner(database, bound, pageTransaction, file)
+function insertInner(database, sessionId, bound, pageTransaction, file)
   if bound.statement.conflictAction == ast.CONFLICT_NONE and not hasIdentityColumn(database, bound.table) then
-    return insertBatchWithoutConflict(database, bound, pageTransaction, file)
+    return insertBatchWithoutConflict(database, sessionId, bound, pageTransaction, file)
   end if
   references = []
   returnedRows = []
@@ -859,6 +861,7 @@ function insertInner(database, bound, pageTransaction, file)
   affected = 0
   rowSchema = scan.schemaForTable(bound.table)
   for each boundRow in bound.rows
+    database_manager.pollSessionControl(database, sessionId)
     row = initialRow(database, bound, boundRow, pageTransaction, file)
     conflict = void
     if bound.statement.conflictAction != ast.CONFLICT_NONE then conflict = findConflict(database, bound, row, pageTransaction, file) end if
@@ -887,12 +890,12 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function insert(database, bound, pageTransaction)
+function insert(database, sessionId, bound, pageTransaction)
   if not binder.isBoundInsert(bound) then return fail(INVALID_ARGUMENT, "insert", "bound must be BoundInsert") end if
   transaction.requireActive(pageTransaction, "executor.dml.insert")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "insert", "transaction is read-only") end if
   file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
-  result = try(insertInner(database, bound, pageTransaction, file))
+  result = try(insertInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
   if typeof(closeResult) == "error" then return closeResult end if
@@ -903,8 +906,8 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function updateInner(database, bound, pageTransaction, file)
-  sourceRows = scan.scanUsing(database.path, bound.table, pageTransaction, file)
+function updateInner(database, sessionId, bound, pageTransaction, file)
+  sourceRows = scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file)
   affected = 0
   references = []
   returnedRows = []
@@ -913,6 +916,7 @@ function updateInner(database, bound, pageTransaction, file)
   rowSchema = scan.schemaForTable(bound.table)
   schema = tableSchemaState(database, bound.table)
   for each source in sourceRows
+    database_manager.pollSessionControl(database, sessionId)
     if expressions.predicatePasses(bound.whereExpression, expressions.rowContext(source.values)) then
       nextRow = []
       for each oldValue in source.values
@@ -942,12 +946,12 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function update(database, bound, pageTransaction)
+function update(database, sessionId, bound, pageTransaction)
   if not binder.isBoundUpdate(bound) then return fail(INVALID_ARGUMENT, "update", "bound must be BoundUpdate") end if
   transaction.requireActive(pageTransaction, "executor.dml.update")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "update", "transaction is read-only") end if
   file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
-  result = try(updateInner(database, bound, pageTransaction, file))
+  result = try(updateInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
   if typeof(closeResult) == "error" then return closeResult end if
@@ -957,12 +961,13 @@ end function
 // Deletes inner using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function deleteInner(database, bound, pageTransaction, file)
-  sourceRows = scan.scanUsing(database.path, bound.table, pageTransaction, file)
+function deleteInner(database, sessionId, bound, pageTransaction, file)
+  sourceRows = scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file)
   affected = 0
   returnedRows = []
   oldRows = []
   for each source in sourceRows
+    database_manager.pollSessionControl(database, sessionId)
     if expressions.predicatePasses(bound.whereExpression, expressions.rowContext(source.values)) then
       validateDeleteReferences(database, bound.table, source.values, pageTransaction, file)
       if len(bound.returning) > 0 then returnedRows = returnedRows + [evaluateReturning(bound.returning, source.values)] end if
@@ -978,12 +983,12 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function delete(database, bound, pageTransaction)
+function delete(database, sessionId, bound, pageTransaction)
   if not binder.isBoundDelete(bound) then return fail(INVALID_ARGUMENT, "delete", "bound must be BoundDelete") end if
   transaction.requireActive(pageTransaction, "executor.dml.delete")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "delete", "transaction is read-only") end if
   file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
-  result = try(deleteInner(database, bound, pageTransaction, file))
+  result = try(deleteInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
   if typeof(closeResult) == "error" then return closeResult end if
@@ -994,21 +999,23 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns its result or propagates a structured error from validation or a dependency.
 // Performs I/O through its file, transport, or storage dependencies.
-function truncate(database, bound, pageTransaction)
+function truncate(database, sessionId, bound, pageTransaction)
   if not binder.isBoundTruncate(bound) then return fail(INVALID_ARGUMENT, "truncate", "bound must be BoundTruncate") end if
   transaction.requireActive(pageTransaction, "executor.dml.truncate")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "truncate", "transaction is read-only") end if
   file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
-  rows = try(scan.scanUsing(database.path, bound.table, pageTransaction, file))
+  rows = try(scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file))
   if typeof(rows) == "error" then paged_file.close(file); return rows end if
   checked = true
   for each source in rows
+    database_manager.pollSessionControl(database, sessionId)
     validation = try(validateDeleteReferences(database, bound.table, source.values, pageTransaction, file))
     if typeof(validation) == "error" then checked = validation; break end if
   end for
   if typeof(checked) == "error" then paged_file.close(file); return checked end if
   references = []
   for each source in rows
+    database_manager.pollSessionControl(database, sessionId)
     stageDelete(pageTransaction, file, bound.table, source.reference)
     references = references + [source.reference]
   end for

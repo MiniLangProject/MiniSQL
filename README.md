@@ -347,18 +347,43 @@ large overflow values, and post-`VACUUM` data integrity. See
 ### Production operations
 
 Configured servers enforce `server.maxConnections`, `maxStatementBytes`,
-`maxFrameBytes`, `maxResultRows`, and `idleTimeoutMs`. The result-row limit is
-checked for both materialized and streaming result paths; oversized requests and
-frames fail with a structured protocol error instead of growing without bound.
-`runtime.temporaryMemoryBytes` remains a spill-policy budget rather than a hard
-whole-process memory ceiling.
+`maxFrameBytes`, `maxResultRows`, `maxResultBytes`, and `idleTimeoutMs`. Result
+row and aggregate wire-byte limits cover materialized and streaming paths;
+oversized work fails with resource error `9037` instead of growing without
+bound. `runtime.queryTimeoutMs` is an absolute cooperative statement deadline,
+including physical-gate waits and streamed execution. Python
+`Connection.cancel()` and JDBC `Statement.cancel()` automatically open a
+separate control connection; native and operational clients can cancel a
+session shown by `SHOW PROCESSLIST`. Cancellation and timeout report `9035`
+and `9036`.
+
+`runtime.processMemoryBytes` rejects new statements and cooperatively aborts
+active work when live managed-heap use reaches the configured ceiling.
+`runtime.temporaryStorageBytes`
+is a hard process-wide reservation ceiling for concurrent operator spills,
+while `runtime.temporaryMemoryBytes` remains the soft per-query threshold that
+triggers those spills. The managed-heap ceiling is admission control, not an OS
+RSS/container limit; use an operating-system job, service, or container limit as
+the final whole-process guard.
 
 Administrators can query `SHOW STATUS` for uptime, sessions, statement/error and
-row counters, checkpoint resets, and the active limits. `SHOW PROCESSLIST`
+row counters, cancellation/timeouts, slow queries, result bytes, heap and spill
+usage, checkpoint resets, and the active limits. `SHOW PROCESSLIST`
 returns the authenticated principal, peer, TLS state, current state/statement,
 age, and request count for every live session. `SHUTDOWN` acknowledges the
 request, completes the protocol close handshake, stops new accepts, drains the
 bounded worker pool, and closes the database.
+
+Statements reaching `runtime.slowQueryMs` produce a warning with session,
+duration, row count, result bytes and success state. A loopback-only Prometheus
+bridge exposes the same `SHOW STATUS` values and a health probe:
+
+```powershell
+python .\tools\monitoring\minisql_exporter.py --database-port 7432 --listen-port 9107
+```
+
+Scrape `http://127.0.0.1:9107/metrics`; credentials are read only from the
+environment variable named by `--password-env`.
 
 The systemd unit template is in [`deploy/systemd/minisql.service`](deploy/systemd/minisql.service).
 Windows Task Scheduler or a service wrapper can invoke the paired
@@ -376,6 +401,13 @@ Run a non-destructive restore drill into new paths with:
 
 ```powershell
 python .\tools\recovery\production_recovery_drill.py <database> <new-backup> <new-restore>
+```
+
+Exercise live WAL export, concurrent standby reads, explicit promotion,
+post-promotion writes, allocator continuity, and offline integrity checking:
+
+```powershell
+python .\tests\ha\production_failover_drill.py --work-root .\build\ha-drill
 ```
 
 ## Performance evaluation

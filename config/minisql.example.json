@@ -12,6 +12,7 @@
     "maxStatementBytes": 1048576,
     "maxFrameBytes": 8388608,
     "maxResultRows": 1000000,
+    "maxResultBytes": 268435456,
     "idleTimeoutMs": 300000
   },
   "runtime": {
@@ -19,6 +20,9 @@
     "queryTimeoutMs": 30000,
     "checkpointWalBytes": 67108864,
     "temporaryMemoryBytes": 134217728,
+    "processMemoryBytes": 2147483648,
+    "temporaryStorageBytes": 1073741824,
+    "slowQueryMs": 1000,
     "logLevel": "info"
   },
   "logging": {

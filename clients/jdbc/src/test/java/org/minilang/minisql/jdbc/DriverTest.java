@@ -45,6 +45,13 @@ public final class DriverTest {
         equal(hex(derived), "ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43",
                 "PBKDF2-HMAC-SHA256 vector");
 
+        equal(MiniSqlProtocol.parseSessionId("MiniSQL protocol 1; session=42"), 42,
+                "HELLO session identifier");
+        equal(MiniSqlProtocol.parseSessionId("MiniSQL protocol 1"), 0,
+                "legacy HELLO has no cancellable session");
+        equal(MiniSqlProtocol.parseSessionId("MiniSQL protocol 1; session=invalid"), 0,
+                "invalid HELLO session is rejected");
+
         DriverPropertyInfo[] info = driver.getPropertyInfo("jdbc:minisql://localhost/main", new Properties());
         check(info.length >= 8, "connection properties are discoverable");
         System.out.println("MiniSQL JDBC unit tests: PASS (" + checks + " checks)");

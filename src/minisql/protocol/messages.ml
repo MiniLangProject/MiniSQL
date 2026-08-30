@@ -172,6 +172,22 @@ function closeRequest(requestId)
   return create(constants.TYPE_CLOSE, 0, requestId, bytes(0))
 end function
 
+// Creates an administrative cancellation request for one active session.
+function cancelRequest(requestId, sessionId)
+  if typeof(sessionId) != "int" or sessionId < 1 or sessionId > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "cancelRequest", "sessionId must fit positive U32") end if
+  payload = bytes(4, 0)
+  endian.writeU32LE(payload, 0, sessionId)
+  return create(constants.TYPE_CANCEL, 0, requestId, payload)
+end function
+
+// Decodes and validates an administrative cancellation target.
+function decodeCancelRequest(payload)
+  if typeof(payload) != "bytes" or len(payload) != 4 then return fail(CORRUPT_DATA, "decodeCancelRequest", "cancel payload must be four bytes") end if
+  sessionId = endian.readU32LE(payload, 0)
+  if sessionId < 1 then return fail(CORRUPT_DATA, "decodeCancelRequest", "sessionId must be positive") end if
+  return sessionId
+end function
+
 // Implements command response for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.

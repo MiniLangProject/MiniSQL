@@ -67,11 +67,14 @@
   sets; protocol-v1 sends that array in bounded continuation frames. The query
   memory budget is a spill policy, not a hard process-memory cap.
 * Configured servers hard-limit live connections, SQL payload bytes, response
-  frame bytes, result rows, and idle lifetime. They do not yet enforce a single
-  global heap/RSS ceiling or a shared on-disk temporary-space quota. Statement
-  execution is cooperatively bounded by lock waits and operator-specific guards;
-  `runtime.queryTimeoutMs` is currently the logical lock-wait timeout rather
-  than an asynchronous kill timer for arbitrary CPU work.
+  frame bytes, aggregate result bytes, result rows, shared spill reservations,
+  and idle lifetime. Statements have cooperative cancellation and an absolute
+  deadline; scans poll per physical heap page and DML batches per row. This is
+  not unsafe asynchronous thread termination, so one native call or one very
+  large scalar expression can delay observation until it returns. The managed
+  process-memory setting is enforced on admission and cooperative poll boundaries
+  using live MiniLang heap bytes, not total OS RSS, native TLS/socket allocation,
+  or memory maps.
 * Table, column, schema-extension, statistics, and authorization metadata are
   not constrained to one page or a fixed 1 MiB snapshot. Capacity is still
   finite at the storage format's integer representation, process address space,
@@ -102,7 +105,9 @@
   writer per database. Long-running readers can delay a waiting writer until the
   current reader set completes; new readers do not bypass that writer.
   This concurrency contract is validated on both native targets.
-* There is no automatic distributed failover or cross-database transaction.
+* There is no automatic leader election, fencing, distributed failover, or
+  cross-database transaction. The tested promotion drill remains an explicit
+  operator action and external orchestration must prevent split brain.
 * The M48 WAL stream covers committed table-page changes for an existing
   schema. DDL, DCL, VACUUM, migration or WAL rewind requires a new base archive.
 * One controller owns an archive directory; there is no multi-writer archive

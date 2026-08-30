@@ -20,6 +20,7 @@ import minisql.storage.paged_file as paged_file
 import minisql.storage.row_codec as row_codec
 import minisql.storage.slotted_page as slotted_page
 import minisql.transaction.transaction as transaction
+import minisql.server.database_manager as database_manager
 import std.ds.list as list
 
 // Transaction-aware sequential table scan for the first executable SQL engine.
@@ -70,6 +71,10 @@ struct TableReader
   ownsFile
   // Optional database-owned concurrent read cache.
   readCache
+  // Optional production-control registry polled at physical page boundaries.
+  controlDatabase
+  // Operational session whose token is attached to this reader.
+  controlSessionId
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -133,6 +138,17 @@ function isTableReader(value)
   return value is TableReader
 end function
 
+// Attaches statement cancellation and deadline state to a reader. Polling is
+// deliberately performed once per physical heap page, which bounds abort
+// latency without adding a registry lookup for every row or expression.
+function setExecutionControl(reader, database, sessionId)
+  validateOpen(reader, "setExecutionControl")
+  if not database_manager.isManagedDatabase(database) or typeof(sessionId) != "int" or sessionId <= 0 then return fail(INVALID_ARGUMENT, "setExecutionControl", "invalid database or session identifier") end if
+  reader.controlDatabase = database
+  reader.controlSessionId = sessionId
+  return true
+end function
+
 // Returns whether value is a forward-only table row cursor.
 function isTableRowCursor(value)
   return value is TableRowCursor
@@ -190,7 +206,7 @@ function openCached(databasePath, table, pageTransaction, readCache)
   end if
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, void, 0, false)
 end function
 
 // Opens a table using a database-owned immutable schema snapshot. Managed
@@ -206,7 +222,7 @@ function openCachedWithSchema(databasePath, table, pageTransaction, readCache, s
   if typeof(file) == "error" then return fail(file.code, "openWithSchema", "cannot open table file " + tablePath + ": " + file.message) end if
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, void, 0, false)
 end function
 
 // Opens a table without a shared cache for storage tools and direct tests.
@@ -227,7 +243,7 @@ function openExistingCached(databasePath, file, table, pageTransaction, readCach
   state = schema_history.loadOrCreate(databasePath, file.databaseId)
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, void, 0, false)
 end function
 
 // Creates a non-owning reader over a persistent database-owned table handle
@@ -241,7 +257,7 @@ function openExistingCachedWithSchema(databasePath, file, table, pageTransaction
   if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.openExistingWithSchema") end if
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
-  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, false)
+  return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, void, 0, false)
 end function
 
 // Opens a caller-owned file without a shared cache.
@@ -438,6 +454,7 @@ function nextRow(cursor)
   if cursor.finished then return void end if
   while cursor.pageIndex < cursor.endPageIndex
     if cursor.pageBytes is void then
+      if cursor.reader.controlDatabase is not void then database_manager.pollSessionControl(cursor.reader.controlDatabase, cursor.reader.controlSessionId) end if
       pageNumber = cursor.heapPages[cursor.pageIndex]
       encoded = visiblePage(cursor.reader, pageNumber)
       header = page.verify(encoded)
@@ -505,6 +522,7 @@ function countLiveRows(reader)
   rowCount = 0
   heapPages = heap_file.heapPageNumbers(reader.file)
   for each pageNumber in heapPages
+    if reader.controlDatabase is not void then database_manager.pollSessionControl(reader.controlDatabase, reader.controlSessionId) end if
     pageBytes = visiblePage(reader, pageNumber)
     header = page.decodePageHeader(pageBytes)
     if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "countLiveRows", "table page has wrong type") end if
@@ -591,6 +609,7 @@ function allRangeColumns(reader, offset, limit, requiredColumns)
   // per page during every table scan.
   heapPages = heap_file.heapPageNumbers(reader.file)
   for each pageNumber in heapPages
+    if reader.controlDatabase is not void then database_manager.pollSessionControl(reader.controlDatabase, reader.controlSessionId) end if
     pageBytes = visiblePage(reader, pageNumber)
     header = page.decodePageHeader(pageBytes)
     if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "all", "table page has wrong type") end if
@@ -719,6 +738,19 @@ function scanTableRangeColumnsCached(databasePath, table, pageTransaction, offse
   return result
 end function
 
+// Controlled cached scan used by network sessions. The ordinary helper stays
+// available to embedded/offline callers that do not own an operational session.
+function scanTableRangeColumnsCachedControlled(database, sessionId, table, pageTransaction, offset, limit, requiredColumns)
+  reader = openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database))
+  configured = try(setExecutionControl(reader, database, sessionId))
+  if typeof(configured) == "error" then close(reader); return configured end if
+  result = try(allRangeColumns(reader, offset, limit, requiredColumns))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
+end function
+
 // Opens a short-lived cached reader and returns only its number of visible rows.
 function countTableRowsCached(databasePath, table, pageTransaction, readCache)
   tablePath = catalog.tableFilePath(databasePath, table.tableId)
@@ -736,6 +768,18 @@ function countTableRowsCached(databasePath, table, pageTransaction, readCache)
     remembered = try(buffer_pool.rememberRowCount(readCache, tablePath, result))
     if typeof(remembered) == "error" then return remembered end if
   end if
+  return result
+end function
+
+// Counts live rows through a cancellation-aware cached reader.
+function countTableRowsCachedControlled(database, sessionId, table, pageTransaction)
+  reader = openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database))
+  configured = try(setExecutionControl(reader, database, sessionId))
+  if typeof(configured) == "error" then close(reader); return configured end if
+  result = try(countLiveRows(reader))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
   return result
 end function
 
@@ -789,6 +833,24 @@ function scanUsing(databasePath, table, pageTransaction, existingFile)
   if existingFile is void then return scanTable(databasePath, table, pageTransaction) end if
   if existingFile.fileId == table.tableId then return scanExisting(databasePath, existingFile, table, pageTransaction) end if
   return scanTable(databasePath, table, pageTransaction)
+end function
+
+// Controlled full scan over either a caller-owned table file or a short-lived
+// reader. This is used by UPDATE, DELETE, and TRUNCATE before staging changes.
+function scanUsingControlled(database, sessionId, table, pageTransaction, existingFile)
+  reader = void
+  if existingFile is void or existingFile.fileId != table.tableId then
+    reader = openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database))
+  else
+    reader = openExisting(database.path, existingFile, table, pageTransaction)
+  end if
+  configured = try(setExecutionControl(reader, database, sessionId))
+  if typeof(configured) == "error" then close(reader); return configured end if
+  result = try(all(reader))
+  closeResult = try(close(reader))
+  if typeof(result) == "error" then return result end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return result
 end function
 
 // Selects the bounded scan implementation for an optional caller-owned file.

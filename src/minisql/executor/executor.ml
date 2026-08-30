@@ -65,6 +65,8 @@ const EXECUTION_BATCH_ROWS = 128
 const CURSOR_SOURCE_BATCH_ROWS = 16
 const CURSOR_TARGET_BATCH_BYTES = 1048552
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
+const QUERY_CANCELLED = 9035
+const QUERY_TIMEOUT = 9036
 
 // Identifies the flattened, versioned parameter metadata stored with procedures.
 const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
@@ -169,6 +171,8 @@ struct Engine
   activePlanKey
   // Soft-limit policy and diagnostics for the current or most recent statement.
   queryMemory
+  // Cooperative cancellation/deadline state for the active top-level statement.
+  queryControl
 end struct
 
 // Holds the resources of a simple forward-only SELECT. The physical read gate
@@ -206,6 +210,16 @@ struct QueryMemoryManager
   spillBytes
   // Number of blocking operators that selected a spill path.
   spillRuns
+end struct
+
+// Session-local token polled at bounded executor and storage batch boundaries.
+struct QueryControl
+  // True while a top-level statement or streaming cursor owns the token.
+  active
+  // Monotonic timestamp at which the top-level statement was admitted.
+  startedAt
+  // Absolute monotonic timestamp after which cooperative polling fails.
+  deadlineAt
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -269,6 +283,7 @@ end function
 
 // Clears last-statement accounting without changing the configured policy.
 function resetQueryMemory(engine)
+  if engine.queryMemory.spillBytes > 0 then ignoredRelease = try(database_manager.releaseTemporaryStorage(engine.database, engine.queryMemory.spillBytes)) end if
   engine.queryMemory.peakBytes = 0
   engine.queryMemory.spillBytes = 0
   engine.queryMemory.spillRuns = 0
@@ -324,8 +339,52 @@ end function
 
 // Records a spill decision using the measured input representation.
 function noteQuerySpill(engine, rows)
+  reservedBytes = estimatedOperatorBytes(engine, rows)
+  reserved = try(database_manager.reserveTemporaryStorage(engine.database, reservedBytes))
+  if typeof(reserved) == "error" then return reserved end if
   engine.queryMemory.spillRuns = engine.queryMemory.spillRuns + 1
-  engine.queryMemory.spillBytes = engine.queryMemory.spillBytes + estimatedOperatorBytes(engine, rows)
+  engine.queryMemory.spillBytes = engine.queryMemory.spillBytes + reservedBytes
+  return true
+end function
+
+// Starts one top-level cooperative token after global memory admission.
+function beginQueryControl(engine)
+  validateOpen(engine, "beginQueryControl")
+  if engine.queryControl.active then return true end if
+  admitted = try(database_manager.admitStatement(engine.database))
+  if typeof(admitted) == "error" then return admitted end if
+  resetQueryMemory(engine)
+  now = clock.monotonicMilliseconds()
+  engine.queryControl.active = true
+  engine.queryControl.startedAt = now
+  engine.queryControl.deadlineAt = now + database_manager.queryTimeoutMs(engine.database)
+  return true
+end function
+
+// Releases reservations and deactivates a completed token.
+function finishQueryControl(engine)
+  if not isEngine(engine) then return true end if
+  resetQueryMemory(engine)
+  engine.queryControl.active = false
+  engine.queryControl.startedAt = 0
+  engine.queryControl.deadlineAt = 0
+  return true
+end function
+
+// Polls administrator cancellation and the monotonic execution deadline.
+function pollQueryControl(engine, operation)
+  validateOpen(engine, operation)
+  if not engine.queryControl.active then return true end if
+  if database_manager.isSessionCancellationRequested(engine.database, engine.sessionId) then
+    ignoredWait = try(database_manager.cancelLockWait(engine.database, engine.sessionId))
+    return fail(QUERY_CANCELLED, operation, "statement cancelled")
+  end if
+  if clock.monotonicMilliseconds() >= engine.queryControl.deadlineAt then
+    ignoredWait = try(database_manager.cancelLockWait(engine.database, engine.sessionId))
+    return fail(QUERY_TIMEOUT, operation, "statement execution deadline exceeded")
+  end if
+  memory = try(database_manager.enforceProcessMemory(engine.database))
+  if typeof(memory) == "error" then return memory end if
   return true
 end function
 
@@ -355,7 +414,7 @@ function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then return prepared end if
-  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0))
+  return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0), QueryControl(false, 0, 0))
 end function
 
 // Opens open using the supplied inputs.
@@ -366,7 +425,7 @@ function open(databasePath)
   database = database_manager.open(databasePath)
   prepared = try(prepareDatabase(database))
   if typeof(prepared) == "error" then database_manager.close(database); return prepared end if
-  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0))
+  return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0), QueryControl(false, 0, 0))
 end function
 
 // Implements set principal for this module.
@@ -1774,10 +1833,10 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function runBoundDml(engine, bound, pageTransaction)
-  if binder.isBoundInsert(bound) then return dml.insert(engine.database, bound, pageTransaction) end if
-  if binder.isBoundUpdate(bound) then return dml.update(engine.database, bound, pageTransaction) end if
-  if binder.isBoundDelete(bound) then return dml.delete(engine.database, bound, pageTransaction) end if
-  if binder.isBoundTruncate(bound) then return dml.truncate(engine.database, bound, pageTransaction) end if
+  if binder.isBoundInsert(bound) then return dml.insert(engine.database, engine.sessionId, bound, pageTransaction) end if
+  if binder.isBoundUpdate(bound) then return dml.update(engine.database, engine.sessionId, bound, pageTransaction) end if
+  if binder.isBoundDelete(bound) then return dml.delete(engine.database, engine.sessionId, bound, pageTransaction) end if
+  if binder.isBoundTruncate(bound) then return dml.truncate(engine.database, engine.sessionId, bound, pageTransaction) end if
   return fail(BINDING_ERROR, "runBoundDml", "unsupported bound DML statement")
 end function
 
@@ -2124,7 +2183,9 @@ end function
 
 // Scans a catalog table, named query, recursive fixpoint, or recursive delta source.
 function scanBoundSource(engine, source, pageTransaction, offset, limit, requiredColumns)
-  if source.query is void then return scan.scanTableRangeColumnsCached(engine.database.path, source.table, pageTransaction, offset, limit, requiredColumns, engine.database.readCache) end if
+  polled = try(pollQueryControl(engine, "scanBoundSource"))
+  if typeof(polled) == "error" then return polled end if
+  if source.query is void then return scan.scanTableRangeColumnsCachedControlled(engine.database, engine.sessionId, source.table, pageTransaction, offset, limit, requiredColumns) end if
   if binder.isBoundInformationSchemaSource(source.query) then
     metadataRows = informationSchemaRows(engine, source.query.relationKind)
     metadataOutput = []
@@ -2254,9 +2315,15 @@ function combineCanonical(bound, left, sourceIndex, right)
 end function
 
 // Applies the semantic nested-loop fallback to one reordered INNER join edge.
-function canonicalNestedJoin(bound, leftRows, rightRows, sourceIndex, condition)
+function canonicalNestedJoin(engine, bound, leftRows, rightRows, sourceIndex, condition)
   output = []
+  pollCounter = 0
   for each left in leftRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalNestedJoin"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     for each right in rightRows
       candidate = combineCanonical(bound, left, sourceIndex, right)
       if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then output = output + [candidate] end if
@@ -2279,15 +2346,21 @@ end function
 
 // Hash-joins a reordered INNER source while preserving canonical SQL column
 // positions. Full key equality and predicate rechecks resolve collisions.
-function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, buildRight)
+function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
   source = bound.sources[sourceIndex]
   columns = canonicalEqualityColumns(condition, source)
-  if columns is void then return canonicalNestedJoin(bound, leftRows, rightRows, sourceIndex, condition) end if
+  if columns is void then return canonicalNestedJoin(engine, bound, leftRows, rightRows, sourceIndex, condition) end if
   joinedColumn = columns[0]
   localColumn = columns[1]
   buckets = array(257, void)
   if buildRight then
+    pollCounter = 0
     for each right in rightRows
+      if pollCounter % 256 == 0 then
+        polled = try(pollQueryControl(engine, "canonicalHashJoin.buildRight"))
+        if typeof(polled) == "error" then return polled end if
+      end if
+      pollCounter = pollCounter + 1
       key = right.values[localColumn]
       if not key.isNull then
         bucketIndex = join.hashValue(key) % 257
@@ -2297,7 +2370,13 @@ function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, b
       end if
     end for
     output = []
+    pollCounter = 0
     for each left in leftRows
+      if pollCounter % 256 == 0 then
+        polled = try(pollQueryControl(engine, "canonicalHashJoin.probeLeft"))
+        if typeof(polled) == "error" then return polled end if
+      end if
+      pollCounter = pollCounter + 1
       key = left.values[joinedColumn]
       if not key.isNull then
         bucket = buckets[join.hashValue(key) % 257]
@@ -2313,7 +2392,13 @@ function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, b
     end for
     return output
   end if
+  pollCounter = 0
   for each left in leftRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalHashJoin.buildLeft"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     key = left.values[joinedColumn]
     if not key.isNull then
       bucketIndex = join.hashValue(key) % 257
@@ -2323,7 +2408,13 @@ function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, b
     end if
   end for
   output = []
+  pollCounter = 0
   for each right in rightRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalHashJoin.probeRight"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     key = right.values[localColumn]
     if not key.isNull then
       bucket = buckets[join.hashValue(key) % 257]
@@ -2341,9 +2432,15 @@ function canonicalHashJoin(bound, leftRows, rightRows, sourceIndex, condition, b
 end function
 
 // Counts a final reordered nested-loop join without retaining its joined rows.
-function canonicalNestedJoinCount(bound, leftRows, rightRows, sourceIndex, condition)
+function canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition)
   count = 0
+  pollCounter = 0
   for each left in leftRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalNestedJoinCount"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     for each right in rightRows
       candidate = combineCanonical(bound, left, sourceIndex, right)
       if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
@@ -2355,15 +2452,21 @@ end function
 // Counts a final reordered hash join. Hash buckets and collision rechecks are
 // identical to canonicalHashJoin, but successful matches increment a scalar
 // instead of extending a cardinality-sized output array.
-function canonicalHashJoinCount(bound, leftRows, rightRows, sourceIndex, condition, buildRight)
+function canonicalHashJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
   source = bound.sources[sourceIndex]
   columns = canonicalEqualityColumns(condition, source)
-  if columns is void then return canonicalNestedJoinCount(bound, leftRows, rightRows, sourceIndex, condition) end if
+  if columns is void then return canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition) end if
   joinedColumn = columns[0]
   localColumn = columns[1]
   buckets = array(257, void)
   if buildRight then
+    pollCounter = 0
     for each right in rightRows
+      if pollCounter % 256 == 0 then
+        polled = try(pollQueryControl(engine, "canonicalHashJoinCount.buildRight"))
+        if typeof(polled) == "error" then return polled end if
+      end if
+      pollCounter = pollCounter + 1
       key = right.values[localColumn]
       if not key.isNull then
         bucketIndex = join.hashValue(key) % 257
@@ -2373,7 +2476,13 @@ function canonicalHashJoinCount(bound, leftRows, rightRows, sourceIndex, conditi
       end if
     end for
     count = 0
+    pollCounter = 0
     for each left in leftRows
+      if pollCounter % 256 == 0 then
+        polled = try(pollQueryControl(engine, "canonicalHashJoinCount.probeLeft"))
+        if typeof(polled) == "error" then return polled end if
+      end if
+      pollCounter = pollCounter + 1
       key = left.values[joinedColumn]
       if not key.isNull then
         bucket = buckets[join.hashValue(key) % 257]
@@ -2389,7 +2498,13 @@ function canonicalHashJoinCount(bound, leftRows, rightRows, sourceIndex, conditi
     end for
     return count
   end if
+  pollCounter = 0
   for each left in leftRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalHashJoinCount.buildLeft"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     key = left.values[joinedColumn]
     if not key.isNull then
       bucketIndex = join.hashValue(key) % 257
@@ -2399,7 +2514,13 @@ function canonicalHashJoinCount(bound, leftRows, rightRows, sourceIndex, conditi
     end if
   end for
   count = 0
+  pollCounter = 0
   for each right in rightRows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, "canonicalHashJoinCount.probeRight"))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     key = right.values[localColumn]
     if not key.isNull then
       bucket = buckets[join.hashValue(key) % 257]
@@ -2420,6 +2541,8 @@ end function
 // edge directly into a cardinality. This bounds retained memory by the largest
 // intermediate before the final fan-out rather than the final result size.
 function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColumns, executable)
+  polled = try(pollQueryControl(engine, "joinedSourceReorderedCount"))
+  if typeof(polled) == "error" then return polled end if
   if executable.constantEmpty then return 0 end if
   startSource = executable.startSource
   firstMask = void
@@ -2429,6 +2552,8 @@ function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColu
   output = canonicalizeRows(bound, startSource, firstRows)
   stepIndex = 0
   for each plannedJoin in executable.joins
+    polledJoin = try(pollQueryControl(engine, "joinedSourceReorderedCount"))
+    if typeof(polledJoin) == "error" then return polledJoin end if
     sourceIndex = plannedJoin.sourceIndex
     source = bound.sources[sourceIndex]
     mask = void
@@ -2438,14 +2563,15 @@ function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColu
     boundJoin = bound.joins[plannedJoin.joinIndex]
     finalStep = stepIndex == len(executable.joins) - 1
     if finalStep then
-      if plannedJoin.algorithm == execution_plan.JOIN_HASH then return canonicalHashJoinCount(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight) end if
-      return canonicalNestedJoinCount(bound, output, right, sourceIndex, boundJoin.condition)
+      if plannedJoin.algorithm == execution_plan.JOIN_HASH then return canonicalHashJoinCount(engine, bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight) end if
+      return canonicalNestedJoinCount(engine, bound, output, right, sourceIndex, boundJoin.condition)
     end if
     if plannedJoin.algorithm == execution_plan.JOIN_HASH then
-      output = canonicalHashJoin(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight)
+      output = try(canonicalHashJoin(engine, bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight))
     else
-      output = canonicalNestedJoin(bound, output, right, sourceIndex, boundJoin.condition)
+      output = try(canonicalNestedJoin(engine, bound, output, right, sourceIndex, boundJoin.condition))
     end if
+    if typeof(output) == "error" then return output end if
     stepIndex = stepIndex + 1
   end for
   return len(output)
@@ -2453,6 +2579,8 @@ end function
 
 // Executes the optimizer's canonicalized order for a pure INNER equijoin graph.
 function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
+  polled = try(pollQueryControl(engine, "joinedSourceReordered"))
+  if typeof(polled) == "error" then return polled end if
   startSource = executable.startSource
   firstMask = void
   if requiredColumns is not void then firstMask = requiredColumns[startSource] end if
@@ -2460,6 +2588,8 @@ function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sou
   firstRows = filterSourceRows(bound.sources[startSource], firstRows, executable.sources[startSource].pushedPredicate)
   output = canonicalizeRows(bound, startSource, firstRows)
   for each plannedJoin in executable.joins
+    polledJoin = try(pollQueryControl(engine, "joinedSourceReordered"))
+    if typeof(polledJoin) == "error" then return polledJoin end if
     sourceIndex = plannedJoin.sourceIndex
     source = bound.sources[sourceIndex]
     mask = void
@@ -2468,10 +2598,11 @@ function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sou
     right = filterSourceRows(source, right, executable.sources[sourceIndex].pushedPredicate)
     boundJoin = bound.joins[plannedJoin.joinIndex]
     if plannedJoin.algorithm == execution_plan.JOIN_HASH then
-      output = canonicalHashJoin(bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight)
+      output = try(canonicalHashJoin(engine, bound, output, right, sourceIndex, boundJoin.condition, plannedJoin.buildRight))
     else
-      output = canonicalNestedJoin(bound, output, right, sourceIndex, boundJoin.condition)
+      output = try(canonicalNestedJoin(engine, bound, output, right, sourceIndex, boundJoin.condition))
     end if
+    if typeof(output) == "error" then return output end if
   end for
   return output
 end function
@@ -2508,10 +2639,61 @@ function joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate)
   return values.compareNonNull(leftValue, predicateLiteral.literal) == 0
 end function
 
+// Applies the semantic nested-loop join while polling inside the candidate
+// loop. Keeping the control-aware orchestration in this module avoids coupling
+// the reusable row-combination module to server session state.
+function controlledNestedJoin(engine, leftRows, rightRows, boundJoin)
+  output = []
+  rightMatched = array(len(rightRows), false)
+  candidateCount = 0
+  for each left in leftRows
+    if not scan.isScannedRow(left) then return error(INVALID_ARGUMENT, "executor.executor.controlledNestedJoin: left input contains non-row") end if
+    matched = false
+    if len(rightRows) > 0 then
+      for rightIndex = 0 to len(rightRows) - 1
+        if candidateCount % 4096 == 0 then
+          polled = try(pollQueryControl(engine, "controlledNestedJoin"))
+          if typeof(polled) == "error" then return polled end if
+        end if
+        candidateCount = candidateCount + 1
+        right = rightRows[rightIndex]
+        if not scan.isScannedRow(right) then return error(INVALID_ARGUMENT, "executor.executor.controlledNestedJoin: right input contains non-row") end if
+        candidate = join.combine(left, right)
+        if boundJoin.joinType == ast.JOIN_CROSS or join.conditionPasses(boundJoin.condition, candidate) then
+          output = output + [candidate]
+          matched = true
+          rightMatched[rightIndex] = true
+        end if
+      end for
+    end if
+    if (boundJoin.joinType == ast.JOIN_LEFT or boundJoin.joinType == ast.JOIN_FULL) and not matched then
+      output = output + [scan.ScannedRow([left.reference, void], left.values + join.nullValues(boundJoin.source.table))]
+    end if
+  end for
+  if boundJoin.joinType == ast.JOIN_RIGHT or boundJoin.joinType == ast.JOIN_FULL then
+    if len(rightRows) > 0 then
+      leftNulls = join.nullValuesForTypes(boundJoin.leftTypes)
+      for rightIndex = 0 to len(rightRows) - 1
+        if rightIndex % 4096 == 0 then
+          polled = try(pollQueryControl(engine, "controlledNestedJoin.unmatchedRight"))
+          if typeof(polled) == "error" then return polled end if
+        end if
+        if not rightMatched[rightIndex] then
+          right = rightRows[rightIndex]
+          output = output + [scan.ScannedRow([void, right.reference], leftNulls + right.values)]
+        end if
+      end for
+    end if
+  end if
+  return output
+end function
+
 // Implements joined source for this module.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
+  polled = try(pollQueryControl(engine, "joinedSource"))
+  if typeof(polled) == "error" then return polled end if
   if len(bound.sources) == 0 then return [scan.ScannedRow(void, [])] end if
   if executable.constantEmpty then return [] end if
   if executable.reorderedJoins then return joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable) end if
@@ -2546,7 +2728,13 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
     joinedRows = []
     if plannedJoin.algorithm == execution_plan.JOIN_INDEX_NESTED_LOOP and not outerRight then
       if len(output) == 0 then usedIndex = true end if
+      indexProbeCount = 0
       for each leftRow in output
+        if indexProbeCount % 256 == 0 then
+          polledIndex = try(pollQueryControl(engine, "joinedSource.indexNestedLoop"))
+          if typeof(polledIndex) == "error" then return polledIndex end if
+        end if
+        indexProbeCount = indexProbeCount + 1
         matches = dml.joinIndexRows(engine.database, boundJoin.source, boundJoin.condition, leftRow, pageTransaction)
         if matches is void then
           usedIndex = false
@@ -2556,7 +2744,9 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
           matches = filterSourceRows(boundJoin.source, matches, rightPlan.pushedPredicate)
         end if
         usedIndex = true
-        joinedRows = joinedRows + join.apply([leftRow], matches, boundJoin)
+        probeRows = try(controlledNestedJoin(engine, [leftRow], matches, boundJoin))
+        if typeof(probeRows) == "error" then return probeRows end if
+        joinedRows = joinedRows + probeRows
       end for
     end if
     if usedIndex and not outerRight then
@@ -2568,12 +2758,13 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
         hashInput = output
         if plannedJoin.buildRight then hashInput = right end if
         hashThreshold = queryRowThreshold(engine, hashInput)
-        if len(hashInput) > hashThreshold then noteQuerySpill(engine, hashInput) end if
-        output = join.applyHashBuildWithSpill(output, right, boundJoin, plannedJoin.buildRight, file_api.joinPath(engine.database.path, "tmp"), hashThreshold)
+        if len(hashInput) > hashThreshold then reservedHash = try(noteQuerySpill(engine, hashInput)); if typeof(reservedHash) == "error" then return reservedHash end if end if
+        output = join.applyHashBuildWithSpillControlled(output, right, boundJoin, plannedJoin.buildRight, file_api.joinPath(engine.database.path, "tmp"), hashThreshold, engine.database, engine.sessionId)
       else
-        output = join.apply(output, right, boundJoin)
+        output = try(controlledNestedJoin(engine, output, right, boundJoin))
       end if
     end if
+    if typeof(output) == "error" then return output end if
     joinIndex = joinIndex + 1
   end for
   return output
@@ -2807,7 +2998,7 @@ end function
 
 // Projects a scalar COUNT(*) directly from checksum-verified heap slot headers.
 function simpleCountStarProjected(engine, bound, pageTransaction)
-  rowCount = scan.countTableRowsCached(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache)
+  rowCount = scan.countTableRowsCachedControlled(engine.database, engine.sessionId, bound.sources[0].table, pageTransaction)
   countValue = values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(rowCount))
   return [projection.ProjectedRow(void, [countValue], [])]
 end function
@@ -2830,12 +3021,15 @@ function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, w
   mask = void
   if requiredColumns is not void then mask = requiredColumns[0] end if
   reader = scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database))
+  scan.setExecutionControl(reader, engine.database, engine.sessionId)
   cursor = scan.openCursor(reader, mask)
   output = list.List.new()
   skipped = 0
   stopped = false
   operationError = void
   while not stopped
+    polled = try(pollQueryControl(engine, "simpleBatchProjected"))
+    if typeof(polled) == "error" then operationError = polled; break end if
     batch = try(scan.nextBatch(cursor, EXECUTION_BATCH_ROWS))
     if typeof(batch) == "error" then operationError = batch; break end if
     if batch is void then break end if
@@ -2880,11 +3074,13 @@ end function
 // ordinary executor without changing SQL semantics.
 function openSelectCursor(engine, statement)
   validateOpen(engine, "openSelectCursor")
+  polled = try(pollQueryControl(engine, "openSelectCursor"))
+  if typeof(polled) == "error" then return polled end if
   if not ast.isSelectStatement(statement) then return void end if
   resetQueryMemory(engine)
   if engine.explicitTransaction and engine.failed then return fail(TRANSACTION_STATE, "openSelectCursor", "transaction is failed; ROLLBACK required") end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "openSelectCursor", "SELECT after staged DDL is not supported") end if
-  entered = try(database_manager.enterReadExecution(engine.database))
+  entered = try(database_manager.enterReadExecutionControlled(engine.database, engine.sessionId))
   if typeof(entered) == "error" then return entered end if
   dirtyIndexes = try(dml.indexesNeedRepair(engine.database))
   if typeof(dirtyIndexes) == "error" then database_manager.leaveReadExecution(engine.database); return dirtyIndexes end if
@@ -2911,6 +3107,8 @@ function openSelectCursor(engine, statement)
   if requiredColumns is not void then mask = requiredColumns[0] end if
   reader = try(scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database)))
   if typeof(reader) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return reader end if
+  controlledReader = try(scan.setExecutionControl(reader, engine.database, engine.sessionId))
+  if typeof(controlledReader) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return controlledReader end if
   scanCursor = try(scan.openCursor(reader, mask))
   if typeof(scanCursor) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return scanCursor end if
   return SelectCursor(engine, bound, optimized.execution.wherePredicate, reader, scanCursor, readLease, 0, 0, false)
@@ -2928,6 +3126,8 @@ function nextSelectBatch(cursor, maximumRows)
   operationError = void
   exhausted = false
   while output.len() < maximumRows and not exhausted and outputBytes < CURSOR_TARGET_BATCH_BYTES
+    polled = try(pollQueryControl(cursor.engine, "nextSelectBatch"))
+    if typeof(polled) == "error" then operationError = polled; break end if
     readRows = maximumRows - output.len()
     if readRows > CURSOR_SOURCE_BATCH_ROWS then readRows = CURSOR_SOURCE_BATCH_ROWS end if
     if limit >= 0 and limit - cursor.emitted < readRows then readRows = limit - cursor.emitted end if
@@ -2985,10 +3185,14 @@ function simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, wh
   if requiredColumns is not void then mask = requiredColumns[0] end if
   reader = try(scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database)))
   if typeof(reader) == "error" then return reader end if
+  controlledReader = try(scan.setExecutionControl(reader, engine.database, engine.sessionId))
+  if typeof(controlledReader) == "error" then scan.close(reader); return controlledReader end if
   cursor = scan.openCursor(reader, mask)
   retained = []
   operationError = void
   while true
+    polled = try(pollQueryControl(engine, "simpleTopNProjected"))
+    if typeof(polled) == "error" then operationError = polled; break end if
     batch = try(scan.nextBatch(cursor, EXECUTION_BATCH_ROWS))
     if typeof(batch) == "error" then operationError = batch; break end if
     if batch is void then break end if
@@ -3012,6 +3216,8 @@ end function
 // Returns the computed value or operation status.
 // Performs I/O through its file, transport, or storage dependencies.
 function selectProjected(engine, bound, pageTransaction)
+  polled = try(pollQueryControl(engine, "selectProjected"))
+  if typeof(polled) == "error" then return polled end if
   optimized = optimizedPlanFor(engine, bound)
   if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_COUNT_SLOTS then return simpleCountStarProjected(engine, bound, pageTransaction) end if
   requiredColumns = selectRequiredColumns(bound)
@@ -3021,7 +3227,7 @@ function selectProjected(engine, bound, pageTransaction)
     return [projection.ProjectedRow(void, [countValue], [])]
   end if
   if optimized.execution.aggregateAlgorithm == execution_plan.AGGREGATE_STREAM then
-    if optimized.execution.constantEmpty then return aggregate.projectStreamingRows([], bound.items, optimized.execution.wherePredicate) end if
+    if optimized.execution.constantEmpty then return aggregate.projectStreamingRowsControlled([], bound.items, optimized.execution.wherePredicate, engine.database, engine.sessionId) end if
     firstPlan = optimized.execution.sources[0]
     if firstPlan.accessKind == execution_plan.ACCESS_INDEX or firstPlan.accessKind == execution_plan.ACCESS_INDEX_ONLY or firstPlan.accessKind == execution_plan.ACCESS_INDEX_INTERSECTION or firstPlan.accessKind == execution_plan.ACCESS_INDEX_UNION then
       indexedRows = void
@@ -3029,7 +3235,7 @@ function selectProjected(engine, bound, pageTransaction)
       if firstPlan.accessKind == execution_plan.ACCESS_INDEX then indexedRows = dml.plannedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexName) end if
       if firstPlan.accessKind == execution_plan.ACCESS_INDEX_INTERSECTION then indexedRows = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, false) end if
       if firstPlan.accessKind == execution_plan.ACCESS_INDEX_UNION then indexedRows = dml.plannedCombinedIndexRowsForBound(engine.database, bound, pageTransaction, firstPlan.indexNames, true) end if
-      if indexedRows is not void then return aggregate.projectStreamingRows(indexedRows, bound.items, optimized.execution.wherePredicate) end if
+      if indexedRows is not void then return aggregate.projectStreamingRowsControlled(indexedRows, bound.items, optimized.execution.wherePredicate, engine.database, engine.sessionId) end if
     end if
     mask = void
     if requiredColumns is not void then mask = requiredColumns[0] end if
@@ -3038,10 +3244,10 @@ function selectProjected(engine, bound, pageTransaction)
       // database has observed concurrent readers. Thereafter inter-query
       // parallelism wins and every session stays serial internally, preventing
       // synchronized request waves from repeatedly creating N x DOP workers.
-      if pageTransaction is void and database_manager.peakConcurrentReaders(engine.database) <= 1 then return aggregate.projectStreamingTableParallel(engine.database.path, bound.sources[0].table, engine.database.readCache, bound.items) end if
-      return aggregate.projectStreamingTable(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items)
+      if pageTransaction is void and database_manager.peakConcurrentReaders(engine.database) <= 1 then return aggregate.projectStreamingTableParallelControlled(engine.database.path, bound.sources[0].table, engine.database.readCache, bound.items, engine.database, engine.sessionId) end if
+      return aggregate.projectStreamingTableControlled(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items, engine.database, engine.sessionId)
     end if
-    return aggregate.projectStreamingTableFiltered(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items, optimized.execution.wherePredicate, mask)
+    return aggregate.projectStreamingTableFilteredControlled(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, bound.items, optimized.execution.wherePredicate, mask, engine.database, engine.sessionId)
   end if
   if simpleTopNEligible(bound, optimized.execution) then return simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, optimized.execution.wherePredicate) end if
   if simpleBatchEligible(bound, optimized.execution) then return simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, optimized.execution.wherePredicate) end if
@@ -3070,7 +3276,7 @@ function selectProjected(engine, bound, pageTransaction)
   else if bound.aggregateQuery then
     filtered = filter.apply(source, wherePredicate)
     aggregateThreshold = queryRowThreshold(engine, filtered)
-    if len(bound.groupExpressions) > 0 and len(filtered) > aggregateThreshold then noteQuerySpill(engine, filtered) end if
+    if len(bound.groupExpressions) > 0 and len(filtered) > aggregateThreshold then reservedAggregate = try(noteQuerySpill(engine, filtered)); if typeof(reservedAggregate) == "error" then return reservedAggregate end if end if
     projected = aggregate.projectWithSpill(filtered, bound.items, bound.groupExpressions, bound.havingExpression, bound.orderExpressions, file_api.joinPath(engine.database.path, "tmp"), aggregateThreshold)
   else if bound.windowQuery then
     filtered = filter.apply(source, wherePredicate)
@@ -3092,7 +3298,7 @@ function selectProjected(engine, bound, pageTransaction)
     // Actual cardinality remains the memory-safety guard when estimates are
     // stale: the sorter may spill even when the plan expected an in-memory run.
     sortThreshold = queryRowThreshold(engine, projected)
-    if len(bound.statement.orderBy) > 0 and len(projected) > sortThreshold then noteQuerySpill(engine, projected) end if
+    if len(bound.statement.orderBy) > 0 and len(projected) > sortThreshold then reservedSort = try(noteQuerySpill(engine, projected)); if typeof(reservedSort) == "error" then return reservedSort end if end if
     projected = sort.sortProjectedWithSpill(projected, bound.statement.orderBy, temporaryRoot, sortThreshold)
   end if
   projected = projection.sliceRows(projected, resultOffset, bound.statement.limit)
@@ -3971,7 +4177,7 @@ end function
 // Exposes bounded process-local counters and configured resource ceilings.
 function executeShowStatus(engine)
   status = try(database_manager.operationalStatus(engine.database))
-  names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes"]
+  names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes", "query_timeout_ms", "max_result_bytes", "process_memory_bytes", "heap_used_bytes", "heap_committed_bytes", "temporary_storage_bytes", "temporary_reserved_bytes", "temporary_peak_bytes", "cancelled_statements", "timed_out_statements", "resource_rejected_statements", "total_execution_ms", "maximum_execution_ms", "slow_query_count", "slow_query_ms", "result_bytes_returned"]
   rows = []
   for index = 0 to len(names) - 1
     rows = rows + [[values.text(names[index]), values.text("" + status[index])]]
@@ -4348,8 +4554,10 @@ end function
 // Prepared statements are classified from their stored AST. A dirty-index marker
 // triggers an atomic read-to-write escalation before repair, with every gate path
 // released before returning the result or a propagated error.
-function executeStatement(engine, statement)
+function executeStatementControlled(engine, statement)
   validateOpen(engine, "executeStatement")
+  polled = try(pollQueryControl(engine, "executeStatement"))
+  if typeof(polled) == "error" then return polled end if
   if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
   readExecution = statementUsesReadLock(statement)
   if ast.isExecutePreparedStatement(statement) then
@@ -4358,7 +4566,8 @@ function executeStatement(engine, statement)
   end if
   repairIndexes = false
   if readExecution then
-    entered = try(database_manager.enterReadExecution(engine.database))
+    entered = try(database_manager.enterReadExecutionControlled(engine.database, engine.sessionId))
+    if typeof(entered) == "error" then return entered end if
     // A failed writer can leave the durable dirty marker behind. Recheck only
     // after entering the read gate so a writer cannot publish it between the
     // check and the plan. Repair is an explicit read-to-write escalation.
@@ -4370,12 +4579,14 @@ function executeStatement(engine, statement)
     if dirtyIndexes then
       leftRead = try(database_manager.leaveReadExecution(engine.database))
       if typeof(leftRead) == "error" then return leftRead end if
-      enteredWriter = try(database_manager.enterExecution(engine.database))
+      enteredWriter = try(database_manager.enterExecutionControlled(engine.database, engine.sessionId))
+      if typeof(enteredWriter) == "error" then return enteredWriter end if
       readExecution = false
       repairIndexes = true
     end if
   else
-    entered = try(database_manager.enterExecution(engine.database))
+    entered = try(database_manager.enterExecutionControlled(engine.database, engine.sessionId))
+    if typeof(entered) == "error" then return entered end if
   end if
   result = void
   if repairIndexes then
@@ -4400,6 +4611,23 @@ function executeStatement(engine, statement)
     released = try(database_manager.leaveExecution(engine.database))
   end if
   if typeof(released) == "error" then return released end if
+  polledAfter = try(pollQueryControl(engine, "executeStatement"))
+  if typeof(polledAfter) == "error" then return polledAfter end if
+  return result
+end function
+
+// Executes one AST with an implicit token for embedded callers. Network
+// sessions start the same token before parsing so parsing, execution, cursor
+// streaming and lock-wait retries share one absolute deadline.
+function executeStatement(engine, statement)
+  validateOpen(engine, "executeStatement")
+  ownsControl = not engine.queryControl.active
+  if ownsControl then
+    startedControl = try(beginQueryControl(engine))
+    if typeof(startedControl) == "error" then return startedControl end if
+  end if
+  result = try(executeStatementControlled(engine, statement))
+  if ownsControl then finishQueryControl(engine) end if
   return result
 end function
 

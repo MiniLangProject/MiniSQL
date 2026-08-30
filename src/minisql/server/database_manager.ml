@@ -34,6 +34,14 @@ const DEFAULT_MAX_STATEMENT_BYTES = 1048576
 const DEFAULT_MAX_FRAME_BYTES = 8388608
 const DEFAULT_MAX_RESULT_ROWS = 1000000
 const DEFAULT_IDLE_TIMEOUT_MS = 300000
+const DEFAULT_QUERY_TIMEOUT_MS = 30000
+const DEFAULT_MAX_RESULT_BYTES = 268435456
+const DEFAULT_PROCESS_MEMORY_BYTES = 2147483648
+const DEFAULT_TEMPORARY_STORAGE_BYTES = 1073741824
+const DEFAULT_SLOW_QUERY_MS = 1000
+const QUERY_CANCELLED = 9035
+const QUERY_TIMEOUT = 9036
+const RESOURCE_LIMIT = 9037
 
 // Mutable process-list entry protected by the database execution-state lock.
 struct OperationalSession
@@ -57,6 +65,8 @@ struct OperationalSession
   state
   // Number of statements completed by this session.
   requestCount
+  // Cooperatively asks the executor owning this session to stop at its next poll.
+  cancelRequested
 end struct
 
 // Durable marker formats used to make physical WAL reset crash-safe. The epoch
@@ -151,6 +161,34 @@ struct ManagedDatabase
   maxResultRows
   // Maximum inactive lifetime for one network session.
   idleTimeoutMs
+  // Maximum execution time for a statement, excluding response delivery.
+  queryTimeoutMs
+  // Aggregate encoded response byte ceiling for one statement.
+  maxResultBytes
+  // Managed-heap admission ceiling shared by all sessions.
+  processMemoryBytes
+  // Spill byte reservations shared by all concurrent statements.
+  temporaryStorageBytes
+  // Bytes currently reserved by all query spill runs.
+  temporaryReservedBytes
+  // Greatest concurrent spill reservation observed since database open.
+  temporaryPeakBytes
+  // Statements terminated by an administrative cancellation token.
+  cancelledStatements
+  // Statements terminated after their absolute execution deadline.
+  timedOutStatements
+  // Statements rejected by a managed resource policy.
+  resourceRejectedStatements
+  // Sum of completed statement execution durations in milliseconds.
+  totalExecutionMs
+  // Greatest completed statement execution duration in milliseconds.
+  maximumExecutionMs
+  // Statements whose duration met the configured slow-query threshold.
+  slowQueryCount
+  // Millisecond threshold used for slow-query warnings and accounting.
+  slowQueryMs
+  // Complete encoded response bytes returned by completed statements.
+  resultBytesReturned
   // Indicates whether the closed condition is active.
   closed
 end struct
@@ -528,6 +566,35 @@ function enterReadExecution(database)
   return true
 end function
 
+// Cancellation-aware shared-gate admission for SQL statements. Short timed
+// waits keep administrative cancellation and the absolute statement deadline
+// observable even while a writer currently owns the physical database gate.
+function enterReadExecutionControlled(database, sessionId)
+  validateOpen(database, "enterReadExecutionControlled")
+  gate = database.executionGate
+  while not gate.turnstile.acquireFor(10)
+    control = try(pollSessionControl(database, sessionId))
+    if typeof(control) == "error" then return control end if
+  end while
+  while not gate.stateLock.acquireFor(10)
+    control = try(pollSessionControl(database, sessionId))
+    if typeof(control) == "error" then gate.turnstile.release(); return control end if
+  end while
+  // Owning turnstile excludes every writer transition. Therefore roomEmpty is
+  // immediately available when this is the first reader; later readers share
+  // the room already owned by the first and never wait on its semaphore.
+  if gate.readers == 0 and not gate.roomEmpty.tryAcquire() then
+    gate.stateLock.release()
+    gate.turnstile.release()
+    return fail(CLOSED_HANDLE, "enterReadExecutionControlled", "database read gate is unavailable")
+  end if
+  gate.readers = gate.readers + 1
+  if gate.readers > gate.peakReaders then gate.peakReaders = gate.readers end if
+  gate.stateLock.release()
+  gate.turnstile.release()
+  return true
+end function
+
 // Removes one shared reader and releases `roomEmpty` when the last reader exits.
 // Returns an error for an invalid database, unavailable lock, or unbalanced leave.
 function leaveReadExecution(database)
@@ -558,6 +625,22 @@ function enterExecution(database)
     gate.turnstile.release()
     return fail(CLOSED_HANDLE, "enterExecution", "database write gate is unavailable")
   end if
+  return true
+end function
+
+// Cancellation-aware exclusive admission. The writer retains turnstile while
+// waiting for readers to leave, preserving writer priority between timed polls.
+function enterExecutionControlled(database, sessionId)
+  validateOpen(database, "enterExecutionControlled")
+  gate = database.executionGate
+  while not gate.turnstile.acquireFor(10)
+    control = try(pollSessionControl(database, sessionId))
+    if typeof(control) == "error" then return control end if
+  end while
+  while not gate.roomEmpty.acquireFor(10)
+    control = try(pollSessionControl(database, sessionId))
+    if typeof(control) == "error" then gate.turnstile.release(); return control end if
+  end while
   return true
 end function
 
@@ -811,6 +894,22 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     file_api.close(lockFile)
     return recoveryResult
   end if
+  // A live WAL archive intentionally ships table-page WAL, not concurrently
+  // rewritten catalog metadata. Advance the allocator past every recovered
+  // transaction before a promoted standby can accept a new writer; otherwise
+  // it could reuse an archived transaction ID and create duplicate TX_BEGIN.
+  maximumRecoveredTransactionId = 0
+  for each record in recoveryScan.records
+    if record.transactionId > maximumRecoveredTransactionId then maximumRecoveredTransactionId = record.transactionId end if
+  end for
+  if catalogHandle.metadata.nextTransactionId <= maximumRecoveredTransactionId then
+    catalogHandle.metadata.nextTransactionId = maximumRecoveredTransactionId + 1
+    synchronizedIds = try(catalog.persistMetadata(catalogHandle))
+    if typeof(synchronizedIds) == "error" then
+      checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
+      return synchronizedIds
+    end if
+  end if
   if retiredRecoveryTargets > 0 then
     ignoredRetiredLog = logger.info("minisql.server.database_manager.openInternal", "recovery skipped historical WAL for retired table files=" + retiredRecoveryTargets)
   end if
@@ -846,7 +945,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
     diagnostics.closeAudit(auditLog); checkpoint.close(checkpointFile); wal.close(walWriter); catalog.close(catalogHandle); file_lock.release(lockToken); file_api.close(lockFile)
     return readHandles
   end if
-  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, [], clock.monotonicMilliseconds(), 0, 0, 0, 0, false, DEFAULT_MAX_STATEMENT_BYTES, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESULT_ROWS, DEFAULT_IDLE_TIMEOUT_MS, false)
+  opened = ManagedDatabase(path, catalogHandle, schemaState, lockFile, lockToken, walWriter, checkpointFile, recoveryResult, lock_manager.create(), 1, auditLog, standbyMarker, executionGate, checkpointWalBytes, epochActive, 0, readCache, readHandles, false, 0, queryMemoryBytes, [], clock.monotonicMilliseconds(), 0, 0, 0, 0, false, DEFAULT_MAX_STATEMENT_BYTES, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESULT_ROWS, DEFAULT_IDLE_TIMEOUT_MS, DEFAULT_QUERY_TIMEOUT_MS, DEFAULT_MAX_RESULT_BYTES, DEFAULT_PROCESS_MEMORY_BYTES, DEFAULT_TEMPORARY_STORAGE_BYTES, 0, 0, 0, 0, 0, 0, 0, 0, DEFAULT_SLOW_QUERY_MS, 0, false)
   ignoredLog = logger.info("minisql.server.database_manager.openInternal", "database opened path=" + path + " tables=" + len(catalogHandle.catalog.tables) + " recoveryPages=" + recoveryResult.pagesRedone)
   return opened
 end function
@@ -941,7 +1040,7 @@ function allocateSessionId(database)
   database.nextSessionId = database.nextSessionId + 1
   if database.nextSessionId <= 0 then database.nextSessionId = 1 end if
   now = clock.monotonicMilliseconds()
-  database.sessions = database.sessions + [OperationalSession(value, "embedded", false, 1, now, now, 0, "", "IDLE", 0)]
+  database.sessions = database.sessions + [OperationalSession(value, "embedded", false, 1, now, now, 0, "", "IDLE", 0, false)]
   database.totalConnections = database.totalConnections + 1
   database.executionGate.stateLock.release()
   return value
@@ -958,6 +1057,22 @@ function configureOperationalLimits(database, maxStatementBytes, maxFrameBytes, 
   database.maxFrameBytes = maxFrameBytes
   database.maxResultRows = maxResultRows
   database.idleTimeoutMs = idleTimeoutMs
+  return true
+end function
+
+// Applies process-wide admission, response, spill, timeout, and slow-query policy.
+function configureProductionControls(database, queryTimeoutMs, maxResultBytes, processMemoryBytes, temporaryStorageBytes, slowQueryMs)
+  validateOpen(database, "configureProductionControls")
+  if typeof(queryTimeoutMs) != "int" or queryTimeoutMs < 1 then return fail(INVALID_ARGUMENT, "configureProductionControls", "queryTimeoutMs must be positive") end if
+  if typeof(maxResultBytes) != "int" or maxResultBytes < 1048576 then return fail(INVALID_ARGUMENT, "configureProductionControls", "maxResultBytes must be at least 1 MiB") end if
+  if typeof(processMemoryBytes) != "int" or processMemoryBytes < 16777216 then return fail(INVALID_ARGUMENT, "configureProductionControls", "processMemoryBytes must be at least 16 MiB") end if
+  if typeof(temporaryStorageBytes) != "int" or temporaryStorageBytes < 1048576 then return fail(INVALID_ARGUMENT, "configureProductionControls", "temporaryStorageBytes must be at least 1 MiB") end if
+  if typeof(slowQueryMs) != "int" or slowQueryMs < 1 then return fail(INVALID_ARGUMENT, "configureProductionControls", "slowQueryMs must be positive") end if
+  database.queryTimeoutMs = queryTimeoutMs
+  database.maxResultBytes = maxResultBytes
+  database.processMemoryBytes = processMemoryBytes
+  database.temporaryStorageBytes = temporaryStorageBytes
+  database.slowQueryMs = slowQueryMs
   return true
 end function
 
@@ -983,6 +1098,65 @@ end function
 function idleTimeoutMs(database)
   validateOpen(database, "idleTimeoutMs")
   return database.idleTimeoutMs
+end function
+
+// Returns the cooperative execution deadline interval.
+function queryTimeoutMs(database)
+  validateOpen(database, "queryTimeoutMs")
+  return database.queryTimeoutMs
+end function
+
+// Returns the aggregate encoded result byte ceiling.
+function maxResultBytes(database)
+  validateOpen(database, "maxResultBytes")
+  return database.maxResultBytes
+end function
+
+// Rejects new statements before they can amplify an already exhausted heap.
+// `heap_bytes_committed` is the runtime's reserved arena and may deliberately
+// exceed the policy, so admission is based on live managed bytes instead.
+function admitStatement(database)
+  validateOpen(database, "admitStatement")
+  if heap_bytes_used() < database.processMemoryBytes then return true end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "admitStatement", "database execution state is unavailable") end if
+  database.resourceRejectedStatements = database.resourceRejectedStatements + 1
+  database.executionGate.stateLock.release()
+  return fail(RESOURCE_LIMIT, "admitStatement", "managed process heap reached configured processMemoryBytes")
+end function
+
+// Enforces the managed-heap ceiling for already admitted work at cooperative
+// executor/storage poll boundaries. The terminal statement accounts the single
+// resource rejection, avoiding one counter increment per observed boundary.
+function enforceProcessMemory(database)
+  validateOpen(database, "enforceProcessMemory")
+  if heap_bytes_used() < database.processMemoryBytes then return true end if
+  return fail(RESOURCE_LIMIT, "enforceProcessMemory", "managed process heap reached configured processMemoryBytes")
+end function
+
+// Reserves spill capacity atomically across all concurrent statements.
+function reserveTemporaryStorage(database, byteCount)
+  validateOpen(database, "reserveTemporaryStorage")
+  if typeof(byteCount) != "int" or byteCount < 0 then return fail(INVALID_ARGUMENT, "reserveTemporaryStorage", "byteCount must be non-negative") end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "reserveTemporaryStorage", "database execution state is unavailable") end if
+  if byteCount > database.temporaryStorageBytes - database.temporaryReservedBytes then
+    database.executionGate.stateLock.release()
+    return fail(RESOURCE_LIMIT, "reserveTemporaryStorage", "temporary-storage quota exhausted")
+  end if
+  database.temporaryReservedBytes = database.temporaryReservedBytes + byteCount
+  if database.temporaryReservedBytes > database.temporaryPeakBytes then database.temporaryPeakBytes = database.temporaryReservedBytes end if
+  database.executionGate.stateLock.release()
+  return true
+end function
+
+// Releases a prior spill reservation; cleanup is idempotent at zero.
+function releaseTemporaryStorage(database, byteCount)
+  if not isManagedDatabase(database) or database.closed then return true end if
+  if typeof(byteCount) != "int" or byteCount < 0 then return fail(INVALID_ARGUMENT, "releaseTemporaryStorage", "byteCount must be non-negative") end if
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "releaseTemporaryStorage", "database execution state is unavailable") end if
+  database.temporaryReservedBytes = database.temporaryReservedBytes - byteCount
+  if database.temporaryReservedBytes < 0 then database.temporaryReservedBytes = 0 end if
+  database.executionGate.stateLock.release()
+  return true
 end function
 
 // Updates connection metadata after the listener resolves the remote endpoint.
@@ -1019,7 +1193,7 @@ function beginOperationalStatement(database, sessionId, principalId, sqlText)
   if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "beginOperationalStatement", "database execution state is unavailable") end if
   now = clock.monotonicMilliseconds()
   for each entry in database.sessions
-    if entry.sessionId == sessionId then entry.principalId = principalId; entry.lastActivity = now; entry.statementStartedAt = now; entry.statementText = summary; entry.state = "EXECUTING" end if
+    if entry.sessionId == sessionId then entry.principalId = principalId; entry.lastActivity = now; entry.statementStartedAt = now; entry.statementText = summary; entry.state = "EXECUTING"; entry.cancelRequested = false end if
   end for
   database.executionGate.stateLock.release()
   return true
@@ -1031,7 +1205,7 @@ function finishOperationalStatement(database, sessionId, success, rowCount)
   if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "finishOperationalStatement", "database execution state is unavailable") end if
   now = clock.monotonicMilliseconds()
   for each entry in database.sessions
-    if entry.sessionId == sessionId then entry.lastActivity = now; entry.statementStartedAt = 0; entry.statementText = ""; entry.state = "IDLE"; entry.requestCount = entry.requestCount + 1 end if
+    if entry.sessionId == sessionId then entry.lastActivity = now; entry.statementStartedAt = 0; entry.statementText = ""; entry.state = "IDLE"; entry.requestCount = entry.requestCount + 1; entry.cancelRequested = false end if
   end for
   database.totalStatements = database.totalStatements + 1
   if not success then database.failedStatements = database.failedStatements + 1 end if
@@ -1059,7 +1233,7 @@ function operationalSessions(database)
   if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "operationalSessions", "database execution state is unavailable") end if
   result = []
   for each entry in database.sessions
-    result = result + [OperationalSession(entry.sessionId, entry.peerEndpoint, entry.secure, entry.principalId, entry.createdAt, entry.lastActivity, entry.statementStartedAt, entry.statementText, entry.state, entry.requestCount)]
+    result = result + [OperationalSession(entry.sessionId, entry.peerEndpoint, entry.secure, entry.principalId, entry.createdAt, entry.lastActivity, entry.statementStartedAt, entry.statementText, entry.state, entry.requestCount, entry.cancelRequested)]
   end for
   database.executionGate.stateLock.release()
   return result
@@ -1069,9 +1243,72 @@ end function
 function operationalStatus(database)
   validateOpen(database, "operationalStatus")
   if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "operationalStatus", "database execution state is unavailable") end if
-  result = [clock.monotonicMilliseconds() - database.startedAt, len(database.sessions), database.totalConnections, database.totalStatements, database.failedStatements, database.rowsReturned, database.checkpointResets, database.maxStatementBytes, database.maxFrameBytes, database.maxResultRows, database.idleTimeoutMs, database.queryMemoryBytes]
+  result = [clock.monotonicMilliseconds() - database.startedAt, len(database.sessions), database.totalConnections, database.totalStatements, database.failedStatements, database.rowsReturned, database.checkpointResets, database.maxStatementBytes, database.maxFrameBytes, database.maxResultRows, database.idleTimeoutMs, database.queryMemoryBytes, database.queryTimeoutMs, database.maxResultBytes, database.processMemoryBytes, heap_bytes_used(), heap_bytes_committed(), database.temporaryStorageBytes, database.temporaryReservedBytes, database.temporaryPeakBytes, database.cancelledStatements, database.timedOutStatements, database.resourceRejectedStatements, database.totalExecutionMs, database.maximumExecutionMs, database.slowQueryCount, database.slowQueryMs, database.resultBytesReturned]
   database.executionGate.stateLock.release()
   return result
+end function
+
+// Records latency, encoded output, and terminal production-control outcomes.
+function recordStatementDiagnostics(database, elapsedMs, resultBytes, errorCode)
+  validateOpen(database, "recordStatementDiagnostics")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "recordStatementDiagnostics", "database execution state is unavailable") end if
+  database.totalExecutionMs = database.totalExecutionMs + elapsedMs
+  if elapsedMs > database.maximumExecutionMs then database.maximumExecutionMs = elapsedMs end if
+  if elapsedMs >= database.slowQueryMs then database.slowQueryCount = database.slowQueryCount + 1 end if
+  if resultBytes > 0 then database.resultBytesReturned = database.resultBytesReturned + resultBytes end if
+  if errorCode == QUERY_CANCELLED then database.cancelledStatements = database.cancelledStatements + 1 end if
+  if errorCode == QUERY_TIMEOUT then database.timedOutStatements = database.timedOutStatements + 1 end if
+  if errorCode == RESOURCE_LIMIT then database.resourceRejectedStatements = database.resourceRejectedStatements + 1 end if
+  database.executionGate.stateLock.release()
+  return elapsedMs >= database.slowQueryMs
+end function
+
+// Requests cancellation of one currently executing session.
+function requestSessionCancellation(database, sessionId)
+  validateOpen(database, "requestSessionCancellation")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "requestSessionCancellation", "database execution state is unavailable") end if
+  found = false
+  for each entry in database.sessions
+    if entry.sessionId == sessionId and entry.statementStartedAt > 0 then entry.cancelRequested = true; entry.state = "CANCELLING"; found = true end if
+  end for
+  database.executionGate.stateLock.release()
+  if not found then return fail(INVALID_ARGUMENT, "requestSessionCancellation", "target session has no active statement") end if
+  ignoredWait = try(cancelLockWait(database, sessionId))
+  return true
+end function
+
+// Returns the synchronized cancellation flag polled by executor operators.
+function isSessionCancellationRequested(database, sessionId)
+  validateOpen(database, "isSessionCancellationRequested")
+  if not database.executionGate.stateLock.acquire() then return true end if
+  value = false
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then value = entry.cancelRequested end if
+  end for
+  database.executionGate.stateLock.release()
+  return value
+end function
+
+// Polls the registry without depending on executor-owned state. Storage batch
+// loops use this to stop long scans at page/row boundaries.
+function pollSessionControl(database, sessionId)
+  validateOpen(database, "pollSessionControl")
+  if not database.executionGate.stateLock.acquire() then return fail(CLOSED_HANDLE, "pollSessionControl", "database execution state is unavailable") end if
+  now = clock.monotonicMilliseconds()
+  cancelled = false
+  timedOut = false
+  for each entry in database.sessions
+    if entry.sessionId == sessionId then
+      cancelled = entry.cancelRequested
+      timedOut = entry.statementStartedAt > 0 and now - entry.statementStartedAt >= database.queryTimeoutMs
+    end if
+  end for
+  database.executionGate.stateLock.release()
+  if cancelled then return fail(QUERY_CANCELLED, "pollSessionControl", "statement cancelled") end if
+  if timedOut then return fail(QUERY_TIMEOUT, "pollSessionControl", "statement execution deadline exceeded") end if
+  memory = try(enforceProcessMemory(database))
+  if typeof(memory) == "error" then return memory end if
+  return true
 end function
 
 // Requests a cooperative listener stop after the current statement response.

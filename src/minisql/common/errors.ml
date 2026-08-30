@@ -72,6 +72,20 @@ enum ErrorCode
   PermissionDenied = 9029
   // Security state variant of the error code.
   SecurityState = 9030
+  // Archive or replication state is inconsistent.
+  ArchiveState = 9031
+  // A logical lock wait exceeded its configured deadline.
+  LockTimeout = 9032
+  // A standby cannot execute the requested writable operation.
+  StandbyState = 9033
+  // Native TLS setup or transport failed.
+  TlsFailure = 9034
+  // An administrator cancelled the active statement.
+  QueryCancelled = 9035
+  // The configured execution deadline expired.
+  QueryTimeout = 9036
+  // A configured process, result, or temporary-storage budget was exhausted.
+  ResourceLimit = 9037
 end enum
 
 // Performs the not implemented operation for this module.

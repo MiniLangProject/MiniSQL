@@ -10,6 +10,7 @@ import minisql.executor.projection as projection
 import minisql.executor.scan as scan
 import minisql.executor.sort as sort
 import minisql.platform.file as file_api
+import minisql.server.database_manager as database_manager
 import minisql.sql.ast as ast
 import minisql.sql.expressions as expressions
 import minisql.sql.types as types
@@ -42,7 +43,18 @@ struct JoinPartitionTask
   boundJoin
   // Optimizer-selected hash-table build orientation.
   buildRight
+  // Optional managed database used for cooperative worker cancellation.
+  database
+  // Owning session identifier when database is present.
+  sessionId
 end struct
+
+// Polls a server-owned query at bounded hash-operator intervals. Direct module
+// tests pass a void database and retain the dependency-free historical API.
+function pollJoinControl(database, sessionId, counter, operation)
+  if database is void or counter % 256 != 0 then return true end if
+  return database_manager.pollSessionControl(database, sessionId)
+end function
 
 // Creates a structured error for fail using the supplied inputs.
 // Returns its result or propagates a structured error from validation or a dependency.
@@ -186,14 +198,18 @@ end function
 // Executes an INNER or LEFT equi-join with a right-side hash table.
 // NULL keys never match, full value comparison resolves collisions, and the
 // original predicate is rechecked before emission. Unsupported shapes fall back.
-function applyHashRight(leftRows, rightRows, boundJoin)
+function applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId)
   if not canHash(boundJoin) then return apply(leftRows, rightRows, boundJoin) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHash", "row inputs must be arrays") end if
   columns = equalityColumns(boundJoin)
   leftColumn = columns[0]
   rightColumn = columns[1]
   buckets = array(HASH_BUCKET_COUNT, void)
+  pollCounter = 0
   for each right in rightRows
+    polled = try(pollJoinControl(database, sessionId, pollCounter, "applyHashRight.build"))
+    if typeof(polled) == "error" then return polled end if
+    pollCounter = pollCounter + 1
     if not scan.isScannedRow(right) then return fail(INVALID_ARGUMENT, "applyHash", "right input contains non-row") end if
     if rightColumn < 0 or rightColumn >= len(right.values) then return fail(INVALID_ARGUMENT, "applyHash", "right join column is out of range") end if
     key = right.values[rightColumn]
@@ -207,7 +223,12 @@ function applyHashRight(leftRows, rightRows, boundJoin)
   end for
 
   output = []
+  pollCounter = 0
+  candidateCount = 0
   for each left in leftRows
+    polled = try(pollJoinControl(database, sessionId, pollCounter, "applyHashRight.probe"))
+    if typeof(polled) == "error" then return polled end if
+    pollCounter = pollCounter + 1
     if not scan.isScannedRow(left) then return fail(INVALID_ARGUMENT, "applyHash", "left input contains non-row") end if
     if leftColumn < 0 or leftColumn >= len(left.values) then return fail(INVALID_ARGUMENT, "applyHash", "left join column is out of range") end if
     matched = false
@@ -216,6 +237,11 @@ function applyHashRight(leftRows, rightRows, boundJoin)
       bucket = buckets[hashValue(key) % HASH_BUCKET_COUNT]
       if bucket is not void then
         for each entry in bucket
+          if candidateCount % 4096 == 0 and database is not void then
+            polledCandidate = try(database_manager.pollSessionControl(database, sessionId))
+            if typeof(polledCandidate) == "error" then return polledCandidate end if
+          end if
+          candidateCount = candidateCount + 1
           if values.compareNonNull(key, entry.key) == 0 then
             candidate = combine(left, entry.row)
             if conditionPasses(boundJoin.condition, candidate) then
@@ -236,14 +262,18 @@ end function
 // Executes an INNER equi-join with the left input as the hash-build side. The
 // emitted row remains `left.values + right.values`, so choosing the smaller
 // build side never changes bound column indexes.
-function applyHashLeft(leftRows, rightRows, boundJoin)
-  if not canHash(boundJoin) or boundJoin.joinType != ast.JOIN_INNER then return applyHashRight(leftRows, rightRows, boundJoin) end if
+function applyHashLeftCore(leftRows, rightRows, boundJoin, database, sessionId)
+  if not canHash(boundJoin) or boundJoin.joinType != ast.JOIN_INNER then return applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHashLeft", "row inputs must be arrays") end if
   columns = equalityColumns(boundJoin)
   leftColumn = columns[0]
   rightColumn = columns[1]
   buckets = array(HASH_BUCKET_COUNT, void)
+  pollCounter = 0
   for each left in leftRows
+    polled = try(pollJoinControl(database, sessionId, pollCounter, "applyHashLeft.build"))
+    if typeof(polled) == "error" then return polled end if
+    pollCounter = pollCounter + 1
     if not scan.isScannedRow(left) then return fail(INVALID_ARGUMENT, "applyHashLeft", "left input contains non-row") end if
     key = left.values[leftColumn]
     if not key.isNull then
@@ -255,13 +285,23 @@ function applyHashLeft(leftRows, rightRows, boundJoin)
     end if
   end for
   output = []
+  pollCounter = 0
+  candidateCount = 0
   for each right in rightRows
+    polled = try(pollJoinControl(database, sessionId, pollCounter, "applyHashLeft.probe"))
+    if typeof(polled) == "error" then return polled end if
+    pollCounter = pollCounter + 1
     if not scan.isScannedRow(right) then return fail(INVALID_ARGUMENT, "applyHashLeft", "right input contains non-row") end if
     key = right.values[rightColumn]
     if not key.isNull then
       bucket = buckets[hashValue(key) % HASH_BUCKET_COUNT]
       if bucket is not void then
         for each entry in bucket
+          if candidateCount % 4096 == 0 and database is not void then
+            polledCandidate = try(database_manager.pollSessionControl(database, sessionId))
+            if typeof(polledCandidate) == "error" then return polledCandidate end if
+          end if
+          candidateCount = candidateCount + 1
           if values.compareNonNull(entry.key, key) == 0 then
             candidate = combine(entry.row, right)
             if conditionPasses(boundJoin.condition, candidate) then output = output + [candidate] end if
@@ -275,10 +315,25 @@ end function
 
 // Executes the optimizer-selected hash build orientation. LEFT joins keep the
 // right build side because unmatched-left tracking is part of that algorithm.
-function applyHashBuild(leftRows, rightRows, boundJoin, buildRight)
+function applyHashBuildCore(leftRows, rightRows, boundJoin, buildRight, database, sessionId)
   if typeof(buildRight) != "bool" then return fail(INVALID_ARGUMENT, "applyHashBuild", "buildRight must be bool") end if
-  if not buildRight and boundJoin.joinType == ast.JOIN_INNER then return applyHashLeft(leftRows, rightRows, boundJoin) end if
-  return applyHashRight(leftRows, rightRows, boundJoin)
+  if not buildRight and boundJoin.joinType == ast.JOIN_INNER then return applyHashLeftCore(leftRows, rightRows, boundJoin, database, sessionId) end if
+  return applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId)
+end function
+
+// Preserves right-build hash joins for callers without a server query token.
+function applyHashRight(leftRows, rightRows, boundJoin)
+  return applyHashRightCore(leftRows, rightRows, boundJoin, void, 0)
+end function
+
+// Preserves left-build hash joins for callers without a server query token.
+function applyHashLeft(leftRows, rightRows, boundJoin)
+  return applyHashLeftCore(leftRows, rightRows, boundJoin, void, 0)
+end function
+
+// Selects a direct hash-build orientation without a server query token.
+function applyHashBuild(leftRows, rightRows, boundJoin, buildRight)
+  return applyHashBuildCore(leftRows, rightRows, boundJoin, buildRight, void, 0)
 end function
 
 // Converts scanned rows to the generic validated spill-run representation.
@@ -300,6 +355,17 @@ function scannedSpillRows(rows)
   return output
 end function
 
+// Removes every spill run already owned by not-yet-submitted partition tasks.
+function cleanupPartitionTasks(tasks)
+  for each task in tasks
+    runs = []
+    if task.leftRun is not void then runs = runs + [task.leftRun] end if
+    if task.rightRun is not void then runs = runs + [task.rightRun] end if
+    sort.cleanupRuns(runs)
+  end for
+  return true
+end function
+
 // Reads and joins one pair of hash partitions on a native worker. Runs are
 // deleted by their owning task on both successful and failed reads.
 function applySpilledPartition(task)
@@ -318,7 +384,7 @@ function applySpilledPartition(task)
     if typeof(restoredRight) == "error" then sort.cleanupRuns(runs); return restoredRight end if
     rightRows = scannedSpillRows(restoredRight)
   end if
-  output = try(applyHashBuild(leftRows, rightRows, task.boundJoin, task.buildRight))
+  output = try(applyHashBuildCore(leftRows, rightRows, task.boundJoin, task.buildRight, task.database, task.sessionId))
   cleanup = try(sort.cleanupRuns(runs))
   if typeof(output) == "error" then return output end if
   if typeof(cleanup) == "error" then return cleanup end if
@@ -328,11 +394,11 @@ end function
 // Executes a grace-style partitioned hash join when the selected build input
 // exceeds the row threshold. Each partition is CRC/shape validated by the
 // shared spill codec and removed on both success and failure paths.
-function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold)
+function applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
   if typeof(temporaryRoot) != "string" or typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "applyHashBuildWithSpill", "invalid spill configuration") end if
   buildRows = rightRows
   if not buildRight then buildRows = leftRows end if
-  if len(buildRows) <= threshold or not canHash(boundJoin) then return applyHashBuild(leftRows, rightRows, boundJoin, buildRight) end if
+  if len(buildRows) <= threshold or not canHash(boundJoin) then return applyHashBuildCore(leftRows, rightRows, boundJoin, buildRight, database, sessionId) end if
   if not file_api.directoryExists(temporaryRoot) then
     created = try(file_api.createDirectory(temporaryRoot))
     if typeof(created) == "error" then return created end if
@@ -344,13 +410,23 @@ function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, tem
   token = sort.nextSpillToken()
   tasks = []
   for partitionIndex = 0 to partitionCount - 1
+    polledPartition = try(pollJoinControl(database, sessionId, partitionIndex * 256, "applyHashBuildWithSpill.partition"))
+    if typeof(polledPartition) == "error" then cleanupPartitionTasks(tasks); return polledPartition end if
     leftPartition = []
     rightPartition = []
+    pollCounter = 0
     for each row in leftRows
+      polledLeft = try(pollJoinControl(database, sessionId, pollCounter, "applyHashBuildWithSpill.left"))
+      if typeof(polledLeft) == "error" then cleanupPartitionTasks(tasks); return polledLeft end if
+      pollCounter = pollCounter + 1
       key = row.values[columns[0]]
       if (key.isNull and boundJoin.joinType == ast.JOIN_LEFT and partitionIndex == 0) or (not key.isNull and hashValue(key) % partitionCount == partitionIndex) then leftPartition = leftPartition + [row] end if
     end for
+    pollCounter = 0
     for each row in rightRows
+      polledRight = try(pollJoinControl(database, sessionId, pollCounter, "applyHashBuildWithSpill.right"))
+      if typeof(polledRight) == "error" then cleanupPartitionTasks(tasks); return polledRight end if
+      pollCounter = pollCounter + 1
       key = row.values[columns[1]]
       if not key.isNull and hashValue(key) % partitionCount == partitionIndex then rightPartition = rightPartition + [row] end if
     end for
@@ -367,7 +443,7 @@ function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, tem
         return rightRun
       end if
     end if
-    tasks = tasks + [JoinPartitionTask(leftRun, rightRun, boundJoin, buildRight)]
+    tasks = tasks + [JoinPartitionTask(leftRun, rightRun, boundJoin, buildRight, database, sessionId)]
   end for
   workerCount = len(tasks)
   if workerCount > INTRA_QUERY_WORKERS then workerCount = INTRA_QUERY_WORKERS end if
@@ -409,6 +485,16 @@ function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, tem
   end for
   pool.Dispose()
   return output
+end function
+
+// Historical direct API retains behavior without a cooperative server token.
+function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold)
+  return applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, void, 0)
+end function
+
+// Server execution path propagates cancellation/deadline state into spill workers.
+function applyHashBuildWithSpillControlled(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
+  return applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
 end function
 
 // Backward-compatible entry point used by direct executor tests.

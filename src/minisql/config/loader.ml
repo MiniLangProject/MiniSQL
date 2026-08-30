@@ -350,8 +350,8 @@ function toConfig(root)
 
   ensureOnlyKeys(root, ["configVersion", "paths", "server", "runtime", "logging", "binlog", "tls", "databaseDefaults", "safety"], "root")
   ensureOnlyKeys(paths, ["dataRoot", "temporaryRoot", "logDirectory"], "paths")
-  ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes", "maxResultRows", "idleTimeoutMs"], "server")
-  ensureOnlyKeys(runtime, ["bufferPoolBytes", "queryTimeoutMs", "checkpointWalBytes", "temporaryMemoryBytes", "logLevel"], "runtime")
+  ensureOnlyKeys(server, ["bindAddress", "port", "maxConnections", "maxStatementBytes", "maxFrameBytes", "maxResultRows", "maxResultBytes", "idleTimeoutMs"], "server")
+  ensureOnlyKeys(runtime, ["bufferPoolBytes", "queryTimeoutMs", "checkpointWalBytes", "temporaryMemoryBytes", "processMemoryBytes", "temporaryStorageBytes", "slowQueryMs", "logLevel"], "runtime")
   logging = model.LoggingConfig(true, true, "minisql.log", 24)
   if loggingValue is not void then
     if loggingValue.kind != JSON_OBJECT then return fail("toConfig", "logging must be object") end if
@@ -383,6 +383,7 @@ function toConfig(root)
       intMember(server, "maxStatementBytes"),
       intMember(server, "maxFrameBytes"),
       optionalIntMember(server, "maxResultRows", 1000000),
+      optionalIntMember(server, "maxResultBytes", 268435456),
       optionalIntMember(server, "idleTimeoutMs", 300000)
     ),
     model.RuntimeConfig(
@@ -390,6 +391,9 @@ function toConfig(root)
       intMember(runtime, "queryTimeoutMs"),
       intMember(runtime, "checkpointWalBytes"),
       intMember(runtime, "temporaryMemoryBytes"),
+      optionalIntMember(runtime, "processMemoryBytes", 2147483648),
+      optionalIntMember(runtime, "temporaryStorageBytes", 1073741824),
+      optionalIntMember(runtime, "slowQueryMs", 1000),
       stringMember(runtime, "logLevel")
     ),
     logging,

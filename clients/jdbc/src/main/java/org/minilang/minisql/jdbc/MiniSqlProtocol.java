@@ -41,6 +41,7 @@ import javax.net.ssl.X509TrustManager;
 final class MiniSqlProtocol implements AutoCloseable {
     static final int TYPE_HELLO = 1, TYPE_QUERY = 2, TYPE_PING = 3, TYPE_CLOSE = 4;
     static final int TYPE_AUTH_BEGIN = 5, TYPE_AUTH_CHALLENGE = 6, TYPE_AUTH_PROOF = 7, TYPE_AUTH_OK = 8;
+    static final int TYPE_CANCEL = 9;
     static final int TYPE_RESPONSE = 100, TYPE_PONG = 101, TYPE_ERROR = 102;
     static final int STATUS_COMMAND = 1, STATUS_ROWS = 2, STATUS_ERROR = 3;
     static final int FLAG_SECURE = 1, FLAG_MORE = 2;
@@ -58,6 +59,7 @@ final class MiniSqlProtocol implements AutoCloseable {
     private boolean secure;
     private boolean closed;
     private Query activeQuery;
+    private volatile int sessionId;
 
     private MiniSqlProtocol(MiniSqlUrl configuration, Socket socket) throws IOException {
         this.configuration = configuration;
@@ -125,6 +127,23 @@ final class MiniSqlProtocol implements AutoCloseable {
         if (message.type != TYPE_RESPONSE || response.status != STATUS_COMMAND || !"HELLO".equals(response.command)) {
             throw connectionError("MiniSQL HELLO handshake was rejected", null);
         }
+        sessionId = parseSessionId(response.message);
+    }
+
+    /** Extracts the optional backward-compatible session identifier from HELLO. */
+    static int parseSessionId(String message) {
+        if (message == null) return 0;
+        for (String field : message.split(";")) {
+            String trimmed = field.trim();
+            if (!trimmed.startsWith("session=")) continue;
+            try {
+                long parsed = Long.parseLong(trimmed.substring("session=".length()));
+                return parsed >= 1 && parsed <= 0xffffffffL ? (int) parsed : 0;
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     /** Performs MiniSQL's challenge/response authentication and activates inner AES-256-GCM framing. */
@@ -191,6 +210,46 @@ final class MiniSqlProtocol implements AutoCloseable {
             return readExpected(id).type == TYPE_PONG;
         } catch (Exception exception) {
             return false;
+        }
+    }
+
+    /**
+     * Cancels this protocol session through a short-lived control connection.
+     *
+     * This method intentionally does not synchronize on the target protocol:
+     * its query thread may hold that monitor while waiting for a server frame.
+     */
+    void cancelCurrentSession() throws SQLException {
+        int target = sessionId;
+        if (target == 0) {
+            throw new SQLException("The MiniSQL server did not advertise a cancellable session identifier", "0A000");
+        }
+        MiniSqlProtocol control = null;
+        try {
+            control = open(configuration);
+            control.cancelSession(target);
+        } catch (SQLException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw recoverable("MiniSQL cancellation transport failed", exception);
+        } finally {
+            if (control != null) control.close();
+        }
+    }
+
+    /** Sends the protocol-v1 administrative cancellation request. */
+    private synchronized void cancelSession(int target) throws SQLException {
+        ensureOpen();
+        try {
+            int id = nextId();
+            write(new Message(TYPE_CANCEL, 0, id, little(4).putInt(target).array()));
+            Message message = readExpected(id);
+            Response response = decodeResponse(message);
+            if (message.type == TYPE_ERROR || response.status == STATUS_ERROR) throw serverError(response);
+        } catch (SQLException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw recoverable("MiniSQL cancellation transport failed", exception);
         }
     }
 

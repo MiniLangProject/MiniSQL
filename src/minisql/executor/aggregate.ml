@@ -10,6 +10,7 @@ import minisql.executor.projection as projection
 import minisql.executor.scan as scan
 import minisql.executor.sort as sort
 import minisql.platform.file as file_api
+import minisql.server.database_manager as database_manager
 import minisql.sql.ast as ast
 import minisql.sql.expressions as expressions
 import minisql.sql.types as types
@@ -97,6 +98,10 @@ struct ParallelAggregateTask
   firstPageIndex
   // Exclusive index into the persistent heap-page directory.
   endPageIndex
+  // Optional managed database used by controlled server scans.
+  database
+  // Owning query session when database is present.
+  sessionId
 end struct
 
 // Creates a structured error for fail using the supplied inputs.
@@ -380,6 +385,10 @@ function aggregatePageRange(task)
   states = streamingAccumulators(task.selectExpressions, "aggregatePageRange")
   reader = try(scan.openCached(task.databasePath, task.table, void, task.readCache))
   if typeof(reader) == "error" then return reader end if
+  if task.database is not void then
+    controlled = try(scan.setExecutionControl(reader, task.database, task.sessionId))
+    if typeof(controlled) == "error" then scan.close(reader); return controlled end if
+  end if
   cursor = try(scan.openCursorRange(reader, task.requiredColumns, task.firstPageIndex, task.endPageIndex))
   if typeof(cursor) == "error" then scan.close(reader); return cursor end if
   operationError = void
@@ -450,10 +459,16 @@ end function
 // Streams already selected rows through a predicate and fixed-size scalar
 // aggregate state. This is used by planned index scans without rebuilding the
 // general grouping structures.
-function projectStreamingRows(rows, selectExpressions, predicate)
+function projectStreamingRowsCore(rows, selectExpressions, predicate, database, sessionId)
   if typeof(rows) != "array" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingRows", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingRows")
+  pollCounter = 0
   for each row in rows
+    if database is not void and pollCounter % VECTOR_BATCH_ROWS == 0 then
+      polled = try(database_manager.pollSessionControl(database, sessionId))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
     if not scan.isScannedRow(row) then return fail(INVALID_ARGUMENT, "projectStreamingRows", "rows contain non-ScannedRow") end if
     if predicate is void or expressions.predicatePasses(predicate, expressions.rowContext(row.values)) then
       for each state in states
@@ -465,14 +480,28 @@ function projectStreamingRows(rows, selectExpressions, predicate)
   return finishStreaming(states)
 end function
 
+// Preserves the direct aggregate API for callers without server session state.
+function projectStreamingRows(rows, selectExpressions, predicate)
+  return projectStreamingRowsCore(rows, selectExpressions, predicate, void, 0)
+end function
+
+// Streams selected rows while honoring one server query control token.
+function projectStreamingRowsControlled(rows, selectExpressions, predicate, database, sessionId)
+  return projectStreamingRowsCore(rows, selectExpressions, predicate, database, sessionId)
+end function
+
 // Streams one filtered base table through fixed-size scalar aggregate
 // accumulators. The caller-supplied mask includes both aggregate and predicate
 // columns, and the reader closes on every reported failure path.
-function projectStreamingTableFiltered(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns)
+function projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableFiltered", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingTableFiltered")
   reader = try(scan.openCached(databasePath, table, pageTransaction, readCache))
   if typeof(reader) == "error" then return reader end if
+  if database is not void then
+    controlled = try(scan.setExecutionControl(reader, database, sessionId))
+    if typeof(controlled) == "error" then scan.close(reader); return controlled end if
+  end if
   cursor = scan.openCursor(reader, requiredColumns)
   operationError = void
   while operationError is void
@@ -494,14 +523,28 @@ function projectStreamingTableFiltered(databasePath, table, pageTransaction, rea
   return finishStreaming(states)
 end function
 
+// Preserves filtered streaming aggregation for non-server callers.
+function projectStreamingTableFiltered(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns)
+  return projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, void, 0)
+end function
+
+// Filters and aggregates a table under cooperative server control.
+function projectStreamingTableFilteredControlled(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
+  return projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
+end function
+
 // Keeps the unfiltered hot path branch-free inside the row loop. This function
 // is intentionally separate from projectStreamingTableFiltered because scalar
 // whole-table aggregates are common and execute the loop once per stored row.
-function projectStreamingTable(databasePath, table, pageTransaction, readCache, selectExpressions)
+function projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTable", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingTable")
   reader = try(scan.openCached(databasePath, table, pageTransaction, readCache))
   if typeof(reader) == "error" then return reader end if
+  if database is not void then
+    controlled = try(scan.setExecutionControl(reader, database, sessionId))
+    if typeof(controlled) == "error" then scan.close(reader); return controlled end if
+  end if
   cursor = scan.openCursor(reader, streamingRequiredColumns(table, selectExpressions))
   operationError = void
   while operationError is void
@@ -517,17 +560,27 @@ function projectStreamingTable(databasePath, table, pageTransaction, readCache, 
   return finishStreaming(states)
 end function
 
+// Preserves unfiltered streaming aggregation for non-server callers.
+function projectStreamingTable(databasePath, table, pageTransaction, readCache, selectExpressions)
+  return projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, void, 0)
+end function
+
+// Aggregates an unfiltered table under cooperative server control.
+function projectStreamingTableControlled(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
+  return projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
+end function
+
 // Executes an unfiltered scalar aggregate with page-partitioned native workers.
 // Small tables and transactional readers stay on the lower-overhead serial path;
 // every worker sees committed pages only and returns constant-size state.
-function projectStreamingTableParallel(databasePath, table, readCache, selectExpressions)
+function projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableParallel", "invalid arguments") end if
   probe = try(scan.openCached(databasePath, table, void, readCache))
   if typeof(probe) == "error" then return probe end if
   pageCount = scan.heapPageCount(probe)
   closedProbe = try(scan.close(probe))
   if typeof(closedProbe) == "error" then return closedProbe end if
-  if pageCount < PARALLEL_SCAN_MINIMUM_PAGES then return projectStreamingTable(databasePath, table, void, readCache, selectExpressions) end if
+  if pageCount < PARALLEL_SCAN_MINIMUM_PAGES then return projectStreamingTableCore(databasePath, table, void, readCache, selectExpressions, database, sessionId) end if
 
   workerCount = INTRA_QUERY_WORKERS
   if pageCount < workerCount then workerCount = pageCount end if
@@ -536,7 +589,7 @@ function projectStreamingTableParallel(databasePath, table, readCache, selectExp
   for workerIndex = 0 to workerCount - 1
     firstPage = integerDivide(pageCount * workerIndex, workerCount)
     endPage = integerDivide(pageCount * (workerIndex + 1), workerCount)
-    tasks = tasks + [ParallelAggregateTask(databasePath, table, readCache, selectExpressions, requiredColumns, firstPage, endPage)]
+    tasks = tasks + [ParallelAggregateTask(databasePath, table, readCache, selectExpressions, requiredColumns, firstPage, endPage, database, sessionId)]
   end for
   pool = try(thread_pool.ThreadPool.withQueueCapacity(workerCount, workerCount))
   if typeof(pool) == "error" then return pool end if
@@ -564,6 +617,16 @@ function projectStreamingTableParallel(databasePath, table, readCache, selectExp
   end for
   pool.Dispose()
   return finishStreaming(merged)
+end function
+
+// Preserves parallel aggregate execution for callers without a query token.
+function projectStreamingTableParallel(databasePath, table, readCache, selectExpressions)
+  return projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, void, 0)
+end function
+
+// Propagates server cancellation and deadlines into parallel aggregate workers.
+function projectStreamingTableParallelControlled(databasePath, table, readCache, selectExpressions, database, sessionId)
+  return projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, database, sessionId)
 end function
 
 // Evaluates group using the supplied inputs.

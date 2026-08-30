@@ -47,6 +47,19 @@ comments, and block comments are ignored. Values are rendered as validated SQL
 literals and parameterized `SELECT`, `INSERT`, `UPDATE`, and `DELETE` operations
 use a bounded 128-entry session-local `PREPARE`/`EXECUTE` LRU cache.
 
+## Cooperative cancellation
+
+`Connection.cancel()` uses the session identifier advertised during HELLO and a
+short-lived control connection, so it remains callable while the query socket
+is blocked. Trusted-local callers need no credentials; authenticated callers
+require database `ADMIN`. The target cursor receives MiniSQL error `9035` and
+the original connection remains usable.
+
+Operational tooling may instead obtain a target identifier from `SHOW
+PROCESSLIST` and call `cancel_session(session_id)` on a separate persistent
+administrator `Connection`. Protocol v1 remains ordered and non-multiplexed;
+the same socket cannot carry cancellation while it owns an unread result.
+
 ## DSNs and authentication
 
 The equivalent DSN forms are:

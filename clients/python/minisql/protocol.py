@@ -33,6 +33,7 @@ TYPE_AUTH_BEGIN: Final = 5
 TYPE_AUTH_CHALLENGE: Final = 6
 TYPE_AUTH_PROOF: Final = 7
 TYPE_AUTH_OK: Final = 8
+TYPE_CANCEL: Final = 9
 TYPE_RESPONSE: Final = 100
 TYPE_PONG: Final = 101
 TYPE_ERROR: Final = 102
@@ -138,6 +139,7 @@ class Protocol:
         self._secure = False
         self._closed = False
         self._active_query: Query | None = None
+        self.session_id: int | None = None
 
     @classmethod
     def open(
@@ -222,6 +224,17 @@ class Protocol:
             or response.command != "HELLO"
         ):
             raise OperationalError("MiniSQL HELLO handshake was rejected")
+        for field in response.message.split(";"):
+            field = field.strip()
+            if not field.startswith("session="):
+                continue
+            try:
+                parsed = int(field.removeprefix("session="))
+            except ValueError:
+                break
+            if 1 <= parsed <= 0xFFFFFFFF:
+                self.session_id = parsed
+            break
 
     def _authenticate(self, user: str, password: str) -> None:
         """Completes challenge/response and enables the inner AES-256-GCM layer."""
@@ -302,6 +315,27 @@ class Protocol:
                 return self._read_expected(request_id).message_type == TYPE_PONG
             except (OSError, ssl.SSLError, OperationalError):
                 return False
+
+    def cancel_session(self, session_id: int) -> Response:
+        """Requests cancellation through this separate administrative connection."""
+        if not isinstance(session_id, int) or not 1 <= session_id <= 0xFFFFFFFF:
+            raise InterfaceError("session_id must be a positive U32")
+        with self._lock:
+            self._ensure_open()
+            if self._active_query is not None:
+                raise InterfaceError("Use a separate MiniSQL connection to cancel a query")
+            try:
+                request_id = self._next_id()
+                self._write(Message(TYPE_CANCEL, 0, request_id, struct.pack("<I", session_id)))
+                message = self._read_expected(request_id)
+                response = self._decode_response(message)
+                if message.message_type == TYPE_ERROR or response.status == STATUS_ERROR:
+                    raise self._server_error(response)
+                return response
+            except DatabaseError:
+                raise
+            except (OSError, ssl.SSLError) as exc:
+                raise OperationalError(f"MiniSQL cancellation transport failed: {exc}") from exc
 
     def _continuation(self, query: Query) -> Response:
         """Reads and validates the next frame owned by *query*."""

@@ -117,6 +117,11 @@ URL query properties take precedence over a supplied `Properties` object.
 - TCP uses `TCP_NODELAY`, and each protocol frame is emitted with one Java
   socket write. This avoids splitting small TLS requests into separate header
   and payload records.
+- `Statement.cancel()` opens a separate control connection and cooperatively
+  cancels the executing server session. Trusted-local connections work without
+  credentials; authenticated deployments require the same principal to hold
+  database `ADMIN`. Servers predating the cancellable session field report the
+  feature as unsupported instead of pretending cancellation succeeded.
 
 ## Protocol-v1 limitations
 

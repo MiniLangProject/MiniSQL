@@ -1015,8 +1015,8 @@ def validate_source_contracts() -> None:
         ],
         "src/minisql/executor/executor.ml": [
             "function executeStatementCore",
-            "database_manager.enterReadExecution(engine.database)",
-            "database_manager.enterExecution(engine.database)",
+            "database_manager.enterReadExecutionControlled(engine.database, engine.sessionId)",
+            "database_manager.enterExecutionControlled(engine.database, engine.sessionId)",
         ],
         "src/minisql/transaction/lock_manager.ml": [
             "import std.threading as threading",
@@ -1819,7 +1819,11 @@ def main() -> int:
             ("M50 release contract and compatibility freeze", lambda: run_simple(compiler,"src/tests/m50_release_contract.ml","minisql-m50-release-contract.exe","MiniSQL M50 release contract tests: SUCCESS",args.verbose,[str(data_root('m50-root'))],3600)),
             ("M50 deterministic Windows-x64 distribution build and verification", lambda: run_m50_release_distribution(args.verbose)),
             ("M50 78-module implementation smoke", lambda: run_simple(compiler,"src/tests/m50_all_modules.ml","minisql-m50-modules.exe","MiniSQL M50 module smoke test: SUCCESS (78 modules)",args.verbose,timeout=2400)),
-            ("M50 final cumulative gate", lambda: (run_m74_workbench(compiler, args.verbose), run_simple(compiler,"src/tests/m75_cost_based_optimizer.ml","minisql-m75-optimizer.exe","MiniSQL M75 cost-based optimizer: SUCCESS",args.verbose,[str(data_root('m75-root'))],3600))),
+            ("M50 final cumulative gate", lambda: (
+                run_m74_workbench(compiler, args.verbose),
+                run_simple(compiler,"src/tests/m75_cost_based_optimizer.ml","minisql-m75-optimizer.exe","MiniSQL M75 cost-based optimizer: SUCCESS",args.verbose,[str(data_root('m75-root'))],3600),
+                run_simple(compiler,"src/tests/m77_production_controls.ml","minisql-m77-production-controls.exe","MiniSQL M77 production controls: SUCCESS",args.verbose,[str(data_root('m77-root'))],3600),
+            )),
         ]
         if len(actions) != PHASE_COUNT:
             raise AcceptanceFailure(f"Internal phase count mismatch: {len(actions)} != {PHASE_COUNT}")
