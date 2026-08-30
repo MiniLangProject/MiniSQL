@@ -135,8 +135,17 @@ the executable as a native SCM service.
 
 Before release, run `tests/soak/production_soak.py` for 1,440 minutes against a
 representative persistent workload. It fails on workload errors or configured
-RSS, handle/fd, and thread median drift. Keep the generated JSON as release
-evidence.
+RSS, handle/fd, thread median drift, a disappearing server process, or an
+optional p95 wave-latency ceiling. Keep the generated JSON as release evidence;
+important deployments should also qualify a 4,320-minute run.
+
+Run `tests/fault/production_fault_drill.py --work-root <new-empty-path>` before a
+release. The isolated drill covers deterministic storage exhaustion, native
+committed/uncommitted crash boundaries, abandoned partial TCP frames, hard
+server termination during concurrent acknowledged commits, restart, continued
+writes, offline checking, and fail-closed middle-WAL corruption in a cloned
+database. It never fills the host volume. Test real filesystem exhaustion only
+on a disposable quota-limited volume or container.
 
 Table scans maintain small `<table>.heap-pages` files next to table storage.
 These CRC-protected files are derived acceleration metadata, not user data: a

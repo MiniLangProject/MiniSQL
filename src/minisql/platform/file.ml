@@ -19,6 +19,11 @@ const INVALID_ARGUMENT = 9001
 const IO_FAILURE = 9005
 const CLOSED_HANDLE = 9008
 
+// Process-local deterministic write-failure state used exclusively by native
+// fault-injection tests. Production code never enables it, and no environment
+// variable or server configuration can activate it accidentally.
+writeFaultRemainingBytes = -1
+
 // Defines the file handle record used by this module.
 struct FileHandle
   // Path field of the file handle.
@@ -53,6 +58,37 @@ end struct
 // Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function fail(code, operation, message)
   return error(code, "platform.file." + operation + ": " + message)
+end function
+
+// Arms a deterministic storage-exhaustion boundary. Complete writes whose
+// payload fits inside the remaining budget are allowed; the first later write
+// fails before reaching the operating system, avoiding artificial torn writes.
+function configureWriteFault(remainingBytes)
+  global writeFaultRemainingBytes
+  if typeof(remainingBytes) != "int" or remainingBytes < 0 or remainingBytes > endian.MAX_MINILANG_INT then
+    return fail(INVALID_ARGUMENT, "configureWriteFault", "remainingBytes must be a non-negative native MiniLang int")
+  end if
+  writeFaultRemainingBytes = remainingBytes
+  return true
+end function
+
+// Disarms deterministic storage exhaustion. Tests call this before cleanup so
+// close/recovery operations use the real file system again.
+function clearWriteFault()
+  global writeFaultRemainingBytes
+  writeFaultRemainingBytes = -1
+  return true
+end function
+
+// Applies the all-or-nothing injected write budget before native I/O.
+function admitInjectedWrite(count, operation)
+  global writeFaultRemainingBytes
+  if writeFaultRemainingBytes < 0 then return true end if
+  if count > writeFaultRemainingBytes then
+    return fail(IO_FAILURE, operation, "injected storage exhaustion")
+  end if
+  writeFaultRemainingBytes = writeFaultRemainingBytes - count
+  return true
 end function
 
 // Validates the open.
@@ -245,6 +281,7 @@ function writeAt(file, fileOffset, source, sourceOffset, count)
   validateSlice(source, sourceOffset, count, "writeAt")
   validateFileRange(fileOffset, count, "writeAt")
   if count == 0 then return 0 end if
+  admitInjectedWrite(count, "writeAt")
 
 #if TARGET_OS == "linux"
   return native.writeAt(file.nativeHandle, fileOffset, source, sourceOffset, count)

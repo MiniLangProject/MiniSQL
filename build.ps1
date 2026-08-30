@@ -218,7 +218,8 @@ $Targets = @(
   @{ Input = "src\tests\m74_workbench_network_worker.ml"; Output = "minisql-m74-workbench-network-worker.exe" },
   @{ Input = "src\tests\m75_cost_based_optimizer.ml"; Output = "minisql-m75-optimizer.exe" },
   @{ Input = "src\tests\m76_streaming_worker.ml"; Output = "minisql-m76-streaming-worker.exe" },
-  @{ Input = "src\tests\m77_production_controls.ml"; Output = "minisql-m77-production-controls.exe" }
+  @{ Input = "src\tests\m77_production_controls.ml"; Output = "minisql-m77-production-controls.exe" },
+  @{ Input = "src\tests\m78_fault_injection.ml"; Output = "minisql-m78-fault-injection.exe" }
 )
 
 if ($AppsOnly) {

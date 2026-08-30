@@ -1,5 +1,17 @@
 # MiniSQL changelog
 
+## 1.0.0 — fault injection and endurance qualification
+
+- added a process-local, programmatic all-or-nothing storage-write failpoint for
+  deterministic ENOSPC-style error and recovery testing without filling a host
+  disk;
+- added an isolated production fault drill covering native crash boundaries,
+  partial-frame disconnects, hard server termination during concurrent writes,
+  restart/continued writes, offline integrity and cloned middle-WAL corruption;
+- extended the endurance runner with process-loss detection, bounded wave
+  timeouts, latency percentiles, minimum-wave and p95 guards, peak resources and
+  auditable sampling failures.
+
 ## 1.0.0 — production controls, monitoring and failover qualification
 
 - added cooperative statement cancellation and absolute deadlines across gate

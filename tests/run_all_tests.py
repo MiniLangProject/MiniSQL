@@ -1072,6 +1072,9 @@ def validate_source_contracts() -> None:
         ],
         "src/tests/m48_hot_replication.ml": ["MiniSQL M48 hot replication tests: SUCCESS", "archiveWalLive", "openStandby"],
         "src/tests/m49_hardening.ml": ["MiniSQL M49 hardening tests: SUCCESS", "AUTO_INCREMENT", "3.3", "deterministic SQL mutation outcome is controlled"],
+        "src/tests/m78_fault_injection.ml": ["MiniSQL M78 fault injection: SUCCESS", "configureWriteFault", "failed write remains invisible after recovery"],
+        "tests/fault/production_fault_drill.py": ["def inject_network_aborts", "def crash_during_writes", "def corrupt_middle_wal", "MiniSQL production fault drill: SUCCESS"],
+        "tests/soak/production_soak.py": ["samplingError", "waveLatencySeconds", "peakResources"],
         "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.0.0"'],
         "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (78 modules)"],
         "build.ps1": [
@@ -1079,6 +1082,7 @@ def validate_source_contracts() -> None:
             "minisql-m49-hardening.exe",
             "minisql-m50-release-contract.exe",
             "minisql-m50-modules.exe",
+            "minisql-m78-fault-injection.exe",
             "MiniSQL 1.0.0 full build: SUCCESS",
         ],
         "release.ps1": ["build_release.py", "MiniSQL-1.0.0-windows-x64.zip", "MiniSQL 1.0.0 release: SUCCESS"],
@@ -1573,6 +1577,39 @@ def run_m49_soak(verbose: bool) -> None:
         raise AcceptanceFailure("M49 soak report violates the performance guardrail")
 
 
+def run_m78_fault_drill(verbose: bool) -> None:
+    """Runs the isolated storage, process, network and WAL production fault drill."""
+    output_root = RESULTS_DIR / "m78-production-fault"
+    command = [
+        sys.executable,
+        str(ROOT / "tests/fault/production_fault_drill.py"),
+        "--work-root",
+        str(output_root),
+        "--writers",
+        "4",
+        "--confirmed-before-kill",
+        "80",
+        "--payload-bytes",
+        "1024",
+        "--network-aborts",
+        "64",
+        "--crash-matrix-iterations",
+        "2",
+    ]
+    completed = base.run_command(command, log_name="m78-production-fault.run.log", verbose=verbose, timeout=1800)
+    if completed.returncode != 0 or base.normalized(completed.stderr) or "MiniSQL production fault drill: SUCCESS" not in completed.stdout:
+        raise AcceptanceFailure(
+            f"M78 production fault drill failed: rc={completed.returncode} "
+            f"stdout={base.normalized(completed.stdout)!r} stderr={base.normalized(completed.stderr)!r}"
+        )
+    report = load_json(output_root / "production-fault-drill.json")
+    scenarios = report.get("scenarios", {})
+    if report.get("status") != "success" or scenarios.get("processCrash", {}).get("recoveredRows", 0) < 80:
+        raise AcceptanceFailure("M78 production fault report is incomplete")
+    if scenarios.get("walCorruption", {}).get("checkerExitCode") == 0:
+        raise AcceptanceFailure("M78 checker did not reject the corrupted WAL clone")
+
+
 def run_m50_release_distribution(verbose: bool) -> None:
     """Compiles and executes the M50 release distribution acceptance scenario."""
     bin_dir = BUILD_ROOT
@@ -1823,6 +1860,8 @@ def main() -> int:
                 run_m74_workbench(compiler, args.verbose),
                 run_simple(compiler,"src/tests/m75_cost_based_optimizer.ml","minisql-m75-optimizer.exe","MiniSQL M75 cost-based optimizer: SUCCESS",args.verbose,[str(data_root('m75-root'))],3600),
                 run_simple(compiler,"src/tests/m77_production_controls.ml","minisql-m77-production-controls.exe","MiniSQL M77 production controls: SUCCESS",args.verbose,[str(data_root('m77-root'))],3600),
+                run_simple(compiler,"src/tests/m78_fault_injection.ml","minisql-m78-fault-injection.exe","MiniSQL M78 fault injection: SUCCESS",args.verbose,[str(data_root('m78-root'))],3600),
+                run_m78_fault_drill(args.verbose),
             )),
         ]
         if len(actions) != PHASE_COUNT:

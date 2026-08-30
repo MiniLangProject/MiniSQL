@@ -390,12 +390,30 @@ Windows Task Scheduler or a service wrapper can invoke the paired
 [`Start-MiniSQL.ps1`](deploy/windows/Start-MiniSQL.ps1) and
 [`Stop-MiniSQL.ps1`](deploy/windows/Stop-MiniSQL.ps1) scripts. The paired
 templates use trusted loopback so graceful stop needs no stored password. A release
-candidate should also pass the 24-hour resource-drift runner:
+candidate should also pass the 24-hour resource-drift runner. Critical
+deployments should extend the same command to 4,320 minutes (72 hours):
 
 ```powershell
-python .\tests\soak\production_soak.py --pid $serverPid --duration-minutes 1440 -- `
+python .\tests\soak\production_soak.py --pid $serverPid --duration-minutes 1440 `
+  --minimum-waves 100 --max-wave-p95-seconds 30 -- `
   .\build\performance\native-concurrent-final.exe 7551 32 2000 1
 ```
+
+The report includes latency percentiles, peak RSS/handles/threads, median drift,
+workload failures, timeouts, and loss of the monitored server process.
+
+Run the non-destructive production fault drill in a new empty directory:
+
+```powershell
+python .\tests\fault\production_fault_drill.py --work-root .\build\fault-drill
+```
+
+It covers deterministic storage exhaustion, committed/uncommitted crash
+boundaries, partial-frame network disconnects, a hard server kill during
+concurrent acknowledged writes, restart and post-recovery writes, offline
+integrity checking, and fail-closed CRC32C detection of middle-WAL corruption in
+a clone. It never fills the host disk; real filesystem exhaustion must be tested
+on a disposable quota-limited volume.
 
 Run a non-destructive restore drill into new paths with:
 
@@ -419,6 +437,14 @@ remained constant at 44, RSS median drift was 4.47 MiB, and handle median drift
 was 16 while the final samples stabilized. This short guard validates the soak
 runner and repeated connection cleanup; the documented 24-hour run remains a
 release gate, not a claim made by the short smoke.
+
+The 2026-08-30 fault-drill qualification completed in 9.875 seconds. It survived
+64 incomplete TCP-frame disconnects, recovered all 80 acknowledged commits after
+a hard kill with four concurrent writers, accepted a post-recovery commit, and
+passed the offline checker. Four native crash-matrix cases passed. A cloned WAL
+with one changed middle-record header byte was rejected as error 9004 after 243
+records; deterministic storage exhaustion preserved the pre-fault row and
+accepted a new durable row after recovery.
 
 ### 2026-08-29 native concurrent-read profile
 

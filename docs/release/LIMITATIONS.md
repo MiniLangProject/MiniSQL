@@ -116,3 +116,8 @@
   archive periodically to bound disk usage.
 
 These are explicit scope limits, not silent fallbacks.
+
+The deterministic storage failpoint validates MiniSQL's I/O-error handling but
+does not reproduce every filesystem or controller behavior on a genuinely full
+volume. Deployment-specific ENOSPC qualification must use a disposable,
+quota-limited volume that cannot exhaust the host operating system.

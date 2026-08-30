@@ -12,6 +12,12 @@ newer so both targets, native `std.checksum.crc32c`, CPU dispatch, SIMD, and the
 portable standard-library services used by the current source tree are
 available.
 
+The final cumulative Windows gate also executes the M78 production fault drill.
+It uses a new isolated database and covers deterministic storage exhaustion,
+committed/uncommitted native crash cases, incomplete TCP frames, a hard server
+kill during acknowledged concurrent writes, restart and continued operation,
+offline integrity, and fail-closed corruption detection on a cloned WAL.
+
 The suite contains **106 cumulative phases** covering M0 through M50. It builds
 and runs native Windows x64 applications and tests, process-level crash cases,
 concurrent clients, TLS proxy integration, replication, fuzz/mutation inputs,
