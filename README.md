@@ -456,6 +456,18 @@ storage-level fencing policy. DDL still requires a new replication base.
 
 ## Performance evaluation
 
+The current MiniLang feature evaluation found one safe runtime-level win:
+`List.fromArray`, growth, `addAll`, and `toArray` now use native `copyArray`.
+Two 65,536-element copies repeated 500 times took a median **31 ms**, versus
+**187 ms** for MiniLang element loops (**6.03x faster**), with identical output.
+Database-level experiments were deliberately not retained when the complete
+query became slower: a generic persistent query pool reduced retained
+`SUM(id)` throughput by 26.1%, non-default heap/GC profiles traded material
+latency for memory, and broad predicate inlining made the hash join 18.7%
+slower. Full methodology, operator medians, memory figures, and negative
+results are in the
+[`compiler-concept evaluation`](tests/performance/COMPILER_CONCEPTS_2026-09-01.md).
+
 The 2026-08-30 automatic-HA series completed 10/10 forced leader-loss trials
 and 5/5 destructive fencing/integrity drills. Leader-kill to a newly serving
 leader measured **1.469 / 1.508 / 1.583 / 2.234 seconds** minimum / median /

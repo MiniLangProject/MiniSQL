@@ -23,6 +23,13 @@ allocation churn, memory, and binary size. The preceding regression report is
 retained in
 [`COMPILER_UPDATE_A5597F7_2026-08-24.md`](COMPILER_UPDATE_A5597F7_2026-08-24.md).
 
+The 2026-09-01 evaluation of native array copying, cardinality-sized hash
+storage, persistent query workers, heap/GC profiles, and compiler inlining is
+documented in
+[`COMPILER_CONCEPTS_2026-09-01.md`](COMPILER_CONCEPTS_2026-09-01.md). It keeps
+the 6.03x `copyArray`-backed `List` improvement and records the measured reasons
+for rejecting the other candidates instead of hiding negative results.
+
 The legacy comma-FROM equality promotion and residual-filter elimination are
 measured in
 [`COMMA_JOIN_RESIDUAL_2026-08-27.md`](COMMA_JOIN_RESIDUAL_2026-08-27.md).
