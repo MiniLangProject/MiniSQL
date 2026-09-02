@@ -11,15 +11,18 @@ import minisql.common.crc32c as crc32c
 import minisql.common.diagnostics as diagnostics
 import minisql.common.endian as endian
 import minisql.common.version as version
+import minisql.common.uuid as uuid
 import minisql.executor.dml as dml
 import minisql.platform.file as file_api
 import minisql.platform.clock as clock
+import minisql.security.key_provider as key_provider
 import minisql.server.database_manager as database_manager
 import minisql.storage.btree as btree
 import minisql.storage.checksum as checksum
 import minisql.storage.paged_file as paged_file
 import minisql.transaction.wal as wal
 import minisql.transaction.checkpoint as checkpoint
+import std.crypto.aes_gcm as aes_gcm
 
 // M20 verified directory backup. A backup is a self-contained directory with
 // byte-identical database files plus a CRC-protected manifest. The database-wide
@@ -338,6 +341,7 @@ function captureDatabase(database)
   files = capturePath(files, database.path, "catalog\\schema.history", true)
   files = capturePath(files, database.path, "catalog\\schema.extensions", false)
   files = capturePath(files, database.path, "catalog\\statistics.tbl", false)
+  files = capturePath(files, database.path, "encryption.meta", false)
   files = addCapture(files, "audit\\audit.key", diagnostics.snapshotAuditKey(database.auditLog))
   files = capturePath(files, database.path, "audit\\audit.anchor", true)
   files = addCapture(files, "audit\\audit.log", diagnostics.snapshotAuditBytes(database.auditLog, MAX_FILE_BYTES))
@@ -524,6 +528,112 @@ function run(databasePath, backupPath)
   if typeof(report) == "error" then return report end if
   if typeof(closeResult) == "error" then return closeResult end if
   return report
+end function
+
+// Creates domain-separated AAD bound to one backup-relative path.
+function backupAad(relativePath)
+  return bytes("MiniSQL-BACKUP-1|" + relativePath)
+end function
+
+// Encrypts one captured backup file independently.
+function encryptBackupData(key, relativePath, plaintext)
+  nonce = try(uuid.randomBytes(12))
+  if typeof(nonce) == "error" then return nonce end if
+  sealed = try(aes_gcm.seal(key, nonce, plaintext, backupAad(relativePath), 16))
+  if typeof(sealed) == "error" then uuid.wipeSecret(nonce); return sealed end if
+  output = bytes("MSBAKENC") + nonce + sealed
+  uuid.wipeSecret(nonce)
+  uuid.wipeSecret(sealed)
+  return output
+end function
+
+// Authenticates and decrypts one captured backup file.
+function decryptBackupData(key, relativePath, encoded)
+  if typeof(encoded) != "bytes" or len(encoded) < 36 or slice(encoded, 0, 8) != bytes("MSBAKENC") then return fail(CORRUPT_DATA, "decryptBackupData", "encrypted backup record is invalid") end if
+  plaintext = try(aes_gcm.open(key, slice(encoded, 8, 12), slice(encoded, 20, len(encoded) - 20), backupAad(relativePath), 16))
+  if typeof(plaintext) == "error" then return fail(CORRUPT_DATA, "decryptBackupData", "backup key is incorrect or backup data was modified") end if
+  return plaintext
+end function
+
+// Captures and publishes an encrypted backup from an open database.
+function runOpenEncrypted(database, backupPath, key, provider)
+  database_manager.validateOpen(database, "tools.backup.runOpenEncrypted")
+  if file_api.pathExists(backupPath) or file_api.pathExists(backupPath + ".new") then return fail(OBJECT_EXISTS, "runOpenEncrypted", "backup destination already exists") end if
+  captured = try(captureDatabase(database))
+  files = []
+  for each file in captured
+    plaintext = file.data
+    if file.relativePath == "encryption.meta" then
+      material = try(key_provider.decodeEnvelope(database.path))
+      if typeof(material) == "error" then return material end if
+      plaintext = try(key_provider.encodeEnvelope(material.databaseId, provider, material.key))
+      key_provider.closeDatabaseKey(material)
+      if typeof(plaintext) == "error" then return plaintext end if
+    end if
+    encrypted = try(encryptBackupData(key, file.relativePath, plaintext))
+    if typeof(encrypted) == "error" then return encrypted end if
+    files = files + [CapturedFile(file.relativePath, encrypted)]
+  end for
+  metadata = database.catalogHandle.metadata
+  manifest = manifestFromFiles(metadata.databaseId, metadata.pageSize, files)
+  temporary = backupPath + ".new"
+  writeCapturedFiles(temporary, files)
+  writeWhole(file_api.joinPath(temporary, "backup.manifest"), encodeManifest(manifest))
+  writeWhole(file_api.joinPath(temporary, "backup.encrypted"), bytes("MiniSQL encrypted backup v1"))
+  movePathReliably(temporary, backupPath, false)
+  total = verifyBackupFiles(backupPath, manifest)
+  return BackupReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, backupPath)
+end function
+
+// Opens a database and creates a verified encrypted backup export.
+function runEncrypted(databasePath, backupPath, keyFilePath)
+  provider = try(key_provider.fileProvider(keyFilePath))
+  key = try(key_provider.loadProviderKey(provider))
+  if typeof(key) == "error" then return key end if
+  database = try(database_manager.open(databasePath))
+  if typeof(database) == "error" then uuid.wipeSecret(key); return database end if
+  report = try(runOpenEncrypted(database, backupPath, key, provider))
+  uuid.wipeSecret(key)
+  closeResult = try(database_manager.close(database))
+  if typeof(report) == "error" then return report end if
+  if typeof(closeResult) == "error" then return closeResult end if
+  return report
+end function
+
+// Restores and validates an encrypted backup before atomic publication.
+function restoreEncrypted(backupPath, databasePath, keyFilePath)
+  if not file_api.fileExists(file_api.joinPath(backupPath, "backup.encrypted")) then return fail(CORRUPT_DATA, "restoreEncrypted", "encrypted-backup marker is missing") end if
+  if file_api.pathExists(databasePath) or file_api.pathExists(databasePath + ".restore-new") then return fail(OBJECT_EXISTS, "restoreEncrypted", "database destination already exists") end if
+  manifest = try(readManifest(backupPath))
+  total = try(verifyBackupFiles(backupPath, manifest))
+  provider = try(key_provider.fileProvider(keyFilePath))
+  key = try(key_provider.loadProviderKey(provider))
+  if typeof(key) == "error" then return key end if
+  temporary = databasePath + ".restore-new"
+  createLayout(temporary)
+  for each entry in manifest.entries
+    encoded = try(readWhole(file_api.joinPath(backupPath, entry.relativePath), MAX_FILE_BYTES))
+    data = try(decryptBackupData(key, entry.relativePath, encoded))
+    if typeof(data) == "error" then uuid.wipeSecret(key); return data end if
+    if entry.relativePath == "encryption.meta" then
+      material = try(key_provider.decodeEnvelopeData(temporary, data, provider))
+      if typeof(material) == "error" then uuid.wipeSecret(key); return material end if
+      rewrapped = try(key_provider.encodeEnvelope(material.databaseId, provider, material.key))
+      key_provider.closeDatabaseKey(material)
+      if typeof(rewrapped) == "error" then uuid.wipeSecret(key); return rewrapped end if
+      uuid.wipeSecret(data)
+      data = rewrapped
+    end if
+    writeWhole(file_api.joinPath(temporary, entry.relativePath), data)
+  end for
+  uuid.wipeSecret(key)
+  writeWhole(file_api.joinPath(temporary, "db.lock"), bytes())
+  database = try(database_manager.open(temporary))
+  if typeof(database) == "error" then return database end if
+  if not bytesEqual(database.catalogHandle.metadata.databaseId, manifest.databaseId) then database_manager.close(database); return fail(CORRUPT_DATA, "restoreEncrypted", "restored database identity mismatch") end if
+  database_manager.close(database)
+  movePathReliably(temporary, databasePath, false)
+  return RestoreReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, databasePath)
 end function
 
 // Reads manifest using the supplied inputs.
@@ -940,7 +1050,7 @@ function snapshotDurableWalLive(databasePath)
   closeResult = try(file_api.close(handle))
   if typeof(readResult) == "error" then return readResult end if
   if typeof(closeResult) == "error" then return closeResult end if
-  scanned = wal.scanSnapshot(output)
+  scanned = wal.scanSnapshotForPath(output, walPath)
   if scanned.truncatedTail or scanned.validBytes != durableLsn then return fail(CORRUPT_DATA, "snapshotDurableWalLive", "durable WAL marker is not a complete record boundary") end if
   return output
 end function

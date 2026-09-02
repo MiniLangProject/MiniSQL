@@ -37,10 +37,22 @@ function main(args)
     print "MiniSQL backup: SUCCESS files=" + report.fileCount + " bytes=" + report.totalBytes
     return 0
   end if
+  if len(args) == 4 and args[0] == "backup-encrypted" then
+    report = try(backup.runEncrypted(args[1], args[2], args[3]))
+    if typeof(report) == "error" then print "ERROR " + report.code + ": " + report.message; return 1 end if
+    print "MiniSQL encrypted backup: SUCCESS files=" + report.fileCount + " bytes=" + report.totalBytes
+    return 0
+  end if
   if len(args) == 3 and args[0] == "restore" then
     report = try(backup.restore(args[1], args[2]))
     if typeof(report) == "error" then print "ERROR " + report.code + ": " + report.message; return 1 end if
     print "MiniSQL restore: SUCCESS files=" + report.fileCount + " bytes=" + report.totalBytes
+    return 0
+  end if
+  if len(args) == 4 and args[0] == "restore-encrypted" then
+    report = try(backup.restoreEncrypted(args[1], args[2], args[3]))
+    if typeof(report) == "error" then print "ERROR " + report.code + ": " + report.message; return 1 end if
+    print "MiniSQL encrypted restore: SUCCESS files=" + report.fileCount + " bytes=" + report.totalBytes
     return 0
   end if
   if len(args) == 3 and args[0] == "archive-init" then
@@ -88,6 +100,6 @@ function main(args)
     print "MiniSQL WAL archive verify: SUCCESS generation=" + manifest.generation + " lsn=" + manifest.latestEndLsn
     return 0
   end if
-  print "Usage: minisql-backup.exe [--version|--m0-self-test|backup <db> <backup>|restore <backup> <db>|archive-init <db> <archive>|archive-wal <db> <archive>|archive-wal-live <db> <archive>|archive-verify <archive>|restore-pitr <archive> <db> <lsn|latest>|standby-materialize <archive> <db>|standby-refresh <archive> <db>|standby-promote <db>]"
+  print "Usage: minisql-backup.exe [--version|--m0-self-test|backup <db> <backup>|backup-encrypted <db> <backup> <key>|restore <backup> <db>|restore-encrypted <backup> <db> <key>|archive-init <db> <archive>|archive-wal <db> <archive>|archive-wal-live <db> <archive>|archive-verify <archive>|restore-pitr <archive> <db> <lsn|latest>|standby-materialize <archive> <db>|standby-refresh <archive> <db>|standby-promote <db>]"
   return 2
 end function

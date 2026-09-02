@@ -119,13 +119,15 @@ end function
 // Requires arguments that satisfy the validation performed below.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function authChallenge(requestId, iterations, salt, nonce)
+function authChallenge(requestId, iterations, salt, nonce, scheme)
   if typeof(iterations) != "int" or iterations < 10000 or iterations > 5000000 then return fail(INVALID_ARGUMENT, "authChallenge", "iterations are invalid") end if
   if typeof(salt) != "bytes" or len(salt) != 16 or typeof(nonce) != "bytes" or len(nonce) != 32 then return fail(INVALID_ARGUMENT, "authChallenge", "salt or nonce is invalid") end if
-  payload = bytes(52, 0)
+  if typeof(scheme) != "int" or (scheme != 1 and scheme != 2) then return fail(INVALID_ARGUMENT, "authChallenge", "authentication scheme is invalid") end if
+  payload = bytes(56, 0)
   endian.writeU32LE(payload, 0, iterations)
   copyBytes(payload, 4, salt, 0, 16)
   copyBytes(payload, 20, nonce, 0, 32)
+  endian.writeU16LE(payload, 52, scheme)
   return create(constants.TYPE_AUTH_CHALLENGE, 0, requestId, payload)
 end function
 
@@ -134,10 +136,16 @@ end function
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
 function decodeAuthChallenge(payload)
-  if typeof(payload) != "bytes" or len(payload) != 52 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge payload size is invalid") end if
+  if typeof(payload) != "bytes" or (len(payload) != 52 and len(payload) != 56) then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge payload size is invalid") end if
   iterations = endian.readU32LE(payload, 0)
   if iterations < 10000 or iterations > 5000000 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge work factor is invalid") end if
-  return [iterations, slice(payload, 4, 16), slice(payload, 20, 32)]
+  scheme = 1
+  if len(payload) == 56 then
+    scheme = endian.readU16LE(payload, 52)
+    reserved = endian.readU16LE(payload, 54)
+    if (scheme != 1 and scheme != 2) or reserved != 0 then return fail(CORRUPT_DATA, "decodeAuthChallenge", "challenge authentication scheme is invalid") end if
+  end if
+  return [iterations, slice(payload, 4, 16), slice(payload, 20, 32), scheme]
 end function
 
 // Implements auth proof for this module.

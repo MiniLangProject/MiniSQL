@@ -40,14 +40,19 @@ DCL and authenticated DDL are autocommit-only in M21. Direct matching grants are
 
 ## Authentication
 
-Passwords must contain 12 to 1024 UTF-8 bytes and no NUL. MiniSQL stores a random 16-byte salt and a 32-byte PBKDF2-HMAC-SHA-256 verifier with 600,000 iterations. Authentication uses a fresh 32-byte server nonce and separate client/server proofs. Unknown and disabled users follow the same externally visible failure path as a wrong password.
+Passwords must contain 12 to 1024 UTF-8 bytes and no NUL. PBKDF2-HMAC-SHA-256
+with 600,000 iterations derives a 32-byte salted secret. New credentials persist
+`SHA256(HMAC(salted, "MiniSQL Client Key")) || HMAC(salted, "MiniSQL Server Key")`
+instead of that password-equivalent secret. A fresh nonce and transcript produce
+SCRAM-style client and server proofs. Legacy 32-byte verifier records negotiate
+scheme 1 until a password reset writes the 64-byte scheme-2 credential.
 
 The wire sequence is:
 
 ```text
 HELLO
 AUTH_BEGIN(username)
-AUTH_CHALLENGE(iterations, salt, nonce)
+AUTH_CHALLENGE(iterations, salt, nonce, scheme)
 AUTH_PROOF(client proof)
 AUTH_OK(server proof)
 ```
@@ -56,10 +61,9 @@ A secure session requires `CONNECT` (or superuser) before SQL is accepted. Three
 
 ## Security boundaries and M21 limitations
 
-- Authenticated service remains loopback-only. TLS and remote binding are intentionally deferred.
+- Authenticated service supports native TLS 1.3 for remote binding; trusted plaintext mode remains loopback-only.
 - `--serve-one` is a trusted local compatibility/maintenance mode and bypasses DCL. `--serve-auth` enforces authentication and privileges.
 - Supplying a password as a command-line argument is provided only for tests and convenience; operating systems can expose command lines to other local processes.
-- In this verifier-based challenge protocol, theft of the database files and verifier can enable impersonation. Protect database files as password-equivalent secrets.
-- M21 does not yet provide a server-secret-derived fake challenge or a PAKE. A known user receives its stable stored salt while an unknown user receives fresh dummy material, so repeated challenge comparison can reveal whether a username exists. The final remote-capable protocol must remove this enumeration signal.
-- The security catalog is currently one payload page per generation; growth beyond that page is rejected rather than partially persisted.
+- Legacy scheme-1 verifier theft can enable impersonation until the password is reset. Scheme-2 stored credentials cannot be replayed as client proofs.
+- MiniSQL authentication is not a PAKE. TLS remains mandatory for remote connections.
 - Authenticated `CREATE TABLE` commits DDL first and then persists the owner grant. M21 does not yet provide one cross-file atomic commit spanning the DDL journal and security sidecar.

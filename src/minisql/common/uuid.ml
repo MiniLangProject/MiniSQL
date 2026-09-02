@@ -18,6 +18,12 @@ const AUTHENTICATION_FAILED = 9027
 
 const PASSWORD_SALT_BYTES = 16
 const PASSWORD_VERIFIER_BYTES = 32
+// New credentials keep a SCRAM-style StoredKey and ServerKey rather than a
+// password-equivalent verifier. Legacy 32-byte verifiers remain readable so a
+// database can be upgraded without invalidating every account at once.
+const PASSWORD_CREDENTIAL_BYTES = 64
+const AUTH_SCHEME_LEGACY = 1
+const AUTH_SCHEME_SCRAM_SHA256 = 2
 const AUTH_NONCE_BYTES = 32
 const DEFAULT_PBKDF2_ITERATIONS = 600000
 const MIN_PBKDF2_ITERATIONS = 10000
@@ -229,8 +235,11 @@ function createPasswordMaterialBytes(passwordBytes)
   secret = validatePasswordBytes(passwordBytes, "createPasswordMaterialBytes")
   salt = try(randomBytes(PASSWORD_SALT_BYTES))
   if typeof(salt) == "error" then wipeSecret(secret); return salt end if
-  verifier = try(deriveKey(secret, salt, DEFAULT_PBKDF2_ITERATIONS, PASSWORD_VERIFIER_BYTES))
+  saltedPassword = try(deriveKey(secret, salt, DEFAULT_PBKDF2_ITERATIONS, PASSWORD_VERIFIER_BYTES))
   wipeSecret(secret)
+  if typeof(saltedPassword) == "error" then return saltedPassword end if
+  verifier = try(scramCredential(saltedPassword))
+  wipeSecret(saltedPassword)
   if typeof(verifier) == "error" then return verifier end if
   return PasswordMaterial(salt, DEFAULT_PBKDF2_ITERATIONS, verifier)
 end function
@@ -241,8 +250,11 @@ function createPasswordMaterial(password)
   secret = validatePassword(password, "createPasswordMaterial")
   salt = try(randomBytes(PASSWORD_SALT_BYTES))
   if typeof(salt) == "error" then fillBytes(secret, 0, len(secret), 0); return salt end if
-  verifier = try(deriveKey(secret, salt, DEFAULT_PBKDF2_ITERATIONS, PASSWORD_VERIFIER_BYTES))
+  saltedPassword = try(deriveKey(secret, salt, DEFAULT_PBKDF2_ITERATIONS, PASSWORD_VERIFIER_BYTES))
   fillBytes(secret, 0, len(secret), 0)
+  if typeof(saltedPassword) == "error" then return saltedPassword end if
+  verifier = try(scramCredential(saltedPassword))
+  wipeSecret(saltedPassword)
   if typeof(verifier) == "error" then return verifier end if
   return PasswordMaterial(salt, DEFAULT_PBKDF2_ITERATIONS, verifier)
 end function
@@ -260,7 +272,7 @@ end function
 // Verifies the password bytes.
 // Inputs: `passwordBytes`, `salt`, `iterations`, `expected`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function verifyPasswordBytes(passwordBytes, salt, iterations, expected)
-  if typeof(salt) != "bytes" or len(salt) != PASSWORD_SALT_BYTES or typeof(expected) != "bytes" or len(expected) != PASSWORD_VERIFIER_BYTES then
+  if typeof(salt) != "bytes" or len(salt) != PASSWORD_SALT_BYTES or typeof(expected) != "bytes" or (len(expected) != PASSWORD_VERIFIER_BYTES and len(expected) != PASSWORD_CREDENTIAL_BYTES) then
     return fail(INVALID_ARGUMENT, "verifyPasswordBytes", "invalid password material")
   end if
   if typeof(iterations) != "int" or iterations < MIN_PBKDF2_ITERATIONS or iterations > MAX_PBKDF2_ITERATIONS then return fail(INVALID_ARGUMENT, "verifyPasswordBytes", "invalid PBKDF2 work factor") end if
@@ -268,6 +280,14 @@ function verifyPasswordBytes(passwordBytes, salt, iterations, expected)
   actual = try(deriveKey(secret, salt, iterations, PASSWORD_VERIFIER_BYTES))
   wipeSecret(secret)
   if typeof(actual) == "error" then return actual end if
+  if len(expected) == PASSWORD_CREDENTIAL_BYTES then
+    credential = try(scramCredential(actual))
+    wipeSecret(actual)
+    if typeof(credential) == "error" then return credential end if
+    result = constantTimeEquals(credential, expected)
+    wipeSecret(credential)
+    return result
+  end if
   result = constantTimeEquals(actual, expected)
   wipeSecret(actual)
   return result
@@ -276,7 +296,7 @@ end function
 // Verifies the password.
 // Inputs: `password`, `salt`, `iterations`, `expected`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function verifyPassword(password, salt, iterations, expected)
-  if typeof(salt) != "bytes" or len(salt) != PASSWORD_SALT_BYTES or typeof(expected) != "bytes" or len(expected) != PASSWORD_VERIFIER_BYTES then
+  if typeof(salt) != "bytes" or len(salt) != PASSWORD_SALT_BYTES or typeof(expected) != "bytes" or (len(expected) != PASSWORD_VERIFIER_BYTES and len(expected) != PASSWORD_CREDENTIAL_BYTES) then
     return fail(INVALID_ARGUMENT, "verifyPassword", "invalid password material")
   end if
   if typeof(iterations) != "int" or iterations < MIN_PBKDF2_ITERATIONS or iterations > MAX_PBKDF2_ITERATIONS then return fail(INVALID_ARGUMENT, "verifyPassword", "invalid PBKDF2 work factor") end if
@@ -284,6 +304,14 @@ function verifyPassword(password, salt, iterations, expected)
   actual = try(deriveKey(secret, salt, iterations, PASSWORD_VERIFIER_BYTES))
   fillBytes(secret, 0, len(secret), 0)
   if typeof(actual) == "error" then return actual end if
+  if len(expected) == PASSWORD_CREDENTIAL_BYTES then
+    credential = try(scramCredential(actual))
+    wipeSecret(actual)
+    if typeof(credential) == "error" then return credential end if
+    result = constantTimeEquals(credential, expected)
+    wipeSecret(credential)
+    return result
+  end if
   result = constantTimeEquals(actual, expected)
   fillBytes(actual, 0, len(actual), 0)
   return result
@@ -300,6 +328,129 @@ function constantTimeEquals(left, right)
     end for
   end if
   return difference == 0
+end function
+
+// Returns the wire authentication scheme implied by persisted credential
+// material. Length is the backwards-compatible discriminator in catalog v1.
+function authenticationScheme(credential)
+  if typeof(credential) != "bytes" then return fail(INVALID_ARGUMENT, "authenticationScheme", "credential must be bytes") end if
+  if len(credential) == PASSWORD_VERIFIER_BYTES then return AUTH_SCHEME_LEGACY end if
+  if len(credential) == PASSWORD_CREDENTIAL_BYTES then return AUTH_SCHEME_SCRAM_SHA256 end if
+  return fail(INVALID_ARGUMENT, "authenticationScheme", "credential length is unsupported")
+end function
+
+// Derives the non-password-equivalent StoredKey || ServerKey representation
+// used by the hardened authentication scheme.
+function scramCredential(saltedPassword)
+  if typeof(saltedPassword) != "bytes" or len(saltedPassword) != PASSWORD_VERIFIER_BYTES then return fail(INVALID_ARGUMENT, "scramCredential", "salted password must be 32 bytes") end if
+  clientKey = try(hmacSha256(saltedPassword, bytes("MiniSQL Client Key")))
+  if typeof(clientKey) == "error" then return clientKey end if
+  storedKey = try(sha256(clientKey))
+  wipeSecret(clientKey)
+  if typeof(storedKey) == "error" then return storedKey end if
+  serverKey = try(hmacSha256(saltedPassword, bytes("MiniSQL Server Key")))
+  if typeof(serverKey) == "error" then wipeSecret(storedKey); return serverKey end if
+  output = storedKey + serverKey
+  wipeSecret(storedKey)
+  wipeSecret(serverKey)
+  return output
+end function
+
+// Produces the single transcript shared by client proof, server proof and
+// transport-key derivation. Domain separation prevents cross-protocol reuse.
+function scramTranscript(nonce, username)
+  if typeof(nonce) != "bytes" or len(nonce) != AUTH_NONCE_BYTES then return fail(INVALID_ARGUMENT, "scramTranscript", "nonce must be 32 bytes") end if
+  if typeof(username) != "string" or len(bytes(username)) == 0 then return fail(INVALID_ARGUMENT, "scramTranscript", "username must be non-empty") end if
+  return bytes("MiniSQL-AUTH-2|" + username + "|") + nonce
+end function
+
+// Creates the client proof from the password-derived salted secret. The proof
+// does not disclose that secret to a server storing only StoredKey/ServerKey.
+function scramClientProof(saltedPassword, nonce, username)
+  if typeof(saltedPassword) != "bytes" or len(saltedPassword) != PASSWORD_VERIFIER_BYTES then return fail(INVALID_ARGUMENT, "scramClientProof", "salted password must be 32 bytes") end if
+  clientKey = try(hmacSha256(saltedPassword, bytes("MiniSQL Client Key")))
+  if typeof(clientKey) == "error" then return clientKey end if
+  storedKey = try(sha256(clientKey))
+  if typeof(storedKey) == "error" then wipeSecret(clientKey); return storedKey end if
+  transcript = try(scramTranscript(nonce, username))
+  if typeof(transcript) == "error" then wipeSecret(clientKey); wipeSecret(storedKey); return transcript end if
+  signature = try(hmacSha256(storedKey, transcript))
+  wipeSecret(storedKey)
+  wipeSecret(transcript)
+  if typeof(signature) == "error" then wipeSecret(clientKey); return signature end if
+  proof = bytes(PASSWORD_VERIFIER_BYTES, 0)
+  for index = 0 to PASSWORD_VERIFIER_BYTES - 1
+    proof[index] = clientKey[index] ^ signature[index]
+  end for
+  wipeSecret(clientKey)
+  wipeSecret(signature)
+  return proof
+end function
+
+// Verifies a hardened client proof without reconstructing or storing the
+// password-equivalent salted secret.
+function verifyScramClientProof(credential, nonce, username, proof)
+  if typeof(credential) != "bytes" or len(credential) != PASSWORD_CREDENTIAL_BYTES or typeof(proof) != "bytes" or len(proof) != PASSWORD_VERIFIER_BYTES then return false end if
+  storedKey = slice(credential, 0, PASSWORD_VERIFIER_BYTES)
+  transcript = try(scramTranscript(nonce, username))
+  if typeof(transcript) == "error" then wipeSecret(storedKey); return transcript end if
+  signature = try(hmacSha256(storedKey, transcript))
+  wipeSecret(transcript)
+  if typeof(signature) == "error" then wipeSecret(storedKey); return signature end if
+  recoveredClientKey = bytes(PASSWORD_VERIFIER_BYTES, 0)
+  for index = 0 to PASSWORD_VERIFIER_BYTES - 1
+    recoveredClientKey[index] = proof[index] ^ signature[index]
+  end for
+  actualStoredKey = try(sha256(recoveredClientKey))
+  wipeSecret(recoveredClientKey)
+  wipeSecret(signature)
+  if typeof(actualStoredKey) == "error" then wipeSecret(storedKey); return actualStoredKey end if
+  valid = constantTimeEquals(actualStoredKey, storedKey)
+  wipeSecret(actualStoredKey)
+  wipeSecret(storedKey)
+  return valid
+end function
+
+// Computes the server's transcript signature. A client derives the same
+// ServerKey from its password and rejects a credential-phishing endpoint.
+function scramServerProofFromCredential(credential, nonce, username)
+  if typeof(credential) != "bytes" or len(credential) != PASSWORD_CREDENTIAL_BYTES then return fail(INVALID_ARGUMENT, "scramServerProofFromCredential", "credential must be 64 bytes") end if
+  serverKey = slice(credential, PASSWORD_VERIFIER_BYTES, PASSWORD_VERIFIER_BYTES)
+  transcript = try(scramTranscript(nonce, username))
+  if typeof(transcript) == "error" then wipeSecret(serverKey); return transcript end if
+  proof = try(hmacSha256(serverKey, transcript))
+  wipeSecret(serverKey)
+  wipeSecret(transcript)
+  return proof
+end function
+
+// Derives the reciprocal server proof from a client-owned salted password.
+function scramServerProofFromPassword(saltedPassword, nonce, username)
+  credential = try(scramCredential(saltedPassword))
+  if typeof(credential) == "error" then return credential end if
+  proof = try(scramServerProofFromCredential(credential, nonce, username))
+  wipeSecret(credential)
+  return proof
+end function
+
+// Derives a shared session secret from both stored halves. Possession of this
+// value alone is insufficient to generate a valid future client proof.
+function scramSessionSecretFromCredential(credential, nonce, username)
+  if typeof(credential) != "bytes" or len(credential) != PASSWORD_CREDENTIAL_BYTES then return fail(INVALID_ARGUMENT, "scramSessionSecretFromCredential", "credential must be 64 bytes") end if
+  transcript = try(scramTranscript(nonce, username))
+  if typeof(transcript) == "error" then return transcript end if
+  secret = try(hmacSha256(slice(credential, PASSWORD_VERIFIER_BYTES, PASSWORD_VERIFIER_BYTES), bytes("MiniSQL-SESSION-2|") + transcript + slice(credential, 0, PASSWORD_VERIFIER_BYTES)))
+  wipeSecret(transcript)
+  return secret
+end function
+
+// Derives the shared session secret from a client-owned salted password.
+function scramSessionSecretFromPassword(saltedPassword, nonce, username)
+  credential = try(scramCredential(saltedPassword))
+  if typeof(credential) == "error" then return credential end if
+  secret = try(scramSessionSecretFromCredential(credential, nonce, username))
+  wipeSecret(credential)
+  return secret
 end function
 
 // Performs the auth proof operation for this module.

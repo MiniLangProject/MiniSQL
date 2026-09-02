@@ -736,6 +736,36 @@ exposing a server outside a trusted local environment. The native TLS tests
 generate an ephemeral localhost identity at runtime; production certificates
 and private keys remain operator-managed secrets.
 
+MiniSQL supports transparent data encryption (TDE) for paged table, index and
+security-catalog storage, authenticated WAL records, and encrypted temporary
+spill rows. Existing databases can be migrated in place with a resumable,
+per-file conversion. Generate and enable an external 256-bit master key while
+the database is offline:
+
+```powershell
+.\build\bin\minisqld.exe --generate-encryption-key D:\MiniSQL-Keys\demo.key
+.\build\bin\minisqld.exe --enable-encryption .\data\db_<uuid> D:\MiniSQL-Keys\demo.key
+```
+
+Rotate the master key atomically without rewriting every data page:
+
+```powershell
+.\build\bin\minisqld.exe --generate-encryption-key D:\MiniSQL-Keys\demo-2027.key
+.\build\bin\minisqld.exe --rotate-encryption-key .\data\db_<uuid> D:\MiniSQL-Keys\demo-2027.key
+```
+
+Encrypted backup exports use a separate key:
+
+```powershell
+.\build\bin\minisql-backup.exe backup-encrypted .\data\db_<uuid> E:\backups\demo D:\MiniSQL-Keys\backup.key
+.\build\bin\minisql-backup.exe restore-encrypted E:\backups\demo .\data\restored D:\MiniSQL-Keys\backup.key
+```
+
+Keep key files outside database and backup directories, restrict their ACLs,
+and escrow them separately. TDE does not replace BitLocker on Windows or
+LUKS/dm-crypt on Linux: volume encryption also protects file names, residual
+free space, logs, crash dumps and artifacts outside the database format.
+
 ## License
 
 MiniSQL is distributed under the Apache License 2.0. See [`LICENSE`](LICENSE)

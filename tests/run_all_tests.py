@@ -748,7 +748,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 81,
+        "moduleCount": 83,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -813,8 +813,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 81:
-        raise AcceptanceFailure("Module catalog must contain exactly 81 source modules")
+    if not isinstance(modules, list) or len(modules) != 83:
+        raise AcceptanceFailure("Module catalog must contain exactly 83 source modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1100,6 +1100,7 @@ def validate_source_contracts() -> None:
         "src/tests/m48_hot_replication.ml": ["MiniSQL M48 hot replication tests: SUCCESS", "archiveWalLive", "openStandby"],
         "src/tests/m49_hardening.ml": ["MiniSQL M49 hardening tests: SUCCESS", "AUTO_INCREMENT", "3.3", "deterministic SQL mutation outcome is controlled"],
         "src/tests/m78_fault_injection.ml": ["MiniSQL M78 fault injection: SUCCESS", "configureWriteFault", "failed write remains invisible after recovery"],
+        "src/tests/m79_security_at_rest.ml": ["MiniSQL M79 security-at-rest tests: SUCCESS", "backup.runEncrypted", "wrong backup key is rejected"],
         "tests/fault/production_fault_drill.py": ["def inject_network_aborts", "def crash_during_writes", "def corrupt_middle_wal", "MiniSQL production fault drill: SUCCESS"],
         "tests/soak/production_soak.py": ["samplingError", "waveLatencySeconds", "peakResources"],
         "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.0.0"'],
@@ -1777,7 +1778,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 81-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 83-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -1895,6 +1896,7 @@ def main() -> int:
                 run_simple(compiler,"src/tests/m77_production_controls.ml","minisql-m77-production-controls.exe","MiniSQL M77 production controls: SUCCESS",args.verbose,[str(data_root('m77-root'))],3600),
                 run_simple(compiler,"src/tests/m78_fault_injection.ml","minisql-m78-fault-injection.exe","MiniSQL M78 fault injection: SUCCESS",args.verbose,[str(data_root('m78-root'))],3600),
                 run_m78_fault_drill(args.verbose),
+                run_simple(compiler,"src/tests/m79_security_at_rest.ml","minisql-m79-security-at-rest.exe","MiniSQL M79 security-at-rest tests: SUCCESS",args.verbose,[str(data_root('m79-root'))],3600),
             )),
         ]
         if len(actions) != PHASE_COUNT:

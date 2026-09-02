@@ -3,6 +3,11 @@
 Repeatable storage and query benchmarks live here. Correctness tests remain mandatory;
 performance measurements may never replace durability or semantic validation.
 
+The 2026-09-02 security-at-rest report is
+[`TDE_SECURITY_2026-09-02.md`](TDE_SECURITY_2026-09-02.md). It records the
+three-trial plaintext/TDE write and indexed-read comparison, page/WAL space
+amplification, test system, methodology and security/recovery test matrix.
+
 The current 1 GiB Windows/Linux reference, test-system description, storage and
 checker speed, CRC-32C throughput, SQL request rates, and memory peaks are in the
 root README's [Performance evaluation](../../README.md#performance-evaluation).

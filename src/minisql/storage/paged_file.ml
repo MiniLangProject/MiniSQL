@@ -5,10 +5,13 @@ package minisql.storage.paged_file
 
 import minisql.common.endian as endian
 import minisql.common.limits as limits
+import minisql.common.uuid as uuid
 import minisql.platform.file as file_api
 import minisql.platform.lock as file_lock
+import minisql.security.key_provider as key_provider
 import minisql.storage.page as page
 import minisql.storage.superblock as superblock
+import std.crypto.aes_gcm as aes_gcm
 
 // A paged file begins with two fixed 4096-byte superblock slots followed by a
 // fixed data region at offset 8192. Page size is persisted in both superblocks;
@@ -23,6 +26,9 @@ const SLOT_B = 1
 const SLOT_A_OFFSET = 0
 const SLOT_B_OFFSET = 4096
 const DATA_OFFSET = 8192
+const FEATURE_PAGE_ENCRYPTION = 1
+const ENCRYPTION_NONCE_BYTES = 12
+const ENCRYPTION_TAG_BYTES = 16
 
 // Defines the paged file record used by this module.
 struct PagedFile
@@ -46,6 +52,8 @@ struct PagedFile
   activeSlot
   // Feature flags field of the paged file.
   featureFlags
+  // Wipeable database encryption key, or void for a plaintext file.
+  encryptionKey
   // First page that may still contain reusable free storage for appenders.
   allocationHint
   // Closed field of the paged file.
@@ -105,6 +113,17 @@ function maxPageCountFor(pageSize)
   return available >> 15
 end function
 
+// Returns the fixed physical stride for plaintext or encrypted page records.
+function physicalPageSize(pageSize, featureFlags)
+  if isEncryptedFlags(featureFlags) then return pageSize + ENCRYPTION_NONCE_BYTES + ENCRYPTION_TAG_BYTES end if
+  return pageSize
+end function
+
+// Tests the persisted page-encryption feature bit.
+function isEncryptedFlags(featureFlags)
+  return (featureFlags & FEATURE_PAGE_ENCRYPTION) > 0
+end function
+
 // Performs the page offset operation for this module.
 // Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pageOffset(pagedFile, pageNumber)
@@ -113,12 +132,12 @@ function pageOffset(pagedFile, pageNumber)
   if pageNumber >= maxPageCountFor(pagedFile.pageSize) then
     return fail(INVALID_ARGUMENT, "pageOffset", "page number would extend beyond the native file-size range")
   end if
-  return DATA_OFFSET + pageNumber * pagedFile.pageSize
+  return DATA_OFFSET + pageNumber * physicalPageSize(pagedFile.pageSize, pagedFile.featureFlags)
 end function
 
 // Commits the ted size.
 // Inputs: `pageSize`, `pageCount`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
-function committedSize(pageSize, pageCount)
+function committedSize(pageSize, pageCount, featureFlags)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     return fail(INVALID_ARGUMENT, "committedSize", "unsupported page size")
   end if
@@ -126,7 +145,7 @@ function committedSize(pageSize, pageCount)
   if pageCount > maxPageCountFor(pageSize) then
     return fail(INVALID_ARGUMENT, "committedSize", "file size exceeds native range")
   end if
-  return DATA_OFFSET + pageCount * pageSize
+  return DATA_OFFSET + pageCount * physicalPageSize(pageSize, featureFlags)
 end function
 
 // Performs the metadata for operation for this module.
@@ -188,6 +207,14 @@ function create(path, pageSize, fileType, fileId, databaseId)
     file_api.close(file)
     return lockResult
   end if
+  keyMaterial = try(key_provider.loadForPath(path, databaseId))
+  encryptionKey = void
+  featureFlags = 0
+  if keyMaterial is not void then
+    encryptionKey = bytes(keyMaterial.key)
+    featureFlags = FEATURE_PAGE_ENCRYPTION
+    key_provider.closeDatabaseKey(keyMaterial)
+  end if
   result = PagedFile(
     path,
     file,
@@ -198,7 +225,8 @@ function create(path, pageSize, fileType, fileId, databaseId)
     0,
     endian.makeUInt64(0, 0),
     SLOT_B,
-    0,
+    featureFlags,
+    encryptionKey,
     0,
     false
   )
@@ -273,7 +301,7 @@ function open(path)
   end if
   metadata = selected[0]
   activeSlot = selected[1]
-  requiredSize = committedSize(metadata.pageSize, metadata.pageCount)
+  requiredSize = committedSize(metadata.pageSize, metadata.pageCount, metadata.featureFlags)
   if actualSize < requiredSize then
     file_api.close(file)
     return fail(CORRUPT_DATA, "open", "file is shorter than committed page count")
@@ -284,6 +312,14 @@ function open(path)
     file_api.flush(file)
   end if
 
+  keyMaterial = void
+  encryptionKey = void
+  if isEncryptedFlags(metadata.featureFlags) then
+    keyMaterial = try(key_provider.loadForPath(path, metadata.databaseId))
+    if keyMaterial is void then file_api.close(file); return fail(CORRUPT_DATA, "open", "encrypted file has no database key envelope") end if
+    encryptionKey = bytes(keyMaterial.key)
+    key_provider.closeDatabaseKey(keyMaterial)
+  end if
   return PagedFile(
     path,
     file,
@@ -295,6 +331,7 @@ function open(path)
     metadata.generation,
     activeSlot,
     metadata.featureFlags,
+    encryptionKey,
     metadata.pageCount,
     false
   )
@@ -328,12 +365,20 @@ function openReadOnly(path)
   end if
   metadata = selected[0]
   activeSlot = selected[1]
-  requiredSize = committedSize(metadata.pageSize, metadata.pageCount)
+  requiredSize = committedSize(metadata.pageSize, metadata.pageCount, metadata.featureFlags)
   if actualSize != requiredSize then
     file_api.close(file)
     return fail(CORRUPT_DATA, "openReadOnly", "file size does not match committed page count")
   end if
 
+  keyMaterial = void
+  encryptionKey = void
+  if isEncryptedFlags(metadata.featureFlags) then
+    keyMaterial = try(key_provider.loadForPath(path, metadata.databaseId))
+    if keyMaterial is void then file_api.close(file); return fail(CORRUPT_DATA, "openReadOnly", "encrypted file has no database key envelope") end if
+    encryptionKey = bytes(keyMaterial.key)
+    key_provider.closeDatabaseKey(keyMaterial)
+  end if
   return PagedFile(
     path,
     file,
@@ -345,6 +390,7 @@ function openReadOnly(path)
     metadata.generation,
     activeSlot,
     metadata.featureFlags,
+    encryptionKey,
     metadata.pageCount,
     false
   )
@@ -373,12 +419,20 @@ function openReadOnlyManaged(path)
   end if
   metadata = selected[0]
   activeSlot = selected[1]
-  requiredSize = committedSize(metadata.pageSize, metadata.pageCount)
+  requiredSize = committedSize(metadata.pageSize, metadata.pageCount, metadata.featureFlags)
   if actualSize != requiredSize then
     file_api.close(file)
     return fail(CORRUPT_DATA, "openReadOnlyManaged", "file size does not match committed page count")
   end if
 
+  keyMaterial = void
+  encryptionKey = void
+  if isEncryptedFlags(metadata.featureFlags) then
+    keyMaterial = try(key_provider.loadForPath(path, metadata.databaseId))
+    if keyMaterial is void then file_api.close(file); return fail(CORRUPT_DATA, "openReadOnlyManaged", "encrypted file has no database key envelope") end if
+    encryptionKey = bytes(keyMaterial.key)
+    key_provider.closeDatabaseKey(keyMaterial)
+  end if
   return PagedFile(
     path,
     file,
@@ -390,6 +444,7 @@ function openReadOnlyManaged(path)
     metadata.generation,
     activeSlot,
     metadata.featureFlags,
+    encryptionKey,
     metadata.pageCount,
     false
   )
@@ -412,6 +467,51 @@ function validatePageIdentity(pagedFile, pageBytes, expectedPageNumber, operatio
   return header
 end function
 
+// Binds every encrypted record to its immutable database/file/page identity.
+// Moving ciphertext between pages or files therefore fails GCM authentication.
+function pageAad(pagedFile, pageNumber)
+  output = bytes(48, 0)
+  copyBytes(output, 0, bytes("MiniSQL-PAGE-1"), 0, 14)
+  copyBytes(output, 16, pagedFile.databaseId, 0, 16)
+  endian.writeU64LE(output, 32, endian.uint64FromInt(pagedFile.fileId))
+  endian.writeU64LE(output, 40, endian.uint64FromInt(pageNumber))
+  return output
+end function
+
+// Encrypts one logical page into its nonce/ciphertext/tag record.
+function encodeStoredPage(pagedFile, pageNumber, plaintext)
+  if not isEncryptedFlags(pagedFile.featureFlags) then return plaintext end if
+  nonce = try(uuid.randomBytes(ENCRYPTION_NONCE_BYTES))
+  if typeof(nonce) == "error" then return nonce end if
+  aad = pageAad(pagedFile, pageNumber)
+  sealed = try(aes_gcm.seal(pagedFile.encryptionKey, nonce, plaintext, aad, ENCRYPTION_TAG_BYTES))
+  fillBytes(aad, 0, len(aad), 0)
+  if typeof(sealed) == "error" then fillBytes(nonce, 0, len(nonce), 0); return sealed end if
+  output = nonce + sealed
+  fillBytes(nonce, 0, len(nonce), 0)
+  fillBytes(sealed, 0, len(sealed), 0)
+  return output
+end function
+
+// Authenticates and decrypts one physical page record.
+function decodeStoredPage(pagedFile, pageNumber, stored)
+  if not isEncryptedFlags(pagedFile.featureFlags) then return stored end if
+  aad = pageAad(pagedFile, pageNumber)
+  plaintext = try(aes_gcm.open(pagedFile.encryptionKey, slice(stored, 0, ENCRYPTION_NONCE_BYTES), slice(stored, ENCRYPTION_NONCE_BYTES, len(stored) - ENCRYPTION_NONCE_BYTES), aad, ENCRYPTION_TAG_BYTES))
+  fillBytes(aad, 0, len(aad), 0)
+  if typeof(plaintext) == "error" then return fail(CORRUPT_DATA, "readPage", "encrypted page authentication failed") end if
+  return plaintext
+end function
+
+// Encodes and writes one logical page at its fixed physical offset.
+function storePage(pagedFile, pageNumber, plaintext)
+  stored = try(encodeStoredPage(pagedFile, pageNumber, plaintext))
+  if typeof(stored) == "error" then return stored end if
+  result = try(file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), stored, 0, len(stored)))
+  if isEncryptedFlags(pagedFile.featureFlags) then fillBytes(stored, 0, len(stored), 0) end if
+  return result
+end function
+
 // Reads the page.
 // Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function readPage(pagedFile, pageNumber)
@@ -423,8 +523,10 @@ function readPageWithContext(pagedFile, pageNumber, readContext)
   validateOpen(pagedFile, "readPage")
   validateNativeId(pageNumber, "readPage", "pageNumber")
   if pageNumber >= pagedFile.pageCount then return fail(INVALID_ARGUMENT, "readPage", "page number is outside the file") end if
-  output = bytes(pagedFile.pageSize, 0)
-  if readContext is void then file_api.readExactAt(pagedFile.file, pageOffset(pagedFile, pageNumber), output, 0, len(output)) else file_api.readExactAtWithContext(pagedFile.file, pageOffset(pagedFile, pageNumber), output, 0, len(output), readContext) end if
+  stored = bytes(physicalPageSize(pagedFile.pageSize, pagedFile.featureFlags), 0)
+  if readContext is void then file_api.readExactAt(pagedFile.file, pageOffset(pagedFile, pageNumber), stored, 0, len(stored)) else file_api.readExactAtWithContext(pagedFile.file, pageOffset(pagedFile, pageNumber), stored, 0, len(stored), readContext) end if
+  output = try(decodeStoredPage(pagedFile, pageNumber, stored))
+  if isEncryptedFlags(pagedFile.featureFlags) then fillBytes(stored, 0, len(stored), 0) end if
   validatePageIdentity(pagedFile, output, pageNumber, "readPage")
   return output
 end function
@@ -435,7 +537,7 @@ function appendPage(pagedFile, pageBytes)
   validateOpen(pagedFile, "appendPage")
   pageNumber = pagedFile.pageCount
   validatePageIdentity(pagedFile, pageBytes, pageNumber, "appendPage")
-  file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), pageBytes, 0, len(pageBytes))
+  storePage(pagedFile, pageNumber, pageBytes)
   // The page reaches stable storage before either metadata copy advertises it.
   file_api.flush(pagedFile.file)
   commitMetadata(pagedFile, pageNumber + 1)
@@ -453,6 +555,14 @@ function appendPages(pagedFile, pageImages)
   for index = 0 to len(pageImages) - 1
     validatePageIdentity(pagedFile, pageImages[index], firstPage + index, "appendPages")
   end for
+  if isEncryptedFlags(pagedFile.featureFlags) then
+    for index = 0 to len(pageImages) - 1
+      storePage(pagedFile, firstPage + index, pageImages[index])
+    end for
+    file_api.flush(pagedFile.file)
+    commitMetadata(pagedFile, firstPage + len(pageImages))
+    return firstPage
+  end if
   offset = 0
   while offset < len(pageImages)
     count = len(pageImages) - offset
@@ -487,7 +597,7 @@ function allocatePages(pagedFile, pageType, count)
   for offset = 0 to count - 1
     pageNumber = firstPage + offset
     pageBytes = page.create(pagedFile.pageSize, pageType, pagedFile.fileId, pageNumber)
-    file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), pageBytes, 0, len(pageBytes))
+    storePage(pagedFile, pageNumber, pageBytes)
   end for
   // All new pages become durable before either metadata copy advertises them.
   file_api.flush(pagedFile.file)
@@ -502,7 +612,7 @@ function writePage(pagedFile, pageNumber, pageBytes)
   validateNativeId(pageNumber, "writePage", "pageNumber")
   if pageNumber >= pagedFile.pageCount then return fail(INVALID_ARGUMENT, "writePage", "page number is outside the file") end if
   validatePageIdentity(pagedFile, pageBytes, pageNumber, "writePage")
-  file_api.writeAt(pagedFile.file, pageOffset(pagedFile, pageNumber), pageBytes, 0, len(pageBytes))
+  storePage(pagedFile, pageNumber, pageBytes)
   return true
 end function
 
@@ -514,6 +624,13 @@ function writeContiguousPages(pagedFile, firstPageNumber, pageImages)
   validateNativeId(firstPageNumber, "writeContiguousPages", "firstPageNumber")
   if typeof(pageImages) != "array" or len(pageImages) == 0 or len(pageImages) > 1024 then return fail(INVALID_ARGUMENT, "writeContiguousPages", "pageImages must contain 1..1024 pages") end if
   if firstPageNumber >= pagedFile.pageCount or len(pageImages) > pagedFile.pageCount - firstPageNumber then return fail(INVALID_ARGUMENT, "writeContiguousPages", "page range is outside the file") end if
+  if isEncryptedFlags(pagedFile.featureFlags) then
+    for index = 0 to len(pageImages) - 1
+      validatePageIdentity(pagedFile, pageImages[index], firstPageNumber + index, "writeContiguousPages")
+      storePage(pagedFile, firstPageNumber + index, pageImages[index])
+    end for
+    return len(pageImages)
+  end if
   output = bytes(len(pageImages) * pagedFile.pageSize, 0)
   for index = 0 to len(pageImages) - 1
     validatePageIdentity(pagedFile, pageImages[index], firstPageNumber + index, "writeContiguousPages")
@@ -541,7 +658,7 @@ function truncatePages(pagedFile, newPageCount)
   if newPageCount == pagedFile.pageCount then return true end if
   file_api.flush(pagedFile.file)
   commitMetadata(pagedFile, newPageCount)
-  file_api.truncate(pagedFile.file, committedSize(pagedFile.pageSize, newPageCount))
+  file_api.truncate(pagedFile.file, committedSize(pagedFile.pageSize, newPageCount, pagedFile.featureFlags))
   file_api.flush(pagedFile.file)
   return true
 end function
@@ -552,6 +669,7 @@ function close(pagedFile)
   validateOpen(pagedFile, "close")
   file_api.flush(pagedFile.file)
   file_api.close(pagedFile.file)
+  if typeof(pagedFile.encryptionKey) == "bytes" then fillBytes(pagedFile.encryptionKey, 0, len(pagedFile.encryptionKey), 0) end if
   pagedFile.closed = true
   return true
 end function
@@ -578,6 +696,30 @@ function snapshotDurableBytes(pagedFile, maxBytes)
     file_api.readExactAt(pagedFile.file, 0, output, 0, length)
   end if
   return output
+end function
+
+// Converts one closed plaintext paged file to the encrypted physical stride.
+// The original is replaced only after the complete encrypted copy is durable.
+function encryptExisting(path)
+  source = try(open(path))
+  if typeof(source) == "error" then return source end if
+  if isEncryptedFlags(source.featureFlags) then close(source); return true end if
+  temporary = path + ".tde-new"
+  if file_api.fileExists(temporary) then file_api.deletePath(temporary) end if
+  target = try(create(temporary, source.pageSize, source.fileType, source.fileId, source.databaseId))
+  if typeof(target) == "error" then close(source); return target end if
+  if not isEncryptedFlags(target.featureFlags) then close(target); close(source); return fail(INVALID_ARGUMENT, "encryptExisting", "database key envelope is not active") end if
+  for pageNumber = 0 to source.pageCount - 1
+    image = try(readPage(source, pageNumber))
+    if typeof(image) == "error" then close(target); close(source); return image end if
+    appended = try(appendPage(target, image))
+    if typeof(appended) == "error" then close(target); close(source); return appended end if
+  end for
+  targetClosed = try(close(target))
+  sourceClosed = try(close(source))
+  if typeof(targetClosed) == "error" then return targetClosed end if
+  if typeof(sourceClosed) == "error" then return sourceClosed end if
+  return file_api.movePath(temporary, path, true)
 end function
 
 // Returns the stable diagnostic name of this component.

@@ -1315,7 +1315,7 @@ end function
 function authenticationMaterial(database, name)
   validateOpen(database, "authenticationMaterial")
   principal = findPrincipal(database, name)
-  if principal is void or principal.principalKind != metadata.PRINCIPAL_USER or not principal.enabled or not principal.canLogin or len(principal.salt) != 16 or len(principal.verifier) != 32 then return void end if
+  if principal is void or principal.principalKind != metadata.PRINCIPAL_USER or not principal.enabled or not principal.canLogin or len(principal.salt) != 16 or (len(principal.verifier) != 32 and len(principal.verifier) != 64) then return void end if
   return principal
 end function
 

@@ -486,6 +486,18 @@
       "package": "minisql.admin.win32_client",
       "component": "admin.win32_client",
       "targetMilestone": "M74"
+    },
+    {
+      "path": "src/minisql/security/key_provider.ml",
+      "package": "minisql.security.key_provider",
+      "component": "security.key_provider",
+      "targetMilestone": "M79"
+    },
+    {
+      "path": "src/minisql/tools/encryption.ml",
+      "package": "minisql.tools.encryption",
+      "component": "tools.encryption",
+      "targetMilestone": "M79"
     }
   ]
 }

@@ -24,7 +24,8 @@ function clientProof(password, username, challenge)
   secret = uuid.validatePassword(password, "m21AuthTest")
   verifier = uuid.deriveKey(secret, challenge[1], challenge[0], uuid.PASSWORD_VERIFIER_BYTES)
   fillBytes(secret, 0, len(secret), 0)
-  proof = uuid.authProof(verifier, challenge[2], username, "client")
+  proof = void
+  if challenge[3] == uuid.AUTH_SCHEME_SCRAM_SHA256 then proof = uuid.scramClientProof(verifier, challenge[2], username) else proof = uuid.authProof(verifier, challenge[2], username, "client") end if
   return [verifier, proof]
 end function
 
@@ -78,8 +79,10 @@ function main(args)
   verifier = auth[1]
   challenge = auth[2]
   testkit.equal(state, authReply.messageType, constants.TYPE_AUTH_OK, "valid proof accepted")
-  expectedServerProof = uuid.authProof(verifier, challenge[2], "alice", "server")
+  expectedServerProof = void
+  if challenge[3] == uuid.AUTH_SCHEME_SCRAM_SHA256 then expectedServerProof = uuid.scramServerProofFromPassword(verifier, challenge[2], "alice") else expectedServerProof = uuid.authProof(verifier, challenge[2], "alice", "server") end if
   testkit.record(state, uuid.constantTimeEquals(expectedServerProof, authReply.payload), "server proves verifier possession")
+  testkit.equal(state, challenge[3], uuid.AUTH_SCHEME_SCRAM_SHA256, "new accounts negotiate hardened authentication")
   fillBytes(expectedServerProof, 0, len(expectedServerProof), 0)
   fillBytes(verifier, 0, len(verifier), 0)
   fillBytes(challenge[1], 0, len(challenge[1]), 0)

@@ -154,7 +154,8 @@ final class MiniSqlProtocol implements AutoCloseable {
         int beginId = nextId();
         write(new Message(TYPE_AUTH_BEGIN, 0, beginId, begin.array()));
         Message challengeMessage = readExpected(beginId);
-        if (challengeMessage.type != TYPE_AUTH_CHALLENGE || challengeMessage.payload.length != 52) {
+        if (challengeMessage.type != TYPE_AUTH_CHALLENGE
+                || (challengeMessage.payload.length != 52 && challengeMessage.payload.length != 56)) {
             throw connectionError("MiniSQL authentication challenge was rejected", null);
         }
         ByteBuffer challenge = wrap(challengeMessage.payload);
@@ -162,19 +163,37 @@ final class MiniSqlProtocol implements AutoCloseable {
         if (iterations < 10_000 || iterations > 5_000_000) throw connectionError("Invalid authentication work factor", null);
         byte[] salt = new byte[16], nonce = new byte[32];
         challenge.get(salt).get(nonce);
+        int scheme = challengeMessage.payload.length == 52 ? 1 : Short.toUnsignedInt(challenge.getShort());
+        if (scheme != 1 && scheme != 2 || challengeMessage.payload.length == 56 && challenge.getShort() != 0) {
+            throw connectionError("Invalid MiniSQL authentication scheme", null);
+        }
         byte[] verifier = pbkdf2(password.getBytes(StandardCharsets.UTF_8), salt, iterations, 32);
-        byte[] clientProof = authValue(verifier, nonce, user, "client", "MiniSQL-AUTH-1|");
+        byte[] clientProof, expectedServer, sessionSecret = verifier;
+        if (scheme == 2) {
+            byte[] transcript = concat("MiniSQL-AUTH-2|".getBytes(StandardCharsets.UTF_8), userBytes,
+                    new byte[] { '|' }, nonce);
+            byte[] clientKey = hmac(verifier, "MiniSQL Client Key".getBytes(StandardCharsets.UTF_8));
+            byte[] storedKey = MessageDigest.getInstance("SHA-256").digest(clientKey);
+            byte[] serverKey = hmac(verifier, "MiniSQL Server Key".getBytes(StandardCharsets.UTF_8));
+            byte[] signature = hmac(storedKey, transcript);
+            clientProof = xor(clientKey, signature);
+            expectedServer = hmac(serverKey, transcript);
+            sessionSecret = hmac(serverKey, concat("MiniSQL-SESSION-2|".getBytes(StandardCharsets.UTF_8), transcript, storedKey));
+            wipe(transcript, clientKey, storedKey, serverKey, signature);
+        } else {
+            clientProof = authValue(verifier, nonce, user, "client", "MiniSQL-AUTH-1|");
+            expectedServer = authValue(verifier, nonce, user, "server", "MiniSQL-AUTH-1|");
+        }
         int proofId = nextId();
         write(new Message(TYPE_AUTH_PROOF, 0, proofId, clientProof));
         Message ok = readExpected(proofId);
-        byte[] expectedServer = authValue(verifier, nonce, user, "server", "MiniSQL-AUTH-1|");
         if (ok.type != TYPE_AUTH_OK || ok.payload.length != 32 || !MessageDigest.isEqual(expectedServer, ok.payload)) {
-            wipe(verifier, clientProof, expectedServer, salt, nonce);
+            wipe(verifier, clientProof, expectedServer, sessionSecret, salt, nonce);
             throw connectionError("MiniSQL authentication failed", null);
         }
-        sendKey = authValue(verifier, nonce, user, "client-to-server", "MiniSQL-TRANSPORT-1|");
-        receiveKey = authValue(verifier, nonce, user, "server-to-client", "MiniSQL-TRANSPORT-1|");
-        wipe(verifier, clientProof, expectedServer, salt, nonce);
+        sendKey = authValue(sessionSecret, nonce, user, "client-to-server", "MiniSQL-TRANSPORT-1|");
+        receiveKey = authValue(sessionSecret, nonce, user, "server-to-client", "MiniSQL-TRANSPORT-1|");
+        wipe(verifier, clientProof, expectedServer, sessionSecret, salt, nonce);
         secure = true;
     }
 
@@ -380,6 +399,33 @@ final class MiniSqlProtocol implements AutoCloseable {
         System.arraycopy(nonce, 0, salt, context.length, nonce.length);
         byte[] result = pbkdf2(verifier, salt, 1, 32);
         wipe(salt);
+        return result;
+    }
+
+    /** Computes HMAC-SHA-256 without provider-specific password conversions. */
+    private static byte[] hmac(byte[] key, byte[] message) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(key, "HmacSHA256"));
+        return mac.doFinal(message);
+    }
+
+    /** Concatenates transcript fragments while keeping the authentication code readable. */
+    private static byte[] concat(byte[]... values) {
+        int length = 0;
+        for (byte[] value : values) length += value.length;
+        byte[] result = new byte[length];
+        int offset = 0;
+        for (byte[] value : values) {
+            System.arraycopy(value, 0, result, offset, value.length);
+            offset += value.length;
+        }
+        return result;
+    }
+
+    /** XORs equal-sized SCRAM values to create the client proof. */
+    private static byte[] xor(byte[] left, byte[] right) {
+        byte[] result = new byte[left.length];
+        for (int index = 0; index < result.length; index++) result[index] = (byte) (left[index] ^ right[index]);
         return result;
     }
 

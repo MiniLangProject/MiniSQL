@@ -5,9 +5,12 @@ package minisql.transaction.wal
 
 import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
+import minisql.common.uuid as uuid
 import minisql.platform.file as file_api
+import minisql.security.key_provider as key_provider
 import minisql.storage.page as page
 import std.ds.list as list
+import std.crypto.aes_gcm as aes_gcm
 
 // Write-ahead log format v1. Records are append-only, length-prefixed and
 // independently protected by header and payload CRC-32C values. The current
@@ -28,6 +31,11 @@ const PAYLOAD_CHECKSUM_OFFSET = 64
 const HEADER_CHECKSUM_OFFSET = 68
 const MAX_RECORD_SIZE = 67108864
 const APPEND_BATCH_BYTES = 4194304
+// The formerly reserved final U64 identifies an encrypted payload without
+// consuming caller-owned record flag bits. Existing v1 records always stored
+// zero here, so the marker is both backward compatible and unambiguous.
+const ENCRYPTION_MARKER_LOW = 0x31454454
+const ENCRYPTION_MARKER_HIGH = 0x314C4157
 
 // M48 durable-export marker. The WAL itself remains format v1. The sidecar
 // marker records only the prefix known to have completed FlushFileBuffers.
@@ -62,6 +70,9 @@ struct WalRecord
   pageLsn
   // Payload field of the wal record.
   payload
+  // True only while the encoded payload contains nonce, ciphertext and tag.
+  // Decoders clear this implementation field before returning a logical record.
+  encryptedPayload
 end struct
 
 // Defines the wal scan record used by this module.
@@ -94,6 +105,8 @@ struct WalWriter
   lastFlushedLsn
   // Record count field of the wal writer.
   recordCount
+  // Database TDE key, or void for a plaintext database.
+  encryptionKey
   // Fail next write field of the wal writer.
   failNextWrite
   // Fail next flush field of the wal writer.
@@ -271,7 +284,7 @@ function createRecord(recordType, flags, transactionId, fileId, pageNumber, payl
   else
     if fileId != 0 or pageNumber != 0 then return fail(INVALID_ARGUMENT, "createRecord", "non-page record must use zero file/page IDs") end if
   end if
-  return WalRecord(recordType, flags, 0, HEADER_SIZE + len(payload), transactionId, fileId, pageNumber, 0, bytes(payload))
+  return WalRecord(recordType, flags, 0, HEADER_SIZE + len(payload), transactionId, fileId, pageNumber, 0, bytes(payload), false)
 end function
 
 // Validates the record.
@@ -286,6 +299,7 @@ function validateRecord(record, operation)
   validateNative(record.pageNumber, operation, "pageNumber")
   validateNative(record.pageLsn, operation, "pageLsn")
   if typeof(record.payload) != "bytes" then return fail(INVALID_ARGUMENT, operation, "payload must be bytes") end if
+  if typeof(record.encryptedPayload) != "bool" then return fail(INVALID_ARGUMENT, operation, "encryptedPayload must be bool") end if
   if record.totalLength != HEADER_SIZE + len(record.payload) then return fail(INVALID_ARGUMENT, operation, "totalLength mismatch") end if
   if record.totalLength > MAX_RECORD_SIZE then return fail(INVALID_ARGUMENT, operation, "record exceeds safety limit") end if
   return true
@@ -310,7 +324,9 @@ function encode(record)
   endian.writeU64LE(output, 56, endian.uint64FromInt(record.pageLsn))
   endian.writeU32LE(output, PAYLOAD_CHECKSUM_OFFSET, crc32c.compute(record.payload))
   endian.writeU32LE(output, HEADER_CHECKSUM_OFFSET, 0)
-  endian.writeU64LE(output, 72, endian.makeUInt64(0, 0))
+  marker = endian.makeUInt64(0, 0)
+  if record.encryptedPayload then marker = endian.makeUInt64(ENCRYPTION_MARKER_HIGH, ENCRYPTION_MARKER_LOW) end if
+  endian.writeU64LE(output, 72, marker)
   headerChecksum = crc32c.computeRange(output, 0, HEADER_SIZE)
   endian.writeU32LE(output, HEADER_CHECKSUM_OFFSET, headerChecksum)
   if len(record.payload) > 0 then copyExact(output, HEADER_SIZE, record.payload, 0, len(record.payload)) end if
@@ -319,7 +335,35 @@ end function
 
 // Decodes the record.
 // Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function decodeRecord(source)
+function walAad(record)
+  output = bytes(56, 0)
+  copyBytes(output, 0, bytes("MiniSQL-WAL-1"), 0, 13)
+  endian.writeU16LE(output, 16, record.recordType)
+  endian.writeU64LE(output, 24, endian.uint64FromInt(record.lsn))
+  endian.writeU64LE(output, 32, endian.uint64FromInt(record.transactionId))
+  endian.writeU64LE(output, 40, endian.uint64FromInt(record.fileId))
+  endian.writeU64LE(output, 48, endian.uint64FromInt(record.pageNumber))
+  return output
+end function
+
+// Encrypts a logical WAL payload after its final LSN is assigned.
+function protectRecord(record, encryptionKey)
+  if typeof(encryptionKey) != "bytes" then return record end if
+  nonce = try(uuid.randomBytes(12))
+  if typeof(nonce) == "error" then return nonce end if
+  aad = walAad(record)
+  sealed = try(aes_gcm.seal(encryptionKey, nonce, record.payload, aad, 16))
+  uuid.wipeSecret(aad)
+  if typeof(sealed) == "error" then uuid.wipeSecret(nonce); return sealed end if
+  protectedPayload = nonce + sealed
+  protected = WalRecord(record.recordType, record.flags, record.lsn, HEADER_SIZE + len(protectedPayload), record.transactionId, record.fileId, record.pageNumber, record.pageLsn, protectedPayload, true)
+  uuid.wipeSecret(nonce)
+  uuid.wipeSecret(sealed)
+  return protected
+end function
+
+// Decodes one plaintext or encrypted WAL record with an optional DEK.
+function decodeRecordWithKey(source, encryptionKey)
   if typeof(source) != "bytes" or len(source) < HEADER_SIZE then return fail(CORRUPT_DATA, "decode", "record is shorter than header") end if
   if len(source) > MAX_RECORD_SIZE then return fail(CORRUPT_DATA, "decode", "record exceeds safety limit") end if
   if not bytesEqual(slice(source, 0, MAGIC_SIZE), magicBytes()) then return fail(UNSUPPORTED_FORMAT, "decode", "record magic mismatch") end if
@@ -330,7 +374,8 @@ function decodeRecord(source)
   payloadLength = endian.readU32LE(source, 20)
   if totalLength != len(source) or totalLength != HEADER_SIZE + payloadLength then return fail(CORRUPT_DATA, "decode", "record length mismatch") end if
   reserved = endian.readU64LE(source, 72)
-  if reserved.high != 0 or reserved.low != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "reserved field is non-zero") end if
+  encryptedPayload = reserved.high == ENCRYPTION_MARKER_HIGH and reserved.low == ENCRYPTION_MARKER_LOW
+  if not encryptedPayload and (reserved.high != 0 or reserved.low != 0) then return fail(UNSUPPORTED_FORMAT, "decode", "reserved field is unsupported") end if
   storedHeader = endian.readU32LE(source, HEADER_CHECKSUM_OFFSET)
   headerCopy = slice(source, 0, HEADER_SIZE)
   endian.writeU32LE(headerCopy, HEADER_CHECKSUM_OFFSET, 0)
@@ -347,8 +392,20 @@ function decodeRecord(source)
     decodeNative(endian.readU64LE(source, 40), "decode", "fileId"),
     decodeNative(endian.readU64LE(source, 48), "decode", "pageNumber"),
     decodeNative(endian.readU64LE(source, 56), "decode", "pageLsn"),
-    payload
+    payload,
+    encryptedPayload
   )
+  if record.encryptedPayload then
+    if typeof(encryptionKey) != "bytes" or len(encryptionKey) != 32 or len(record.payload) < 28 then return fail(CORRUPT_DATA, "decode", "encrypted WAL record has no valid database key") end if
+    aad = walAad(record)
+    plaintext = try(aes_gcm.open(encryptionKey, slice(record.payload, 0, 12), slice(record.payload, 12, len(record.payload) - 12), aad, 16))
+    uuid.wipeSecret(aad)
+    if typeof(plaintext) == "error" then return fail(CORRUPT_DATA, "decode", "encrypted WAL authentication failed") end if
+    uuid.wipeSecret(record.payload)
+    record.payload = plaintext
+    record.totalLength = HEADER_SIZE + len(record.payload)
+    record.encryptedPayload = false
+  end if
   validateRecord(record, "decode")
   if record.recordType == RECORD_PAGE_IMAGE then
     header = page.verify(record.payload)
@@ -356,6 +413,11 @@ function decodeRecord(source)
     if page.compareLsn(header.pageLsn, endian.uint64FromInt(record.pageLsn)) != 0 then return fail(CORRUPT_DATA, "decode", "PAGE_IMAGE pageLSN mismatch") end if
   end if
   return record
+end function
+
+// Decodes a compatibility plaintext WAL record.
+function decodeRecord(source)
+  return decodeRecordWithKey(source, void)
 end function
 
 // Public compatibility wrapper. Qualified calls such as wal.decode(...) resolve
@@ -369,7 +431,7 @@ end function
 
 // Scans the file.
 // Inputs: `file`. Returns the produced value or propagates a structured error from validation or delegated operations.
-function scanFile(file)
+function scanFile(file, encryptionKey)
   file_api.validateOpen(file, "wal.scanFile")
   length = file_api.size(file)
   offset = 0
@@ -387,7 +449,7 @@ function scanFile(file)
     if totalLength > remaining then truncated = true; break end if
     encoded = bytes(totalLength, 0)
     file_api.readExactAt(file, offset, encoded, 0, totalLength)
-    record = decodeRecord(encoded)
+    record = decodeRecordWithKey(encoded, encryptionKey)
     if record.lsn != offset then return fail(CORRUPT_DATA, "scanFile", "record LSN differs from file offset") end if
     records.add(record)
     offset = offset + totalLength
@@ -398,6 +460,21 @@ end function
 // Scans the snapshot.
 // Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function scanSnapshot(source)
+  return scanSnapshotWithKey(source, void)
+end function
+
+// Scans a WAL snapshot using the database key resolved from its path.
+function scanSnapshotForPath(source, walPath)
+  material = try(key_provider.loadForPath(walPath, void))
+  encryptionKey = void
+  if material is not void then encryptionKey = bytes(material.key); key_provider.closeDatabaseKey(material) end if
+  result = try(scanSnapshotWithKey(source, encryptionKey))
+  if typeof(encryptionKey) == "bytes" then uuid.wipeSecret(encryptionKey) end if
+  return result
+end function
+
+// Scans a bounded snapshot containing plaintext or encrypted records.
+function scanSnapshotWithKey(source, encryptionKey)
   if typeof(source) != "bytes" then return fail(INVALID_ARGUMENT, "scanSnapshot", "source must be bytes") end if
   offset = 0
   records = list.List.new()
@@ -409,7 +486,7 @@ function scanSnapshot(source)
     if not bytesEqual(slice(header, 0, MAGIC_SIZE), magicBytes()) then truncated = true; break end if
     totalLength = endian.readU32LE(header, 16)
     if totalLength < HEADER_SIZE or totalLength > MAX_RECORD_SIZE or totalLength > remaining then truncated = true; break end if
-    decoded = try(decodeRecord(slice(source, offset, totalLength)))
+    decoded = try(decodeRecordWithKey(slice(source, offset, totalLength), encryptionKey))
     if typeof(decoded) == "error" then
       if offset + totalLength == len(source) then truncated = true; break end if
       return decoded
@@ -437,7 +514,10 @@ function create(path, segmentBytes)
   validateSegmentBytes(segmentBytes, "create")
   file = file_api.createNewDurable(path)
   ignoredMarker = try(writeDurableMarker(path, 0))
-  return WalWriter(path, file, segmentBytes, 0, 0, 0, false, false, false)
+  material = try(key_provider.loadForPath(path, void))
+  encryptionKey = void
+  if material is not void then encryptionKey = bytes(material.key); key_provider.closeDatabaseKey(material) end if
+  return WalWriter(path, file, segmentBytes, 0, 0, 0, encryptionKey, false, false, false)
 end function
 
 // Opens the requested value.
@@ -446,7 +526,10 @@ function open(path, segmentBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   validateSegmentBytes(segmentBytes, "open")
   file = file_api.openReadWrite(path, false)
-  scanned = try(scanFile(file))
+  material = try(key_provider.loadForPath(path, void))
+  encryptionKey = void
+  if material is not void then encryptionKey = bytes(material.key); key_provider.closeDatabaseKey(material) end if
+  scanned = try(scanFile(file, encryptionKey))
   if typeof(scanned) == "error" then file_api.close(file); return scanned end if
   if scanned.truncatedTail then
     file_api.truncate(file, scanned.validBytes)
@@ -457,7 +540,7 @@ function open(path, segmentBytes)
   // databases alike. Marker failure may delay replication but must not make an
   // already durable database unavailable.
   ignoredMarker = try(writeDurableMarker(path, scanned.validBytes))
-  return WalWriter(path, file, segmentBytes, scanned.validBytes, scanned.validBytes, len(scanned.records), false, false, false)
+  return WalWriter(path, file, segmentBytes, scanned.validBytes, scanned.validBytes, len(scanned.records), encryptionKey, false, false, false)
 end function
 
 // Validates the open.
@@ -504,7 +587,9 @@ function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumb
     record.pageLsn = record.lsn
     record.totalLength = HEADER_SIZE + len(image)
   end if
-  encoded = encode(record)
+  protected = try(protectRecord(record, writer.encryptionKey))
+  if typeof(protected) == "error" then return protected end if
+  encoded = encode(protected)
   file_api.append(writer.file, encoded, 0, len(encoded))
   writer.nextLsn = writer.nextLsn + len(encoded)
   writer.recordCount = writer.recordCount + 1
@@ -512,7 +597,7 @@ function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumb
 end function
 
 // Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
-function encodeRecordAt(record, lsn)
+function encodeRecordAt(writer, record, lsn)
   record.lsn = lsn
   if record.recordType == RECORD_PAGE_IMAGE then
     image = bytes(record.payload)
@@ -523,7 +608,9 @@ function encodeRecordAt(record, lsn)
     record.pageLsn = record.lsn
     record.totalLength = HEADER_SIZE + len(image)
   end if
-  return encode(record)
+  protected = try(protectRecord(record, writer.encryptionKey))
+  if typeof(protected) == "error" then return protected end if
+  return encode(protected)
 end function
 
 // Flushes the occupied prefix of a bounded append batch.
@@ -539,7 +626,7 @@ end function
 // Adds one record to the bounded batch, flushing or directly appending records
 // larger than the staging buffer. At most APPEND_BATCH_BYTES are duplicated.
 function appendBatchRecord(batch, record)
-  encoded = encodeRecordAt(record, batch.nextLsn)
+  encoded = try(encodeRecordAt(batch.writer, record, batch.nextLsn))
   if len(encoded) > len(batch.buffer) then
     flushAppendBatch(batch)
     written = try(file_api.append(batch.writer.file, encoded, 0, len(encoded)))
@@ -630,14 +717,14 @@ end function
 function scan(writer, repairTail)
   validateOpen(writer, "scan")
   if typeof(repairTail) != "bool" then return fail(INVALID_ARGUMENT, "scan", "repairTail must be bool") end if
-  result = scanFile(writer.file)
+  result = scanFile(writer.file, writer.encryptionKey)
   if repairTail and result.truncatedTail then
     file_api.truncate(writer.file, result.validBytes)
     file_api.flush(writer.file)
     ignoredMarker = try(writeDurableMarker(writer.path, result.validBytes))
     writer.nextLsn = result.validBytes
     writer.lastFlushedLsn = result.validBytes
-    result = scanFile(writer.file)
+    result = scanFile(writer.file, writer.encryptionKey)
   end if
   return result
 end function
@@ -670,7 +757,7 @@ function rewind(writer, lsn)
   ignoredMarker = try(writeDurableMarker(writer.path, lsn))
   writer.nextLsn = lsn
   if writer.lastFlushedLsn > lsn then writer.lastFlushedLsn = lsn end if
-  scanned = scanFile(writer.file)
+  scanned = scanFile(writer.file, writer.encryptionKey)
   writer.recordCount = len(scanned.records)
   return true
 end function
@@ -697,6 +784,7 @@ function close(writer)
   validateOpen(writer, "close")
   flush(writer)
   file_api.close(writer.file)
+  if typeof(writer.encryptionKey) == "bytes" then uuid.wipeSecret(writer.encryptionKey) end if
   writer.closed = true
   return true
 end function

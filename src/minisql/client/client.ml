@@ -192,25 +192,39 @@ function openAuthenticatedConnection(connectionValue, username, passwordBytes, o
   verifier = try(uuid.deriveKey(secret, challenge[1], challenge[0], uuid.PASSWORD_VERIFIER_BYTES))
   uuid.wipeSecret(secret)
   if typeof(verifier) == "error" then clearAuthChallenge(challenge); return closeFailedOpen(client, verifier) end if
-  proof = try(uuid.authProof(verifier, challenge[2], username, "client"))
+  scheme = challenge[3]
+  proof = void
+  expectedServerProof = void
+  sessionSecret = bytes(verifier)
+  if scheme == uuid.AUTH_SCHEME_SCRAM_SHA256 then
+    proof = try(uuid.scramClientProof(verifier, challenge[2], username))
+    if typeof(proof) != "error" then expectedServerProof = try(uuid.scramServerProofFromPassword(verifier, challenge[2], username)) end if
+    if typeof(expectedServerProof) != "error" then sessionSecret = try(uuid.scramSessionSecretFromPassword(verifier, challenge[2], username)) end if
+  else
+    proof = try(uuid.authProof(verifier, challenge[2], username, "client"))
+    if typeof(proof) != "error" then expectedServerProof = try(uuid.authProof(verifier, challenge[2], username, "server")) end if
+  end if
   if typeof(proof) == "error" then uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, proof) end if
+  if typeof(expectedServerProof) == "error" then uuid.wipeSecret(proof); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, expectedServerProof) end if
+  if typeof(sessionSecret) == "error" then uuid.wipeSecret(proof); uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, sessionSecret) end if
 
   proofMessage = try(messages.authProof(client.nextRequestId, proof))
-  if typeof(proofMessage) == "error" then uuid.wipeSecret(proof); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, proofMessage) end if
+  if typeof(proofMessage) == "error" then uuid.wipeSecret(proof); uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(sessionSecret); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, proofMessage) end if
   authenticationMessage = try(request(client, proofMessage))
   uuid.wipeSecret(proofMessage.payload)
   uuid.wipeSecret(proof)
-  if typeof(authenticationMessage) == "error" then uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, authenticationMessage) end if
+  if typeof(authenticationMessage) == "error" then uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(sessionSecret); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, authenticationMessage) end if
   if authenticationMessage.messageType != constants.TYPE_AUTH_OK or typeof(authenticationMessage.payload) != "bytes" or len(authenticationMessage.payload) != uuid.PASSWORD_VERIFIER_BYTES then
+    uuid.wipeSecret(expectedServerProof)
+    uuid.wipeSecret(sessionSecret)
     uuid.wipeSecret(verifier)
     clearAuthChallenge(challenge)
     return closeFailedOpen(client, authenticationFailure(operation))
   end if
-  expectedServerProof = try(uuid.authProof(verifier, challenge[2], username, "server"))
-  if typeof(expectedServerProof) == "error" then uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, expectedServerProof) end if
-  sendKey = try(uuid.transportKey(verifier, challenge[2], username, "client-to-server"))
-  if typeof(sendKey) == "error" then uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, sendKey) end if
-  receiveKey = try(uuid.transportKey(verifier, challenge[2], username, "server-to-client"))
+  sendKey = try(uuid.transportKey(sessionSecret, challenge[2], username, "client-to-server"))
+  if typeof(sendKey) == "error" then uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(sessionSecret); uuid.wipeSecret(verifier); clearAuthChallenge(challenge); return closeFailedOpen(client, sendKey) end if
+  receiveKey = try(uuid.transportKey(sessionSecret, challenge[2], username, "server-to-client"))
+  uuid.wipeSecret(sessionSecret)
   uuid.wipeSecret(verifier)
   if typeof(receiveKey) == "error" then uuid.wipeSecret(expectedServerProof); uuid.wipeSecret(sendKey); clearAuthChallenge(challenge); return closeFailedOpen(client, receiveKey) end if
   proofValid = uuid.constantTimeEquals(expectedServerProof, authenticationMessage.payload)

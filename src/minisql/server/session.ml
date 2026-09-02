@@ -260,7 +260,9 @@ end function
 function fakeAuthenticationMaterial(session, username)
   seed = session.engine.database.catalogHandle.metadata.databaseId
   salt = uuid.deriveKey(seed, bytes("MiniSQL-FAKE-SALT-1|" + username), 1, uuid.PASSWORD_SALT_BYTES)
-  verifier = uuid.deriveKey(seed, bytes("MiniSQL-FAKE-VERIFIER-1|" + username), 1, uuid.PASSWORD_VERIFIER_BYTES)
+  saltedPassword = uuid.deriveKey(seed, bytes("MiniSQL-FAKE-VERIFIER-1|" + username), 1, uuid.PASSWORD_VERIFIER_BYTES)
+  verifier = uuid.scramCredential(saltedPassword)
+  uuid.wipeSecret(saltedPassword)
   return [uuid.DEFAULT_PBKDF2_ITERATIONS, salt, verifier]
 end function
 
@@ -304,7 +306,9 @@ function handleAuthBegin(session, request)
   session.pendingPrincipalId = principalId
   session.pendingNonce = bytes(nonce)
   session.pendingVerifier = bytes(verifier)
-  response = try(messages.authChallenge(request.requestId, iterations, salt, nonce))
+  scheme = try(uuid.authenticationScheme(verifier))
+  if typeof(scheme) == "error" then fillBytes(salt, 0, len(salt), 0); fillBytes(verifier, 0, len(verifier), 0); fillBytes(nonce, 0, len(nonce), 0); clearPending(session); return authenticationError(request) end if
+  response = try(messages.authChallenge(request.requestId, iterations, salt, nonce, scheme))
   fillBytes(salt, 0, len(salt), 0)
   fillBytes(verifier, 0, len(verifier), 0)
   fillBytes(nonce, 0, len(nonce), 0)
@@ -319,22 +323,38 @@ end function
 function handleAuthProof(session, request)
   if not session.secure or session.authenticated or session.pendingUsername is void then return authenticationError(request) end if
   if typeof(request.payload) != "bytes" or len(request.payload) != uuid.PASSWORD_VERIFIER_BYTES then clearPending(session); return authenticationError(request) end if
-  expected = try(uuid.authProof(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "client"))
-  if typeof(expected) == "error" then clearPending(session); return authenticationError(request) end if
-  proofValid = uuid.constantTimeEquals(expected, request.payload)
-  fillBytes(expected, 0, len(expected), 0)
+  scheme = try(uuid.authenticationScheme(session.pendingVerifier))
+  if typeof(scheme) == "error" then clearPending(session); return authenticationError(request) end if
+  proofValid = false
+  if scheme == uuid.AUTH_SCHEME_SCRAM_SHA256 then
+    proofValid = try(uuid.verifyScramClientProof(session.pendingVerifier, session.pendingNonce, session.pendingUsername, request.payload))
+  else
+    expected = try(uuid.authProof(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "client"))
+    if typeof(expected) == "error" then clearPending(session); return authenticationError(request) end if
+    proofValid = uuid.constantTimeEquals(expected, request.payload)
+    fillBytes(expected, 0, len(expected), 0)
+  end if
   fillBytes(request.payload, 0, len(request.payload), 0)
   connectAllowed = false
   if session.pendingPrincipalId > 0 then
     connectAllowed = catalog.isSuperuser(session.engine.database.catalogHandle, session.pendingPrincipalId) or catalog.hasPrivilege(session.engine.database.catalogHandle, session.pendingPrincipalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CONNECT, false)
   end if
   if proofValid and connectAllowed then
-    sendKey = try(uuid.transportKey(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "server-to-client"))
-    if typeof(sendKey) == "error" then clearPending(session); return authenticationError(request) end if
-    receiveKey = try(uuid.transportKey(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "client-to-server"))
-    if typeof(receiveKey) == "error" then uuid.wipeSecret(sendKey); clearPending(session); return authenticationError(request) end if
-    serverProof = try(uuid.authProof(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "server"))
-    if typeof(serverProof) == "error" then uuid.wipeSecret(sendKey); uuid.wipeSecret(receiveKey); clearPending(session); return authenticationError(request) end if
+    sessionSecret = bytes(session.pendingVerifier)
+    serverProof = void
+    if scheme == uuid.AUTH_SCHEME_SCRAM_SHA256 then
+      sessionSecret = try(uuid.scramSessionSecretFromCredential(session.pendingVerifier, session.pendingNonce, session.pendingUsername))
+      if typeof(sessionSecret) == "error" then clearPending(session); return authenticationError(request) end if
+      serverProof = try(uuid.scramServerProofFromCredential(session.pendingVerifier, session.pendingNonce, session.pendingUsername))
+    else
+      serverProof = try(uuid.authProof(session.pendingVerifier, session.pendingNonce, session.pendingUsername, "server"))
+    end if
+    if typeof(serverProof) == "error" then uuid.wipeSecret(sessionSecret); clearPending(session); return authenticationError(request) end if
+    sendKey = try(uuid.transportKey(sessionSecret, session.pendingNonce, session.pendingUsername, "server-to-client"))
+    if typeof(sendKey) == "error" then uuid.wipeSecret(serverProof); uuid.wipeSecret(sessionSecret); clearPending(session); return authenticationError(request) end if
+    receiveKey = try(uuid.transportKey(sessionSecret, session.pendingNonce, session.pendingUsername, "client-to-server"))
+    uuid.wipeSecret(sessionSecret)
+    if typeof(receiveKey) == "error" then uuid.wipeSecret(serverProof); uuid.wipeSecret(sendKey); clearPending(session); return authenticationError(request) end if
     principalSet = try(executor.setPrincipal(session.engine, session.pendingPrincipalId))
     if typeof(principalSet) == "error" then uuid.wipeSecret(serverProof); uuid.wipeSecret(sendKey); uuid.wipeSecret(receiveKey); clearPending(session); return authenticationError(request) end if
     operationalPrincipal = try(database_manager.setOperationalPrincipal(session.engine.database, executor.sessionIdentifier(session.engine), session.pendingPrincipalId))

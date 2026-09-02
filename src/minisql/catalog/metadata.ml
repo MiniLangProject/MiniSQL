@@ -556,7 +556,7 @@ function createPrincipal(principalId, name, principalKind, enabled, canLogin, su
     return PrincipalMetadata(principalId, name, principalKind, enabled, canLogin, superuser, builtin, bytes(0), 0, bytes(0))
   end if
   if not canLogin then return fail(INVALID_ARGUMENT, "createPrincipal", "a non-login user cannot contain password material") end if
-  if len(salt) != 16 or len(verifier) != 32 or iterations < 10000 or iterations > 5000000 then
+  if len(salt) != 16 or (len(verifier) != 32 and len(verifier) != 64) or iterations < 10000 or iterations > 5000000 then
     return fail(INVALID_ARGUMENT, "createPrincipal", "invalid PBKDF2 password material")
   end if
   return PrincipalMetadata(principalId, name, principalKind, enabled, canLogin, superuser, builtin, bytes(salt), iterations, bytes(verifier))

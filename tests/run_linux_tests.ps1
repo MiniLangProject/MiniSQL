@@ -247,6 +247,7 @@ $Cases = @(
   [pscustomobject]@{ Name = "M21 authentication"; Source = "m21_auth_protocol.ml"; Output = "m21-auth"; Args = @("$LinuxDataRoot/m21") },
   [pscustomobject]@{ Name = "M27 parallel scheduler"; Source = "m27_scheduler_locks.ml"; Output = "m27-scheduler"; Args = @("$LinuxDataRoot/m27") },
   [pscustomobject]@{ Name = "M29 secure transport"; Source = "m29_secure_transport.ml"; Output = "m29-secure"; Args = @() },
+  [pscustomobject]@{ Name = "M79 security at rest"; Source = "m79_security_at_rest.ml"; Output = "m79-security"; Args = @("$LinuxDataRoot/m79") },
   [pscustomobject]@{ Name = "M50 release contract"; Source = "m50_release_contract.ml"; Output = "m50-release"; Args = @("$LinuxDataRoot/m50") }
 )
 

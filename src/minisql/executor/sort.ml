@@ -8,6 +8,9 @@ import minisql.common.endian as endian
 import minisql.executor.projection as projection
 import minisql.platform.clock as clock
 import minisql.platform.file as file_api
+import minisql.security.key_provider as key_provider
+import minisql.common.uuid as uuid
+import std.crypto.aes_gcm as aes_gcm
 import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.row_codec as row_codec
@@ -252,14 +255,19 @@ end function
 // Encodes header using the supplied inputs.
 // Returns the computed value or operation status.
 // Any side effects are limited to the explicitly invoked dependencies.
-function encodeHeader(valueCount, orderCount)
+function encodeHeader(valueCount, orderCount, encrypted)
   output = bytes(SPILL_HEADER_SIZE, 0)
   copyBytes(output, 0, spillMagic(), 0, 8)
   endian.writeU16LE(output, 8, SPILL_VERSION)
   endian.writeU16LE(output, 10, valueCount)
   endian.writeU16LE(output, 12, orderCount)
-  endian.writeU16LE(output, 14, 0)
+  if encrypted then endian.writeU16LE(output, 14, 1) end if
   return output
+end function
+
+// Creates domain-separated AAD for one ordered spill row.
+function spillAad(rowIndex)
+  return bytes("MiniSQL-SPILL-1|" + rowIndex)
 end function
 
 // Writes run using the supplied inputs.
@@ -272,13 +280,27 @@ function writeRun(path, rows, valueCount, orderCount)
   kinds = shaped[1]
   handle = try(file_api.createNewDurable(path))
   if typeof(handle) == "error" then return handle end if
-  header = encodeHeader(valueCount, orderCount)
+  material = try(key_provider.loadForPath(path, void))
+  encryptionKey = void
+  if material is not void then encryptionKey = bytes(material.key); key_provider.closeDatabaseKey(material) end if
+  header = encodeHeader(valueCount, orderCount, typeof(encryptionKey) == "bytes")
   written = try(file_api.writeAt(handle, 0, header, 0, len(header)))
   if typeof(written) == "error" then ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return written end if
   cursor = len(header)
+  rowIndex = 0
   for each row in rows
     encoded = try(row_codec.encode(schema, rawValues(combinedValues(row))))
     if typeof(encoded) == "error" then ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return encoded end if
+    if typeof(encryptionKey) == "bytes" then
+      nonce = try(uuid.randomBytes(12))
+      if typeof(nonce) == "error" then uuid.wipeSecret(encryptionKey); ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return nonce end if
+      sealed = try(aes_gcm.seal(encryptionKey, nonce, encoded, spillAad(rowIndex), 16))
+      uuid.wipeSecret(encoded)
+      if typeof(sealed) == "error" then uuid.wipeSecret(nonce); uuid.wipeSecret(encryptionKey); ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return sealed end if
+      encoded = nonce + sealed
+      uuid.wipeSecret(nonce)
+      uuid.wipeSecret(sealed)
+    end if
     if cursor > MAX_SPILL_FILE_BYTES - 4 - len(encoded) then
       ignored = try(file_api.close(handle))
       ignoredDelete = try(file_api.deletePath(path))
@@ -292,7 +314,9 @@ function writeRun(path, rows, valueCount, orderCount)
     wroteRow = try(file_api.writeAt(handle, cursor, encoded, 0, len(encoded)))
     if typeof(wroteRow) == "error" then ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return wroteRow end if
     cursor = cursor + len(encoded)
+    rowIndex = rowIndex + 1
   end for
+  if typeof(encryptionKey) == "bytes" then uuid.wipeSecret(encryptionKey) end if
   flushed = try(file_api.flush(handle))
   if typeof(flushed) == "error" then ignored = try(file_api.close(handle)); ignoredDelete = try(file_api.deletePath(path)); return flushed end if
   closed = try(file_api.close(handle))
@@ -323,9 +347,18 @@ function readRun(run)
   readHeader = try(file_api.readExactAt(handle, 0, header, 0, len(header)))
   if typeof(readHeader) == "error" then ignored = try(file_api.close(handle)); return readHeader end if
   if not bytesEqual(slice(header, 0, 8), spillMagic()) or endian.readU16LE(header, 8) != SPILL_VERSION then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "spill header mismatch") end if
-  if endian.readU16LE(header, 10) != run.valueCount or endian.readU16LE(header, 12) != run.orderCount or endian.readU16LE(header, 14) != 0 then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "spill shape mismatch") end if
+  flags = endian.readU16LE(header, 14)
+  if endian.readU16LE(header, 10) != run.valueCount or endian.readU16LE(header, 12) != run.orderCount or (flags != 0 and flags != 1) then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "spill shape mismatch") end if
+  encryptionKey = void
+  if flags == 1 then
+    material = try(key_provider.loadForPath(run.path, void))
+    if material is void then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "encrypted spill has no database key") end if
+    encryptionKey = bytes(material.key)
+    key_provider.closeDatabaseKey(material)
+  end if
   cursor = SPILL_HEADER_SIZE
   output = []
+  rowIndex = 0
   while cursor < length
     if length - cursor < 4 then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "truncated spill row length") end if
     lengthBytes = bytes(4, 0)
@@ -338,6 +371,13 @@ function readRun(run)
     readRow = try(file_api.readExactAt(handle, cursor, encoded, 0, rowLength))
     if typeof(readRow) == "error" then ignored = try(file_api.close(handle)); return readRow end if
     cursor = cursor + rowLength
+    if flags == 1 then
+      if len(encoded) < 28 then uuid.wipeSecret(encryptionKey); ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "encrypted spill row is truncated") end if
+      plaintext = try(aes_gcm.open(encryptionKey, slice(encoded, 0, 12), slice(encoded, 12, len(encoded) - 12), spillAad(rowIndex), 16))
+      uuid.wipeSecret(encoded)
+      if typeof(plaintext) == "error" then uuid.wipeSecret(encryptionKey); ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "encrypted spill authentication failed") end if
+      encoded = plaintext
+    end if
     decoded = try(row_codec.decodeRow(run.rowSchema, encoded))
     if typeof(decoded) == "error" then ignored = try(file_api.close(handle)); return decoded end if
     if len(decoded.values) != len(run.typeKinds) then ignored = try(file_api.close(handle)); return fail(CORRUPT_DATA, "readRun", "decoded spill row shape mismatch") end if
@@ -358,7 +398,9 @@ function readRun(run)
       end for
     end if
     output = output + [projection.ProjectedRow(void, projectedValues, orderValues)]
+    rowIndex = rowIndex + 1
   end while
+  if typeof(encryptionKey) == "bytes" then uuid.wipeSecret(encryptionKey) end if
   closed = try(file_api.close(handle))
   if typeof(closed) == "error" then return closed end if
   if len(output) != run.rowCount then return fail(CORRUPT_DATA, "readRun", "spill row count mismatch") end if

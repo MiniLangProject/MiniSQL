@@ -25,6 +25,7 @@ failures, and contradictory identities are fail-closed.
 - [Wire protocol v1](wire-protocol-v1.md) — M18/M21
 - [Backup manifest v1](backup-manifest-v1.md) — M20
 - [Security catalog v1](security-catalog-v1.md) — M21
+- [Encryption envelope and records v1](encryption-envelope-v1.md) — M79
 - [Maintenance journal v1](maintenance-journal-v1.md) — M25
 
 Existing paged files MUST derive page size and format identity from persisted

@@ -250,23 +250,39 @@ class Protocol:
         begin_id = self._next_id()
         self._write(Message(TYPE_AUTH_BEGIN, 0, begin_id, struct.pack("<H", len(user_bytes)) + user_bytes))
         challenge = self._read_expected(begin_id)
-        if challenge.message_type != TYPE_AUTH_CHALLENGE or len(challenge.payload) != 52:
+        if challenge.message_type != TYPE_AUTH_CHALLENGE or len(challenge.payload) not in (52, 56):
             raise OperationalError("MiniSQL authentication challenge was rejected")
         iterations, = struct.unpack_from("<I", challenge.payload)
         if not 10_000 <= iterations <= 5_000_000:
             raise OperationalError("MiniSQL authentication work factor is invalid")
         salt = challenge.payload[4:20]
         nonce = challenge.payload[20:52]
+        scheme = 1 if len(challenge.payload) == 52 else struct.unpack_from("<H", challenge.payload, 52)[0]
+        if scheme not in (1, 2) or (len(challenge.payload) == 56 and challenge.payload[54:56] != b"\0\0"):
+            raise OperationalError("MiniSQL authentication scheme is invalid")
         verifier = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations, 32)
-        proof = self._auth_value(verifier, nonce, user, "client")
+        session_secret = verifier
+        if scheme == 2:
+            transcript = b"MiniSQL-AUTH-2|" + user.encode("utf-8") + b"|" + nonce
+            client_key = hmac.new(verifier, b"MiniSQL Client Key", hashlib.sha256).digest()
+            stored_key = hashlib.sha256(client_key).digest()
+            server_key = hmac.new(verifier, b"MiniSQL Server Key", hashlib.sha256).digest()
+            signature = hmac.new(stored_key, transcript, hashlib.sha256).digest()
+            proof = bytes(left ^ right for left, right in zip(client_key, signature))
+            expected = hmac.new(server_key, transcript, hashlib.sha256).digest()
+            session_secret = hmac.new(
+                server_key, b"MiniSQL-SESSION-2|" + transcript + stored_key, hashlib.sha256
+            ).digest()
+        else:
+            proof = self._auth_value(verifier, nonce, user, "client")
+            expected = self._auth_value(verifier, nonce, user, "server")
         proof_id = self._next_id()
         self._write(Message(TYPE_AUTH_PROOF, 0, proof_id, proof))
         accepted = self._read_expected(proof_id)
-        expected = self._auth_value(verifier, nonce, user, "server")
         if accepted.message_type != TYPE_AUTH_OK or not hmac.compare_digest(accepted.payload, expected):
             raise OperationalError("MiniSQL authentication failed")
-        self._send_key = self._auth_value(verifier, nonce, user, "client-to-server", "MiniSQL-TRANSPORT-1|")
-        self._receive_key = self._auth_value(verifier, nonce, user, "server-to-client", "MiniSQL-TRANSPORT-1|")
+        self._send_key = self._auth_value(session_secret, nonce, user, "client-to-server", "MiniSQL-TRANSPORT-1|")
+        self._receive_key = self._auth_value(session_secret, nonce, user, "server-to-client", "MiniSQL-TRANSPORT-1|")
         self._secure = True
 
     @staticmethod

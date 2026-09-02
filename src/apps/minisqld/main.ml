@@ -11,6 +11,7 @@ import minisql.config.loader as config_loader
 import minisql.config.model as config_model
 import minisql.server.database_manager as database_manager
 import minisql.server.server as server
+import minisql.tools.encryption as encryption
 
 // Prints usage using the supplied inputs.
 // Returns the computed value or operation status.
@@ -22,6 +23,9 @@ function printUsage()
   print "  minisqld.exe --init <data-root> <database-name> [page-size]"
   print "  minisqld.exe --set-admin-password <database-path>"
   print "  minisqld.exe --set-user-password <database-path> <user>"
+  print "  minisqld.exe --generate-encryption-key <new-key-file>"
+  print "  minisqld.exe --enable-encryption <database-path> <key-file>"
+  print "  minisqld.exe --rotate-encryption-key <database-path> <new-key-file>"
   print ""
   print "Operational servers (run until stopped with Ctrl+C):"
   print "  minisqld.exe --serve <database-path> <port> [max-clients]"
@@ -189,6 +193,27 @@ function main(args)
 
   if len(args) == 3 and args[0] == "--set-user-password" then
     return setUserPassword(args[1], args[2])
+  end if
+
+  if len(args) == 2 and args[0] == "--generate-encryption-key" then
+    generated = try(encryption.generateKeyFile(args[1]))
+    if typeof(generated) == "error" then return printAppError(generated) end if
+    print "MiniSQL encryption key created: " + args[1]
+    return 0
+  end if
+
+  if len(args) == 3 and args[0] == "--enable-encryption" then
+    converted = try(encryption.enable(args[1], args[2]))
+    if typeof(converted) == "error" then return printAppError(converted) end if
+    print "MiniSQL TDE enabled; encrypted paged files: " + converted
+    return 0
+  end if
+
+  if len(args) == 3 and args[0] == "--rotate-encryption-key" then
+    rotated = try(encryption.rotate(args[1], args[2]))
+    if typeof(rotated) == "error" then return printAppError(rotated) end if
+    print "MiniSQL master key rotation completed"
+    return 0
   end if
 
   if len(args) == 3 and (args[0] == "--serve-config" or args[0] == "--serve-authenticated-config" or args[0] == "--serve-standby-config" or args[0] == "--serve-tls-config") then
