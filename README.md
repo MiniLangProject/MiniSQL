@@ -1,5 +1,8 @@
 # MiniSQL 1.0.0
 
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Language: MiniLang](https://img.shields.io/badge/written%20in-MiniLang-5b5bd6.svg)](.)
+
 MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 PE or Linux x64 ELF applications.
