@@ -286,7 +286,7 @@ try {
   Invoke-Compiler (Join-Path $SourceRoot "tests\m73_tls_client_worker.ml") $tlsClientWorker
   Invoke-LinuxTlsIntegration (Join-Path $ApplicationDir "minisqld") $tlsServerWorker $tlsClientWorker
 
-  Write-Host "MiniSQL 1.0.0 Linux x64 acceptance: SUCCESS"
+  Write-Host "MiniSQL 1.1.0 Linux x64 acceptance: SUCCESS"
 } finally {
   if (-not $KeepArtifacts) {
     & wsl.exe rm -rf -- $LinuxDataRoot

@@ -8,7 +8,7 @@
     "checksumOffset": 24
   },
   "release": {
-    "productVersion": "1.0.0",
+    "productVersion": "1.1.0",
     "milestone": "M50",
     "databaseFormatVersion": 1,
     "wireProtocolVersion": 1,
@@ -16,6 +16,6 @@
   },
   "acceptance": {
     "phaseCount": 106,
-    "finalLine": "MiniSQL 1.0.0 test suite: SUCCESS"
+    "finalLine": "MiniSQL 1.1.0 test suite: SUCCESS"
   }
 }

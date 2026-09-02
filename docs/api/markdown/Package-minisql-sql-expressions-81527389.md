@@ -1,0 +1,101 @@
+# Package `minisql.sql.expressions`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/sql/expressions.ml](File-src-minisql-sql-expressions-ml-980820199.md)
+
+## Symbols
+
+- [`minisql.sql.expressions.absoluteValue`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-absolutevalue-function-absolutevalue-value-src-minisql-sql-expressions-ml-276633659) — function
+- [`minisql.sql.expressions.aggregate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-aggregate-function-aggregate-name-argument-separator-distinct-typeinfo-countstar-src-minisql-sql-expressions-ml-600154012) — function
+- [`minisql.sql.expressions.asciiCase`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-asciicase-function-asciicase-value-upper-src-minisql-sql-expressions-ml-1924295497) — function
+- [`minisql.sql.expressions.betweenPredicate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-betweenpredicate-function-betweenpredicate-operand-lower-upper-negated-src-minisql-sql-expressions-ml-1156326868) — function
+- [`minisql.sql.expressions.binary`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-binary-function-binary-operator-left-right-typeinfo-src-minisql-sql-expressions-ml-2011680027) — function
+- [`minisql.sql.expressions.BINDING_ERROR`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-binding-error-const-binding-error-9020-src-minisql-sql-expressions-ml-1399282056) — constant
+- [`minisql.sql.expressions.BOUND_AGGREGATE`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-aggregate-const-bound-aggregate-6-src-minisql-sql-expressions-ml-816275085) — constant
+- [`minisql.sql.expressions.BOUND_BETWEEN`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-between-const-bound-between-11-src-minisql-sql-expressions-ml-741015819) — constant
+- [`minisql.sql.expressions.BOUND_BINARY`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-binary-const-bound-binary-4-src-minisql-sql-expressions-ml-2048939277) — constant
+- [`minisql.sql.expressions.BOUND_CASE`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-case-const-bound-case-7-src-minisql-sql-expressions-ml-747070612) — constant
+- [`minisql.sql.expressions.BOUND_CAST`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-cast-const-bound-cast-8-src-minisql-sql-expressions-ml-1628901069) — constant
+- [`minisql.sql.expressions.BOUND_COLUMN`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-column-const-bound-column-2-src-minisql-sql-expressions-ml-1830967293) — constant
+- [`minisql.sql.expressions.BOUND_IN`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-in-const-bound-in-10-src-minisql-sql-expressions-ml-655882104) — constant
+- [`minisql.sql.expressions.BOUND_IS_NULL`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-is-null-const-bound-is-null-5-src-minisql-sql-expressions-ml-1029242754) — constant
+- [`minisql.sql.expressions.BOUND_LITERAL`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-literal-const-bound-literal-1-src-minisql-sql-expressions-ml-2045380418) — constant
+- [`minisql.sql.expressions.BOUND_SCALAR`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-scalar-const-bound-scalar-9-src-minisql-sql-expressions-ml-265121338) — constant
+- [`minisql.sql.expressions.BOUND_SUBQUERY`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-subquery-const-bound-subquery-14-src-minisql-sql-expressions-ml-783498354) — constant
+- [`minisql.sql.expressions.BOUND_TRUTH_TEST`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-truth-test-const-bound-truth-test-12-src-minisql-sql-expressions-ml-1529943224) — constant
+- [`minisql.sql.expressions.BOUND_UNARY`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-unary-const-bound-unary-3-src-minisql-sql-expressions-ml-394298068) — constant
+- [`minisql.sql.expressions.BOUND_WINDOW`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-bound-window-const-bound-window-13-src-minisql-sql-expressions-ml-477633389) — constant
+- [`minisql.sql.expressions.BoundAggregate`](Type-minisql-sql-expressions-boundaggregate-321703190.md) — struct
+- [`minisql.sql.expressions.BoundBetween`](Type-minisql-sql-expressions-boundbetween-1479166313.md) — struct
+- [`minisql.sql.expressions.BoundCase`](Type-minisql-sql-expressions-boundcase-1441287547.md) — struct
+- [`minisql.sql.expressions.BoundCaseBranch`](Type-minisql-sql-expressions-boundcasebranch-588620307.md) — struct
+- [`minisql.sql.expressions.BoundCast`](Type-minisql-sql-expressions-boundcast-1156068024.md) — struct
+- [`minisql.sql.expressions.BoundExpression`](Type-minisql-sql-expressions-boundexpression-1415457849.md) — struct
+- [`minisql.sql.expressions.BoundIn`](Type-minisql-sql-expressions-boundin-546586140.md) — struct
+- [`minisql.sql.expressions.BoundScalar`](Type-minisql-sql-expressions-boundscalar-643609595.md) — struct
+- [`minisql.sql.expressions.BoundSubquery`](Type-minisql-sql-expressions-boundsubquery-1803602985.md) — struct
+- [`minisql.sql.expressions.BoundTruthTest`](Type-minisql-sql-expressions-boundtruthtest-546122980.md) — struct
+- [`minisql.sql.expressions.BoundWindow`](Type-minisql-sql-expressions-boundwindow-118201735.md) — struct
+- [`minisql.sql.expressions.bytesMatchAt`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-bytesmatchat-function-bytesmatchat-source-needle-offset-src-minisql-sql-expressions-ml-486032557) — function
+- [`minisql.sql.expressions.caseBranch`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-casebranch-function-casebranch-condition-result-src-minisql-sql-expressions-ml-789695702) — function
+- [`minisql.sql.expressions.caseExpression`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-caseexpression-function-caseexpression-branches-elseexpression-typeinfo-src-minisql-sql-expressions-ml-854416207) — function
+- [`minisql.sql.expressions.castExpression`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-castexpression-function-castexpression-operand-targettype-src-minisql-sql-expressions-ml-152506130) — function
+- [`minisql.sql.expressions.checkPasses`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-checkpasses-function-checkpasses-expression-context-src-minisql-sql-expressions-ml-1778957065) — function
+- [`minisql.sql.expressions.civilDateFromEpochDays`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-civildatefromepochdays-function-civildatefromepochdays-days-src-minisql-sql-expressions-ml-1188779335) — function
+- [`minisql.sql.expressions.column`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-column-function-column-index-typeinfo-src-minisql-sql-expressions-ml-1864292186) — function
+- [`minisql.sql.expressions.comparisonResult`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-comparisonresult-function-comparisonresult-left-right-operator-src-minisql-sql-expressions-ml-1687809711) — function
+- [`minisql.sql.expressions.componentName`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-componentname-function-componentname-src-minisql-sql-expressions-ml-1272046120) — function
+- [`minisql.sql.expressions.containsAggregate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-containsaggregate-function-containsaggregate-expression-src-minisql-sql-expressions-ml-2077814370) — function
+- [`minisql.sql.expressions.containsSubquery`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-containssubquery-function-containssubquery-expression-src-minisql-sql-expressions-ml-1355758302) — function
+- [`minisql.sql.expressions.containsSubqueryList`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-containssubquerylist-function-containssubquerylist-items-src-minisql-sql-expressions-ml-602274278) — function
+- [`minisql.sql.expressions.containsWindow`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-containswindow-function-containswindow-expression-src-minisql-sql-expressions-ml-1763696578) — function
+- [`minisql.sql.expressions.containsWindowList`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-containswindowlist-function-containswindowlist-items-src-minisql-sql-expressions-ml-1414774230) — function
+- [`minisql.sql.expressions.evaluate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluate-function-evaluate-expression-context-src-minisql-sql-expressions-ml-979657523) — function
+- [`minisql.sql.expressions.evaluateBetween`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatebetween-function-evaluatebetween-expression-context-src-minisql-sql-expressions-ml-1591508465) — function
+- [`minisql.sql.expressions.evaluateCase`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatecase-function-evaluatecase-expression-context-src-minisql-sql-expressions-ml-161039363) — function
+- [`minisql.sql.expressions.evaluateIn`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatein-function-evaluatein-expression-context-src-minisql-sql-expressions-ml-1120919715) — function
+- [`minisql.sql.expressions.evaluateScalar`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatescalar-function-evaluatescalar-expression-context-src-minisql-sql-expressions-ml-259117407) — function
+- [`minisql.sql.expressions.evaluateScalarValues`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatescalarvalues-function-evaluatescalarvalues-expression-arguments-src-minisql-sql-expressions-ml-1180906980) — function
+- [`minisql.sql.expressions.evaluateTruthTest`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-evaluatetruthtest-function-evaluatetruthtest-expression-context-src-minisql-sql-expressions-ml-509246463) — function
+- [`minisql.sql.expressions.fail`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-fail-function-fail-code-operation-message-src-minisql-sql-expressions-ml-1085390465) — function
+- [`minisql.sql.expressions.inPredicate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-inpredicate-function-inpredicate-operand-candidates-negated-src-minisql-sql-expressions-ml-1643100991) — function
+- [`minisql.sql.expressions.integerDivide`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-integerdivide-function-integerdivide-left-right-src-minisql-sql-expressions-ml-1001956497) — function
+- [`minisql.sql.expressions.INVALID_ARGUMENT`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-invalid-argument-const-invalid-argument-9001-src-minisql-sql-expressions-ml-719178215) — constant
+- [`minisql.sql.expressions.isBaseBoundExpression`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isbaseboundexpression-function-isbaseboundexpression-value-src-minisql-sql-expressions-ml-1439032977) — function
+- [`minisql.sql.expressions.isBoundAggregate`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundaggregate-function-isboundaggregate-value-src-minisql-sql-expressions-ml-903333839) — function
+- [`minisql.sql.expressions.isBoundBetween`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundbetween-function-isboundbetween-value-src-minisql-sql-expressions-ml-1655655883) — function
+- [`minisql.sql.expressions.isBoundCase`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundcase-function-isboundcase-value-src-minisql-sql-expressions-ml-74747395) — function
+- [`minisql.sql.expressions.isBoundCast`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundcast-function-isboundcast-value-src-minisql-sql-expressions-ml-9631865) — function
+- [`minisql.sql.expressions.isBoundExpression`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundexpression-function-isboundexpression-value-src-minisql-sql-expressions-ml-1763501823) — function
+- [`minisql.sql.expressions.isBoundIn`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundin-function-isboundin-value-src-minisql-sql-expressions-ml-1071518137) — function
+- [`minisql.sql.expressions.isBoundLiteral`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundliteral-function-isboundliteral-value-src-minisql-sql-expressions-ml-300714339) — function
+- [`minisql.sql.expressions.isBoundScalar`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundscalar-function-isboundscalar-value-src-minisql-sql-expressions-ml-1513274467) — function
+- [`minisql.sql.expressions.isBoundSubquery`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundsubquery-function-isboundsubquery-value-src-minisql-sql-expressions-ml-1508449695) — function
+- [`minisql.sql.expressions.isBoundTruthTest`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundtruthtest-function-isboundtruthtest-value-src-minisql-sql-expressions-ml-463023955) — function
+- [`minisql.sql.expressions.isBoundWindow`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isboundwindow-function-isboundwindow-value-src-minisql-sql-expressions-ml-2031183211) — function
+- [`minisql.sql.expressions.isImplemented`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isimplemented-function-isimplemented-src-minisql-sql-expressions-ml-1402863288) — function
+- [`minisql.sql.expressions.isNull`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-isnull-function-isnull-operand-negated-src-minisql-sql-expressions-ml-1696555189) — function
+- [`minisql.sql.expressions.likeResult`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-likeresult-function-likeresult-left-right-src-minisql-sql-expressions-ml-1774863519) — function
+- [`minisql.sql.expressions.literal`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-literal-function-literal-value-typeinfo-src-minisql-sql-expressions-ml-580674141) — function
+- [`minisql.sql.expressions.numericResult`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-numericresult-function-numericresult-left-right-operator-resulttype-src-minisql-sql-expressions-ml-684013274) — function
+- [`minisql.sql.expressions.predicatePasses`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-predicatepasses-function-predicatepasses-expression-context-src-minisql-sql-expressions-ml-909119135) — function
+- [`minisql.sql.expressions.referencesColumnAtOrAfter`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-referencescolumnatorafter-function-referencescolumnatorafter-expression-minimumindex-src-minisql-sql-expressions-ml-1902384338) — function
+- [`minisql.sql.expressions.replaceText`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-replacetext-function-replacetext-sourcetext-searchtext-replacementtext-src-minisql-sql-expressions-ml-726165740) — function
+- [`minisql.sql.expressions.rowContext`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-rowcontext-function-rowcontext-rowvalues-src-minisql-sql-expressions-ml-1875813636) — function
+- [`minisql.sql.expressions.RowContext`](Type-minisql-sql-expressions-rowcontext-652519886.md) — struct
+- [`minisql.sql.expressions.sameBinding`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-samebinding-function-samebinding-left-right-src-minisql-sql-expressions-ml-720867517) — function
+- [`minisql.sql.expressions.scalar`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-scalar-function-scalar-name-arguments-typeinfo-src-minisql-sql-expressions-ml-1239700967) — function
+- [`minisql.sql.expressions.subquery`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-subquery-function-subquery-subquerykind-query-operand-negated-typeinfo-src-minisql-sql-expressions-ml-792075027) — function
+- [`minisql.sql.expressions.SUBQUERY_EXISTS`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-subquery-exists-const-subquery-exists-2-src-minisql-sql-expressions-ml-238240837) — constant
+- [`minisql.sql.expressions.SUBQUERY_IN`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-subquery-in-const-subquery-in-3-src-minisql-sql-expressions-ml-673033704) — constant
+- [`minisql.sql.expressions.SUBQUERY_SCALAR`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-subquery-scalar-const-subquery-scalar-1-src-minisql-sql-expressions-ml-1379831510) — constant
+- [`minisql.sql.expressions.targetMilestone`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-targetmilestone-function-targetmilestone-src-minisql-sql-expressions-ml-1986052634) — function
+- [`minisql.sql.expressions.truthTest`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-truthtest-function-truthtest-operand-expected-negated-src-minisql-sql-expressions-ml-67539123) — function
+- [`minisql.sql.expressions.TYPE_MISMATCH`](File-src-minisql-sql-expressions-ml-980820199.md#constant-constant-minisql-sql-expressions-type-mismatch-const-type-mismatch-9017-src-minisql-sql-expressions-ml-391730910) — constant
+- [`minisql.sql.expressions.unary`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-unary-function-unary-operator-operand-typeinfo-src-minisql-sql-expressions-ml-510660709) — function
+- [`minisql.sql.expressions.utf8ByteOffset`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-utf8byteoffset-function-utf8byteoffset-raw-characterindex-src-minisql-sql-expressions-ml-1813106529) — function
+- [`minisql.sql.expressions.utf8CharacterCount`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-utf8charactercount-function-utf8charactercount-raw-src-minisql-sql-expressions-ml-1224644980) — function
+- [`minisql.sql.expressions.window`](File-src-minisql-sql-expressions-ml-980820199.md#function-function-minisql-sql-expressions-window-function-window-name-arguments-partitionby-orderby-descending-nullsfirst-nullsspecified-typeinfo-src-minisql-sql-expressions-ml-730976289) — function

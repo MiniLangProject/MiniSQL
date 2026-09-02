@@ -251,7 +251,7 @@ foreach ($BuildTarget in $Targets) {
 }
 
 if ($AppsOnly) {
-  Write-Host "MiniSQL 1.0.0 application build: SUCCESS"
+  Write-Host "MiniSQL 1.1.0 application build: SUCCESS"
 } else {
-  Write-Host "MiniSQL 1.0.0 full build: SUCCESS"
+  Write-Host "MiniSQL 1.1.0 full build: SUCCESS"
 }

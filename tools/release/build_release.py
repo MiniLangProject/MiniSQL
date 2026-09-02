@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Build and verify the deterministic MiniSQL 1.0.0 binary distribution."""
+"""Build and verify the deterministic MiniSQL 1.1.0 binary distribution."""
 from __future__ import annotations
 
 import argparse
@@ -27,7 +27,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Sequence
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 ROOT_NAME = f"MiniSQL-{VERSION}"
 FIXED_TIME = (2026, 7, 29, 0, 0, 0)
 REQUIRED_BINARIES = (
@@ -140,7 +140,7 @@ def build(project: Path, bin_dir: Path, output: Path) -> None:
     verify(output)
     digest_path = output.with_suffix(output.suffix + ".sha256")
     digest_path.write_text(f"{sha256(output.read_bytes())}  {output.name}\n", encoding="ascii")
-    print(f"MiniSQL 1.0.0 release build: SUCCESS path={output} files={len(files)}")
+    print(f"MiniSQL 1.1.0 release build: SUCCESS path={output} files={len(files)}")
 
 
 def safe_member(name: str) -> PurePosixPath:
@@ -192,7 +192,7 @@ def verify(output: Path) -> None:
         path = item.get("path")
         if path not in payloads or item.get("sha256") != sha256(payloads[path]) or item.get("bytes") != len(payloads[path]):
             raise ReleaseError(f"release manifest entry mismatch: {path}")
-    print(f"MiniSQL 1.0.0 release verify: SUCCESS files={len(payloads)}")
+    print(f"MiniSQL 1.1.0 release verify: SUCCESS files={len(payloads)}")
 
 
 def parser() -> argparse.ArgumentParser:

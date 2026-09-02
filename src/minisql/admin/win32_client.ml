@@ -1177,12 +1177,14 @@ function workbenchLayoutSmoke()
   gui.clearEvents()
   if not gui.clickTabHeaderForTest(window.workspaceTabs, 180, 12) then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "workspace tab could not be clicked") end if
   gui.pumpMessages()
-  workspaceSynced = try(synchronizeWorkspace(tabSession))
-  if typeof(workspaceSynced) == "error" or not workspaceSynced then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "native workspace state was not synchronized") end if
   receivedWorkspaceTab = false
   event = gui.pollEvent()
   while typeof(event) == "struct"
-    if event.message == gui.WM_NOTIFY and event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then receivedWorkspaceTab = true end if
+    if event.message == gui.WM_NOTIFY and event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then
+      receivedWorkspaceTab = true
+      handledWorkspaceTab = try(handleSessionEvent(tabSession, event))
+      if typeof(handledWorkspaceTab) == "error" then gui.destroy(window.hwnd); return handledWorkspaceTab end if
+    end if
     event = gui.pollEvent()
   end while
   if gui.tabSelectedIndex(window.workspaceTabs) != 1 then gui.destroy(window.hwnd); return fail("workbenchLayoutSmoke", "native workspace click did not select Object Details") end if
@@ -2394,6 +2396,117 @@ function handleCommand(session, command)
   return true
 end function
 
+/// Opens the context menu appropriate for the control under the pointer.
+/// @param session Active Workbench session that owns the native controls.
+/// @param event Native context-menu event to dispatch.
+function handleContextMenuEvent(session, event)
+  if event.controlId == ID_DETAIL_GRID and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
+    ignoredDataMenu = gui.showContextMenu(session.window.hwnd, ["Add row", "Edit selected row", "Delete selected row(s)", "Copy selected row(s)", "Paste rows", "Apply changes", "Revert changes", "SQL preview"], [gui.MENU_DATA_ADD, gui.MENU_DATA_EDIT, gui.MENU_DATA_DELETE, gui.MENU_DATA_COPY, gui.MENU_DATA_PASTE, gui.MENU_DATA_APPLY, gui.MENU_DATA_REVERT, gui.MENU_DATA_PREVIEW])
+  else if event.controlId == ID_OBJECT_TREE then
+    ignoredObjectMenu = gui.showContextMenu(session.window.hwnd, ["Open table details", "Select first 100 rows", "Open schema designer"], [gui.MENU_OBJECT_DESCRIBE, gui.MENU_OBJECT_QUERY, gui.MENU_OBJECT_SCHEMA])
+  else if event.controlId == ID_QUERY_EDIT then
+    ignoredSqlMenu = gui.showContextMenu(session.window.hwnd, ["Execute current / selection", "Execute script", "Explain", "New SQL worksheet", "Close SQL worksheet"], [gui.MENU_SQL_EXECUTE, gui.MENU_SQL_EXECUTE_SCRIPT, gui.MENU_SQL_EXPLAIN, gui.MENU_FILE_NEW, gui.MENU_FILE_CLOSE_WORKSHEET])
+  else if event.controlId == ID_RESULT_GRID then
+    ignoredResultMenu = gui.showContextMenu(session.window.hwnd, ["Export active result as CSV", "Clear results"], [gui.MENU_FILE_EXPORT, gui.MENU_SQL_CLEAR])
+  end if
+  return true
+end function
+
+/// Handles tab, list-view, and object-tree WM_NOTIFY events.
+/// @param session Active Workbench session that receives the notification.
+/// @param event Native notification event and control identifiers.
+function handleNotifyEvent(session, event)
+  if event.controlId == ID_WORKSHEET_TABS and event.notification == NM_CLICK then
+    closingWorksheet = gui.tabCloseHitIndexAt(session.window.worksheetTabs, event.source & 65535, (event.source >> 16) & 65535)
+    if closingWorksheet >= 0 then ignoredWorksheetClose = try(closeWorksheetAt(session, closingWorksheet)) end if
+  else if event.controlId == ID_RESULT_TABS and event.notification == NM_CLICK then
+    closingResult = gui.tabCloseHitIndexAt(session.window.resultTabs, event.source & 65535, (event.source >> 16) & 65535)
+    if closingResult >= 0 then ignoredResultClose = try(closeResultAt(session, closingResult)) end if
+  else if event.controlId == ID_SIDEBAR_TABS and event.notification == TCN_SELCHANGE then
+    applyVisibility(session.window)
+  else if event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then
+    ignoredWorkspaceNotify = try(synchronizeWorkspace(session))
+  else if event.controlId == ID_WORKSHEET_TABS and event.notification == TCN_SELCHANGE then
+    selectedWorksheet = gui.tabSelectedIndex(session.window.worksheetTabs)
+    if selectedWorksheet >= 0 and selectedWorksheet < len(session.worksheets) and selectedWorksheet != session.selectedWorksheetIndex then ignoredWorksheet = try(activateWorksheet(session, selectedWorksheet)) end if
+  else if event.controlId == ID_DETAIL_TABS and event.notification == TCN_SELCHANGE then
+    labels = fullclient.detailTabLines(session.state)
+    selected = gui.tabSelectedIndex(session.window.detailTabs)
+    if selected >= 0 and selected < len(labels) then
+      gui.setText(session.window.detailEdit, fullclient.detailTextByName(session.state, labels[selected]))
+      ignoredDetailGrid = try(fillDetailGrid(session, labels[selected]))
+      applyVisibility(session.window)
+    end if
+  else if event.controlId == ID_DETAIL_GRID and event.notification == NM_DBLCLK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
+    selectedData = try(selectedDataRow(session))
+    cell = gui.listViewPointerCell(session.window.detailGrid)
+    initialField = 0
+    if len(cell) == 2 and cell[1] > 0 then initialField = editorFieldForDataColumn(session.state.tableDetails, cell[1] - 1) end if
+    if typeof(selectedData) == "error" then session.state.statusText = selectedData.message else ignoredDoubleEdit = try(editDataRow(session, selectedData, false, true, initialField)) end if
+  else if event.controlId == ID_DETAIL_GRID and event.notification == LVN_COLUMNCLICK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
+    dataColumn = event.source - 1
+    if dataColumn >= 0 and dataColumn < len(session.state.tableDetails.contentsGrid.columns) then
+      sortColumn = session.state.tableDetails.contentsGrid.columns[dataColumn]
+      ascending = true
+      if sortColumn == session.dataOptions.sortColumn then ascending = not session.dataOptions.ascending end if
+      options = try(fullclient.createDataBrowseOptions(session.dataOptions.filterText, sortColumn, ascending, 0, session.dataOptions.pageSize))
+      if typeof(options) == "error" then session.state.statusText = options.message else ignoredSort = try(startDataPage(session, options)) end if
+    end if
+  else if event.controlId == ID_RESULT_TABS and event.notification == TCN_SELCHANGE then
+    selected = gui.tabSelectedIndex(session.window.resultTabs)
+    if selected >= 0 and selected < len(session.state.resultTabs) then session.state.selectedResultIndex = selected; fillResultGrid(session.window, session.state) end if
+  else if event.controlId == ID_OBJECT_TREE and event.notification == TVN_SELCHANGEDW then
+    selectedObject = try(gui.treeSelectedText(session.window.objectTree))
+    if typeof(selectedObject) == "string" and fullclient.containsText(session.state.tables, selectedObject) then session.state.selectedTable = selectedObject; session.state.statusText = "Selected table " + selectedObject; gui.setText(session.window.statusLabel, session.state.statusText) end if
+  else if event.controlId == ID_OBJECT_TREE and event.notification == NM_DBLCLK then
+    openSelectedObject(session)
+  end if
+  return true
+end function
+
+/// Handles edit, filter, bookmark, history, and toolbar WM_COMMAND events.
+/// @param session Active Workbench session that receives the command.
+/// @param event Native command event and control identifiers.
+function handleWindowCommandEvent(session, event)
+  if event.controlId == ID_QUERY_EDIT and event.notification == EN_CHANGE then
+    session.highlightDirty = true
+    session.highlightAfterMilliseconds = clock.monotonicMilliseconds() + 120
+  else if event.controlId == ID_HISTORY_FILTER and event.notification == EN_CHANGE then
+    filterText = try(gui.getText(session.window.historyFilterEdit))
+    if typeof(filterText) == "string" then session.historyFilter = filterText; ignoredFilteredHistory = try(fillList(session.window.historyList, fullclient.filterHistory(session.state.history, filterText))) end if
+  else if event.controlId == ID_BOOKMARK_LIST and event.notification == LBN_DBLCLK then
+    insertSelectedBookmark(session)
+  else if event.controlId == ID_HISTORY_LIST and event.notification == LBN_DBLCLK then
+    insertSelectedHistory(session)
+  else
+    handleCommand(session, event.controlId)
+  end if
+  return true
+end function
+
+/// Routes one native event after verifying that it belongs to this workbench.
+/// @param session Active Workbench session and top-level window state.
+/// @param event Native window event to route.
+function handleSessionEvent(session, event)
+  if event.hwnd != session.window.hwnd then return true end if
+  if event.message == gui.WM_CLOSE then return handleCommand(session, ID_CLOSE) end if
+  if event.message == gui.WM_SIZE or event.message == gui.WM_DPICHANGED then
+    layoutWindow(session.window)
+    currentRect = try(gui.topLevelRect(session.window.hwnd))
+    if typeof(currentRect) == "array" then session.windowRect = currentRect end if
+    return true
+  end if
+  if event.message == gui.WM_MOVE then
+    currentRect = try(gui.topLevelRect(session.window.hwnd))
+    if typeof(currentRect) == "array" then session.windowRect = currentRect end if
+    return true
+  end if
+  if event.message == gui.WM_CONTEXTMENU and not session.busy then return handleContextMenuEvent(session, event) end if
+  if event.message == gui.WM_NOTIFY and not session.busy then return handleNotifyEvent(session, event) end if
+  if event.message == gui.WM_COMMAND then return handleWindowCommandEvent(session, event) end if
+  return true
+end function
+
 // Runs the responsive Win32 event loop for one connected session.
 function runSession(session)
   while gui.isOpen(session.window.hwnd)
@@ -2405,83 +2518,7 @@ function runSession(session)
     if gui.isOpen(session.window.hwnd) then ignoredWorker = pollQuery(session) end if
     event = gui.pollEvent()
     while typeof(event) == "struct"
-      if event.hwnd != session.window.hwnd then
-        ignoredForeignEvent = true
-      else if event.message == gui.WM_CLOSE then
-        ignoredNativeClose = try(handleCommand(session, ID_CLOSE))
-      else if event.message == gui.WM_SIZE or event.message == gui.WM_DPICHANGED then
-        layoutWindow(session.window)
-        currentRect = try(gui.topLevelRect(session.window.hwnd))
-        if typeof(currentRect) == "array" then session.windowRect = currentRect end if
-      else if event.message == gui.WM_MOVE then
-        currentRect = try(gui.topLevelRect(session.window.hwnd))
-        if typeof(currentRect) == "array" then session.windowRect = currentRect end if
-      else if event.message == gui.WM_CONTEXTMENU and not session.busy then
-        if event.controlId == ID_DETAIL_GRID and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
-          ignoredDataMenu = gui.showContextMenu(session.window.hwnd, ["Add row", "Edit selected row", "Delete selected row(s)", "Copy selected row(s)", "Paste rows", "Apply changes", "Revert changes", "SQL preview"], [gui.MENU_DATA_ADD, gui.MENU_DATA_EDIT, gui.MENU_DATA_DELETE, gui.MENU_DATA_COPY, gui.MENU_DATA_PASTE, gui.MENU_DATA_APPLY, gui.MENU_DATA_REVERT, gui.MENU_DATA_PREVIEW])
-        else if event.controlId == ID_OBJECT_TREE then
-          ignoredObjectMenu = gui.showContextMenu(session.window.hwnd, ["Open table details", "Select first 100 rows", "Open schema designer"], [gui.MENU_OBJECT_DESCRIBE, gui.MENU_OBJECT_QUERY, gui.MENU_OBJECT_SCHEMA])
-        else if event.controlId == ID_QUERY_EDIT then
-          ignoredSqlMenu = gui.showContextMenu(session.window.hwnd, ["Execute current / selection", "Execute script", "Explain", "New SQL worksheet", "Close SQL worksheet"], [gui.MENU_SQL_EXECUTE, gui.MENU_SQL_EXECUTE_SCRIPT, gui.MENU_SQL_EXPLAIN, gui.MENU_FILE_NEW, gui.MENU_FILE_CLOSE_WORKSHEET])
-        else if event.controlId == ID_RESULT_GRID then
-          ignoredResultMenu = gui.showContextMenu(session.window.hwnd, ["Export active result as CSV", "Clear results"], [gui.MENU_FILE_EXPORT, gui.MENU_SQL_CLEAR])
-        end if
-      else if event.message == gui.WM_NOTIFY and not session.busy then
-        if event.controlId == ID_WORKSHEET_TABS and event.notification == NM_CLICK then
-          closingWorksheet = gui.tabCloseHitIndexAt(session.window.worksheetTabs, event.source & 65535, (event.source >> 16) & 65535)
-          if closingWorksheet >= 0 then ignoredWorksheetClose = try(closeWorksheetAt(session, closingWorksheet)) end if
-        else if event.controlId == ID_RESULT_TABS and event.notification == NM_CLICK then
-          closingResult = gui.tabCloseHitIndexAt(session.window.resultTabs, event.source & 65535, (event.source >> 16) & 65535)
-          if closingResult >= 0 then ignoredResultClose = try(closeResultAt(session, closingResult)) end if
-        else if event.controlId == ID_SIDEBAR_TABS and event.notification == TCN_SELCHANGE then
-          applyVisibility(session.window)
-        else if event.controlId == ID_WORKSPACE_TABS and event.notification == TCN_SELCHANGE then
-          ignoredWorkspaceNotify = try(synchronizeWorkspace(session))
-        else if event.controlId == ID_WORKSHEET_TABS and event.notification == TCN_SELCHANGE then
-          selectedWorksheet = gui.tabSelectedIndex(session.window.worksheetTabs)
-          if selectedWorksheet >= 0 and selectedWorksheet < len(session.worksheets) and selectedWorksheet != session.selectedWorksheetIndex then ignoredWorksheet = try(activateWorksheet(session, selectedWorksheet)) end if
-        else if event.controlId == ID_DETAIL_TABS and event.notification == TCN_SELCHANGE then
-          labels = fullclient.detailTabLines(session.state)
-          selected = gui.tabSelectedIndex(session.window.detailTabs)
-          if selected >= 0 and selected < len(labels) then
-            gui.setText(session.window.detailEdit, fullclient.detailTextByName(session.state, labels[selected]))
-            ignoredDetailGrid = try(fillDetailGrid(session, labels[selected]))
-            applyVisibility(session.window)
-          end if
-        else if event.controlId == ID_DETAIL_GRID and event.notification == NM_DBLCLK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
-          selectedData = try(selectedDataRow(session))
-          cell = gui.listViewPointerCell(session.window.detailGrid)
-          initialField = 0
-          if len(cell) == 2 and cell[1] > 0 then initialField = editorFieldForDataColumn(session.state.tableDetails, cell[1] - 1) end if
-          if typeof(selectedData) == "error" then session.state.statusText = selectedData.message else ignoredDoubleEdit = try(editDataRow(session, selectedData, false, true, initialField)) end if
-        else if event.controlId == ID_DETAIL_GRID and event.notification == LVN_COLUMNCLICK and gui.tabSelectedIndex(session.window.detailTabs) == 3 then
-          dataColumn = event.source - 1
-          if dataColumn >= 0 and dataColumn < len(session.state.tableDetails.contentsGrid.columns) then
-            sortColumn = session.state.tableDetails.contentsGrid.columns[dataColumn]
-            ascending = true
-            if sortColumn == session.dataOptions.sortColumn then ascending = not session.dataOptions.ascending end if
-            options = try(fullclient.createDataBrowseOptions(session.dataOptions.filterText, sortColumn, ascending, 0, session.dataOptions.pageSize))
-            if typeof(options) == "error" then session.state.statusText = options.message else ignoredSort = try(startDataPage(session, options)) end if
-          end if
-        else if event.controlId == ID_RESULT_TABS and event.notification == TCN_SELCHANGE then
-          selected = gui.tabSelectedIndex(session.window.resultTabs)
-          if selected >= 0 and selected < len(session.state.resultTabs) then session.state.selectedResultIndex = selected; fillResultGrid(session.window, session.state) end if
-        else if event.controlId == ID_OBJECT_TREE and event.notification == TVN_SELCHANGEDW then
-          selectedObject = try(gui.treeSelectedText(session.window.objectTree))
-          if typeof(selectedObject) == "string" and fullclient.containsText(session.state.tables, selectedObject) then session.state.selectedTable = selectedObject; session.state.statusText = "Selected table " + selectedObject; gui.setText(session.window.statusLabel, session.state.statusText) end if
-        else if event.controlId == ID_OBJECT_TREE and event.notification == NM_DBLCLK then
-          openSelectedObject(session)
-        end if
-      else if event.message == gui.WM_COMMAND then
-        if event.controlId == ID_QUERY_EDIT and event.notification == EN_CHANGE then session.highlightDirty = true; session.highlightAfterMilliseconds = clock.monotonicMilliseconds() + 120
-        else if event.controlId == ID_HISTORY_FILTER and event.notification == EN_CHANGE then
-          filterText = try(gui.getText(session.window.historyFilterEdit))
-          if typeof(filterText) == "string" then session.historyFilter = filterText; ignoredFilteredHistory = try(fillList(session.window.historyList, fullclient.filterHistory(session.state.history, filterText))) end if
-        else if event.controlId == ID_BOOKMARK_LIST and event.notification == LBN_DBLCLK then insertSelectedBookmark(session)
-        else if event.controlId == ID_HISTORY_LIST and event.notification == LBN_DBLCLK then insertSelectedHistory(session)
-        else handleCommand(session, event.controlId)
-        end if
-      end if
+      ignoredEvent = try(handleSessionEvent(session, event))
       event = gui.pollEvent()
     end while
     // Coalesce every edit burst into one full recolor after the native event

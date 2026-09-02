@@ -1,0 +1,49 @@
+# Package `minisql.protocol.connection`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/protocol/connection.ml](File-src-minisql-protocol-connection-ml-870021768.md)
+
+## Symbols
+
+- [`minisql.protocol.connection.abort`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-abort-function-abort-connection-src-minisql-protocol-connection-ml-1501340348) — function
+- [`minisql.protocol.connection.appendReceiveBytes`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-appendreceivebytes-function-appendreceivebytes-connection-incoming-src-minisql-protocol-connection-ml-409761652) — function
+- [`minisql.protocol.connection.appendReceiveScratch`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-appendreceivescratch-function-appendreceivescratch-connection-count-src-minisql-protocol-connection-ml-22295363) — function
+- [`minisql.protocol.connection.close`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-close-function-close-connection-src-minisql-protocol-connection-ml-371202104) — function
+- [`minisql.protocol.connection.CLOSED_HANDLE`](File-src-minisql-protocol-connection-ml-870021768.md#constant-constant-minisql-protocol-connection-closed-handle-const-closed-handle-9008-src-minisql-protocol-connection-ml-463517886) — constant
+- [`minisql.protocol.connection.componentName`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-componentname-function-componentname-src-minisql-protocol-connection-ml-233166304) — function
+- [`minisql.protocol.connection.connectAddress`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-connectaddress-function-connectaddress-address-port-src-minisql-protocol-connection-ml-430820979) — function
+- [`minisql.protocol.connection.Connection`](Type-minisql-protocol-connection-connection-344312244.md) — struct
+- [`minisql.protocol.connection.connectLoopback`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-connectloopback-function-connectloopback-port-src-minisql-protocol-connection-ml-473957737) — function
+- [`minisql.protocol.connection.connectTlsAddress`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-connecttlsaddress-function-connecttlsaddress-address-port-servername-src-minisql-protocol-connection-ml-362774277) — function
+- [`minisql.protocol.connection.connectTlsPinnedAddress`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-connecttlspinnedaddress-function-connecttlspinnedaddress-address-port-servername-pintext-src-minisql-protocol-connection-ml-1005533091) — function
+- [`minisql.protocol.connection.copyRange`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-copyrange-function-copyrange-source-offset-count-operation-src-minisql-protocol-connection-ml-1748581154) — function
+- [`minisql.protocol.connection.CORRUPT_DATA`](File-src-minisql-protocol-connection-ml-870021768.md#constant-constant-minisql-protocol-connection-corrupt-data-const-corrupt-data-9004-src-minisql-protocol-connection-ml-879765828) — constant
+- [`minisql.protocol.connection.create`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-create-function-create-sockethandle-src-minisql-protocol-connection-ml-1434457539) — function
+- [`minisql.protocol.connection.decodeInbound`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-decodeinbound-function-decodeinbound-connection-frame-src-minisql-protocol-connection-ml-633926463) — function
+- [`minisql.protocol.connection.enableSecure`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-enablesecure-function-enablesecure-connection-sendkey-receivekey-src-minisql-protocol-connection-ml-395214409) — function
+- [`minisql.protocol.connection.enableTls`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-enabletls-function-enabletls-connection-tlscontext-src-minisql-protocol-connection-ml-532141020) — function
+- [`minisql.protocol.connection.extractBufferedMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-extractbufferedmessage-function-extractbufferedmessage-connection-src-minisql-protocol-connection-ml-1657465084) — function
+- [`minisql.protocol.connection.fail`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-fail-function-fail-code-operation-message-src-minisql-protocol-connection-ml-250590469) — function
+- [`minisql.protocol.connection.INVALID_ARGUMENT`](File-src-minisql-protocol-connection-ml-870021768.md#constant-constant-minisql-protocol-connection-invalid-argument-const-invalid-argument-9001-src-minisql-protocol-connection-ml-55962339) — constant
+- [`minisql.protocol.connection.isConnection`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-isconnection-function-isconnection-value-src-minisql-protocol-connection-ml-398223009) — function
+- [`minisql.protocol.connection.isImplemented`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-isimplemented-function-isimplemented-src-minisql-protocol-connection-ml-743716744) — function
+- [`minisql.protocol.connection.isPollResult`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-ispollresult-function-ispollresult-value-src-minisql-protocol-connection-ml-962966921) — function
+- [`minisql.protocol.connection.makeNonBlocking`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-makenonblocking-function-makenonblocking-connection-src-minisql-protocol-connection-ml-122501172) — function
+- [`minisql.protocol.connection.POLL_RECEIVE_BYTES`](File-src-minisql-protocol-connection-ml-870021768.md#constant-constant-minisql-protocol-connection-poll-receive-bytes-const-poll-receive-bytes-65536-src-minisql-protocol-connection-ml-1375018834) — constant
+- [`minisql.protocol.connection.pollMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-pollmessage-function-pollmessage-connection-src-minisql-protocol-connection-ml-562205644) — function
+- [`minisql.protocol.connection.PollResult`](Type-minisql-protocol-connection-pollresult-314322152.md) — struct
+- [`minisql.protocol.connection.protectMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-protectmessage-function-protectmessage-connection-message-src-minisql-protocol-connection-ml-950709283) — function
+- [`minisql.protocol.connection.protocolBytesReceived`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-protocolbytesreceived-function-protocolbytesreceived-connection-src-minisql-protocol-connection-ml-1019780388) — function
+- [`minisql.protocol.connection.protocolBytesSent`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-protocolbytessent-function-protocolbytessent-connection-src-minisql-protocol-connection-ml-1201636758) — function
+- [`minisql.protocol.connection.receiveMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-receivemessage-function-receivemessage-connection-src-minisql-protocol-connection-ml-211292584) — function
+- [`minisql.protocol.connection.SECURE_TRANSPORT`](File-src-minisql-protocol-connection-ml-870021768.md#constant-constant-minisql-protocol-connection-secure-transport-const-secure-transport-9030-src-minisql-protocol-connection-ml-2120036559) — constant
+- [`minisql.protocol.connection.secureActive`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-secureactive-function-secureactive-connection-src-minisql-protocol-connection-ml-246226912) — function
+- [`minisql.protocol.connection.sendMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-sendmessage-function-sendmessage-connection-message-src-minisql-protocol-connection-ml-978925877) — function
+- [`minisql.protocol.connection.setTimeouts`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-settimeouts-function-settimeouts-connection-receivems-sendms-src-minisql-protocol-connection-ml-50564487) — function
+- [`minisql.protocol.connection.targetMilestone`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-targetmilestone-function-targetmilestone-src-minisql-protocol-connection-ml-652479078) — function
+- [`minisql.protocol.connection.tlsActive`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-tlsactive-function-tlsactive-connection-src-minisql-protocol-connection-ml-117327562) — function
+- [`minisql.protocol.connection.unprotectMessage`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-unprotectmessage-function-unprotectmessage-connection-message-src-minisql-protocol-connection-ml-2084867119) — function
+- [`minisql.protocol.connection.validateOpen`](File-src-minisql-protocol-connection-ml-870021768.md#function-function-minisql-protocol-connection-validateopen-function-validateopen-connection-operation-src-minisql-protocol-connection-ml-518685321) — function

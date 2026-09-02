@@ -1111,220 +1111,295 @@ function constraintFromAst(prepared, table, tableSchemaValue, source)
   return value
 end function
 
-// Builds the alter table.
-// Inputs: `prepared`, `databasePath`, `bound`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Advances the schema generation shared by catalog metadata and schema rules.
+/// @param table Mutable catalog table whose schema version advances.
+/// @param tableSchemaValue Mutable persisted schema rules for the same table.
+function advanceSchemaVersion(table, tableSchemaValue)
+  table.schemaVersion = table.schemaVersion + 1
+  tableSchemaValue.schemaVersion = table.schemaVersion
+  return true
+end function
+
+/// Applies ALTER TABLE ADD COLUMN without mixing its invariants with other DDL actions.
+/// @param prepared Transactional schema-change state being updated.
+/// @param table Mutable catalog table receiving the new column.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed ALTER TABLE statement.
+/// @param bound Bound type and expression information for the statement.
+function applyAlterAddColumn(prepared, table, tableSchemaValue, statement, bound)
+  definition = statement.columnDefinition
+  if columnIndexByName(table, definition.name) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "column already exists: " + definition.name) end if
+  typeInfo = bound.columnType
+  columnId = allocateId(prepared.newMetadata)
+  table.columns = table.columns + [metadata.createColumn(columnId, definition.name, typeInfo.kind, typeInfo.nullable, typeInfo.length, typeInfo.precision, typeInfo.scale)]
+  advanceSchemaVersion(table, tableSchemaValue)
+  defaultSql = void
+  if definition.defaultExpression is not void then defaultSql = ast.formatExpression(definition.defaultExpression) end if
+  tableSchemaValue.columnRules = tableSchemaValue.columnRules + [columnRule(definition.name, defaultSql, false)]
+  if definition.generatedExpression is not void then
+    prepared.newState.generatedColumns = prepared.newState.generatedColumns + [generatedColumnDefinition(table.tableId, definition.name, ast.formatExpression(definition.generatedExpression), definition.generatedStored)]
+  end if
+  return true
+end function
+
+/// Rewrites every catalog dependency affected by an ALTER TABLE RENAME COLUMN.
+/// @param prepared Transactional schema-change state being updated.
+/// @param table Mutable catalog table containing the renamed column.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed rename-column action and names.
+function applyAlterRenameColumn(prepared, table, tableSchemaValue, statement)
+  columnIndex = columnIndexByName(table, statement.oldName)
+  if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+  if columnIndexByName(table, statement.newName) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "column already exists: " + statement.newName) end if
+  table.columns[columnIndex].name = statement.newName
+  for each rule in tableSchemaValue.columnRules
+    if rule.columnName == statement.oldName then rule.columnName = statement.newName end if
+  end for
+  for each schemaValue in prepared.newState.tables
+    for each value in schemaValue.constraints
+      if schemaValue.tableId == table.tableId then
+        renamedKeys = []
+        for each keyValue in value.columns
+          if value.indexId > 0 and isIndexExpressionKey(keyValue) then
+            renamedKeys = renamedKeys + [indexExpressionKey(renameExpressionSql(indexExpressionSql(keyValue), statement.oldName, statement.newName))]
+          else if keyValue == statement.oldName then
+            renamedKeys = renamedKeys + [statement.newName]
+          else
+            renamedKeys = renamedKeys + [keyValue]
+          end if
+        end for
+        value.columns = renamedKeys
+        if value.indexId > 0 then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
+        if value.indexId > 0 and len(value.expressionSql) > 0 then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
+        if value.kind == CONSTRAINT_CHECK then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
+      end if
+      if value.referenceTable == table.name then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
+    end for
+  end for
+  for each generated in prepared.newState.generatedColumns
+    if generated.tableId == table.tableId then
+      if generated.columnName == statement.oldName then generated.columnName = statement.newName end if
+      generated.expressionSql = renameExpressionSql(generated.expressionSql, statement.oldName, statement.newName)
+    end if
+  end for
+  for each trigger in prepared.newState.triggers
+    if trigger.tableId == table.tableId and trigger.targetColumn == statement.oldName then trigger.targetColumn = statement.newName end if
+  end for
+  return true
+end function
+
+/// Applies a table rename and updates incoming foreign-key references.
+/// @param prepared Transactional schema-change state being updated.
+/// @param table Mutable catalog table being renamed.
+/// @param statement Parsed rename-table action and destination name.
+function applyAlterRenameTable(prepared, table, statement)
+  if tableIndexByName(prepared.newCatalog, statement.newName) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "table already exists: " + statement.newName) end if
+  oldName = table.name
+  table.name = statement.newName
+  for each schemaValue in prepared.newState.tables
+    for each value in schemaValue.constraints
+      if value.referenceTable == oldName then value.referenceTable = statement.newName end if
+    end for
+  end for
+  return true
+end function
+
+/// Validates the relational side of a new foreign-key constraint.
+/// @param prepared Transactional schema-change state used for catalog lookup.
+/// @param table Source table that owns the foreign key.
+/// @param source Parsed foreign-key constraint definition.
+function validateAlterForeignKey(prepared, table, source)
+  referenceIndex = tableIndexByName(prepared.newCatalog, source.referencesTable)
+  if referenceIndex < 0 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "referenced table does not exist: " + source.referencesTable) end if
+  referenceTable = prepared.newCatalog.tables[referenceIndex]
+  referenceSchema = findTableSchema(prepared.newState, referenceTable.tableId)
+  if len(source.columns) == 0 or len(source.columns) != len(source.referencesColumns) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column count mismatch") end if
+  if not uniqueConstraintForColumns(referenceSchema, source.referencesColumns) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign key target must be PRIMARY KEY or UNIQUE") end if
+  for pairIndex = 0 to len(source.columns) - 1
+    localIndex = columnIndexByName(table, source.columns[pairIndex])
+    remoteIndex = columnIndexByName(referenceTable, source.referencesColumns[pairIndex])
+    if localIndex < 0 or remoteIndex < 0 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column is missing") end if
+    if table.columns[localIndex].typeCode != referenceTable.columns[remoteIndex].typeCode then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column types differ") end if
+  end for
+  return true
+end function
+
+/// Adds one table constraint and schedules any physical index it owns.
+/// @param prepared Transactional schema-change state being updated.
+/// @param databasePath Database directory used for new backing files.
+/// @param table Mutable catalog table receiving the constraint.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed ADD CONSTRAINT action.
+function applyAlterAddConstraint(prepared, databasePath, table, tableSchemaValue, statement)
+  source = statement.constraint
+  if source.kind == CONSTRAINT_FOREIGN_KEY then validateAlterForeignKey(prepared, table, source) end if
+  if source.kind == CONSTRAINT_PRIMARY_KEY then
+    for each existing in tableSchemaValue.constraints
+      if existing.kind == CONSTRAINT_PRIMARY_KEY then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "table already has a PRIMARY KEY") end if
+    end for
+  end if
+  value = constraintFromAst(prepared, table, tableSchemaValue, source)
+  if value.kind == CONSTRAINT_PRIMARY_KEY then
+    for each columnName in value.columns
+      index = columnIndexByName(table, columnName)
+      if index >= 0 then table.columns[index].nullable = false end if
+    end for
+  end if
+  if value.indexId > 0 then
+    finalPath = indexFilePath(databasePath, value.indexId)
+    prepared.createFiles = prepared.createFiles + [CreateFilePlan(finalPath + ".ddl.new", finalPath, superblock.FILE_TYPE_INDEX, value.indexId, value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE)]
+  end if
+  return true
+end function
+
+/// Removes a constraint only after proving that no foreign key depends on it.
+/// @param prepared Transactional schema-change state being updated.
+/// @param databasePath Database directory containing backing files.
+/// @param table Mutable catalog table losing the constraint.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed DROP CONSTRAINT action.
+function applyAlterDropConstraint(prepared, databasePath, table, tableSchemaValue, statement)
+  found = -1
+  if len(tableSchemaValue.constraints) > 0 then
+    for index = 0 to len(tableSchemaValue.constraints) - 1
+      value = tableSchemaValue.constraints[index]
+      if value.name == statement.constraintName or value.indexName == statement.constraintName then found = index end if
+    end for
+  end if
+  if found < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "constraint not found: " + statement.constraintName) end if
+  removed = tableSchemaValue.constraints[found]
+  if removed.kind == CONSTRAINT_PRIMARY_KEY or removed.kind == CONSTRAINT_UNIQUE then
+    for each schemaValue in prepared.newState.tables
+      for each dependent in schemaValue.constraints
+        if dependent.kind == CONSTRAINT_FOREIGN_KEY and dependent.referenceTable == table.name and sameStringArray(dependent.referenceColumns, removed.columns) then
+          return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "constraint is referenced by foreign key " + dependent.name)
+        end if
+      end for
+    end for
+  end if
+  tableSchemaValue.constraints = removeAt(tableSchemaValue.constraints, found)
+  if removed.indexId > 0 then
+    original = indexFilePath(databasePath, removed.indexId)
+    prepared.backups = prepared.backups + [BackupPlan(original, original + ".ddl.old")]
+  end if
+  return true
+end function
+
+/// Rejects a column drop while any schema object still depends on that column.
+/// @param prepared Transactional schema-change state used for dependency lookup.
+/// @param table Table from which the column would be removed.
+/// @param columnName Exact column name being checked.
+function validateAlterDropColumnDependencies(prepared, table, columnName)
+  for each schemaValue in prepared.newState.tables
+    for each value in schemaValue.constraints
+      if schemaValue.tableId == table.tableId then
+        if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
+        if stringArrayContains(value.columns, columnName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
+        if value.indexId > 0 then
+          for each keyValue in value.columns
+            if isIndexExpressionKey(keyValue) and expressionSqlReferencesColumn(indexExpressionSql(keyValue), columnName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by expression index " + value.indexName) end if
+          end for
+        end if
+        if value.indexId > 0 and stringArrayContains(value.referenceColumns, columnName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is included by index " + value.indexName) end if
+        if value.indexId > 0 and expressionSqlReferencesColumn(value.expressionSql, columnName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by partial index " + value.indexName) end if
+      end if
+      if value.kind == CONSTRAINT_FOREIGN_KEY and value.referenceTable == table.name and stringArrayContains(value.referenceColumns, columnName) then
+        return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by foreign key " + value.name)
+      end if
+    end for
+  end for
+  return true
+end function
+
+/// Applies a metadata-only column drop after dependency and ownership validation.
+/// @param prepared Transactional schema-change state being updated.
+/// @param table Mutable catalog table losing the column.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed DROP COLUMN action.
+function applyAlterDropColumn(prepared, table, tableSchemaValue, statement)
+  columnIndex = columnIndexByName(table, statement.oldName)
+  if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+  if len(table.columns) <= 1 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "a table must retain at least one column") end if
+  // The executor separately requires an empty heap, so no stored row needs a
+  // physical rewrite under the shorter schema.
+  validateAlterDropColumnDependencies(prepared, table, statement.oldName)
+  generatedIndex = -1
+  if len(prepared.newState.generatedColumns) > 0 then
+    for index = 0 to len(prepared.newState.generatedColumns) - 1
+      generated = prepared.newState.generatedColumns[index]
+      if generated.tableId == table.tableId then
+        if generated.columnName == statement.oldName then generatedIndex = index else return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop generated columns before dropping a source column") end if
+      end if
+    end for
+  end if
+  for each trigger in prepared.newState.triggers
+    if trigger.tableId == table.tableId then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop table triggers before dropping a column") end if
+  end for
+  ruleIndex = -1
+  if len(tableSchemaValue.columnRules) > 0 then
+    for index = 0 to len(tableSchemaValue.columnRules) - 1
+      if tableSchemaValue.columnRules[index].columnName == statement.oldName then
+        if tableSchemaValue.columnRules[index].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column cannot be dropped while its sequence is owned") end if
+        ruleIndex = index
+      end if
+    end for
+  end if
+  table.columns = removeAt(table.columns, columnIndex)
+  if ruleIndex >= 0 then tableSchemaValue.columnRules = removeAt(tableSchemaValue.columnRules, ruleIndex) end if
+  if generatedIndex >= 0 then prepared.newState.generatedColumns = removeAt(prepared.newState.generatedColumns, generatedIndex) end if
+  return advanceSchemaVersion(table, tableSchemaValue)
+end function
+
+/// Applies SET/DROP DEFAULT while preserving identity-column ownership.
+/// @param table Catalog table used to validate the target column.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed default-changing action.
+function applyAlterDefault(table, tableSchemaValue, statement)
+  columnIndex = columnIndexByName(table, statement.oldName)
+  if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+  ruleIndex = -1
+  if len(tableSchemaValue.columnRules) > 0 then
+    for index = 0 to len(tableSchemaValue.columnRules) - 1
+      if tableSchemaValue.columnRules[index].columnName == statement.oldName then ruleIndex = index end if
+    end for
+  end if
+  if ruleIndex < 0 then
+    tableSchemaValue.columnRules = tableSchemaValue.columnRules + [columnRule(statement.oldName, void, false)]
+    ruleIndex = len(tableSchemaValue.columnRules) - 1
+  end if
+  if tableSchemaValue.columnRules[ruleIndex].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column default is sequence-owned") end if
+  if statement.action == ast.ALTER_TABLE_SET_DEFAULT then tableSchemaValue.columnRules[ruleIndex].defaultSql = ast.formatExpression(statement.columnDefinition) else tableSchemaValue.columnRules[ruleIndex].defaultSql = void end if
+  return advanceSchemaVersion(table, tableSchemaValue)
+end function
+
+/// Applies SET/DROP NOT NULL to one existing column.
+/// @param table Mutable catalog table containing the target column.
+/// @param tableSchemaValue Mutable schema rules associated with the table.
+/// @param statement Parsed nullability-changing action.
+function applyAlterNullability(table, tableSchemaValue, statement)
+  columnIndex = columnIndexByName(table, statement.oldName)
+  if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
+  table.columns[columnIndex].nullable = statement.action == ast.ALTER_TABLE_DROP_NOT_NULL
+  return advanceSchemaVersion(table, tableSchemaValue)
+end function
+
+/// Dispatches ALTER TABLE to one action-specific handler.
+/// @param prepared Transactional schema-change state being updated.
+/// @param databasePath Database directory used for physical schema changes.
+/// @param bound Bound ALTER TABLE statement and resolved table metadata.
 function buildAlterTable(prepared, databasePath, bound)
   statement = bound.statement
   table = catalogTableById(prepared.newCatalog, bound.table.tableId)
   if table is void then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "table no longer exists") end if
   tableSchemaValue = ensurePreparedTableSchema(prepared, table)
-  if statement.action == ast.ALTER_TABLE_ADD_COLUMN then
-    definition = statement.columnDefinition
-    if columnIndexByName(table, definition.name) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "column already exists: " + definition.name) end if
-    typeInfo = bound.columnType
-    columnId = allocateId(prepared.newMetadata)
-    table.columns = table.columns + [metadata.createColumn(columnId, definition.name, typeInfo.kind, typeInfo.nullable, typeInfo.length, typeInfo.precision, typeInfo.scale)]
-    table.schemaVersion = table.schemaVersion + 1
-    tableSchemaValue.schemaVersion = table.schemaVersion
-    defaultSql = void
-    if definition.defaultExpression is not void then defaultSql = ast.formatExpression(definition.defaultExpression) end if
-    tableSchemaValue.columnRules = tableSchemaValue.columnRules + [columnRule(definition.name, defaultSql, false)]
-    if definition.generatedExpression is not void then
-      prepared.newState.generatedColumns = prepared.newState.generatedColumns + [generatedColumnDefinition(table.tableId, definition.name, ast.formatExpression(definition.generatedExpression), definition.generatedStored)]
-    end if
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_RENAME_COLUMN then
-    columnIndex = columnIndexByName(table, statement.oldName)
-    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
-    if columnIndexByName(table, statement.newName) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "column already exists: " + statement.newName) end if
-    table.columns[columnIndex].name = statement.newName
-    for each rule in tableSchemaValue.columnRules
-      if rule.columnName == statement.oldName then rule.columnName = statement.newName end if
-    end for
-    for each schemaValue in prepared.newState.tables
-      for each value in schemaValue.constraints
-        if schemaValue.tableId == table.tableId then
-          renamedKeys = []
-          for each keyValue in value.columns
-            if value.indexId > 0 and isIndexExpressionKey(keyValue) then
-              renamedKeys = renamedKeys + [indexExpressionKey(renameExpressionSql(indexExpressionSql(keyValue), statement.oldName, statement.newName))]
-            else if keyValue == statement.oldName then
-              renamedKeys = renamedKeys + [statement.newName]
-            else
-              renamedKeys = renamedKeys + [keyValue]
-            end if
-          end for
-          value.columns = renamedKeys
-          if value.indexId > 0 then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
-          if value.indexId > 0 and len(value.expressionSql) > 0 then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
-          if value.kind == CONSTRAINT_CHECK then value.expressionSql = renameExpressionSql(value.expressionSql, statement.oldName, statement.newName) end if
-        end if
-        if value.referenceTable == table.name then value.referenceColumns = stringArrayReplace(value.referenceColumns, statement.oldName, statement.newName) end if
-      end for
-    end for
-    for each generated in prepared.newState.generatedColumns
-      if generated.tableId == table.tableId then
-        if generated.columnName == statement.oldName then generated.columnName = statement.newName end if
-        generated.expressionSql = renameExpressionSql(generated.expressionSql, statement.oldName, statement.newName)
-      end if
-    end for
-    for each trigger in prepared.newState.triggers
-      if trigger.tableId == table.tableId and trigger.targetColumn == statement.oldName then trigger.targetColumn = statement.newName end if
-    end for
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_RENAME_TABLE then
-    if tableIndexByName(prepared.newCatalog, statement.newName) >= 0 then return fail(OBJECT_EXISTS, "buildAlterTable", "table already exists: " + statement.newName) end if
-    oldName = table.name
-    table.name = statement.newName
-    for each schemaValue in prepared.newState.tables
-      for each value in schemaValue.constraints
-        if value.referenceTable == oldName then value.referenceTable = statement.newName end if
-      end for
-    end for
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_ADD_CONSTRAINT then
-    source = statement.constraint
-    if source.kind == CONSTRAINT_FOREIGN_KEY then
-      referenceIndex = tableIndexByName(prepared.newCatalog, source.referencesTable)
-      if referenceIndex < 0 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "referenced table does not exist: " + source.referencesTable) end if
-      referenceTable = prepared.newCatalog.tables[referenceIndex]
-      referenceSchema = findTableSchema(prepared.newState, referenceTable.tableId)
-      if len(source.columns) == 0 or len(source.columns) != len(source.referencesColumns) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column count mismatch") end if
-      if not uniqueConstraintForColumns(referenceSchema, source.referencesColumns) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign key target must be PRIMARY KEY or UNIQUE") end if
-      for pairIndex = 0 to len(source.columns) - 1
-        localIndex = columnIndexByName(table, source.columns[pairIndex])
-        remoteIndex = columnIndexByName(referenceTable, source.referencesColumns[pairIndex])
-        if localIndex < 0 or remoteIndex < 0 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column is missing") end if
-        if table.columns[localIndex].typeCode != referenceTable.columns[remoteIndex].typeCode then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "foreign-key column types differ") end if
-      end for
-    end if
-    if source.kind == CONSTRAINT_PRIMARY_KEY then
-      for each existing in tableSchemaValue.constraints
-        if existing.kind == CONSTRAINT_PRIMARY_KEY then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "table already has a PRIMARY KEY") end if
-      end for
-    end if
-    value = constraintFromAst(prepared, table, tableSchemaValue, source)
-    if value.kind == CONSTRAINT_PRIMARY_KEY then
-      for each columnName in value.columns
-        index = columnIndexByName(table, columnName)
-        if index >= 0 then table.columns[index].nullable = false end if
-      end for
-    end if
-    if value.indexId > 0 then
-      finalPath = indexFilePath(databasePath, value.indexId)
-      prepared.createFiles = prepared.createFiles + [CreateFilePlan(finalPath + ".ddl.new", finalPath, superblock.FILE_TYPE_INDEX, value.indexId, value.kind == CONSTRAINT_PRIMARY_KEY or value.kind == CONSTRAINT_UNIQUE)]
-    end if
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_DROP_CONSTRAINT then
-    found = -1
-    if len(tableSchemaValue.constraints) > 0 then
-      for index = 0 to len(tableSchemaValue.constraints) - 1
-        value = tableSchemaValue.constraints[index]
-        if value.name == statement.constraintName or value.indexName == statement.constraintName then found = index end if
-      end for
-    end if
-    if found < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "constraint not found: " + statement.constraintName) end if
-    removed = tableSchemaValue.constraints[found]
-    if removed.kind == CONSTRAINT_PRIMARY_KEY or removed.kind == CONSTRAINT_UNIQUE then
-      for each schemaValue in prepared.newState.tables
-        for each dependent in schemaValue.constraints
-          if dependent.kind == CONSTRAINT_FOREIGN_KEY and dependent.referenceTable == table.name and sameStringArray(dependent.referenceColumns, removed.columns) then
-            return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "constraint is referenced by foreign key " + dependent.name)
-          end if
-        end for
-      end for
-    end if
-    tableSchemaValue.constraints = removeAt(tableSchemaValue.constraints, found)
-    if removed.indexId > 0 then
-      original = indexFilePath(databasePath, removed.indexId)
-      prepared.backups = prepared.backups + [BackupPlan(original, original + ".ddl.old")]
-    end if
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_DROP_COLUMN then
-    columnIndex = columnIndexByName(table, statement.oldName)
-    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
-    if len(table.columns) <= 1 then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "a table must retain at least one column") end if
-    // Dropping a column is metadata-safe only after every dependent catalog
-    // object has been removed. The executor separately requires an empty heap,
-    // so no stored row ever needs a physical rewrite under the shorter schema.
-    for each schemaValue in prepared.newState.tables
-      for each value in schemaValue.constraints
-        if schemaValue.tableId == table.tableId then
-          if value.kind == CONSTRAINT_CHECK then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop CHECK constraints before dropping a column") end if
-          if stringArrayContains(value.columns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is used by constraint " + value.name) end if
-          if value.indexId > 0 then
-            for each keyValue in value.columns
-              if isIndexExpressionKey(keyValue) and expressionSqlReferencesColumn(indexExpressionSql(keyValue), statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by expression index " + value.indexName) end if
-            end for
-          end if
-          if value.indexId > 0 and stringArrayContains(value.referenceColumns, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is included by index " + value.indexName) end if
-          if value.indexId > 0 and expressionSqlReferencesColumn(value.expressionSql, statement.oldName) then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by partial index " + value.indexName) end if
-        end if
-        if value.kind == CONSTRAINT_FOREIGN_KEY and value.referenceTable == table.name and stringArrayContains(value.referenceColumns, statement.oldName) then
-          return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "column is referenced by foreign key " + value.name)
-        end if
-      end for
-    end for
-    generatedIndex = -1
-    if len(prepared.newState.generatedColumns) > 0 then
-      for index = 0 to len(prepared.newState.generatedColumns) - 1
-        generated = prepared.newState.generatedColumns[index]
-        if generated.tableId == table.tableId then
-          if generated.columnName == statement.oldName then generatedIndex = index else return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop generated columns before dropping a source column") end if
-        end if
-      end for
-    end if
-    for each trigger in prepared.newState.triggers
-      if trigger.tableId == table.tableId then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "drop table triggers before dropping a column") end if
-    end for
-    ruleIndex = -1
-    if len(tableSchemaValue.columnRules) > 0 then
-      for index = 0 to len(tableSchemaValue.columnRules) - 1
-        if tableSchemaValue.columnRules[index].columnName == statement.oldName then
-          if tableSchemaValue.columnRules[index].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column cannot be dropped while its sequence is owned") end if
-          ruleIndex = index
-        end if
-      end for
-    end if
-    table.columns = removeAt(table.columns, columnIndex)
-    if ruleIndex >= 0 then tableSchemaValue.columnRules = removeAt(tableSchemaValue.columnRules, ruleIndex) end if
-    if generatedIndex >= 0 then prepared.newState.generatedColumns = removeAt(prepared.newState.generatedColumns, generatedIndex) end if
-    table.schemaVersion = table.schemaVersion + 1
-    tableSchemaValue.schemaVersion = table.schemaVersion
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_SET_DEFAULT or statement.action == ast.ALTER_TABLE_DROP_DEFAULT then
-    columnIndex = columnIndexByName(table, statement.oldName)
-    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
-    ruleIndex = -1
-    if len(tableSchemaValue.columnRules) > 0 then
-      for index = 0 to len(tableSchemaValue.columnRules) - 1
-        if tableSchemaValue.columnRules[index].columnName == statement.oldName then ruleIndex = index end if
-      end for
-    end if
-    if ruleIndex < 0 then
-      tableSchemaValue.columnRules = tableSchemaValue.columnRules + [columnRule(statement.oldName, void, false)]
-      ruleIndex = len(tableSchemaValue.columnRules) - 1
-    end if
-    if tableSchemaValue.columnRules[ruleIndex].identity then return fail(CONSTRAINT_VIOLATION, "buildAlterTable", "identity column default is sequence-owned") end if
-    if statement.action == ast.ALTER_TABLE_SET_DEFAULT then tableSchemaValue.columnRules[ruleIndex].defaultSql = ast.formatExpression(statement.columnDefinition) else tableSchemaValue.columnRules[ruleIndex].defaultSql = void end if
-    table.schemaVersion = table.schemaVersion + 1
-    tableSchemaValue.schemaVersion = table.schemaVersion
-    return true
-  end if
-  if statement.action == ast.ALTER_TABLE_SET_NOT_NULL or statement.action == ast.ALTER_TABLE_DROP_NOT_NULL then
-    columnIndex = columnIndexByName(table, statement.oldName)
-    if columnIndex < 0 then return fail(OBJECT_NOT_FOUND, "buildAlterTable", "column not found: " + statement.oldName) end if
-    table.columns[columnIndex].nullable = statement.action == ast.ALTER_TABLE_DROP_NOT_NULL
-    table.schemaVersion = table.schemaVersion + 1
-    tableSchemaValue.schemaVersion = table.schemaVersion
-    return true
-  end if
+  if statement.action == ast.ALTER_TABLE_ADD_COLUMN then return applyAlterAddColumn(prepared, table, tableSchemaValue, statement, bound) end if
+  if statement.action == ast.ALTER_TABLE_RENAME_COLUMN then return applyAlterRenameColumn(prepared, table, tableSchemaValue, statement) end if
+  if statement.action == ast.ALTER_TABLE_RENAME_TABLE then return applyAlterRenameTable(prepared, table, statement) end if
+  if statement.action == ast.ALTER_TABLE_ADD_CONSTRAINT then return applyAlterAddConstraint(prepared, databasePath, table, tableSchemaValue, statement) end if
+  if statement.action == ast.ALTER_TABLE_DROP_CONSTRAINT then return applyAlterDropConstraint(prepared, databasePath, table, tableSchemaValue, statement) end if
+  if statement.action == ast.ALTER_TABLE_DROP_COLUMN then return applyAlterDropColumn(prepared, table, tableSchemaValue, statement) end if
+  if statement.action == ast.ALTER_TABLE_SET_DEFAULT or statement.action == ast.ALTER_TABLE_DROP_DEFAULT then return applyAlterDefault(table, tableSchemaValue, statement) end if
+  if statement.action == ast.ALTER_TABLE_SET_NOT_NULL or statement.action == ast.ALTER_TABLE_DROP_NOT_NULL then return applyAlterNullability(table, tableSchemaValue, statement) end if
   return fail(UNSUPPORTED_SQL, "buildAlterTable", "unsupported ALTER TABLE action")
 end function
 

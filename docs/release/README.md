@@ -1,4 +1,4 @@
-# MiniSQL 1.0.0
+# MiniSQL 1.1.0
 
 MiniSQL is a native Windows x64 and Linux x64 relational database management
 system written in MiniLang. The Windows distribution contains:

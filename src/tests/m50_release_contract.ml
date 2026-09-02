@@ -31,7 +31,7 @@ function main(args)
 
   state = testkit.create()
   testkit.equal(state, version.productName(), "MiniSQL", "release product name")
-  testkit.equal(state, version.productVersion(), "1.0.0", "release semantic version")
+  testkit.equal(state, version.productVersion(), "1.1.0", "release semantic version")
   testkit.equal(state, version.milestone(), "M50", "release milestone freeze")
   testkit.equal(state, version.WIRE_PROTOCOL_VERSION, 1, "wire protocol remains v1")
   testkit.equal(state, version.DATABASE_FORMAT_VERSION, 1, "database format remains v1")

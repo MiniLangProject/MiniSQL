@@ -1,0 +1,52 @@
+# Package `minisql.platform.tls_policy`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/platform/tls_policy.ml](File-src-minisql-platform-tls-policy-ml-1426658235.md)
+
+## Symbols
+
+- [`minisql.platform.tls_policy.appendHandshakeBytes`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-appendhandshakebytes-function-appendhandshakebytes-left-right-src-minisql-platform-tls-policy-ml-962026581) — function
+- [`minisql.platform.tls_policy.CertificatePolicy`](Type-minisql-platform-tls-policy-certificatepolicy-307377760.md) — struct
+- [`minisql.platform.tls_policy.cipherAllowed`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-cipherallowed-function-cipherallowed-policy-wireid-src-minisql-platform-tls-policy-ml-1568283782) — function
+- [`minisql.platform.tls_policy.cipherSuiteById`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-ciphersuitebyid-function-ciphersuitebyid-wireid-src-minisql-platform-tls-policy-ml-68173372) — function
+- [`minisql.platform.tls_policy.collectHandshakeMessages`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-collecthandshakemessages-function-collecthandshakemessages-transcript-src-minisql-platform-tls-policy-ml-904750060) — function
+- [`minisql.platform.tls_policy.componentName`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-componentname-function-componentname-src-minisql-platform-tls-policy-ml-2115096750) — function
+- [`minisql.platform.tls_policy.defaultClientPolicy`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-defaultclientpolicy-function-defaultclientpolicy-servername-src-minisql-platform-tls-policy-ml-269088350) — function
+- [`minisql.platform.tls_policy.defaultServerPolicy`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-defaultserverpolicy-function-defaultserverpolicy-src-minisql-platform-tls-policy-ml-66125718) — function
+- [`minisql.platform.tls_policy.fail`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-fail-function-fail-operation-message-src-minisql-platform-tls-policy-ml-2090509478) — function
+- [`minisql.platform.tls_policy.groupAllowed`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-groupallowed-function-groupallowed-policy-wireid-src-minisql-platform-tls-policy-ml-944474028) — function
+- [`minisql.platform.tls_policy.groupById`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-groupbyid-function-groupbyid-wireid-src-minisql-platform-tls-policy-ml-1009707552) — function
+- [`minisql.platform.tls_policy.hexValue`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-hexvalue-function-hexvalue-value-src-minisql-platform-tls-policy-ml-309886941) — function
+- [`minisql.platform.tls_policy.INVALID_ARGUMENT`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-invalid-argument-const-invalid-argument-9001-src-minisql-platform-tls-policy-ml-1201749365) — constant
+- [`minisql.platform.tls_policy.isHelloRetryRequest`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-ishelloretryrequest-function-ishelloretryrequest-body-src-minisql-platform-tls-policy-ml-1565169796) — function
+- [`minisql.platform.tls_policy.isImplemented`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-isimplemented-function-isimplemented-src-minisql-platform-tls-policy-ml-1668845638) — function
+- [`minisql.platform.tls_policy.KEY_SHARE_EXTENSION`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-key-share-extension-const-key-share-extension-51-src-minisql-platform-tls-policy-ml-2032381577) — constant
+- [`minisql.platform.tls_policy.MAX_HANDSHAKE_TRANSCRIPT_BYTES`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-max-handshake-transcript-bytes-const-max-handshake-transcript-bytes-262144-src-minisql-platform-tls-policy-ml-501584060) — constant
+- [`minisql.platform.tls_policy.parseServerHelloBody`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-parseserverhellobody-function-parseserverhellobody-body-src-minisql-platform-tls-policy-ml-1201788246) — function
+- [`minisql.platform.tls_policy.parseSha256Pin`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-parsesha256pin-function-parsesha256pin-text-src-minisql-platform-tls-policy-ml-515183321) — function
+- [`minisql.platform.tls_policy.pinnedCertificatePolicy`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-pinnedcertificatepolicy-function-pinnedcertificatepolicy-servername-pintext-src-minisql-platform-tls-policy-ml-354626578) — function
+- [`minisql.platform.tls_policy.pinnedClientPolicy`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-pinnedclientpolicy-function-pinnedclientpolicy-servername-pintext-src-minisql-platform-tls-policy-ml-568447664) — function
+- [`minisql.platform.tls_policy.SERVER_HELLO_MESSAGE`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-server-hello-message-const-server-hello-message-2-src-minisql-platform-tls-policy-ml-1548680213) — constant
+- [`minisql.platform.tls_policy.serverHelloSelection`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-serverhelloselection-function-serverhelloselection-transcript-src-minisql-platform-tls-policy-ml-1895599636) — function
+- [`minisql.platform.tls_policy.ServerHelloSelection`](Type-minisql-platform-tls-policy-serverhelloselection-91121722.md) — struct
+- [`minisql.platform.tls_policy.SUPPORTED_VERSIONS_EXTENSION`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-supported-versions-extension-const-supported-versions-extension-43-src-minisql-platform-tls-policy-ml-123873466) — constant
+- [`minisql.platform.tls_policy.supportedCipherSuites`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-supportedciphersuites-function-supportedciphersuites-src-minisql-platform-tls-policy-ml-756521814) — function
+- [`minisql.platform.tls_policy.supportedGroups`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-supportedgroups-function-supportedgroups-src-minisql-platform-tls-policy-ml-562626362) — function
+- [`minisql.platform.tls_policy.systemCertificatePolicy`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-systemcertificatepolicy-function-systemcertificatepolicy-servername-src-minisql-platform-tls-policy-ml-1122491638) — function
+- [`minisql.platform.tls_policy.targetMilestone`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-targetmilestone-function-targetmilestone-src-minisql-platform-tls-policy-ml-1899501528) — function
+- [`minisql.platform.tls_policy.TLS_1_2_LEGACY_VERSION`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-tls-1-2-legacy-version-const-tls-1-2-legacy-version-771-src-minisql-platform-tls-policy-ml-1952019474) — constant
+- [`minisql.platform.tls_policy.TLS_1_3_VERSION`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-tls-1-3-version-const-tls-1-3-version-772-src-minisql-platform-tls-policy-ml-983625961) — constant
+- [`minisql.platform.tls_policy.TLS_AES_256_GCM_SHA384_ID`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-tls-aes-256-gcm-sha384-id-const-tls-aes-256-gcm-sha384-id-4866-src-minisql-platform-tls-policy-ml-58146971) — constant
+- [`minisql.platform.tls_policy.TLS_ERROR`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-tls-error-const-tls-error-9034-src-minisql-platform-tls-policy-ml-1099767985) — constant
+- [`minisql.platform.tls_policy.TLS_HANDSHAKE_RECORD`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-tls-handshake-record-const-tls-handshake-record-22-src-minisql-platform-tls-policy-ml-2101176863) — constant
+- [`minisql.platform.tls_policy.tlsAes256GcmSha384`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-tlsaes256gcmsha384-function-tlsaes256gcmsha384-src-minisql-platform-tls-policy-ml-460685846) — function
+- [`minisql.platform.tls_policy.TlsCipherSuite`](Type-minisql-platform-tls-policy-tlsciphersuite-1550476789.md) — struct
+- [`minisql.platform.tls_policy.TlsNamedGroup`](Type-minisql-platform-tls-policy-tlsnamedgroup-327531472.md) — struct
+- [`minisql.platform.tls_policy.TlsPolicy`](Type-minisql-platform-tls-policy-tlspolicy-1409561862.md) — struct
+- [`minisql.platform.tls_policy.validate`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-validate-function-validate-policy-src-minisql-platform-tls-policy-ml-614052436) — function
+- [`minisql.platform.tls_policy.verifyServerHello`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-verifyserverhello-function-verifyserverhello-policy-transcript-src-minisql-platform-tls-policy-ml-834869930) — function
+- [`minisql.platform.tls_policy.x25519`](File-src-minisql-platform-tls-policy-ml-1426658235.md#function-function-minisql-platform-tls-policy-x25519-function-x25519-src-minisql-platform-tls-policy-ml-1408556718) — function
+- [`minisql.platform.tls_policy.X25519_ID`](File-src-minisql-platform-tls-policy-ml-1426658235.md#constant-constant-minisql-platform-tls-policy-x25519-id-const-x25519-id-29-src-minisql-platform-tls-policy-ml-424577532) — constant

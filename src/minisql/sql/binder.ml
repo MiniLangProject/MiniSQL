@@ -984,175 +984,223 @@ function maskOuterSelect(statement, sources)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
-// Binds expression internal using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Binds a scalar, EXISTS, or IN subquery after masking correlated references.
+/// @param expression Subquery expression node to bind.
+/// @param sources Visible outer sources that must not become correlations.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used to bind the nested SELECT.
+function bindSubqueryExpression(expression, sources, allowAggregates, database)
+  if database is void then return fail(BINDING_ERROR, "bindSubquery", "subqueries are not supported in this statement context") end if
+  query = maskOuterSelect(expression.query, sources)
+  nested = bindSelect(query, database)
+  if ast.isExistsExpression(expression) then return expressions.subquery(expressions.SUBQUERY_EXISTS, expression.query, void, false, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false)) end if
+  if len(nested.items) != 1 then return fail(BINDING_ERROR, "bindSubquery", "subquery must return exactly one column") end if
+  if ast.isSubqueryExpression(expression) then return expressions.subquery(expressions.SUBQUERY_SCALAR, expression.query, void, false, resultTypeWithNullability(nested.items[0].typeInfo, true)) end if
+  operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
+  if not types.comparable(operand.typeInfo, nested.items[0].typeInfo) then return fail(TYPE_MISMATCH, "bindSubquery", "IN operand and subquery column are incompatible") end if
+  return expressions.subquery(expressions.SUBQUERY_IN, expression.query, operand, expression.negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, true))
+end function
+
+/// Validates the arity and types required by one supported window function.
+/// @param name Normalized window-function name.
+/// @param ranking Whether the function belongs to the ranking family.
+/// @param countStar Whether the function represents COUNT(*).
+/// @param arguments Bound window-function arguments.
+function validateWindowArguments(name, ranking, countStar, arguments)
+  if ranking and len(arguments) != 0 then return fail(BINDING_ERROR, "bindExpression", name + " takes no arguments") end if
+  if isWindowAggregateName(name) and not countStar and len(arguments) != 1 then return fail(BINDING_ERROR, "bindExpression", name + " window requires one argument") end if
+  if name == "NTILE" and (len(arguments) != 1 or not types.isIntegralKind(arguments[0].typeInfo.kind)) then return fail(TYPE_MISMATCH, "bindExpression", "NTILE requires one integral bucket count") end if
+  if (name == "LAG" or name == "LEAD") and (len(arguments) < 1 or len(arguments) > 3) then return fail(BINDING_ERROR, "bindExpression", name + " requires value, optional offset, and optional default") end if
+  if (name == "LAG" or name == "LEAD") and len(arguments) >= 2 and not types.isIntegralKind(arguments[1].typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", name + " offset must be integral") end if
+  if (name == "LAG" or name == "LEAD") and len(arguments) == 3 and not types.comparable(arguments[0].typeInfo, arguments[2].typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", name + " default is incompatible with its value") end if
+  if (name == "FIRST_VALUE" or name == "LAST_VALUE") and len(arguments) != 1 then return fail(BINDING_ERROR, "bindExpression", name + " requires one value") end if
+  if name == "NTH_VALUE" and (len(arguments) != 2 or not types.isIntegralKind(arguments[1].typeInfo.kind)) then return fail(TYPE_MISMATCH, "bindExpression", "NTH_VALUE requires a value and integral position") end if
+  return true
+end function
+
+/// Binds one window expression and preserves its ordering metadata arrays.
+/// @param expression Window expression node to bind.
+/// @param sources Visible row sources for columns and scalar expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindWindowExpression(expression, sources, database)
+  name = expression.name
+  ranking = name == "ROW_NUMBER" or name == "RANK" or name == "DENSE_RANK" or name == "PERCENT_RANK" or name == "CUME_DIST"
+  navigation = name == "NTILE" or name == "LAG" or name == "LEAD" or name == "FIRST_VALUE" or name == "LAST_VALUE" or name == "NTH_VALUE"
+  if not ranking and not navigation and not isWindowAggregateName(name) then return fail(BINDING_ERROR, "bindExpression", "unsupported window function " + name) end if
+  arguments = []
+  countStar = name == "COUNT" and len(expression.arguments) == 1 and ast.isStarExpression(expression.arguments[0])
+  if not countStar then
+    for each argumentAst in expression.arguments
+      arguments = arguments + [bindExpressionInternal(argumentAst, sources, false, database)]
+    end for
+  end if
+  validateWindowArguments(name, ranking, countStar, arguments)
+  partitions = []
+  for each partitionAst in expression.partitionBy
+    partitions = partitions + [bindExpressionInternal(partitionAst, sources, false, database)]
+  end for
+  orders = []
+  descending = []
+  nullsFirst = []
+  nullsSpecified = []
+  for each orderItem in expression.orderBy
+    orders = orders + [bindExpressionInternal(orderItem.expression, sources, false, database)]
+    descending = descending + [orderItem.descending]
+    nullsFirst = nullsFirst + [orderItem.nullsFirst]
+    nullsSpecified = nullsSpecified + [orderItem.nullsSpecified]
+  end for
+  if navigation and len(orders) == 0 then return fail(BINDING_ERROR, "bindExpression", name + " requires ORDER BY") end if
+  resultType = types.create(types.SqlTypeKind.BigInt, 0, 0, 0, false)
+  if name == "PERCENT_RANK" or name == "CUME_DIST" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, false) end if
+  if name == "LAG" or name == "LEAD" or name == "FIRST_VALUE" or name == "LAST_VALUE" or name == "NTH_VALUE" then resultType = resultTypeWithNullability(arguments[0].typeInfo, true) end if
+  if isWindowAggregateName(name) then resultType = bindAggregate(ast.functionExpression(name, expression.arguments, false), sources, database).typeInfo end if
+  return expressions.window(name, arguments, partitions, orders, descending, nullsFirst, nullsSpecified, resultType)
+end function
+
+/// Binds all CASE branches while deriving their common nullable result type.
+/// @param expression CASE expression node to bind.
+/// @param sources Visible row sources for branch expressions.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindCaseExpression(expression, sources, allowAggregates, database)
+  branches = []
+  resultType = void
+  hasConcrete = false
+  for each branchAst in expression.branches
+    condition = ensureBoolean(bindExpressionInternal(branchAst.condition, sources, allowAggregates, database), "bindExpression.CASE")
+    result = bindExpressionInternal(branchAst.result, sources, allowAggregates, database)
+    merged = mergeResultType(resultType, hasConcrete, result)
+    resultType = merged[0]
+    hasConcrete = merged[1]
+    branches = branches + [expressions.caseBranch(condition, result)]
+  end for
+  elseExpression = void
+  if expression.elseExpression is not void then
+    elseExpression = bindExpressionInternal(expression.elseExpression, sources, allowAggregates, database)
+    merged = mergeResultType(resultType, hasConcrete, elseExpression)
+    resultType = merged[0]
+  else
+    resultType = resultTypeWithNullability(resultType, true)
+  end if
+  return expressions.caseExpression(branches, elseExpression, resultType)
+end function
+
+/// Binds one IN-list predicate and verifies every candidate type.
+/// @param expression IN-list expression node to bind.
+/// @param sources Visible row sources for operands and candidates.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindInExpression(expression, sources, allowAggregates, database)
+  operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
+  candidates = []
+  for each candidateAst in expression.values
+    candidate = bindExpressionInternal(candidateAst, sources, allowAggregates, database)
+    if not isNullBoundLiteral(operand) and not isNullBoundLiteral(candidate) and not types.comparable(operand.typeInfo, candidate.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "IN candidate is incompatible with operand") end if
+    candidates = candidates + [candidate]
+  end for
+  return expressions.inPredicate(operand, candidates, expression.negated)
+end function
+
+/// Binds one BETWEEN predicate and validates both boundary types.
+/// @param expression BETWEEN expression node to bind.
+/// @param sources Visible row sources for the operand and boundaries.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindBetweenExpression(expression, sources, allowAggregates, database)
+  operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
+  lower = bindExpressionInternal(expression.lower, sources, allowAggregates, database)
+  upper = bindExpressionInternal(expression.upper, sources, allowAggregates, database)
+  if not isNullBoundLiteral(operand) and not isNullBoundLiteral(lower) and not types.comparable(operand.typeInfo, lower.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "BETWEEN lower bound is incompatible") end if
+  if not isNullBoundLiteral(operand) and not isNullBoundLiteral(upper) and not types.comparable(operand.typeInfo, upper.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "BETWEEN upper bound is incompatible") end if
+  return expressions.betweenPredicate(operand, lower, upper, expression.negated)
+end function
+
+/// Binds a unary operator, including the signed-literal minimum-value path.
+/// @param expression Unary expression node to bind.
+/// @param sources Visible row sources for the operand.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindUnaryExpression(expression, sources, allowAggregates, database)
+  if expression.operator == "-" and ast.isLiteralExpression(expression.operand) and expression.operand.literalKind == ast.LITERAL_INTEGER and typeof(expression.operand.value) == "string" then
+    signedValue = values.literalInteger("-" + expression.operand.value)
+    return expressions.literal(signedValue, literalType(signedValue))
+  end if
+  operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
+  if expression.operator == "NOT" then
+    ensureBoolean(operand, "bindExpression.NOT")
+    return expressions.unary("NOT", operand, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, operand.typeInfo.nullable))
+  end if
+  if expression.operator == "+" or expression.operator == "-" then
+    if not types.isNumeric(operand.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "unary numeric operator requires number") end if
+    return expressions.unary(expression.operator, operand, operand.typeInfo)
+  end if
+  return fail(BINDING_ERROR, "bindExpression", "unsupported unary operator " + expression.operator)
+end function
+
+/// Binds a binary operator and computes its SQL result type.
+/// @param expression Binary expression node to bind.
+/// @param sources Visible row sources for both operands.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
+function bindBinaryExpression(expression, sources, allowAggregates, database)
+  left = bindExpressionInternal(expression.left, sources, allowAggregates, database)
+  right = bindExpressionInternal(expression.right, sources, allowAggregates, database)
+  operator = expression.operator
+  if operator == "AND" or operator == "OR" then
+    ensureBoolean(left, "bindExpression.logical.left")
+    ensureBoolean(right, "bindExpression.logical.right")
+    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+  end if
+  if operator == "+" or operator == "-" or operator == "*" or operator == "/" or operator == "%" then
+    if not types.isNumeric(left.typeInfo) or not types.isNumeric(right.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "arithmetic requires numeric operands") end if
+    resultType = types.commonNumeric(left.typeInfo, right.typeInfo)
+    if operator == "/" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, resultType.nullable) end if
+    return expressions.binary(operator, left, right, resultType)
+  end if
+  if operator == "||" then
+    if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "|| requires text operands") end if
+    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Text, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+  end if
+  if operator == "LIKE" or operator == "NOT LIKE" then
+    if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "LIKE requires text operands") end if
+    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+  end if
+  if operator == "=" or operator == "<>" or operator == "!=" or operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then
+    comparable = isNullBoundLiteral(left) or isNullBoundLiteral(right) or types.comparable(left.typeInfo, right.typeInfo)
+    if not comparable then return fail(TYPE_MISMATCH, "bindExpression", "comparison operands are incompatible") end if
+    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+  end if
+  return fail(BINDING_ERROR, "bindExpression", "unsupported binary operator " + operator)
+end function
+
+/// Dispatches one AST expression to its node-specific binder.
+/// @param expression AST expression node to bind.
+/// @param sources Visible row sources for name resolution.
+/// @param allowAggregates Whether this clause permits aggregate expressions.
+/// @param database Catalog handle used by nested expression binding.
 function bindExpressionInternal(expression, sources, allowAggregates, database)
   if ast.isTypedLiteralExpression(expression) then return expressions.literal(expression.value, literalType(expression.value)) end if
   if ast.isLiteralExpression(expression) then return bindLiteral(expression) end if
   if ast.isColumnExpression(expression) then return bindColumnSources(expression, sources) end if
   if ast.isStarExpression(expression) then return fail(BINDING_ERROR, "bindExpression", "'*' is valid only as a SELECT item or COUNT(*)") end if
-  if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) or ast.isInSubqueryExpression(expression) then
-    if database is void then return fail(BINDING_ERROR, "bindSubquery", "subqueries are not supported in this statement context") end if
-    query = maskOuterSelect(expression.query, sources)
-    nested = bindSelect(query, database)
-    if ast.isExistsExpression(expression) then return expressions.subquery(expressions.SUBQUERY_EXISTS, expression.query, void, false, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false)) end if
-    if len(nested.items) != 1 then return fail(BINDING_ERROR, "bindSubquery", "subquery must return exactly one column") end if
-    if ast.isSubqueryExpression(expression) then return expressions.subquery(expressions.SUBQUERY_SCALAR, expression.query, void, false, resultTypeWithNullability(nested.items[0].typeInfo, true)) end if
-    operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-    if not types.comparable(operand.typeInfo, nested.items[0].typeInfo) then return fail(TYPE_MISMATCH, "bindSubquery", "IN operand and subquery column are incompatible") end if
-    return expressions.subquery(expressions.SUBQUERY_IN, expression.query, operand, expression.negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, true))
-  end if
-  if ast.isWindowExpression(expression) then
-    name = expression.name
-    ranking = name == "ROW_NUMBER" or name == "RANK" or name == "DENSE_RANK" or name == "PERCENT_RANK" or name == "CUME_DIST"
-    navigation = name == "NTILE" or name == "LAG" or name == "LEAD" or name == "FIRST_VALUE" or name == "LAST_VALUE" or name == "NTH_VALUE"
-    supported = ranking or navigation or isWindowAggregateName(name)
-    if not supported then return fail(BINDING_ERROR, "bindExpression", "unsupported window function " + name) end if
-    arguments = []
-    countStar = name == "COUNT" and len(expression.arguments) == 1 and ast.isStarExpression(expression.arguments[0])
-    if not countStar then
-      for each argumentAst in expression.arguments
-        arguments = arguments + [bindExpressionInternal(argumentAst, sources, false, database)]
-      end for
-    end if
-    if ranking and len(arguments) != 0 then return fail(BINDING_ERROR, "bindExpression", name + " takes no arguments") end if
-    if isWindowAggregateName(name) and not countStar and len(arguments) != 1 then return fail(BINDING_ERROR, "bindExpression", name + " window requires one argument") end if
-    if name == "NTILE" and (len(arguments) != 1 or not types.isIntegralKind(arguments[0].typeInfo.kind)) then return fail(TYPE_MISMATCH, "bindExpression", "NTILE requires one integral bucket count") end if
-    if (name == "LAG" or name == "LEAD") and (len(arguments) < 1 or len(arguments) > 3) then return fail(BINDING_ERROR, "bindExpression", name + " requires value, optional offset, and optional default") end if
-    if (name == "LAG" or name == "LEAD") and len(arguments) >= 2 and not types.isIntegralKind(arguments[1].typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", name + " offset must be integral") end if
-    if (name == "LAG" or name == "LEAD") and len(arguments) == 3 and not types.comparable(arguments[0].typeInfo, arguments[2].typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", name + " default is incompatible with its value") end if
-    if (name == "FIRST_VALUE" or name == "LAST_VALUE") and len(arguments) != 1 then return fail(BINDING_ERROR, "bindExpression", name + " requires one value") end if
-    if name == "NTH_VALUE" and (len(arguments) != 2 or not types.isIntegralKind(arguments[1].typeInfo.kind)) then return fail(TYPE_MISMATCH, "bindExpression", "NTH_VALUE requires a value and integral position") end if
-    partitions = []
-    for each partitionAst in expression.partitionBy
-      partitions = partitions + [bindExpressionInternal(partitionAst, sources, false, database)]
-    end for
-    orders = []
-    descending = []
-    nullsFirst = []
-    nullsSpecified = []
-    for each orderItem in expression.orderBy
-      orders = orders + [bindExpressionInternal(orderItem.expression, sources, false, database)]
-      descending = descending + [orderItem.descending]
-      nullsFirst = nullsFirst + [orderItem.nullsFirst]
-      nullsSpecified = nullsSpecified + [orderItem.nullsSpecified]
-    end for
-    if navigation and len(orders) == 0 then return fail(BINDING_ERROR, "bindExpression", name + " requires ORDER BY") end if
-    resultType = types.create(types.SqlTypeKind.BigInt, 0, 0, 0, false)
-    if name == "PERCENT_RANK" or name == "CUME_DIST" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, false) end if
-    if name == "LAG" or name == "LEAD" or name == "FIRST_VALUE" or name == "LAST_VALUE" or name == "NTH_VALUE" then resultType = resultTypeWithNullability(arguments[0].typeInfo, true) end if
-    if isWindowAggregateName(name) then
-      pseudo = ast.functionExpression(name, expression.arguments, false)
-      aggregateValue = bindAggregate(pseudo, sources, database)
-      resultType = aggregateValue.typeInfo
-    end if
-    return expressions.window(name, arguments, partitions, orders, descending, nullsFirst, nullsSpecified, resultType)
-  end if
+  if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) or ast.isInSubqueryExpression(expression) then return bindSubqueryExpression(expression, sources, allowAggregates, database) end if
+  if ast.isWindowExpression(expression) then return bindWindowExpression(expression, sources, database) end if
   if ast.isFunctionExpression(expression) then
     if isScalarFunctionName(expression.name) then return bindScalarFunction(expression, sources, allowAggregates, database) end if
     if not allowAggregates then return fail(BINDING_ERROR, "bindExpression", "aggregate is not allowed in this clause") end if
     return bindAggregate(expression, sources, database)
   end if
-  if ast.isCaseExpression(expression) then
-    branches = []
-    resultType = void
-    hasConcrete = false
-    for each branchAst in expression.branches
-      condition = ensureBoolean(bindExpressionInternal(branchAst.condition, sources, allowAggregates, database), "bindExpression.CASE")
-      result = bindExpressionInternal(branchAst.result, sources, allowAggregates, database)
-      merged = mergeResultType(resultType, hasConcrete, result)
-      resultType = merged[0]
-      hasConcrete = merged[1]
-      branches = branches + [expressions.caseBranch(condition, result)]
-    end for
-    elseExpression = void
-    if expression.elseExpression is not void then
-      elseExpression = bindExpressionInternal(expression.elseExpression, sources, allowAggregates, database)
-      merged = mergeResultType(resultType, hasConcrete, elseExpression)
-      resultType = merged[0]
-      hasConcrete = merged[1]
-    else
-      resultType = resultTypeWithNullability(resultType, true)
-    end if
-    return expressions.caseExpression(branches, elseExpression, resultType)
-  end if
+  if ast.isCaseExpression(expression) then return bindCaseExpression(expression, sources, allowAggregates, database) end if
   if ast.isCastExpression(expression) then
     operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-    targetType = types.fromTypeName(expression.targetType, operand.typeInfo.nullable or isNullBoundLiteral(operand))
-    return expressions.castExpression(operand, targetType)
+    return expressions.castExpression(operand, types.fromTypeName(expression.targetType, operand.typeInfo.nullable or isNullBoundLiteral(operand)))
   end if
-  if ast.isInExpression(expression) then
-    operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-    candidates = []
-    for each candidateAst in expression.values
-      candidate = bindExpressionInternal(candidateAst, sources, allowAggregates, database)
-      if not isNullBoundLiteral(operand) and not isNullBoundLiteral(candidate) and not types.comparable(operand.typeInfo, candidate.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "IN candidate is incompatible with operand") end if
-      candidates = candidates + [candidate]
-    end for
-    return expressions.inPredicate(operand, candidates, expression.negated)
-  end if
-  if ast.isBetweenExpression(expression) then
-    operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-    lower = bindExpressionInternal(expression.lower, sources, allowAggregates, database)
-    upper = bindExpressionInternal(expression.upper, sources, allowAggregates, database)
-    if not isNullBoundLiteral(operand) and not isNullBoundLiteral(lower) and not types.comparable(operand.typeInfo, lower.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "BETWEEN lower bound is incompatible") end if
-    if not isNullBoundLiteral(operand) and not isNullBoundLiteral(upper) and not types.comparable(operand.typeInfo, upper.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "BETWEEN upper bound is incompatible") end if
-    return expressions.betweenPredicate(operand, lower, upper, expression.negated)
-  end if
-  if ast.isTruthTestExpression(expression) then
-    operand = ensureBoolean(bindExpressionInternal(expression.operand, sources, allowAggregates, database), "bindExpression.truthTest")
-    return expressions.truthTest(operand, expression.expected, expression.negated)
-  end if
+  if ast.isInExpression(expression) then return bindInExpression(expression, sources, allowAggregates, database) end if
+  if ast.isBetweenExpression(expression) then return bindBetweenExpression(expression, sources, allowAggregates, database) end if
+  if ast.isTruthTestExpression(expression) then return expressions.truthTest(ensureBoolean(bindExpressionInternal(expression.operand, sources, allowAggregates, database), "bindExpression.truthTest"), expression.expected, expression.negated) end if
   if ast.isIsNullExpression(expression) then return expressions.isNull(bindExpressionInternal(expression.operand, sources, allowAggregates, database), expression.negated) end if
-  if ast.isUnaryExpression(expression) then
-    if expression.operator == "-" and ast.isLiteralExpression(expression.operand) and expression.operand.literalKind == ast.LITERAL_INTEGER and typeof(expression.operand.value) == "string" then
-      signedValue = values.literalInteger("-" + expression.operand.value)
-      return expressions.literal(signedValue, literalType(signedValue))
-    end if
-    operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-    if expression.operator == "NOT" then
-      ensureBoolean(operand, "bindExpression.NOT")
-      return expressions.unary("NOT", operand, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, operand.typeInfo.nullable))
-    end if
-    if expression.operator == "+" or expression.operator == "-" then
-      if not types.isNumeric(operand.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "unary numeric operator requires number") end if
-      return expressions.unary(expression.operator, operand, operand.typeInfo)
-    end if
-    return fail(BINDING_ERROR, "bindExpression", "unsupported unary operator " + expression.operator)
-  end if
-  if ast.isBinaryExpression(expression) then
-    left = bindExpressionInternal(expression.left, sources, allowAggregates, database)
-    right = bindExpressionInternal(expression.right, sources, allowAggregates, database)
-    operator = expression.operator
-    if operator == "AND" or operator == "OR" then
-      ensureBoolean(left, "bindExpression.logical.left")
-      ensureBoolean(right, "bindExpression.logical.right")
-      return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
-    end if
-    if operator == "+" or operator == "-" or operator == "*" or operator == "/" or operator == "%" then
-      if not types.isNumeric(left.typeInfo) or not types.isNumeric(right.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "arithmetic requires numeric operands") end if
-      resultType = types.commonNumeric(left.typeInfo, right.typeInfo)
-      if operator == "/" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, resultType.nullable) end if
-      return expressions.binary(operator, left, right, resultType)
-    end if
-    if operator == "||" then
-      if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "|| requires text operands") end if
-      return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Text, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
-    end if
-    if operator == "LIKE" or operator == "NOT LIKE" then
-      if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "LIKE requires text operands") end if
-      return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
-    end if
-    if operator == "=" or operator == "<>" or operator == "!=" or operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then
-      comparable = false
-      if isNullBoundLiteral(left) or isNullBoundLiteral(right) then comparable = true else comparable = types.comparable(left.typeInfo, right.typeInfo) end if
-      if not comparable then return fail(TYPE_MISMATCH, "bindExpression", "comparison operands are incompatible") end if
-      return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
-    end if
-    return fail(BINDING_ERROR, "bindExpression", "unsupported binary operator " + operator)
-  end if
+  if ast.isUnaryExpression(expression) then return bindUnaryExpression(expression, sources, allowAggregates, database) end if
+  if ast.isBinaryExpression(expression) then return bindBinaryExpression(expression, sources, allowAggregates, database) end if
   return fail(INVALID_ARGUMENT, "bindExpression", "value is not an AST expression")
 end function
 

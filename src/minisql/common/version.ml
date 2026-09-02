@@ -8,7 +8,7 @@ package minisql.common.version
 // version so compatibility checks remain explicit.
 
 const PRODUCT_NAME = "MiniSQL"
-const PRODUCT_VERSION = "1.0.0"
+const PRODUCT_VERSION = "1.1.0"
 const MILESTONE = "M50"
 const REVISION = "M48-M50R3"
 const WIRE_PROTOCOL_VERSION = 1

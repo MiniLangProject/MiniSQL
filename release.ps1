@@ -15,7 +15,7 @@ Path to the MiniLang Python compiler; build-time discovery is used when omitted.
 .PARAMETER Python
 Python executable used for compilation and deterministic archive generation.
 .PARAMETER Output
-Optional release archive path; defaults to build/release for version 1.0.0.
+Optional release archive path; defaults to build/release for version 1.1.0.
 #>
 param(
   [string]$Compiler = $env:MINILANG_COMPILER,
@@ -30,7 +30,7 @@ $BinDir = Join-Path $Root "build\bin"
 $ReleaseDir = Join-Path $Root "build\release"
 
 if (-not $Output) {
-  $Output = Join-Path $ReleaseDir "MiniSQL-1.0.0-windows-x64.zip"
+  $Output = Join-Path $ReleaseDir "MiniSQL-1.1.0-windows-x64.zip"
 }
 
 & $BuildScript -Compiler $Compiler -Python $Python -Clean -AppsOnly
@@ -47,6 +47,6 @@ if ($LASTEXITCODE -ne 0) {
   throw "MiniSQL release packaging failed with exit code $LASTEXITCODE."
 }
 
-Write-Host "MiniSQL 1.0.0 release: SUCCESS"
+Write-Host "MiniSQL 1.1.0 release: SUCCESS"
 Write-Host "Archive: $Output"
 Write-Host "Checksum: $Output.sha256"

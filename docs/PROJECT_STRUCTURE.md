@@ -14,7 +14,7 @@ MiniSQL/
 ├── README.md  # project overview and quick start
 ├── build.ps1  # build applications or the full native test set
 ├── test.ps1  # only user-facing cumulative test launcher
-├── release.ps1  # build and verify the 1.0.0 binary distribution
+├── release.ps1  # build and verify the 1.1.0 binary distribution
 ├── clean.ps1  # remove generated build output
 ```
 

@@ -33,7 +33,7 @@ A contribution is ready for review when:
 1. the source tree contains no generated executables, logs, databases, or cache
    files;
 2. relevant unit/integration tests are added or updated;
-3. the full cumulative suite ends with `MiniSQL 1.0.0 test suite: SUCCESS`;
+3. the full cumulative suite ends with `MiniSQL 1.1.0 test suite: SUCCESS`;
 4. persistent or wire-format changes include specification, compatibility, and
    upgrade documentation;
 5. security-sensitive changes update `SECURITY.md` or the security guide.

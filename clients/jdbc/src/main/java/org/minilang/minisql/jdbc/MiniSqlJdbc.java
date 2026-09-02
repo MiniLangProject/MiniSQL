@@ -765,7 +765,7 @@ final class MiniSqlJdbc {
                 case "getURL": return connection.url.originalUrl;
                 case "getUserName": return connection.url.user == null ? "trusted-local" : connection.url.user;
                 case "getDatabaseProductName": return "MiniSQL";
-                case "getDatabaseProductVersion": return "1.0.0";
+                case "getDatabaseProductVersion": return "1.1.0";
                 case "getDriverName": return "MiniSQL JDBC Driver";
                 case "getDriverVersion": return MiniSqlDriver.VERSION;
                 case "getDriverMajorVersion": case "getDatabaseMajorVersion": case "getJDBCMajorVersion": return 1;

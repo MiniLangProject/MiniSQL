@@ -661,6 +661,141 @@ function validateNative(value, operation, name)
   return true
 end function
 
+/// Validates and encodes one fixed-width column-statistics record.
+/// @param payload Mutable catalog payload receiving the record.
+/// @param cursor Byte offset at which the record begins.
+/// @param column Column statistics to validate and encode.
+/// @param rowCount Owning table population used for range checks.
+function encodeColumnRecord(payload, cursor, column, rowCount)
+  if column is not ColumnStatistics then return fail(INVALID_ARGUMENT, "encode", "invalid column statistics") end if
+  if typeof(column.columnIndex) != "int" or column.columnIndex < 0 or column.columnIndex > 65535 then return fail(INVALID_ARGUMENT, "encode", "columnIndex must fit U16") end if
+  validateNative(column.nullCount, "encode", "nullCount")
+  validateNative(column.distinctCount, "encode", "distinctCount")
+  if column.nullCount > rowCount or column.distinctCount > rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "column counts exceed table population") end if
+  if typeof(column.averageWidth) != "int" or column.averageWidth < 0 or column.averageWidth > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "averageWidth must fit U32") end if
+  if typeof(column.hasIntegralBounds) != "bool" then return fail(INVALID_ARGUMENT, "encode", "hasIntegralBounds must be bool") end if
+  if column.hasIntegralBounds and (typeof(column.minimumIntegral) != "int" or typeof(column.maximumIntegral) != "int" or column.minimumIntegral < endian.MIN_I32 or column.maximumIntegral > endian.MAX_I32 or column.minimumIntegral > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "invalid integral bounds") end if
+  if typeof(column.histogramBounds) != "array" or typeof(column.histogramCounts) != "array" or len(column.histogramBounds) != len(column.histogramCounts) or len(column.histogramBounds) > HISTOGRAM_BUCKET_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid integral histogram") end if
+  if typeof(column.mostCommonValues) != "array" or typeof(column.mostCommonCounts) != "array" or len(column.mostCommonValues) != len(column.mostCommonCounts) or len(column.mostCommonValues) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid most-common-values list") end if
+  if typeof(column.mostCommonHashed) != "bool" then return fail(INVALID_ARGUMENT, "encode", "mostCommonHashed must be bool") end if
+  if len(column.histogramBounds) > 0 and not column.hasIntegralBounds then return fail(INVALID_ARGUMENT, "encode", "histograms require bounds") end if
+  if len(column.mostCommonValues) > 0 and not column.hasIntegralBounds and not column.mostCommonHashed then return fail(INVALID_ARGUMENT, "encode", "unhashed most-common values require bounds") end if
+  endian.writeU16LE(payload, cursor, column.columnIndex)
+  flags = 0
+  if column.hasIntegralBounds then flags = COLUMN_FLAG_INTEGRAL_BOUNDS end if
+  if column.mostCommonHashed then flags = flags | COLUMN_FLAG_HASHED_MCV end if
+  endian.writeU16LE(payload, cursor + 2, flags)
+  endian.writeU64LE(payload, cursor + 4, endian.uint64FromInt(column.nullCount))
+  endian.writeU64LE(payload, cursor + 12, endian.uint64FromInt(column.distinctCount))
+  endian.writeU32LE(payload, cursor + 20, column.averageWidth)
+  if column.hasIntegralBounds then
+    endian.writeI32LE(payload, cursor + 24, column.minimumIntegral)
+    endian.writeI32LE(payload, cursor + 28, column.maximumIntegral)
+  else
+    endian.writeU32LE(payload, cursor + 24, 0)
+    endian.writeU32LE(payload, cursor + 28, 0)
+  end if
+  payload[cursor + 32] = len(column.histogramBounds)
+  payload[cursor + 33] = len(column.mostCommonValues)
+  endian.writeU16LE(payload, cursor + 34, 0)
+  previousBound = endian.MIN_I32
+  previousCount = 0
+  if len(column.histogramBounds) > 0 then
+    for index = 0 to len(column.histogramBounds) - 1
+      currentBound = column.histogramBounds[index]
+      currentCount = column.histogramCounts[index]
+      if typeof(currentBound) != "int" or currentBound < previousBound or currentBound < column.minimumIntegral or currentBound > column.maximumIntegral then return fail(INVALID_ARGUMENT, "encode", "histogram bounds are not ordered") end if
+      validateNative(currentCount, "encode", "histogram count")
+      if currentCount < previousCount or currentCount > rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "histogram counts are not cumulative population counts") end if
+      endian.writeI32LE(payload, cursor + 36 + index * 12, currentBound)
+      endian.writeU64LE(payload, cursor + 40 + index * 12, endian.uint64FromInt(currentCount))
+      previousBound = currentBound
+      previousCount = currentCount
+    end for
+  end if
+  if len(column.mostCommonValues) > 0 then
+    for index = 0 to len(column.mostCommonValues) - 1
+      commonValue = column.mostCommonValues[index]
+      commonCount = column.mostCommonCounts[index]
+      if typeof(commonValue) != "int" then return fail(INVALID_ARGUMENT, "encode", "most-common value must be an integer representation") end if
+      if column.mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(INVALID_ARGUMENT, "encode", "most-common hash is outside range") end if
+      if not column.mostCommonHashed and (commonValue < column.minimumIntegral or commonValue > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "most-common value is outside bounds") end if
+      validateNative(commonCount, "encode", "most-common count")
+      if commonCount > rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "most-common count exceeds population") end if
+      endian.writeI32LE(payload, cursor + 132 + index * 12, commonValue)
+      endian.writeU64LE(payload, cursor + 136 + index * 12, endian.uint64FromInt(commonCount))
+    end for
+  end if
+  endian.writeU32LE(payload, cursor + 228, 0)
+  return cursor + COLUMN_BYTES
+end function
+
+/// Validates and encodes one fixed-width multi-column statistics record.
+/// @param payload Mutable catalog payload receiving the record.
+/// @param cursor Byte offset at which the record begins.
+/// @param group Multi-column statistics to validate and encode.
+/// @param rowCount Owning table population used for range checks.
+function encodeColumnGroupRecord(payload, cursor, group, rowCount)
+  if group is not ColumnGroupStatistics or typeof(group.columnIndexes) != "array" or len(group.columnIndexes) < 2 or len(group.columnIndexes) > MAX_COLUMN_GROUP_WIDTH then return fail(INVALID_ARGUMENT, "encode", "invalid column-group statistics") end if
+  if typeof(group.mostCommonHashes) != "array" or typeof(group.mostCommonCounts) != "array" or len(group.mostCommonHashes) != len(group.mostCommonCounts) or len(group.mostCommonHashes) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid column-group MCV list") end if
+  validateNative(group.distinctCount, "encode", "column-group distinctCount")
+  if group.distinctCount > rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group distinctCount exceeds table population") end if
+  payload[cursor] = len(group.columnIndexes)
+  payload[cursor + 1] = 0
+  endian.writeU16LE(payload, cursor + 2, 0)
+  for index = 0 to len(group.columnIndexes) - 1
+    columnIndex = group.columnIndexes[index]
+    if typeof(columnIndex) != "int" or columnIndex < 0 or columnIndex > 65535 then return fail(INVALID_ARGUMENT, "encode", "column-group index must fit U16") end if
+    endian.writeU16LE(payload, cursor + 4 + index * 2, columnIndex)
+  end for
+  endian.writeU64LE(payload, cursor + 20, endian.uint64FromInt(group.distinctCount))
+  payload[cursor + 28] = len(group.mostCommonHashes)
+  payload[cursor + 29] = 0
+  endian.writeU16LE(payload, cursor + 30, 0)
+  if len(group.mostCommonHashes) > 0 then
+    for index = 0 to len(group.mostCommonHashes) - 1
+      currentHash = group.mostCommonHashes[index]
+      currentCount = group.mostCommonCounts[index]
+      if typeof(currentHash) != "int" or currentHash < 0 or currentHash > HASH_MASK then return fail(INVALID_ARGUMENT, "encode", "column-group MCV hash is outside range") end if
+      validateNative(currentCount, "encode", "column-group MCV count")
+      if currentCount > rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group MCV count exceeds population") end if
+      endian.writeU32LE(payload, cursor + 32 + index * 12, currentHash)
+      endian.writeU64LE(payload, cursor + 36 + index * 12, endian.uint64FromInt(currentCount))
+    end for
+  end if
+  return cursor + COLUMN_GROUP_BYTES
+end function
+
+/// Encodes one table header followed by all of its column and group records.
+/// @param payload Mutable catalog payload receiving the table record.
+/// @param cursor Byte offset at which the table header begins.
+/// @param table Table statistics and nested records to encode.
+function encodeTableRecord(payload, cursor, table)
+  if table is not TableStatistics then return fail(INVALID_ARGUMENT, "encode", "invalid table statistics") end if
+  validateNative(table.tableId, "encode", "tableId")
+  validateNative(table.rowCount, "encode", "rowCount")
+  validateNative(table.pageCount, "encode", "pageCount")
+  validateNative(table.sampleCount, "encode", "sampleCount")
+  if table.sampleCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "sampleCount cannot exceed rowCount") end if
+  if table.sampleCount > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "sampleCount must fit U32") end if
+  if len(table.columns) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many column statistics") end if
+  if typeof(table.columnGroups) != "array" or len(table.columnGroups) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many column-group statistics") end if
+  endian.writeU64LE(payload, cursor, endian.uint64FromInt(table.tableId))
+  endian.writeU64LE(payload, cursor + 8, endian.uint64FromInt(table.rowCount))
+  endian.writeU64LE(payload, cursor + 16, endian.uint64FromInt(table.pageCount))
+  endian.writeU16LE(payload, cursor + 24, len(table.columns))
+  endian.writeU16LE(payload, cursor + 26, len(table.columnGroups))
+  endian.writeU32LE(payload, cursor + 28, table.sampleCount)
+  cursor = cursor + TABLE_HEADER_BYTES
+  for each column in table.columns
+    cursor = encodeColumnRecord(payload, cursor, column, table.rowCount)
+  end for
+  for each group in table.columnGroups
+    cursor = encodeColumnGroupRecord(payload, cursor, group, table.rowCount)
+  end for
+  return cursor
+end function
+
 // Encodes the requested value.
 // Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
 function encode(state)
@@ -675,115 +810,7 @@ function encode(state)
   endian.writeU32LE(payload, 28, 0)
   cursor = 32
   for each table in state.tables
-    if table is not TableStatistics then return fail(INVALID_ARGUMENT, "encode", "invalid table statistics") end if
-    validateNative(table.tableId, "encode", "tableId")
-    validateNative(table.rowCount, "encode", "rowCount")
-    validateNative(table.pageCount, "encode", "pageCount")
-    validateNative(table.sampleCount, "encode", "sampleCount")
-    if table.sampleCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "sampleCount cannot exceed rowCount") end if
-    if table.sampleCount > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "sampleCount must fit U32") end if
-    if len(table.columns) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many column statistics") end if
-    if typeof(table.columnGroups) != "array" or len(table.columnGroups) > 65535 then return fail(INVALID_ARGUMENT, "encode", "too many column-group statistics") end if
-    endian.writeU64LE(payload, cursor, endian.uint64FromInt(table.tableId))
-    endian.writeU64LE(payload, cursor + 8, endian.uint64FromInt(table.rowCount))
-    endian.writeU64LE(payload, cursor + 16, endian.uint64FromInt(table.pageCount))
-    endian.writeU16LE(payload, cursor + 24, len(table.columns))
-    endian.writeU16LE(payload, cursor + 26, len(table.columnGroups))
-    endian.writeU32LE(payload, cursor + 28, table.sampleCount)
-    cursor = cursor + TABLE_HEADER_BYTES
-    for each column in table.columns
-      if column is not ColumnStatistics then return fail(INVALID_ARGUMENT, "encode", "invalid column statistics") end if
-      if typeof(column.columnIndex) != "int" or column.columnIndex < 0 or column.columnIndex > 65535 then return fail(INVALID_ARGUMENT, "encode", "columnIndex must fit U16") end if
-      validateNative(column.nullCount, "encode", "nullCount")
-      validateNative(column.distinctCount, "encode", "distinctCount")
-      if column.nullCount > table.rowCount or column.distinctCount > table.rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "column counts exceed table population") end if
-      if typeof(column.averageWidth) != "int" or column.averageWidth < 0 or column.averageWidth > endian.MAX_U32 then return fail(INVALID_ARGUMENT, "encode", "averageWidth must fit U32") end if
-      if typeof(column.hasIntegralBounds) != "bool" then return fail(INVALID_ARGUMENT, "encode", "hasIntegralBounds must be bool") end if
-      if column.hasIntegralBounds and (typeof(column.minimumIntegral) != "int" or typeof(column.maximumIntegral) != "int" or column.minimumIntegral < endian.MIN_I32 or column.maximumIntegral > endian.MAX_I32 or column.minimumIntegral > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "invalid integral bounds") end if
-      if typeof(column.histogramBounds) != "array" or typeof(column.histogramCounts) != "array" or len(column.histogramBounds) != len(column.histogramCounts) or len(column.histogramBounds) > HISTOGRAM_BUCKET_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid integral histogram") end if
-      if typeof(column.mostCommonValues) != "array" or typeof(column.mostCommonCounts) != "array" or len(column.mostCommonValues) != len(column.mostCommonCounts) or len(column.mostCommonValues) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid most-common-values list") end if
-      if typeof(column.mostCommonHashed) != "bool" then return fail(INVALID_ARGUMENT, "encode", "mostCommonHashed must be bool") end if
-      if len(column.histogramBounds) > 0 and not column.hasIntegralBounds then return fail(INVALID_ARGUMENT, "encode", "histograms require bounds") end if
-      if len(column.mostCommonValues) > 0 and not column.hasIntegralBounds and not column.mostCommonHashed then return fail(INVALID_ARGUMENT, "encode", "unhashed most-common values require bounds") end if
-      endian.writeU16LE(payload, cursor, column.columnIndex)
-      flags = 0
-      if column.hasIntegralBounds then flags = COLUMN_FLAG_INTEGRAL_BOUNDS end if
-      if column.mostCommonHashed then flags = flags | COLUMN_FLAG_HASHED_MCV end if
-      endian.writeU16LE(payload, cursor + 2, flags)
-      endian.writeU64LE(payload, cursor + 4, endian.uint64FromInt(column.nullCount))
-      endian.writeU64LE(payload, cursor + 12, endian.uint64FromInt(column.distinctCount))
-      endian.writeU32LE(payload, cursor + 20, column.averageWidth)
-      if column.hasIntegralBounds then
-        endian.writeI32LE(payload, cursor + 24, column.minimumIntegral)
-        endian.writeI32LE(payload, cursor + 28, column.maximumIntegral)
-      else
-        endian.writeU32LE(payload, cursor + 24, 0)
-        endian.writeU32LE(payload, cursor + 28, 0)
-      end if
-      payload[cursor + 32] = len(column.histogramBounds)
-      payload[cursor + 33] = len(column.mostCommonValues)
-      endian.writeU16LE(payload, cursor + 34, 0)
-      previousBound = endian.MIN_I32
-      previousCount = 0
-      if len(column.histogramBounds) > 0 then
-        for index = 0 to len(column.histogramBounds) - 1
-          currentBound = column.histogramBounds[index]
-          currentCount = column.histogramCounts[index]
-          if typeof(currentBound) != "int" or currentBound < previousBound or currentBound < column.minimumIntegral or currentBound > column.maximumIntegral then return fail(INVALID_ARGUMENT, "encode", "histogram bounds are not ordered") end if
-          validateNative(currentCount, "encode", "histogram count")
-          if currentCount < previousCount or currentCount > table.rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "histogram counts are not cumulative population counts") end if
-          endian.writeI32LE(payload, cursor + 36 + index * 12, currentBound)
-          endian.writeU64LE(payload, cursor + 40 + index * 12, endian.uint64FromInt(currentCount))
-          previousBound = currentBound
-          previousCount = currentCount
-        end for
-      end if
-      if len(column.mostCommonValues) > 0 then
-        for index = 0 to len(column.mostCommonValues) - 1
-          commonValue = column.mostCommonValues[index]
-          commonCount = column.mostCommonCounts[index]
-          if typeof(commonValue) != "int" then return fail(INVALID_ARGUMENT, "encode", "most-common value must be an integer representation") end if
-          if column.mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(INVALID_ARGUMENT, "encode", "most-common hash is outside range") end if
-          if not column.mostCommonHashed and (commonValue < column.minimumIntegral or commonValue > column.maximumIntegral) then return fail(INVALID_ARGUMENT, "encode", "most-common value is outside bounds") end if
-          validateNative(commonCount, "encode", "most-common count")
-          if commonCount > table.rowCount - column.nullCount then return fail(INVALID_ARGUMENT, "encode", "most-common count exceeds population") end if
-          endian.writeI32LE(payload, cursor + 132 + index * 12, commonValue)
-          endian.writeU64LE(payload, cursor + 136 + index * 12, endian.uint64FromInt(commonCount))
-        end for
-      end if
-      endian.writeU32LE(payload, cursor + 228, 0)
-      cursor = cursor + COLUMN_BYTES
-    end for
-    for each group in table.columnGroups
-      if group is not ColumnGroupStatistics or typeof(group.columnIndexes) != "array" or len(group.columnIndexes) < 2 or len(group.columnIndexes) > MAX_COLUMN_GROUP_WIDTH then return fail(INVALID_ARGUMENT, "encode", "invalid column-group statistics") end if
-      if typeof(group.mostCommonHashes) != "array" or typeof(group.mostCommonCounts) != "array" or len(group.mostCommonHashes) != len(group.mostCommonCounts) or len(group.mostCommonHashes) > MOST_COMMON_VALUE_COUNT then return fail(INVALID_ARGUMENT, "encode", "invalid column-group MCV list") end if
-      validateNative(group.distinctCount, "encode", "column-group distinctCount")
-      if group.distinctCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group distinctCount exceeds table population") end if
-      payload[cursor] = len(group.columnIndexes)
-      payload[cursor + 1] = 0
-      endian.writeU16LE(payload, cursor + 2, 0)
-      for index = 0 to len(group.columnIndexes) - 1
-        columnIndex = group.columnIndexes[index]
-        if typeof(columnIndex) != "int" or columnIndex < 0 or columnIndex > 65535 then return fail(INVALID_ARGUMENT, "encode", "column-group index must fit U16") end if
-        endian.writeU16LE(payload, cursor + 4 + index * 2, columnIndex)
-      end for
-      endian.writeU64LE(payload, cursor + 20, endian.uint64FromInt(group.distinctCount))
-      payload[cursor + 28] = len(group.mostCommonHashes)
-      payload[cursor + 29] = 0
-      endian.writeU16LE(payload, cursor + 30, 0)
-      if len(group.mostCommonHashes) > 0 then
-        for index = 0 to len(group.mostCommonHashes) - 1
-          currentHash = group.mostCommonHashes[index]
-          currentCount = group.mostCommonCounts[index]
-          if typeof(currentHash) != "int" or currentHash < 0 or currentHash > HASH_MASK then return fail(INVALID_ARGUMENT, "encode", "column-group MCV hash is outside range") end if
-          validateNative(currentCount, "encode", "column-group MCV count")
-          if currentCount > table.rowCount then return fail(INVALID_ARGUMENT, "encode", "column-group MCV count exceeds population") end if
-          endian.writeU32LE(payload, cursor + 32 + index * 12, currentHash)
-          endian.writeU64LE(payload, cursor + 36 + index * 12, endian.uint64FromInt(currentCount))
-        end for
-      end if
-      cursor = cursor + COLUMN_GROUP_BYTES
-    end for
+    cursor = encodeTableRecord(payload, cursor, table)
   end for
   return checksum.encodeEnvelope(magic(), FORMAT_VERSION, RECORD_KIND, 0, payload)
 end function
@@ -793,6 +820,120 @@ end function
 function decodeNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
+end function
+
+/// Decodes one column record directly into its preallocated destination slot.
+/// @param payload Validated statistics payload being decoded.
+/// @param cursor Byte offset at which the column record begins.
+/// @param encodedVersion On-disk statistics format version.
+/// @param rowCount Owning table population used for validation.
+/// @param destination Preallocated column-statistics array.
+/// @param destinationIndex Slot receiving the decoded record.
+function decodeColumnRecord(payload, cursor, encodedVersion, rowCount, destination, destinationIndex)
+  columnBytes = LEGACY_COLUMN_BYTES
+  if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then columnBytes = COLUMN_BYTES end if
+  if cursor > len(payload) - columnBytes then return fail(CORRUPT_DATA, "decode", "column record is truncated") end if
+  columnFlags = endian.readU16LE(payload, cursor + 2)
+  if encodedVersion < BOUNDS_FORMAT_VERSION and (columnFlags != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then return fail(UNSUPPORTED_FORMAT, "decode", "legacy reserved column fields are non-zero") end if
+  allowedFlags = COLUMN_FLAG_INTEGRAL_BOUNDS
+  if encodedVersion >= FORMAT_VERSION then allowedFlags = allowedFlags | COLUMN_FLAG_HASHED_MCV end if
+  if encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & ~allowedFlags) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "unknown column statistic flags") end if
+  hasIntegralBounds = encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & COLUMN_FLAG_INTEGRAL_BOUNDS) != 0
+  mostCommonHashed = encodedVersion >= FORMAT_VERSION and (columnFlags & COLUMN_FLAG_HASHED_MCV) != 0
+  minimumIntegral = 0
+  maximumIntegral = 0
+  if hasIntegralBounds then
+    minimumIntegral = endian.readI32LE(payload, cursor + 24)
+    maximumIntegral = endian.readI32LE(payload, cursor + 28)
+    if minimumIntegral > maximumIntegral then return fail(CORRUPT_DATA, "decode", "integral bounds are inverted") end if
+  else if encodedVersion >= BOUNDS_FORMAT_VERSION and (endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then
+    return fail(UNSUPPORTED_FORMAT, "decode", "unflagged integral bounds are non-zero")
+  end if
+  histogramBounds = []
+  histogramCounts = []
+  mostCommonValues = []
+  mostCommonCounts = []
+  if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then
+    histogramCount = payload[cursor + 32]
+    mostCommonCount = payload[cursor + 33]
+    if histogramCount > HISTOGRAM_BUCKET_COUNT or mostCommonCount > MOST_COMMON_VALUE_COUNT or endian.readU16LE(payload, cursor + 34) != 0 or endian.readU32LE(payload, cursor + 228) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid distribution header") end if
+    previousBound = endian.MIN_I32
+    previousCount = 0
+    if histogramCount > 0 then
+      if not hasIntegralBounds then return fail(CORRUPT_DATA, "decode", "histogram lacks integral bounds") end if
+      for index = 0 to histogramCount - 1
+        currentBound = endian.readI32LE(payload, cursor + 36 + index * 12)
+        currentCount = decodeNative(endian.readU64LE(payload, cursor + 40 + index * 12), "decode", "histogram count")
+        if currentBound < previousBound or currentBound < minimumIntegral or currentBound > maximumIntegral or currentCount < previousCount then return fail(CORRUPT_DATA, "decode", "histogram is not cumulative and ordered") end if
+        histogramBounds = histogramBounds + [currentBound]
+        histogramCounts = histogramCounts + [currentCount]
+        previousBound = currentBound
+        previousCount = currentCount
+      end for
+    end if
+    if mostCommonCount > 0 then
+      if not hasIntegralBounds and not mostCommonHashed then return fail(CORRUPT_DATA, "decode", "most-common values lack a representation flag") end if
+      for index = 0 to mostCommonCount - 1
+        commonValue = endian.readI32LE(payload, cursor + 132 + index * 12)
+        commonCount = decodeNative(endian.readU64LE(payload, cursor + 136 + index * 12), "decode", "most-common count")
+        if mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(CORRUPT_DATA, "decode", "most-common hash is outside range") end if
+        if not mostCommonHashed and (commonValue < minimumIntegral or commonValue > maximumIntegral) then return fail(CORRUPT_DATA, "decode", "most-common value is outside bounds") end if
+        mostCommonValues = mostCommonValues + [commonValue]
+        mostCommonCounts = mostCommonCounts + [commonCount]
+      end for
+    end if
+  end if
+  decodedNullCount = decodeNative(endian.readU64LE(payload, cursor + 4), "decode", "nullCount")
+  decodedDistinctCount = decodeNative(endian.readU64LE(payload, cursor + 12), "decode", "distinctCount")
+  if decodedNullCount > rowCount or decodedDistinctCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "column counts exceed table population") end if
+  for each distributionCount in histogramCounts
+    if distributionCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "histogram count exceeds non-NULL population") end if
+  end for
+  for each commonCount in mostCommonCounts
+    if commonCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "most-common count exceeds non-NULL population") end if
+  end for
+  destination[destinationIndex] = ColumnStatistics(endian.readU16LE(payload, cursor), decodedNullCount, decodedDistinctCount, endian.readU32LE(payload, cursor + 20), hasIntegralBounds, minimumIntegral, maximumIntegral, histogramBounds, histogramCounts, mostCommonValues, mostCommonCounts, mostCommonHashed)
+  return cursor + columnBytes
+end function
+
+/// Decodes one column-group record directly into its preallocated destination.
+/// @param payload Validated statistics payload being decoded.
+/// @param cursor Byte offset at which the group record begins.
+/// @param encodedVersion On-disk statistics format version.
+/// @param rowCount Owning table population used for validation.
+/// @param destination Preallocated column-group statistics array.
+/// @param destinationIndex Slot receiving the decoded record.
+function decodeColumnGroupRecord(payload, cursor, encodedVersion, rowCount, destination, destinationIndex)
+  groupBytes = LEGACY_COLUMN_GROUP_BYTES
+  if encodedVersion >= FORMAT_VERSION then groupBytes = COLUMN_GROUP_BYTES end if
+  if cursor > len(payload) - groupBytes then return fail(CORRUPT_DATA, "decode", "column-group record is truncated") end if
+  groupWidth = payload[cursor]
+  if groupWidth < 2 or groupWidth > MAX_COLUMN_GROUP_WIDTH or payload[cursor + 1] != 0 or endian.readU16LE(payload, cursor + 2) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group header") end if
+  columnIndexes = []
+  for index = 0 to groupWidth - 1
+    columnIndexes = columnIndexes + [endian.readU16LE(payload, cursor + 4 + index * 2)]
+  end for
+  groupDistinct = decodeNative(endian.readU64LE(payload, cursor + 20), "decode", "column-group distinctCount")
+  if groupDistinct > rowCount then return fail(CORRUPT_DATA, "decode", "column-group distinctCount exceeds population") end if
+  groupHashes = []
+  groupCounts = []
+  if encodedVersion >= FORMAT_VERSION then
+    mcvCount = payload[cursor + 28]
+    if mcvCount > MOST_COMMON_VALUE_COUNT or payload[cursor + 29] != 0 or endian.readU16LE(payload, cursor + 30) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group MCV header") end if
+    if mcvCount > 0 then
+      for index = 0 to mcvCount - 1
+        currentHash = endian.readU32LE(payload, cursor + 32 + index * 12)
+        currentCount = decodeNative(endian.readU64LE(payload, cursor + 36 + index * 12), "decode", "column-group MCV count")
+        if currentHash > HASH_MASK or currentCount > rowCount then return fail(CORRUPT_DATA, "decode", "column-group MCV value is invalid") end if
+        groupHashes = groupHashes + [currentHash]
+        groupCounts = groupCounts + [currentCount]
+      end for
+    end if
+  else if endian.readU32LE(payload, cursor + 28) != 0 then
+    return fail(UNSUPPORTED_FORMAT, "decode", "legacy column-group reserved field is non-zero")
+  end if
+  destination[destinationIndex] = ColumnGroupStatistics(columnIndexes, groupDistinct, groupHashes, groupCounts)
+  return cursor + groupBytes
 end function
 
 // Decodes the catalog.
@@ -834,118 +975,14 @@ function decodeCatalog(encoded)
       columns = array(columnCount)
       if columnCount > 0 then
         for columnNumber = 0 to columnCount - 1
-          columnBytes = LEGACY_COLUMN_BYTES
-          if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then columnBytes = COLUMN_BYTES end if
-          if cursor > len(payload) - columnBytes then return fail(CORRUPT_DATA, "decode", "column record is truncated") end if
-          columnFlags = endian.readU16LE(payload, cursor + 2)
-          if encodedVersion < BOUNDS_FORMAT_VERSION and (columnFlags != 0 or endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then return fail(UNSUPPORTED_FORMAT, "decode", "legacy reserved column fields are non-zero") end if
-          allowedFlags = COLUMN_FLAG_INTEGRAL_BOUNDS
-          if encodedVersion >= FORMAT_VERSION then allowedFlags = allowedFlags | COLUMN_FLAG_HASHED_MCV end if
-          if encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & ~allowedFlags) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "unknown column statistic flags") end if
-          hasIntegralBounds = encodedVersion >= BOUNDS_FORMAT_VERSION and (columnFlags & COLUMN_FLAG_INTEGRAL_BOUNDS) != 0
-          mostCommonHashed = encodedVersion >= FORMAT_VERSION and (columnFlags & COLUMN_FLAG_HASHED_MCV) != 0
-          minimumIntegral = 0
-          maximumIntegral = 0
-          if hasIntegralBounds then
-            minimumIntegral = endian.readI32LE(payload, cursor + 24)
-            maximumIntegral = endian.readI32LE(payload, cursor + 28)
-            if minimumIntegral > maximumIntegral then return fail(CORRUPT_DATA, "decode", "integral bounds are inverted") end if
-          else if encodedVersion >= BOUNDS_FORMAT_VERSION and (endian.readU32LE(payload, cursor + 24) != 0 or endian.readU32LE(payload, cursor + 28) != 0) then
-            return fail(UNSUPPORTED_FORMAT, "decode", "unflagged integral bounds are non-zero")
-          end if
-          histogramBounds = []
-          histogramCounts = []
-          mostCommonValues = []
-          mostCommonCounts = []
-          if encodedVersion >= DISTRIBUTION_FORMAT_VERSION then
-            histogramCount = payload[cursor + 32]
-            mostCommonCount = payload[cursor + 33]
-            if histogramCount > HISTOGRAM_BUCKET_COUNT or mostCommonCount > MOST_COMMON_VALUE_COUNT or endian.readU16LE(payload, cursor + 34) != 0 or endian.readU32LE(payload, cursor + 228) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid distribution header") end if
-            previousBound = endian.MIN_I32
-            previousCount = 0
-            if histogramCount > 0 then
-              if not hasIntegralBounds then return fail(CORRUPT_DATA, "decode", "histogram lacks integral bounds") end if
-              for index = 0 to histogramCount - 1
-                currentBound = endian.readI32LE(payload, cursor + 36 + index * 12)
-                currentCount = decodeNative(endian.readU64LE(payload, cursor + 40 + index * 12), "decode", "histogram count")
-                if currentBound < previousBound or currentBound < minimumIntegral or currentBound > maximumIntegral or currentCount < previousCount then return fail(CORRUPT_DATA, "decode", "histogram is not cumulative and ordered") end if
-                histogramBounds = histogramBounds + [currentBound]
-                histogramCounts = histogramCounts + [currentCount]
-                previousBound = currentBound
-                previousCount = currentCount
-              end for
-            end if
-            if mostCommonCount > 0 then
-              if not hasIntegralBounds and not mostCommonHashed then return fail(CORRUPT_DATA, "decode", "most-common values lack a representation flag") end if
-              for index = 0 to mostCommonCount - 1
-                commonValue = endian.readI32LE(payload, cursor + 132 + index * 12)
-                commonCount = decodeNative(endian.readU64LE(payload, cursor + 136 + index * 12), "decode", "most-common count")
-                if mostCommonHashed and (commonValue < 0 or commonValue > HASH_MASK) then return fail(CORRUPT_DATA, "decode", "most-common hash is outside range") end if
-                if not mostCommonHashed and (commonValue < minimumIntegral or commonValue > maximumIntegral) then return fail(CORRUPT_DATA, "decode", "most-common value is outside bounds") end if
-                mostCommonValues = mostCommonValues + [commonValue]
-                mostCommonCounts = mostCommonCounts + [commonCount]
-              end for
-            end if
-          end if
-          decodedNullCount = decodeNative(endian.readU64LE(payload, cursor + 4), "decode", "nullCount")
-          decodedDistinctCount = decodeNative(endian.readU64LE(payload, cursor + 12), "decode", "distinctCount")
-          if decodedNullCount > rowCount or decodedDistinctCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "column counts exceed table population") end if
-          for each distributionCount in histogramCounts
-            if distributionCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "histogram count exceeds non-NULL population") end if
-          end for
-          for each commonCount in mostCommonCounts
-            if commonCount > rowCount - decodedNullCount then return fail(CORRUPT_DATA, "decode", "most-common count exceeds non-NULL population") end if
-          end for
-          columns[columnNumber] = ColumnStatistics(
-            endian.readU16LE(payload, cursor),
-            decodedNullCount,
-            decodedDistinctCount,
-            endian.readU32LE(payload, cursor + 20),
-            hasIntegralBounds,
-            minimumIntegral,
-            maximumIntegral,
-            histogramBounds,
-            histogramCounts,
-            mostCommonValues,
-            mostCommonCounts,
-            mostCommonHashed
-          )
-          cursor = cursor + columnBytes
+          cursor = decodeColumnRecord(payload, cursor, encodedVersion, rowCount, columns, columnNumber)
         end for
       end if
       columnGroups = []
       if columnGroupCount > 0 then
+        columnGroups = array(columnGroupCount)
         for groupIndex = 0 to columnGroupCount - 1
-          groupBytes = LEGACY_COLUMN_GROUP_BYTES
-          if encodedVersion >= FORMAT_VERSION then groupBytes = COLUMN_GROUP_BYTES end if
-          if cursor > len(payload) - groupBytes then return fail(CORRUPT_DATA, "decode", "column-group record is truncated") end if
-          groupWidth = payload[cursor]
-          if groupWidth < 2 or groupWidth > MAX_COLUMN_GROUP_WIDTH or payload[cursor + 1] != 0 or endian.readU16LE(payload, cursor + 2) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group header") end if
-          columnIndexes = []
-          for index = 0 to groupWidth - 1
-            columnIndexes = columnIndexes + [endian.readU16LE(payload, cursor + 4 + index * 2)]
-          end for
-          groupDistinct = decodeNative(endian.readU64LE(payload, cursor + 20), "decode", "column-group distinctCount")
-          if groupDistinct > rowCount then return fail(CORRUPT_DATA, "decode", "column-group distinctCount exceeds population") end if
-          groupHashes = []
-          groupCounts = []
-          if encodedVersion >= FORMAT_VERSION then
-            mcvCount = payload[cursor + 28]
-            if mcvCount > MOST_COMMON_VALUE_COUNT or payload[cursor + 29] != 0 or endian.readU16LE(payload, cursor + 30) != 0 then return fail(UNSUPPORTED_FORMAT, "decode", "invalid column-group MCV header") end if
-            if mcvCount > 0 then
-              for index = 0 to mcvCount - 1
-                currentHash = endian.readU32LE(payload, cursor + 32 + index * 12)
-                currentCount = decodeNative(endian.readU64LE(payload, cursor + 36 + index * 12), "decode", "column-group MCV count")
-                if currentHash > HASH_MASK or currentCount > rowCount then return fail(CORRUPT_DATA, "decode", "column-group MCV value is invalid") end if
-                groupHashes = groupHashes + [currentHash]
-                groupCounts = groupCounts + [currentCount]
-              end for
-            end if
-          else if endian.readU32LE(payload, cursor + 28) != 0 then
-            return fail(UNSUPPORTED_FORMAT, "decode", "legacy column-group reserved field is non-zero")
-          end if
-          columnGroups = columnGroups + [ColumnGroupStatistics(columnIndexes, groupDistinct, groupHashes, groupCounts)]
-          cursor = cursor + groupBytes
+          cursor = decodeColumnGroupRecord(payload, cursor, encodedVersion, rowCount, columnGroups, groupIndex)
         end for
       end if
       state.tables[tableIndex] = TableStatistics(tableId, rowCount, pageCount, sampleCount, columns, columnGroups)

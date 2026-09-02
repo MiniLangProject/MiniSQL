@@ -27,8 +27,8 @@ $sources = Get-ChildItem (Join-Path $projectRoot "src\main\java") -Recurse -Filt
 if ($LASTEXITCODE -ne 0) { throw "javac failed with exit code $LASTEXITCODE" }
 Copy-Item (Join-Path $projectRoot "src\main\resources\*") $classes -Recurse -Force
 
-$jar = Join-Path $OutputRoot "minisql-jdbc-1.0.0.jar"
-$zip = Join-Path $OutputRoot "minisql-jdbc-1.0.0.zip"
+$jar = Join-Path $OutputRoot "minisql-jdbc-1.1.0.jar"
+$zip = Join-Path $OutputRoot "minisql-jdbc-1.1.0.zip"
 Compress-Archive -Path (Join-Path $classes "*") -DestinationPath $zip -Force
 Move-Item -LiteralPath $zip -Destination $jar -Force
 Write-Host "MiniSQL JDBC driver: $jar"

@@ -2348,6 +2348,31 @@ function canonicalEqualityColumns(condition, source)
   return void
 end function
 
+/// Builds the fixed hash-bucket array shared by materializing and COUNT joins.
+/// @param engine Active execution engine used for expression evaluation.
+/// @param rows Build-side rows to partition into hash buckets.
+/// @param keyColumn Bound join-key expression evaluated for each row.
+/// @param operation Diagnostic operation name used by validation errors.
+function buildCanonicalHashBuckets(engine, rows, keyColumn, operation)
+  buckets = array(257, void)
+  pollCounter = 0
+  for each row in rows
+    if pollCounter % 256 == 0 then
+      polled = try(pollQueryControl(engine, operation))
+      if typeof(polled) == "error" then return polled end if
+    end if
+    pollCounter = pollCounter + 1
+    key = row.values[keyColumn]
+    if not key.isNull then
+      bucketIndex = join.hashValue(key) % 257
+      bucket = buckets[bucketIndex]
+      if bucket is void then bucket = [] end if
+      buckets[bucketIndex] = bucket + [[key, row]]
+    end if
+  end for
+  return buckets
+end function
+
 // Hash-joins a reordered INNER source while preserving canonical SQL column
 // positions. Full key equality and predicate rechecks resolve collisions.
 function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
@@ -2356,23 +2381,8 @@ function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, cond
   if columns is void then return canonicalNestedJoin(engine, bound, leftRows, rightRows, sourceIndex, condition) end if
   joinedColumn = columns[0]
   localColumn = columns[1]
-  buckets = array(257, void)
   if buildRight then
-    pollCounter = 0
-    for each right in rightRows
-      if pollCounter % 256 == 0 then
-        polled = try(pollQueryControl(engine, "canonicalHashJoin.buildRight"))
-        if typeof(polled) == "error" then return polled end if
-      end if
-      pollCounter = pollCounter + 1
-      key = right.values[localColumn]
-      if not key.isNull then
-        bucketIndex = join.hashValue(key) % 257
-        bucket = buckets[bucketIndex]
-        if bucket is void then bucket = [] end if
-        buckets[bucketIndex] = bucket + [[key, right]]
-      end if
-    end for
+    buckets = buildCanonicalHashBuckets(engine, rightRows, localColumn, "canonicalHashJoin.buildRight")
     output = []
     pollCounter = 0
     for each left in leftRows
@@ -2396,21 +2406,7 @@ function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, cond
     end for
     return output
   end if
-  pollCounter = 0
-  for each left in leftRows
-    if pollCounter % 256 == 0 then
-      polled = try(pollQueryControl(engine, "canonicalHashJoin.buildLeft"))
-      if typeof(polled) == "error" then return polled end if
-    end if
-    pollCounter = pollCounter + 1
-    key = left.values[joinedColumn]
-    if not key.isNull then
-      bucketIndex = join.hashValue(key) % 257
-      bucket = buckets[bucketIndex]
-      if bucket is void then bucket = [] end if
-      buckets[bucketIndex] = bucket + [[key, left]]
-    end if
-  end for
+  buckets = buildCanonicalHashBuckets(engine, leftRows, joinedColumn, "canonicalHashJoin.buildLeft")
   output = []
   pollCounter = 0
   for each right in rightRows
@@ -2453,70 +2449,48 @@ function canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceInde
   return count
 end function
 
-// Counts a final reordered hash join. Hash buckets and collision rechecks are
-// identical to canonicalHashJoin, but successful matches increment a scalar
-// instead of extending a cardinality-sized output array.
-function canonicalHashJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
-  source = bound.sources[sourceIndex]
-  columns = canonicalEqualityColumns(condition, source)
-  if columns is void then return canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition) end if
-  joinedColumn = columns[0]
-  localColumn = columns[1]
-  buckets = array(257, void)
-  if buildRight then
-    pollCounter = 0
-    for each right in rightRows
-      if pollCounter % 256 == 0 then
-        polled = try(pollQueryControl(engine, "canonicalHashJoinCount.buildRight"))
-        if typeof(polled) == "error" then return polled end if
-      end if
-      pollCounter = pollCounter + 1
-      key = right.values[localColumn]
-      if not key.isNull then
-        bucketIndex = join.hashValue(key) % 257
-        bucket = buckets[bucketIndex]
-        if bucket is void then bucket = [] end if
-        buckets[bucketIndex] = bucket + [[key, right]]
-      end if
-    end for
-    count = 0
-    pollCounter = 0
-    for each left in leftRows
-      if pollCounter % 256 == 0 then
-        polled = try(pollQueryControl(engine, "canonicalHashJoinCount.probeLeft"))
-        if typeof(polled) == "error" then return polled end if
-      end if
-      pollCounter = pollCounter + 1
-      key = left.values[joinedColumn]
-      if not key.isNull then
-        bucket = buckets[join.hashValue(key) % 257]
-        if bucket is not void then
-          for each entry in bucket
-            if values.compareNonNull(key, entry[0]) == 0 then
-              candidate = combineCanonical(bound, left, sourceIndex, entry[1])
-              if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
-            end if
-          end for
-        end if
-      end if
-    end for
-    return count
-  end if
+/// Probes right-side buckets with canonical left rows and counts valid matches.
+/// @param engine Active execution engine used for residual evaluation.
+/// @param bound Bound SELECT statement and source layout.
+/// @param leftRows Canonical rows from the left join input.
+/// @param buckets Hash buckets built from right-side rows.
+/// @param sourceIndex Position at which the compact row is joined.
+/// @param condition Optional residual join predicate.
+/// @param joinedColumn Bound key expression for the probing row.
+function canonicalHashJoinCountProbeLeft(engine, bound, leftRows, buckets, sourceIndex, condition, joinedColumn)
+  count = 0
   pollCounter = 0
   for each left in leftRows
     if pollCounter % 256 == 0 then
-      polled = try(pollQueryControl(engine, "canonicalHashJoinCount.buildLeft"))
+      polled = try(pollQueryControl(engine, "canonicalHashJoinCount.probeLeft"))
       if typeof(polled) == "error" then return polled end if
     end if
     pollCounter = pollCounter + 1
     key = left.values[joinedColumn]
     if not key.isNull then
-      bucketIndex = join.hashValue(key) % 257
-      bucket = buckets[bucketIndex]
-      if bucket is void then bucket = [] end if
-      buckets[bucketIndex] = bucket + [[key, left]]
+      bucket = buckets[join.hashValue(key) % 257]
+      if bucket is not void then
+        for each entry in bucket
+          if values.compareNonNull(key, entry[0]) == 0 then
+            candidate = combineCanonical(bound, left, sourceIndex, entry[1])
+            if expressions.predicatePasses(condition, expressions.rowContext(candidate.values)) then count = count + 1 end if
+          end if
+        end for
+      end if
     end if
   end for
+  return count
+end function
+
+/// Probes left-side buckets with compact right rows and counts valid matches.
+/// @param engine Active execution engine used for residual evaluation.
+/// @param bound Bound SELECT statement and source layout.
+/// @param rightRows Compact rows from the right join input.
+/// @param buckets Hash buckets built from left-side rows.
+/// @param sourceIndex Position at which the compact row is joined.
+/// @param condition Optional residual join predicate.
+/// @param localColumn Bound key expression for the probing row.
+function canonicalHashJoinCountProbeRight(engine, bound, rightRows, buckets, sourceIndex, condition, localColumn)
   count = 0
   pollCounter = 0
   for each right in rightRows
@@ -2539,6 +2513,28 @@ function canonicalHashJoinCount(engine, bound, leftRows, rightRows, sourceIndex,
     end if
   end for
   return count
+end function
+
+/// Counts a final reordered hash join without materializing result rows.
+/// @param engine Active execution engine used for expression evaluation.
+/// @param bound Bound SELECT statement and source layout.
+/// @param leftRows Canonical rows from the left join input.
+/// @param rightRows Compact rows from the right join input.
+/// @param sourceIndex Position at which right rows join the canonical layout.
+/// @param condition Optional residual join predicate.
+/// @param buildRight Selects which input is used as the hash build side.
+function canonicalHashJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
+  source = bound.sources[sourceIndex]
+  columns = canonicalEqualityColumns(condition, source)
+  if columns is void then return canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition) end if
+  joinedColumn = columns[0]
+  localColumn = columns[1]
+  if buildRight then
+    buckets = buildCanonicalHashBuckets(engine, rightRows, localColumn, "canonicalHashJoinCount.buildRight")
+    return canonicalHashJoinCountProbeLeft(engine, bound, leftRows, buckets, sourceIndex, condition, joinedColumn)
+  end if
+  buckets = buildCanonicalHashBuckets(engine, leftRows, joinedColumn, "canonicalHashJoinCount.buildLeft")
+  return canonicalHashJoinCountProbeRight(engine, bound, rightRows, buckets, sourceIndex, condition, localColumn)
 end function
 
 // Executes all reordered joins except the final edge normally, then turns that
@@ -3833,19 +3829,16 @@ function authorizeSelectItems(engine, items)
   return true
 end function
 
-// Implements authorize statement for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
-function authorizeStatement(engine, statement)
-  if engine.trusted then return true end if
-  if ast.isShowStatusStatement(statement) or ast.isShowProcesslistStatement(statement) or ast.isShutdownStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_ADMIN, "authorizeOperations") end if
-  if ast.isDclStatement(statement) then return true end if
-  if ast.isPrepareStatement(statement) or ast.isExecutePreparedStatement(statement) or ast.isDeallocateStatement(statement) then return true end if
-  if ast.isBeginStatement(statement) or ast.isCommitStatement(statement) or ast.isRollbackStatement(statement) or ast.isSavepointStatement(statement) or ast.isRollbackToStatement(statement) or ast.isReleaseSavepointStatement(statement) then return true end if
-  if ast.isShowTablesStatement(statement) then return true end if
-  if ast.isDescribeTableStatement(statement) or ast.isShowIndexesStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_SELECT, "authorizeMetadata"); return true end if
-  if ast.isSelectStatement(statement) then return authorizeSelect(engine, statement) end if
+/// Returns whether a statement changes or truncates table data.
+/// @param statement Bound SQL statement to classify.
+function isAuthorizedDataStatement(statement)
+  return ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isMergeStatement(statement) or ast.isTruncateStatement(statement)
+end function
+
+/// Authorizes INSERT, UPDATE, DELETE, MERGE, and TRUNCATE expression trees.
+/// @param engine Active execution engine and authenticated principal.
+/// @param statement Bound data-changing statement to authorize.
+function authorizeDataStatement(engine, statement)
   if ast.isInsertStatement(statement) then
     requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_INSERT, "authorizeInsert")
     if statement.sourceQuery is not void then authorizeSelect(engine, statement.sourceQuery) end if
@@ -3883,7 +3876,20 @@ function authorizeStatement(engine, statement)
     if len(statement.insertValues) > 0 then requireTablePrivilegeByName(engine, statement.targetTable, metadata.PRIVILEGE_INSERT, "authorizeMergeInsert") end if
     return true
   end if
-  if ast.isTruncateStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_DELETE, "authorizeTruncate"); return true end if
+  requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_DELETE, "authorizeTruncate")
+  return true
+end function
+
+/// Returns whether a statement changes schema or optimizer metadata.
+/// @param statement Bound SQL statement to classify.
+function isAuthorizedDefinitionStatement(statement)
+  return ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) or ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) or ast.isCallStatement(statement) or ast.isCreateTableStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement)
+end function
+
+/// Authorizes schema and maintenance statements in one isolated dispatcher.
+/// @param engine Active execution engine and authenticated principal.
+/// @param statement Bound definition or maintenance statement to authorize.
+function authorizeDefinitionStatement(engine, statement)
   if ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeSchemaDdl") end if
   if ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, "authorizeProcedureDdl") end if
   if ast.isCallStatement(statement) then return true end if
@@ -3911,7 +3917,23 @@ function authorizeStatement(engine, statement)
   if ast.isDropTableStatement(statement) then requireTablePrivilegeByName(engine, statement.name, metadata.PRIVILEGE_DROP, "authorizeDropTable"); return true end if
   if ast.isAlterTableStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_ALTER, "authorizeAlterTable"); return true end if
   if ast.isAnalyzeStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_MAINTAIN, "authorizeAnalyze") end if
-  if ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_MAINTAIN, "authorizeMaintenance") end if
+  return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_MAINTAIN, "authorizeMaintenance")
+end function
+
+/// Authorizes a statement against the active engine security context.
+/// @param engine Active execution engine and authenticated principal.
+/// @param statement Bound SQL statement to authorize or classify as public.
+function authorizeStatement(engine, statement)
+  if engine.trusted then return true end if
+  if ast.isShowStatusStatement(statement) or ast.isShowProcesslistStatement(statement) or ast.isShutdownStatement(statement) then return requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_ADMIN, "authorizeOperations") end if
+  if ast.isDclStatement(statement) then return true end if
+  if ast.isPrepareStatement(statement) or ast.isExecutePreparedStatement(statement) or ast.isDeallocateStatement(statement) then return true end if
+  if ast.isBeginStatement(statement) or ast.isCommitStatement(statement) or ast.isRollbackStatement(statement) or ast.isSavepointStatement(statement) or ast.isRollbackToStatement(statement) or ast.isReleaseSavepointStatement(statement) then return true end if
+  if ast.isShowTablesStatement(statement) then return true end if
+  if ast.isDescribeTableStatement(statement) or ast.isShowIndexesStatement(statement) then requireTablePrivilegeByName(engine, statement.tableName, metadata.PRIVILEGE_SELECT, "authorizeMetadata"); return true end if
+  if ast.isSelectStatement(statement) then return authorizeSelect(engine, statement) end if
+  if isAuthorizedDataStatement(statement) then return authorizeDataStatement(engine, statement) end if
+  if isAuthorizedDefinitionStatement(statement) then return authorizeDefinitionStatement(engine, statement) end if
   if ast.isExplainStatement(statement) then return authorizeStatement(engine, statement.statement) end if
   return permissionFailure("authorizeStatement", "statement is not authorized")
 end function

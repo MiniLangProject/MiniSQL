@@ -1,0 +1,92 @@
+# Package `minisql.storage.btree`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/storage/btree.ml](File-src-minisql-storage-btree-ml-1474397187.md)
+
+## Symbols
+
+- [`minisql.storage.btree.allEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-allentries-function-allentries-tree-src-minisql-storage-btree-ml-304192544) — function
+- [`minisql.storage.btree.auditLeafChain`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditleafchain-function-auditleafchain-tree-src-minisql-storage-btree-ml-1222439520) — function
+- [`minisql.storage.btree.auditNode`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditnode-function-auditnode-tree-pagenumber-expectedlevel-state-src-minisql-storage-btree-ml-282196879) — function
+- [`minisql.storage.btree.BTree`](Type-minisql-storage-btree-btree-129466497.md) — struct
+- [`minisql.storage.btree.BTreeAudit`](Type-minisql-storage-btree-btreeaudit-1014624468.md) — struct
+- [`minisql.storage.btree.BTreeEntry`](Type-minisql-storage-btree-btreeentry-1599338031.md) — struct
+- [`minisql.storage.btree.BTreeInternal`](Type-minisql-storage-btree-btreeinternal-698637796.md) — struct
+- [`minisql.storage.btree.BTreeLeaf`](Type-minisql-storage-btree-btreeleaf-1180898761.md) — struct
+- [`minisql.storage.btree.BTreeMeta`](Type-minisql-storage-btree-btreemeta-1168535116.md) — struct
+- [`minisql.storage.btree.bulkLoad`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bulkload-function-bulkload-tree-values-src-minisql-storage-btree-ml-1643248522) — function
+- [`minisql.storage.btree.bytesEqual`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bytesequal-function-bytesequal-left-right-src-minisql-storage-btree-ml-638325327) — function
+- [`minisql.storage.btree.chooseMeta`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-choosemeta-function-choosemeta-first-second-src-minisql-storage-btree-ml-1493140172) — function
+- [`minisql.storage.btree.chunkEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-chunkentries-function-chunkentries-values-pagesize-src-minisql-storage-btree-ml-1560533940) — function
+- [`minisql.storage.btree.close`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-close-function-close-tree-src-minisql-storage-btree-ml-1598693584) — function
+- [`minisql.storage.btree.CLOSED_HANDLE`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-closed-handle-const-closed-handle-9008-src-minisql-storage-btree-ml-861742094) — constant
+- [`minisql.storage.btree.commitSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-commitsorted-function-commitsorted-tree-values-src-minisql-storage-btree-ml-1889270466) — function
+- [`minisql.storage.btree.compareEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-compareentries-function-compareentries-left-right-src-minisql-storage-btree-ml-813618475) — function
+- [`minisql.storage.btree.compareKeys`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-comparekeys-function-comparekeys-left-right-src-minisql-storage-btree-ml-1219268477) — function
+- [`minisql.storage.btree.componentName`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-componentname-function-componentname-src-minisql-storage-btree-ml-1535933160) — function
+- [`minisql.storage.btree.containsEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-containsentry-function-containsentry-tree-expected-src-minisql-storage-btree-ml-699816718) — function
+- [`minisql.storage.btree.copyEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-copyentry-function-copyentry-value-src-minisql-storage-btree-ml-962533537) — function
+- [`minisql.storage.btree.CORRUPT_DATA`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-corrupt-data-const-corrupt-data-9004-src-minisql-storage-btree-ml-656652144) — constant
+- [`minisql.storage.btree.count`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-count-function-count-tree-src-minisql-storage-btree-ml-1558978018) — function
+- [`minisql.storage.btree.create`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-create-function-create-path-pagesize-fileid-databaseid-unique-src-minisql-storage-btree-ml-428455165) — function
+- [`minisql.storage.btree.decodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternal-function-decodeinternal-tree-pagenumber-src-minisql-storage-btree-ml-1010670406) — function
+- [`minisql.storage.btree.decodeInternalWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternalwithcontext-function-decodeinternalwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-1660257631) — function
+- [`minisql.storage.btree.decodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleaf-function-decodeleaf-tree-pagenumber-src-minisql-storage-btree-ml-1860519834) — function
+- [`minisql.storage.btree.decodeLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleafwithcontext-function-decodeleafwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-162776037) — function
+- [`minisql.storage.btree.decodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodemetapage-function-decodemetapage-treefile-pagenumber-src-minisql-storage-btree-ml-18858320) — function
+- [`minisql.storage.btree.decodeNative`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodenative-function-decodenative-words-operation-name-src-minisql-storage-btree-ml-1514441641) — function
+- [`minisql.storage.btree.encodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeinternal-function-encodeinternal-tree-pagenumber-level-descriptors-src-minisql-storage-btree-ml-1408795798) — function
+- [`minisql.storage.btree.encodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeleaf-function-encodeleaf-tree-pagenumber-previouspage-nextpage-values-src-minisql-storage-btree-ml-1082243172) — function
+- [`minisql.storage.btree.encodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodemetapage-function-encodemetapage-treefile-pagenumber-generation-unique-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1472260786) — function
+- [`minisql.storage.btree.entry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-entry-function-entry-key-value-src-minisql-storage-btree-ml-4224476) — function
+- [`minisql.storage.btree.fail`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-fail-function-fail-code-operation-message-src-minisql-storage-btree-ml-2143870441) — function
+- [`minisql.storage.btree.find`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-find-function-find-tree-key-src-minisql-storage-btree-ml-1108622593) — function
+- [`minisql.storage.btree.findWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-findwithcontext-function-findwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-1627758102) — function
+- [`minisql.storage.btree.FLAG_META`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-flag-meta-const-flag-meta-32768-src-minisql-storage-btree-ml-409131251) — constant
+- [`minisql.storage.btree.FLAG_UNIQUE`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-flag-unique-const-flag-unique-1-src-minisql-storage-btree-ml-1767315518) — constant
+- [`minisql.storage.btree.FORMAT_VERSION`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-format-version-const-format-version-1-src-minisql-storage-btree-ml-140704084) — constant
+- [`minisql.storage.btree.height`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-height-function-height-tree-src-minisql-storage-btree-ml-1211433548) — function
+- [`minisql.storage.btree.insert`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-insert-function-insert-tree-key-value-src-minisql-storage-btree-ml-738273672) — function
+- [`minisql.storage.btree.INTERNAL_DATA_OFFSET`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-internal-data-offset-const-internal-data-offset-88-src-minisql-storage-btree-ml-1408411819) — constant
+- [`minisql.storage.btree.internalMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-internalmagic-function-internalmagic-src-minisql-storage-btree-ml-2134122928) — function
+- [`minisql.storage.btree.INVALID_ARGUMENT`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-invalid-argument-const-invalid-argument-9001-src-minisql-storage-btree-ml-1551839931) — constant
+- [`minisql.storage.btree.isImplemented`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isimplemented-function-isimplemented-src-minisql-storage-btree-ml-1883775896) — function
+- [`minisql.storage.btree.isUnique`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isunique-function-isunique-tree-src-minisql-storage-btree-ml-721780756) — function
+- [`minisql.storage.btree.LEAF_DATA_OFFSET`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-leaf-data-offset-const-leaf-data-offset-96-src-minisql-storage-btree-ml-446659412) — constant
+- [`minisql.storage.btree.leafMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-leafmagic-function-leafmagic-src-minisql-storage-btree-ml-1666210738) — function
+- [`minisql.storage.btree.locateLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleaf-function-locateleaf-tree-key-src-minisql-storage-btree-ml-1847517933) — function
+- [`minisql.storage.btree.locateLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleafwithcontext-function-locateleafwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-2141609176) — function
+- [`minisql.storage.btree.MAX_INTERNAL_CHILDREN`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-max-internal-children-const-max-internal-children-12-src-minisql-storage-btree-ml-1653419868) — constant
+- [`minisql.storage.btree.MAX_KEY_BYTES`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-max-key-bytes-const-max-key-bytes-256-src-minisql-storage-btree-ml-1803503068) — constant
+- [`minisql.storage.btree.MAX_LEAF_ENTRIES`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-max-leaf-entries-const-max-leaf-entries-10-src-minisql-storage-btree-ml-412124260) — constant
+- [`minisql.storage.btree.MAX_VALUE_BYTES`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-max-value-bytes-const-max-value-bytes-3584-src-minisql-storage-btree-ml-819686281) — constant
+- [`minisql.storage.btree.mergeSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-mergesorted-function-mergesorted-left-right-src-minisql-storage-btree-ml-1557720837) — function
+- [`minisql.storage.btree.META_DATA_OFFSET`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-meta-data-offset-const-meta-data-offset-64-src-minisql-storage-btree-ml-1032112221) — constant
+- [`minisql.storage.btree.META_DATA_SIZE`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-meta-data-size-const-meta-data-size-64-src-minisql-storage-btree-ml-1910557789) — constant
+- [`minisql.storage.btree.META_PAGE_A`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-meta-page-a-const-meta-page-a-0-src-minisql-storage-btree-ml-2145884863) — constant
+- [`minisql.storage.btree.META_PAGE_B`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-meta-page-b-const-meta-page-b-1-src-minisql-storage-btree-ml-1502617810) — constant
+- [`minisql.storage.btree.metaMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-metamagic-function-metamagic-src-minisql-storage-btree-ml-1414963488) — function
+- [`minisql.storage.btree.NodeDescriptor`](Type-minisql-storage-btree-nodedescriptor-1027824740.md) — struct
+- [`minisql.storage.btree.OBJECT_EXISTS`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-object-exists-const-object-exists-9013-src-minisql-storage-btree-ml-1911349022) — constant
+- [`minisql.storage.btree.OBJECT_NOT_FOUND`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-object-not-found-const-object-not-found-9014-src-minisql-storage-btree-ml-608342987) — constant
+- [`minisql.storage.btree.open`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-open-function-open-path-src-minisql-storage-btree-ml-1067946583) — function
+- [`minisql.storage.btree.openReadOnly`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonly-function-openreadonly-path-src-minisql-storage-btree-ml-1734688875) — function
+- [`minisql.storage.btree.openReadOnlyForLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyforlookup-function-openreadonlyforlookup-path-src-minisql-storage-btree-ml-655027473) — function
+- [`minisql.storage.btree.openReadOnlyForManagedLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyformanagedlookup-function-openreadonlyformanagedlookup-path-src-minisql-storage-btree-ml-1037068571) — function
+- [`minisql.storage.btree.openTreeFile`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-opentreefile-function-opentreefile-treefile-src-minisql-storage-btree-ml-1086454918) — function
+- [`minisql.storage.btree.publish`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-publish-function-publish-tree-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1410154387) — function
+- [`minisql.storage.btree.range`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-range-function-range-tree-lower-lowerinclusive-upper-upperinclusive-maximum-src-minisql-storage-btree-ml-1143369316) — function
+- [`minisql.storage.btree.rangeWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-rangewithcontext-function-rangewithcontext-tree-lower-lowerinclusive-upper-upperinclusive-maximum-readcontext-src-minisql-storage-btree-ml-1940410515) — function
+- [`minisql.storage.btree.remove`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-remove-function-remove-tree-key-value-src-minisql-storage-btree-ml-159743392) — function
+- [`minisql.storage.btree.sliceArray`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-slicearray-function-slicearray-values-offset-count-src-minisql-storage-btree-ml-1176188886) — function
+- [`minisql.storage.btree.sortEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-sortentries-function-sortentries-values-src-minisql-storage-btree-ml-446483214) — function
+- [`minisql.storage.btree.targetMilestone`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-targetmilestone-function-targetmilestone-src-minisql-storage-btree-ml-1921177446) — function
+- [`minisql.storage.btree.UNSUPPORTED_FORMAT`](File-src-minisql-storage-btree-ml-1474397187.md#constant-constant-minisql-storage-btree-unsupported-format-const-unsupported-format-9003-src-minisql-storage-btree-ml-1338510201) — constant
+- [`minisql.storage.btree.validateOpen`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validateopen-function-validateopen-tree-operation-src-minisql-storage-btree-ml-2077186735) — function
+- [`minisql.storage.btree.validateSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validatesorted-function-validatesorted-values-unique-operation-src-minisql-storage-btree-ml-1382432732) — function
+- [`minisql.storage.btree.verify`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-verify-function-verify-tree-src-minisql-storage-btree-ml-1625814372) — function
+- [`minisql.storage.btree.visitContains`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-visitcontains-function-visitcontains-state-pagenumber-src-minisql-storage-btree-ml-2078111669) — function
+- [`minisql.storage.btree.VisitState`](Type-minisql-storage-btree-visitstate-1033435189.md) — struct

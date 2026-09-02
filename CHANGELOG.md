@@ -4,7 +4,16 @@ All notable release-level changes are documented here. The detailed milestone
 and repair-candidate log from development is preserved in
 `docs/history/DEVELOPMENT_CHANGELOG.md`.
 
-## Unreleased — 2026-08-26
+## 1.1.0 — 2026-09-02
+
+- added generated MiniDoc HTML and Markdown API references with checked output
+  inventories, link validation, and code-quality regression thresholds;
+- reduced maximum cyclomatic complexity from 113 to 84, maximum cognitive
+  complexity from 290 to 150, and duplicated source from 5.09% to 4.96%
+  without a repeatable performance or memory regression;
+- split ALTER TABLE, statistics serialization, expression binding,
+  authorization, hash-join counting, and Win32 event handling into focused,
+  parameter-documented helpers;
 
 - added a single-host automatic HA controller with a stable loopback endpoint,
   asynchronous standby refresh, controller-owned promotion, a serialized file

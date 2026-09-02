@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 /** JDBC 4.3 entry point for the native MiniSQL protocol. */
 public final class MiniSqlDriver implements Driver {
     public static final String URL_PREFIX = "jdbc:minisql://";
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.1.0";
 
     static {
         try {

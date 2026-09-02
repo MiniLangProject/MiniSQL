@@ -9,7 +9,7 @@ dependencies. Build it on Windows from the repository root:
 .\clients\jdbc\build.ps1
 ```
 
-This creates `build/jdbc/minisql-jdbc-1.0.0.jar`. The JAR contains the
+This creates `build/jdbc/minisql-jdbc-1.1.0.jar`. The JAR contains the
 `java.sql.Driver` service entry, so modern Java applications discover it
 automatically when it is on the class path. Calling
 `Class.forName("org.minilang.minisql.jdbc.MiniSqlDriver")` remains supported for

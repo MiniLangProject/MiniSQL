@@ -36,7 +36,7 @@ from .errors import (
 apilevel = "2.0"
 threadsafety = 1
 paramstyle = "qmark"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "BINARY", "DATETIME", "NUMBER", "ROWID", "STRING", "Binary", "Connection", "Cursor",

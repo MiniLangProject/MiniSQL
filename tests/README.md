@@ -35,13 +35,13 @@ job disposal and later connection acceptance; see
 A successful run ends with:
 
 ```text
-MiniSQL 1.0.0 test suite: SUCCESS
+MiniSQL 1.1.0 test suite: SUCCESS
 ```
 
 and creates one archive:
 
 ```text
-build\MiniSQL_1.0.0_RESULTS_<timestamp>.zip
+build\MiniSQL_1.1.0_RESULTS_<timestamp>.zip
 ```
 
 Source-only validation:

@@ -1,4 +1,4 @@
-# MiniSQL 1.0.0
+# MiniSQL 1.1.0
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Language: MiniLang](https://img.shields.io/badge/written%20in-MiniLang-5b5bd6.svg)](.)
@@ -7,8 +7,24 @@ MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 PE or Linux x64 ELF applications.
 
-The frozen M0-M50 plan is complete. The accepted 1.0 source revision is
-`M48-M50R3`. The current tree was revalidated on 2026-08-26: Windows passed all
+Browse the committed [GitHub-friendly API documentation](docs/api/markdown/README.md),
+or download the repository and open the [offline HTML reference](docs/api/html/index.html).
+Both documentation trees are generated directly from the MiniLang sources with
+[MiniDoc](https://github.com/MiniLangProject/MiniDoc) and the checked-in
+[`minidoc.toml`](minidoc.toml).
+The [September 2026 metrics comparison](docs/api/METRICS_COMPARISON_2026-09-02.md)
+records the complexity, duplication, performance, and memory effects of the
+first metrics-driven refactoring pass.
+
+Regenerate both formats from sibling MiniSQL and MiniDoc checkouts with:
+
+```powershell
+..\MiniDoc\build\minidoc.exe --config .\minidoc.toml
+```
+
+The frozen M0-M50 plan is complete. The accepted 1.0 baseline revision is
+`M48-M50R3`; MiniSQL 1.1.0 retains database and wire format version 1. The
+current tree was revalidated on 2026-09-02: Windows passed all
 **106/106 cumulative phases**, including crash recovery, genuinely parallel
 same-database reads, concurrent clients, TLS integration, replication, fuzzing,
 soak tests, and deterministic release packaging; the focused Linux gate passed
@@ -253,7 +269,7 @@ try (Connection connection = DriverManager.getConnection(
 }
 ```
 
-The JAR is written to `build/jdbc/minisql-jdbc-1.0.0.jar`. See the
+The JAR is written to `build/jdbc/minisql-jdbc-1.1.0.jar`. See the
 [`JDBC driver guide`](docs/release/JDBC.md) for authenticated/TLS URLs,
 certificate pinning, supported interfaces, and protocol-v1 limitations.
 
@@ -323,7 +339,7 @@ release matrix.
 Successful runs end with the platform-specific `SUCCESS` gate.
 
 ```text
-MiniSQL 1.0.0 test suite: SUCCESS
+MiniSQL 1.1.0 test suite: SUCCESS
 ```
 
 A source-only static validation is available with:
@@ -695,8 +711,8 @@ verified fix, and additional WSL2 limitations.
 Output:
 
 ```text
-build\release\MiniSQL-1.0.0-windows-x64.zip
-build\release\MiniSQL-1.0.0-windows-x64.zip.sha256
+build\release\MiniSQL-1.1.0-windows-x64.zip
+build\release\MiniSQL-1.1.0-windows-x64.zip.sha256
 ```
 
 ## Repository layout

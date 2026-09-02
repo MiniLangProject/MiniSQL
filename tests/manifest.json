@@ -3,7 +3,7 @@
   "project": "MiniSQL",
   "milestone": "M50",
   "revision": "M48-M50R3",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "moduleCount": 83,
   "acceptancePhaseCount": 106,
   "userFacingTestRunner": "test.ps1",
@@ -11,37 +11,37 @@
     {
       "source": "src/apps/minisqld/main.ml",
       "output": "minisqld.exe",
-      "version": "MiniSQL 1.0.0 server",
+      "version": "MiniSQL 1.1.0 server",
       "m0SelfTest": "MiniSQL server M0 self-test: SUCCESS"
     },
     {
       "source": "src/apps/minisql/main.ml",
       "output": "minisql.exe",
-      "version": "MiniSQL 1.0.0 client",
+      "version": "MiniSQL 1.1.0 client",
       "m0SelfTest": "MiniSQL client M0 self-test: SUCCESS"
     },
     {
       "source": "src/apps/minisql_check/main.ml",
       "output": "minisql-check.exe",
-      "version": "MiniSQL 1.0.0 check",
+      "version": "MiniSQL 1.1.0 check",
       "m0SelfTest": "MiniSQL check tool M0 self-test: SUCCESS"
     },
     {
       "source": "src/apps/minisql_backup/main.ml",
       "output": "minisql-backup.exe",
-      "version": "MiniSQL 1.0.0 backup",
+      "version": "MiniSQL 1.1.0 backup",
       "m0SelfTest": "MiniSQL backup tool M0 self-test: SUCCESS"
     },
     {
       "source": "src/apps/minisql_migrate/main.ml",
       "output": "minisql-migrate.exe",
-      "version": "MiniSQL 1.0.0 migrate",
+      "version": "MiniSQL 1.1.0 migrate",
       "m0SelfTest": "MiniSQL migrate tool M0 self-test: SUCCESS"
     },
     {
       "source": "src/apps/minisql_admin/main.ml",
       "output": "minisql-admin.exe",
-      "version": "MiniSQL 1.0.0 workbench",
+      "version": "MiniSQL 1.1.0 workbench",
       "m0SelfTest": "MiniSQL Workbench M0 self-test: SUCCESS"
     }
   ],
@@ -100,8 +100,8 @@
     "evidence": "docs/acceptance/FINAL_STATUS.md"
   },
   "candidateMilestones": [],
-  "resultArchivePattern": "build/MiniSQL_1.0.0_RESULTS_<timestamp>.zip",
-  "finalSuccessLine": "MiniSQL 1.0.0 test suite: SUCCESS",
+  "resultArchivePattern": "build/MiniSQL_1.1.0_RESULTS_<timestamp>.zip",
+  "finalSuccessLine": "MiniSQL 1.1.0 test suite: SUCCESS",
   "requiredDirectories": [
     "clients",
     "clients/jdbc",
@@ -191,6 +191,7 @@
     "NOTICE.md",
     "README.md",
     "SECURITY.md",
+    "minidoc.toml",
     "build.ps1",
     "clean.ps1",
     "clients/jdbc/README.md",

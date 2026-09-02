@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Run the complete MiniSQL 1.0.0 M0-M50 test suite and package results."""
+"""Run the complete MiniSQL 1.1.0 M0-M50 test suite and package results."""
 from __future__ import annotations
 
 import argparse
@@ -44,11 +44,11 @@ RESULTS_DIR = ROOT / "build" / "test-results"
 RESULTS_PATH = RESULTS_DIR / "results.json"
 LOG_DIR = RESULTS_DIR / "logs"
 DATA_DIR = BUILD_ROOT / "data"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 REVISION = "M48-M50R3"
 PHASE_COUNT = 106
-FINAL_SUCCESS = "MiniSQL 1.0.0 test suite: SUCCESS"
-FINAL_FAILURE = "MiniSQL 1.0.0 test suite: FAIL"
+FINAL_SUCCESS = "MiniSQL 1.1.0 test suite: SUCCESS"
+FINAL_FAILURE = "MiniSQL 1.1.0 test suite: FAIL"
 
 base.BUILD_ROOT = BUILD_ROOT
 base.RESULTS_DIR = RESULTS_DIR
@@ -761,8 +761,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
     if manifest.get("acceptedBaseline") != accepted:
         raise AcceptanceFailure("Manifest accepted M0-M50 baseline mismatch")
     if manifest.get("candidateMilestones") != []:
-        raise AcceptanceFailure("MiniSQL 1.0.0 must not contain candidate milestones")
-    if manifest.get("resultArchivePattern") != "build/MiniSQL_1.0.0_RESULTS_<timestamp>.zip":
+        raise AcceptanceFailure("MiniSQL 1.1.0 must not contain candidate milestones")
+    if manifest.get("resultArchivePattern") != "build/MiniSQL_1.1.0_RESULTS_<timestamp>.zip":
         raise AcceptanceFailure("Manifest result archive pattern mismatch")
     if manifest.get("finalSuccessLine") != FINAL_SUCCESS:
         raise AcceptanceFailure("Manifest final success line mismatch")
@@ -781,6 +781,77 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         if not path.is_file() or path.stat().st_size == 0:
             raise AcceptanceFailure(f"Required non-empty file missing: {relative}")
 
+    # MiniDoc owns its generated API trees through one exact output manifest
+    # per format. Keeping thousands of stable hash-named pages in the hand-
+    # maintained repository manifest would duplicate that stronger contract.
+    api_root = ROOT / "docs" / "api"
+    required_api_pages = {
+        "html": {"index.html", "diagnostics.html", "metrics.html", "search-index.json"},
+        "markdown": {"README.md", "Diagnostics.md", "Metrics.md"},
+    }
+    for format_name, required_pages in required_api_pages.items():
+        output_root = api_root / format_name
+        output_manifest = output_root / ".minidoc-output"
+        if not output_manifest.is_file() or output_manifest.stat().st_size == 0:
+            raise AcceptanceFailure(f"MiniDoc {format_name} output manifest is missing")
+        listed = [line.strip() for line in output_manifest.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if len(listed) != len(set(listed)):
+            raise AcceptanceFailure(f"MiniDoc {format_name} output manifest contains duplicates")
+        for relative in listed:
+            parts = Path(relative).parts
+            if Path(relative).is_absolute() or ".." in parts or "\\" in relative:
+                raise AcceptanceFailure(f"Unsafe MiniDoc {format_name} output path: {relative}")
+        generated = {
+            path.relative_to(output_root).as_posix()
+            for path in output_root.rglob("*")
+            if path.is_file() and path.name != ".minidoc-output"
+        }
+        if generated != set(listed):
+            raise AcceptanceFailure(
+                f"MiniDoc {format_name} output inventory mismatch; "
+                f"missing={sorted(generated-set(listed))}, stale={sorted(set(listed)-generated)}"
+            )
+        missing_pages = required_pages - generated
+        if missing_pages:
+            raise AcceptanceFailure(f"MiniDoc {format_name} required pages are missing: {sorted(missing_pages)}")
+        for relative in generated:
+            if (output_root / relative).stat().st_size == 0:
+                raise AcceptanceFailure(f"MiniDoc {format_name} generated an empty file: {relative}")
+
+    # Treat the checked-in MiniDoc report as a quality ratchet. MiniDoc 0.4
+    # measures parameter and member contracts in addition to API summaries, so
+    # both the complete contract coverage and the declaration-only coverage are
+    # checked against the post-refactoring baseline.
+    metrics_text = (api_root / "markdown" / "Metrics.md").read_text(encoding="utf-8")
+
+    def metric_match(pattern: str, name: str) -> re.Match[str]:
+        """Returns one required MiniDoc summary match."""
+        matched = re.search(pattern, metrics_text)
+        if matched is None:
+            raise AcceptanceFailure(f"MiniDoc metric is missing or malformed: {name}")
+        return matched
+
+    coverage = float(metric_match(r"\| Documentation coverage \| ([0-9.]+)%", "documentation coverage").group(1))
+    declaration_coverage = float(metric_match(r"\| API declarations \| \d+ \| \d+ \| ([0-9.]+)%", "API declaration coverage").group(1))
+    duplicated = float(metric_match(r"\| Duplicated lines \| \d+ \(([0-9.]+)%\)", "duplicated lines").group(1))
+    cyclomatic = int(metric_match(r"\| Cyclomatic complexity \| \d+ \(average: [0-9.]+, maximum: (\d+)\)", "maximum cyclomatic complexity").group(1))
+    cognitive = int(metric_match(r"\| Cognitive complexity \| \d+ \(maximum per function: (\d+)\)", "maximum cognitive complexity").group(1))
+    if coverage < 41.02:
+        raise AcceptanceFailure(f"MiniDoc documentation coverage regressed: {coverage}% < 41.02%")
+    if declaration_coverage != 100.0:
+        raise AcceptanceFailure(f"MiniDoc API declaration coverage regressed: {declaration_coverage}%")
+    if duplicated > 4.96:
+        raise AcceptanceFailure(f"MiniDoc duplicated source regressed: {duplicated}% > 4.96%")
+    if cyclomatic > 84:
+        raise AcceptanceFailure(f"MiniDoc maximum cyclomatic complexity regressed: {cyclomatic} > 84")
+    if cognitive > 150:
+        raise AcceptanceFailure(f"MiniDoc maximum cognitive complexity regressed: {cognitive} > 150")
+
+    def is_generated_api_path(path: Path) -> bool:
+        """Returns whether a repository-relative path belongs to MiniDoc output."""
+        relative = path.relative_to(ROOT)
+        return len(relative.parts) >= 2 and relative.parts[0:2] == ("docs", "api")
+
     excluded_roots = {"build", "data", "logs", "tmp", ".git"}
     actual_files = {
         path.relative_to(ROOT).as_posix()
@@ -788,6 +859,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         if path.is_file()
         and path.relative_to(ROOT).parts[0] not in excluded_roots
         and "__pycache__" not in path.relative_to(ROOT).parts
+        and not is_generated_api_path(path)
     }
     if actual_files != set(files):
         raise AcceptanceFailure(
@@ -800,6 +872,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         if path.is_dir()
         and path.relative_to(ROOT).parts[0] not in excluded_roots
         and "__pycache__" not in path.relative_to(ROOT).parts
+        and not is_generated_api_path(path)
     }
     if actual_directories != set(directories):
         raise AcceptanceFailure(
@@ -944,7 +1017,7 @@ def validate_source_contracts() -> None:
     """Checks milestone-specific implementation contracts without executing native code."""
     contracts = {
         "src/minisql/common/version.ml": [
-            'const PRODUCT_VERSION = "1.0.0"',
+            'const PRODUCT_VERSION = "1.1.0"',
             'const MILESTONE = "M50"',
             'const REVISION = "M48-M50R3"',
             "const WIRE_PROTOCOL_VERSION = 1",
@@ -1092,10 +1165,10 @@ def validate_source_contracts() -> None:
             "m49-soak-report.json",
         ],
         "tools/release/build_release.py": [
-            'VERSION = "1.0.0"',
+            'VERSION = "1.1.0"',
             "release-manifest.json",
             "SHA256SUMS",
-            "MiniSQL 1.0.0 release verify: SUCCESS",
+            "MiniSQL 1.1.0 release verify: SUCCESS",
         ],
         "src/tests/m48_hot_replication.ml": ["MiniSQL M48 hot replication tests: SUCCESS", "archiveWalLive", "openStandby"],
         "src/tests/m49_hardening.ml": ["MiniSQL M49 hardening tests: SUCCESS", "AUTO_INCREMENT", "3.3", "deterministic SQL mutation outcome is controlled"],
@@ -1103,7 +1176,7 @@ def validate_source_contracts() -> None:
         "src/tests/m79_security_at_rest.ml": ["MiniSQL M79 security-at-rest tests: SUCCESS", "backup.runEncrypted", "wrong backup key is rejected"],
         "tests/fault/production_fault_drill.py": ["def inject_network_aborts", "def crash_during_writes", "def corrupt_middle_wal", "MiniSQL production fault drill: SUCCESS"],
         "tests/soak/production_soak.py": ["samplingError", "waveLatencySeconds", "peakResources"],
-        "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.0.0"'],
+        "src/tests/m50_release_contract.ml": ["MiniSQL M50 release contract tests: SUCCESS", '"1.1.0"'],
         "src/tests/m50_all_modules.ml": ["MiniSQL M50 module smoke test: SUCCESS (78 modules)"],
         "build.ps1": [
             "minisql-m48-hot-replication.exe",
@@ -1111,9 +1184,9 @@ def validate_source_contracts() -> None:
             "minisql-m50-release-contract.exe",
             "minisql-m50-modules.exe",
             "minisql-m78-fault-injection.exe",
-            "MiniSQL 1.0.0 full build: SUCCESS",
+            "MiniSQL 1.1.0 full build: SUCCESS",
         ],
-        "release.ps1": ["build_release.py", "MiniSQL-1.0.0-windows-x64.zip", "MiniSQL 1.0.0 release: SUCCESS"],
+        "release.ps1": ["build_release.py", "MiniSQL-1.1.0-windows-x64.zip", "MiniSQL 1.1.0 release: SUCCESS"],
     }
     for relative, phrases in contracts.items():
         require_phrases(relative, phrases)
@@ -1259,7 +1332,7 @@ def validate_platform_compare_cache_hygiene() -> None:
 def validate_reference_vectors() -> None:
     """Validates independent binary, parser and security reference vectors."""
     if PHASE_COUNT != 106:
-        raise AcceptanceFailure("MiniSQL 1.0.0 phase count must remain 106")
+        raise AcceptanceFailure("MiniSQL 1.1.0 phase count must remain 106")
     corpus_document = load_json(ROOT / "tests/fuzz/m49_sql_corpus.json")
     corpus = corpus_document.get("statements")
     if not isinstance(corpus, list) or len(corpus) < 32 or not all(isinstance(item, str) for item in corpus):
@@ -1281,7 +1354,7 @@ def validate_reference_vectors() -> None:
     }:
         raise AcceptanceFailure("M48 durable-marker reference layout mismatch")
     if layout.get("acceptance", {}).get("phaseCount") != PHASE_COUNT or layout.get("acceptance", {}).get("finalLine") != FINAL_SUCCESS:
-        raise AcceptanceFailure("MiniSQL 1.0.0 acceptance reference mismatch")
+        raise AcceptanceFailure("MiniSQL 1.1.0 acceptance reference mismatch")
     upgrade = load_json(ROOT / "docs/release/upgrade-matrix.json")
     features = load_json(ROOT / "docs/release/feature-matrix.json")
     if upgrade.get("targetVersion") != VERSION or upgrade.get("databaseFormatVersion") != 1:
@@ -1652,21 +1725,21 @@ def run_m50_release_distribution(verbose: bool) -> None:
             raise AcceptanceFailure(f"Release input binary is missing: {name}")
     release_dir = RESULTS_DIR / "release"
     release_dir.mkdir(parents=True, exist_ok=True)
-    archive = release_dir / "MiniSQL-1.0.0-windows-x64.zip"
+    archive = release_dir / "MiniSQL-1.1.0-windows-x64.zip"
     builder = ROOT / "tools/release/build_release.py"
     build_command = [
         sys.executable, str(builder), "build", "--project", str(ROOT),
         "--bin-dir", str(bin_dir), "--output", str(archive),
     ]
     built = base.run_command(build_command, log_name="m50-release-build.run.log", verbose=verbose, timeout=600)
-    if built.returncode != 0 or base.normalized(built.stderr) or "MiniSQL 1.0.0 release build: SUCCESS" not in built.stdout:
+    if built.returncode != 0 or base.normalized(built.stderr) or "MiniSQL 1.1.0 release build: SUCCESS" not in built.stdout:
         raise AcceptanceFailure(
             f"M50 release build failed: rc={built.returncode} "
             f"stdout={base.normalized(built.stdout)!r} stderr={base.normalized(built.stderr)!r}"
         )
     verify_command = [sys.executable, str(builder), "verify", "--archive", str(archive)]
     verified = base.run_command(verify_command, log_name="m50-release-verify.run.log", verbose=verbose, timeout=300)
-    if verified.returncode != 0 or base.normalized(verified.stderr) or "MiniSQL 1.0.0 release verify: SUCCESS" not in verified.stdout:
+    if verified.returncode != 0 or base.normalized(verified.stderr) or "MiniSQL 1.1.0 release verify: SUCCESS" not in verified.stdout:
         raise AcceptanceFailure(
             f"M50 release verify failed: rc={verified.returncode} "
             f"stdout={base.normalized(verified.stdout)!r} stderr={base.normalized(verified.stderr)!r}"
@@ -1742,7 +1815,7 @@ def write_results(status: str, phases: list[dict[str, Any]], started: float, fai
 
 def package_results() -> Path:
     """Packages reports and logs into the timestamped acceptance evidence archive."""
-    archive = ROOT / "build" / f"MiniSQL_1.0.0_RESULTS_{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+    archive = ROOT / "build" / f"MiniSQL_1.1.0_RESULTS_{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
     archive.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
         if RESULTS_PATH.is_file():
@@ -1763,7 +1836,7 @@ def package_results() -> Path:
 
 def parse_args() -> argparse.Namespace:
     """Parses and returns the acceptance runner command-line arguments."""
-    parser = argparse.ArgumentParser(description="Run the complete MiniSQL 1.0.0 M0-M50 test suite")
+    parser = argparse.ArgumentParser(description="Run the complete MiniSQL 1.1.0 M0-M50 test suite")
     parser.add_argument("--compiler")
     parser.add_argument("--static-only", action="store_true")
     parser.add_argument("--keep-artifacts", action="store_true")
@@ -1785,7 +1858,7 @@ def main() -> int:
         ]
         if args.static_only:
             for i,(name,action) in enumerate(static_actions,1): run_phase(i,len(static_actions),name,action,phases)
-            print("MiniSQL 1.0.0 static validation: SUCCESS"); return 0
+            print("MiniSQL 1.1.0 static validation: SUCCESS"); return 0
         compiler = base.resolve_compiler(args.compiler); print(f"MiniLang compiler: {compiler}")
         actions: list[tuple[str,Callable[[],None]]] = list(static_actions)
         actions += [

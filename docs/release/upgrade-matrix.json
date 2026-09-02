@@ -1,12 +1,13 @@
 {
   "matrixVersion": 1,
-  "targetVersion": "1.0.0",
+  "targetVersion": "1.1.0",
   "databaseFormatVersion": 1,
   "entries": [
     {"source": "M8-M20", "open": true, "automaticAdditions": ["security catalog", "audit metadata", "durable WAL marker"]},
     {"source": "M21-M31", "open": true, "automaticAdditions": ["durable WAL marker", "schema extensions when needed"]},
     {"source": "M32-M47", "open": true, "automaticAdditions": ["durable WAL marker"]},
-    {"source": "1.0.0", "open": true, "automaticAdditions": []}
+    {"source": "1.0.0", "open": true, "automaticAdditions": []},
+    {"source": "1.1.0", "open": true, "automaticAdditions": []}
   ],
   "pageSizeChange": "offline rewrite only",
   "downgrade": "not supported after use of newer logical features"

@@ -1,0 +1,98 @@
+# Package `minisql.sql.parser`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/sql/parser.ml](File-src-minisql-sql-parser-ml-2143788161.md)
+
+## Symbols
+
+- [`minisql.sql.parser.advance`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-advance-function-advance-state-src-minisql-sql-parser-ml-1016213217) — function
+- [`minisql.sql.parser.atEnd`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-atend-function-atend-state-src-minisql-sql-parser-ml-1141605641) — function
+- [`minisql.sql.parser.checkKeyword`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-checkkeyword-function-checkkeyword-state-keyword-src-minisql-sql-parser-ml-1123058328) — function
+- [`minisql.sql.parser.checkKind`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-checkkind-function-checkkind-state-kind-src-minisql-sql-parser-ml-426117883) — function
+- [`minisql.sql.parser.componentName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-componentname-function-componentname-src-minisql-sql-parser-ml-1016146040) — function
+- [`minisql.sql.parser.current`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-current-function-current-state-src-minisql-sql-parser-ml-1810443483) — function
+- [`minisql.sql.parser.expectKeyword`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-expectkeyword-function-expectkeyword-state-keyword-src-minisql-sql-parser-ml-1169332012) — function
+- [`minisql.sql.parser.expectKind`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-expectkind-function-expectkind-state-kind-description-src-minisql-sql-parser-ml-798420505) — function
+- [`minisql.sql.parser.fail`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-fail-function-fail-state-message-src-minisql-sql-parser-ml-510885780) — function
+- [`minisql.sql.parser.INVALID_ARGUMENT`](File-src-minisql-sql-parser-ml-2143788161.md#constant-constant-minisql-sql-parser-invalid-argument-const-invalid-argument-9001-src-minisql-sql-parser-ml-456493941) — constant
+- [`minisql.sql.parser.isFunctionNameToken`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-isfunctionnametoken-function-isfunctionnametoken-value-src-minisql-sql-parser-ml-1403514569) — function
+- [`minisql.sql.parser.isIdentifierToken`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-isidentifiertoken-function-isidentifiertoken-value-src-minisql-sql-parser-ml-784807657) — function
+- [`minisql.sql.parser.isImplemented`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-isimplemented-function-isimplemented-src-minisql-sql-parser-ml-34734376) — function
+- [`minisql.sql.parser.isTriggerRowQualifierToken`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-istriggerrowqualifiertoken-function-istriggerrowqualifiertoken-value-src-minisql-sql-parser-ml-482427069) — function
+- [`minisql.sql.parser.matchKeyword`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-matchkeyword-function-matchkeyword-state-keyword-src-minisql-sql-parser-ml-170314060) — function
+- [`minisql.sql.parser.matchKind`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-matchkind-function-matchkind-state-kind-src-minisql-sql-parser-ml-1590339029) — function
+- [`minisql.sql.parser.nextIsKeyword`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-nextiskeyword-function-nextiskeyword-state-keyword-src-minisql-sql-parser-ml-871911436) — function
+- [`minisql.sql.parser.nextIsKind`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-nextiskind-function-nextiskind-state-kind-src-minisql-sql-parser-ml-638857839) — function
+- [`minisql.sql.parser.operatorPrecedence`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-operatorprecedence-function-operatorprecedence-value-src-minisql-sql-parser-ml-1358644077) — function
+- [`minisql.sql.parser.operatorText`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-operatortext-function-operatortext-value-src-minisql-sql-parser-ml-181559717) — function
+- [`minisql.sql.parser.parseAlter`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsealter-function-parsealter-state-src-minisql-sql-parser-ml-184766817) — function
+- [`minisql.sql.parser.parseAlterTable`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsealtertable-function-parsealtertable-state-src-minisql-sql-parser-ml-2032474239) — function
+- [`minisql.sql.parser.parseAssignments`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseassignments-function-parseassignments-state-src-minisql-sql-parser-ml-915825669) — function
+- [`minisql.sql.parser.parseBegin`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsebegin-function-parsebegin-state-src-minisql-sql-parser-ml-165773645) — function
+- [`minisql.sql.parser.parseCall`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecall-function-parsecall-state-src-minisql-sql-parser-ml-308565695) — function
+- [`minisql.sql.parser.parseCaseExpression`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecaseexpression-function-parsecaseexpression-state-src-minisql-sql-parser-ml-1164052659) — function
+- [`minisql.sql.parser.parseCastExpression`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecastexpression-function-parsecastexpression-state-src-minisql-sql-parser-ml-798906017) — function
+- [`minisql.sql.parser.parseColumnDefinition`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecolumndefinition-function-parsecolumndefinition-state-src-minisql-sql-parser-ml-655854205) — function
+- [`minisql.sql.parser.parseCreate`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreate-function-parsecreate-state-src-minisql-sql-parser-ml-345218999) — function
+- [`minisql.sql.parser.parseCreateIndex`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreateindex-function-parsecreateindex-state-unique-src-minisql-sql-parser-ml-1169847716) — function
+- [`minisql.sql.parser.parseCreatePrincipal`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreateprincipal-function-parsecreateprincipal-state-principalkind-src-minisql-sql-parser-ml-223417505) — function
+- [`minisql.sql.parser.parseCreateProcedure`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreateprocedure-function-parsecreateprocedure-state-replace-src-minisql-sql-parser-ml-1644414057) — function
+- [`minisql.sql.parser.parseCreateSchema`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreateschema-function-parsecreateschema-state-src-minisql-sql-parser-ml-1562481933) — function
+- [`minisql.sql.parser.parseCreateSequence`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreatesequence-function-parsecreatesequence-state-src-minisql-sql-parser-ml-782151369) — function
+- [`minisql.sql.parser.parseCreateTable`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreatetable-function-parsecreatetable-state-src-minisql-sql-parser-ml-767416413) — function
+- [`minisql.sql.parser.parseCreateTrigger`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreatetrigger-function-parsecreatetrigger-state-src-minisql-sql-parser-ml-1250658305) — function
+- [`minisql.sql.parser.parseCreateView`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsecreateview-function-parsecreateview-state-replace-src-minisql-sql-parser-ml-1509415117) — function
+- [`minisql.sql.parser.parseDeallocate`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsedeallocate-function-parsedeallocate-state-src-minisql-sql-parser-ml-1976083431) — function
+- [`minisql.sql.parser.parseDelete`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsedelete-function-parsedelete-state-src-minisql-sql-parser-ml-1551249053) — function
+- [`minisql.sql.parser.parseDescribe`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsedescribe-function-parsedescribe-state-src-minisql-sql-parser-ml-1337118013) — function
+- [`minisql.sql.parser.parseDrop`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsedrop-function-parsedrop-state-src-minisql-sql-parser-ml-900100933) — function
+- [`minisql.sql.parser.parseExecutePrepared`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseexecuteprepared-function-parseexecuteprepared-state-src-minisql-sql-parser-ml-1014197913) — function
+- [`minisql.sql.parser.parseExpression`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseexpression-function-parseexpression-state-minimumprecedence-src-minisql-sql-parser-ml-1891708655) — function
+- [`minisql.sql.parser.parseExpressionText`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseexpressiontext-function-parseexpressiontext-source-src-minisql-sql-parser-ml-1621736567) — function
+- [`minisql.sql.parser.parseGrant`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsegrant-function-parsegrant-state-src-minisql-sql-parser-ml-869061341) — function
+- [`minisql.sql.parser.parseIdentifier`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseidentifier-function-parseidentifier-state-description-src-minisql-sql-parser-ml-1519662343) — function
+- [`minisql.sql.parser.parseIdentifierList`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseidentifierlist-function-parseidentifierlist-state-src-minisql-sql-parser-ml-14518141) — function
+- [`minisql.sql.parser.parseIdentifierName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseidentifiername-function-parseidentifiername-state-description-src-minisql-sql-parser-ml-838817309) — function
+- [`minisql.sql.parser.parseIndexKeyList`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseindexkeylist-function-parseindexkeylist-state-src-minisql-sql-parser-ml-10134397) — function
+- [`minisql.sql.parser.parseInsert`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseinsert-function-parseinsert-state-src-minisql-sql-parser-ml-1062368913) — function
+- [`minisql.sql.parser.parseIntegerValue`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseintegervalue-function-parseintegervalue-state-description-src-minisql-sql-parser-ml-1304910103) — function
+- [`minisql.sql.parser.parseJoinClause`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsejoinclause-function-parsejoinclause-state-src-minisql-sql-parser-ml-2003264545) — function
+- [`minisql.sql.parser.parseMerge`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsemerge-function-parsemerge-state-src-minisql-sql-parser-ml-460496321) — function
+- [`minisql.sql.parser.parseObjectName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseobjectname-function-parseobjectname-state-description-src-minisql-sql-parser-ml-1805546373) — function
+- [`minisql.sql.parser.parseOrderItem`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseorderitem-function-parseorderitem-state-src-minisql-sql-parser-ml-1292881405) — function
+- [`minisql.sql.parser.parsePasswordLiteral`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsepasswordliteral-function-parsepasswordliteral-state-src-minisql-sql-parser-ml-459925117) — function
+- [`minisql.sql.parser.parsePredicateTail`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsepredicatetail-function-parsepredicatetail-state-expression-src-minisql-sql-parser-ml-678144915) — function
+- [`minisql.sql.parser.parsePrepare`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseprepare-function-parseprepare-state-src-minisql-sql-parser-ml-799376733) — function
+- [`minisql.sql.parser.parsePrimary`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseprimary-function-parseprimary-state-src-minisql-sql-parser-ml-1720555453) — function
+- [`minisql.sql.parser.parsePrincipalName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseprincipalname-function-parseprincipalname-state-description-src-minisql-sql-parser-ml-1131152435) — function
+- [`minisql.sql.parser.parsePrivilegeList`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseprivilegelist-function-parseprivilegelist-state-src-minisql-sql-parser-ml-185389693) — function
+- [`minisql.sql.parser.parseReferentialAction`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsereferentialaction-function-parsereferentialaction-state-src-minisql-sql-parser-ml-1519990733) — function
+- [`minisql.sql.parser.parseReturning`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsereturning-function-parsereturning-state-src-minisql-sql-parser-ml-1749622157) — function
+- [`minisql.sql.parser.parseRevoke`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parserevoke-function-parserevoke-state-src-minisql-sql-parser-ml-1933001427) — function
+- [`minisql.sql.parser.parseRevokeBehavior`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parserevokebehavior-function-parserevokebehavior-state-src-minisql-sql-parser-ml-15461451) — function
+- [`minisql.sql.parser.ParserState`](Type-minisql-sql-parser-parserstate-824999695.md) — struct
+- [`minisql.sql.parser.parseSelect`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseselect-function-parseselect-state-src-minisql-sql-parser-ml-131685571) — function
+- [`minisql.sql.parser.parseSelectCore`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseselectcore-function-parseselectcore-state-src-minisql-sql-parser-ml-1726657285) — function
+- [`minisql.sql.parser.parseSelectItem`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseselectitem-function-parseselectitem-state-src-minisql-sql-parser-ml-1233371773) — function
+- [`minisql.sql.parser.parseShow`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseshow-function-parseshow-state-src-minisql-sql-parser-ml-2141513113) — function
+- [`minisql.sql.parser.parseSql`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsesql-function-parsesql-source-src-minisql-sql-parser-ml-1887707447) — function
+- [`minisql.sql.parser.parseStatement`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsestatement-function-parsestatement-state-src-minisql-sql-parser-ml-697443873) — function
+- [`minisql.sql.parser.parseTableAlias`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetablealias-function-parsetablealias-state-src-minisql-sql-parser-ml-1426797263) — function
+- [`minisql.sql.parser.parseTableConstraint`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetableconstraint-function-parsetableconstraint-state-src-minisql-sql-parser-ml-1048842061) — function
+- [`minisql.sql.parser.parseTableSource`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetablesource-function-parsetablesource-state-description-src-minisql-sql-parser-ml-1900678295) — function
+- [`minisql.sql.parser.parseTokens`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetokens-function-parsetokens-tokens-src-minisql-sql-parser-ml-1550899676) — function
+- [`minisql.sql.parser.parseTruncate`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetruncate-function-parsetruncate-state-src-minisql-sql-parser-ml-1311540655) — function
+- [`minisql.sql.parser.parseTypeName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsetypename-function-parsetypename-state-src-minisql-sql-parser-ml-752638909) — function
+- [`minisql.sql.parser.parseUnary`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseunary-function-parseunary-state-src-minisql-sql-parser-ml-1255049437) — function
+- [`minisql.sql.parser.parseUpdate`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parseupdate-function-parseupdate-state-src-minisql-sql-parser-ml-1003819037) — function
+- [`minisql.sql.parser.parseWithSelect`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-parsewithselect-function-parsewithselect-state-src-minisql-sql-parser-ml-1831116375) — function
+- [`minisql.sql.parser.preparableStatement`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-preparablestatement-function-preparablestatement-statement-src-minisql-sql-parser-ml-1538119331) — function
+- [`minisql.sql.parser.previous`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-previous-function-previous-state-src-minisql-sql-parser-ml-552479361) — function
+- [`minisql.sql.parser.privilegeName`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-privilegename-function-privilegename-state-src-minisql-sql-parser-ml-1909899965) — function
+- [`minisql.sql.parser.SQL_SYNTAX`](File-src-minisql-sql-parser-ml-2143788161.md#constant-constant-minisql-sql-parser-sql-syntax-const-sql-syntax-9019-src-minisql-sql-parser-ml-1533729826) — constant
+- [`minisql.sql.parser.startsJoin`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-startsjoin-function-startsjoin-state-src-minisql-sql-parser-ml-721577185) — function
+- [`minisql.sql.parser.startsTableConstraint`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-startstableconstraint-function-startstableconstraint-state-src-minisql-sql-parser-ml-370278397) — function
+- [`minisql.sql.parser.targetMilestone`](File-src-minisql-sql-parser-ml-2143788161.md#function-function-minisql-sql-parser-targetmilestone-function-targetmilestone-src-minisql-sql-parser-ml-790413730) — function

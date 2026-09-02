@@ -1,0 +1,64 @@
+# Package `minisql.storage.heap_file`
+
+[Home](README.md) · [Packages](Packages.md)
+
+## Files
+
+- [src/minisql/storage/heap_file.ml](File-src-minisql-storage-heap-file-ml-1771906446.md)
+
+## Symbols
+
+- [`minisql.storage.heap_file.bytesEqual`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-bytesequal-function-bytesequal-left-right-src-minisql-storage-heap-file-ml-79159967) — function
+- [`minisql.storage.heap_file.classifyHeapPages`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-classifyheappages-function-classifyheappages-file-startpage-prefix-src-minisql-storage-heap-file-ml-571435123) — function
+- [`minisql.storage.heap_file.close`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-close-function-close-heap-src-minisql-storage-heap-file-ml-178387068) — function
+- [`minisql.storage.heap_file.CLOSED_HANDLE`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-closed-handle-const-closed-handle-9008-src-minisql-storage-heap-file-ml-653597136) — constant
+- [`minisql.storage.heap_file.componentName`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-componentname-function-componentname-src-minisql-storage-heap-file-ml-1344332010) — function
+- [`minisql.storage.heap_file.containsRowId`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-containsrowid-function-containsrowid-values-sought-src-minisql-storage-heap-file-ml-1626062382) — function
+- [`minisql.storage.heap_file.CORRUPT_DATA`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-corrupt-data-const-corrupt-data-9004-src-minisql-storage-heap-file-ml-521517622) — constant
+- [`minisql.storage.heap_file.count`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-count-function-count-heap-src-minisql-storage-heap-file-ml-1106331446) — function
+- [`minisql.storage.heap_file.create`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-create-function-create-path-pagesize-fileid-databaseid-src-minisql-storage-heap-file-ml-535174448) — function
+- [`minisql.storage.heap_file.decodeDirectoryNative`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-decodedirectorynative-function-decodedirectorynative-words-operation-name-src-minisql-storage-heap-file-ml-831587347) — function
+- [`minisql.storage.heap_file.decodeForward`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-decodeforward-function-decodeforward-value-src-minisql-storage-heap-file-ml-135225589) — function
+- [`minisql.storage.heap_file.decodePageDirectory`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-decodepagedirectory-function-decodepagedirectory-file-encoded-src-minisql-storage-heap-file-ml-724228542) — function
+- [`minisql.storage.heap_file.encodeForward`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-encodeforward-function-encodeforward-target-src-minisql-storage-heap-file-ml-357007645) — function
+- [`minisql.storage.heap_file.encodePageDirectory`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-encodepagedirectory-function-encodepagedirectory-file-directory-src-minisql-storage-heap-file-ml-452538919) — function
+- [`minisql.storage.heap_file.fail`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-fail-function-fail-code-operation-message-src-minisql-storage-heap-file-ml-1461836375) — function
+- [`minisql.storage.heap_file.FORWARD_SIZE`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-forward-size-const-forward-size-24-src-minisql-storage-heap-file-ml-2080602417) — constant
+- [`minisql.storage.heap_file.forwardingMagic`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-forwardingmagic-function-forwardingmagic-src-minisql-storage-heap-file-ml-1428612930) — function
+- [`minisql.storage.heap_file.HeapFile`](Type-minisql-storage-heap-file-heapfile-2088479080.md) — struct
+- [`minisql.storage.heap_file.HeapPageDirectory`](Type-minisql-storage-heap-file-heappagedirectory-873951192.md) — struct
+- [`minisql.storage.heap_file.heapPageNumbers`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-heappagenumbers-function-heappagenumbers-file-src-minisql-storage-heap-file-ml-1360821622) — function
+- [`minisql.storage.heap_file.HeapRow`](Type-minisql-storage-heap-file-heaprow-40418530.md) — struct
+- [`minisql.storage.heap_file.initialInsertionPage`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-initialinsertionpage-function-initialinsertionpage-file-src-minisql-storage-heap-file-ml-1143491132) — function
+- [`minisql.storage.heap_file.insert`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-insert-function-insert-heap-recordbytes-src-minisql-storage-heap-file-ml-253062440) — function
+- [`minisql.storage.heap_file.insertWithFlags`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-insertwithflags-function-insertwithflags-heap-recordbytes-slotflags-src-minisql-storage-heap-file-ml-1810912075) — function
+- [`minisql.storage.heap_file.INVALID_ARGUMENT`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-invalid-argument-const-invalid-argument-9001-src-minisql-storage-heap-file-ml-145240741) — constant
+- [`minisql.storage.heap_file.invalidatePageDirectory`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-invalidatepagedirectory-synchronized-function-invalidatepagedirectory-tablepath-src-minisql-storage-heap-file-ml-1895287139) — function
+- [`minisql.storage.heap_file.isHeapPageDirectory`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-isheappagedirectory-function-isheappagedirectory-value-src-minisql-storage-heap-file-ml-1202133551) — function
+- [`minisql.storage.heap_file.isImplemented`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-isimplemented-function-isimplemented-src-minisql-storage-heap-file-ml-1146114082) — function
+- [`minisql.storage.heap_file.loadPageDirectory`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-loadpagedirectory-function-loadpagedirectory-file-src-minisql-storage-heap-file-ml-944916308) — function
+- [`minisql.storage.heap_file.loadSlot`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-loadslot-function-loadslot-heap-identifier-operation-src-minisql-storage-heap-file-ml-650579536) — function
+- [`minisql.storage.heap_file.MAX_FORWARD_DEPTH`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-max-forward-depth-const-max-forward-depth-64-src-minisql-storage-heap-file-ml-284393849) — constant
+- [`minisql.storage.heap_file.open`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-open-function-open-path-src-minisql-storage-heap-file-ml-265442793) — function
+- [`minisql.storage.heap_file.PAGE_DIRECTORY_FORMAT_VERSION`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-page-directory-format-version-const-page-directory-format-version-1-src-minisql-storage-heap-file-ml-922673938) — constant
+- [`minisql.storage.heap_file.PAGE_DIRECTORY_HEADER_BYTES`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-page-directory-header-bytes-const-page-directory-header-bytes-64-src-minisql-storage-heap-file-ml-24710745) — constant
+- [`minisql.storage.heap_file.PAGE_DIRECTORY_RECORD_KIND`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-page-directory-record-kind-const-page-directory-record-kind-51-src-minisql-storage-heap-file-ml-962896439) — constant
+- [`minisql.storage.heap_file.pageDirectoryMagic`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-pagedirectorymagic-function-pagedirectorymagic-src-minisql-storage-heap-file-ml-1284114298) — function
+- [`minisql.storage.heap_file.pageDirectoryPath`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-pagedirectorypath-function-pagedirectorypath-tablepath-src-minisql-storage-heap-file-ml-1267126387) — function
+- [`minisql.storage.heap_file.read`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-read-function-read-heap-identifier-src-minisql-storage-heap-file-ml-1974969595) — function
+- [`minisql.storage.heap_file.readDirectoryBytes`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-readdirectorybytes-function-readdirectorybytes-path-src-minisql-storage-heap-file-ml-1696064845) — function
+- [`minisql.storage.heap_file.rebuildHeapPageNumbers`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-rebuildheappagenumbers-synchronized-function-rebuildheappagenumbers-file-src-minisql-storage-heap-file-ml-1781913850) — function
+- [`minisql.storage.heap_file.remove`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-remove-function-remove-heap-identifier-src-minisql-storage-heap-file-ml-818635795) — function
+- [`minisql.storage.heap_file.resolve`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-resolve-function-resolve-heap-identifier-src-minisql-storage-heap-file-ml-657359131) — function
+- [`minisql.storage.heap_file.ResolvedRow`](Type-minisql-storage-heap-file-resolvedrow-1857803540.md) — struct
+- [`minisql.storage.heap_file.ROW_NOT_FOUND`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-row-not-found-const-row-not-found-9016-src-minisql-storage-heap-file-ml-1731797833) — constant
+- [`minisql.storage.heap_file.rowId`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-rowid-function-rowid-pagenumber-slotid-generation-src-minisql-storage-heap-file-ml-499360953) — function
+- [`minisql.storage.heap_file.RowId`](Type-minisql-storage-heap-file-rowid-60550609.md) — struct
+- [`minisql.storage.heap_file.sameRowId`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-samerowid-function-samerowid-left-right-src-minisql-storage-heap-file-ml-1007505825) — function
+- [`minisql.storage.heap_file.scan`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-scan-function-scan-heap-src-minisql-storage-heap-file-ml-2129234564) — function
+- [`minisql.storage.heap_file.STALE_REFERENCE`](File-src-minisql-storage-heap-file-ml-1771906446.md#constant-constant-minisql-storage-heap-file-stale-reference-const-stale-reference-9018-src-minisql-storage-heap-file-ml-244491267) — constant
+- [`minisql.storage.heap_file.targetMilestone`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-targetmilestone-function-targetmilestone-src-minisql-storage-heap-file-ml-1698423216) — function
+- [`minisql.storage.heap_file.update`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-update-function-update-heap-identifier-recordbytes-src-minisql-storage-heap-file-ml-1276580385) — function
+- [`minisql.storage.heap_file.validateIdentifier`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-validateidentifier-function-validateidentifier-identifier-operation-src-minisql-storage-heap-file-ml-333123162) — function
+- [`minisql.storage.heap_file.validateOpen`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-validateopen-function-validateopen-heap-operation-src-minisql-storage-heap-file-ml-2137086473) — function
+- [`minisql.storage.heap_file.writeDirectoryAtomic`](File-src-minisql-storage-heap-file-ml-1771906446.md#function-function-minisql-storage-heap-file-writedirectoryatomic-function-writedirectoryatomic-path-encoded-src-minisql-storage-heap-file-ml-1877778845) — function

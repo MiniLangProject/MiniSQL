@@ -1,0 +1,29 @@
+[project]
+name = "MiniSQL"
+description = "MiniSQL is a native relational database implemented in MiniLang, including transactional storage, SQL execution and optimization, concurrent client/server operation, security, backup, replication, administrative tools, and language connectors."
+entry = "src/apps/minisqld/main.ml"
+source_roots = ["src/minisql", "src/apps"]
+include = ["src", "../MiniLangCompilerML"]
+exclude = ["build", "docs/api", "src/tests", "tests"]
+target = "windows-x64"
+
+[documentation]
+include_internal = false
+reachable_only = false
+strict = false
+
+[output]
+formats = ["html", "markdown"]
+html_dir = "docs/api/html"
+markdown_dir = "docs/api/markdown"
+markdown_profile = "repository"
+
+[graphs]
+imports = true
+calls = true
+types = true
+max_nodes = 300
+
+[links]
+repository = "https://github.com/MiniLangProject/MiniSQL"
+ref = "main"

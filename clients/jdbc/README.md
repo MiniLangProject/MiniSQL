@@ -14,7 +14,7 @@ Build the driver from the repository root:
 .\clients\jdbc\build.ps1
 ```
 
-The resulting JAR is `build/jdbc/minisql-jdbc-1.0.0.jar`. A conventional Maven
+The resulting JAR is `build/jdbc/minisql-jdbc-1.1.0.jar`. A conventional Maven
 project descriptor is also supplied, so `mvn package` can be used in this
 directory when Maven and a full JDK are installed.
 

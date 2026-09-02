@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.minilang</groupId>
   <artifactId>minisql-jdbc</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>MiniSQL JDBC Driver</name>
   <description>Dependency-free JDBC 4.3 driver for MiniSQL.</description>
   <licenses><license><name>Apache License, Version 2.0</name><url>https://www.apache.org/licenses/LICENSE-2.0</url></license></licenses>
