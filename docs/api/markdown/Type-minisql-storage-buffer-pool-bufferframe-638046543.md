@@ -12,7 +12,7 @@ struct BufferFrame
 Defines the buffer frame record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L25)
 
 ## Members
 
@@ -26,7 +26,7 @@ data
 Data field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L35)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-dirty-dirty-src-minisql-storage-buffer-pool-ml-2064211562"></a>
 ### dirty
@@ -38,7 +38,7 @@ dirty
 Dirty field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L39)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-pagedfile-pagedfile-src-minisql-storage-buffer-pool-ml-203623702"></a>
 ### pagedFile
@@ -50,7 +50,7 @@ pagedFile
 Paged file field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L31)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-pagenumber-pagenumber-src-minisql-storage-buffer-pool-ml-1732683930"></a>
 ### pageNumber
@@ -62,7 +62,7 @@ pageNumber
 Page number field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L33)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-path-path-src-minisql-storage-buffer-pool-ml-1813017612"></a>
 ### path
@@ -74,7 +74,7 @@ path
 Path field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L29)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-pincount-pincount-src-minisql-storage-buffer-pool-ml-1069364410"></a>
 ### pinCount
@@ -86,7 +86,7 @@ pinCount
 Pin count field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L37)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-referenced-referenced-src-minisql-storage-buffer-pool-ml-1044056180"></a>
 ### referenced
@@ -98,7 +98,7 @@ referenced
 Referenced field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L41)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferframe-valid-valid-src-minisql-storage-buffer-pool-ml-1868579638"></a>
 ### valid
@@ -110,4 +110,4 @@ valid
 Valid field of the buffer frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L27)

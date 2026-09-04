@@ -12,7 +12,7 @@ struct CachedReadHandle
 One persistent immutable table or index handle. Native positioned reads let all database readers use the same object concurrently without a shared file cursor; the database writer gate still owns invalidation and close.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L236)
 
 ## Members
 
@@ -26,7 +26,7 @@ indexHandle
 Distinguishes BTree handles from PagedFile handles during close.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L242)
 
 <a id="field-field-minisql-server-database-manager-cachedreadhandle-path-path-src-minisql-server-database-manager-ml-1158830631"></a>
 ### path
@@ -38,7 +38,7 @@ path
 Stable absolute or database-relative path used as the registry key.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L238)
 
 <a id="field-field-minisql-server-database-manager-cachedreadhandle-value-value-src-minisql-server-database-manager-ml-1077872857"></a>
 ### value
@@ -50,4 +50,4 @@ value
 Open PagedFile or BTree owned exclusively by the database registry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L240)

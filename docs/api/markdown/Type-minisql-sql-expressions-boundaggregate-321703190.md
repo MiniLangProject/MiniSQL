@@ -12,7 +12,7 @@ struct BoundAggregate
 Groups the bound aggregate state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L77)
 
 ## Members
 
@@ -26,7 +26,7 @@ argument
 Stores the argument associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L83)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-countstar-countstar-src-minisql-sql-expressions-ml-1497725308"></a>
 ### countStar
@@ -38,7 +38,7 @@ countStar
 Stores the count star associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L91)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-distinct-distinct-src-minisql-sql-expressions-ml-2506396"></a>
 ### distinct
@@ -50,7 +50,7 @@ distinct
 Indicates whether the distinct condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L87)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-kind-kind-src-minisql-sql-expressions-ml-686366972"></a>
 ### kind
@@ -62,7 +62,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L79)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-name-name-src-minisql-sql-expressions-ml-1065485346"></a>
 ### name
@@ -74,7 +74,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L81)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-separator-separator-src-minisql-sql-expressions-ml-1924660692"></a>
 ### separator
@@ -86,7 +86,7 @@ separator
 Stores the optional delimiter or secondary aggregate argument.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L85)
 
 <a id="field-field-minisql-sql-expressions-boundaggregate-typeinfo-typeinfo-src-minisql-sql-expressions-ml-158710628"></a>
 ### typeInfo
@@ -98,4 +98,4 @@ typeInfo
 Stores the type info associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L89)

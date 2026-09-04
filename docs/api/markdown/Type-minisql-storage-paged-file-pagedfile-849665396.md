@@ -12,7 +12,7 @@ struct PagedFile
 Defines the paged file record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L44)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeSlot
 Active slot field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L62)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-allocationhint-allocationhint-src-minisql-storage-paged-file-ml-509487524"></a>
 ### allocationHint
@@ -38,7 +38,7 @@ allocationHint
 First page that may still contain reusable free storage for appenders.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L68)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-closed-closed-src-minisql-storage-paged-file-ml-857546906"></a>
 ### closed
@@ -50,7 +50,7 @@ closed
 Closed field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L70)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-databaseid-databaseid-src-minisql-storage-paged-file-ml-1385689430"></a>
 ### databaseId
@@ -62,7 +62,7 @@ databaseId
 Database id field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L56)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-encryptionkey-encryptionkey-src-minisql-storage-paged-file-ml-1719193578"></a>
 ### encryptionKey
@@ -74,7 +74,7 @@ encryptionKey
 Wipeable database encryption key, or void for a plaintext file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L66)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-featureflags-featureflags-src-minisql-storage-paged-file-ml-106395284"></a>
 ### featureFlags
@@ -86,7 +86,7 @@ featureFlags
 Feature flags field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L64)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-file-file-src-minisql-storage-paged-file-ml-1802110642"></a>
 ### file
@@ -98,7 +98,7 @@ file
 File field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L48)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-fileid-fileid-src-minisql-storage-paged-file-ml-1068883668"></a>
 ### fileId
@@ -110,7 +110,7 @@ fileId
 File id field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L54)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-filetype-filetype-src-minisql-storage-paged-file-ml-323778482"></a>
 ### fileType
@@ -122,7 +122,7 @@ fileType
 File type field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L52)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-generation-generation-src-minisql-storage-paged-file-ml-200238130"></a>
 ### generation
@@ -134,7 +134,7 @@ generation
 Generation field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L60)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-pagecount-pagecount-src-minisql-storage-paged-file-ml-609278394"></a>
 ### pageCount
@@ -146,7 +146,7 @@ pageCount
 Page count field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L58)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-pagesize-pagesize-src-minisql-storage-paged-file-ml-1980513882"></a>
 ### pageSize
@@ -158,7 +158,7 @@ pageSize
 Page size field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L50)
 
 <a id="field-field-minisql-storage-paged-file-pagedfile-path-path-src-minisql-storage-paged-file-ml-1512633052"></a>
 ### path
@@ -170,4 +170,4 @@ path
 Path field of the paged file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L46)

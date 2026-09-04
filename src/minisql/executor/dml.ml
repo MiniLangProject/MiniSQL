@@ -1,3 +1,5 @@
+//! Provides minisql executor dml facilities for this project.
+
 package minisql.executor.dml
 
 // Copyright 2026 MiniLangProject contributors
@@ -29,91 +31,111 @@ import minisql.transaction.checkpoint as checkpoint
 import minisql.transaction.transaction as transaction
 import minisql.transaction.wal as wal
 
-// Basic transactional DML. Every changed heap page is private until the WAL
-// commit succeeds. Publishing pages after commit is redo-safe: a publication
-// failure is repaired by the already accepted M7 recovery path on next open.
+/// Basic transactional DML. Every changed heap page is private until the WAL
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql executor dml module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql executor dml module.
 const CLOSED_HANDLE = 9008
+/// Defines the transaction state constant used by the minisql executor dml module.
 const TRANSACTION_STATE = 9011
+/// Defines the read only violation constant used by the minisql executor dml module.
 const READ_ONLY_VIOLATION = 9012
+/// Defines the object not found constant used by the minisql executor dml module.
 const OBJECT_NOT_FOUND = 9014
+/// Defines the page full constant used by the minisql executor dml module.
 const PAGE_FULL = 9015
+/// Defines the type mismatch constant used by the minisql executor dml module.
 const TYPE_MISMATCH = 9017
+/// Defines the binding error constant used by the minisql executor dml module.
 const BINDING_ERROR = 9020
+/// Defines the constraint violation constant used by the minisql executor dml module.
 const CONSTRAINT_VIOLATION = 9021
+/// Defines the duplicate key constant used by the minisql executor dml module.
 const DUPLICATE_KEY = 9022
+/// Defines the unsupported sql constant used by the minisql executor dml module.
 const UNSUPPORTED_SQL = 9025
 
-// Groups the DML result state and preserves the field relationships documented below.
+/// Groups the DML result state and preserves the field relationships documented below.
 struct DmlResult
-  // Stores the affected rows associated with this value.
+  /// Stores the affected rows associated with this value.
   affectedRows
-  // Stores the references associated with this value.
+  /// Stores the references associated with this value.
   references
-  // Contains the ordered rows collection.
+  /// Contains the ordered rows collection.
   rows
-  // Stores the old rows associated with this value.
+  /// Stores the old rows associated with this value.
   oldRows
-  // Stores the new rows associated with this value.
+  /// Stores the new rows associated with this value.
   newRows
 end struct
 
-// Groups the conflict match state and preserves the field relationships documented below.
+/// Groups the conflict match state and preserves the field relationships documented below.
 struct ConflictMatch
-  // Stores the reference associated with this value.
+  /// Stores the reference associated with this value.
   reference
-  // Contains the ordered values collection.
+  /// Contains the ordered values collection.
   values
-  // Stores the constraint associated with this value.
+  /// Stores the constraint associated with this value.
   constraint
 end struct
 
-// Tracks the last heap page considered by a statement-local bulk insert.
+/// Tracks the last heap page considered by a statement-local bulk insert.
 struct InsertCursor
-  // First page that can still have capacity during the current insert batch.
+  /// First page that can still have capacity during the current insert batch.
   pageNumber
-  // Maximum number of empty heap pages reserved by one durability barrier.
+  /// Maximum number of empty heap pages reserved by one durability barrier.
   allocationBatch
-  // Rows not yet staged, used to avoid reserving unused tail pages.
+  /// Rows not yet staged, used to avoid reserving unused tail pages.
   remainingRows
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor dml module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.dml." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the DML result condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the DML result condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isDmlResult(value)
   return value is DmlResult
 end function
 
-// Returns whether the supplied value satisfies the conflict match condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the conflict match condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isConflictMatch(value)
   return value is ConflictMatch
 end function
 
-// Implements same reference for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same reference for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameReference(left, right)
   if left is void or right is void then return false end if
   if not scan.isRowReference(left) or not scan.isRowReference(right) then return false end if
   return left.pageNumber == right.pageNumber and left.slotId == right.slotId and left.generation == right.generation
 end function
 
-// Implements visible page for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements visible page for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param tableId Identifier of table.
+/// @param pageNumber pageNumber value consumed by this operation.
 function visiblePage(pageTransaction, file, tableId, pageNumber)
   if pageTransaction is not void then
     privatePage = transaction.readPrivatePage(pageTransaction, tableId, pageNumber)
@@ -122,10 +144,14 @@ function visiblePage(pageTransaction, file, tableId, pageNumber)
   return paged_file.readPage(file, pageNumber)
 end function
 
-// Scans rows using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Scans rows using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
 function scanRows(database, table, pageTransaction, existingFile)
   if existingFile is not void and existingFile.fileId == table.tableId then
     return scan.scanUsing(database.path, table, pageTransaction, existingFile)
@@ -133,12 +159,19 @@ function scanRows(database, table, pageTransaction, existingFile)
   return scan.scanTable(database.path, table, pageTransaction)
 end function
 
-// Scans rows while retaining only columns needed by a constraint check.
+/// Scans rows while retaining only columns needed by a constraint check.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanRowsColumns(database, table, pageTransaction, existingFile, requiredColumns)
   return scan.scanUsingColumns(database.path, table, pageTransaction, existingFile, requiredColumns)
 end function
 
-// Builds a table-width mask for local constraint key columns.
+/// Builds a table-width mask for local constraint key columns.
+/// @param table table value consumed by this operation.
+/// @param constraints constraints value consumed by this operation.
 function constraintColumnMask(table, constraints)
   mask = array(len(table.columns), false)
   for each constraint in constraints
@@ -168,7 +201,9 @@ function constraintColumnMask(table, constraints)
   return mask
 end function
 
-// Extends a key mask with non-key values persisted in covering-index leaves.
+/// Extends a key mask with non-key values persisted in covering-index leaves.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function indexColumnMask(table, constraint)
   mask = constraintColumnMask(table, [constraint])
   for each columnName in constraint.referenceColumns
@@ -179,9 +214,14 @@ function indexColumnMask(table, constraint)
   return mask
 end function
 
-// Implements storage row for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements storage row for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rowSchema rowSchema value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param sqlValues sqlValues value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param ownerId Identifier of owner.
 function storageRow(rowSchema, table, sqlValues, file, ownerId)
   raw = array(len(sqlValues))
   if len(sqlValues) > 0 then
@@ -200,10 +240,14 @@ function storageRow(rowSchema, table, sqlValues, file, ownerId)
   return row_codec.encodeRow(rowSchema, raw)
 end function
 
-// Implements stage insert for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements stage insert for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param encodedRow encodedRow value consumed by this operation.
 function stageInsert(pageTransaction, file, table, encodedRow)
   if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsert", "encoded row must be non-empty bytes") end if
   heapPages = heap_file.heapPageNumbers(file)
@@ -228,9 +272,14 @@ function stageInsert(pageTransaction, file, table, encodedRow)
   return scan.RowReference(pageNumber, slotId, slotted_page.entryGeneration(working, slotId))
 end function
 
-// Stages one row while advancing a statement-local heap cursor. Pages before
-// the cursor were already proven full and cannot gain space during an insert-only
-// batch, so each heap page is visited only a bounded number of times.
+/// Stages one row while advancing a statement-local heap cursor. Pages before
+/// the cursor were already proven full and cannot gain space during an insert-only
+/// batch, so each heap page is visited only a bounded number of times.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param encodedRow encodedRow value consumed by this operation.
+/// @param cursor cursor value consumed by this operation.
 function stageInsertWithCursor(pageTransaction, file, table, encodedRow, cursor)
   if cursor is not InsertCursor then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "cursor must be InsertCursor") end if
   if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "encoded row must be non-empty bytes") end if
@@ -282,9 +331,13 @@ function stageInsertWithCursor(pageTransaction, file, table, encodedRow, cursor)
   return scan.RowReference(pageNumber, slotId, slotted_page.entryGeneration(working, slotId))
 end function
 
-// Implements stage delete for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements stage delete for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param reference reference value consumed by this operation.
 function stageDelete(pageTransaction, file, table, reference)
   if not scan.isRowReference(reference) then return fail(INVALID_ARGUMENT, "stageDelete", "reference must be RowReference") end if
   working = bytes(visiblePage(pageTransaction, file, table.tableId, reference.pageNumber))
@@ -295,10 +348,15 @@ function stageDelete(pageTransaction, file, table, reference)
   return true
 end function
 
-// Implements stage update for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements stage update for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param reference reference value consumed by this operation.
+/// @param encodedRow encodedRow value consumed by this operation.
 function stageUpdate(pageTransaction, file, table, reference, encodedRow)
   if not scan.isRowReference(reference) then return fail(INVALID_ARGUMENT, "stageUpdate", "reference must be RowReference") end if
   working = bytes(visiblePage(pageTransaction, file, table.tableId, reference.pageNumber))
@@ -315,30 +373,38 @@ function stageUpdate(pageTransaction, file, table, reference, encodedRow)
   return stageInsert(pageTransaction, file, table, encodedRow)
 end function
 
-// Implements table schema state for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements table schema state for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function tableSchemaState(database, table)
   return schema_history.findTableSchema(database_manager.schemaSnapshot(database), table.tableId)
 end function
 
-// Implements schema state for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements schema state for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function schemaState(database)
   return database_manager.schemaSnapshot(database)
 end function
 
-// Implements generated columns for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements generated columns for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function generatedColumns(database, table)
   return schema_history.generatedForTable(schemaState(database), table.tableId)
 end function
 
-// Finds generated using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds generated using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function findGenerated(database, table, columnName)
   for each generated in generatedColumns(database, table)
     if generated.columnName == columnName then return generated end if
@@ -346,9 +412,12 @@ function findGenerated(database, table, columnName)
   return void
 end function
 
-// Applies generated using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Applies generated using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param row row value consumed by this operation.
 function applyGenerated(database, table, row)
   for each generated in generatedColumns(database, table)
     columnIndex = binder.findColumnIndex(table, generated.columnName)
@@ -361,9 +430,11 @@ function applyGenerated(database, table, row)
   return row
 end function
 
-// Finds rule using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds rule using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param tableSchemaValue tableSchemaValue value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function findRule(tableSchemaValue, columnName)
   if tableSchemaValue is void then return void end if
   for each rule in tableSchemaValue.columnRules
@@ -372,18 +443,24 @@ function findRule(tableSchemaValue, columnName)
   return void
 end function
 
-// Evaluates constant SQL using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates constant SQL using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param sqlText sqlText value consumed by this operation.
 function evaluateConstantSql(sqlText)
   expression = parser.parseExpressionText(sqlText)
   bound = binder.bindExpression(expression, void, void)
   return expressions.evaluate(bound, expressions.rowContext([]))
 end function
 
-// Implements next identity for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements next identity for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function nextIdentity(database, table, columnIndex, pageTransaction, file)
   rows = scan.scanUsing(database.path, table, pageTransaction, file)
   maximum = 0
@@ -400,10 +477,15 @@ function nextIdentity(database, table, columnIndex, pageTransaction, file)
   return values.convert(values.integer(nextValue), types.fromColumn(table.columns[columnIndex]))
 end function
 
-// Implements initial row for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements initial row for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param boundRow boundRow value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function initialRow(database, bound, boundRow, pageTransaction, file)
   table = bound.table
   row = array(len(table.columns))
@@ -440,9 +522,11 @@ function initialRow(database, bound, boundRow, pageTransaction, file)
   return row
 end function
 
-// Implements constraint key for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements constraint key for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function bindConstraintKeyExpressions(table, constraint)
   output = []
   for each keyValue in constraint.columns
@@ -455,7 +539,11 @@ function bindConstraintKeyExpressions(table, constraint)
   return output
 end function
 
-// Evaluates persisted expression keys and reads ordinary column keys.
+/// Evaluates persisted expression keys and reads ordinary column keys.
+/// @param row row value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param boundKeys boundKeys value consumed by this operation.
 function constraintKeyBound(row, table, constraint, boundKeys)
   output = array(len(constraint.columns))
   if len(constraint.columns) > 0 then
@@ -472,14 +560,18 @@ function constraintKeyBound(row, table, constraint, boundKeys)
   return output
 end function
 
-// Resolves key metadata for compatibility callers outside index hot loops.
+/// Resolves key metadata for compatibility callers outside index hot loops.
+/// @param row row value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function constraintKey(row, table, constraint)
   return constraintKeyBound(row, table, constraint, bindConstraintKeyExpressions(table, constraint))
 end function
 
-// Implements key has null for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements key has null for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param key key value consumed by this operation.
 function keyHasNull(key)
   for each value in key
     if value.isNull then return true end if
@@ -487,9 +579,11 @@ function keyHasNull(key)
   return false
 end function
 
-// Implements keys equal for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements keys equal for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function keysEqual(left, right)
   if len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -500,9 +594,12 @@ function keysEqual(left, right)
   return true
 end function
 
-// Validates check using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates check using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param row row value consumed by this operation.
 function validateCheck(table, constraint, row)
   expression = parser.parseExpressionText(constraint.expressionSql)
   bound = binder.bindExpression(expression, table, void)
@@ -510,21 +607,32 @@ function validateCheck(table, constraint, row)
   return true
 end function
 
-// Binds the canonical predicate stored for a partial index once per operation.
+/// Binds the canonical predicate stored for a partial index once per operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function bindIndexPredicate(table, constraint)
   if len(constraint.expressionSql) == 0 then return void end if
   return binder.bindWhere(parser.parseExpressionText(constraint.expressionSql), table, void)
 end function
 
-// SQL WHERE semantics admit only TRUE; FALSE and UNKNOWN omit the row.
+/// SQL WHERE semantics admit only TRUE; FALSE and UNKNOWN omit the row.
+/// @param boundPredicate boundPredicate value consumed by this operation.
+/// @param row row value consumed by this operation.
 function indexPredicatePasses(boundPredicate, row)
   if boundPredicate is void then return true end if
   return expressions.predicatePasses(boundPredicate, expressions.rowContext(row))
 end function
 
-// Validates unique using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates unique using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param excludedReference excludedReference value consumed by this operation.
+/// @param file file value consumed by this operation.
 function validateUnique(database, table, constraint, row, pageTransaction, excludedReference, file)
   indexPredicate = bindIndexPredicate(table, constraint)
   if not indexPredicatePasses(indexPredicate, row) then return true end if
@@ -541,9 +649,15 @@ function validateUnique(database, table, constraint, row, pageTransaction, exclu
   return true
 end function
 
-// Validates foreign key using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates foreign key using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function validateForeignKey(database, table, constraint, row, pageTransaction, file)
   key = constraintKey(row, table, constraint)
   if keyHasNull(key) then return true end if
@@ -562,10 +676,16 @@ function validateForeignKey(database, table, constraint, row, pageTransaction, f
   return fail(CONSTRAINT_VIOLATION, "validateForeignKey", "foreign key failed: " + constraint.name)
 end function
 
-// Validates row using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates row using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param excludedReference excludedReference value consumed by this operation.
+/// @param file file value consumed by this operation.
 function validateRow(database, table, row, pageTransaction, excludedReference, file)
   if typeof(row) != "array" or len(row) != len(table.columns) then return fail(INVALID_ARGUMENT, "validateRow", "row shape mismatch") end if
   for index = 0 to len(table.columns) - 1
@@ -586,9 +706,14 @@ function validateRow(database, table, row, pageTransaction, excludedReference, f
   return row
 end function
 
-// Validates all unique keys for a statement from one stable table snapshot.
-// Precomputed keys remove the repeated full heap scan previously performed for
-// every inserted row while retaining SQL NULL and primary-key semantics.
+/// Validates all unique keys for a statement from one stable table snapshot.
+/// Precomputed keys remove the repeated full heap scan previously performed for
+/// every inserted row while retaining SQL NULL and primary-key semantics.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function validateUniqueBatch(database, table, rows, pageTransaction, file)
   constraints = uniqueConstraints(database, table)
   if len(constraints) == 0 or len(rows) == 0 then return true end if
@@ -618,8 +743,10 @@ function validateUniqueBatch(database, table, rows, pageTransaction, file)
   return true
 end function
 
-// Returns whether identity allocation requires sequential visibility of rows
-// inserted earlier in the same statement.
+/// Returns whether identity allocation requires sequential visibility of rows
+/// inserted earlier in the same statement.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function hasIdentityColumn(database, table)
   schema = tableSchemaState(database, table)
   if schema is void then return false end if
@@ -629,9 +756,14 @@ function hasIdentityColumn(database, table)
   return false
 end function
 
-// Inserts a conflict-free batch using fixed-size result buffers and one unique
-// snapshot. Other constraints are checked again in insertion order so foreign
-// keys may still reference a preceding row from the same SQL statement.
+/// Inserts a conflict-free batch using fixed-size result buffers and one unique
+/// snapshot. Other constraints are checked again in insertion order so foreign
+/// keys may still reference a preceding row from the same SQL statement.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function insertBatchWithoutConflict(database, sessionId, bound, pageTransaction, file)
   preparedRows = array(len(bound.rows))
   if len(bound.rows) > 0 then
@@ -685,10 +817,12 @@ function insertBatchWithoutConflict(database, sessionId, bound, pageTransaction,
   return DmlResult(len(preparedRows), references, returnedRows, [], preparedRows)
 end function
 
-// Validates existing constraint using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates existing constraint using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function validateExistingConstraint(database, bound)
   if not binder.isBoundAlterTable(bound) or bound.statement.action != ast.ALTER_TABLE_ADD_CONSTRAINT then return true end if
   source = bound.statement.constraint
@@ -726,10 +860,15 @@ function validateExistingConstraint(database, bound)
   return true
 end function
 
-// Validates delete references using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates delete references using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function validateDeleteReferences(database, table, row, pageTransaction, file)
   state = schema_history.loadOrCreate(database.path, database.catalogHandle.metadata.databaseId)
   for each otherTable in database.catalogHandle.catalog.tables
@@ -762,9 +901,11 @@ function validateDeleteReferences(database, table, row, pageTransaction, file)
   return true
 end function
 
-// Evaluates returning using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates returning using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param returningItems returningItems value consumed by this operation.
+/// @param row row value consumed by this operation.
 function evaluateReturning(returningItems, row)
   output = array(len(returningItems))
   if len(returningItems) == 0 then return output end if
@@ -775,9 +916,11 @@ function evaluateReturning(returningItems, row)
   return output
 end function
 
-// Implements unique constraints for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements unique constraints for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function uniqueConstraints(database, table)
   schema = tableSchemaState(database, table)
   output = []
@@ -788,10 +931,15 @@ function uniqueConstraints(database, table)
   return output
 end function
 
-// Finds conflict using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds conflict using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function findConflict(database, bound, row, pageTransaction, file)
   constraints = []
   if bound.conflictConstraint is not void then constraints = [bound.conflictConstraint] else constraints = uniqueConstraints(database, bound.table) end if
@@ -810,10 +958,17 @@ function findConflict(database, bound, row, pageTransaction, file)
   return void
 end function
 
-// Implements conflict update for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements conflict update for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param excludedRow excludedRow value consumed by this operation.
+/// @param match match value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
+/// @param rowSchema rowSchema value consumed by this operation.
 function conflictUpdate(database, bound, excludedRow, match, pageTransaction, file, rowSchema)
   if not isConflictMatch(match) then return fail(INVALID_ARGUMENT, "conflictUpdate", "match must be ConflictMatch") end if
   combined = []
@@ -846,10 +1001,15 @@ function conflictUpdate(database, bound, excludedRow, match, pageTransaction, fi
   return DmlResult(1, [nextReference], returned, [match.values], [nextRow])
 end function
 
-// Inserts inner using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Inserts inner using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function insertInner(database, sessionId, bound, pageTransaction, file)
   if bound.statement.conflictAction == ast.CONFLICT_NONE and not hasIdentityColumn(database, bound.table) then
     return insertBatchWithoutConflict(database, sessionId, bound, pageTransaction, file)
@@ -886,10 +1046,14 @@ function insertInner(database, sessionId, bound, pageTransaction, file)
   return DmlResult(affected, references, returnedRows, oldRows, newRows)
 end function
 
-// Inserts insert using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Inserts insert using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function insert(database, sessionId, bound, pageTransaction)
   if not binder.isBoundInsert(bound) then return fail(INVALID_ARGUMENT, "insert", "bound must be BoundInsert") end if
   transaction.requireActive(pageTransaction, "executor.dml.insert")
@@ -902,10 +1066,15 @@ function insert(database, sessionId, bound, pageTransaction)
   return result
 end function
 
-// Implements update inner for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements update inner for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function updateInner(database, sessionId, bound, pageTransaction, file)
   sourceRows = scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file)
   affected = 0
@@ -942,10 +1111,14 @@ function updateInner(database, sessionId, bound, pageTransaction, file)
   return DmlResult(affected, references, returnedRows, oldRows, newRows)
 end function
 
-// Implements update for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements update for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function update(database, sessionId, bound, pageTransaction)
   if not binder.isBoundUpdate(bound) then return fail(INVALID_ARGUMENT, "update", "bound must be BoundUpdate") end if
   transaction.requireActive(pageTransaction, "executor.dml.update")
@@ -958,9 +1131,14 @@ function update(database, sessionId, bound, pageTransaction)
   return result
 end function
 
-// Deletes inner using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Deletes inner using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param file file value consumed by this operation.
 function deleteInner(database, sessionId, bound, pageTransaction, file)
   sourceRows = scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file)
   affected = 0
@@ -979,10 +1157,14 @@ function deleteInner(database, sessionId, bound, pageTransaction, file)
   return DmlResult(affected, [], returnedRows, oldRows, [])
 end function
 
-// Deletes delete using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Deletes delete using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function delete(database, sessionId, bound, pageTransaction)
   if not binder.isBoundDelete(bound) then return fail(INVALID_ARGUMENT, "delete", "bound must be BoundDelete") end if
   transaction.requireActive(pageTransaction, "executor.dml.delete")
@@ -995,10 +1177,14 @@ function delete(database, sessionId, bound, pageTransaction)
   return result
 end function
 
-// Implements truncate for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements truncate for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function truncate(database, sessionId, bound, pageTransaction)
   if not binder.isBoundTruncate(bound) then return fail(INVALID_ARGUMENT, "truncate", "bound must be BoundTruncate") end if
   transaction.requireActive(pageTransaction, "executor.dml.truncate")
@@ -1028,9 +1214,11 @@ function truncate(database, sessionId, bound, pageTransaction)
   return DmlResult(len(rows), references, [], oldRows, [])
 end function
 
-// Implements file for change for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements file for change for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param fileId Identifier of file.
 function fileForChange(database, fileId)
   for each table in database.catalogHandle.catalog.tables
     if table.tableId == fileId then return paged_file.open(catalog.tableFilePath(database.path, table.tableId)) end if
@@ -1038,10 +1226,11 @@ function fileForChange(database, fileId)
   return fail(OBJECT_NOT_FOUND, "fileForChange", "committed page refers to unknown table")
 end function
 
-// Closes published files using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Closes published files using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param files files value consumed by this operation.
 function closePublishedFiles(files)
   firstError = void
   for each file in files
@@ -1051,9 +1240,12 @@ function closePublishedFiles(files)
   return firstError
 end function
 
-// Writes one consecutive publication batch. Keeping batches below 512 KiB
-// amortizes Win32 seek/write calls without allowing a large transaction to
-// duplicate an unbounded number of committed page images.
+/// Writes one consecutive publication batch. Keeping batches below 512 KiB
+/// amortizes Win32 seek/write calls without allowing a large transaction to
+/// duplicate an unbounded number of committed page images.
+/// @param file file value consumed by this operation.
+/// @param firstPageNumber firstPageNumber value consumed by this operation.
+/// @param images images value consumed by this operation.
 function writePublicationBatch(file, firstPageNumber, images)
   if len(images) == 0 then return true end if
   written = try(paged_file.writeContiguousPages(file, firstPageNumber, images))
@@ -1061,10 +1253,13 @@ function writePublicationBatch(file, firstPageNumber, images)
   return true
 end function
 
-// Implements publish committed for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements publish committed for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param commitLsn commitLsn value consumed by this operation.
 function publishCommitted(database, pageTransaction, commitLsn)
   if typeof(commitLsn) != "int" or commitLsn < 0 then return fail(INVALID_ARGUMENT, "publishCommitted", "commitLsn must be non-negative") end if
   // Do not remove the private committed page batch until every base file has
@@ -1132,19 +1327,22 @@ end function
 // M23 derived persistent index integration
 // ---------------------------------------------------------------------------
 
-// Appends key bytes using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Appends key bytes using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function appendKeyBytes(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return fail(INVALID_ARGUMENT, "appendKeyBytes", "values must be bytes") end if
   return left + right
 end function
 
-// Implements escaped key bytes for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements escaped key bytes for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
 function escapedKeyBytes(source)
   if typeof(source) != "bytes" then return fail(INVALID_ARGUMENT, "escapedKeyBytes", "source must be bytes") end if
   output = bytes()
@@ -1160,9 +1358,10 @@ function escapedKeyBytes(source)
   return output + bytes([0, 0])
 end function
 
-// Implements index key part for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements index key part for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
 function indexKeyPart(value)
   if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "indexKeyPart", "value must be SqlValue") end if
   if value.isNull then return bytes([1]) end if
@@ -1187,10 +1386,11 @@ function indexKeyPart(value)
   return fail(TYPE_MISMATCH, "indexKeyPart", "unsupported index key type")
 end function
 
-// Encodes index key using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes index key using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param keyValues keyValues value consumed by this operation.
 function encodeIndexKey(keyValues)
   if typeof(keyValues) != "array" or len(keyValues) == 0 then return fail(INVALID_ARGUMENT, "encodeIndexKey", "keyValues must be non-empty") end if
   output = bytes([127])
@@ -1201,9 +1401,10 @@ function encodeIndexKey(keyValues)
   return output
 end function
 
-// Encodes an exact composite constraint key without the physical B+ tree size
-// ceiling. The statement-local hash set uses this representation to validate
-// arbitrarily large batches in linear expected time.
+/// Encodes an exact composite constraint key without the physical B+ tree size
+/// ceiling. The statement-local hash set uses this representation to validate
+/// arbitrarily large batches in linear expected time.
+/// @param keyValues keyValues value consumed by this operation.
 function encodeConstraintHashKey(keyValues)
   if typeof(keyValues) != "array" or len(keyValues) == 0 then return fail(INVALID_ARGUMENT, "encodeConstraintHashKey", "keyValues must be non-empty") end if
   output = bytes([127])
@@ -1215,10 +1416,12 @@ function encodeConstraintHashKey(keyValues)
   return output
 end function
 
-// Encodes row reference using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes row reference using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param tableId Identifier of table.
+/// @param reference reference value consumed by this operation.
 function encodeRowReference(tableId, reference)
   if typeof(tableId) != "int" or tableId < 0 or not scan.isRowReference(reference) then return fail(INVALID_ARGUMENT, "encodeRowReference", "invalid row reference") end if
   output = bytes(12, 0)
@@ -1229,10 +1432,12 @@ function encodeRowReference(tableId, reference)
   return output
 end function
 
-// Decodes row reference using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Decodes row reference using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param tableId Identifier of table.
+/// @param encoded encoded value consumed by this operation.
 function decodeRowReference(tableId, encoded)
   // The stable 12-byte reference is the prefix of both legacy leaf values and
   // v1 covering values, so older indexes remain readable without migration.
@@ -1241,9 +1446,11 @@ function decodeRowReference(tableId, encoded)
   return scan.RowReference(endian.readU32LE(encoded, 0), endian.readU16LE(encoded, 4), endian.readU16LE(encoded, 6))
 end function
 
-// Validates the leaf-value shape before a heap-backed scan consumes only its
-// row-reference prefix. Full payload decoding remains exclusive to index-only
-// scans, while ordinary legacy values still require an exact 12-byte length.
+/// Validates the leaf-value shape before a heap-backed scan consumes only its
+/// row-reference prefix. Full payload decoding remains exclusive to index-only
+/// scans, while ordinary legacy values still require an exact 12-byte length.
+/// @param constraint constraint value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function validateIndexEntryValueShape(constraint, encoded)
   if typeof(encoded) != "bytes" then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "index leaf value must be bytes") end if
   if len(constraint.referenceColumns) == 0 then
@@ -1254,8 +1461,10 @@ function validateIndexEntryValueShape(constraint, encoded)
   return true
 end function
 
-// Decodes one zero-escaped variable-width key component and returns its bytes
-// plus the first cursor position after the 0,0 terminator.
+/// Decodes one zero-escaped variable-width key component and returns its bytes
+/// plus the first cursor position after the 0,0 terminator.
+/// @param encoded encoded value consumed by this operation.
+/// @param startOffset startOffset value consumed by this operation.
 function decodeEscapedKeyBytes(encoded, startOffset)
   output = bytes()
   cursor = startOffset
@@ -1276,9 +1485,13 @@ function decodeEscapedKeyBytes(encoded, startOffset)
   return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "missing component terminator")
 end function
 
-// Decodes one self-delimiting typed value shared by ordered keys and INCLUDE
-// payloads. Floating-point key text is not reversible and deliberately returns
-// void, which makes execution fall back to a heap-backed index scan.
+/// Decodes one self-delimiting typed value shared by ordered keys and INCLUDE
+/// payloads. Floating-point key text is not reversible and deliberately returns
+/// void, which makes execution fall back to a heap-backed index scan.
+/// @param column column value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
+/// @param cursor cursor value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function decodeIndexPart(column, encoded, cursor, operation)
   if cursor >= len(encoded) then return fail(CORRUPT_DATA, operation, "truncated typed index value") end if
   tag = encoded[cursor]
@@ -1309,10 +1522,13 @@ function decodeIndexPart(column, encoded, cursor, operation)
   return [decodedValue, cursor]
 end function
 
-// Reconstructs table-typed SQL values from an index key. Non-key positions are
-// typed NULL placeholders and are safe because the optimizer proves they are
-// not referenced before selecting an index-only plan. Floating encodings retain
-// their textual ordering representation and therefore conservatively fall back.
+/// Reconstructs table-typed SQL values from an index key. Non-key positions are
+/// typed NULL placeholders and are safe because the optimizer proves they are
+/// not referenced before selecting an index-only plan. Floating encodings retain
+/// their textual ordering representation and therefore conservatively fall back.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function decodeCoveredIndexKey(table, constraint, encoded)
   if typeof(encoded) != "bytes" or len(encoded) == 0 or encoded[0] != 127 then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid index key prefix") end if
   output = []
@@ -1333,8 +1549,12 @@ function decodeCoveredIndexKey(table, constraint, encoded)
   return output
 end function
 
-// Encodes a leaf value as a stable row-reference prefix followed, when needed,
-// by the MSI v1 marker and self-delimiting typed INCLUDE values.
+/// Encodes a leaf value as a stable row-reference prefix followed, when needed,
+/// by the MSI v1 marker and self-delimiting typed INCLUDE values.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param rowValues rowValues value consumed by this operation.
+/// @param reference reference value consumed by this operation.
 function encodeIndexEntryValue(table, constraint, rowValues, reference)
   output = encodeRowReference(table.tableId, reference)
   if len(constraint.referenceColumns) == 0 then return output end if
@@ -1348,8 +1568,12 @@ function encodeIndexEntryValue(table, constraint, rowValues, reference)
   return output
 end function
 
-// Merges a validated MSI v1 payload into the table-width row reconstructed
-// from the key. Missing legacy payloads return void and trigger a safe fallback.
+/// Merges a validated MSI v1 payload into the table-width row reconstructed
+/// from the key. Missing legacy payloads return void and trigger a safe fallback.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
+/// @param output Output collection or buffer populated by the operation.
 function decodeIncludedIndexValues(table, constraint, encoded, output)
   if len(constraint.referenceColumns) == 0 then return output end if
   if len(encoded) == 12 then return void end if
@@ -1367,7 +1591,10 @@ function decodeIncludedIndexValues(table, constraint, encoded, output)
   return output
 end function
 
-// Converts B+-tree entries into heap-shaped rows without opening the heap.
+/// Converts B+-tree entries into heap-shaped rows without opening the heap.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param entries entries value consumed by this operation.
 function coveredRowsFromIndexEntries(table, constraint, entries)
   output = []
   for each entry in entries
@@ -1380,9 +1607,11 @@ function coveredRowsFromIndexEntries(table, constraint, entries)
   return output
 end function
 
-// Implements indexed constraints for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements indexed constraints for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function indexedConstraints(database, table)
   schema = tableSchemaState(database, table)
   if schema is void then return [] end if
@@ -1393,23 +1622,29 @@ function indexedConstraints(database, table)
   return output
 end function
 
-// Returns whether the supplied value satisfies the unique index constraint condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the unique index constraint condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isUniqueIndexConstraint(value)
   return value.kind == schema_history.CONSTRAINT_PRIMARY_KEY or value.kind == schema_history.CONSTRAINT_UNIQUE
 end function
 
-// Implements index path for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements index path for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function indexPath(database, constraint)
   return schema_history.indexFilePath(database.path, constraint.indexId)
 end function
 
-// Opens an index for a read plan while retaining the concrete path in errors.
-// This makes a missing or inaccessible derived file diagnosable without hiding
-// corruption behind a generic native CreateFile failure.
+/// Opens an index for a read plan while retaining the concrete path in errors.
+/// This makes a missing or inaccessible derived file diagnosable without hiding
+/// corruption behind a generic native CreateFile failure.
+/// @param database database value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function openReadOnlyIndex(database, constraint, operation)
   path = indexPath(database, constraint)
   // Query probes validate redundant metadata plus every traversed node. A full
@@ -1420,24 +1655,31 @@ function openReadOnlyIndex(database, constraint, operation)
   return lease
 end function
 
-// Returns the immutable BTree owned by one active database handle lease.
+/// Returns the immutable BTree owned by one active database handle lease.
+/// @param lease lease value consumed by this operation.
 function readOnlyIndexTree(lease)
   return database_manager.readHandleValue(lease)
 end function
 
-// Returns the event context amortized across this index probe's page reads.
+/// Returns the event context amortized across this index probe's page reads.
+/// @param lease lease value consumed by this operation.
 function readOnlyIndexContext(lease)
   return database_manager.readHandleContext(lease)
 end function
 
-// Releases a persistent index lease without closing its database-owned tree.
+/// Releases a persistent index lease without closing its database-owned tree.
+/// @param lease lease value consumed by this operation.
 function closeReadOnlyIndex(lease)
   return database_manager.releaseReadHandle(lease)
 end function
 
-// Builds index entries using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Builds index entries using the supplied inputs.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function buildIndexEntries(database, table, constraint, pageTransaction)
   // Index construction needs only key columns plus the physical RowReference.
   // Avoid fetching unrelated external values during startup verification,
@@ -1464,10 +1706,13 @@ function buildIndexEntries(database, table, constraint, pageTransaction)
   return entries
 end function
 
-// Implements rebuild index for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements rebuild index for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function rebuildIndex(database, table, constraint)
   if constraint.indexId <= 0 then return fail(INVALID_ARGUMENT, "rebuildIndex", "constraint has no index") end if
   finalPath = indexPath(database, constraint)
@@ -1490,9 +1735,11 @@ function rebuildIndex(database, table, constraint)
   return result
 end function
 
-// Implements rebuild indexes for table for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements rebuild indexes for table for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function rebuildIndexesForTable(database, table)
   rebuilt = 0
   for each constraint in indexedConstraints(database, table)
@@ -1502,10 +1749,13 @@ function rebuildIndexesForTable(database, table)
   return rebuilt
 end function
 
-// Applies an insert-only statement delta to every derived index without
-// rescanning unrelated table payload pages. The caller publishes the durable
-// indexes.dirty marker before the heap commit; a crash or failed index write is
-// therefore repaired by the ordinary startup path.
+/// Applies an insert-only statement delta to every derived index without
+/// rescanning unrelated table payload pages. The caller publishes the durable
+/// indexes.dirty marker before the heap commit; a crash or failed index write is
+/// therefore repaired by the ordinary startup path.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param result Result object populated or inspected by the operation.
 function applyInsertedIndexes(database, table, result)
   if not isDmlResult(result) or len(result.oldRows) != 0 or len(result.newRows) != len(result.references) then return fail(INVALID_ARGUMENT, "applyInsertedIndexes", "result is not an insert-only delta") end if
   updated = 0
@@ -1550,9 +1800,10 @@ function applyInsertedIndexes(database, table, result)
   return updated
 end function
 
-// Implements rebuild all indexes for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements rebuild all indexes for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function rebuildAllIndexes(database)
   rebuilt = 0
   for each table in database.catalogHandle.catalog.tables
@@ -1561,10 +1812,15 @@ function rebuildAllIndexes(database)
   return rebuilt
 end function
 
-// Compares one derived index with the heap through forward-only row reads and
-// logarithmic B+ tree membership probes. Count equality plus the presence of
-// every unique row-reference entry proves that the tree has neither missing nor
-// additional entries, without retaining either complete collection.
+/// Compares one derived index with the heap through forward-only row reads and
+/// logarithmic B+ tree membership probes. Count equality plus the presence of
+/// every unique row-reference entry proves that the tree has neither missing nor
+/// additional entries, without retaining either complete collection.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param tree tree value consumed by this operation.
+/// @param reader reader value consumed by this operation.
 function verifyIndexStreaming(database, table, constraint, tree, reader)
   cursorResult = try(scan.openCursor(reader, indexColumnMask(table, constraint)))
   if typeof(cursorResult) == "error" then return cursorResult end if
@@ -1598,9 +1854,12 @@ function verifyIndexStreaming(database, table, constraint, tree, reader)
   return true
 end function
 
-// Verifies one index while guaranteeing that both read-only handles are closed
-// on comparison failures. B+ tree open already performs the streaming structural
-// audit, and the explicit call documents that integrity is part of this API.
+/// Verifies one index while guaranteeing that both read-only handles are closed
+/// on comparison failures. B+ tree open already performs the streaming structural
+/// audit, and the explicit call documents that integrity is part of this API.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function verifyIndex(database, table, constraint)
   tree = try(btree.openReadOnly(indexPath(database, constraint)))
   if typeof(tree) == "error" then return tree end if
@@ -1616,9 +1875,10 @@ function verifyIndex(database, table, constraint)
   return true
 end function
 
-// Verifies all indexes using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Verifies all indexes using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function verifyAllIndexes(database)
   verified = 0
   for each table in database.catalogHandle.catalog.tables
@@ -1630,23 +1890,26 @@ function verifyAllIndexes(database)
   return verified
 end function
 
-// Implements index dirty path for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements index dirty path for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function indexDirtyPath(database)
   return catalog.joinPath(catalog.joinPath(database.path, "catalog"), "indexes.dirty")
 end function
 
-// Implements indexes need repair for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements indexes need repair for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function indexesNeedRepair(database)
   return file_api.fileExists(indexDirtyPath(database))
 end function
 
-// Detects missing derived index files without scanning any table heap. A clean
-// dirty-marker state proves that committed index updates completed, but older
-// databases or manual file loss may still leave an expected file absent.
+/// Detects missing derived index files without scanning any table heap. A clean
+/// dirty-marker state proves that committed index updates completed, but older
+/// databases or manual file loss may still leave an expected file absent.
+/// @param database database value consumed by this operation.
 function indexFilesMissing(database)
   for each table in database.catalogHandle.catalog.tables
     for each constraint in indexedConstraints(database, table)
@@ -1656,9 +1919,10 @@ function indexFilesMissing(database)
   return false
 end function
 
-// Implements mark indexes dirty for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements mark indexes dirty for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function markIndexesDirty(database)
   path = indexDirtyPath(database)
   file = file_api.createDurable(path)
@@ -1670,19 +1934,21 @@ function markIndexesDirty(database)
   return true
 end function
 
-// Implements clear indexes dirty for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements clear indexes dirty for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function clearIndexesDirty(database)
   path = indexDirtyPath(database)
   if file_api.fileExists(path) then file_api.deletePath(path) end if
   return true
 end function
 
-// Ensures indexes using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Ensures indexes using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function ensureIndexes(database)
   needsRebuild = indexesNeedRepair(database) or indexFilesMissing(database)
   // Every mutation durably creates indexes.dirty before its heap commit and
@@ -1698,8 +1964,12 @@ function ensureIndexes(database)
   return true
 end function
 
-// Finds a single-column index, optionally requiring the optimizer's stable
-// catalog index name. An empty name retains the legacy first-match behavior.
+/// Finds a single-column index, optionally requiring the optimizer's stable
+/// catalog index name. An empty name retains the legacy first-match behavior.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param indexName indexName value consumed by this operation.
 function namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if columnIndex < 0 or columnIndex >= len(table.columns) then return void end if
   columnName = table.columns[columnIndex].name
@@ -1711,15 +1981,21 @@ function namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   return void
 end function
 
-// Retains the original first-match lookup used by joins and compatibility
-// diagnostics that do not carry a typed optimizer decision.
+/// Retains the original first-match lookup used by joins and compatibility
+/// diagnostics that do not carry a typed optimizer decision.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
 function constraintForSingleColumn(database, table, columnIndex)
   return namedConstraintForSingleColumn(database, table, columnIndex, "")
 end function
 
-// Acquires a persistent table handle and creates a non-owning reader over it.
-// The returned lease keeps the handle generation alive while positioned reads
-// materialize every heap reference.
+/// Acquires a persistent table handle and creates a non-owning reader over it.
+/// The returned lease keeps the handle generation alive while positioned reads
+/// materialize every heap reference.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function openPersistentTableReader(database, table, pageTransaction)
   path = catalog.tableFilePath(database.path, table.tableId)
   lease = try(database_manager.acquireTableReadHandle(database, path))
@@ -1729,7 +2005,8 @@ function openPersistentTableReader(database, table, pageTransaction)
   return [lease, reader]
 end function
 
-// Closes a non-owning reader and then releases its persistent table lease.
+/// Closes a non-owning reader and then releases its persistent table lease.
+/// @param opened opened value consumed by this operation.
 function closePersistentTableReader(opened)
   readerClose = try(scan.close(opened[1]))
   leaseClose = try(database_manager.releaseReadHandle(opened[0]))
@@ -1738,10 +2015,15 @@ function closePersistentTableReader(opened)
   return true
 end function
 
-// Implements rows from index entries for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements rows from index entries for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param entries entries value consumed by this operation.
 function rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
   // Reuse one table reader for the complete candidate set. Opening the heap,
   // schema history, and generated-column metadata once per index entry made a
@@ -1764,8 +2046,14 @@ function rowsFromIndexEntries(database, table, constraint, pageTransaction, entr
   return output
 end function
 
-// Executes an equality lookup through one explicitly named single-column
-// index, or through the first matching index when indexName is empty.
+/// Executes an equality lookup through one explicitly named single-column
+/// index, or through the first matching index when indexName is empty.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param literalValue literalValue value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function namedEqualityIndexRows(database, table, columnIndex, literalValue, pageTransaction, indexName)
   constraint = namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if constraint is void then return void end if
@@ -1784,13 +2072,25 @@ function namedEqualityIndexRows(database, table, columnIndex, literalValue, page
   return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
 end function
 
-// Preserves the legacy equality-index API for join probes and older callers.
+/// Preserves the legacy equality-index API for join probes and older callers.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param literalValue literalValue value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function equalityIndexRows(database, table, columnIndex, literalValue, pageTransaction)
   return namedEqualityIndexRows(database, table, columnIndex, literalValue, pageTransaction, "")
 end function
 
-// Executes a range lookup through one explicitly named single-column index,
-// or through the first matching index when indexName is empty.
+/// Executes a range lookup through one explicitly named single-column index,
+/// or through the first matching index when indexName is empty.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param literalValue literalValue value consumed by this operation.
+/// @param operator operator value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, indexName)
   constraint = namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if constraint is void then return void end if
@@ -1818,14 +2118,22 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
   return rowsFromIndexEntries(database, table, constraint, pageTransaction, found)
 end function
 
-// Preserves the legacy range-index API for callers without a physical plan.
+/// Preserves the legacy range-index API for callers without a physical plan.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
+/// @param literalValue literalValue value consumed by this operation.
+/// @param operator operator value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function rangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction)
   return namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, "")
 end function
 
-// Implements equality literal for column for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements equality literal for column for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
 function equalityLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, void] end if
@@ -1840,8 +2148,13 @@ function equalityLiteralForColumn(expression, columnIndex)
   return [false, void]
 end function
 
-// Executes a complete equality probe against a named composite index, or the
-// first usable composite index when indexName is empty.
+/// Executes a complete equality probe against a named composite index, or the
+/// first usable composite index when indexName is empty.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function namedCompositeEqualityIndexRows(database, table, expression, pageTransaction, indexName)
   for each constraint in indexedConstraints(database, table)
     nameMatches = indexName == "" or constraint.indexName == indexName
@@ -1879,18 +2192,27 @@ function namedCompositeEqualityIndexRows(database, table, expression, pageTransa
   return void
 end function
 
-// Preserves the legacy composite-index API for unplanned callers.
+/// Preserves the legacy composite-index API for unplanned callers.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function compositeEqualityIndexRows(database, table, expression, pageTransaction)
   return namedCompositeEqualityIndexRows(database, table, expression, pageTransaction, "")
 end function
 
-// Implements index rows for bound for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
-// Finds one executable single-column index predicate inside an AND tree. The
-// caller retains the complete WHERE predicate as a post-filter, so using one
-// conjunct here is semantically equivalent to a database index candidate scan.
+/// Implements index rows for bound for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds one executable single-column index predicate inside an AND tree. The
+/// caller retains the complete WHERE predicate as a post-filter, so using one
+/// conjunct here is semantically equivalent to a database index candidate scan.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function namedSingleIndexRows(database, table, expression, pageTransaction, indexName)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
   if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
@@ -1916,12 +2238,19 @@ function namedSingleIndexRows(database, table, expression, pageTransaction, inde
   return void
 end function
 
-// Finds the first executable single-column predicate for legacy callers.
+/// Finds the first executable single-column predicate for legacy callers.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function singleIndexRows(database, table, expression, pageTransaction)
   return namedSingleIndexRows(database, table, expression, pageTransaction, "")
 end function
 
-// Finds the exact persistent index selected by the physical plan.
+/// Finds the exact persistent index selected by the physical plan.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function constraintForIndexName(database, table, indexName)
   for each constraint in indexedConstraints(database, table)
     if constraint.indexName == indexName then return constraint end if
@@ -1929,7 +2258,9 @@ function constraintForIndexName(database, table, indexName)
   return void
 end function
 
-// Finds a literal comparison against one exact bound functional-index key.
+/// Finds a literal comparison against one exact bound functional-index key.
+/// @param expression expression value consumed by this operation.
+/// @param keyExpression keyExpression value consumed by this operation.
 function comparisonLiteralForBoundKey(expression, keyExpression)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
@@ -1947,7 +2278,12 @@ function comparisonLiteralForBoundKey(expression, keyExpression)
   return [false, "", void]
 end function
 
-// Executes an equality/range probe against one named expression index.
+/// Executes an equality/range probe against one named expression index.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function namedExpressionIndexRows(database, table, expression, pageTransaction, indexName)
   constraint = constraintForIndexName(database, table, indexName)
   if constraint is void or len(constraint.columns) != 1 or not schema_history.isIndexExpressionKey(constraint.columns[0]) then return void end if
@@ -1983,7 +2319,9 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   return rowsFromIndexEntries(database, table, constraint, pageTransaction, entries)
 end function
 
-// Finds and normalizes a comparison between one bound column and a literal.
+/// Finds and normalizes a comparison between one bound column and a literal.
+/// @param expression expression value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
 function comparisonLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
@@ -2001,9 +2339,13 @@ function comparisonLiteralForColumn(expression, columnIndex)
   return [false, "", void]
 end function
 
-// Reads B+-tree entries for the exact equality/range shape accepted by the
-// optimizer. Unlike ordinary index access this helper deliberately stops before
-// heap dereference so a covering plan can reconstruct rows from key bytes.
+/// Reads B+-tree entries for the exact equality/range shape accepted by the
+/// optimizer. Unlike ordinary index access this helper deliberately stops before
+/// heap dereference so a covering plan can reconstruct rows from key bytes.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param constraint constraint value consumed by this operation.
 function plannedCoveredIndexEntries(database, table, expression, constraint)
   if len(constraint.columns) > 1 then
     keyValues = []
@@ -2065,7 +2407,11 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   return entries
 end function
 
-// Executes a planned covering scan without touching table or overflow pages.
+/// Executes a planned covering scan without touching table or overflow pages.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function plannedIndexOnlyRowsForBound(database, bound, pageTransaction, indexName)
   if typeof(indexName) != "string" or indexName == "" then return void end if
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
@@ -2080,9 +2426,13 @@ function plannedIndexOnlyRowsForBound(database, bound, pageTransaction, indexNam
   return coveredRowsFromIndexEntries(table, constraint, entries)
 end function
 
-// Executes exactly the optimizer-selected access path for a single-table
-// SELECT. Returning void lets the executor fall back safely if catalog or
-// transaction visibility changed after planning.
+/// Executes exactly the optimizer-selected access path for a single-table
+/// SELECT. Returning void lets the executor fall back safely if catalog or
+/// transaction visibility changed after planning.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function plannedIndexRowsForBound(database, bound, pageTransaction, indexName)
   if typeof(indexName) != "string" or indexName == "" then return void end if
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
@@ -2096,12 +2446,16 @@ function plannedIndexRowsForBound(database, bound, pageTransaction, indexName)
   return namedSingleIndexRows(database, bound.sources[0].table, expression, pageTransaction, indexName)
 end function
 
-// Reports whether two durable heap references identify the same row version.
+/// Reports whether two durable heap references identify the same row version.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameRowReference(left, right)
   return left.pageNumber == right.pageNumber and left.slotId == right.slotId and left.generation == right.generation
 end function
 
-// Reports whether a reference collection already contains one row identity.
+/// Reports whether a reference collection already contains one row identity.
+/// @param references references value consumed by this operation.
+/// @param candidate candidate value consumed by this operation.
 function rowReferenceContains(references, candidate)
   for each reference in references
     if sameRowReference(reference, candidate) then return true end if
@@ -2109,9 +2463,12 @@ function rowReferenceContains(references, candidate)
   return false
 end function
 
-// Reads encoded row identities from one optimizer-selected ordinary index.
-// Functional keys retain their safe single-index fallback until their entry
-// codec exposes the same generic reference-only interface.
+/// Reads encoded row identities from one optimizer-selected ordinary index.
+/// Functional keys retain their safe single-index fallback until their entry
+/// codec exposes the same generic reference-only interface.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param indexName indexName value consumed by this operation.
 function plannedIndexReferencesForBound(database, bound, indexName)
   table = bound.sources[0].table
   constraint = constraintForIndexName(database, table, indexName)
@@ -2126,7 +2483,11 @@ function plannedIndexReferencesForBound(database, bound, indexName)
   return references
 end function
 
-// Materializes one combined identity set through one shared table reader.
+/// Materializes one combined identity set through one shared table reader.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param references references value consumed by this operation.
 function rowsFromReferences(database, table, pageTransaction, references)
   openedReader = try(openPersistentTableReader(database, table, pageTransaction))
   if typeof(openedReader) == "error" then return openedReader end if
@@ -2144,9 +2505,14 @@ function rowsFromReferences(database, table, pageTransaction, references)
   return output
 end function
 
-// Executes a planned intersection or union of independently safe index probes.
-// Combining durable row identities preserves one heap row per result even when
-// duplicate OR branches or overlapping indexes return the same entry.
+/// Executes a planned intersection or union of independently safe index probes.
+/// Combining durable row identities preserves one heap row per result even when
+/// duplicate OR branches or overlapping indexes return the same entry.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param indexNames indexNames value consumed by this operation.
+/// @param unionMode unionMode value consumed by this operation.
 function plannedCombinedIndexRowsForBound(database, bound, pageTransaction, indexNames, unionMode)
   if typeof(indexNames) != "array" or len(indexNames) < 2 or typeof(unionMode) != "bool" then return void end if
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
@@ -2172,8 +2538,11 @@ function plannedCombinedIndexRowsForBound(database, bound, pageTransaction, inde
   return rowsFromReferences(database, bound.sources[0].table, pageTransaction, combined)
 end function
 
-// Returns index candidates for one bound, single-table SELECT or void when the
-// query shape or transaction visibility requires a sequential fallback.
+/// Returns index candidates for one bound, single-table SELECT or void when the
+/// query shape or transaction visibility requires a sequential fallback.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function indexRowsForBound(database, bound, pageTransaction)
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
   if not binder.isBoundSelect(bound) or len(bound.sources) != 1 or len(bound.joins) != 0 then return void end if
@@ -2184,19 +2553,26 @@ function indexRowsForBound(database, bound, pageTransaction)
   return singleIndexRows(database, bound.sources[0].table, expression, pageTransaction)
 end function
 
-// Implements index access description for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements index access description for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function indexAccessDescription(database, bound)
   indexed = indexRowsForBound(database, bound, void)
   if indexed is void then return void end if
   return "Index Seek rows=" + len(indexed)
 end function
 
-// Implements join index rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements join index rows for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param condition condition value consumed by this operation.
+/// @param leftRow leftRow value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function joinIndexRows(database, source, condition, leftRow, pageTransaction)
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
   if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
@@ -2216,10 +2592,14 @@ end function
 // M25 maintenance: VACUUM and REINDEX
 // ---------------------------------------------------------------------------
 
-// Implements vacuum storage values for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements vacuum storage values for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param heap heap value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param sqlValues sqlValues value consumed by this operation.
+/// @param ownerId Identifier of owner.
 function vacuumStorageValues(heap, table, sqlValues, ownerId)
   output = []
   if len(sqlValues) > 0 then
@@ -2239,10 +2619,15 @@ function vacuumStorageValues(heap, table, sqlValues, ownerId)
   return output
 end function
 
-// Writes rows to heap using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Writes rows to heap using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param databaseId Identifier of database.
+/// @param table table value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function writeRowsToHeap(path, pageSize, databaseId, table, rows)
   if typeof(path) != "string" or len(path) == 0 or typeof(pageSize) != "int" or typeof(databaseId) != "bytes" or len(databaseId) != 16 or not metadata.isTableMetadata(table) or typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "writeRowsToHeap", "invalid arguments") end if
   if file_api.pathExists(path) then file_api.deletePath(path) end if
@@ -2270,10 +2655,15 @@ function writeRowsToHeap(path, pageSize, databaseId, table, rows)
   return len(rows)
 end function
 
-// Rewrites one table with memory bounded to one source page, one decoded row,
-// and one target page. This is the VACUUM path for multi-gigabyte relations;
-// retaining the complete live row set would otherwise scale heap usage with
-// database size and fail long before the storage format reaches its limits.
+/// Rewrites one table with memory bounded to one source page, one decoded row,
+/// and one target page. This is the VACUUM path for multi-gigabyte relations;
+/// retaining the complete live row set would otherwise scale heap usage with
+/// database size and fail long before the storage format reaches its limits.
+/// @param databasePath Path associated with database.
+/// @param path Path of the file or directory used by the operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param databaseId Identifier of database.
+/// @param table table value consumed by this operation.
 function rewriteTableStreaming(databasePath, path, pageSize, databaseId, table)
   if typeof(databasePath) != "string" or len(databasePath) == 0 or typeof(path) != "string" or len(path) == 0 or not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "rewriteTableStreaming", "invalid arguments") end if
   if file_api.pathExists(path) then file_api.deletePath(path) end if
@@ -2339,9 +2729,10 @@ function rewriteTableStreaming(databasePath, path, pageSize, databaseId, table)
   return written
 end function
 
-// Resets WAL after vacuum using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state and perform I/O through its dependencies.
+/// Resets WAL after vacuum using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state and perform I/O through its dependencies.
+/// @param database database value consumed by this operation.
 function resetWalAfterVacuum(database)
   // The replacement heap uses a new physical page layout. Old committed WAL
   // page images must never be replayed into that layout. VACUUM is autocommit-
@@ -2355,9 +2746,11 @@ function resetWalAfterVacuum(database)
   return true
 end function
 
-// Implements vacuum table for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements vacuum table for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param table table value consumed by this operation.
 function vacuumTable(database, table)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "vacuumTable", "table must be TableMetadata") end if
   finalPath = catalog.tableFilePath(database.path, table.tableId)
@@ -2379,9 +2772,11 @@ function vacuumTable(database, table)
   return written
 end function
 
-// Implements vacuum for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements vacuum for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param tableName tableName value consumed by this operation.
 function vacuum(database, tableName)
   tables = []
   if tableName is void then
@@ -2401,10 +2796,12 @@ function vacuum(database, tableName)
   return affected
 end function
 
-// Implements reindex for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements reindex for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
 function reindex(database, name)
   if name is void then
     markIndexesDirty(database)
@@ -2432,23 +2829,23 @@ function reindex(database, name)
   return fail(OBJECT_NOT_FOUND, "reindex", "table or index not found: " + name)
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor dml module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.dml"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor dml module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor dml module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct JoinPlan
 Selects exactly one algorithm for a join in the bound SQL join sequence. Hash joins may build either side while still returning canonical left/right column order. Runtime fallbacks are allowed only for transaction visibility or index availability changes and never alter SQL semantics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L108)
 
 ## Members
 
@@ -26,7 +26,7 @@ algorithm
 JOIN_* algorithm selected by the cost model.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L114)
 
 <a id="field-field-minisql-planner-execution-plan-joinplan-buildright-buildright-src-minisql-planner-execution-plan-ml-747871696"></a>
 ### buildRight
@@ -38,7 +38,7 @@ buildRight
 True when the right/new source is the hash build input.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L116)
 
 <a id="field-field-minisql-planner-execution-plan-joinplan-estimatedcost-estimatedcost-src-minisql-planner-execution-plan-ml-173990464"></a>
 ### estimatedCost
@@ -50,7 +50,7 @@ estimatedCost
 Cumulative deterministic integer cost.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L120)
 
 <a id="field-field-minisql-planner-execution-plan-joinplan-estimatedrows-estimatedrows-src-minisql-planner-execution-plan-ml-1945139568"></a>
 ### estimatedRows
@@ -62,7 +62,7 @@ estimatedRows
 Estimated output cardinality after this join.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L98)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L118)
 
 <a id="field-field-minisql-planner-execution-plan-joinplan-joinindex-joinindex-src-minisql-planner-execution-plan-ml-1455668728"></a>
 ### joinIndex
@@ -74,7 +74,7 @@ joinIndex
 Position of the predicate in BoundSelect.joins.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L110)
 
 <a id="field-field-minisql-planner-execution-plan-joinplan-sourceindex-sourceindex-src-minisql-planner-execution-plan-ml-585982944"></a>
 ### sourceIndex
@@ -86,4 +86,4 @@ sourceIndex
 Source attached by this physical join step.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L112)

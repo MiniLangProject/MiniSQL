@@ -12,7 +12,7 @@ struct QueryControl
 Session-local token polled at bounded executor and storage batch boundaries.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L234)
 
 ## Members
 
@@ -26,7 +26,7 @@ active
 True while a top-level statement or streaming cursor owns the token.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L218)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L236)
 
 <a id="field-field-minisql-executor-executor-querycontrol-deadlineat-deadlineat-src-minisql-executor-executor-ml-1749163772"></a>
 ### deadlineAt
@@ -38,7 +38,7 @@ deadlineAt
 Absolute monotonic timestamp after which cooperative polling fails.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L240)
 
 <a id="field-field-minisql-executor-executor-querycontrol-startedat-startedat-src-minisql-executor-executor-ml-252147026"></a>
 ### startedAt
@@ -50,4 +50,4 @@ startedAt
 Monotonic timestamp at which the top-level statement was admitted.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L220)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L238)

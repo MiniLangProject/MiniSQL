@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql sql lexer facilities for this project.
+
 Package: [`minisql.sql.lexer`](Package-minisql-sql-lexer-27747776.md)
 
 Reachable from entry: **yes**
@@ -25,10 +27,10 @@ Advances advance using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L99)
 
 <a id="function-function-minisql-sql-lexer-appendtoken-function-appendtoken-state-kind-text-value-offset-line-column-quoted-src-minisql-sql-lexer-ml-268081274"></a>
 ### appendToken
@@ -41,17 +43,17 @@ Appends token using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `kind` | `dynamic` | — |  |
-| `text` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `line` | `dynamic` | — |  |
-| `column` | `dynamic` | — |  |
-| `quoted` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
+| `text` | `dynamic` | — | Text consumed by the operation. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `line` | `dynamic` | — | line value consumed by this operation. |
+| `column` | `dynamic` | — | column value consumed by this operation. |
+| `quoted` | `dynamic` | — | quoted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L133)
 
 <a id="function-function-minisql-sql-lexer-componentname-function-componentname-src-minisql-sql-lexer-ml-188876834"></a>
 ### componentName
@@ -60,10 +62,10 @@ Appends token using the supplied inputs. Returns the computed value or operation
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql sql lexer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L377)
 
 <a id="function-function-minisql-sql-lexer-current-function-current-state-src-minisql-sql-lexer-ml-1392062601"></a>
 ### current
@@ -76,10 +78,10 @@ Implements current for this module. Returns the computed value or operation stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L79)
 
 <a id="function-function-minisql-sql-lexer-fail-function-fail-state-message-src-minisql-sql-lexer-ml-237243994"></a>
 ### fail
@@ -88,15 +90,15 @@ Implements current for this module. Returns the computed value or operation stat
 function fail(state, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql sql lexer module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L39)
 
 <a id="constant-constant-minisql-sql-lexer-invalid-argument-const-invalid-argument-9001-src-minisql-sql-lexer-ml-1395162233"></a>
 ### INVALID_ARGUMENT
@@ -105,8 +107,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql sql lexer module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L11)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L14)
 
 <a id="function-function-minisql-sql-lexer-isdigit-function-isdigit-value-src-minisql-sql-lexer-ml-427885961"></a>
 ### isDigit
@@ -119,10 +123,10 @@ Returns whether the supplied value satisfies the digit condition. Returns the co
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L55)
 
 <a id="function-function-minisql-sql-lexer-isidentifierpart-function-isidentifierpart-value-src-minisql-sql-lexer-ml-1582357871"></a>
 ### isIdentifierPart
@@ -135,10 +139,10 @@ Returns whether the supplied value satisfies the identifier part condition. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L71)
 
 <a id="function-function-minisql-sql-lexer-isidentifierstart-function-isidentifierstart-value-src-minisql-sql-lexer-ml-1596903397"></a>
 ### isIdentifierStart
@@ -151,10 +155,10 @@ Returns whether the supplied value satisfies the identifier start condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L63)
 
 <a id="function-function-minisql-sql-lexer-isimplemented-function-isimplemented-src-minisql-sql-lexer-ml-1122888698"></a>
 ### isImplemented
@@ -163,10 +167,10 @@ Returns whether the supplied value satisfies the identifier start condition. Ret
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql sql lexer module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L359)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L391)
 
 <a id="function-function-minisql-sql-lexer-iswhitespace-function-iswhitespace-value-src-minisql-sql-lexer-ml-545372067"></a>
 ### isWhitespace
@@ -179,10 +183,10 @@ Returns whether the supplied value satisfies the whitespace condition. Returns t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L47)
 
 - [minisql.sql.lexer.LexerState](Type-minisql-sql-lexer-lexerstate-700274641.md) — struct
 <a id="function-function-minisql-sql-lexer-peek-function-peek-state-distance-src-minisql-sql-lexer-ml-1761817316"></a>
@@ -196,11 +200,11 @@ Implements peek for this module. Returns the computed value or operation status.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `distance` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `distance` | `dynamic` | — | distance value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L89)
 
 <a id="function-function-minisql-sql-lexer-rawtext-function-rawtext-state-startoffset-endoffset-src-minisql-sql-lexer-ml-219029626"></a>
 ### rawText
@@ -213,12 +217,12 @@ Implements raw text for this module. Returns the computed value or operation sta
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `startOffset` | `dynamic` | — |  |
-| `endOffset` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `startOffset` | `dynamic` | — | startOffset value consumed by this operation. |
+| `endOffset` | `dynamic` | — | endOffset value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L118)
 
 <a id="function-function-minisql-sql-lexer-readidentifier-function-readidentifier-state-src-minisql-sql-lexer-ml-66473823"></a>
 ### readIdentifier
@@ -231,10 +235,10 @@ Reads identifier using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L181)
 
 <a id="function-function-minisql-sql-lexer-readnumber-function-readnumber-state-src-minisql-sql-lexer-ml-838656239"></a>
 ### readNumber
@@ -247,10 +251,10 @@ Reads number using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L250)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L280)
 
 <a id="function-function-minisql-sql-lexer-readquotedidentifier-function-readquotedidentifier-state-src-minisql-sql-lexer-ml-1335996291"></a>
 ### readQuotedIdentifier
@@ -263,10 +267,10 @@ Reads quoted identifier using the supplied inputs. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L203)
 
 <a id="function-function-minisql-sql-lexer-readstring-function-readstring-state-src-minisql-sql-lexer-ml-1223701547"></a>
 ### readString
@@ -279,10 +283,10 @@ Reads string using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L212)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L241)
 
 <a id="function-function-minisql-sql-lexer-skipignored-function-skipignored-state-src-minisql-sql-lexer-ml-1910730313"></a>
 ### skipIgnored
@@ -295,10 +299,10 @@ Implements skip ignored for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L142)
 
 <a id="constant-constant-minisql-sql-lexer-sql-syntax-const-sql-syntax-9019-src-minisql-sql-lexer-ml-84339536"></a>
 ### SQL_SYNTAX
@@ -307,8 +311,10 @@ Implements skip ignored for this module. Returns the computed value or operation
 const SQL_SYNTAX = 9019
 ```
 
+Defines the sql syntax constant used by the minisql sql lexer module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L12)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L16)
 
 <a id="function-function-minisql-sql-lexer-symboltoken-function-symboltoken-state-src-minisql-sql-lexer-ml-1120007953"></a>
 ### symbolToken
@@ -321,10 +327,10 @@ Implements symbol token for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L284)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L315)
 
 <a id="function-function-minisql-sql-lexer-targetmilestone-function-targetmilestone-src-minisql-sql-lexer-ml-1713377632"></a>
 ### targetMilestone
@@ -333,10 +339,10 @@ Implements symbol token for this module. Returns the computed value or operation
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql sql lexer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L352)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L384)
 
 <a id="function-function-minisql-sql-lexer-tokenizesql-function-tokenizesql-source-src-minisql-sql-lexer-ml-2095317789"></a>
 ### tokenizeSql
@@ -349,7 +355,7 @@ Tokenizes SQL using the supplied inputs. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L317)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L349)

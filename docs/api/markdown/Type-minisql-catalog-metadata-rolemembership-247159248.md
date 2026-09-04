@@ -12,7 +12,7 @@ struct RoleMembership
 Defines the role membership record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L449)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L532)
 
 ## Members
 
@@ -26,7 +26,7 @@ adminOption
 Admin option field of the role membership.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L457)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L540)
 
 <a id="field-field-minisql-catalog-metadata-rolemembership-grantorid-grantorid-src-minisql-catalog-metadata-ml-456996207"></a>
 ### grantorId
@@ -38,7 +38,7 @@ grantorId
 Grantor id field of the role membership.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L455)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L538)
 
 <a id="field-field-minisql-catalog-metadata-rolemembership-memberid-memberid-src-minisql-catalog-metadata-ml-2097159041"></a>
 ### memberId
@@ -50,7 +50,7 @@ memberId
 Member id field of the role membership.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L453)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L536)
 
 <a id="field-field-minisql-catalog-metadata-rolemembership-roleid-roleid-src-minisql-catalog-metadata-ml-1158797429"></a>
 ### roleId
@@ -62,4 +62,4 @@ roleId
 Role id field of the role membership.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L451)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L534)

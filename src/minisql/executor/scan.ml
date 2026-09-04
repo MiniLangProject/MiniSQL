@@ -1,3 +1,5 @@
+//! Provides minisql executor scan facilities for this project.
+
 package minisql.executor.scan
 
 // Copyright 2026 MiniLangProject contributors
@@ -23,124 +25,132 @@ import minisql.transaction.transaction as transaction
 import minisql.server.database_manager as database_manager
 import std.ds.list as list
 
-// Transaction-aware sequential table scan for the first executable SQL engine.
-// A scan always consults private transaction pages before the committed base
-// file, giving the session read-your-writes semantics without exposing those
-// pages to other sessions before WAL commit.
+/// Transaction-aware sequential table scan for the first executable SQL engine.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql executor scan module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql executor scan module.
 const CLOSED_HANDLE = 9008
+/// Defines the unsupported sql constant used by the minisql executor scan module.
 const UNSUPPORTED_SQL = 9025
 
-// Groups the row reference state and preserves the field relationships documented below.
+/// Groups the row reference state and preserves the field relationships documented below.
 struct RowReference
-  // Stores the page number associated with this value.
+  /// Stores the page number associated with this value.
   pageNumber
-  // Identifies the slot identifier.
+  /// Identifies the slot identifier.
   slotId
-  // Stores the generation associated with this value.
+  /// Stores the generation associated with this value.
   generation
 end struct
 
-// Groups the scanned row state and preserves the field relationships documented below.
+/// Groups the scanned row state and preserves the field relationships documented below.
 struct ScannedRow
-  // Stores the reference associated with this value.
+  /// Stores the reference associated with this value.
   reference
-  // Contains the ordered values collection.
+  /// Contains the ordered values collection.
   values
 end struct
 
-// Groups the table reader state and preserves the field relationships documented below.
+/// Groups the table reader state and preserves the field relationships documented below.
 struct TableReader
-  // Stores the filesystem database path.
+  /// Stores the filesystem database path.
   databasePath
-  // Stores the table associated with this value.
+  /// Stores the table associated with this value.
   table
-  // Contains the ordered table schema collection.
+  /// Contains the ordered table schema collection.
   tableSchema
-  // Stores the generated columns associated with this value.
+  /// Stores the generated columns associated with this value.
   generatedColumns
-  // Stores the filesystem file.
+  /// Stores the filesystem file.
   file
-  // Contains the ordered row schema collection.
+  /// Contains the ordered row schema collection.
   rowSchema
-  // Stores the page transaction associated with this value.
+  /// Stores the page transaction associated with this value.
   pageTransaction
-  // Stores the filesystem owns file.
+  /// Stores the filesystem owns file.
   ownsFile
-  // Optional database-owned concurrent read cache.
+  /// Optional database-owned concurrent read cache.
   readCache
-  // Optional production-control registry polled at physical page boundaries.
+  /// Optional production-control registry polled at physical page boundaries.
   controlDatabase
-  // Operational session whose token is attached to this reader.
+  /// Operational session whose token is attached to this reader.
   controlSessionId
-  // Indicates whether the closed condition is active.
+  /// Indicates whether the closed condition is active.
   closed
 end struct
 
-// Holds a forward-only live-row scan. The cursor retains one heap page and one
-// decoded row at a time; callers can therefore validate or consume tables whose
-// total payload is much larger than the MiniLang heap.
+/// Holds a forward-only live-row scan. The cursor retains one heap page and one
+/// decoded row at a time; callers can therefore validate or consume tables whose
+/// total payload is much larger than the MiniLang heap.
 struct TableRowCursor
-  // Reader that supplies transaction visibility, schema, and overflow access.
+  /// Reader that supplies transaction visibility, schema, and overflow access.
   reader
-  // Optional column mask used to avoid unrelated overflow payload reads.
+  /// Optional column mask used to avoid unrelated overflow payload reads.
   requiredColumns
-  // Persistent-directory result containing physical heap page numbers only.
+  /// Persistent-directory result containing physical heap page numbers only.
   heapPages
-  // Index of the heap page currently being visited.
+  /// Index of the heap page currently being visited.
   pageIndex
-  // Exclusive heap-page index at which this cursor stops. Keeping the bound in
-  // the cursor lets independent read-only workers scan disjoint page ranges.
+  /// Exclusive heap-page index at which this cursor stops. Keeping the bound in
   endPageIndex
-  // Checksummed bytes for the current heap page, or void between pages.
+  /// Checksummed bytes for the current heap page, or void between pages.
   pageBytes
-  // Next slot to inspect within pageBytes.
+  /// Next slot to inspect within pageBytes.
   slotId
-  // Indicates that every page and slot has been consumed.
+  /// Indicates that every page and slot has been consumed.
   finished
 end struct
 
-// Bounded group of rows transferred between streaming physical operators.
-// The batch itself owns no storage handles; rows remain ordinary ScannedRow
-// values and may safely outlive the cursor.
+/// Bounded group of rows transferred between streaming physical operators.
+/// The batch itself owns no storage handles; rows remain ordinary ScannedRow
+/// values and may safely outlive the cursor.
 struct RowBatch
-  // Ordered rows contained in this bounded transfer unit.
+  /// Ordered rows contained in this bounded transfer unit.
   rows
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor scan module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.scan." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the row reference condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the row reference condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isRowReference(value)
   return value is RowReference
 end function
 
-// Returns whether the supplied value satisfies the scanned row condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the scanned row condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isScannedRow(value)
   return value is ScannedRow
 end function
 
-// Returns whether the supplied value satisfies the table reader condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the table reader condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isTableReader(value)
   return value is TableReader
 end function
 
-// Attaches statement cancellation and deadline state to a reader. Polling is
-// deliberately performed once per physical heap page, which bounds abort
-// latency without adding a registry lookup for every row or expression.
+/// Attaches statement cancellation and deadline state to a reader. Polling is
+/// deliberately performed once per physical heap page, which bounds abort
+/// latency without adding a registry lookup for every row or expression.
+/// @param reader reader value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function setExecutionControl(reader, database, sessionId)
   validateOpen(reader, "setExecutionControl")
   if not database_manager.isManagedDatabase(database) or typeof(sessionId) != "int" or sessionId <= 0 then return fail(INVALID_ARGUMENT, "setExecutionControl", "invalid database or session identifier") end if
@@ -149,20 +159,25 @@ function setExecutionControl(reader, database, sessionId)
   return true
 end function
 
-// Returns whether value is a forward-only table row cursor.
+/// Returns whether value is a forward-only table row cursor.
+/// @param value Value consumed or transformed by the operation.
 function isTableRowCursor(value)
   return value is TableRowCursor
 end function
 
-// Reports whether a value is a bounded RowBatch.
+/// Reports whether a value is a bounded RowBatch.
+/// @param value Value consumed or transformed by the operation.
 function isRowBatch(value)
   return value is RowBatch
 end function
 
-// Appends array value using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Appends array value using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
+/// @param item item value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function appendArrayValue(source, item, operation)
   if typeof(source) != "array" then return fail(INVALID_ARGUMENT, operation, "source must be array") end if
   result = array(len(source) + 1)
@@ -175,9 +190,10 @@ function appendArrayValue(source, item, operation)
   return result
 end function
 
-// Implements schema for table for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements schema for table for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param table table value consumed by this operation.
 function schemaForTable(table)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "schemaForTable", "table must be TableMetadata") end if
   specifications = []
@@ -188,10 +204,14 @@ function schemaForTable(table)
   return row_codec.schema(table.schemaVersion, specifications)
 end function
 
-// Opens open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Opens cached for the minisql executor scan module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
 function openCached(databasePath, table, pageTransaction, readCache)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "open", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "open", "table must be TableMetadata") end if
@@ -209,9 +229,14 @@ function openCached(databasePath, table, pageTransaction, readCache)
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, void, 0, false)
 end function
 
-// Opens a table using a database-owned immutable schema snapshot. Managed
-// query execution uses this variant so point lookups do not reopen and verify
-// schema.history. The paged table itself is still opened and validated here.
+/// Opens a table using a database-owned immutable schema snapshot. Managed
+/// query execution uses this variant so point lookups do not reopen and verify
+/// schema.history. The paged table itself is still opened and validated here.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function openCachedWithSchema(databasePath, table, pageTransaction, readCache, state)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openWithSchema", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openWithSchema", "table must be TableMetadata") end if
@@ -225,15 +250,23 @@ function openCachedWithSchema(databasePath, table, pageTransaction, readCache, s
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, true, readCache, void, 0, false)
 end function
 
-// Opens a table without a shared cache for storage tools and direct tests.
+/// Opens a table without a shared cache for storage tools and direct tests.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function open(databasePath, table, pageTransaction)
   return openCached(databasePath, table, pageTransaction, void)
 end function
 
-// Opens existing using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Opens existing using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
 function openExistingCached(databasePath, file, table, pageTransaction, readCache)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openExisting", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openExisting", "table must be TableMetadata") end if
@@ -246,8 +279,14 @@ function openExistingCached(databasePath, file, table, pageTransaction, readCach
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, void, 0, false)
 end function
 
-// Creates a non-owning reader over a persistent database-owned table handle
-// and an already published immutable schema snapshot.
+/// Creates a non-owning reader over a persistent database-owned table handle
+/// and an already published immutable schema snapshot.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function openExistingCachedWithSchema(databasePath, file, table, pageTransaction, readCache, state)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "databasePath must be non-empty") end if
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "openExistingWithSchema", "table must be TableMetadata") end if
@@ -260,15 +299,21 @@ function openExistingCachedWithSchema(databasePath, file, table, pageTransaction
   return TableReader(databasePath, table, tableSchemaValue, generatedColumns, file, schemaForTable(table), pageTransaction, false, readCache, void, 0, false)
 end function
 
-// Opens a caller-owned file without a shared cache.
+/// Opens a caller-owned file without a shared cache.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function openExisting(databasePath, file, table, pageTransaction)
   return openExistingCached(databasePath, file, table, pageTransaction, void)
 end function
 
-// Validates open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Validates open for the minisql executor scan workflow.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(reader, operation)
   if reader is not TableReader then return fail(INVALID_ARGUMENT, operation, "reader must be TableReader") end if
   if reader.closed then return fail(CLOSED_HANDLE, operation, "reader is closed") end if
@@ -276,10 +321,12 @@ function validateOpen(reader, operation)
   return true
 end function
 
-// Implements visible page for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements visible page for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function visiblePage(reader, pageNumber)
   validateOpen(reader, "visiblePage")
   if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber >= reader.file.pageCount then return fail(INVALID_ARGUMENT, "visiblePage", "page number is outside table") end if
@@ -291,9 +338,11 @@ function visiblePage(reader, pageNumber)
   return paged_file.readPage(reader.file, pageNumber)
 end function
 
-// Finds column rule using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds column rule using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function findColumnRule(reader, columnName)
   if reader.tableSchema is void then return void end if
   for each rule in reader.tableSchema.columnRules
@@ -302,9 +351,11 @@ function findColumnRule(reader, columnName)
   return void
 end function
 
-// Evaluates default using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates default using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rule rule value consumed by this operation.
+/// @param column column value consumed by this operation.
 function evaluateDefault(rule, column)
   target = types.fromColumn(column)
   if rule is void or rule.defaultSql is void then return values.convert(values.nullValue(column.typeCode), target) end if
@@ -313,9 +364,11 @@ function evaluateDefault(rule, column)
   return values.convert(expressions.evaluate(bound, expressions.rowContext([])), target)
 end function
 
-// Finds generated using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds generated using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function findGenerated(reader, columnName)
   for each generated in reader.generatedColumns
     if generated.columnName == columnName then return generated end if
@@ -323,9 +376,13 @@ function findGenerated(reader, columnName)
   return void
 end function
 
-// Evaluates generated using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates generated using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param generated generated value consumed by this operation.
+/// @param column column value consumed by this operation.
+/// @param currentValues currentValues value consumed by this operation.
 function evaluateGenerated(reader, generated, column, currentValues)
   expression = parser.parseExpressionText(generated.expressionSql)
   bound = binder.bindExpression(expression, reader.table, void)
@@ -333,10 +390,13 @@ function evaluateGenerated(reader, generated, column, currentValues)
   return values.convert(evaluated, types.fromColumn(column))
 end function
 
-// Implements materialize stored value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements materialize stored value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param index Zero-based index of the affected item.
+/// @param raw raw value consumed by this operation.
 function materializeStoredValue(reader, index, raw)
   column = reader.table.columns[index]
   if row_codec.isExternalValue(raw) then
@@ -352,10 +412,12 @@ function materializeStoredValue(reader, index, raw)
   return values.fromStorage(column.typeCode, raw)
 end function
 
-// Decodes record using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Decodes record using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function decodeRecord(reader, encoded)
   decoded = row_codec.decodeCompatible(reader.rowSchema, encoded)
   storedCount = len(decoded.values)
@@ -382,11 +444,14 @@ function decodeRecord(reader, encoded)
   return output
 end function
 
-// Decodes one record while materializing only columns required by the query.
-// Unused values retain a correctly typed SQL NULL placeholder so bound column
-// indexes remain stable, but external TEXT/BLOB payloads are never fetched.
-// Generated columns conservatively use the full decoder because their stored
-// expressions may depend on columns that are not explicit in the SELECT list.
+/// Decodes one record while materializing only columns required by the query.
+/// Unused values retain a correctly typed SQL NULL placeholder so bound column
+/// indexes remain stable, but external TEXT/BLOB payloads are never fetched.
+/// Generated columns conservatively use the full decoder because their stored
+/// expressions may depend on columns that are not explicit in the SELECT list.
+/// @param reader reader value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function decodeRecordColumns(reader, encoded, requiredColumns)
   if requiredColumns is void or len(reader.generatedColumns) > 0 then return decodeRecord(reader, encoded) end if
   if typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns) then return fail(INVALID_ARGUMENT, "decodeRecordColumns", "required column mask must match the table") end if
@@ -417,9 +482,11 @@ function decodeRecordColumns(reader, encoded, requiredColumns)
   return output
 end function
 
-// Creates a forward-only cursor over live rows. Heap-page discovery uses the
-// persistent sidecar index, while each selected heap page is still checksum
-// verified before any slot or overflow pointer is trusted.
+/// Creates a forward-only cursor over live rows. Heap-page discovery uses the
+/// persistent sidecar index, while each selected heap page is still checksum
+/// verified before any slot or overflow pointer is trusted.
+/// @param reader reader value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function openCursor(reader, requiredColumns)
   validateOpen(reader, "openCursor")
   if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "openCursor", "required column mask must match the table") end if
@@ -427,16 +494,21 @@ function openCursor(reader, requiredColumns)
   return TableRowCursor(reader, requiredColumns, heapPages, 0, len(heapPages), void, 0, false)
 end function
 
-// Returns the number of physical heap pages advertised by the persistent page
-// directory. Parallel operators use this metadata-only count to choose ranges.
+/// Returns the number of physical heap pages advertised by the persistent page
+/// directory. Parallel operators use this metadata-only count to choose ranges.
+/// @param reader reader value consumed by this operation.
 function heapPageCount(reader)
   validateOpen(reader, "heapPageCount")
   return len(heap_file.heapPageNumbers(reader.file))
 end function
 
-// Creates a cursor over the half-open physical heap-page range [first, end).
-// The range addresses entries in the persistent heap-page directory rather
-// than raw file page numbers, so overflow and metadata pages are never scanned.
+/// Creates a cursor over the half-open physical heap-page range [first, end).
+/// The range addresses entries in the persistent heap-page directory rather
+/// than raw file page numbers, so overflow and metadata pages are never scanned.
+/// @param reader reader value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param firstPageIndex Zero-based index of first page.
+/// @param endPageIndex Zero-based index of end page.
 function openCursorRange(reader, requiredColumns, firstPageIndex, endPageIndex)
   validateOpen(reader, "openCursorRange")
   if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "openCursorRange", "required column mask must match the table") end if
@@ -445,9 +517,10 @@ function openCursorRange(reader, requiredColumns, firstPageIndex, endPageIndex)
   return TableRowCursor(reader, requiredColumns, heapPages, firstPageIndex, endPageIndex, void, 0, firstPageIndex == endPageIndex)
 end function
 
-// Returns the next live row or void at end-of-table. Advancing before returning
-// makes repeated calls deterministic even when the caller immediately discards
-// a multi-megabyte decoded payload.
+/// Returns the next live row or void at end-of-table. Advancing before returning
+/// makes repeated calls deterministic even when the caller immediately discards
+/// a multi-megabyte decoded payload.
+/// @param cursor cursor value consumed by this operation.
 function nextRow(cursor)
   if cursor is not TableRowCursor then return fail(INVALID_ARGUMENT, "nextRow", "cursor must be TableRowCursor") end if
   validateOpen(cursor.reader, "nextRow")
@@ -483,8 +556,10 @@ function nextRow(cursor)
   return void
 end function
 
-// Reads at most maximumRows from a forward-only cursor. A void result denotes
-// end-of-input; every non-void batch contains at least one row.
+/// Reads at most maximumRows from a forward-only cursor. A void result denotes
+/// end-of-input; every non-void batch contains at least one row.
+/// @param cursor cursor value consumed by this operation.
+/// @param maximumRows maximumRows value consumed by this operation.
 function nextBatch(cursor, maximumRows)
   if cursor is not TableRowCursor or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "nextBatch", "invalid arguments") end if
   output = list.List.new()
@@ -498,9 +573,10 @@ function nextBatch(cursor, maximumRows)
   return RowBatch(output.toArray())
 end function
 
-// Fully decodes and validates every live row while retaining only one row. This
-// includes external TEXT/BLOB chains, UTF-8 conversion, schema compatibility,
-// generated/default column handling, page checksums, and slot generations.
+/// Fully decodes and validates every live row while retaining only one row. This
+/// includes external TEXT/BLOB chains, UTF-8 conversion, schema compatibility,
+/// generated/default column handling, page checksums, and slot generations.
+/// @param reader reader value consumed by this operation.
 function verifyAndCount(reader)
   validateOpen(reader, "verifyAndCount")
   cursor = openCursor(reader, void)
@@ -514,9 +590,10 @@ function verifyAndCount(reader)
   return rowCount
 end function
 
-// Counts live slots without decoding row values. Every heap page still passes
-// through transaction visibility, the shared cache, and page checksum checks;
-// only row allocation, schema conversion, and overflow payload reads are skipped.
+/// Counts live slots without decoding row values. Every heap page still passes
+/// through transaction visibility, the shared cache, and page checksum checks;
+/// only row allocation, schema conversion, and overflow payload reads are skipped.
+/// @param reader reader value consumed by this operation.
 function countLiveRows(reader)
   validateOpen(reader, "countLiveRows")
   rowCount = 0
@@ -536,9 +613,12 @@ function countLiveRows(reader)
   return rowCount
 end function
 
-// Decodes at most `maximumRows` uniformly spaced live rows while visiting each
-// heap page once. ANALYZE obtains the exact population from slot headers first,
-// then uses this pass to bound external-value I/O and retained memory.
+/// Decodes at most `maximumRows` uniformly spaced live rows while visiting each
+/// heap page once. ANALYZE obtains the exact population from slot headers first,
+/// then uses this pass to bound external-value I/O and retained memory.
+/// @param reader reader value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param maximumRows maximumRows value consumed by this operation.
 function sampleRows(reader, populationRows, maximumRows)
   validateOpen(reader, "sampleRows")
   if typeof(populationRows) != "int" or populationRows < 0 or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "sampleRows", "invalid arguments") end if
@@ -578,7 +658,10 @@ function sampleRows(reader, populationRows, maximumRows)
   return output.toArray()
 end function
 
-// Opens, streams, and closes one table for the offline consistency checker.
+/// Opens, streams, and closes one table for the offline consistency checker.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function verifyTable(databasePath, table, pageTransaction)
   reader = open(databasePath, table, pageTransaction)
   if typeof(reader) == "error" then return reader end if
@@ -589,9 +672,13 @@ function verifyTable(databasePath, table, pageTransaction)
   return result
 end function
 
-// Implements all for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements all for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function allRangeColumns(reader, offset, limit, requiredColumns)
   validateOpen(reader, "allRangeColumns")
   if typeof(offset) != "int" or offset < 0 then return fail(INVALID_ARGUMENT, "allRange", "offset must be non-negative") end if
@@ -631,22 +718,28 @@ function allRangeColumns(reader, offset, limit, requiredColumns)
   return output.toArray()
 end function
 
-// Scans a physical live-row range and materializes all columns.
+/// Scans a physical live-row range and materializes all columns.
+/// @param reader reader value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
 function allRange(reader, offset, limit)
   return allRangeColumns(reader, offset, limit, void)
 end function
 
-// Materializes every live row. The range implementation is shared with
-// LIMIT/OFFSET scans so checksum verification and transaction visibility have
-// one implementation.
+/// Materializes every live row. The range implementation is shared with
+/// LIMIT/OFFSET scans so checksum verification and transaction visibility have
+/// one implementation.
+/// @param reader reader value consumed by this operation.
 function all(reader)
   return allRange(reader, 0, -1)
 end function
 
-// Reads reference using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads reference using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
+/// @param reference reference value consumed by this operation.
 function readReference(reader, reference)
   validateOpen(reader, "readReference")
   if reference is not RowReference then return fail(INVALID_ARGUMENT, "readReference", "reference must be RowReference") end if
@@ -661,10 +754,14 @@ function readReference(reader, reference)
   return ScannedRow(reference, rowValues)
 end function
 
-// Reads table reference using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads table reference using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param reference reference value consumed by this operation.
 function readTableReference(databasePath, table, pageTransaction, reference)
   reader = open(databasePath, table, pageTransaction)
   result = try(readReference(reader, reference))
@@ -674,16 +771,18 @@ function readTableReference(databasePath, table, pageTransaction, reference)
   return result
 end function
 
-// Counts count using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Counts count using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param reader reader value consumed by this operation.
 function count(reader)
   return len(all(reader))
 end function
 
-// Closes close using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state and perform I/O through its dependencies.
+/// Closes close owned by the minisql executor scan module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state and perform I/O through its dependencies.
+/// @param reader reader value consumed by this operation.
 function close(reader)
   validateOpen(reader, "close")
   if reader.ownsFile then paged_file.close(reader.file) end if
@@ -691,10 +790,13 @@ function close(reader)
   return true
 end function
 
-// Scans table using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Scans table using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function scanTable(databasePath, table, pageTransaction)
   reader = open(databasePath, table, pageTransaction)
   result = try(all(reader))
@@ -704,9 +806,14 @@ function scanTable(databasePath, table, pageTransaction)
   return result
 end function
 
-// Scans only a physical live-row range and stops as soon as the requested
-// number of rows has been decoded. This bounds memory for simple paginated
-// SELECT statements and avoids reading overflow values outside the page.
+/// Scans only a physical live-row range and stops as soon as the requested
+/// number of rows has been decoded. This bounds memory for simple paginated
+/// SELECT statements and avoids reading overflow values outside the page.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
 function scanTableRange(databasePath, table, pageTransaction, offset, limit)
   reader = open(databasePath, table, pageTransaction)
   result = try(allRange(reader, offset, limit))
@@ -716,7 +823,13 @@ function scanTableRange(databasePath, table, pageTransaction, offset, limit)
   return result
 end function
 
-// Scans a range while fetching only columns referenced by the bound query.
+/// Scans a range while fetching only columns referenced by the bound query.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanTableRangeColumns(databasePath, table, pageTransaction, offset, limit, requiredColumns)
   reader = open(databasePath, table, pageTransaction)
   result = try(allRangeColumns(reader, offset, limit, requiredColumns))
@@ -726,9 +839,16 @@ function scanTableRangeColumns(databasePath, table, pageTransaction, offset, lim
   return result
 end function
 
-// Uses the database-owned concurrent page cache together with range and
-// projection pushdown. The reader handle remains short-lived; cache frames are
-// keyed only by stable path and page number.
+/// Uses the database-owned concurrent page cache together with range and
+/// projection pushdown. The reader handle remains short-lived; cache frames are
+/// keyed only by stable path and page number.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
 function scanTableRangeColumnsCached(databasePath, table, pageTransaction, offset, limit, requiredColumns, readCache)
   reader = openCached(databasePath, table, pageTransaction, readCache)
   result = try(allRangeColumns(reader, offset, limit, requiredColumns))
@@ -738,8 +858,15 @@ function scanTableRangeColumnsCached(databasePath, table, pageTransaction, offse
   return result
 end function
 
-// Controlled cached scan used by network sessions. The ordinary helper stays
-// available to embedded/offline callers that do not own an operational session.
+/// Controlled cached scan used by network sessions. The ordinary helper stays
+/// available to embedded/offline callers that do not own an operational session.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanTableRangeColumnsCachedControlled(database, sessionId, table, pageTransaction, offset, limit, requiredColumns)
   reader = openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database))
   configured = try(setExecutionControl(reader, database, sessionId))
@@ -751,7 +878,11 @@ function scanTableRangeColumnsCachedControlled(database, sessionId, table, pageT
   return result
 end function
 
-// Opens a short-lived cached reader and returns only its number of visible rows.
+/// Opens a short-lived cached reader and returns only its number of visible rows.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
 function countTableRowsCached(databasePath, table, pageTransaction, readCache)
   tablePath = catalog.tableFilePath(databasePath, table.tableId)
   if pageTransaction is void and readCache is not void then
@@ -771,7 +902,11 @@ function countTableRowsCached(databasePath, table, pageTransaction, readCache)
   return result
 end function
 
-// Counts live rows through a cancellation-aware cached reader.
+/// Counts live rows through a cancellation-aware cached reader.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function countTableRowsCachedControlled(database, sessionId, table, pageTransaction)
   reader = openCachedWithSchema(database.path, table, pageTransaction, database.readCache, database_manager.schemaSnapshot(database))
   configured = try(setExecutionControl(reader, database, sessionId))
@@ -783,7 +918,12 @@ function countTableRowsCachedControlled(database, sessionId, table, pageTransact
   return result
 end function
 
-// Opens one cached reader for the bounded ANALYZE sampling pass.
+/// Opens one cached reader for the bounded ANALYZE sampling pass.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param maximumRows maximumRows value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
 function sampleTableRowsCached(databasePath, table, populationRows, maximumRows, readCache)
   reader = openCached(databasePath, table, void, readCache)
   result = try(sampleRows(reader, populationRows, maximumRows))
@@ -793,10 +933,14 @@ function sampleTableRowsCached(databasePath, table, populationRows, maximumRows,
   return result
 end function
 
-// Scans existing using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Scans existing using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function scanExisting(databasePath, file, table, pageTransaction)
   reader = openExisting(databasePath, file, table, pageTransaction)
   result = try(all(reader))
@@ -806,7 +950,13 @@ function scanExisting(databasePath, file, table, pageTransaction)
   return result
 end function
 
-// Applies a bounded range scan to a caller-owned paged file.
+/// Applies a bounded range scan to a caller-owned paged file.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
 function scanExistingRange(databasePath, file, table, pageTransaction, offset, limit)
   reader = openExisting(databasePath, file, table, pageTransaction)
   result = try(allRange(reader, offset, limit))
@@ -816,7 +966,14 @@ function scanExistingRange(databasePath, file, table, pageTransaction, offset, l
   return result
 end function
 
-// Applies both range and column pushdown to a caller-owned paged file.
+/// Applies both range and column pushdown to a caller-owned paged file.
+/// @param databasePath Path associated with database.
+/// @param file file value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanExistingRangeColumns(databasePath, file, table, pageTransaction, offset, limit, requiredColumns)
   reader = openExisting(databasePath, file, table, pageTransaction)
   result = try(allRangeColumns(reader, offset, limit, requiredColumns))
@@ -826,17 +983,26 @@ function scanExistingRangeColumns(databasePath, file, table, pageTransaction, of
   return result
 end function
 
-// Scans using using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Scans using using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
 function scanUsing(databasePath, table, pageTransaction, existingFile)
   if existingFile is void then return scanTable(databasePath, table, pageTransaction) end if
   if existingFile.fileId == table.tableId then return scanExisting(databasePath, existingFile, table, pageTransaction) end if
   return scanTable(databasePath, table, pageTransaction)
 end function
 
-// Controlled full scan over either a caller-owned table file or a short-lived
-// reader. This is used by UPDATE, DELETE, and TRUNCATE before staging changes.
+/// Controlled full scan over either a caller-owned table file or a short-lived
+/// reader. This is used by UPDATE, DELETE, and TRUNCATE before staging changes.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
 function scanUsingControlled(database, sessionId, table, pageTransaction, existingFile)
   reader = void
   if existingFile is void or existingFile.fileId != table.tableId then
@@ -853,37 +1019,48 @@ function scanUsingControlled(database, sessionId, table, pageTransaction, existi
   return result
 end function
 
-// Selects the bounded scan implementation for an optional caller-owned file.
+/// Selects the bounded scan implementation for an optional caller-owned file.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
 function scanUsingRange(databasePath, table, pageTransaction, existingFile, offset, limit)
   if existingFile is void then return scanTableRange(databasePath, table, pageTransaction, offset, limit) end if
   if existingFile.fileId == table.tableId then return scanExistingRange(databasePath, existingFile, table, pageTransaction, offset, limit) end if
   return scanTableRange(databasePath, table, pageTransaction, offset, limit)
 end function
 
-// Scans all rows but materializes only the supplied table-column mask.
+/// Scans all rows but materializes only the supplied table-column mask.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param existingFile existingFile value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanUsingColumns(databasePath, table, pageTransaction, existingFile, requiredColumns)
   if existingFile is void then return scanTableRangeColumns(databasePath, table, pageTransaction, 0, -1, requiredColumns) end if
   if existingFile.fileId == table.tableId then return scanExistingRangeColumns(databasePath, existingFile, table, pageTransaction, 0, -1, requiredColumns) end if
   return scanTableRangeColumns(databasePath, table, pageTransaction, 0, -1, requiredColumns)
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor scan module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.scan"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor scan module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor scan module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

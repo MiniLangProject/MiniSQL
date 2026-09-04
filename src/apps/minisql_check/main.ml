@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+//! Provides apps minisql check main facilities for this project.
+
 import minisql.tools.check as checker
 
-// Implements main for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the main operation for the apps minisql check main module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param args Command-line or caller-supplied arguments.
 function main(args)
   if len(args) == 1 and args[0] == "--version" then print checker.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print checker.m0SelfTestLine(); return 0 end if

@@ -12,7 +12,7 @@ struct BoundInsert
 Groups the bound insert state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L152)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnIndexes
 Stores the column indexes associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L158)
 
 <a id="field-field-minisql-sql-binder-boundinsert-conflictassignments-conflictassignments-src-minisql-sql-binder-ml-1499334806"></a>
 ### conflictAssignments
@@ -38,7 +38,7 @@ conflictAssignments
 Stores the conflict assignments associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L152)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L166)
 
 <a id="field-field-minisql-sql-binder-boundinsert-conflictconstraint-conflictconstraint-src-minisql-sql-binder-ml-946544300"></a>
 ### conflictConstraint
@@ -50,7 +50,7 @@ conflictConstraint
 Stores the conflict constraint associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L150)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L164)
 
 <a id="field-field-minisql-sql-binder-boundinsert-conflictwhere-conflictwhere-src-minisql-sql-binder-ml-1610555762"></a>
 ### conflictWhere
@@ -62,7 +62,7 @@ conflictWhere
 Stores the conflict where associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L168)
 
 <a id="field-field-minisql-sql-binder-boundinsert-returning-returning-src-minisql-sql-binder-ml-1144758762"></a>
 ### returning
@@ -74,7 +74,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L156)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L170)
 
 <a id="field-field-minisql-sql-binder-boundinsert-rows-rows-src-minisql-sql-binder-ml-203954928"></a>
 ### rows
@@ -86,7 +86,7 @@ rows
 Contains the ordered rows collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L160)
 
 <a id="field-field-minisql-sql-binder-boundinsert-sourcequery-sourcequery-src-minisql-sql-binder-ml-1817925658"></a>
 ### sourceQuery
@@ -98,7 +98,7 @@ sourceQuery
 Stores the source query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L162)
 
 <a id="field-field-minisql-sql-binder-boundinsert-statement-statement-src-minisql-sql-binder-ml-709021726"></a>
 ### statement
@@ -110,7 +110,7 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L154)
 
 <a id="field-field-minisql-sql-binder-boundinsert-table-table-src-minisql-sql-binder-ml-1066913286"></a>
 ### table
@@ -122,4 +122,4 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L156)

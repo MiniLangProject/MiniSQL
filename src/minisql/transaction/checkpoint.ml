@@ -1,3 +1,5 @@
+//! Provides minisql transaction checkpoint facilities for this project.
+
 package minisql.transaction.checkpoint
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -10,66 +12,83 @@ import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import minisql.transaction.wal as wal
 
-// Durable checkpoint metadata and orchestration. A checkpoint flushes dirty
-// database pages before publishing the WAL boundary from which crash recovery
-// may safely resume.
+/// Durable checkpoint metadata and orchestration. A checkpoint flushes dirty
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql transaction checkpoint module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql transaction checkpoint module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql transaction checkpoint module.
 const CLOSED_HANDLE = 9008
 
+/// Defines the format version constant used by the minisql transaction checkpoint module.
 const FORMAT_VERSION = 1
+/// Defines the slot size constant used by the minisql transaction checkpoint module.
 const SLOT_SIZE = 256
+/// Defines the slot a constant used by the minisql transaction checkpoint module.
 const SLOT_A = 0
+/// Defines the slot b constant used by the minisql transaction checkpoint module.
 const SLOT_B = 1
+/// Defines the slot a offset constant used by the minisql transaction checkpoint module.
 const SLOT_A_OFFSET = 0
+/// Defines the slot b offset constant used by the minisql transaction checkpoint module.
 const SLOT_B_OFFSET = 256
+/// Defines the file size constant used by the minisql transaction checkpoint module.
 const FILE_SIZE = 512
+/// Defines the checksum offset constant used by the minisql transaction checkpoint module.
 const CHECKSUM_OFFSET = 64
 
-// Defines the checkpoint metadata record used by this module.
+/// Defines the checkpoint metadata record used by this module.
 struct CheckpointMetadata
-  // Generation field of the checkpoint metadata.
+  /// Generation field of the checkpoint metadata.
   generation
-  // Checkpoint lsn field of the checkpoint metadata.
+  /// Checkpoint lsn field of the checkpoint metadata.
   checkpointLsn
-  // Redo start lsn field of the checkpoint metadata.
+  /// Redo start lsn field of the checkpoint metadata.
   redoStartLsn
-  // Record count field of the checkpoint metadata.
+  /// Record count field of the checkpoint metadata.
   recordCount
-  // Database id field of the checkpoint metadata.
+  /// Database id field of the checkpoint metadata.
   databaseId
 end struct
 
-// Defines the checkpoint file record used by this module.
+/// Defines the checkpoint file record used by this module.
 struct CheckpointFile
-  // Path field of the checkpoint file.
+  /// Path field of the checkpoint file.
   path
-  // File field of the checkpoint file.
+  /// File field of the checkpoint file.
   file
-  // Metadata field of the checkpoint file.
+  /// Metadata field of the checkpoint file.
   metadata
-  // Active slot field of the checkpoint file.
+  /// Active slot field of the checkpoint file.
   activeSlot
-  // Closed field of the checkpoint file.
+  /// Closed field of the checkpoint file.
   closed
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql transaction checkpoint module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "transaction.checkpoint." + operation + ": " + message)
 end function
 
-// Performs the magic bytes operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the magicBytes operation for the minisql transaction checkpoint module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSQLCKP1")
 end function
 
-// Copies the exact.
-// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the copyExact operation for the minisql transaction checkpoint module.
+/// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -78,8 +97,10 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql transaction checkpoint module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -89,29 +110,42 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Validates the native.
-// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native for the minisql transaction checkpoint workflow.
+/// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function validateNative(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, operation, name + " must be non-negative") end if
   return true
 end function
 
-// Validates the database id.
-// Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates database id for the minisql transaction checkpoint workflow.
+/// Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param databaseId Identifier of database.
+/// @param operation operation value consumed by this operation.
 function validateDatabaseId(databaseId, operation)
   if typeof(databaseId) != "bytes" or len(databaseId) != 16 then return fail(INVALID_ARGUMENT, operation, "databaseId must be 16 bytes") end if
   return true
 end function
 
-// Decodes the native.
-// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes native for the minisql transaction checkpoint workflow.
+/// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Performs the new metadata operation for this module.
-// Inputs: `generation`, `checkpointLsn`, `redoStartLsn`, `recordCount`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the new metadata operation for this module.
+/// Inputs: `generation`, `checkpointLsn`, `redoStartLsn`, `recordCount`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param generation generation value consumed by this operation.
+/// @param checkpointLsn checkpointLsn value consumed by this operation.
+/// @param redoStartLsn redoStartLsn value consumed by this operation.
+/// @param recordCount Number of record to process.
+/// @param databaseId Identifier of database.
 function newMetadata(generation, checkpointLsn, redoStartLsn, recordCount, databaseId)
   endian.validateUInt64Words(generation, "transaction.checkpoint.newMetadata.generation")
   validateNative(checkpointLsn, "newMetadata", "checkpointLsn")
@@ -122,8 +156,9 @@ function newMetadata(generation, checkpointLsn, redoStartLsn, recordCount, datab
   return CheckpointMetadata(generation, checkpointLsn, redoStartLsn, recordCount, bytes(databaseId))
 end function
 
-// Encodes the slot.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the slot.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function encodeSlot(value)
   if value is not CheckpointMetadata then return fail(INVALID_ARGUMENT, "encodeSlot", "value must be CheckpointMetadata") end if
   newMetadata(value.generation, value.checkpointLsn, value.redoStartLsn, value.recordCount, value.databaseId)
@@ -143,8 +178,9 @@ function encodeSlot(value)
   return output
 end function
 
-// Decodes the slot.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the slot.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function decodeSlot(source)
   if typeof(source) != "bytes" or len(source) != SLOT_SIZE then return fail(CORRUPT_DATA, "decodeSlot", "slot must be exactly 256 bytes") end if
   if not bytesEqual(slice(source, 0, 8), magicBytes()) then return fail(UNSUPPORTED_FORMAT, "decodeSlot", "slot magic mismatch") end if
@@ -170,32 +206,40 @@ function decodeSlot(source)
   )
 end function
 
-// Performs the slot offset operation for this module.
-// Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the slotOffset operation for the minisql transaction checkpoint module.
+/// Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param slot slot value consumed by this operation.
 function slotOffset(slot)
   if slot == SLOT_A then return SLOT_A_OFFSET end if
   if slot == SLOT_B then return SLOT_B_OFFSET end if
   return fail(INVALID_ARGUMENT, "slotOffset", "unknown slot")
 end function
 
-// Reads the slot.
-// Inputs: `file`, `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the slot.
+/// Inputs: `file`, `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param slot slot value consumed by this operation.
 function readSlot(file, slot)
   data = bytes(SLOT_SIZE, 0)
   file_api.readExactAt(file, slotOffset(slot), data, 0, SLOT_SIZE)
   return decodeSlot(data)
 end function
 
-// Writes the slot.
-// Inputs: `file`, `slot`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the slot.
+/// Inputs: `file`, `slot`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param file file value consumed by this operation.
+/// @param slot slot value consumed by this operation.
+/// @param value Value consumed or transformed by the operation.
 function writeSlot(file, slot, value)
   encoded = encodeSlot(value)
   file_api.writeAt(file, slotOffset(slot), encoded, 0, SLOT_SIZE)
   return true
 end function
 
-// Performs the choose operation for this module.
-// Inputs: `firstResult`, `secondResult`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the choose operation for this module.
+/// Inputs: `firstResult`, `secondResult`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param firstResult firstResult value consumed by this operation.
+/// @param secondResult secondResult value consumed by this operation.
 function choose(firstResult, secondResult)
   firstOk = typeof(firstResult) != "error"
   secondOk = typeof(secondResult) != "error"
@@ -214,8 +258,10 @@ function choose(firstResult, secondResult)
   return [secondResult, SLOT_B]
 end function
 
-// Creates the requested value.
-// Inputs: `path`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql transaction checkpoint module.
+/// Inputs: `path`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param databaseId Identifier of database.
 function create(path, databaseId)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "create", "path must be non-empty") end if
   validateDatabaseId(databaseId, "create")
@@ -227,8 +273,9 @@ function create(path, databaseId)
   return CheckpointFile(path, file, initial, SLOT_A, false)
 end function
 
-// Opens the requested value.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens open for the minisql transaction checkpoint module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function open(path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   file = file_api.openReadWrite(path, false)
@@ -240,16 +287,22 @@ function open(path)
   return CheckpointFile(path, file, selected[0], selected[1], false)
 end function
 
-// Validates the open.
-// Inputs: `checkpointFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql transaction checkpoint workflow.
+/// Inputs: `checkpointFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param checkpointFile checkpointFile value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(checkpointFile, operation)
   if checkpointFile is not CheckpointFile then return fail(INVALID_ARGUMENT, operation, "value must be CheckpointFile") end if
   if checkpointFile.closed then return fail(CLOSED_HANDLE, operation, "checkpoint file is closed") end if
   return true
 end function
 
-// Performs the publish operation for this module.
-// Inputs: `checkpointFile`, `checkpointLsn`, `redoStartLsn`, `recordCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the publish operation for this module.
+/// Inputs: `checkpointFile`, `checkpointLsn`, `redoStartLsn`, `recordCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param checkpointFile checkpointFile value consumed by this operation.
+/// @param checkpointLsn checkpointLsn value consumed by this operation.
+/// @param redoStartLsn redoStartLsn value consumed by this operation.
+/// @param recordCount Number of record to process.
 function publish(checkpointFile, checkpointLsn, redoStartLsn, recordCount)
   validateOpen(checkpointFile, "publish")
   generation = superblock.incrementGeneration(checkpointFile.metadata.generation)
@@ -263,22 +316,34 @@ function publish(checkpointFile, checkpointLsn, redoStartLsn, recordCount)
   return next
 end function
 
-// Begins the wal checkpoint.
-// Inputs: `log`, `checkpointId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Begins the wal checkpoint.
+/// Inputs: `log`, `checkpointId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param checkpointId Identifier of checkpoint.
 function beginWalCheckpoint(log, checkpointId)
   return wal.appendCheckpointBegin(log, checkpointId, bytes())
 end function
 
-// Performs the complete wal checkpoint operation for this module.
-// Inputs: `log`, `checkpointFile`, `checkpointId`, `redoStartLsn`, `recordCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the complete wal checkpoint operation for this module.
+/// Inputs: `log`, `checkpointFile`, `checkpointId`, `redoStartLsn`, `recordCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param checkpointFile checkpointFile value consumed by this operation.
+/// @param checkpointId Identifier of checkpoint.
+/// @param redoStartLsn redoStartLsn value consumed by this operation.
+/// @param recordCount Number of record to process.
 function completeWalCheckpoint(log, checkpointFile, checkpointId, redoStartLsn, recordCount)
   ending = wal.appendCheckpointEnd(log, checkpointId, bytes())
   wal.flush(log)
   return publish(checkpointFile, log.nextLsn, redoStartLsn, recordCount)
 end function
 
-// Performs the perform operation for this module.
-// Inputs: `log`, `checkpointFile`, `checkpointId`, `pagedFiles`, `redoStartLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the perform operation for this module.
+/// Inputs: `log`, `checkpointFile`, `checkpointId`, `pagedFiles`, `redoStartLsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param checkpointFile checkpointFile value consumed by this operation.
+/// @param checkpointId Identifier of checkpoint.
+/// @param pagedFiles pagedFiles value consumed by this operation.
+/// @param redoStartLsn redoStartLsn value consumed by this operation.
 function perform(log, checkpointFile, checkpointId, pagedFiles, redoStartLsn)
   validateOpen(checkpointFile, "perform")
   if typeof(pagedFiles) != "array" then return fail(INVALID_ARGUMENT, "perform", "pagedFiles must be array") end if
@@ -290,8 +355,9 @@ function perform(log, checkpointFile, checkpointId, pagedFiles, redoStartLsn)
   return completeWalCheckpoint(log, checkpointFile, checkpointId, redoStartLsn, log.recordCount)
 end function
 
-// Closes the requested value.
-// Inputs: `checkpointFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql transaction checkpoint module.
+/// Inputs: `checkpointFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param checkpointFile checkpointFile value consumed by this operation.
 function close(checkpointFile)
   validateOpen(checkpointFile, "close")
   file_api.close(checkpointFile.file)
@@ -299,20 +365,20 @@ function close(checkpointFile)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql transaction checkpoint module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "transaction.checkpoint"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql transaction checkpoint module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M7"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql transaction checkpoint module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

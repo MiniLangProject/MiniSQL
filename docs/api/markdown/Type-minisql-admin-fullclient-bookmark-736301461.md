@@ -12,7 +12,7 @@ struct Bookmark
 Defines a reusable SQL template offered by the editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L193)
 
 ## Members
 
@@ -26,7 +26,7 @@ label
 Stores the bookmark label shown in the UI.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L195)
 
 <a id="field-field-minisql-admin-fullclient-bookmark-sqltext-sqltext-src-minisql-admin-fullclient-ml-1536835051"></a>
 ### sqlText
@@ -38,4 +38,4 @@ sqlText
 Stores SQL inserted into the editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L197)

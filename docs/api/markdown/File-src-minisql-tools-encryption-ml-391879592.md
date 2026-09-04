@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql tools encryption facilities for this project.
+
 Package: [`minisql.tools.encryption`](Package-minisql-tools-encryption-1747363322.md)
 
 Reachable from entry: **yes**
@@ -30,11 +32,11 @@ Adds one existing physical artifact to a migration plan.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `paths` | `dynamic` | — |  |
-| `path` | `dynamic` | — |  |
+| `paths` | `dynamic` | — | paths value consumed by this operation. |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L52)
 
 <a id="function-function-minisql-tools-encryption-componentname-function-componentname-src-minisql-tools-encryption-ml-1225962280"></a>
 ### componentName
@@ -46,7 +48,7 @@ function componentName()
 Returns the stable component name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L145)
 
 <a id="function-function-minisql-tools-encryption-contains-function-contains-values-wanted-src-minisql-tools-encryption-ml-53962951"></a>
 ### contains
@@ -59,11 +61,11 @@ Tests integer membership in a bounded metadata array.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `wanted` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `wanted` | `dynamic` | — | wanted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L30)
 
 <a id="function-function-minisql-tools-encryption-enable-function-enable-databasepath-keyfilepath-src-minisql-tools-encryption-ml-406033832"></a>
 ### enable
@@ -76,11 +78,11 @@ Enables resumable TDE migration. Mixed plaintext/encrypted files are valid durin
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `keyFilePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `keyFilePath` | `dynamic` | — | Path associated with key file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L72)
 
 <a id="function-function-minisql-tools-encryption-fail-function-fail-operation-message-src-minisql-tools-encryption-ml-422168880"></a>
 ### fail
@@ -93,11 +95,11 @@ Creates a structured encryption-administration error.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L23)
 
 <a id="function-function-minisql-tools-encryption-generatekeyfile-function-generatekeyfile-path-src-minisql-tools-encryption-ml-1958228393"></a>
 ### generateKeyFile
@@ -110,10 +112,10 @@ Creates a durable new raw 256-bit provider key.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L129)
 
 <a id="function-function-minisql-tools-encryption-indexids-function-indexids-state-src-minisql-tools-encryption-ml-984698431"></a>
 ### indexIds
@@ -126,10 +128,10 @@ Collects unique physical index identifiers from schema constraints.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L39)
 
 <a id="constant-constant-minisql-tools-encryption-invalid-argument-const-invalid-argument-9001-src-minisql-tools-encryption-ml-349678837"></a>
 ### INVALID_ARGUMENT
@@ -138,8 +140,10 @@ Collects unique physical index identifiers from schema constraints.
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql tools encryption module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L18)
 
 <a id="function-function-minisql-tools-encryption-isimplemented-function-isimplemented-src-minisql-tools-encryption-ml-51389920"></a>
 ### isImplemented
@@ -148,10 +152,10 @@ const INVALID_ARGUMENT = 9001
 function isImplemented()
 ```
 
-Reports that the component is implemented.
+Returns whether implemented satisfies the condition required by the minisql tools encryption module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L155)
 
 <a id="function-function-minisql-tools-encryption-releasemigrationlock-function-releasemigrationlock-locktoken-lockfile-src-minisql-tools-encryption-ml-1306300495"></a>
 ### releaseMigrationLock
@@ -164,11 +168,11 @@ Releases the migration's process-visible database lock and owning handle.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lockToken` | `dynamic` | — |  |
-| `lockFile` | `dynamic` | — |  |
+| `lockToken` | `dynamic` | — | lockToken value consumed by this operation. |
+| `lockFile` | `dynamic` | — | lockFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L60)
 
 <a id="function-function-minisql-tools-encryption-rotate-function-rotate-databasepath-newkeyfilepath-src-minisql-tools-encryption-ml-1390703746"></a>
 ### rotate
@@ -181,11 +185,11 @@ Rewraps the database DEK under a new external KEK.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `newKeyFilePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `newKeyFilePath` | `dynamic` | — | Path associated with new key file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L121)
 
 <a id="function-function-minisql-tools-encryption-targetmilestone-function-targetmilestone-src-minisql-tools-encryption-ml-1739759946"></a>
 ### targetMilestone
@@ -197,4 +201,4 @@ function targetMilestone()
 Returns the milestone introducing this component.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/encryption.ml#L150)

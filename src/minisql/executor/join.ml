@@ -1,3 +1,5 @@
+//! Provides minisql executor join facilities for this project.
+
 package minisql.executor.join
 
 // Copyright 2026 MiniLangProject contributors
@@ -16,70 +18,83 @@ import minisql.sql.expressions as expressions
 import minisql.sql.types as types
 import minisql.sql.values as values
 
-// Join executor. M16 provides the correctness-first nested-loop implementation.
-// M46 adds a deterministic hash path for INNER/LEFT equality joins while keeping
-// nested loops as the semantic fallback for all other predicates and outer joins.
+/// Join executor. M16 provides the correctness-first nested-loop implementation.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the hash bucket count constant used by the minisql executor join module.
 const HASH_BUCKET_COUNT = 257
+/// Defines the hash mask constant used by the minisql executor join module.
 const HASH_MASK = 2147483647
+/// Defines the intra query workers constant used by the minisql executor join module.
 const INTRA_QUERY_WORKERS = 4
 
-// Stores one build-side row in a hash-bucket collision chain.
+/// Stores one build-side row in a hash-bucket collision chain.
 struct HashJoinEntry
-  // Non-NULL equality key retained for collision verification.
+  /// Non-NULL equality key retained for collision verification.
   key
-  // Right/build-side row associated with the key.
+  /// Right/build-side row associated with the key.
   row
 end struct
 
-// Immutable work package for one independent grace-hash-join partition.
+/// Immutable work package for one independent grace-hash-join partition.
 struct JoinPartitionTask
-  // Optional validated spill run for the left input partition.
+  /// Optional validated spill run for the left input partition.
   leftRun
-  // Optional validated spill run for the right input partition.
+  /// Optional validated spill run for the right input partition.
   rightRun
-  // Bound join metadata used for equality and residual-predicate checks.
+  /// Bound join metadata used for equality and residual-predicate checks.
   boundJoin
-  // Optimizer-selected hash-table build orientation.
+  /// Optimizer-selected hash-table build orientation.
   buildRight
-  // Optional managed database used for cooperative worker cancellation.
+  /// Optional managed database used for cooperative worker cancellation.
   database
-  // Owning session identifier when database is present.
+  /// Owning session identifier when database is present.
   sessionId
 end struct
 
-// Polls a server-owned query at bounded hash-operator intervals. Direct module
-// tests pass a void database and retain the dependency-free historical API.
+/// Polls a server-owned query at bounded hash-operator intervals. Direct module
+/// tests pass a void database and retain the dependency-free historical API.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param counter counter value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function pollJoinControl(database, sessionId, counter, operation)
   if database is void or counter % 256 != 0 then return true end if
   return database_manager.pollSessionControl(database, sessionId)
 end function
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor join module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.join." + operation + ": " + message)
 end function
 
-// Computes non-negative truncating integer division without losing precision.
+/// Computes non-negative truncating integer division without losing precision.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
   return (numerator - (numerator % denominator)) / denominator
 end function
 
-// Implements combine for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements combine for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function combine(left, right)
   if not scan.isScannedRow(left) or not scan.isScannedRow(right) then return fail(INVALID_ARGUMENT, "combine", "rows must be ScannedRow") end if
   return scan.ScannedRow([left.reference, right.reference], left.values + right.values)
 end function
 
-// Implements null values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements null values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param table table value consumed by this operation.
 function nullValues(table)
   output = []
   for each column in table.columns
@@ -88,10 +103,11 @@ function nullValues(table)
   return output
 end function
 
-// Implements null values for types for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements null values for types for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param typeInfos typeInfos value consumed by this operation.
 function nullValuesForTypes(typeInfos)
   if typeof(typeInfos) != "array" then return fail(INVALID_ARGUMENT, "nullValuesForTypes", "types must be array") end if
   output = []
@@ -102,18 +118,22 @@ function nullValuesForTypes(typeInfos)
   return output
 end function
 
-// Implements condition passes for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements condition passes for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param condition condition value consumed by this operation.
+/// @param row row value consumed by this operation.
 function conditionPasses(condition, row)
   if condition is void then return true end if
   return expressions.predicatePasses(condition, expressions.rowContext(row.values))
 end function
 
-// Implements hash bytes for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements hash bytes for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param input input value consumed by this operation.
+/// @param seed seed value consumed by this operation.
 function hashBytes(input, seed)
   if typeof(input) != "bytes" or typeof(seed) != "int" then return fail(INVALID_ARGUMENT, "hashBytes", "invalid hash input") end if
   result = seed & HASH_MASK
@@ -125,10 +145,11 @@ function hashBytes(input, seed)
   return result
 end function
 
-// Implements hash value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements hash value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function hashValue(value)
   if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "hashValue", "value must be SqlValue") end if
   if value.isNull then return 0 end if
@@ -162,10 +183,11 @@ function hashValue(value)
   return hashBytes(bytes("" + value.value), result)
 end function
 
-// Implements equality columns for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements equality columns for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param boundJoin boundJoin value consumed by this operation.
 function equalityColumns(boundJoin)
   if typeof(boundJoin) != "struct" or not expressions.isBoundExpression(boundJoin.condition) then return void end if
   condition = boundJoin.condition
@@ -180,10 +202,11 @@ function equalityColumns(boundJoin)
   return void
 end function
 
-// Returns whether the supplied value satisfies the hash condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the hash condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param boundJoin boundJoin value consumed by this operation.
 function canHash(boundJoin)
   if typeof(boundJoin) != "struct" then return false end if
   if boundJoin.joinType != ast.JOIN_INNER and boundJoin.joinType != ast.JOIN_LEFT then return false end if
@@ -195,9 +218,14 @@ function canHash(boundJoin)
   return types.sameBase(boundJoin.condition.left.typeInfo, boundJoin.condition.right.typeInfo)
 end function
 
-// Executes an INNER or LEFT equi-join with a right-side hash table.
-// NULL keys never match, full value comparison resolves collisions, and the
-// original predicate is rechecked before emission. Unsupported shapes fall back.
+/// Executes an INNER or LEFT equi-join with a right-side hash table.
+/// NULL keys never match, full value comparison resolves collisions, and the
+/// original predicate is rechecked before emission. Unsupported shapes fall back.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId)
   if not canHash(boundJoin) then return apply(leftRows, rightRows, boundJoin) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHash", "row inputs must be arrays") end if
@@ -259,9 +287,14 @@ function applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId)
   return output
 end function
 
-// Executes an INNER equi-join with the left input as the hash-build side. The
-// emitted row remains `left.values + right.values`, so choosing the smaller
-// build side never changes bound column indexes.
+/// Executes an INNER equi-join with the left input as the hash-build side. The
+/// emitted row remains `left.values + right.values`, so choosing the smaller
+/// build side never changes bound column indexes.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function applyHashLeftCore(leftRows, rightRows, boundJoin, database, sessionId)
   if not canHash(boundJoin) or boundJoin.joinType != ast.JOIN_INNER then return applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId) end if
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "applyHashLeft", "row inputs must be arrays") end if
@@ -313,30 +346,47 @@ function applyHashLeftCore(leftRows, rightRows, boundJoin, database, sessionId)
   return output
 end function
 
-// Executes the optimizer-selected hash build orientation. LEFT joins keep the
-// right build side because unmatched-left tracking is part of that algorithm.
+/// Executes the optimizer-selected hash build orientation. LEFT joins keep the
+/// right build side because unmatched-left tracking is part of that algorithm.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function applyHashBuildCore(leftRows, rightRows, boundJoin, buildRight, database, sessionId)
   if typeof(buildRight) != "bool" then return fail(INVALID_ARGUMENT, "applyHashBuild", "buildRight must be bool") end if
   if not buildRight and boundJoin.joinType == ast.JOIN_INNER then return applyHashLeftCore(leftRows, rightRows, boundJoin, database, sessionId) end if
   return applyHashRightCore(leftRows, rightRows, boundJoin, database, sessionId)
 end function
 
-// Preserves right-build hash joins for callers without a server query token.
+/// Preserves right-build hash joins for callers without a server query token.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
 function applyHashRight(leftRows, rightRows, boundJoin)
   return applyHashRightCore(leftRows, rightRows, boundJoin, void, 0)
 end function
 
-// Preserves left-build hash joins for callers without a server query token.
+/// Preserves left-build hash joins for callers without a server query token.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
 function applyHashLeft(leftRows, rightRows, boundJoin)
   return applyHashLeftCore(leftRows, rightRows, boundJoin, void, 0)
 end function
 
-// Selects a direct hash-build orientation without a server query token.
+/// Selects a direct hash-build orientation without a server query token.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
 function applyHashBuild(leftRows, rightRows, boundJoin, buildRight)
   return applyHashBuildCore(leftRows, rightRows, boundJoin, buildRight, void, 0)
 end function
 
-// Converts scanned rows to the generic validated spill-run representation.
+/// Converts scanned rows to the generic validated spill-run representation.
+/// @param rows rows value consumed by this operation.
 function projectedSpillRows(rows)
   output = []
   for each row in rows
@@ -346,7 +396,8 @@ function projectedSpillRows(rows)
   return output
 end function
 
-// Restores value-only scanned rows after a validated spill-run read.
+/// Restores value-only scanned rows after a validated spill-run read.
+/// @param rows rows value consumed by this operation.
 function scannedSpillRows(rows)
   output = []
   for each row in rows
@@ -355,7 +406,8 @@ function scannedSpillRows(rows)
   return output
 end function
 
-// Removes every spill run already owned by not-yet-submitted partition tasks.
+/// Removes every spill run already owned by not-yet-submitted partition tasks.
+/// @param tasks tasks value consumed by this operation.
 function cleanupPartitionTasks(tasks)
   for each task in tasks
     runs = []
@@ -366,8 +418,9 @@ function cleanupPartitionTasks(tasks)
   return true
 end function
 
-// Reads and joins one pair of hash partitions on a native worker. Runs are
-// deleted by their owning task on both successful and failed reads.
+/// Reads and joins one pair of hash partitions on a native worker. Runs are
+/// deleted by their owning task on both successful and failed reads.
+/// @param task task value consumed by this operation.
 function applySpilledPartition(task)
   runs = []
   leftRows = []
@@ -391,9 +444,17 @@ function applySpilledPartition(task)
   return output
 end function
 
-// Executes a grace-style partitioned hash join when the selected build input
-// exceeds the row threshold. Each partition is CRC/shape validated by the
-// shared spill codec and removed on both success and failure paths.
+/// Executes a grace-style partitioned hash join when the selected build input
+/// exceeds the row threshold. Each partition is CRC/shape validated by the
+/// shared spill codec and removed on both success and failure paths.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
+/// @param temporaryRoot temporaryRoot value consumed by this operation.
+/// @param threshold threshold value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
   if typeof(temporaryRoot) != "string" or typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "applyHashBuildWithSpill", "invalid spill configuration") end if
   buildRows = rightRows
@@ -487,24 +548,44 @@ function applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight,
   return output
 end function
 
-// Historical direct API retains behavior without a cooperative server token.
+/// Historical direct API retains behavior without a cooperative server token.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
+/// @param temporaryRoot temporaryRoot value consumed by this operation.
+/// @param threshold threshold value consumed by this operation.
 function applyHashBuildWithSpill(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold)
   return applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, void, 0)
 end function
 
-// Server execution path propagates cancellation/deadline state into spill workers.
+/// Server execution path propagates cancellation/deadline state into spill workers.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
+/// @param temporaryRoot temporaryRoot value consumed by this operation.
+/// @param threshold threshold value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function applyHashBuildWithSpillControlled(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
   return applyHashBuildWithSpillCore(leftRows, rightRows, boundJoin, buildRight, temporaryRoot, threshold, database, sessionId)
 end function
 
-// Backward-compatible entry point used by direct executor tests.
+/// Backward-compatible entry point used by direct executor tests.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
 function applyHash(leftRows, rightRows, boundJoin)
   return applyHashBuild(leftRows, rightRows, boundJoin, true)
 end function
 
-// Executes the semantic nested-loop fallback for every supported join type.
-// Tracks matched right rows for RIGHT/FULL padding and emits typed NULL padding
-// for unmatched outer rows. Returns rows in deterministic left-major order.
+/// Executes the semantic nested-loop fallback for every supported join type.
+/// Tracks matched right rows for RIGHT/FULL padding and emits typed NULL padding
+/// for unmatched outer rows. Returns rows in deterministic left-major order.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
 function apply(leftRows, rightRows, boundJoin)
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" then return fail(INVALID_ARGUMENT, "apply", "row inputs must be arrays") end if
   if typeof(boundJoin) != "struct" then return fail(INVALID_ARGUMENT, "apply", "join must be bound") end if
@@ -543,23 +624,23 @@ function apply(leftRows, rightRows, boundJoin)
   return output
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor join module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.join"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor join module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M16"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor join module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

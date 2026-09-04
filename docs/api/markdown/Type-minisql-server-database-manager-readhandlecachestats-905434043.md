@@ -12,7 +12,7 @@ struct ReadHandleCacheStats
 Immutable diagnostic snapshot for handle-cache tests and performance logs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L284)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeLeases
 Number of handle leases active at snapshot time.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L294)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-availablereadcontexts-availablereadcontexts-src-minisql-server-database-manager-ml-1528791592"></a>
 ### availableReadContexts
@@ -38,7 +38,7 @@ availableReadContexts
 Number of contexts currently idle in the pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L300)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-hits-hits-src-minisql-server-database-manager-ml-1828477564"></a>
 ### hits
@@ -50,7 +50,7 @@ hits
 Number of acquisitions served by an existing persistent handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L267)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L286)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-indexhandles-indexhandles-src-minisql-server-database-manager-ml-9612366"></a>
 ### indexHandles
@@ -62,7 +62,7 @@ indexHandles
 Number of currently cached index BTree handles.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L273)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L292)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-misses-misses-src-minisql-server-database-manager-ml-53373812"></a>
 ### misses
@@ -74,7 +74,7 @@ misses
 Number of acquisitions that opened a new native storage handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L269)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L288)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-peakleases-peakleases-src-minisql-server-database-manager-ml-1941490836"></a>
 ### peakLeases
@@ -86,7 +86,7 @@ peakLeases
 Highest simultaneous handle lease count since database open.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L296)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-readcontexts-readcontexts-src-minisql-server-database-manager-ml-1282511428"></a>
 ### readContexts
@@ -98,7 +98,7 @@ readContexts
 Number of reusable positioned-read contexts owned by the database.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L298)
 
 <a id="field-field-minisql-server-database-manager-readhandlecachestats-tablehandles-tablehandles-src-minisql-server-database-manager-ml-1563215962"></a>
 ### tableHandles
@@ -110,4 +110,4 @@ tableHandles
 Number of currently cached table PagedFile handles.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L290)

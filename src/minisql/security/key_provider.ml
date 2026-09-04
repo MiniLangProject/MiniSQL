@@ -1,3 +1,5 @@
+//! Provides minisql security key provider facilities for this project.
+
 package minisql.security.key_provider
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -9,47 +11,58 @@ import minisql.common.uuid as uuid
 import minisql.platform.file as file_api
 import std.crypto.aes_gcm as aes_gcm
 
-// The envelope is deliberately provider- and algorithm-tagged. Adding an OS
-// keystore or KMS only requires another provider implementation; paged files,
-// WAL and backup code consume the same unwrapped DatabaseKey.
+/// The envelope is deliberately provider- and algorithm-tagged. Adding an OS
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql security key provider module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql security key provider module.
 const CORRUPT_DATA = 9004
+/// Defines the io failure constant used by the minisql security key provider module.
 const IO_FAILURE = 9005
+/// Defines the authentication failed constant used by the minisql security key provider module.
 const AUTHENTICATION_FAILED = 9027
 
+/// Defines the provider file constant used by the minisql security key provider module.
 const PROVIDER_FILE = 1
+/// Defines the wrap aes 256 gcm constant used by the minisql security key provider module.
 const WRAP_AES_256_GCM = 1
+/// Defines the meta version constant used by the minisql security key provider module.
 const META_VERSION = 1
+/// Defines the meta fixed bytes constant used by the minisql security key provider module.
 const META_FIXED_BYTES = 112
+/// Defines the meta max bytes constant used by the minisql security key provider module.
 const META_MAX_BYTES = 8192
 
-// Describes one external key source without embedding secret bytes.
+/// Describes one external key source without embedding secret bytes.
 struct KeyProvider
-  // Stable provider-kind discriminator.
+  /// Stable provider-kind discriminator.
   kind
-  // Provider-specific key identifier or path.
+  /// Provider-specific key identifier or path.
   identifier
 end struct
 
-// Owns one unwrapped wipeable DEK and its envelope identity.
+/// Owns one unwrapped wipeable DEK and its envelope identity.
 struct DatabaseKey
-  // Root directory containing the database envelope.
+  /// Root directory containing the database envelope.
   databaseRoot
-  // Immutable 16-byte database identifier.
+  /// Immutable 16-byte database identifier.
   databaseId
-  // Provider used to unwrap the DEK.
+  /// Provider used to unwrap the DEK.
   provider
-  // Mutable 32-byte DEK that must be wiped after use.
+  /// Mutable 32-byte DEK that must be wiped after use.
   key
 end struct
 
-// Creates a structured key-provider error.
+/// Creates a structured key-provider error.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "security.key_provider." + operation + ": " + message)
 end function
 
-// Returns the UTF-8 parent path without filesystem-dependent normalization.
+/// Returns the UTF-8 parent path without filesystem-dependent normalization.
+/// @param path Path of the file or directory used by the operation.
 function parentPath(path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "parentPath", "path must be non-empty") end if
   raw = bytes(path)
@@ -63,14 +76,16 @@ function parentPath(path)
   return decoded
 end function
 
-// Returns the fixed database envelope path.
+/// Returns the fixed database envelope path.
+/// @param databaseRoot databaseRoot value consumed by this operation.
 function metadataPath(databaseRoot)
   return file_api.joinPath(databaseRoot, "encryption.meta")
 end function
 
-// Searches a small bounded ancestor chain so catalog, table, index, WAL and
-// temporary paths all resolve the database-level key envelope consistently.
-// Finds the nearest ancestor containing an encryption envelope.
+/// Searches a small bounded ancestor chain so catalog, table, index, WAL and
+/// temporary paths all resolve the database-level key envelope consistently.
+/// Finds the nearest ancestor containing an encryption envelope.
+/// @param path Path of the file or directory used by the operation.
 function findDatabaseRoot(path)
   current = path
   for depth = 0 to 4
@@ -81,13 +96,15 @@ function findDatabaseRoot(path)
   return void
 end function
 
-// Creates the version-1 raw-file key provider descriptor.
+/// Creates the version-1 raw-file key provider descriptor.
+/// @param path Path of the file or directory used by the operation.
 function fileProvider(path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "fileProvider", "key path must be non-empty") end if
   return KeyProvider(PROVIDER_FILE, path)
 end function
 
-// Loads one wipeable 256-bit KEK from the selected provider.
+/// Loads one wipeable 256-bit KEK from the selected provider.
+/// @param provider provider value consumed by this operation.
 function loadProviderKey(provider)
   if provider is not KeyProvider then return fail(INVALID_ARGUMENT, "loadProviderKey", "provider is invalid") end if
   if provider.kind != PROVIDER_FILE then return fail(UNSUPPORTED_FORMAT, "loadProviderKey", "provider kind is not installed") end if
@@ -97,12 +114,18 @@ function loadProviderKey(provider)
   return key
 end function
 
-// Creates domain-separated AAD for one DEK envelope.
+/// Creates domain-separated AAD for one DEK envelope.
+/// @param databaseId Identifier of database.
+/// @param providerKind providerKind value consumed by this operation.
+/// @param providerIdentifier providerIdentifier value consumed by this operation.
 function envelopeAad(databaseId, providerKind, providerIdentifier)
   return bytes("MiniSQL-TDE-1|") + databaseId + bytes("|" + providerKind + "|") + bytes(providerIdentifier)
 end function
 
-// Wraps a DEK and serializes authenticated crypto-agile metadata.
+/// Wraps a DEK and serializes authenticated crypto-agile metadata.
+/// @param databaseId Identifier of database.
+/// @param provider provider value consumed by this operation.
+/// @param databaseKey databaseKey value consumed by this operation.
 function encodeEnvelope(databaseId, provider, databaseKey)
   if typeof(databaseId) != "bytes" or len(databaseId) != 16 or provider is not KeyProvider or typeof(databaseKey) != "bytes" or len(databaseKey) != 32 then return fail(INVALID_ARGUMENT, "encodeEnvelope", "invalid envelope input") end if
   identifier = bytes(provider.identifier)
@@ -134,9 +157,12 @@ function encodeEnvelope(databaseId, provider, databaseKey)
   return output
 end function
 
-// Validates and unwraps one serialized DEK envelope. A provider override lets
-// portable backup restore use identical key bytes from a new machine-local
-// path while the original provider identity remains part of authenticated AAD.
+/// Validates and unwraps one serialized DEK envelope. A provider override lets
+/// portable backup restore use identical key bytes from a new machine-local
+/// path while the original provider identity remains part of authenticated AAD.
+/// @param databaseRoot databaseRoot value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
+/// @param providerOverride providerOverride value consumed by this operation.
 function decodeEnvelopeData(databaseRoot, encoded, providerOverride)
   if typeof(encoded) != "bytes" or len(encoded) > META_MAX_BYTES then return fail(INVALID_ARGUMENT, "decodeEnvelope", "encoded envelope must be bounded bytes") end if
   if len(encoded) < META_FIXED_BYTES or slice(encoded, 0, 8) != bytes("MSTDE001") then return fail(UNSUPPORTED_FORMAT, "decodeEnvelope", "metadata magic is invalid") end if
@@ -166,14 +192,17 @@ function decodeEnvelopeData(databaseRoot, encoded, providerOverride)
   return DatabaseKey(databaseRoot, databaseId, provider, databaseKey)
 end function
 
-// Reads, validates and unwraps the database's current DEK envelope.
+/// Reads, validates and unwraps the database's current DEK envelope.
+/// @param databaseRoot databaseRoot value consumed by this operation.
 function decodeEnvelope(databaseRoot)
   encoded = try(file_api.readAllBytes(metadataPath(databaseRoot), META_MAX_BYTES))
   if typeof(encoded) == "error" then return encoded end if
   return decodeEnvelopeData(databaseRoot, encoded, void)
 end function
 
-// Resolves and loads the database key associated with an artifact path.
+/// Resolves and loads the database key associated with an artifact path.
+/// @param path Path of the file or directory used by the operation.
+/// @param expectedDatabaseId Identifier of expected database.
 function loadForPath(path, expectedDatabaseId)
   root = findDatabaseRoot(path)
   if root is void then return void end if
@@ -183,7 +212,11 @@ function loadForPath(path, expectedDatabaseId)
   return material
 end function
 
-// Atomically publishes a durable wrapped-key envelope.
+/// Atomically publishes a durable wrapped-key envelope.
+/// @param databaseRoot databaseRoot value consumed by this operation.
+/// @param databaseId Identifier of database.
+/// @param provider provider value consumed by this operation.
+/// @param databaseKey databaseKey value consumed by this operation.
 function writeEnvelope(databaseRoot, databaseId, provider, databaseKey)
   encoded = try(encodeEnvelope(databaseId, provider, databaseKey))
   if typeof(encoded) == "error" then return encoded end if
@@ -199,7 +232,10 @@ function writeEnvelope(databaseRoot, databaseId, provider, databaseKey)
   return file_api.movePath(temporary, metadataPath(databaseRoot), true)
 end function
 
-// Creates and wraps a fresh random database encryption key.
+/// Creates and wraps a fresh random database encryption key.
+/// @param databaseRoot databaseRoot value consumed by this operation.
+/// @param databaseId Identifier of database.
+/// @param provider provider value consumed by this operation.
 function createEnvelope(databaseRoot, databaseId, provider)
   if file_api.fileExists(metadataPath(databaseRoot)) then return fail(INVALID_ARGUMENT, "createEnvelope", "database encryption is already enabled") end if
   key = try(uuid.randomBytes(32))
@@ -209,10 +245,12 @@ function createEnvelope(databaseRoot, databaseId, provider)
   return result
 end function
 
-// Rotation rewraps the DEK atomically; data pages never become half-keyed and
-// no full database rewrite is required. The old key remains usable until the
-// final metadata rename, which is the online cut-over point.
-// Atomically rewraps the existing DEK with a new provider key.
+/// Rotation rewraps the DEK atomically; data pages never become half-keyed and
+/// no full database rewrite is required. The old key remains usable until the
+/// final metadata rename, which is the online cut-over point.
+/// Atomically rewraps the existing DEK with a new provider key.
+/// @param databaseRoot databaseRoot value consumed by this operation.
+/// @param newProvider newProvider value consumed by this operation.
 function rotateEnvelope(databaseRoot, newProvider)
   material = try(decodeEnvelope(databaseRoot))
   if typeof(material) == "error" then return material end if
@@ -221,24 +259,25 @@ function rotateEnvelope(databaseRoot, newProvider)
   return result
 end function
 
-// Wipes caller-owned database key material.
+/// Wipes caller-owned database key material.
+/// @param material material value consumed by this operation.
 function closeDatabaseKey(material)
   if material is not DatabaseKey then return false end if
   uuid.wipeSecret(material.key)
   return true
 end function
 
-// Returns the stable component name.
+/// Returns the stable component name.
 function componentName()
   return "security.key_provider"
 end function
 
-// Returns the milestone introducing this component.
+/// Returns the milestone introducing this component.
 function targetMilestone()
   return "M79"
 end function
 
-// Reports that the component is implemented.
+/// Returns whether implemented satisfies the condition required by the minisql security key provider module.
 function isImplemented()
   return true
 end function

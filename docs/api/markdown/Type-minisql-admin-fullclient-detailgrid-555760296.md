@@ -12,7 +12,7 @@ struct DetailGrid
 Retains one structured table used by an object-detail page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L63)
 
 ## Members
 
@@ -26,7 +26,7 @@ columns
 Stores ordered native-grid column captions.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L65)
 
 <a id="field-field-minisql-admin-fullclient-detailgrid-rows-rows-src-minisql-admin-fullclient-ml-632885212"></a>
 ### rows
@@ -38,4 +38,4 @@ rows
 Stores ordered textual rows aligned with columns.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L67)

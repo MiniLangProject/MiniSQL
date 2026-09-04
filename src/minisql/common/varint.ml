@@ -1,3 +1,5 @@
+//! Provides minisql common varint facilities for this project.
+
 package minisql.common.varint
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -5,48 +7,57 @@ package minisql.common.varint
 
 import minisql.common.endian as endian
 
-// Canonical unsigned LEB128 plus ZigZag signed codecs.
-// Full 64-bit domains use the M1 UInt64Words/Int64Words representation.
+/// Canonical unsigned LEB128 plus ZigZag signed codecs.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql common varint module.
 const CORRUPT_DATA = 9004
+/// Defines the max u32 bytes constant used by the minisql common varint module.
 const MAX_U32_BYTES = 5
+/// Defines the max u64 bytes constant used by the minisql common varint module.
 const MAX_U64_BYTES = 10
 
-// Defines the varint32 result record used by this module.
+/// Defines the varint32 result record used by this module.
 struct Varint32Result
-  // Value field of the varint32 result.
+  /// Value field of the varint32 result.
   value
-  // Next offset field of the varint32 result.
+  /// Next offset field of the varint32 result.
   nextOffset
-  // Bytes read field of the varint32 result.
+  /// Bytes read field of the varint32 result.
   bytesRead
 end struct
 
-// Defines the varint64 result record used by this module.
+/// Defines the varint64 result record used by this module.
 struct Varint64Result
-  // Value field of the varint64 result.
+  /// Value field of the varint64 result.
   value
-  // Next offset field of the varint64 result.
+  /// Next offset field of the varint64 result.
   nextOffset
-  // Bytes read field of the varint64 result.
+  /// Bytes read field of the varint64 result.
   bytesRead
 end struct
 
-// Creates an invalid-argument error with operation context.
-// Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the invalid operation for the minisql common varint module.
+/// Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function invalid(operation, message)
   return error(INVALID_ARGUMENT, "common.varint." + operation + ": " + message)
 end function
 
-// Performs the corrupt operation for this module.
-// Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the corrupt operation for this module.
+/// Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function corrupt(operation, message)
   return error(CORRUPT_DATA, "common.varint." + operation + ": " + message)
 end function
 
-// Validates the buffer offset.
-// Inputs: `buffer`, `offset`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the buffer offset.
+/// Inputs: `buffer`, `offset`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param operation operation value consumed by this operation.
 function validateBufferOffset(buffer, offset, operation)
   if typeof(buffer) != "bytes" then
     return invalid(operation, "buffer must be bytes")
@@ -60,8 +71,12 @@ function validateBufferOffset(buffer, offset, operation)
   return true
 end function
 
-// Validates the write range.
-// Inputs: `buffer`, `offset`, `width`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the write range.
+/// Inputs: `buffer`, `offset`, `width`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param width Width in the coordinate or storage units used by the caller.
+/// @param operation operation value consumed by this operation.
 function validateWriteRange(buffer, offset, width, operation)
   validateBufferOffset(buffer, offset, operation)
   if typeof(width) != "int" or width < 0 then
@@ -73,8 +88,9 @@ function validateWriteRange(buffer, offset, width, operation)
   return true
 end function
 
-// Encodes the d length u32.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the d length u32.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function encodedLengthU32(value)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_U32 then
     return invalid("encodedLengthU32", "value must be in 0..4294967295")
@@ -88,8 +104,9 @@ function encodedLengthU32(value)
   return length
 end function
 
-// Encodes the d length u64.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the d length u64.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function encodedLengthU64(value)
   endian.validateUInt64Words(value, "varint.encodedLengthU64")
   high = value.high
@@ -103,8 +120,11 @@ function encodedLengthU64(value)
   return length
 end function
 
-// Writes the u32.
-// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the u32.
+/// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param value Value consumed or transformed by the operation.
 function writeU32(buffer, offset, value)
   width = encodedLengthU32(value)
   validateWriteRange(buffer, offset, width, "writeU32")
@@ -119,8 +139,10 @@ function writeU32(buffer, offset, value)
   return cursor + 1
 end function
 
-// Reads the u32.
-// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the u32.
+/// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
 function readU32(buffer, offset)
   validateBufferOffset(buffer, offset, "readU32")
   result = 0
@@ -148,8 +170,11 @@ function readU32(buffer, offset)
   return corrupt("readU32", "unterminated or oversized varint")
 end function
 
-// Writes the u64.
-// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the u64.
+/// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param value Value consumed or transformed by the operation.
 function writeU64(buffer, offset, value)
   width = encodedLengthU64(value)
   validateWriteRange(buffer, offset, width, "writeU64")
@@ -166,8 +191,10 @@ function writeU64(buffer, offset, value)
   return cursor + 1
 end function
 
-// Reads the u64.
-// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the u64.
+/// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
 function readU64(buffer, offset)
   validateBufferOffset(buffer, offset, "readU64")
   high = 0
@@ -205,8 +232,9 @@ function readU64(buffer, offset)
   return corrupt("readU64", "unterminated or oversized varint")
 end function
 
-// Performs the zig zag encode i32 operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the zig zag encode i32 operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function zigZagEncodeI32(value)
   if typeof(value) != "int" or value < endian.MIN_I32 or value > endian.MAX_I32 then
     return invalid("zigZagEncodeI32", "value must fit I32")
@@ -217,8 +245,9 @@ function zigZagEncodeI32(value)
   return ((-value) << 1) - 1
 end function
 
-// Performs the zig zag decode i32 operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the zig zag decode i32 operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function zigZagDecodeI32(value)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_U32 then
     return invalid("zigZagDecodeI32", "value must fit U32")
@@ -230,21 +259,27 @@ function zigZagDecodeI32(value)
   return -magnitude - 1
 end function
 
-// Writes the i32.
-// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the i32.
+/// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param value Value consumed or transformed by the operation.
 function writeI32(buffer, offset, value)
   return writeU32(buffer, offset, zigZagEncodeI32(value))
 end function
 
-// Reads the i32.
-// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the i32.
+/// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
 function readI32(buffer, offset)
   decoded = readU32(buffer, offset)
   return Varint32Result(zigZagDecodeI32(decoded.value), decoded.nextOffset, decoded.bytesRead)
 end function
 
-// Performs the zig zag encode i64 operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the zig zag encode i64 operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function zigZagEncodeI64(value)
   endian.validateInt64Words(value, "varint.zigZagEncodeI64")
   signMask = 0
@@ -256,8 +291,9 @@ function zigZagEncodeI64(value)
   return endian.makeUInt64(shiftedHigh ^ signMask, shiftedLow ^ signMask)
 end function
 
-// Performs the zig zag decode i64 operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the zig zag decode i64 operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function zigZagDecodeI64(value)
   endian.validateUInt64Words(value, "varint.zigZagDecodeI64")
   signMask = 0
@@ -269,33 +305,38 @@ function zigZagDecodeI64(value)
   return endian.makeInt64(shiftedHigh ^ signMask, shiftedLow ^ signMask)
 end function
 
-// Writes the i64.
-// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the i64.
+/// Inputs: `buffer`, `offset`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param value Value consumed or transformed by the operation.
 function writeI64(buffer, offset, value)
   return writeU64(buffer, offset, zigZagEncodeI64(value))
 end function
 
-// Reads the i64.
-// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the i64.
+/// Inputs: `buffer`, `offset`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
 function readI64(buffer, offset)
   decoded = readU64(buffer, offset)
   return Varint64Result(zigZagDecodeI64(decoded.value), decoded.nextOffset, decoded.bytesRead)
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql common varint module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "common.varint"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql common varint module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M2"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql common varint module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

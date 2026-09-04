@@ -12,7 +12,7 @@ struct QueryMemoryManager
 Per-session query memory policy and last-statement diagnostics. Operators use byte-derived row thresholds instead of assuming that every row has one size.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L204)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L222)
 
 ## Members
 
@@ -26,7 +26,7 @@ limitBytes
 Configured soft memory limit for blocking operators.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L206)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L224)
 
 <a id="field-field-minisql-executor-executor-querymemorymanager-peakbytes-peakbytes-src-minisql-executor-executor-ml-1338884443"></a>
 ### peakBytes
@@ -38,7 +38,7 @@ peakBytes
 Largest estimated resident operator input observed by the statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L208)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L226)
 
 <a id="field-field-minisql-executor-executor-querymemorymanager-spillbytes-spillbytes-src-minisql-executor-executor-ml-1844773529"></a>
 ### spillBytes
@@ -50,7 +50,7 @@ spillBytes
 Estimated bytes delegated to temporary spill runs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L228)
 
 <a id="field-field-minisql-executor-executor-querymemorymanager-spillruns-spillruns-src-minisql-executor-executor-ml-2028913651"></a>
 ### spillRuns
@@ -62,4 +62,4 @@ spillRuns
 Number of blocking operators that selected a spill path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L212)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L230)

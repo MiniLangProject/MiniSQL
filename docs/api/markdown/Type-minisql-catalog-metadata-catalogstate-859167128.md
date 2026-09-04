@@ -12,7 +12,7 @@ struct CatalogState
 Defines the catalog state record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L87)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Database id field of the catalog state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L89)
 
 <a id="field-field-minisql-catalog-metadata-catalogstate-nextobjectid-nextobjectid-src-minisql-catalog-metadata-ml-1588891785"></a>
 ### nextObjectId
@@ -38,7 +38,7 @@ nextObjectId
 Next object id field of the catalog state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L91)
 
 <a id="field-field-minisql-catalog-metadata-catalogstate-tables-tables-src-minisql-catalog-metadata-ml-1522337241"></a>
 ### tables
@@ -50,4 +50,4 @@ tables
 Tables field of the catalog state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L93)

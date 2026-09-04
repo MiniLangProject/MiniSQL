@@ -12,7 +12,7 @@ struct BTreeInternal
 Defines the btree internal record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L94)
 
 ## Members
 
@@ -26,7 +26,7 @@ children
 Children field of the btree internal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L100)
 
 <a id="field-field-minisql-storage-btree-btreeinternal-level-level-src-minisql-storage-btree-ml-766156198"></a>
 ### level
@@ -38,7 +38,7 @@ level
 Level field of the btree internal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L98)
 
 <a id="field-field-minisql-storage-btree-btreeinternal-pagenumber-pagenumber-src-minisql-storage-btree-ml-1397469286"></a>
 ### pageNumber
@@ -50,7 +50,7 @@ pageNumber
 Page number field of the btree internal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L96)
 
 <a id="field-field-minisql-storage-btree-btreeinternal-separators-separators-src-minisql-storage-btree-ml-816529966"></a>
 ### separators
@@ -62,4 +62,4 @@ separators
 Separators field of the btree internal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L102)

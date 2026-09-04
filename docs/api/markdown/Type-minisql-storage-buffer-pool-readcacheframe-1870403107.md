@@ -12,7 +12,7 @@ struct ReadCacheFrame
 Immutable read-cache frame keyed by a stable file path and page number. It deliberately does not retain a PagedFile handle, allowing short-lived scan handles to close without leaving dangling cache ownership.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L93)
 
 ## Members
 
@@ -26,7 +26,7 @@ data
 Immutable verified-size page image retained independently of file handles.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L97)
 
 <a id="field-field-minisql-storage-buffer-pool-readcacheframe-key-key-src-minisql-storage-buffer-pool-ml-1975516486"></a>
 ### key
@@ -38,7 +38,7 @@ key
 Stable file-path and page-number identity used by the lookup map.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L95)
 
 <a id="field-field-minisql-storage-buffer-pool-readcacheframe-referenced-referenced-src-minisql-storage-buffer-pool-ml-961587240"></a>
 ### referenced
@@ -50,4 +50,4 @@ referenced
 CLOCK reference bit set by every successful lookup.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L99)

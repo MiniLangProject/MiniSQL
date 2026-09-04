@@ -12,7 +12,7 @@ struct GeneratedColumnDefinition
 Defines the generated column definition record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L199)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnName
 Column name field of the generated column definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L203)
 
 <a id="field-field-minisql-catalog-schema-history-generatedcolumndefinition-expressionsql-expressionsql-src-minisql-catalog-schema-history-ml-907491911"></a>
 ### expressionSql
@@ -38,7 +38,7 @@ expressionSql
 Expression sql field of the generated column definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L205)
 
 <a id="field-field-minisql-catalog-schema-history-generatedcolumndefinition-stored-stored-src-minisql-catalog-schema-history-ml-917777553"></a>
 ### stored
@@ -50,7 +50,7 @@ stored
 Stored field of the generated column definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L207)
 
 <a id="field-field-minisql-catalog-schema-history-generatedcolumndefinition-tableid-tableid-src-minisql-catalog-schema-history-ml-518860763"></a>
 ### tableId
@@ -62,4 +62,4 @@ tableId
 Table id field of the generated column definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L201)

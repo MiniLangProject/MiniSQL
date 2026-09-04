@@ -12,7 +12,7 @@ struct BinaryExpression
 Groups the binary expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L189)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L191)
 
 <a id="field-field-minisql-sql-ast-binaryexpression-left-left-src-minisql-sql-ast-ml-1079207176"></a>
 ### left
@@ -38,7 +38,7 @@ left
 Stores the left associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L195)
 
 <a id="field-field-minisql-sql-ast-binaryexpression-operator-operator-src-minisql-sql-ast-ml-14420846"></a>
 ### operator
@@ -50,7 +50,7 @@ operator
 Stores the operator associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L193)
 
 <a id="field-field-minisql-sql-ast-binaryexpression-right-right-src-minisql-sql-ast-ml-1971664766"></a>
 ### right
@@ -62,4 +62,4 @@ right
 Stores the right associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L197)

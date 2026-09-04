@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql config model facilities for this project.
+
 Package: [`minisql.config.model`](Package-minisql-config-model-2080962645.md)
 
 Reachable from entry: **yes**
@@ -16,10 +18,10 @@ Reachable from entry: **yes**
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql config model module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L212)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L223)
 
 - [minisql.config.model.DatabaseDefaults](Type-minisql-config-model-databasedefaults-704930438.md) — struct
 <a id="function-function-minisql-config-model-defaultconfig-function-defaultconfig-dataroot-src-minisql-config-model-ml-198024192"></a>
@@ -33,10 +35,10 @@ Implements default config for this module. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `dataRoot` | `dynamic` | — |  |
+| `dataRoot` | `dynamic` | — | dataRoot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L253)
 
 <a id="function-function-minisql-config-model-defaultdatabasesettings-function-defaultdatabasesettings-pagesize-src-minisql-config-model-ml-1333476822"></a>
 ### defaultDatabaseSettings
@@ -49,10 +51,10 @@ Implements default database settings for this module. Returns the computed value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L245)
 
 <a id="function-function-minisql-config-model-isbinlogconfig-function-isbinlogconfig-value-src-minisql-config-model-ml-1676898991"></a>
 ### isBinlogConfig
@@ -65,10 +67,10 @@ Returns whether the supplied value is a binlog configuration. Inputs: `value`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L186)
 
 <a id="function-function-minisql-config-model-isdatabasedefaults-function-isdatabasedefaults-value-src-minisql-config-model-ml-731134279"></a>
 ### isDatabaseDefaults
@@ -81,10 +83,10 @@ Returns whether the supplied value satisfies the database defaults condition. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L200)
 
 <a id="function-function-minisql-config-model-isimplemented-function-isimplemented-src-minisql-config-model-ml-996830778"></a>
 ### isImplemented
@@ -93,10 +95,10 @@ Returns whether the supplied value satisfies the database defaults condition. Re
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql config model module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L226)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L237)
 
 <a id="function-function-minisql-config-model-isloggingconfig-function-isloggingconfig-value-src-minisql-config-model-ml-2083258201"></a>
 ### isLoggingConfig
@@ -109,10 +111,10 @@ Returns whether the supplied value is a logger configuration. Inputs: `value`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L179)
 
 <a id="function-function-minisql-config-model-isminisqlconfig-function-isminisqlconfig-value-src-minisql-config-model-ml-2114353501"></a>
 ### isMiniSqlConfig
@@ -125,10 +127,10 @@ Returns whether the supplied value satisfies the mini SQL config condition. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L216)
 
 <a id="function-function-minisql-config-model-ispathsconfig-function-ispathsconfig-value-src-minisql-config-model-ml-266010427"></a>
 ### isPathsConfig
@@ -141,10 +143,10 @@ Returns whether the supplied value satisfies the paths config condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L156)
 
 <a id="function-function-minisql-config-model-isruntimeconfig-function-isruntimeconfig-value-src-minisql-config-model-ml-3333103"></a>
 ### isRuntimeConfig
@@ -157,10 +159,10 @@ Returns whether the supplied value satisfies the runtime config condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L172)
 
 <a id="function-function-minisql-config-model-issafetyconfig-function-issafetyconfig-value-src-minisql-config-model-ml-1092988699"></a>
 ### isSafetyConfig
@@ -173,10 +175,10 @@ Returns whether the supplied value satisfies the safety config condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L198)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L208)
 
 <a id="function-function-minisql-config-model-isserverconfig-function-isserverconfig-value-src-minisql-config-model-ml-1219571259"></a>
 ### isServerConfig
@@ -189,10 +191,10 @@ Returns whether the supplied value satisfies the server config condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L164)
 
 <a id="function-function-minisql-config-model-istlsconfig-function-istlsconfig-value-src-minisql-config-model-ml-1134747821"></a>
 ### isTlsConfig
@@ -205,10 +207,10 @@ Returns whether the supplied value is a native TLS configuration.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L192)
 
 - [minisql.config.model.LoggingConfig](Type-minisql-config-model-loggingconfig-1700021644.md) — struct
 - [minisql.config.model.MiniSqlConfig](Type-minisql-config-model-minisqlconfig-1246526844.md) — struct
@@ -223,9 +225,9 @@ Returns whether the supplied value is a native TLS configuration.
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql config model module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L230)
 
 - [minisql.config.model.TlsConfig](Type-minisql-config-model-tlsconfig-1694670536.md) — struct

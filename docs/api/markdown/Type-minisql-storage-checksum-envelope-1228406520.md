@@ -12,7 +12,7 @@ struct Envelope
 Defines the envelope record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L28)
 
 ## Members
 
@@ -26,7 +26,7 @@ flags
 Flags field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L36)
 
 <a id="field-field-minisql-storage-checksum-envelope-headerchecksum-headerchecksum-src-minisql-storage-checksum-ml-2012628123"></a>
 ### headerChecksum
@@ -38,7 +38,7 @@ headerChecksum
 Header checksum field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L42)
 
 <a id="field-field-minisql-storage-checksum-envelope-kind-kind-src-minisql-storage-checksum-ml-1187476555"></a>
 ### kind
@@ -50,7 +50,7 @@ kind
 Kind field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L34)
 
 <a id="field-field-minisql-storage-checksum-envelope-magic-magic-src-minisql-storage-checksum-ml-1334085823"></a>
 ### magic
@@ -62,7 +62,7 @@ magic
 Magic field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L30)
 
 <a id="field-field-minisql-storage-checksum-envelope-payload-payload-src-minisql-storage-checksum-ml-2127695291"></a>
 ### payload
@@ -74,7 +74,7 @@ payload
 Payload field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L38)
 
 <a id="field-field-minisql-storage-checksum-envelope-payloadchecksum-payloadchecksum-src-minisql-storage-checksum-ml-1599877895"></a>
 ### payloadChecksum
@@ -86,7 +86,7 @@ payloadChecksum
 Payload checksum field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L40)
 
 <a id="field-field-minisql-storage-checksum-envelope-version-version-src-minisql-storage-checksum-ml-558094879"></a>
 ### version
@@ -98,4 +98,4 @@ version
 Version field of the envelope.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/checksum.ml#L32)

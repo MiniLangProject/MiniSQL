@@ -12,7 +12,7 @@ struct BTreeEntry
 Defines the btree entry record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L56)
 
 ## Members
 
@@ -26,7 +26,7 @@ key
 Key field of the btree entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L58)
 
 <a id="field-field-minisql-storage-btree-btreeentry-value-value-src-minisql-storage-btree-ml-1487348827"></a>
 ### value
@@ -38,4 +38,4 @@ value
 Value field of the btree entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L60)

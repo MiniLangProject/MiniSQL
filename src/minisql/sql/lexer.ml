@@ -1,3 +1,5 @@
+//! Provides minisql sql lexer facilities for this project.
+
 package minisql.sql.lexer
 
 // Copyright 2026 MiniLangProject contributors
@@ -8,80 +10,92 @@ import minisql.sql.dialect as dialect
 import minisql.sql.token as token
 import std.ds.list as list
 
+/// Defines the invalid argument constant used by the minisql sql lexer module.
 const INVALID_ARGUMENT = 9001
+/// Defines the sql syntax constant used by the minisql sql lexer module.
 const SQL_SYNTAX = 9019
 
-// Groups the lexer state state and preserves the field relationships documented below.
+/// Groups the lexer state state and preserves the field relationships documented below.
 struct LexerState
-  // Stores the source associated with this value.
+  /// Stores the source associated with this value.
   source
-  // Stores the raw associated with this value.
+  /// Stores the raw associated with this value.
   raw
-  // Tracks the index numeric value.
+  /// Tracks the index numeric value.
   index
-  // Stores the line associated with this value.
+  /// Stores the line associated with this value.
   line
-  // Stores the column associated with this value.
+  /// Stores the column associated with this value.
   column
-  // Contains the ordered tokens collection.
+  /// Contains the ordered tokens collection.
   tokens
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql sql lexer module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param message Human-readable message associated with the operation.
 function fail(state, message)
   return error(SQL_SYNTAX, "sql.lexer at line " + state.line + ", column " + state.column + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the whitespace condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the whitespace condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isWhitespace(value)
   return value == 32 or value == 9 or value == 10 or value == 13 or value == 12
 end function
 
-// Returns whether the supplied value satisfies the digit condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the digit condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isDigit(value)
   return value >= 48 and value <= 57
 end function
 
-// Returns whether the supplied value satisfies the identifier start condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the identifier start condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isIdentifierStart(value)
   return (value >= 65 and value <= 90) or (value >= 97 and value <= 122) or value == 95 or value >= 128
 end function
 
-// Returns whether the supplied value satisfies the identifier part condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the identifier part condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isIdentifierPart(value)
   return isIdentifierStart(value) or isDigit(value) or value == 36
 end function
 
-// Implements current for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements current for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function current(state)
   if state.index >= len(state.raw) then return -1 end if
   return state.raw[state.index]
 end function
 
-// Implements peek for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements peek for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param distance distance value consumed by this operation.
 function peek(state, distance)
   position = state.index + distance
   if position < 0 or position >= len(state.raw) then return -1 end if
   return state.raw[position]
 end function
 
-// Advances advance using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Advances advance using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function advance(state)
   if state.index >= len(state.raw) then return -1 end if
   value = state.raw[state.index]
@@ -95,24 +109,36 @@ function advance(state)
   return value
 end function
 
-// Implements raw text for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements raw text for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param startOffset startOffset value consumed by this operation.
+/// @param endOffset endOffset value consumed by this operation.
 function rawText(state, startOffset, endOffset)
   return decode(slice(state.raw, startOffset, endOffset - startOffset))
 end function
 
-// Appends token using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Appends token using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param kind kind value consumed by this operation.
+/// @param text Text consumed by the operation.
+/// @param value Value consumed or transformed by the operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param line line value consumed by this operation.
+/// @param column column value consumed by this operation.
+/// @param quoted quoted value consumed by this operation.
 function appendToken(state, kind, text, value, offset, line, column, quoted)
   state.tokens.add(token.create(kind, text, value, offset, line, column, quoted))
   return true
 end function
 
-// Implements skip ignored for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements skip ignored for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function skipIgnored(state)
   changed = true
   while changed
@@ -148,9 +174,10 @@ function skipIgnored(state)
   return true
 end function
 
-// Reads identifier using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads identifier using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function readIdentifier(state)
   startOffset = state.index
   startLine = state.line
@@ -169,9 +196,10 @@ function readIdentifier(state)
   return true
 end function
 
-// Reads quoted identifier using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads quoted identifier using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function readQuotedIdentifier(state)
   startOffset = state.index
   startLine = state.line
@@ -206,9 +234,10 @@ function readQuotedIdentifier(state)
   return true
 end function
 
-// Reads string using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads string using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function readString(state)
   startOffset = state.index
   startLine = state.line
@@ -244,9 +273,10 @@ function readString(state)
   return true
 end function
 
-// Reads number using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads number using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function readNumber(state)
   startOffset = state.index
   startLine = state.line
@@ -278,9 +308,10 @@ function readNumber(state)
   return true
 end function
 
-// Implements symbol token for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements symbol token for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function symbolToken(state)
   startOffset = state.index
   startLine = state.line
@@ -310,10 +341,11 @@ function symbolToken(state)
   return fail(state, "unexpected byte 0x" + hex(bytes([first])))
 end function
 
-// Tokenizes SQL using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Tokenizes SQL using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param source source value consumed by this operation.
 function tokenizeSql(source)
   if typeof(source) != "string" then return error(INVALID_ARGUMENT, "sql.lexer.tokenizeSql: source must be string") end if
   raw = bytes(source)
@@ -339,23 +371,23 @@ function tokenizeSql(source)
   return state.tokens.toArray()
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql sql lexer module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.lexer"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql sql lexer module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M12"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql sql lexer module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct JoinClause
 Groups the join clause state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L368)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L423)
 
 ## Members
 
@@ -26,7 +26,7 @@ condition
 Stores the condition associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L376)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L431)
 
 <a id="field-field-minisql-sql-ast-joinclause-jointype-jointype-src-minisql-sql-ast-ml-1210897344"></a>
 ### joinType
@@ -38,7 +38,7 @@ joinType
 Stores the join type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L425)
 
 <a id="field-field-minisql-sql-ast-joinclause-tablealias-tablealias-src-minisql-sql-ast-ml-299373296"></a>
 ### tableAlias
@@ -50,7 +50,7 @@ tableAlias
 Stores the table alias associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L374)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L429)
 
 <a id="field-field-minisql-sql-ast-joinclause-tablename-tablename-src-minisql-sql-ast-ml-1699071888"></a>
 ### tableName
@@ -62,4 +62,4 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L372)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L427)

@@ -12,7 +12,7 @@ struct CaseExpression
 Groups the case expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L239)
 
 ## Members
 
@@ -26,7 +26,7 @@ branches
 Contains the ordered branches collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L243)
 
 <a id="field-field-minisql-sql-ast-caseexpression-elseexpression-elseexpression-src-minisql-sql-ast-ml-1451885623"></a>
 ### elseExpression
@@ -38,7 +38,7 @@ elseExpression
 Stores the else expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L245)
 
 <a id="field-field-minisql-sql-ast-caseexpression-kind-kind-src-minisql-sql-ast-ml-2121545457"></a>
 ### kind
@@ -50,4 +50,4 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L241)

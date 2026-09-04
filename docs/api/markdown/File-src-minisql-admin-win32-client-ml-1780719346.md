@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql admin win32 client facilities for this project.
+
 Package: [`minisql.admin.win32_client`](Package-minisql-admin-win32-client-1206206668.md)
 
 Reachable from entry: **no**
@@ -29,11 +31,11 @@ Loads one worksheet into the shared colorized RichEdit control.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `index` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1853)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2049)
 
 <a id="function-function-minisql-admin-win32-client-addworksheet-function-addworksheet-session-initialsql-src-minisql-admin-win32-client-ml-1069304628"></a>
 ### addWorksheet
@@ -46,11 +48,11 @@ Adds and activates a separately retained SQL worksheet.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `initialSql` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `initialSql` | `dynamic` | — | initialSql value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1867)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2065)
 
 - [minisql.admin.win32_client.AdminSession](Type-minisql-admin-win32-client-adminsession-696483031.md) — struct
 - [minisql.admin.win32_client.AdminWindow](Type-minisql-admin-win32-client-adminwindow-455282749.md) — struct
@@ -65,10 +67,10 @@ Shows controls belonging to the selected sidebar and workspace tabs.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1226)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1368)
 
 <a id="function-function-minisql-admin-win32-client-clipboardeditorvalues-function-clipboardeditorvalues-details-row-src-minisql-admin-win32-client-ml-1093204672"></a>
 ### clipboardEditorValues
@@ -81,11 +83,11 @@ Converts one SELECT-ordered clipboard row into DESCRIBE-ordered editor values.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `details` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `details` | `dynamic` | — | details value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1999)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2210)
 
 <a id="function-function-minisql-admin-win32-client-clipboardheader-function-clipboardheader-details-row-src-minisql-admin-win32-client-ml-565436040"></a>
 ### clipboardHeader
@@ -98,11 +100,11 @@ Tests whether a clipboard row is the exact Data-grid header.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `details` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `details` | `dynamic` | — | details value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1990)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2199)
 
 <a id="function-function-minisql-admin-win32-client-closeresultat-function-closeresultat-session-closingindex-src-minisql-admin-win32-client-ml-593013707"></a>
 ### closeResultAt
@@ -115,11 +117,11 @@ Closes one structured result page selected through its tab-header glyph.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `closingIndex` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `closingIndex` | `dynamic` | — | Zero-based index of closing. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1927)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2130)
 
 <a id="function-function-minisql-admin-win32-client-closeworksheet-function-closeworksheet-session-src-minisql-admin-win32-client-ml-2139452500"></a>
 ### closeWorksheet
@@ -132,10 +134,10 @@ Closes the worksheet currently loaded in the shared RichEdit control.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1922)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2123)
 
 <a id="function-function-minisql-admin-win32-client-closeworksheetat-function-closeworksheetat-session-closingindex-src-minisql-admin-win32-client-ml-841452163"></a>
 ### closeWorksheetAt
@@ -148,11 +150,11 @@ Closes any worksheet tab and selects the nearest surviving editor page.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `closingIndex` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `closingIndex` | `dynamic` | — | Zero-based index of closing. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1889)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2089)
 
 <a id="function-function-minisql-admin-win32-client-componentname-function-componentname-src-minisql-admin-win32-client-ml-526938540"></a>
 ### componentName
@@ -161,10 +163,10 @@ Closes any worksheet tab and selects the nearest surviving editor page.
 function componentName()
 ```
 
-Returns the stable module name used by smoke tests.
+Performs the componentName operation for the minisql admin win32 client module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2552)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2804)
 
 - [minisql.admin.win32_client.ConnectionAttempt](Type-minisql-admin-win32-client-connectionattempt-1325310399.md) — struct
 <a id="function-function-minisql-admin-win32-client-connectionfailuretext-function-connectionfailuretext-value-src-minisql-admin-win32-client-ml-1389217289"></a>
@@ -178,10 +180,10 @@ Translates common WinSock failures into actionable connection guidance.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L685)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L804)
 
 <a id="function-function-minisql-admin-win32-client-connectionlayoutprobe-function-connectionlayoutprobe-profiles-src-minisql-admin-win32-client-ml-935316222"></a>
 ### connectionLayoutProbe
@@ -194,10 +196,10 @@ Exercises responsive geometry, editor roundtrips, checkboxes, and command delive
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `profiles` | `dynamic` | — |  |
+| `profiles` | `dynamic` | — | profiles value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L839)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L973)
 
 <a id="function-function-minisql-admin-win32-client-connectionlayoutsmoke-function-connectionlayoutsmoke-path-src-minisql-admin-win32-client-ml-1208721263"></a>
 ### connectionLayoutSmoke
@@ -210,10 +212,10 @@ Loads aliases from a test path and runs the complete connection-layout probe.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L868)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1003)
 
 <a id="function-function-minisql-admin-win32-client-connectionmanagersmoke-function-connectionmanagersmoke-path-src-minisql-admin-win32-client-ml-1950716661"></a>
 ### connectionManagerSmoke
@@ -226,10 +228,10 @@ Runs a hidden connection-manager construction smoke test.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L799)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L924)
 
 - [minisql.admin.win32_client.ConnectionTask](Type-minisql-admin-win32-client-connectiontask-42222287.md) — struct
 - [minisql.admin.win32_client.ConnectionWindow](Type-minisql-admin-win32-client-connectionwindow-1356944590.md) — struct
@@ -244,10 +246,10 @@ Opens one profile on a native worker so DNS, TCP, TLS, and authentication cannot
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `task` | `dynamic` | — |  |
+| `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L615)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L727)
 
 <a id="function-function-minisql-admin-win32-client-copyselecteddatarows-function-copyselecteddatarows-session-src-minisql-admin-win32-client-ml-343907528"></a>
 ### copySelectedDataRows
@@ -260,10 +262,10 @@ Copies all selected preview rows as escaped, header-bearing TSV.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1966)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2173)
 
 <a id="function-function-minisql-admin-win32-client-createconnectionwindow-function-createconnectionwindow-visible-src-minisql-admin-win32-client-ml-302798074"></a>
 ### createConnectionWindow
@@ -276,10 +278,10 @@ Creates the modern alias manager used before a MiniSQL session opens.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `visible` | `dynamic` | — |  |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L452)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L552)
 
 <a id="function-function-minisql-admin-win32-client-createroweditorwindow-function-createroweditorwindow-details-updatemode-visible-src-minisql-admin-win32-client-ml-1488590624"></a>
 ### createRowEditorWindow
@@ -292,12 +294,12 @@ Creates the modal field-by-field editor used for inserts, copies, and updates.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `details` | `dynamic` | — |  |
-| `updateMode` | `dynamic` | — |  |
-| `visible` | `dynamic` | — |  |
+| `details` | `dynamic` | — | details value consumed by this operation. |
+| `updateMode` | `dynamic` | — | updateMode value consumed by this operation. |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1637)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1809)
 
 <a id="function-function-minisql-admin-win32-client-createschemaeditorwindow-function-createschemaeditorwindow-tablename-visible-src-minisql-admin-win32-client-ml-76430573"></a>
 ### createSchemaEditorWindow
@@ -310,11 +312,11 @@ Creates the modal structured MiniSQL schema designer.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tableName` | `dynamic` | — |  |
-| `visible` | `dynamic` | — |  |
+| `tableName` | `dynamic` | — | tableName value consumed by this operation. |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1676)
 
 <a id="function-function-minisql-admin-win32-client-createwindow-function-createwindow-visible-src-minisql-admin-win32-client-ml-437574102"></a>
 ### createWindow
@@ -327,10 +329,10 @@ Creates the SQuirreL-style MiniSQL session workbench.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `visible` | `dynamic` | — |  |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L875)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1011)
 
 <a id="function-function-minisql-admin-win32-client-detailcolumnwidthdip-function-detailcolumnwidthdip-caption-src-minisql-admin-win32-client-ml-1597264138"></a>
 ### detailColumnWidthDip
@@ -343,10 +345,10 @@ Chooses readable report-column widths while keeping compact metadata flags narro
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `caption` | `dynamic` | — |  |
+| `caption` | `dynamic` | — | caption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1390)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1549)
 
 <a id="function-function-minisql-admin-win32-client-editdatarow-function-editdatarow-session-rowindex-duplicate-updatemode-initialfield-src-minisql-admin-win32-client-ml-25144921"></a>
 ### editDataRow
@@ -359,14 +361,14 @@ Opens an insert/update draft and stages its exact SQL after explicit preview.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `rowIndex` | `dynamic` | — |  |
-| `duplicate` | `dynamic` | — |  |
-| `updateMode` | `dynamic` | — |  |
-| `initialField` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `rowIndex` | `dynamic` | — | Zero-based index of row. |
+| `duplicate` | `dynamic` | — | duplicate value consumed by this operation. |
+| `updateMode` | `dynamic` | — | updateMode value consumed by this operation. |
+| `initialField` | `dynamic` | — | initialField value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1825)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2018)
 
 <a id="function-function-minisql-admin-win32-client-editorfieldfordatacolumn-function-editorfieldfordatacolumn-details-datacolumn-src-minisql-admin-win32-client-ml-839441452"></a>
 ### editorFieldForDataColumn
@@ -379,11 +381,11 @@ Resolves a SELECT-grid column to its DESCRIBE editor field.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `details` | `dynamic` | — |  |
-| `dataColumn` | `dynamic` | — |  |
+| `details` | `dynamic` | — | details value consumed by this operation. |
+| `dataColumn` | `dynamic` | — | dataColumn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1806)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1992)
 
 <a id="function-function-minisql-admin-win32-client-editorsqlforcommand-function-editorsqlforcommand-window-wholescript-src-minisql-admin-win32-client-ml-1349876078"></a>
 ### editorSqlForCommand
@@ -396,11 +398,11 @@ Reads the whole script, explicit selection, or statement under the caret.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `wholeScript` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `wholeScript` | `dynamic` | — | wholeScript value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L442)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L541)
 
 <a id="constant-constant-minisql-admin-win32-client-en-change-const-en-change-768-src-minisql-admin-win32-client-ml-1709258688"></a>
 ### EN_CHANGE
@@ -409,8 +411,10 @@ Reads the whole script, explicit selection, or statement under the caret.
 const EN_CHANGE = 768
 ```
 
+Defines the en change constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L34)
 
 <a id="function-function-minisql-admin-win32-client-exportactiveresult-function-exportactiveresult-session-src-minisql-admin-win32-client-ml-842252916"></a>
 ### exportActiveResult
@@ -423,10 +427,10 @@ Exports the active result grid through the native Save As dialog.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1948)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2154)
 
 <a id="function-function-minisql-admin-win32-client-fail-function-fail-operation-message-src-minisql-admin-win32-client-ml-1188686376"></a>
 ### fail
@@ -439,11 +443,11 @@ Creates a namespaced GUI-controller error.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L514)
 
 <a id="function-function-minisql-admin-win32-client-fillclosabletabs-function-fillclosabletabs-hwnd-labels-selected-src-minisql-admin-win32-client-ml-1647072175"></a>
 ### fillClosableTabs
@@ -456,12 +460,12 @@ Renders notebook labels with a trailing multiplication-sign close target.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hwnd` | `dynamic` | — |  |
-| `labels` | `dynamic` | — |  |
-| `selected` | `dynamic` | — |  |
+| `hwnd` | `dynamic` | — | hwnd value consumed by this operation. |
+| `labels` | `dynamic` | — | labels value consumed by this operation. |
+| `selected` | `dynamic` | — | selected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1346)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1502)
 
 <a id="function-function-minisql-admin-win32-client-filldetailgrid-function-filldetailgrid-session-detailname-src-minisql-admin-win32-client-ml-555042"></a>
 ### fillDetailGrid
@@ -474,11 +478,11 @@ Renders a structured object-detail response into the shared native report grid.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `detailName` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `detailName` | `dynamic` | — | detailName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1398)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1559)
 
 <a id="function-function-minisql-admin-win32-client-filllist-function-filllist-hwnd-values-src-minisql-admin-win32-client-ml-1870085047"></a>
 ### fillList
@@ -491,11 +495,11 @@ Populates a list box from ordered display strings.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hwnd` | `dynamic` | — |  |
-| `values` | `dynamic` | — |  |
+| `hwnd` | `dynamic` | — | hwnd value consumed by this operation. |
+| `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1437)
 
 <a id="function-function-minisql-admin-win32-client-fillobjecttree-function-fillobjecttree-window-state-src-minisql-admin-win32-client-ml-782934103"></a>
 ### fillObjectTree
@@ -508,11 +512,11 @@ Rebuilds the MiniSQL-only database object hierarchy.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1300)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1450)
 
 <a id="function-function-minisql-admin-win32-client-fillresultgrid-function-fillresultgrid-window-state-src-minisql-admin-win32-client-ml-2135671311"></a>
 ### fillResultGrid
@@ -525,11 +529,11 @@ Renders the active structured result into the native ListView grid.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1355)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1513)
 
 <a id="function-function-minisql-admin-win32-client-filltabs-function-filltabs-hwnd-labels-selected-src-minisql-admin-win32-client-ml-1187136647"></a>
 ### fillTabs
@@ -542,12 +546,12 @@ Replaces tab captions and restores a valid selection.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hwnd` | `dynamic` | — |  |
-| `labels` | `dynamic` | — |  |
-| `selected` | `dynamic` | — |  |
+| `hwnd` | `dynamic` | — | hwnd value consumed by this operation. |
+| `labels` | `dynamic` | — | labels value consumed by this operation. |
+| `selected` | `dynamic` | — | selected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1331)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1484)
 
 <a id="function-function-minisql-admin-win32-client-firstcontrolerror-function-firstcontrolerror-controls-src-minisql-admin-win32-client-ml-1571059304"></a>
 ### firstControlError
@@ -560,10 +564,10 @@ Returns the first failed native-control creation from a heterogeneous handle arr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `controls` | `dynamic` | — |  |
+| `controls` | `dynamic` | — | controls value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L424)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L520)
 
 <a id="function-function-minisql-admin-win32-client-handlecommand-function-handlecommand-session-command-src-minisql-admin-win32-client-ml-1107026329"></a>
 ### handleCommand
@@ -576,11 +580,11 @@ Handles a native menu or toolbar command.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `command` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `command` | `dynamic` | — | command value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2314)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2564)
 
 <a id="function-function-minisql-admin-win32-client-handlecontextmenuevent-function-handlecontextmenuevent-session-event-src-minisql-admin-win32-client-ml-1742682236"></a>
 ### handleContextMenuEvent
@@ -597,7 +601,7 @@ Opens the context menu appropriate for the control under the pointer.
 | `event` | `dynamic` | — | Native context-menu event to dispatch. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2402)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2652)
 
 <a id="function-function-minisql-admin-win32-client-handlenotifyevent-function-handlenotifyevent-session-event-src-minisql-admin-win32-client-ml-1193421798"></a>
 ### handleNotifyEvent
@@ -614,7 +618,7 @@ Handles tab, list-view, and object-tree WM_NOTIFY events.
 | `event` | `dynamic` | — | Native notification event and control identifiers. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2418)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2668)
 
 <a id="function-function-minisql-admin-win32-client-handlesessionevent-function-handlesessionevent-session-event-src-minisql-admin-win32-client-ml-920021580"></a>
 ### handleSessionEvent
@@ -631,7 +635,7 @@ Routes one native event after verifying that it belongs to this workbench.
 | `event` | `dynamic` | — | Native window event to route. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2740)
 
 <a id="function-function-minisql-admin-win32-client-handlewindowcommandevent-function-handlewindowcommandevent-session-event-src-minisql-admin-win32-client-ml-141977228"></a>
 ### handleWindowCommandEvent
@@ -648,7 +652,7 @@ Handles edit, filter, bookmark, history, and toolbar WM_COMMAND events.
 | `event` | `dynamic` | — | Native command event and control identifiers. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2470)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2720)
 
 <a id="function-function-minisql-admin-win32-client-highlightsqleditor-function-highlightsqleditor-window-src-minisql-admin-win32-client-ml-724917340"></a>
 ### highlightSqlEditor
@@ -661,10 +665,10 @@ Recomputes all presentation spans and applies them without moving the caret.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L432)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L529)
 
 <a id="constant-constant-minisql-admin-win32-client-id-begin-const-id-begin-8115-src-minisql-admin-win32-client-ml-595682946"></a>
 ### ID_BEGIN
@@ -673,8 +677,10 @@ Recomputes all presentation spans and applies them without moving the caret.
 const ID_BEGIN = 8115
 ```
 
+Defines the id begin constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L65)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L115)
 
 <a id="constant-constant-minisql-admin-win32-client-id-bookmark-list-const-id-bookmark-list-8103-src-minisql-admin-win32-client-ml-160259253"></a>
 ### ID_BOOKMARK_LIST
@@ -683,8 +689,10 @@ const ID_BEGIN = 8115
 const ID_BOOKMARK_LIST = 8103
 ```
 
+Defines the id bookmark list constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L54)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L93)
 
 <a id="constant-constant-minisql-admin-win32-client-id-clear-const-id-clear-8119-src-minisql-admin-win32-client-ml-404794090"></a>
 ### ID_CLEAR
@@ -693,8 +701,10 @@ const ID_BOOKMARK_LIST = 8103
 const ID_CLEAR = 8119
 ```
 
+Defines the id clear constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L69)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L123)
 
 <a id="constant-constant-minisql-admin-win32-client-id-close-const-id-close-8120-src-minisql-admin-win32-client-ml-160071084"></a>
 ### ID_CLOSE
@@ -703,8 +713,10 @@ const ID_CLEAR = 8119
 const ID_CLOSE = 8120
 ```
 
+Defines the id close constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L70)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L125)
 
 <a id="constant-constant-minisql-admin-win32-client-id-close-sql-const-id-close-sql-8141-src-minisql-admin-win32-client-ml-1201790875"></a>
 ### ID_CLOSE_SQL
@@ -713,8 +725,10 @@ const ID_CLOSE = 8120
 const ID_CLOSE_SQL = 8141
 ```
 
+Defines the id close sql constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L91)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L167)
 
 <a id="constant-constant-minisql-admin-win32-client-id-commit-const-id-commit-8116-src-minisql-admin-win32-client-ml-1899423339"></a>
 ### ID_COMMIT
@@ -723,8 +737,10 @@ const ID_CLOSE_SQL = 8141
 const ID_COMMIT = 8116
 ```
 
+Defines the id commit constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L66)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L117)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-add-const-id-data-add-8124-src-minisql-admin-win32-client-ml-1759415846"></a>
 ### ID_DATA_ADD
@@ -733,8 +749,10 @@ const ID_COMMIT = 8116
 const ID_DATA_ADD = 8124
 ```
 
+Defines the id data add constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L74)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L133)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-apply-changes-const-id-data-apply-changes-8136-src-minisql-admin-win32-client-ml-640880933"></a>
 ### ID_DATA_APPLY_CHANGES
@@ -743,8 +761,10 @@ const ID_DATA_ADD = 8124
 const ID_DATA_APPLY_CHANGES = 8136
 ```
 
+Defines the id data apply changes constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L86)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L157)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-copy-const-id-data-copy-8125-src-minisql-admin-win32-client-ml-933449759"></a>
 ### ID_DATA_COPY
@@ -753,8 +773,10 @@ const ID_DATA_APPLY_CHANGES = 8136
 const ID_DATA_COPY = 8125
 ```
 
+Defines the id data copy constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L75)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L135)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-copy-clipboard-const-id-data-copy-clipboard-8129-src-minisql-admin-win32-client-ml-1097180141"></a>
 ### ID_DATA_COPY_CLIPBOARD
@@ -763,8 +785,10 @@ const ID_DATA_COPY = 8125
 const ID_DATA_COPY_CLIPBOARD = 8129
 ```
 
+Defines the id data copy clipboard constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L79)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L143)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-delete-const-id-data-delete-8127-src-minisql-admin-win32-client-ml-939260033"></a>
 ### ID_DATA_DELETE
@@ -773,8 +797,10 @@ const ID_DATA_COPY_CLIPBOARD = 8129
 const ID_DATA_DELETE = 8127
 ```
 
+Defines the id data delete constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L77)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L139)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-edit-const-id-data-edit-8126-src-minisql-admin-win32-client-ml-584072320"></a>
 ### ID_DATA_EDIT
@@ -783,8 +809,10 @@ const ID_DATA_DELETE = 8127
 const ID_DATA_EDIT = 8126
 ```
 
+Defines the id data edit constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L76)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L137)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-filter-const-id-data-filter-8131-src-minisql-admin-win32-client-ml-1910678456"></a>
 ### ID_DATA_FILTER
@@ -793,8 +821,10 @@ const ID_DATA_EDIT = 8126
 const ID_DATA_FILTER = 8131
 ```
 
+Defines the id data filter constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L81)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L147)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-filter-apply-const-id-data-filter-apply-8132-src-minisql-admin-win32-client-ml-1217444387"></a>
 ### ID_DATA_FILTER_APPLY
@@ -803,8 +833,10 @@ const ID_DATA_FILTER = 8131
 const ID_DATA_FILTER_APPLY = 8132
 ```
 
+Defines the id data filter apply constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L82)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L149)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-next-page-const-id-data-next-page-8134-src-minisql-admin-win32-client-ml-522503039"></a>
 ### ID_DATA_NEXT_PAGE
@@ -813,8 +845,10 @@ const ID_DATA_FILTER_APPLY = 8132
 const ID_DATA_NEXT_PAGE = 8134
 ```
 
+Defines the id data next page constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L84)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L153)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-page-label-const-id-data-page-label-8135-src-minisql-admin-win32-client-ml-271632300"></a>
 ### ID_DATA_PAGE_LABEL
@@ -823,8 +857,10 @@ const ID_DATA_NEXT_PAGE = 8134
 const ID_DATA_PAGE_LABEL = 8135
 ```
 
+Defines the id data page label constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L85)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L155)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-paste-const-id-data-paste-8130-src-minisql-admin-win32-client-ml-1452825815"></a>
 ### ID_DATA_PASTE
@@ -833,8 +869,10 @@ const ID_DATA_PAGE_LABEL = 8135
 const ID_DATA_PASTE = 8130
 ```
 
+Defines the id data paste constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L80)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L145)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-preview-changes-const-id-data-preview-changes-8138-src-minisql-admin-win32-client-ml-1091745671"></a>
 ### ID_DATA_PREVIEW_CHANGES
@@ -843,8 +881,10 @@ const ID_DATA_PASTE = 8130
 const ID_DATA_PREVIEW_CHANGES = 8138
 ```
 
+Defines the id data preview changes constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L88)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L161)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-previous-page-const-id-data-previous-page-8133-src-minisql-admin-win32-client-ml-1889705434"></a>
 ### ID_DATA_PREVIOUS_PAGE
@@ -853,8 +893,10 @@ const ID_DATA_PREVIEW_CHANGES = 8138
 const ID_DATA_PREVIOUS_PAGE = 8133
 ```
 
+Defines the id data previous page constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L83)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L151)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-refresh-const-id-data-refresh-8128-src-minisql-admin-win32-client-ml-298682690"></a>
 ### ID_DATA_REFRESH
@@ -863,8 +905,10 @@ const ID_DATA_PREVIOUS_PAGE = 8133
 const ID_DATA_REFRESH = 8128
 ```
 
+Defines the id data refresh constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L78)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L141)
 
 <a id="constant-constant-minisql-admin-win32-client-id-data-revert-changes-const-id-data-revert-changes-8137-src-minisql-admin-win32-client-ml-200001254"></a>
 ### ID_DATA_REVERT_CHANGES
@@ -873,8 +917,10 @@ const ID_DATA_REFRESH = 8128
 const ID_DATA_REVERT_CHANGES = 8137
 ```
 
+Defines the id data revert changes constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L87)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L159)
 
 <a id="constant-constant-minisql-admin-win32-client-id-detail-grid-const-id-detail-grid-8123-src-minisql-admin-win32-client-ml-1666061361"></a>
 ### ID_DETAIL_GRID
@@ -883,8 +929,10 @@ const ID_DATA_REVERT_CHANGES = 8137
 const ID_DETAIL_GRID = 8123
 ```
 
+Defines the id detail grid constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L73)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L131)
 
 <a id="constant-constant-minisql-admin-win32-client-id-detail-tabs-const-id-detail-tabs-8106-src-minisql-admin-win32-client-ml-144422296"></a>
 ### ID_DETAIL_TABS
@@ -893,8 +941,10 @@ const ID_DETAIL_GRID = 8123
 const ID_DETAIL_TABS = 8106
 ```
 
+Defines the id detail tabs constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L57)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L99)
 
 <a id="constant-constant-minisql-admin-win32-client-id-execute-const-id-execute-8113-src-minisql-admin-win32-client-ml-715440444"></a>
 ### ID_EXECUTE
@@ -903,8 +953,10 @@ const ID_DETAIL_TABS = 8106
 const ID_EXECUTE = 8113
 ```
 
+Defines the id execute constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L63)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L111)
 
 <a id="constant-constant-minisql-admin-win32-client-id-execute-script-const-id-execute-script-8121-src-minisql-admin-win32-client-ml-773701549"></a>
 ### ID_EXECUTE_SCRIPT
@@ -913,8 +965,10 @@ const ID_EXECUTE = 8113
 const ID_EXECUTE_SCRIPT = 8121
 ```
 
+Defines the id execute script constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L71)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L127)
 
 <a id="constant-constant-minisql-admin-win32-client-id-explain-const-id-explain-8114-src-minisql-admin-win32-client-ml-1098852845"></a>
 ### ID_EXPLAIN
@@ -923,8 +977,10 @@ const ID_EXECUTE_SCRIPT = 8121
 const ID_EXPLAIN = 8114
 ```
 
+Defines the id explain constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L64)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L113)
 
 <a id="constant-constant-minisql-admin-win32-client-id-export-csv-const-id-export-csv-8140-src-minisql-admin-win32-client-ml-1033460848"></a>
 ### ID_EXPORT_CSV
@@ -933,8 +989,10 @@ const ID_EXPLAIN = 8114
 const ID_EXPORT_CSV = 8140
 ```
 
+Defines the id export csv constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L90)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L165)
 
 <a id="constant-constant-minisql-admin-win32-client-id-history-filter-const-id-history-filter-8143-src-minisql-admin-win32-client-ml-1624912537"></a>
 ### ID_HISTORY_FILTER
@@ -943,8 +1001,10 @@ const ID_EXPORT_CSV = 8140
 const ID_HISTORY_FILTER = 8143
 ```
 
+Defines the id history filter constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L93)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L171)
 
 <a id="constant-constant-minisql-admin-win32-client-id-history-list-const-id-history-list-8104-src-minisql-admin-win32-client-ml-385633740"></a>
 ### ID_HISTORY_LIST
@@ -953,8 +1013,10 @@ const ID_HISTORY_FILTER = 8143
 const ID_HISTORY_LIST = 8104
 ```
 
+Defines the id history list constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L55)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L95)
 
 <a id="constant-constant-minisql-admin-win32-client-id-new-sql-const-id-new-sql-8112-src-minisql-admin-win32-client-ml-1525881923"></a>
 ### ID_NEW_SQL
@@ -963,8 +1025,10 @@ const ID_HISTORY_LIST = 8104
 const ID_NEW_SQL = 8112
 ```
 
+Defines the id new sql constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L62)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L109)
 
 <a id="constant-constant-minisql-admin-win32-client-id-object-tree-const-id-object-tree-8102-src-minisql-admin-win32-client-ml-26344484"></a>
 ### ID_OBJECT_TREE
@@ -973,8 +1037,10 @@ const ID_NEW_SQL = 8112
 const ID_OBJECT_TREE = 8102
 ```
 
+Defines the id object tree constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L53)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L91)
 
 <a id="constant-constant-minisql-admin-win32-client-id-open-object-const-id-open-object-8111-src-minisql-admin-win32-client-ml-538804368"></a>
 ### ID_OPEN_OBJECT
@@ -983,8 +1049,10 @@ const ID_OBJECT_TREE = 8102
 const ID_OPEN_OBJECT = 8111
 ```
 
+Defines the id open object constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L61)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L107)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-address-const-id-profile-address-8003-src-minisql-admin-win32-client-ml-2032184028"></a>
 ### ID_PROFILE_ADDRESS
@@ -993,8 +1061,10 @@ const ID_OPEN_OBJECT = 8111
 const ID_PROFILE_ADDRESS = 8003
 ```
 
+Defines the id profile address constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L37)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L60)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-close-const-id-profile-close-8016-src-minisql-admin-win32-client-ml-1693314614"></a>
 ### ID_PROFILE_CLOSE
@@ -1003,8 +1073,10 @@ const ID_PROFILE_ADDRESS = 8003
 const ID_PROFILE_CLOSE = 8016
 ```
 
+Defines the id profile close constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L50)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L86)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-connect-const-id-profile-connect-8013-src-minisql-admin-win32-client-ml-1423254889"></a>
 ### ID_PROFILE_CONNECT
@@ -1013,8 +1085,10 @@ const ID_PROFILE_CLOSE = 8016
 const ID_PROFILE_CONNECT = 8013
 ```
 
+Defines the id profile connect constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L47)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L80)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-database-const-id-profile-database-8006-src-minisql-admin-win32-client-ml-1416042289"></a>
 ### ID_PROFILE_DATABASE
@@ -1023,8 +1097,10 @@ const ID_PROFILE_CONNECT = 8013
 const ID_PROFILE_DATABASE = 8006
 ```
 
+Defines the id profile database constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L40)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L66)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-delete-const-id-profile-delete-8014-src-minisql-admin-win32-client-ml-1337289134"></a>
 ### ID_PROFILE_DELETE
@@ -1033,8 +1109,10 @@ const ID_PROFILE_DATABASE = 8006
 const ID_PROFILE_DELETE = 8014
 ```
 
+Defines the id profile delete constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L48)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L82)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-list-const-id-profile-list-8001-src-minisql-admin-win32-client-ml-1050484340"></a>
 ### ID_PROFILE_LIST
@@ -1043,8 +1121,10 @@ const ID_PROFILE_DELETE = 8014
 const ID_PROFILE_LIST = 8001
 ```
 
+Defines the id profile list constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L56)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-name-const-id-profile-name-8002-src-minisql-admin-win32-client-ml-1015869253"></a>
 ### ID_PROFILE_NAME
@@ -1053,8 +1133,10 @@ const ID_PROFILE_LIST = 8001
 const ID_PROFILE_NAME = 8002
 ```
 
+Defines the id profile name constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L36)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L58)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-new-const-id-profile-new-8015-src-minisql-admin-win32-client-ml-502655667"></a>
 ### ID_PROFILE_NEW
@@ -1063,8 +1145,10 @@ const ID_PROFILE_NAME = 8002
 const ID_PROFILE_NEW = 8015
 ```
 
+Defines the id profile new constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L49)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L84)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-password-const-id-profile-password-8008-src-minisql-admin-win32-client-ml-1960664511"></a>
 ### ID_PROFILE_PASSWORD
@@ -1073,8 +1157,10 @@ const ID_PROFILE_NEW = 8015
 const ID_PROFILE_PASSWORD = 8008
 ```
 
+Defines the id profile password constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L42)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L70)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-pin-const-id-profile-pin-8011-src-minisql-admin-win32-client-ml-38961425"></a>
 ### ID_PROFILE_PIN
@@ -1083,8 +1169,10 @@ const ID_PROFILE_PASSWORD = 8008
 const ID_PROFILE_PIN = 8011
 ```
 
+Defines the id profile pin constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L45)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L76)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-port-const-id-profile-port-8004-src-minisql-admin-win32-client-ml-1505599975"></a>
 ### ID_PROFILE_PORT
@@ -1093,8 +1181,10 @@ const ID_PROFILE_PIN = 8011
 const ID_PROFILE_PORT = 8004
 ```
 
+Defines the id profile port constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L38)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L62)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-save-const-id-profile-save-8012-src-minisql-admin-win32-client-ml-692213112"></a>
 ### ID_PROFILE_SAVE
@@ -1103,8 +1193,10 @@ const ID_PROFILE_PORT = 8004
 const ID_PROFILE_SAVE = 8012
 ```
 
+Defines the id profile save constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L46)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L78)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-server-const-id-profile-server-8005-src-minisql-admin-win32-client-ml-998411152"></a>
 ### ID_PROFILE_SERVER
@@ -1113,8 +1205,10 @@ const ID_PROFILE_SAVE = 8012
 const ID_PROFILE_SERVER = 8005
 ```
 
+Defines the id profile server constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L39)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L64)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-tls-const-id-profile-tls-8009-src-minisql-admin-win32-client-ml-1147812672"></a>
 ### ID_PROFILE_TLS
@@ -1123,8 +1217,10 @@ const ID_PROFILE_SERVER = 8005
 const ID_PROFILE_TLS = 8009
 ```
 
+Defines the id profile tls constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L43)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L72)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-trusted-const-id-profile-trusted-8010-src-minisql-admin-win32-client-ml-485853278"></a>
 ### ID_PROFILE_TRUSTED
@@ -1133,8 +1229,10 @@ const ID_PROFILE_TLS = 8009
 const ID_PROFILE_TRUSTED = 8010
 ```
 
+Defines the id profile trusted constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L44)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L74)
 
 <a id="constant-constant-minisql-admin-win32-client-id-profile-user-const-id-profile-user-8007-src-minisql-admin-win32-client-ml-349842670"></a>
 ### ID_PROFILE_USER
@@ -1143,8 +1241,10 @@ const ID_PROFILE_TRUSTED = 8010
 const ID_PROFILE_USER = 8007
 ```
 
+Defines the id profile user constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L41)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L68)
 
 <a id="constant-constant-minisql-admin-win32-client-id-query-edit-const-id-query-edit-8122-src-minisql-admin-win32-client-ml-1174144444"></a>
 ### ID_QUERY_EDIT
@@ -1153,8 +1253,10 @@ const ID_PROFILE_USER = 8007
 const ID_QUERY_EDIT = 8122
 ```
 
+Defines the id query edit constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L72)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L129)
 
 <a id="constant-constant-minisql-admin-win32-client-id-refresh-const-id-refresh-8110-src-minisql-admin-win32-client-ml-1406769281"></a>
 ### ID_REFRESH
@@ -1163,8 +1265,10 @@ const ID_QUERY_EDIT = 8122
 const ID_REFRESH = 8110
 ```
 
+Defines the id refresh constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L60)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L105)
 
 <a id="constant-constant-minisql-admin-win32-client-id-result-grid-const-id-result-grid-8108-src-minisql-admin-win32-client-ml-1768949738"></a>
 ### ID_RESULT_GRID
@@ -1173,8 +1277,10 @@ const ID_REFRESH = 8110
 const ID_RESULT_GRID = 8108
 ```
 
+Defines the id result grid constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L59)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L103)
 
 <a id="constant-constant-minisql-admin-win32-client-id-result-tabs-const-id-result-tabs-8107-src-minisql-admin-win32-client-ml-148535967"></a>
 ### ID_RESULT_TABS
@@ -1183,8 +1289,10 @@ const ID_RESULT_GRID = 8108
 const ID_RESULT_TABS = 8107
 ```
 
+Defines the id result tabs constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L58)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L101)
 
 <a id="constant-constant-minisql-admin-win32-client-id-rollback-const-id-rollback-8117-src-minisql-admin-win32-client-ml-1784157292"></a>
 ### ID_ROLLBACK
@@ -1193,8 +1301,10 @@ const ID_RESULT_TABS = 8107
 const ID_ROLLBACK = 8117
 ```
 
+Defines the id rollback constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L67)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L119)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-cancel-const-id-row-cancel-8206-src-minisql-admin-win32-client-ml-1119194923"></a>
 ### ID_ROW_CANCEL
@@ -1203,8 +1313,10 @@ const ID_ROLLBACK = 8117
 const ID_ROW_CANCEL = 8206
 ```
 
+Defines the id row cancel constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L100)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L184)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-next-const-id-row-next-8204-src-minisql-admin-win32-client-ml-1957913829"></a>
 ### ID_ROW_NEXT
@@ -1213,8 +1325,10 @@ const ID_ROW_CANCEL = 8206
 const ID_ROW_NEXT = 8204
 ```
 
+Defines the id row next constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L98)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L180)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-previous-const-id-row-previous-8203-src-minisql-admin-win32-client-ml-1283440004"></a>
 ### ID_ROW_PREVIOUS
@@ -1223,8 +1337,10 @@ const ID_ROW_NEXT = 8204
 const ID_ROW_PREVIOUS = 8203
 ```
 
+Defines the id row previous constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L97)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L178)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-save-const-id-row-save-8205-src-minisql-admin-win32-client-ml-915524446"></a>
 ### ID_ROW_SAVE
@@ -1233,8 +1349,10 @@ const ID_ROW_PREVIOUS = 8203
 const ID_ROW_SAVE = 8205
 ```
 
+Defines the id row save constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L99)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L182)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-value-const-id-row-value-8202-src-minisql-admin-win32-client-ml-1651047877"></a>
 ### ID_ROW_VALUE
@@ -1243,8 +1361,10 @@ const ID_ROW_SAVE = 8205
 const ID_ROW_VALUE = 8202
 ```
 
+Defines the id row value constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L96)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L176)
 
 <a id="constant-constant-minisql-admin-win32-client-id-row-values-const-id-row-values-8201-src-minisql-admin-win32-client-ml-375438454"></a>
 ### ID_ROW_VALUES
@@ -1253,8 +1373,10 @@ const ID_ROW_VALUE = 8202
 const ID_ROW_VALUES = 8201
 ```
 
+Defines the id row values constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L95)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L174)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-actions-const-id-schema-actions-8301-src-minisql-admin-win32-client-ml-126643749"></a>
 ### ID_SCHEMA_ACTIONS
@@ -1263,8 +1385,10 @@ const ID_ROW_VALUES = 8201
 const ID_SCHEMA_ACTIONS = 8301
 ```
 
+Defines the id schema actions constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L102)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L187)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-cancel-const-id-schema-cancel-8309-src-minisql-admin-win32-client-ml-424554407"></a>
 ### ID_SCHEMA_CANCEL
@@ -1273,8 +1397,10 @@ const ID_SCHEMA_ACTIONS = 8301
 const ID_SCHEMA_CANCEL = 8309
 ```
 
+Defines the id schema cancel constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L110)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L203)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-definition-const-id-schema-definition-8304-src-minisql-admin-win32-client-ml-406862886"></a>
 ### ID_SCHEMA_DEFINITION
@@ -1283,8 +1409,10 @@ const ID_SCHEMA_CANCEL = 8309
 const ID_SCHEMA_DEFINITION = 8304
 ```
 
+Defines the id schema definition constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L105)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L193)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-designer-const-id-schema-designer-8139-src-minisql-admin-win32-client-ml-1468349140"></a>
 ### ID_SCHEMA_DESIGNER
@@ -1293,8 +1421,10 @@ const ID_SCHEMA_DEFINITION = 8304
 const ID_SCHEMA_DESIGNER = 8139
 ```
 
+Defines the id schema designer constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L89)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L163)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-execute-const-id-schema-execute-8307-src-minisql-admin-win32-client-ml-1458086531"></a>
 ### ID_SCHEMA_EXECUTE
@@ -1303,8 +1433,10 @@ const ID_SCHEMA_DESIGNER = 8139
 const ID_SCHEMA_EXECUTE = 8307
 ```
 
+Defines the id schema execute constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L108)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L199)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-insert-const-id-schema-insert-8308-src-minisql-admin-win32-client-ml-1044091542"></a>
 ### ID_SCHEMA_INSERT
@@ -1313,8 +1445,10 @@ const ID_SCHEMA_EXECUTE = 8307
 const ID_SCHEMA_INSERT = 8308
 ```
 
+Defines the id schema insert constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L109)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L201)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-object-const-id-schema-object-8303-src-minisql-admin-win32-client-ml-685033871"></a>
 ### ID_SCHEMA_OBJECT
@@ -1323,8 +1457,10 @@ const ID_SCHEMA_INSERT = 8308
 const ID_SCHEMA_OBJECT = 8303
 ```
 
+Defines the id schema object constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L104)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L191)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-option-const-id-schema-option-8305-src-minisql-admin-win32-client-ml-1537253105"></a>
 ### ID_SCHEMA_OPTION
@@ -1333,8 +1469,10 @@ const ID_SCHEMA_OBJECT = 8303
 const ID_SCHEMA_OPTION = 8305
 ```
 
+Defines the id schema option constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L106)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L195)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-preview-const-id-schema-preview-8306-src-minisql-admin-win32-client-ml-1049173600"></a>
 ### ID_SCHEMA_PREVIEW
@@ -1343,8 +1481,10 @@ const ID_SCHEMA_OPTION = 8305
 const ID_SCHEMA_PREVIEW = 8306
 ```
 
+Defines the id schema preview constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L107)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L197)
 
 <a id="constant-constant-minisql-admin-win32-client-id-schema-table-const-id-schema-table-8302-src-minisql-admin-win32-client-ml-1881089156"></a>
 ### ID_SCHEMA_TABLE
@@ -1353,8 +1493,10 @@ const ID_SCHEMA_PREVIEW = 8306
 const ID_SCHEMA_TABLE = 8302
 ```
 
+Defines the id schema table constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L103)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L189)
 
 <a id="constant-constant-minisql-admin-win32-client-id-sidebar-tabs-const-id-sidebar-tabs-8101-src-minisql-admin-win32-client-ml-1823581955"></a>
 ### ID_SIDEBAR_TABS
@@ -1363,8 +1505,10 @@ const ID_SCHEMA_TABLE = 8302
 const ID_SIDEBAR_TABS = 8101
 ```
 
+Defines the id sidebar tabs constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L52)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L89)
 
 <a id="constant-constant-minisql-admin-win32-client-id-stop-const-id-stop-8118-src-minisql-admin-win32-client-ml-1689573189"></a>
 ### ID_STOP
@@ -1373,8 +1517,10 @@ const ID_SIDEBAR_TABS = 8101
 const ID_STOP = 8118
 ```
 
+Defines the id stop constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L68)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L121)
 
 <a id="constant-constant-minisql-admin-win32-client-id-worksheet-tabs-const-id-worksheet-tabs-8142-src-minisql-admin-win32-client-ml-49044430"></a>
 ### ID_WORKSHEET_TABS
@@ -1383,8 +1529,10 @@ const ID_STOP = 8118
 const ID_WORKSHEET_TABS = 8142
 ```
 
+Defines the id worksheet tabs constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L92)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L169)
 
 <a id="constant-constant-minisql-admin-win32-client-id-workspace-tabs-const-id-workspace-tabs-8105-src-minisql-admin-win32-client-ml-1590897239"></a>
 ### ID_WORKSPACE_TABS
@@ -1393,8 +1541,10 @@ const ID_WORKSHEET_TABS = 8142
 const ID_WORKSPACE_TABS = 8105
 ```
 
+Defines the id workspace tabs constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L56)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L97)
 
 <a id="function-function-minisql-admin-win32-client-insertselectedbookmark-function-insertselectedbookmark-session-src-minisql-admin-win32-client-ml-1181370088"></a>
 ### insertSelectedBookmark
@@ -1407,10 +1557,10 @@ Inserts a selected bookmark into the SQL worksheet.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2526)
 
 <a id="function-function-minisql-admin-win32-client-insertselectedhistory-function-insertselectedhistory-session-src-minisql-admin-win32-client-ml-1644606160"></a>
 ### insertSelectedHistory
@@ -1423,10 +1573,10 @@ Reopens a redacted history item in the SQL worksheet.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2293)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2538)
 
 <a id="constant-constant-minisql-admin-win32-client-invalid-argument-const-invalid-argument-9001-src-minisql-admin-win32-client-ml-198925529"></a>
 ### INVALID_ARGUMENT
@@ -1435,8 +1585,10 @@ Reopens a redacted history item in the SQL worksheet.
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L18)
 
 <a id="function-function-minisql-admin-win32-client-isimplemented-function-isimplemented-src-minisql-admin-win32-client-ml-135580628"></a>
 ### isImplemented
@@ -1448,7 +1600,7 @@ function isImplemented()
 Reports that the native workbench is implemented.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2562)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2814)
 
 <a id="function-function-minisql-admin-win32-client-launchconnectionmanager-function-launchconnectionmanager-src-minisql-admin-win32-client-ml-1118419156"></a>
 ### launchConnectionManager
@@ -1460,7 +1612,7 @@ function launchConnectionManager()
 Launches the per-user connection manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L792)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L916)
 
 <a id="function-function-minisql-admin-win32-client-layoutconnectionwindow-function-layoutconnectionwindow-window-src-minisql-admin-win32-client-ml-925064736"></a>
 ### layoutConnectionWindow
@@ -1473,10 +1625,10 @@ Reflows the alias list and all connection fields in logical DPI-independent unit
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L499)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L600)
 
 <a id="function-function-minisql-admin-win32-client-layoutroweditor-function-layoutroweditor-window-src-minisql-admin-win32-client-ml-1012955674"></a>
 ### layoutRowEditor
@@ -1489,10 +1641,10 @@ Reflows the modal row editor for DPI changes and user-driven resizing.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1838)
 
 <a id="function-function-minisql-admin-win32-client-layoutschemaeditor-function-layoutschemaeditor-window-src-minisql-admin-win32-client-ml-2103639000"></a>
 ### layoutSchemaEditor
@@ -1505,10 +1657,10 @@ Reflows the schema designer at its current DPI and client size.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1545)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1711)
 
 <a id="function-function-minisql-admin-win32-client-layoutsmoke-function-layoutsmoke-src-minisql-admin-win32-client-ml-1109601154"></a>
 ### layoutSmoke
@@ -1520,7 +1672,7 @@ function layoutSmoke()
 Runs both responsive native-window probes against the per-user profile location.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1360)
 
 <a id="function-function-minisql-admin-win32-client-layoutwindow-function-layoutwindow-window-src-minisql-admin-win32-client-ml-904508552"></a>
 ### layoutWindow
@@ -1533,10 +1685,10 @@ Reflows every workbench pane after a top-level resize.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L960)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1098)
 
 <a id="constant-constant-minisql-admin-win32-client-lbn-dblclk-const-lbn-dblclk-2-src-minisql-admin-win32-client-ml-1047463921"></a>
 ### LBN_DBLCLK
@@ -1545,8 +1697,10 @@ Reflows every workbench pane after a top-level resize.
 const LBN_DBLCLK = 2
 ```
 
+Defines the lbn dblclk constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L22)
 
 <a id="constant-constant-minisql-admin-win32-client-lbn-selchange-const-lbn-selchange-1-src-minisql-admin-win32-client-ml-1091275580"></a>
 ### LBN_SELCHANGE
@@ -1555,8 +1709,10 @@ const LBN_DBLCLK = 2
 const LBN_SELCHANGE = 1
 ```
 
+Defines the lbn selchange constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L20)
 
 <a id="constant-constant-minisql-admin-win32-client-lvn-columnclick-const-lvn-columnclick-108-src-minisql-admin-win32-client-ml-1609725041"></a>
 ### LVN_COLUMNCLICK
@@ -1565,8 +1721,10 @@ const LBN_SELCHANGE = 1
 const LVN_COLUMNCLICK = -108
 ```
 
+Defines the lvn columnclick constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L32)
 
 <a id="function-function-minisql-admin-win32-client-moveroweditor-function-moveroweditor-editor-delta-src-minisql-admin-win32-client-ml-1799907627"></a>
 ### moveRowEditor
@@ -1579,11 +1737,11 @@ Commits the active value and navigates by one bounded field.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `editor` | `dynamic` | — |  |
-| `delta` | `dynamic` | — |  |
+| `editor` | `dynamic` | — | editor value consumed by this operation. |
+| `delta` | `dynamic` | — | delta value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1729)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1906)
 
 <a id="constant-constant-minisql-admin-win32-client-nm-click-const-nm-click-2-src-minisql-admin-win32-client-ml-2072555566"></a>
 ### NM_CLICK
@@ -1592,8 +1750,10 @@ Commits the active value and navigates by one bounded field.
 const NM_CLICK = -2
 ```
 
+Defines the nm click constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L28)
 
 <a id="constant-constant-minisql-admin-win32-client-nm-dblclk-const-nm-dblclk-3-src-minisql-admin-win32-client-ml-8784575"></a>
 ### NM_DBLCLK
@@ -1602,8 +1762,10 @@ const NM_CLICK = -2
 const NM_DBLCLK = -3
 ```
 
+Defines the nm dblclk constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L30)
 
 <a id="function-function-minisql-admin-win32-client-openprofile-function-openprofile-profile-passwordbytes-visible-src-minisql-admin-win32-client-ml-1682134331"></a>
 ### openProfile
@@ -1616,12 +1778,12 @@ Opens a profile directly for command-line and network smoke workflows.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `profile` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
-| `visible` | `dynamic` | — |  |
+| `profile` | `dynamic` | — | profile value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2339)
 
 <a id="function-function-minisql-admin-win32-client-openschemadesigner-function-openschemadesigner-session-src-minisql-admin-win32-client-ml-2139628768"></a>
 ### openSchemaDesigner
@@ -1634,10 +1796,10 @@ Opens the schema designer and either executes or inserts its generated DDL.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1625)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1794)
 
 <a id="function-function-minisql-admin-win32-client-openselectedobject-function-openselectedobject-session-src-minisql-admin-win32-client-ml-2102983192"></a>
 ### openSelectedObject
@@ -1650,10 +1812,10 @@ Opens table details for the current object-tree selection.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2261)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2503)
 
 <a id="function-function-minisql-admin-win32-client-openstate-function-openstate-state-visible-src-minisql-admin-win32-client-ml-618151237"></a>
 ### openState
@@ -1666,11 +1828,11 @@ Wraps an existing connected state in a native workbench window.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `visible` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2096)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2317)
 
 <a id="function-function-minisql-admin-win32-client-parkcontrol-function-parkcontrol-hwnd-src-minisql-admin-win32-client-ml-1787773427"></a>
 ### parkControl
@@ -1683,10 +1845,10 @@ Parks one inactive notebook page outside the client area without destroying it.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hwnd` | `dynamic` | — |  |
+| `hwnd` | `dynamic` | — | hwnd value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L955)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1092)
 
 <a id="function-function-minisql-admin-win32-client-passwordfromwindow-function-passwordfromwindow-window-profile-src-minisql-admin-win32-client-ml-42055843"></a>
 ### passwordFromWindow
@@ -1699,11 +1861,11 @@ Reads transient credentials, allowing password-free trusted-local sessions.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `profile` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `profile` | `dynamic` | — | profile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L606)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L717)
 
 <a id="function-function-minisql-admin-win32-client-pastedatarows-function-pastedatarows-session-src-minisql-admin-win32-client-ml-1790265248"></a>
 ### pasteDataRows
@@ -1716,10 +1878,10 @@ Stages clipboard TSV rows as validated INSERT statements.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2016)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2228)
 
 <a id="function-function-minisql-admin-win32-client-pollconnection-function-pollconnection-attempt-src-minisql-admin-win32-client-ml-375594067"></a>
 ### pollConnection
@@ -1732,10 +1894,10 @@ Returns void while connecting, then publishes the state or error and wipes crede
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `attempt` | `dynamic` | — |  |
+| `attempt` | `dynamic` | — | attempt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L654)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L771)
 
 <a id="function-function-minisql-admin-win32-client-pollquery-function-pollquery-session-src-minisql-admin-win32-client-ml-1712659998"></a>
 ### pollQuery
@@ -1748,10 +1910,10 @@ Publishes a completed worker result without performing network I/O on the UI thr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2455)
 
 <a id="function-function-minisql-admin-win32-client-profilebyname-function-profilebyname-profiles-name-src-minisql-admin-win32-client-ml-599482117"></a>
 ### profileByName
@@ -1764,11 +1926,11 @@ Finds an alias by exact user-visible name.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `profiles` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `profiles` | `dynamic` | — | profiles value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L547)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L650)
 
 <a id="function-function-minisql-admin-win32-client-profilefromwindow-function-profilefromwindow-window-src-minisql-admin-win32-client-ml-621351630"></a>
 ### profileFromWindow
@@ -1781,10 +1943,10 @@ Validates connection-manager fields into a secret-free profile.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L585)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L694)
 
 <a id="constant-constant-minisql-admin-win32-client-query-begin-const-query-begin-3-src-minisql-admin-win32-client-ml-718815106"></a>
 ### QUERY_BEGIN
@@ -1793,8 +1955,10 @@ Validates connection-manager fields into a secret-free profile.
 const QUERY_BEGIN = 3
 ```
 
+Defines the query begin constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L41)
 
 <a id="constant-constant-minisql-admin-win32-client-query-commit-const-query-commit-4-src-minisql-admin-win32-client-ml-844516149"></a>
 ### QUERY_COMMIT
@@ -1803,8 +1967,10 @@ const QUERY_BEGIN = 3
 const QUERY_COMMIT = 4
 ```
 
+Defines the query commit constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L43)
 
 <a id="constant-constant-minisql-admin-win32-client-query-data-mutation-const-query-data-mutation-8-src-minisql-admin-win32-client-ml-1590452935"></a>
 ### QUERY_DATA_MUTATION
@@ -1813,8 +1979,10 @@ const QUERY_COMMIT = 4
 const QUERY_DATA_MUTATION = 8
 ```
 
+Defines the query data mutation constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L51)
 
 <a id="constant-constant-minisql-admin-win32-client-query-describe-const-query-describe-7-src-minisql-admin-win32-client-ml-1596361776"></a>
 ### QUERY_DESCRIBE
@@ -1823,8 +1991,10 @@ const QUERY_DATA_MUTATION = 8
 const QUERY_DESCRIBE = 7
 ```
 
+Defines the query describe constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L49)
 
 <a id="constant-constant-minisql-admin-win32-client-query-execute-const-query-execute-1-src-minisql-admin-win32-client-ml-48185344"></a>
 ### QUERY_EXECUTE
@@ -1833,8 +2003,10 @@ const QUERY_DESCRIBE = 7
 const QUERY_EXECUTE = 1
 ```
 
+Defines the query execute constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L37)
 
 <a id="constant-constant-minisql-admin-win32-client-query-explain-const-query-explain-2-src-minisql-admin-win32-client-ml-1937022825"></a>
 ### QUERY_EXPLAIN
@@ -1843,8 +2015,10 @@ const QUERY_EXECUTE = 1
 const QUERY_EXPLAIN = 2
 ```
 
+Defines the query explain constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L39)
 
 <a id="constant-constant-minisql-admin-win32-client-query-refresh-const-query-refresh-6-src-minisql-admin-win32-client-ml-1011399901"></a>
 ### QUERY_REFRESH
@@ -1853,8 +2027,10 @@ const QUERY_EXPLAIN = 2
 const QUERY_REFRESH = 6
 ```
 
+Defines the query refresh constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L47)
 
 <a id="constant-constant-minisql-admin-win32-client-query-rollback-const-query-rollback-5-src-minisql-admin-win32-client-ml-1950604620"></a>
 ### QUERY_ROLLBACK
@@ -1863,8 +2039,10 @@ const QUERY_REFRESH = 6
 const QUERY_ROLLBACK = 5
 ```
 
+Defines the query rollback constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L45)
 
 <a id="constant-constant-minisql-admin-win32-client-query-schema-mutation-const-query-schema-mutation-9-src-minisql-admin-win32-client-ml-260775668"></a>
 ### QUERY_SCHEMA_MUTATION
@@ -1873,8 +2051,10 @@ const QUERY_ROLLBACK = 5
 const QUERY_SCHEMA_MUTATION = 9
 ```
 
+Defines the query schema mutation constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L53)
 
 - [minisql.admin.win32_client.QueryCompletion](Type-minisql-admin-win32-client-querycompletion-69551328.md) — struct
 <a id="function-function-minisql-admin-win32-client-queryselectedobject-function-queryselectedobject-session-src-minisql-admin-win32-client-ml-658762384"></a>
@@ -1888,10 +2068,10 @@ Inserts a table preview query for the selected object.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2513)
 
 - [minisql.admin.win32_client.QueryTask](Type-minisql-admin-win32-client-querytask-1334880615.md) — struct
 <a id="function-function-minisql-admin-win32-client-queryworker-function-queryworker-task-src-minisql-admin-win32-client-ml-1740301927"></a>
@@ -1905,10 +2085,10 @@ Executes one protocol operation and any dependent refresh on the same worker.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `task` | `dynamic` | — |  |
+| `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2349)
 
 <a id="function-function-minisql-admin-win32-client-rectangleinside-function-rectangleinside-rectangle-width-height-src-minisql-admin-win32-client-ml-1741440870"></a>
 ### rectangleInside
@@ -1921,12 +2101,12 @@ Returns true when a child rectangle is positive and fully contained by a client 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rectangle` | `dynamic` | — |  |
-| `width` | `dynamic` | — |  |
-| `height` | `dynamic` | — |  |
+| `rectangle` | `dynamic` | — | rectangle value consumed by this operation. |
+| `width` | `dynamic` | — | Width in the coordinate or storage units used by the caller. |
+| `height` | `dynamic` | — | Height in the coordinate or storage units used by the caller. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L804)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L932)
 
 <a id="function-function-minisql-admin-win32-client-rectanglesoverlap-function-rectanglesoverlap-first-second-src-minisql-admin-win32-client-ml-677457368"></a>
 ### rectanglesOverlap
@@ -1939,11 +2119,11 @@ Detects whether two parent-relative rectangles consume the same layout area.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `first` | `dynamic` | — |  |
-| `second` | `dynamic` | — |  |
+| `first` | `dynamic` | — | first value consumed by this operation. |
+| `second` | `dynamic` | — | second value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L810)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L940)
 
 <a id="function-function-minisql-admin-win32-client-render-function-render-session-src-minisql-admin-win32-client-ml-11788184"></a>
 ### render
@@ -1956,10 +2136,10 @@ Renders all workbench panes from the current fullclient model.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1472)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1635)
 
 <a id="function-function-minisql-admin-win32-client-renderconnectionprofile-function-renderconnectionprofile-window-profile-src-minisql-admin-win32-client-ml-1144626597"></a>
 ### renderConnectionProfile
@@ -1972,11 +2152,11 @@ Copies an alias into connection-manager controls and clears the password.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `profile` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `profile` | `dynamic` | — | profile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L555)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L660)
 
 <a id="function-function-minisql-admin-win32-client-renderconnectionprofiles-function-renderconnectionprofiles-window-profiles-src-minisql-admin-win32-client-ml-2045087882"></a>
 ### renderConnectionProfiles
@@ -1989,11 +2169,11 @@ Rebuilds the alias list while keeping the first row selected.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `profiles` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `profiles` | `dynamic` | — | profiles value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L570)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L677)
 
 <a id="function-function-minisql-admin-win32-client-rendernewprofile-function-rendernewprofile-window-src-minisql-admin-win32-client-ml-442346804"></a>
 ### renderNewProfile
@@ -2006,10 +2186,10 @@ Clears fields to a sensible new local alias template.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L580)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L688)
 
 <a id="function-function-minisql-admin-win32-client-renderroweditor-function-renderroweditor-editor-src-minisql-admin-win32-client-ml-1124740969"></a>
 ### renderRowEditor
@@ -2022,10 +2202,10 @@ Rebuilds the row-editor review table and focuses the active field value.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `editor` | `dynamic` | — |  |
+| `editor` | `dynamic` | — | editor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1690)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1864)
 
 <a id="function-function-minisql-admin-win32-client-renderschemaeditor-function-renderschemaeditor-editor-src-minisql-admin-win32-client-ml-1829843227"></a>
 ### renderSchemaEditor
@@ -2038,10 +2218,10 @@ Rebuilds the exact DDL preview from all current schema-designer fields.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `editor` | `dynamic` | — |  |
+| `editor` | `dynamic` | — | editor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1578)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1745)
 
 <a id="function-function-minisql-admin-win32-client-reportconnectionfailure-function-reportconnectionfailure-window-value-showdialog-src-minisql-admin-win32-client-ml-426732456"></a>
 ### reportConnectionFailure
@@ -2054,12 +2234,12 @@ Reports a failed handshake without closing the manager so the user can retry.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
-| `showDialog` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `showDialog` | `dynamic` | — | showDialog value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L693)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L815)
 
 <a id="function-function-minisql-admin-win32-client-restorewindowlayout-function-restorewindowlayout-path-hwnd-src-minisql-admin-win32-client-ml-158536848"></a>
 ### restoreWindowLayout
@@ -2072,11 +2252,11 @@ Restores a previously persisted workbench rectangle when every field is valid.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `hwnd` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `hwnd` | `dynamic` | — | hwnd value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2080)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2299)
 
 <a id="function-function-minisql-admin-win32-client-restoreworkspace-function-restoreworkspace-session-src-minisql-admin-win32-client-ml-574812612"></a>
 ### restoreWorkspace
@@ -2089,10 +2269,10 @@ Restores the session-owned page after native controls were repopulated.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1428)
 
 <a id="function-function-minisql-admin-win32-client-roweditorsql-function-roweditorsql-editor-src-minisql-admin-win32-client-ml-1049704563"></a>
 ### rowEditorSql
@@ -2105,10 +2285,10 @@ Validates the complete draft and builds its INSERT or keyed UPDATE statement.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `editor` | `dynamic` | — |  |
+| `editor` | `dynamic` | — | editor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1740)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1918)
 
 - [minisql.admin.win32_client.RowEditorState](Type-minisql-admin-win32-client-roweditorstate-1300666988.md) — struct
 - [minisql.admin.win32_client.RowEditorWindow](Type-minisql-admin-win32-client-roweditorwindow-1716256787.md) — struct
@@ -2123,11 +2303,11 @@ Returns whether one preview row already has an unapplied update or delete.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `rowIndex` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `rowIndex` | `dynamic` | — | Zero-based index of row. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1817)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2005)
 
 <a id="function-function-minisql-admin-win32-client-runconnectionmanagerwithpath-function-runconnectionmanagerwithpath-path-visible-src-minisql-admin-win32-client-ml-1882746917"></a>
 ### runConnectionManagerWithPath
@@ -2140,11 +2320,11 @@ Runs the native alias manager using an explicit profile path for tests.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `visible` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `visible` | `dynamic` | — | visible value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L704)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L828)
 
 <a id="function-function-minisql-admin-win32-client-runroweditor-function-runroweditor-session-rowindex-duplicate-updatemode-initialfield-src-minisql-admin-win32-client-ml-279230085"></a>
 ### runRowEditor
@@ -2157,14 +2337,14 @@ Runs one modal row editor and returns generated SQL plus its preview values.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `rowIndex` | `dynamic` | — |  |
-| `duplicate` | `dynamic` | — |  |
-| `updateMode` | `dynamic` | — |  |
-| `initialField` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `rowIndex` | `dynamic` | — | Zero-based index of row. |
+| `duplicate` | `dynamic` | — | duplicate value consumed by this operation. |
+| `updateMode` | `dynamic` | — | updateMode value consumed by this operation. |
+| `initialField` | `dynamic` | — | initialField value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1751)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1934)
 
 <a id="function-function-minisql-admin-win32-client-runschemaeditor-function-runschemaeditor-session-src-minisql-admin-win32-client-ml-1624694086"></a>
 ### runSchemaEditor
@@ -2177,10 +2357,10 @@ Runs the modal schema designer and returns generated SQL plus execution intent.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1591)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1759)
 
 <a id="function-function-minisql-admin-win32-client-runsession-function-runsession-session-src-minisql-admin-win32-client-ml-68003060"></a>
 ### runSession
@@ -2193,10 +2373,10 @@ Runs the responsive Win32 event loop for one connected session.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2762)
 
 <a id="function-function-minisql-admin-win32-client-savewindowlayout-function-savewindowlayout-path-rectangle-src-minisql-admin-win32-client-ml-1463754788"></a>
 ### saveWindowLayout
@@ -2209,11 +2389,11 @@ Persists one validated physical window rectangle as a tiny JSON document.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `rectangle` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `rectangle` | `dynamic` | — | rectangle value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2073)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2290)
 
 - [minisql.admin.win32_client.SchemaEditorState](Type-minisql-admin-win32-client-schemaeditorstate-405759977.md) — struct
 - [minisql.admin.win32_client.SchemaEditorWindow](Type-minisql-admin-win32-client-schemaeditorwindow-1426118472.md) — struct
@@ -2228,10 +2408,10 @@ Returns the selected Data-grid row index or a descriptive validation error.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1799)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1983)
 
 <a id="function-function-minisql-admin-win32-client-selectworkspace-function-selectworkspace-session-page-src-minisql-admin-win32-client-ml-1013328635"></a>
 ### selectWorkspace
@@ -2244,11 +2424,11 @@ Selects and persists one main workspace page before updating child visibility.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `page` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `page` | `dynamic` | — | page value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1262)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1406)
 
 <a id="function-function-minisql-admin-win32-client-setbusycontrols-function-setbusycontrols-session-src-minisql-admin-win32-client-ml-429217454"></a>
 ### setBusyControls
@@ -2261,10 +2441,10 @@ Enables query actions only when no native SQL worker owns the client session.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1427)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1589)
 
 <a id="function-function-minisql-admin-win32-client-setconnectionbusy-function-setconnectionbusy-window-busy-src-minisql-admin-win32-client-ml-1259971749"></a>
 ### setConnectionBusy
@@ -2277,11 +2457,11 @@ Prevents profile edits while the worker reads its immutable profile snapshot.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `busy` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `busy` | `dynamic` | — | busy value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L620)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L734)
 
 <a id="function-function-minisql-admin-win32-client-stageselecteddeletes-function-stageselecteddeletes-session-src-minisql-admin-win32-client-ml-2014064532"></a>
 ### stageSelectedDeletes
@@ -2294,10 +2474,10 @@ Stages safe key-constrained DELETE statements for all selected rows.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2043)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2256)
 
 <a id="function-function-minisql-admin-win32-client-startconnection-function-startconnection-window-profile-src-minisql-admin-win32-client-ml-1659150907"></a>
 ### startConnection
@@ -2310,11 +2490,11 @@ Starts an asynchronous connection attempt and transfers password ownership to it
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `profile` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `profile` | `dynamic` | — | profile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L641)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L757)
 
 <a id="function-function-minisql-admin-win32-client-startdatamutation-function-startdatamutation-session-sqltext-src-minisql-admin-win32-client-ml-1943982223"></a>
 ### startDataMutation
@@ -2327,11 +2507,11 @@ Starts a generated INSERT, UPDATE, or DELETE and reloads the edited table previe
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2440)
 
 <a id="function-function-minisql-admin-win32-client-startdatapage-function-startdatapage-session-options-src-minisql-admin-win32-client-ml-863009860"></a>
 ### startDataPage
@@ -2344,11 +2524,11 @@ Applies a new filter/page/sort request only when pending row indices remain stab
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `options` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `options` | `dynamic` | — | Options controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2065)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2280)
 
 <a id="function-function-minisql-admin-win32-client-startdescribe-function-startdescribe-session-tablename-src-minisql-admin-win32-client-ml-895554475"></a>
 ### startDescribe
@@ -2361,11 +2541,11 @@ Starts background metadata loading for one validated tree selection.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `tableName` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `tableName` | `dynamic` | — | tableName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2198)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2433)
 
 <a id="function-function-minisql-admin-win32-client-starteditorcommand-function-starteditorcommand-session-wholescript-explain-src-minisql-admin-win32-client-ml-1242818285"></a>
 ### startEditorCommand
@@ -2378,12 +2558,12 @@ Resolves the requested editor scope and starts its background execution.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `wholeScript` | `dynamic` | — |  |
-| `explain` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `wholeScript` | `dynamic` | — | wholeScript value consumed by this operation. |
+| `explain` | `dynamic` | — | explain value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2303)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2551)
 
 <a id="function-function-minisql-admin-win32-client-startoperation-function-startoperation-session-operation-sqltext-tablename-src-minisql-admin-win32-client-ml-2104103481"></a>
 ### startOperation
@@ -2396,13 +2576,13 @@ Starts one responsive background protocol operation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
-| `tableName` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
+| `tableName` | `dynamic` | — | tableName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2392)
 
 <a id="function-function-minisql-admin-win32-client-startquery-function-startquery-session-sqltext-explain-src-minisql-admin-win32-client-ml-1559530070"></a>
 ### startQuery
@@ -2415,12 +2595,12 @@ Starts normal or EXPLAIN SQL while preserving the established public API.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
-| `explain` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
+| `explain` | `dynamic` | — | explain value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2415)
 
 <a id="function-function-minisql-admin-win32-client-startrefresh-function-startrefresh-session-src-minisql-admin-win32-client-ml-1468632536"></a>
 ### startRefresh
@@ -2433,10 +2613,10 @@ Starts a background object-tree refresh.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2426)
 
 <a id="function-function-minisql-admin-win32-client-startschemamutation-function-startschemamutation-session-sqltext-src-minisql-admin-win32-client-ml-163182345"></a>
 ### startSchemaMutation
@@ -2449,11 +2629,11 @@ Starts one generated schema mutation and reloads the object tree on success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2448)
 
 <a id="function-function-minisql-admin-win32-client-statesmoke-function-statesmoke-state-src-minisql-admin-win32-client-ml-550053599"></a>
 ### stateSmoke
@@ -2466,10 +2646,10 @@ Runs a hidden workbench construction smoke test against an existing state.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2542)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2794)
 
 <a id="function-function-minisql-admin-win32-client-stopconnection-function-stopconnection-attempt-src-minisql-admin-win32-client-ml-2103161987"></a>
 ### stopConnection
@@ -2482,10 +2662,10 @@ Cancels a handshake without wiping bytes until the native worker has terminated.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `attempt` | `dynamic` | — |  |
+| `attempt` | `dynamic` | — | attempt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L667)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L785)
 
 <a id="function-function-minisql-admin-win32-client-stopquery-function-stopquery-session-src-minisql-admin-win32-client-ml-89904500"></a>
 ### stopQuery
@@ -2498,10 +2678,10 @@ Stops the native worker before disconnecting the affected session.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2485)
 
 <a id="function-function-minisql-admin-win32-client-storeactiveworksheet-function-storeactiveworksheet-session-src-minisql-admin-win32-client-ml-1605572360"></a>
 ### storeActiveWorksheet
@@ -2514,10 +2694,10 @@ Saves the RichEdit contents into the selected worksheet model.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1844)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2038)
 
 <a id="function-function-minisql-admin-win32-client-storeroweditorvalue-function-storeroweditorvalue-editor-src-minisql-admin-win32-client-ml-629035533"></a>
 ### storeRowEditorValue
@@ -2530,10 +2710,10 @@ Copies the active text box into its aligned row-editor draft slot.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `editor` | `dynamic` | — |  |
+| `editor` | `dynamic` | — | editor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1720)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1895)
 
 <a id="function-function-minisql-admin-win32-client-synchronizeworkspace-function-synchronizeworkspace-session-src-minisql-admin-win32-client-ml-1747303476"></a>
 ### synchronizeWorkspace
@@ -2546,10 +2726,10 @@ Reconciles a user-driven native tab selection before asynchronous rendering.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — |  |
+| `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1415)
 
 <a id="function-function-minisql-admin-win32-client-targetmilestone-function-targetmilestone-src-minisql-admin-win32-client-ml-1323333326"></a>
 ### targetMilestone
@@ -2558,10 +2738,10 @@ Reconciles a user-driven native tab selection before asynchronous rendering.
 function targetMilestone()
 ```
 
-Identifies the GUI integration milestone.
+Performs the targetMilestone operation for the minisql admin win32 client module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2557)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2809)
 
 <a id="constant-constant-minisql-admin-win32-client-tcn-selchange-const-tcn-selchange-551-src-minisql-admin-win32-client-ml-813421003"></a>
 ### TCN_SELCHANGE
@@ -2570,8 +2750,10 @@ Identifies the GUI integration milestone.
 const TCN_SELCHANGE = -551
 ```
 
+Defines the tcn selchange constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L24)
 
 <a id="constant-constant-minisql-admin-win32-client-tvn-selchangedw-const-tvn-selchangedw-451-src-minisql-admin-win32-client-ml-565708252"></a>
 ### TVN_SELCHANGEDW
@@ -2580,8 +2762,10 @@ const TCN_SELCHANGE = -551
 const TVN_SELCHANGEDW = -451
 ```
 
+Defines the tvn selchangedw constant used by the minisql admin win32 client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L26)
 
 <a id="function-function-minisql-admin-win32-client-verifyconnectionlayout-function-verifyconnectionlayout-window-width-height-src-minisql-admin-win32-client-ml-610306141"></a>
 ### verifyConnectionLayout
@@ -2594,12 +2778,12 @@ Verifies one responsive connection-manager size through actual Win32 child recta
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `width` | `dynamic` | — |  |
-| `height` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `width` | `dynamic` | — | Width in the coordinate or storage units used by the caller. |
+| `height` | `dynamic` | — | Height in the coordinate or storage units used by the caller. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L816)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L949)
 
 <a id="function-function-minisql-admin-win32-client-verifyworkbenchlayout-function-verifyworkbenchlayout-window-width-height-src-minisql-admin-win32-client-ml-1124749413"></a>
 ### verifyWorkbenchLayout
@@ -2612,12 +2796,12 @@ Verifies one workbench size through actual native child rectangles and pane sepa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `window` | `dynamic` | — |  |
-| `width` | `dynamic` | — |  |
-| `height` | `dynamic` | — |  |
+| `window` | `dynamic` | — | window value consumed by this operation. |
+| `width` | `dynamic` | — | Width in the coordinate or storage units used by the caller. |
+| `height` | `dynamic` | — | Height in the coordinate or storage units used by the caller. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1257)
 
 <a id="function-function-minisql-admin-win32-client-workbenchlayoutsmoke-function-workbenchlayoutsmoke-src-minisql-admin-win32-client-ml-1924028508"></a>
 ### workbenchLayoutSmoke
@@ -2629,7 +2813,7 @@ function workbenchLayoutSmoke()
 Exercises geometry, native SQL coloring, selection stability, and both execution commands.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1285)
 
 <a id="function-function-minisql-admin-win32-client-writetextfile-function-writetextfile-path-text-src-minisql-admin-win32-client-ml-851607704"></a>
 ### writeTextFile
@@ -2642,8 +2826,8 @@ Writes a complete UTF-8 text artifact and flushes it before returning success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `text` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L1934)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L2139)

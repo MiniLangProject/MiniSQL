@@ -1,3 +1,5 @@
+//! Provides minisql storage superblock facilities for this project.
+
 package minisql.storage.superblock
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -7,60 +9,75 @@ import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
 import minisql.common.limits as limits
 
-// Fixed 4096-byte metadata slot used twice at the beginning of every paged file.
-// The two copies are updated alternately. The valid copy with the highest
-// generation is authoritative after a crash.
+/// Fixed 4096-byte metadata slot used twice at the beginning of every paged file.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql storage superblock module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql storage superblock module.
 const CORRUPT_DATA = 9004
 
+/// Defines the format version constant used by the minisql storage superblock module.
 const FORMAT_VERSION = 1
+/// Defines the slot size constant used by the minisql storage superblock module.
 const SLOT_SIZE = 4096
+/// Defines the header size constant used by the minisql storage superblock module.
 const HEADER_SIZE = 128
+/// Defines the database id size constant used by the minisql storage superblock module.
 const DATABASE_ID_SIZE = 16
+/// Defines the checksum offset constant used by the minisql storage superblock module.
 const CHECKSUM_OFFSET = 72
 
+/// Defines the file type table constant used by the minisql storage superblock module.
 const FILE_TYPE_TABLE = 1
+/// Defines the file type index constant used by the minisql storage superblock module.
 const FILE_TYPE_INDEX = 2
+/// Defines the file type wal constant used by the minisql storage superblock module.
 const FILE_TYPE_WAL = 3
+/// Defines the file type database meta constant used by the minisql storage superblock module.
 const FILE_TYPE_DATABASE_META = 4
+/// Defines the file type generic constant used by the minisql storage superblock module.
 const FILE_TYPE_GENERIC = 255
 
-// Defines the superblock record used by this module.
+/// Defines the superblock record used by this module.
 struct Superblock
-  // Format version field of the superblock.
+  /// Format version field of the superblock.
   formatVersion
-  // Generation field of the superblock.
+  /// Generation field of the superblock.
   generation
-  // Page size field of the superblock.
+  /// Page size field of the superblock.
   pageSize
-  // File type field of the superblock.
+  /// File type field of the superblock.
   fileType
-  // File id field of the superblock.
+  /// File id field of the superblock.
   fileId
-  // Page count field of the superblock.
+  /// Page count field of the superblock.
   pageCount
-  // Database id field of the superblock.
+  /// Database id field of the superblock.
   databaseId
-  // Feature flags field of the superblock.
+  /// Feature flags field of the superblock.
   featureFlags
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage superblock module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.superblock." + operation + ": " + message)
 end function
 
-// Performs the magic bytes operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the magicBytes operation for the minisql storage superblock module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSQLSB01")
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql storage superblock module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return false end if
   if len(left) != len(right) then return false end if
@@ -71,8 +88,13 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Copies the exact.
-// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the copyExact operation for the minisql storage superblock module.
+/// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -81,8 +103,11 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
-// Validates the native id.
-// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native id for the minisql storage superblock workflow.
+/// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function validateNativeId(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -90,8 +115,11 @@ function validateNativeId(value, operation, name)
   return true
 end function
 
-// Decodes the native id.
-// Inputs: `value`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the native id.
+/// Inputs: `value`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNativeId(value, operation, name)
   endian.validateUInt64Words(value, "storage.superblock." + operation + "." + name)
   if value.high > endian.MAX_SCALAR_HIGH then
@@ -100,8 +128,10 @@ function decodeNativeId(value, operation, name)
   return endian.uint64ToInt(value)
 end function
 
-// Validates the file type.
-// Inputs: `fileType`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the file type.
+/// Inputs: `fileType`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param fileType fileType value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateFileType(fileType, operation)
   if typeof(fileType) != "int" or fileType < 0 or fileType > 65535 then
     return fail(INVALID_ARGUMENT, operation, "fileType must fit U16")
@@ -109,8 +139,10 @@ function validateFileType(fileType, operation)
   return true
 end function
 
-// Validates the database id.
-// Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates database id for the minisql storage superblock workflow.
+/// Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param databaseId Identifier of database.
+/// @param operation operation value consumed by this operation.
 function validateDatabaseId(databaseId, operation)
   if typeof(databaseId) != "bytes" or len(databaseId) != DATABASE_ID_SIZE then
     return fail(INVALID_ARGUMENT, operation, "databaseId must be exactly 16 bytes")
@@ -118,8 +150,16 @@ function validateDatabaseId(databaseId, operation)
   return true
 end function
 
-// Creates the requested value.
-// Inputs: `formatVersion`, `generation`, `pageSize`, `fileType`, `fileId`, `pageCount`, `databaseId`, `featureFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage superblock module.
+/// Inputs: `formatVersion`, `generation`, `pageSize`, `fileType`, `fileId`, `pageCount`, `databaseId`, `featureFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param formatVersion formatVersion value consumed by this operation.
+/// @param generation generation value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param fileType fileType value consumed by this operation.
+/// @param fileId Identifier of file.
+/// @param pageCount Number of page to process.
+/// @param databaseId Identifier of database.
+/// @param featureFlags featureFlags value consumed by this operation.
 function create(formatVersion, generation, pageSize, fileType, fileId, pageCount, databaseId, featureFlags)
   if formatVersion != FORMAT_VERSION then
     return fail(UNSUPPORTED_FORMAT, "create", "unsupported superblock format version")
@@ -138,8 +178,9 @@ function create(formatVersion, generation, pageSize, fileType, fileId, pageCount
   return Superblock(formatVersion, generation, pageSize, fileType, fileId, pageCount, bytes(databaseId), featureFlags)
 end function
 
-// Encodes the requested value.
-// Inputs: `superblock`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes encode for the minisql storage superblock workflow.
+/// Inputs: `superblock`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param superblock superblock value consumed by this operation.
 function encode(superblock)
   if superblock is not Superblock then return fail(INVALID_ARGUMENT, "encode", "value must be Superblock") end if
   validated = create(
@@ -173,8 +214,9 @@ function encode(superblock)
   return output
 end function
 
-// Decodes the requested value.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the requested value.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function decode(source)
   if typeof(source) != "bytes" or len(source) != SLOT_SIZE then
     return fail(CORRUPT_DATA, "decode", "superblock slot must be exactly 4096 bytes")
@@ -212,8 +254,10 @@ function decode(source)
   return create(version, generation, pageSize, fileType, fileId, pageCount, databaseId, featureFlags)
 end function
 
-// Compares the generation.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Compares the generation.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function compareGeneration(left, right)
   endian.validateUInt64Words(left, "storage.superblock.compareGeneration.left")
   endian.validateUInt64Words(right, "storage.superblock.compareGeneration.right")
@@ -224,8 +268,9 @@ function compareGeneration(left, right)
   return 0
 end function
 
-// Performs the increment generation operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the increment generation operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function incrementGeneration(value)
   endian.validateUInt64Words(value, "storage.superblock.incrementGeneration")
   if value.high == endian.MAX_U32 and value.low == endian.MAX_U32 then
@@ -240,16 +285,20 @@ function incrementGeneration(value)
   return endian.makeUInt64(high, low)
 end function
 
-// Compares the database id.
-// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Compares the database id.
+/// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameDatabaseId(left, right)
   validateDatabaseId(left, "sameDatabaseId")
   validateDatabaseId(right, "sameDatabaseId")
   return bytesEqual(left, right)
 end function
 
-// Performs the immutable identity matches operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the immutable identity matches operation for this module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function immutableIdentityMatches(left, right)
   if left is not Superblock or right is not Superblock then
     return fail(INVALID_ARGUMENT, "immutableIdentityMatches", "values must be Superblock")
@@ -262,20 +311,20 @@ function immutableIdentityMatches(left, right)
     sameDatabaseId(left.databaseId, right.databaseId)
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage superblock module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.superblock"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage superblock module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M4"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage superblock module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct BinlogConfig
 Defines the independent SQL statement log. Binlog records bypass the ordinary severity threshold so enabling it always captures every statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L73)
 
 ## Members
 
@@ -26,7 +26,7 @@ enabled
 Enables durable SQL statement recording.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L75)
 
 <a id="field-field-minisql-config-model-binlogconfig-filename-filename-src-minisql-config-model-ml-928633828"></a>
 ### fileName
@@ -38,4 +38,4 @@ fileName
 Names the active binlog file inside `paths.logDirectory`.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L77)

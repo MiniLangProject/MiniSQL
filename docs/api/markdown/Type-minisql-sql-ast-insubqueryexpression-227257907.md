@@ -12,7 +12,7 @@ struct InSubqueryExpression
 Groups the in subquery expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L268)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L323)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L325)
 
 <a id="field-field-minisql-sql-ast-insubqueryexpression-negated-negated-src-minisql-sql-ast-ml-1734928534"></a>
 ### negated
@@ -38,7 +38,7 @@ negated
 Indicates whether the negated condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L276)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L331)
 
 <a id="field-field-minisql-sql-ast-insubqueryexpression-operand-operand-src-minisql-sql-ast-ml-795914442"></a>
 ### operand
@@ -50,7 +50,7 @@ operand
 Stores the operand associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L272)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L327)
 
 <a id="field-field-minisql-sql-ast-insubqueryexpression-query-query-src-minisql-sql-ast-ml-672834306"></a>
 ### query
@@ -62,4 +62,4 @@ query
 Stores the query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L329)

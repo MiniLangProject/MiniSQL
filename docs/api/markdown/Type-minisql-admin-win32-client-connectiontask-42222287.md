@@ -12,7 +12,7 @@ struct ConnectionTask
 Owns credentials while one connection handshake runs outside the UI thread.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L363)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L456)
 
 ## Members
 
@@ -26,7 +26,7 @@ password
 Stores transient password bytes read from the password editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L367)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L460)
 
 <a id="field-field-minisql-admin-win32-client-connectiontask-profile-profile-src-minisql-admin-win32-client-ml-767975842"></a>
 ### profile
@@ -38,4 +38,4 @@ profile
 Stores the validated, secret-free connection profile.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L365)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L458)

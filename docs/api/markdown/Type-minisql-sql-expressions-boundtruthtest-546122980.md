@@ -12,7 +12,7 @@ struct BoundTruthTest
 Groups the bound truth test state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L169)
 
 ## Members
 
@@ -26,7 +26,7 @@ expected
 Stores the expected associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L175)
 
 <a id="field-field-minisql-sql-expressions-boundtruthtest-kind-kind-src-minisql-sql-expressions-ml-306434962"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L171)
 
 <a id="field-field-minisql-sql-expressions-boundtruthtest-negated-negated-src-minisql-sql-expressions-ml-621357010"></a>
 ### negated
@@ -50,7 +50,7 @@ negated
 Indicates whether the negated condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L177)
 
 <a id="field-field-minisql-sql-expressions-boundtruthtest-operand-operand-src-minisql-sql-expressions-ml-243788670"></a>
 ### operand
@@ -62,7 +62,7 @@ operand
 Stores the operand associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L173)
 
 <a id="field-field-minisql-sql-expressions-boundtruthtest-typeinfo-typeinfo-src-minisql-sql-expressions-ml-1591499706"></a>
 ### typeInfo
@@ -74,4 +74,4 @@ typeInfo
 Stores the type info associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L179)

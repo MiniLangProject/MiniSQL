@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql executor filter facilities for this project.
+
 Package: [`minisql.executor.filter`](Package-minisql-executor-filter-1376553475.md)
 
 Reachable from entry: **yes**
@@ -24,11 +26,11 @@ Applies apply using the supplied inputs. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L31)
 
 <a id="function-function-minisql-executor-filter-componentname-function-componentname-src-minisql-executor-filter-ml-524355326"></a>
 ### componentName
@@ -37,10 +39,10 @@ Applies apply using the supplied inputs. Requires arguments that satisfy the val
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql executor filter module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L45)
 
 <a id="function-function-minisql-executor-filter-fail-function-fail-code-operation-message-src-minisql-executor-filter-ml-310989407"></a>
 ### fail
@@ -49,16 +51,16 @@ Implements component name for this module. Returns the computed value or operati
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql executor filter module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L21)
 
 <a id="constant-constant-minisql-executor-filter-invalid-argument-const-invalid-argument-9001-src-minisql-executor-filter-ml-1794472101"></a>
 ### INVALID_ARGUMENT
@@ -67,8 +69,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql executor filter module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L10)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L13)
 
 <a id="function-function-minisql-executor-filter-isimplemented-function-isimplemented-src-minisql-executor-filter-ml-262149318"></a>
 ### isImplemented
@@ -77,10 +81,10 @@ const INVALID_ARGUMENT = 9001
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql executor filter module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L59)
 
 <a id="function-function-minisql-executor-filter-targetmilestone-function-targetmilestone-src-minisql-executor-filter-ml-1266904520"></a>
 ### targetMilestone
@@ -89,7 +93,7 @@ Returns whether the supplied value satisfies the implemented condition. Returns 
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql executor filter module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/filter.ml#L52)

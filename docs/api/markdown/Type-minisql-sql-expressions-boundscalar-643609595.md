@@ -12,7 +12,7 @@ struct BoundScalar
 Groups the bound scalar state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L127)
 
 ## Members
 
@@ -26,7 +26,7 @@ arguments
 Contains the ordered arguments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L133)
 
 <a id="field-field-minisql-sql-expressions-boundscalar-kind-kind-src-minisql-sql-expressions-ml-1264821083"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L129)
 
 <a id="field-field-minisql-sql-expressions-boundscalar-name-name-src-minisql-sql-expressions-ml-1107361561"></a>
 ### name
@@ -50,7 +50,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L131)
 
 <a id="field-field-minisql-sql-expressions-boundscalar-typeinfo-typeinfo-src-minisql-sql-expressions-ml-898875823"></a>
 ### typeInfo
@@ -62,4 +62,4 @@ typeInfo
 Stores the type info associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L135)

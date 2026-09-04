@@ -12,7 +12,7 @@ struct RecursiveCteFrame
 Stores one active recursive CTE working table on the session-local evaluation stack.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L130)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the CTE name used by bound self-reference sources.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L132)
 
 <a id="field-field-minisql-executor-executor-recursivecteframe-rows-rows-src-minisql-executor-executor-ml-1649715106"></a>
 ### rows
@@ -38,4 +38,4 @@ rows
 Contains the current iteration's delta rows.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L134)

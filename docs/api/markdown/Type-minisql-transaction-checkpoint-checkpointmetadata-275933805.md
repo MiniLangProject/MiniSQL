@@ -12,7 +12,7 @@ struct CheckpointMetadata
 Defines the checkpoint metadata record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L43)
 
 ## Members
 
@@ -26,7 +26,7 @@ checkpointLsn
 Checkpoint lsn field of the checkpoint metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L47)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointmetadata-databaseid-databaseid-src-minisql-transaction-checkpoint-ml-291788084"></a>
 ### databaseId
@@ -38,7 +38,7 @@ databaseId
 Database id field of the checkpoint metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L53)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointmetadata-generation-generation-src-minisql-transaction-checkpoint-ml-816175956"></a>
 ### generation
@@ -50,7 +50,7 @@ generation
 Generation field of the checkpoint metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L45)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointmetadata-recordcount-recordcount-src-minisql-transaction-checkpoint-ml-1485889264"></a>
 ### recordCount
@@ -62,7 +62,7 @@ recordCount
 Record count field of the checkpoint metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L51)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointmetadata-redostartlsn-redostartlsn-src-minisql-transaction-checkpoint-ml-1179408218"></a>
 ### redoStartLsn
@@ -74,4 +74,4 @@ redoStartLsn
 Redo start lsn field of the checkpoint metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L49)

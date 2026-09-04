@@ -12,7 +12,7 @@ struct SqlSyntaxAccumulator
 Owns the mutable head/tail state used to avoid quadratic array appends.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L163)
 
 ## Members
 
@@ -26,7 +26,7 @@ count
 Counts nodes for one exactly sized result allocation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L169)
 
 <a id="field-field-minisql-admin-fullclient-sqlsyntaxaccumulator-first-first-src-minisql-admin-fullclient-ml-993870472"></a>
 ### first
@@ -38,7 +38,7 @@ first
 Points to the first collected span node.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L165)
 
 <a id="field-field-minisql-admin-fullclient-sqlsyntaxaccumulator-last-last-src-minisql-admin-fullclient-ml-1866906856"></a>
 ### last
@@ -50,4 +50,4 @@ last
 Points to the final collected span node.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L167)

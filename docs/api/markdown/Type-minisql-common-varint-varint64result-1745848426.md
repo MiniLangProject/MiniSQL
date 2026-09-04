@@ -12,7 +12,7 @@ struct Varint64Result
 Defines the varint64 result record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L31)
 
 ## Members
 
@@ -26,7 +26,7 @@ bytesRead
 Bytes read field of the varint64 result.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L37)
 
 <a id="field-field-minisql-common-varint-varint64result-nextoffset-nextoffset-src-minisql-common-varint-ml-742105828"></a>
 ### nextOffset
@@ -38,7 +38,7 @@ nextOffset
 Next offset field of the varint64 result.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L35)
 
 <a id="field-field-minisql-common-varint-varint64result-value-value-src-minisql-common-varint-ml-652520456"></a>
 ### value
@@ -50,4 +50,4 @@ value
 Value field of the varint64 result.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L33)

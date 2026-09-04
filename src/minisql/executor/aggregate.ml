@@ -1,3 +1,5 @@
+//! Provides minisql executor aggregate facilities for this project.
+
 package minisql.executor.aggregate
 
 // Copyright 2026 MiniLangProject contributors
@@ -16,104 +18,116 @@ import minisql.sql.expressions as expressions
 import minisql.sql.types as types
 import minisql.sql.values as values
 
-// Grouping, SQL aggregates and set operations. The first implementation uses
-// deterministic linear group lookup. M17 statistics and planning can replace the
-// grouping container with a hash table while preserving this operator contract.
+/// Grouping, SQL aggregates and set operations. The first implementation uses
 
 const INVALID_ARGUMENT = 9001
+/// Defines the type mismatch constant used by the minisql executor aggregate module.
 const TYPE_MISMATCH = 9017
+/// Defines the binding error constant used by the minisql executor aggregate module.
 const BINDING_ERROR = 9020
+/// Defines the hash bucket count constant used by the minisql executor aggregate module.
 const HASH_BUCKET_COUNT = 257
+/// Defines the hash mask constant used by the minisql executor aggregate module.
 const HASH_MASK = 2147483647
+/// Defines the intra query workers constant used by the minisql executor aggregate module.
 const INTRA_QUERY_WORKERS = 4
+/// Defines the vector batch rows constant used by the minisql executor aggregate module.
 const VECTOR_BATCH_ROWS = 256
+/// Defines the parallel scan minimum pages constant used by the minisql executor aggregate module.
 const PARALLEL_SCAN_MINIMUM_PAGES = 128
 
-// Computes non-negative truncating integer division for spill partition sizing.
+/// Computes non-negative truncating integer division for spill partition sizing.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
   return (numerator - (numerator % denominator)) / denominator
 end function
 
-// Owns one SQL grouping key and all input rows assigned to that key.
+/// Owns one SQL grouping key and all input rows assigned to that key.
 struct AggregateGroup
-  // Evaluated GROUP BY values; NULL values compare equal for grouping.
+  /// Evaluated GROUP BY values; NULL values compare equal for grouping.
   keyValues
-  // Input rows in stable scan order for aggregate evaluation.
+  /// Input rows in stable scan order for aggregate evaluation.
   rows
 end struct
 
-// Maps a collision-chain key to an index in the stable `groups` array.
+/// Maps a collision-chain key to an index in the stable `groups` array.
 struct HashGroupEntry
-  // Full key retained to resolve hash collisions using SQL grouping equality.
+  /// Full key retained to resolve hash collisions using SQL grouping equality.
   keyValues
-  // Index of the corresponding AggregateGroup.
+  /// Index of the corresponding AggregateGroup.
   groupIndex
 end struct
 
-// Immutable work package for one independent aggregate hash partition.
+/// Immutable work package for one independent aggregate hash partition.
 struct AggregatePartitionTask
-  // Validated spill run containing every row for this hash partition.
+  /// Validated spill run containing every row for this hash partition.
   run
-  // Bound SELECT expressions evaluated for each completed group.
+  /// Bound SELECT expressions evaluated for each completed group.
   selectExpressions
-  // Bound grouping expressions whose hash selected this partition.
+  /// Bound grouping expressions whose hash selected this partition.
   groupExpressions
-  // Optional bound HAVING predicate.
+  /// Optional bound HAVING predicate.
   havingExpression
-  // Bound ORDER BY expressions retained for the final merge/sort stage.
+  /// Bound ORDER BY expressions retained for the final merge/sort stage.
   orderExpressions
 end struct
 
-// Fixed-size state for one direct scalar aggregate in the streaming fast path.
+/// Fixed-size state for one direct scalar aggregate in the streaming fast path.
 struct AggregateAccumulator
-  // Bound aggregate whose semantics this state implements.
+  /// Bound aggregate whose semantics this state implements.
   expression
-  // Number of contributing non-NULL values, or input rows for COUNT(*).
+  /// Number of contributing non-NULL values, or input rows for COUNT(*).
   count
-  // Running numeric SUM used by SUM and AVG.
+  /// Running numeric SUM used by SUM and AVG.
   total
-  // Current extremum used by MIN and MAX.
+  /// Current extremum used by MIN and MAX.
   selected
-  // Current boolean fold used by BOOL_AND and BOOL_OR.
+  /// Current boolean fold used by BOOL_AND and BOOL_OR.
   booleanValue
-  // Indicates whether any non-NULL input contributed.
+  /// Indicates whether any non-NULL input contributed.
   hasValue
 end struct
 
-// Immutable input for one page-range partial aggregate. Workers open private
-// read handles while sharing only the database's thread-safe read cache.
+/// Immutable input for one page-range partial aggregate. Workers open private
+/// read handles while sharing only the database's thread-safe read cache.
 struct ParallelAggregateTask
-  // Filesystem root containing the table file and schema history.
+  /// Filesystem root containing the table file and schema history.
   databasePath
-  // Immutable catalog metadata for the scanned table.
+  /// Immutable catalog metadata for the scanned table.
   table
-  // Database-owned concurrent read cache shared by worker readers.
+  /// Database-owned concurrent read cache shared by worker readers.
   readCache
-  // Direct scalar aggregates updated by this worker.
+  /// Direct scalar aggregates updated by this worker.
   selectExpressions
-  // Column mask that prevents unrelated overflow-value reads.
+  /// Column mask that prevents unrelated overflow-value reads.
   requiredColumns
-  // Inclusive index into the persistent heap-page directory.
+  /// Inclusive index into the persistent heap-page directory.
   firstPageIndex
-  // Exclusive index into the persistent heap-page directory.
+  /// Exclusive index into the persistent heap-page directory.
   endPageIndex
-  // Optional managed database used by controlled server scans.
+  /// Optional managed database used by controlled server scans.
   database
-  // Owning query session when database is present.
+  /// Owning query session when database is present.
   sessionId
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor aggregate module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.aggregate." + operation + ": " + message)
 end function
 
-// Implements hash bytes for this module.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements hash bytes for this module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param input input value consumed by this operation.
+/// @param seed seed value consumed by this operation.
 function hashBytes(input, seed)
   result = seed & HASH_MASK
   if len(input) > 0 then
@@ -124,10 +138,11 @@ function hashBytes(input, seed)
   return result
 end function
 
-// Implements hash value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements hash value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function hashValue(value)
   if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "hashValue", "value must be SqlValue") end if
   if value.isNull then return 0 end if
@@ -160,9 +175,10 @@ function hashValue(value)
   return hashBytes(bytes("" + value.value), result)
 end function
 
-// Implements hash values for this module.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements hash values for this module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param input input value consumed by this operation.
 function hashValues(input)
   result = 2166136261 & HASH_MASK
   for each value in input
@@ -171,17 +187,21 @@ function hashValues(input)
   return result
 end function
 
-// Implements same value for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same value for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameValue(left, right)
   if left.isNull or right.isNull then return left.isNull and right.isNull end if
   return values.compareNonNull(left, right) == 0
 end function
 
-// Implements same values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameValues(left, right)
   if len(left) != len(right) then return false end if
   if len(left) > 0 then
@@ -192,9 +212,10 @@ function sameValues(left, right)
   return true
 end function
 
-// Implements distinct values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements distinct values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param input input value consumed by this operation.
 function distinctValues(input)
   output = []
   for each candidate in input
@@ -207,17 +228,21 @@ function distinctValues(input)
   return output
 end function
 
-// Evaluates argument using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates argument using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param row row value consumed by this operation.
 function evaluateArgument(expression, row)
   return expressions.evaluate(expression, expressions.rowContext(row.values))
 end function
 
-// Implements aggregate value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements aggregate value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function aggregateValue(expression, rows)
   if not expressions.isBoundAggregate(expression) then return fail(INVALID_ARGUMENT, "aggregateValue", "expression must be aggregate") end if
   if expression.name == "STRING_AGG" then
@@ -303,14 +328,17 @@ function aggregateValue(expression, rows)
   return fail(BINDING_ERROR, "aggregateValue", "unknown aggregate " + expression.name)
 end function
 
-// Creates an accumulator whose neutral state matches SQL empty-input rules.
+/// Creates an accumulator whose neutral state matches SQL empty-input rules.
+/// @param expression expression value consumed by this operation.
 function createAccumulator(expression)
   booleanValue = false
   if expression.name == "BOOL_AND" then booleanValue = true end if
   return AggregateAccumulator(expression, 0, 0, void, booleanValue, false)
 end function
 
-// Updates one accumulator from one row without retaining the row.
+/// Updates one accumulator from one row without retaining the row.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param row row value consumed by this operation.
 function accumulate(state, row)
   expression = state.expression
   if expression.countStar then state.count = state.count + 1; return true end if
@@ -343,9 +371,11 @@ function accumulate(state, row)
   return true
 end function
 
-// Updates all aggregate lanes from one bounded row batch. Keeping accumulator
-// dispatch outside the storage cursor makes the operator batch-at-a-time and
-// gives the native compiler a compact, allocation-free numeric inner loop.
+/// Updates all aggregate lanes from one bounded row batch. Keeping accumulator
+/// dispatch outside the storage cursor makes the operator batch-at-a-time and
+/// gives the native compiler a compact, allocation-free numeric inner loop.
+/// @param states states value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function accumulateBatch(states, rows)
   for each row in rows
     for each state in states
@@ -356,9 +386,11 @@ function accumulateBatch(states, rows)
   return true
 end function
 
-// Merges one worker's fixed-size partial aggregate into the coordinator state.
-// AVG is represented by SUM+COUNT, while extrema and boolean folds preserve
-// SQL NULL behavior through the explicit hasValue bit.
+/// Merges one worker's fixed-size partial aggregate into the coordinator state.
+/// AVG is represented by SUM+COUNT, while extrema and boolean folds preserve
+/// SQL NULL behavior through the explicit hasValue bit.
+/// @param target target value consumed by this operation.
+/// @param partial partial value consumed by this operation.
 function mergeAccumulator(target, partial)
   target.count = target.count + partial.count
   target.total = target.total + partial.total
@@ -380,7 +412,8 @@ function mergeAccumulator(target, partial)
   return true
 end function
 
-// Scans one disjoint heap-page range and returns mergeable partial states.
+/// Scans one disjoint heap-page range and returns mergeable partial states.
+/// @param task task value consumed by this operation.
 function aggregatePageRange(task)
   states = streamingAccumulators(task.selectExpressions, "aggregatePageRange")
   reader = try(scan.openCached(task.databasePath, task.table, void, task.readCache))
@@ -405,7 +438,8 @@ function aggregatePageRange(task)
   return states
 end function
 
-// Converts an accumulator into the same SqlValue produced by aggregateValue.
+/// Converts an accumulator into the same SqlValue produced by aggregateValue.
+/// @param state Mutable state inspected or updated by the operation.
 function finishAccumulator(state)
   expression = state.expression
   if expression.name == "COUNT" then return values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(state.count)) end if
@@ -418,9 +452,11 @@ function finishAccumulator(state)
   return values.convert(source, expression.typeInfo)
 end function
 
-// Builds the narrowest safe source-column mask for direct aggregate arguments.
-// Complex scalar arguments retain full decoding while still avoiding row
-// materialization; direct column aggregates skip unrelated external values.
+/// Builds the narrowest safe source-column mask for direct aggregate arguments.
+/// Complex scalar arguments retain full decoding while still avoiding row
+/// materialization; direct column aggregates skip unrelated external values.
+/// @param table table value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
 function streamingRequiredColumns(table, selectExpressions)
   required = array(len(table.columns), false)
   for each expression in selectExpressions
@@ -437,7 +473,9 @@ function streamingRequiredColumns(table, selectExpressions)
   return required
 end function
 
-// Creates accumulator state for a validated streaming scalar aggregate list.
+/// Creates accumulator state for a validated streaming scalar aggregate list.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function streamingAccumulators(selectExpressions, operation)
   states = []
   for each expression in selectExpressions
@@ -447,7 +485,8 @@ function streamingAccumulators(selectExpressions, operation)
   return states
 end function
 
-// Finalizes fixed-size accumulators into the ordinary one-row projection shape.
+/// Finalizes fixed-size accumulators into the ordinary one-row projection shape.
+/// @param states states value consumed by this operation.
 function finishStreaming(states)
   output = []
   for each state in states
@@ -456,9 +495,14 @@ function finishStreaming(states)
   return [projection.ProjectedRow(void, output, [])]
 end function
 
-// Streams already selected rows through a predicate and fixed-size scalar
-// aggregate state. This is used by planned index scans without rebuilding the
-// general grouping structures.
+/// Streams already selected rows through a predicate and fixed-size scalar
+/// aggregate state. This is used by planned index scans without rebuilding the
+/// general grouping structures.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingRowsCore(rows, selectExpressions, predicate, database, sessionId)
   if typeof(rows) != "array" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingRows", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingRows")
@@ -480,19 +524,36 @@ function projectStreamingRowsCore(rows, selectExpressions, predicate, database, 
   return finishStreaming(states)
 end function
 
-// Preserves the direct aggregate API for callers without server session state.
+/// Preserves the direct aggregate API for callers without server session state.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function projectStreamingRows(rows, selectExpressions, predicate)
   return projectStreamingRowsCore(rows, selectExpressions, predicate, void, 0)
 end function
 
-// Streams selected rows while honoring one server query control token.
+/// Streams selected rows while honoring one server query control token.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingRowsControlled(rows, selectExpressions, predicate, database, sessionId)
   return projectStreamingRowsCore(rows, selectExpressions, predicate, database, sessionId)
 end function
 
-// Streams one filtered base table through fixed-size scalar aggregate
-// accumulators. The caller-supplied mask includes both aggregate and predicate
-// columns, and the reader closes on every reported failure path.
+/// Streams one filtered base table through fixed-size scalar aggregate
+/// accumulators. The caller-supplied mask includes both aggregate and predicate
+/// columns, and the reader closes on every reported failure path.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableFiltered", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingTableFiltered")
@@ -523,19 +584,42 @@ function projectStreamingTableFilteredCore(databasePath, table, pageTransaction,
   return finishStreaming(states)
 end function
 
-// Preserves filtered streaming aggregation for non-server callers.
+/// Preserves filtered streaming aggregation for non-server callers.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function projectStreamingTableFiltered(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns)
   return projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, void, 0)
 end function
 
-// Filters and aggregates a table under cooperative server control.
+/// Filters and aggregates a table under cooperative server control.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableFilteredControlled(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
   return projectStreamingTableFilteredCore(databasePath, table, pageTransaction, readCache, selectExpressions, predicate, requiredColumns, database, sessionId)
 end function
 
-// Keeps the unfiltered hot path branch-free inside the row loop. This function
-// is intentionally separate from projectStreamingTableFiltered because scalar
-// whole-table aggregates are common and execute the loop once per stored row.
+/// Keeps the unfiltered hot path branch-free inside the row loop. This function
+/// is intentionally separate from projectStreamingTableFiltered because scalar
+/// whole-table aggregates are common and execute the loop once per stored row.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTable", "invalid arguments") end if
   states = streamingAccumulators(selectExpressions, "projectStreamingTable")
@@ -560,19 +644,37 @@ function projectStreamingTableCore(databasePath, table, pageTransaction, readCac
   return finishStreaming(states)
 end function
 
-// Preserves unfiltered streaming aggregation for non-server callers.
+/// Preserves unfiltered streaming aggregation for non-server callers.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
 function projectStreamingTable(databasePath, table, pageTransaction, readCache, selectExpressions)
   return projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, void, 0)
 end function
 
-// Aggregates an unfiltered table under cooperative server control.
+/// Aggregates an unfiltered table under cooperative server control.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableControlled(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
   return projectStreamingTableCore(databasePath, table, pageTransaction, readCache, selectExpressions, database, sessionId)
 end function
 
-// Executes an unfiltered scalar aggregate with page-partitioned native workers.
-// Small tables and transactional readers stay on the lower-overhead serial path;
-// every worker sees committed pages only and returns constant-size state.
+/// Executes an unfiltered scalar aggregate with page-partitioned native workers.
+/// Small tables and transactional readers stay on the lower-overhead serial path;
+/// every worker sees committed pages only and returns constant-size state.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, database, sessionId)
   if typeof(databasePath) != "string" or typeof(selectExpressions) != "array" then return fail(INVALID_ARGUMENT, "projectStreamingTableParallel", "invalid arguments") end if
   probe = try(scan.openCached(databasePath, table, void, readCache))
@@ -619,19 +721,32 @@ function projectStreamingTableParallelCore(databasePath, table, readCache, selec
   return finishStreaming(merged)
 end function
 
-// Preserves parallel aggregate execution for callers without a query token.
+/// Preserves parallel aggregate execution for callers without a query token.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
 function projectStreamingTableParallel(databasePath, table, readCache, selectExpressions)
   return projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, void, 0)
 end function
 
-// Propagates server cancellation and deadlines into parallel aggregate workers.
+/// Propagates server cancellation and deadlines into parallel aggregate workers.
+/// @param databasePath Path associated with database.
+/// @param table table value consumed by this operation.
+/// @param readCache readCache value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param database database value consumed by this operation.
+/// @param sessionId Identifier of session.
 function projectStreamingTableParallelControlled(databasePath, table, readCache, selectExpressions, database, sessionId)
   return projectStreamingTableParallelCore(databasePath, table, readCache, selectExpressions, database, sessionId)
 end function
 
-// Evaluates group using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates group using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param representative representative value consumed by this operation.
 function evaluateGroup(expression, rows, representative)
   if expressions.isBoundAggregate(expression) then return aggregateValue(expression, rows) end if
   if not expressions.containsAggregate(expression) then return expressions.evaluate(expression, representative) end if
@@ -744,9 +859,12 @@ function evaluateGroup(expression, rows, representative)
   return fail(BINDING_ERROR, "evaluateGroup", "unsupported grouped expression")
 end function
 
-// Evaluates list using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates list using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param boundExpressions boundExpressions value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param representative representative value consumed by this operation.
 function evaluateList(boundExpressions, rows, representative)
   output = []
   for each expression in boundExpressions
@@ -755,9 +873,12 @@ function evaluateList(boundExpressions, rows, representative)
   return output
 end function
 
-// Partitions rows with a fixed-bucket hash table and explicit collision chains.
-// Full-key comparison preserves SQL NULL/equality semantics; the separate groups
-// array preserves first-key encounter order. Empty global aggregation yields one group.
+/// Partitions rows with a fixed-bucket hash table and explicit collision chains.
+/// Full-key comparison preserves SQL NULL/equality semantics; the separate groups
+/// array preserves first-key encounter order. Empty global aggregation yields one group.
+/// @param rows rows value consumed by this operation.
+/// @param groupExpressions groupExpressions value consumed by this operation.
+/// @param aggregateQuery aggregateQuery value consumed by this operation.
 function groupRows(rows, groupExpressions, aggregateQuery)
   if not aggregateQuery then return fail(INVALID_ARGUMENT, "groupRows", "query is not aggregate") end if
   groups = []
@@ -789,10 +910,15 @@ function groupRows(rows, groupExpressions, aggregateQuery)
   return groups
 end function
 
-// Implements project for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements project for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param groupExpressions groupExpressions value consumed by this operation.
+/// @param havingExpression havingExpression value consumed by this operation.
+/// @param orderExpressions orderExpressions value consumed by this operation.
 function project(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "project", "rows must be array") end if
   groups = groupRows(rows, groupExpressions, true)
@@ -813,7 +939,8 @@ function project(rows, selectExpressions, groupExpressions, havingExpression, or
   return output
 end function
 
-// Converts scanned rows to the shared validated spill representation.
+/// Converts scanned rows to the shared validated spill representation.
+/// @param rows rows value consumed by this operation.
 function projectedSpillRows(rows)
   output = []
   for each row in rows
@@ -822,7 +949,8 @@ function projectedSpillRows(rows)
   return output
 end function
 
-// Restores value-only scanned rows from a validated spill partition.
+/// Restores value-only scanned rows from a validated spill partition.
+/// @param rows rows value consumed by this operation.
 function scannedSpillRows(rows)
   output = []
   for each row in rows
@@ -831,8 +959,9 @@ function scannedSpillRows(rows)
   return output
 end function
 
-// Reads, aggregates, and removes one partition. Different tasks own disjoint
-// files and disjoint hash tables, so native workers require no shared lock.
+/// Reads, aggregates, and removes one partition. Different tasks own disjoint
+/// files and disjoint hash tables, so native workers require no shared lock.
+/// @param task task value consumed by this operation.
 function projectSpilledPartition(task)
   restored = try(sort.readRun(task.run))
   if typeof(restored) == "error" then sort.cleanupRuns([task.run]); return restored end if
@@ -843,9 +972,16 @@ function projectSpilledPartition(task)
   return output
 end function
 
-// Executes grouped aggregation one hash partition at a time when the input
-// exceeds the configured threshold. Equal group keys always select the same
-// partition; final ORDER BY, when present, restores requested output ordering.
+/// Executes grouped aggregation one hash partition at a time when the input
+/// exceeds the configured threshold. Equal group keys always select the same
+/// partition; final ORDER BY, when present, restores requested output ordering.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param groupExpressions groupExpressions value consumed by this operation.
+/// @param havingExpression havingExpression value consumed by this operation.
+/// @param orderExpressions orderExpressions value consumed by this operation.
+/// @param temporaryRoot temporaryRoot value consumed by this operation.
+/// @param threshold threshold value consumed by this operation.
 function projectWithSpill(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions, temporaryRoot, threshold)
   if typeof(temporaryRoot) != "string" or typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "projectWithSpill", "invalid spill configuration") end if
   if len(rows) <= threshold or len(groupExpressions) == 0 then return project(rows, selectExpressions, groupExpressions, havingExpression, orderExpressions) end if
@@ -916,9 +1052,12 @@ function projectWithSpill(rows, selectExpressions, groupExpressions, havingExpre
   return output
 end function
 
-// Finds matching using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds matching using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param candidate candidate value consumed by this operation.
+/// @param used used value consumed by this operation.
 function findMatching(rows, candidate, used)
   if len(rows) == 0 then return -1 end if
   for index = 0 to len(rows) - 1
@@ -927,10 +1066,14 @@ function findMatching(rows, candidate, used)
   return -1
 end function
 
-// Implements set operation for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements set operation for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param operator operator value consumed by this operation.
+/// @param all all value consumed by this operation.
 function setOperation(leftRows, rightRows, operator, all)
   if typeof(leftRows) != "array" or typeof(rightRows) != "array" or typeof(operator) != "int" or typeof(all) != "bool" then return fail(INVALID_ARGUMENT, "setOperation", "invalid arguments") end if
   if operator == ast.SET_UNION then
@@ -966,23 +1109,23 @@ function setOperation(leftRows, rightRows, operator, all)
   return output
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor aggregate module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.aggregate"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor aggregate module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M16"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor aggregate module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

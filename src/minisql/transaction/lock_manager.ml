@@ -1,3 +1,5 @@
+//! Provides minisql transaction lock manager facilities for this project.
+
 package minisql.transaction.lock_manager
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -6,78 +8,87 @@ package minisql.transaction.lock_manager
 import std.threading as threading
 import minisql.platform.clock as clock
 
-// In-process writer-prioritized reader/writer gate shared by connections using
-// one database. The manager serializes state transitions with a mutex, prevents
-// new readers from starving queued writers, and exposes wait-for edges for
-// deterministic timeout and deadlock diagnostics.
+/// In-process writer-prioritized reader/writer gate shared by connections using
 
 const INVALID_ARGUMENT = 9001
+/// Defines the lock conflict constant used by the minisql transaction lock manager module.
 const LOCK_CONFLICT = 9007
+/// Defines the deadlock detected constant used by the minisql transaction lock manager module.
 const DEADLOCK_DETECTED = 9031
+/// Defines the lock timeout constant used by the minisql transaction lock manager module.
 const LOCK_TIMEOUT = 9032
 
-// Defines the wait edge record used by this module.
+/// Defines the wait edge record used by this module.
 struct WaitEdge
-  // Waiter id field of the wait edge.
+  /// Waiter id field of the wait edge.
   waiterId
-  // Blocker id field of the wait edge.
+  /// Blocker id field of the wait edge.
   blockerId
-  // Started at field of the wait edge.
+  /// Started at field of the wait edge.
   startedAt
 end struct
 
-// Defines the lock manager record used by this module.
+/// Defines the lock manager record used by this module.
 struct LockManager
-  // Guard field of the lock manager.
+  /// Guard field of the lock manager.
   guard
-  // Active writer field of the lock manager.
+  /// Active writer field of the lock manager.
   activeWriter
-  // Readers field of the lock manager.
+  /// Readers field of the lock manager.
   readers
-  // Waits field of the lock manager.
+  /// Waits field of the lock manager.
   waits
 end struct
 
-// Defines the read lease record used by this module.
+/// Defines the read lease record used by this module.
 struct ReadLease
-  // Transaction id field of the read lease.
+  /// Transaction id field of the read lease.
   transactionId
-  // Isolation level field of the read lease.
+  /// Isolation level field of the read lease.
   isolationLevel
-  // Release on finish field of the read lease.
+  /// Release on finish field of the read lease.
   releaseOnFinish
-  // Active field of the read lease.
+  /// Active field of the read lease.
   active
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql transaction lock manager module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "transaction.lock_manager." + operation + ": " + message)
 end function
 
-// Creates the requested value.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql transaction lock manager module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function create()
   return LockManager(threading.Lock.new(), 0, [], [])
 end function
 
-// Validates the requested value.
-// Inputs: `manager`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates validate for the minisql transaction lock manager workflow.
+/// Inputs: `manager`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param manager manager value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validate(manager, operation)
   if manager is not LockManager then return fail(INVALID_ARGUMENT, operation, "manager must be LockManager") end if
   return true
 end function
 
-// Performs the valid transaction id operation for this module.
-// Inputs: `transactionId`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the valid transaction id operation for this module.
+/// Inputs: `transactionId`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param transactionId Identifier of transaction.
+/// @param operation operation value consumed by this operation.
 function validTransactionId(transactionId, operation)
   if typeof(transactionId) != "int" or transactionId <= 0 then return fail(INVALID_ARGUMENT, operation, "transactionId must be positive") end if
   return true
 end function
 
-// Performs the contains id operation for this module.
-// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the contains id operation for this module.
+/// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param wanted wanted value consumed by this operation.
 function containsId(values, wanted)
   for each value in values
     if value == wanted then return true end if
@@ -85,14 +96,18 @@ function containsId(values, wanted)
   return false
 end function
 
-// Performs the contains reader operation for this module.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the contains reader operation for this module.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function containsReader(manager, transactionId)
   return containsId(manager.readers, transactionId)
 end function
 
-// Clears the waiter.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Clears the waiter.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function clearWaiter(manager, transactionId)
   output = []
   for each edge in manager.waits
@@ -102,8 +117,10 @@ function clearWaiter(manager, transactionId)
   return true
 end function
 
-// Clears the transaction waits.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Clears the transaction waits.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function clearTransactionWaits(manager, transactionId)
   output = []
   for each edge in manager.waits
@@ -113,8 +130,12 @@ function clearTransactionWaits(manager, transactionId)
   return true
 end function
 
-// Performs the path exists operation for this module.
-// Inputs: `manager`, `current`, `target`, `visited`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the pathExists operation for the minisql transaction lock manager module.
+/// Inputs: `manager`, `current`, `target`, `visited`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param current current value consumed by this operation.
+/// @param target target value consumed by this operation.
+/// @param visited visited value consumed by this operation.
 function pathExists(manager, current, target, visited)
   if current == target then return true end if
   if containsId(visited, current) then return false end if
@@ -127,8 +148,12 @@ function pathExists(manager, current, target, visited)
   return false
 end function
 
-// Performs the register wait operation for this module.
-// Inputs: `manager`, `transactionId`, `blockers`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the register wait operation for this module.
+/// Inputs: `manager`, `transactionId`, `blockers`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
+/// @param blockers blockers value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function registerWait(manager, transactionId, blockers, operation)
   clearWaiter(manager, transactionId)
   started = clock.monotonicMilliseconds()
@@ -150,16 +175,20 @@ function registerWait(manager, transactionId, blockers, operation)
   return fail(LOCK_CONFLICT, operation, "lock is currently held by another session")
 end function
 
-// Reads the blockers.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the blockers.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function readBlockers(manager, transactionId)
   blockers = []
   if manager.activeWriter != 0 and manager.activeWriter != transactionId then blockers = blockers + [manager.activeWriter] end if
   return blockers
 end function
 
-// Writes the blockers.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the blockers.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function writeBlockers(manager, transactionId)
   blockers = []
   if manager.activeWriter != 0 and manager.activeWriter != transactionId then blockers = blockers + [manager.activeWriter] end if
@@ -169,8 +198,10 @@ function writeBlockers(manager, transactionId)
   return blockers
 end function
 
-// Acquires the read unlocked.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Acquires the read unlocked.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function acquireReadUnlocked(manager, transactionId)
   blockers = readBlockers(manager, transactionId)
   if len(blockers) > 0 then return registerWait(manager, transactionId, blockers, "acquireRead") end if
@@ -179,8 +210,10 @@ function acquireReadUnlocked(manager, transactionId)
   return true
 end function
 
-// Acquires the read.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Acquires the read.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function acquireRead(manager, transactionId)
   validate(manager, "acquireRead")
   validTransactionId(transactionId, "acquireRead")
@@ -190,8 +223,10 @@ function acquireRead(manager, transactionId)
   return result
 end function
 
-// Acquires the write unlocked.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Acquires the write unlocked.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function acquireWriteUnlocked(manager, transactionId)
   blockers = writeBlockers(manager, transactionId)
   if len(blockers) > 0 then return registerWait(manager, transactionId, blockers, "acquireWrite") end if
@@ -200,8 +235,10 @@ function acquireWriteUnlocked(manager, transactionId)
   return true
 end function
 
-// Acquires the write.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Acquires the write.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function acquireWrite(manager, transactionId)
   validate(manager, "acquireWrite")
   validTransactionId(transactionId, "acquireWrite")
@@ -211,8 +248,10 @@ function acquireWrite(manager, transactionId)
   return result
 end function
 
-// Removes the transaction's pending wait edges after cancellation or timeout.
-// Inputs: `manager`, `transactionId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Removes the transaction's pending wait edges after cancellation or timeout.
+/// Inputs: `manager`, `transactionId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function cancelWait(manager, transactionId)
   validate(manager, "cancelWait")
   validTransactionId(transactionId, "cancelWait")
@@ -222,8 +261,10 @@ function cancelWait(manager, transactionId)
   return result
 end function
 
-// Releases the unlocked.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Releases the unlocked.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function releaseUnlocked(manager, transactionId)
   if manager.activeWriter == transactionId then manager.activeWriter = 0 end if
   nextReaders = []
@@ -235,8 +276,10 @@ function releaseUnlocked(manager, transactionId)
   return true
 end function
 
-// Releases the requested value.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Performs the release operation for the minisql transaction lock manager module.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function release(manager, transactionId)
   validate(manager, "release")
   validTransactionId(transactionId, "release")
@@ -246,8 +289,9 @@ function release(manager, transactionId)
   return result
 end function
 
-// Reads the er count.
-// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the er count.
+/// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
 function readerCount(manager)
   validate(manager, "readerCount")
   if not manager.guard.acquire() then return fail(INVALID_ARGUMENT, "readerCount", "manager lock is unavailable") end if
@@ -256,8 +300,9 @@ function readerCount(manager)
   return value
 end function
 
-// Performs the waiter count operation for this module.
-// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the waiter count operation for this module.
+/// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
 function waiterCount(manager)
   validate(manager, "waiterCount")
   if not manager.guard.acquire() then return fail(INVALID_ARGUMENT, "waiterCount", "manager lock is unavailable") end if
@@ -270,8 +315,10 @@ function waiterCount(manager)
   return value
 end function
 
-// Evaluates whether the supplied input satisfies the waiting predicate.
-// Inputs: `manager`, `transactionId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the waiting predicate.
+/// Inputs: `manager`, `transactionId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function isWaiting(manager, transactionId)
   validate(manager, "isWaiting")
   validTransactionId(transactionId, "isWaiting")
@@ -284,8 +331,10 @@ function isWaiting(manager, transactionId)
   return waiting
 end function
 
-// Releases the read unlocked.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Releases the read unlocked.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function releaseReadUnlocked(manager, transactionId)
   nextReaders = []
   for each reader in manager.readers
@@ -296,8 +345,10 @@ function releaseReadUnlocked(manager, transactionId)
   return true
 end function
 
-// Releases the read.
-// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Releases the read.
+/// Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function releaseRead(manager, transactionId)
   validate(manager, "releaseRead")
   validTransactionId(transactionId, "releaseRead")
@@ -307,8 +358,11 @@ function releaseRead(manager, transactionId)
   return result
 end function
 
-// Acquires the statement read.
-// Inputs: `manager`, `transactionId`, `isolationLevel`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Acquires the statement read.
+/// Inputs: `manager`, `transactionId`, `isolationLevel`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
+/// @param isolationLevel isolationLevel value consumed by this operation.
 function acquireStatementRead(manager, transactionId, isolationLevel)
   validate(manager, "acquireStatementRead")
   validTransactionId(transactionId, "acquireStatementRead")
@@ -324,8 +378,10 @@ function acquireStatementRead(manager, transactionId, isolationLevel)
   return lease
 end function
 
-// Performs the finish statement operation for this module.
-// Inputs: `manager`, `lease`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the finish statement operation for this module.
+/// Inputs: `manager`, `lease`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param lease lease value consumed by this operation.
 function finishStatement(manager, lease)
   validate(manager, "finishStatement")
   if lease is not ReadLease or not lease.active then return fail(INVALID_ARGUMENT, "finishStatement", "lease is invalid") end if
@@ -336,14 +392,17 @@ function finishStatement(manager, lease)
   return true
 end function
 
-// Performs the finish transaction operation for this module.
-// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the finish transaction operation for this module.
+/// Inputs: `manager`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function finishTransaction(manager, transactionId)
   return release(manager, transactionId)
 end function
 
-// Performs the active writer operation for this module.
-// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the active writer operation for this module.
+/// Inputs: `manager`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param manager manager value consumed by this operation.
 function activeWriter(manager)
   validate(manager, "activeWriter")
   if not manager.guard.acquire() then return fail(INVALID_ARGUMENT, "activeWriter", "manager lock is unavailable") end if
@@ -352,8 +411,9 @@ function activeWriter(manager)
   return value
 end function
 
-// Closes the requested value.
-// Inputs: `manager`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql transaction lock manager module.
+/// Inputs: `manager`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param manager manager value consumed by this operation.
 function close(manager)
   validate(manager, "close")
   if not manager.guard.acquire() then return fail(INVALID_ARGUMENT, "close", "manager lock is unavailable") end if
@@ -364,20 +424,20 @@ function close(manager)
   return manager.guard.close()
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql transaction lock manager module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "transaction.lock_manager"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql transaction lock manager module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M6"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql transaction lock manager module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct TruncateStatement
 Groups the truncate statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L658)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L713)
 
 ## Members
 
@@ -26,7 +26,7 @@ restartIdentity
 Stores the restart identity associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L662)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L717)
 
 <a id="field-field-minisql-sql-ast-truncatestatement-tablename-tablename-src-minisql-sql-ast-ml-1987585854"></a>
 ### tableName
@@ -38,4 +38,4 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L660)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L715)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql platform lock facilities for this project.
+
 Package: [`minisql.platform.lock`](Package-minisql-platform-lock-321595408.md)
 
 Reachable from entry: **yes**
@@ -24,11 +26,11 @@ Acquires the exclusive. Inputs: `file`, `failImmediately`. Returns the produced 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `failImmediately` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `failImmediately` | `dynamic` | — | failImmediately value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L44)
 
 <a id="function-function-minisql-platform-lock-acquireshared-function-acquireshared-file-failimmediately-src-minisql-platform-lock-ml-494139354"></a>
 ### acquireShared
@@ -41,11 +43,11 @@ Acquires the shared. Inputs: `file`, `failImmediately`. Returns the produced val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `failImmediately` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `failImmediately` | `dynamic` | — | failImmediately value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L57)
 
 <a id="function-function-minisql-platform-lock-componentname-function-componentname-src-minisql-platform-lock-ml-822735344"></a>
 ### componentName
@@ -54,10 +56,10 @@ Acquires the shared. Inputs: `file`, `failImmediately`. Returns the produced val
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql platform lock module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L81)
 
 <a id="function-function-minisql-platform-lock-fail-function-fail-code-operation-message-src-minisql-platform-lock-ml-1548745065"></a>
 ### fail
@@ -66,16 +68,16 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql platform lock module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L36)
 
 - [minisql.platform.lock.FileLock](Type-minisql-platform-lock-filelock-1523501747.md) — struct
 <a id="constant-constant-minisql-platform-lock-invalid-argument-const-invalid-argument-9001-src-minisql-platform-lock-ml-707634639"></a>
@@ -85,7 +87,7 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const INVALID_ARGUMENT = 9001
 ```
 
-Process-visible file-region locks used to coordinate database readers and writers. A FileLock owns the duplicated handle that carries the Windows lock; releasing or closing the lease must happen exactly once.
+Process-visible file-region locks used to coordinate database readers and
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L17)
@@ -97,10 +99,10 @@ Process-visible file-region locks used to coordinate database readers and writer
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql platform lock module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L93)
 
 <a id="constant-constant-minisql-platform-lock-lock-conflict-const-lock-conflict-9007-src-minisql-platform-lock-ml-1060498669"></a>
 ### LOCK_CONFLICT
@@ -109,8 +111,10 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 const LOCK_CONFLICT = 9007
 ```
 
+Defines the lock conflict constant used by the minisql platform lock module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L19)
 
 <a id="function-function-minisql-platform-lock-release-function-release-lock-src-minisql-platform-lock-ml-796137905"></a>
 ### release
@@ -119,14 +123,14 @@ const LOCK_CONFLICT = 9007
 function release(lock)
 ```
 
-Releases the requested value. Inputs: `lock`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the release operation for the minisql platform lock module. Inputs: `lock`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lock` | `dynamic` | — |  |
+| `lock` | `dynamic` | — | lock value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L69)
 
 <a id="function-function-minisql-platform-lock-targetmilestone-function-targetmilestone-src-minisql-platform-lock-ml-383365606"></a>
 ### targetMilestone
@@ -135,7 +139,7 @@ Releases the requested value. Inputs: `lock`. Returns the operation result and p
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql platform lock module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L87)

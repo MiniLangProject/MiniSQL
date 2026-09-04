@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql sql binder facilities for this project.
+
 Package: [`minisql.sql.binder`](Package-minisql-sql-binder-1359417870.md)
 
 Reachable from entry: **yes**
@@ -31,13 +33,13 @@ Appends one column definition to a virtual INFORMATION_SCHEMA table.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `columns` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `kind` | `dynamic` | — |  |
-| `nullable` | `dynamic` | — |  |
+| `columns` | `dynamic` | — | columns value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
+| `nullable` | `dynamic` | — | nullable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L560)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L628)
 
 <a id="function-function-minisql-sql-binder-appendnamedsource-function-appendnamedsource-sources-named-alias-src-minisql-sql-binder-ml-1577303499"></a>
 ### appendNamedSource
@@ -50,12 +52,12 @@ Appends named source using the supplied inputs. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
-| `named` | `dynamic` | — |  |
-| `alias` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `named` | `dynamic` | — | named value consumed by this operation. |
+| `alias` | `dynamic` | — | alias value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L524)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L582)
 
 <a id="function-function-minisql-sql-binder-appendresolvedsource-function-appendresolvedsource-sources-database-name-alias-availablequeries-viewstack-src-minisql-sql-binder-ml-1595355496"></a>
 ### appendResolvedSource
@@ -68,15 +70,15 @@ Appends resolved source using the supplied inputs. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `alias` | `dynamic` | — |  |
-| `availableQueries` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `alias` | `dynamic` | — | alias value consumed by this operation. |
+| `availableQueries` | `dynamic` | — | availableQueries value consumed by this operation. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L610)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L685)
 
 <a id="function-function-minisql-sql-binder-appendsource-function-appendsource-sources-table-alias-src-minisql-sql-binder-ml-119937950"></a>
 ### appendSource
@@ -89,12 +91,12 @@ Appends source using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `alias` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `alias` | `dynamic` | — | alias value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L463)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L511)
 
 <a id="function-function-minisql-sql-binder-bindaggregate-function-bindaggregate-expression-sources-database-src-minisql-sql-binder-ml-441568511"></a>
 ### bindAggregate
@@ -107,12 +109,12 @@ Binds aggregate using the supplied inputs. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L830)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L929)
 
 <a id="function-function-minisql-sql-binder-bindaltertable-function-bindaltertable-statement-database-src-minisql-sql-binder-ml-407437228"></a>
 ### bindAlterTable
@@ -125,11 +127,11 @@ Binds alter table using the supplied inputs. Requires arguments that satisfy the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2314)
 
 <a id="function-function-minisql-sql-binder-bindbetweenexpression-function-bindbetweenexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-146631670"></a>
 ### bindBetweenExpression
@@ -148,7 +150,7 @@ Binds one BETWEEN predicate and validates both boundary types.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1218)
 
 <a id="function-function-minisql-sql-binder-bindbinaryexpression-function-bindbinaryexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-1747867668"></a>
 ### bindBinaryExpression
@@ -167,7 +169,7 @@ Binds a binary operator and computes its SQL result type.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1254)
 
 <a id="function-function-minisql-sql-binder-bindcaseexpression-function-bindcaseexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-393381928"></a>
 ### bindCaseExpression
@@ -186,7 +188,7 @@ Binds all CASE branches while deriving their common nullable result type.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1065)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1174)
 
 <a id="function-function-minisql-sql-binder-bindcolumnsources-function-bindcolumnsources-expression-sources-src-minisql-sql-binder-ml-1731728374"></a>
 ### bindColumnSources
@@ -199,11 +201,11 @@ Binds column sources using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L659)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L738)
 
 <a id="function-function-minisql-sql-binder-bindconflictassignments-function-bindconflictassignments-statement-table-sources-src-minisql-sql-binder-ml-1134364459"></a>
 ### bindConflictAssignments
@@ -216,12 +218,12 @@ Binds conflict assignments using the supplied inputs. Returns the computed value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1687)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1843)
 
 <a id="function-function-minisql-sql-binder-bindconflictexpression-function-bindconflictexpression-expression-table-sources-src-minisql-sql-binder-ml-400675656"></a>
 ### bindConflictExpression
@@ -234,12 +236,12 @@ Binds conflict expression using the supplied inputs. Returns the computed value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1680)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1833)
 
 <a id="function-function-minisql-sql-binder-bindcreateindex-function-bindcreateindex-statement-database-src-minisql-sql-binder-ml-997421642"></a>
 ### bindCreateIndex
@@ -252,11 +254,11 @@ Binds index columns and validates an optional immutable row predicate.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2011)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2192)
 
 <a id="function-function-minisql-sql-binder-bindcreatetable-function-bindcreatetable-statement-database-src-minisql-sql-binder-ml-1804111214"></a>
 ### bindCreateTable
@@ -269,11 +271,11 @@ Binds create table using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1870)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2041)
 
 <a id="function-function-minisql-sql-binder-binddelete-function-binddelete-statement-database-src-minisql-sql-binder-ml-509950280"></a>
 ### bindDelete
@@ -286,11 +288,11 @@ Binds delete using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1849)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2016)
 
 <a id="function-function-minisql-sql-binder-binddropindex-function-binddropindex-statement-database-src-minisql-sql-binder-ml-1557931876"></a>
 ### bindDropIndex
@@ -303,11 +305,11 @@ Binds DROP INDEX by resolving the database-wide index name to its owning table. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2063)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2250)
 
 <a id="function-function-minisql-sql-binder-binddroptable-function-binddroptable-statement-database-src-minisql-sql-binder-ml-2041613476"></a>
 ### bindDropTable
@@ -320,11 +322,11 @@ Binds drop table using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2045)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2228)
 
 <a id="function-function-minisql-sql-binder-bindexpression-function-bindexpression-expression-table-alias-src-minisql-sql-binder-ml-1817696678"></a>
 ### bindExpression
@@ -337,12 +339,12 @@ Binds expression using the supplied inputs. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `alias` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `alias` | `dynamic` | — | alias value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1323)
 
 <a id="function-function-minisql-sql-binder-bindexpressioninternal-function-bindexpressioninternal-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-817189148"></a>
 ### bindExpressionInternal
@@ -361,7 +363,7 @@ Dispatches one AST expression to its node-specific binder.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1290)
 
 <a id="function-function-minisql-sql-binder-bindinexpression-function-bindinexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-1067051104"></a>
 ### bindInExpression
@@ -380,7 +382,7 @@ Binds one IN-list predicate and verifies every candidate type.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1093)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1202)
 
 <a id="constant-constant-minisql-sql-binder-binding-error-const-binding-error-9020-src-minisql-sql-binder-ml-223572636"></a>
 ### BINDING_ERROR
@@ -389,8 +391,10 @@ Binds one IN-list predicate and verifies every candidate type.
 const BINDING_ERROR = 9020
 ```
 
+Defines the binding error constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L26)
 
 <a id="function-function-minisql-sql-binder-bindinsert-function-bindinsert-statement-database-src-minisql-sql-binder-ml-1258080740"></a>
 ### bindInsert
@@ -403,11 +407,11 @@ Binds insert using the supplied inputs. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1773)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1936)
 
 <a id="function-function-minisql-sql-binder-bindinsertvalue-function-bindinsertvalue-expression-targettype-src-minisql-sql-binder-ml-1269042503"></a>
 ### bindInsertValue
@@ -420,11 +424,11 @@ Binds insert value using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `targetType` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `targetType` | `dynamic` | — | targetType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1752)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1913)
 
 <a id="function-function-minisql-sql-binder-bindliteral-function-bindliteral-expression-src-minisql-sql-binder-ml-991973214"></a>
 ### bindLiteral
@@ -437,10 +441,10 @@ Binds literal using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L396)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L436)
 
 <a id="function-function-minisql-sql-binder-bindreturning-function-bindreturning-items-table-src-minisql-sql-binder-ml-1753836362"></a>
 ### bindReturning
@@ -453,11 +457,11 @@ Binds returning using the supplied inputs. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1555)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1697)
 
 <a id="function-function-minisql-sql-binder-bindscalarfunction-function-bindscalarfunction-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-390962724"></a>
 ### bindScalarFunction
@@ -470,13 +474,13 @@ Binds scalar function using the supplied inputs. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `allowAggregates` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `allowAggregates` | `dynamic` | — | allowAggregates value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L744)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L840)
 
 <a id="function-function-minisql-sql-binder-bindselect-function-bindselect-statement-database-src-minisql-sql-binder-ml-650448800"></a>
 ### bindSelect
@@ -489,11 +493,11 @@ Binds select using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1547)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1687)
 
 <a id="function-function-minisql-sql-binder-bindselectinternal-function-bindselectinternal-statement-database-inheritedqueries-viewstack-src-minisql-sql-binder-ml-2079062947"></a>
 ### bindSelectInternal
@@ -506,13 +510,13 @@ Binds select internal using the supplied inputs. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
-| `inheritedQueries` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `inheritedQueries` | `dynamic` | — | inheritedQueries value consumed by this operation. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1391)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1529)
 
 <a id="function-function-minisql-sql-binder-bindstatement-function-bindstatement-statement-database-src-minisql-sql-binder-ml-1834647236"></a>
 ### bindStatement
@@ -525,11 +529,11 @@ Binds statement using the supplied inputs. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2206)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2398)
 
 <a id="function-function-minisql-sql-binder-bindsubqueryexpression-function-bindsubqueryexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-957967456"></a>
 ### bindSubqueryExpression
@@ -548,7 +552,7 @@ Binds a scalar, EXISTS, or IN subquery after masking correlated references.
 | `database` | `dynamic` | — | Catalog handle used to bind the nested SELECT. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L992)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1101)
 
 <a id="function-function-minisql-sql-binder-bindtruncate-function-bindtruncate-statement-database-src-minisql-sql-binder-ml-1437790096"></a>
 ### bindTruncate
@@ -561,11 +565,11 @@ Binds truncate using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1859)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2028)
 
 <a id="function-function-minisql-sql-binder-bindunaryexpression-function-bindunaryexpression-expression-sources-allowaggregates-database-src-minisql-sql-binder-ml-1635451516"></a>
 ### bindUnaryExpression
@@ -584,7 +588,7 @@ Binds a unary operator, including the signed-literal minimum-value path.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1232)
 
 <a id="function-function-minisql-sql-binder-bindupdate-function-bindupdate-statement-database-src-minisql-sql-binder-ml-815972764"></a>
 ### bindUpdate
@@ -597,11 +601,11 @@ Binds update using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1826)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1991)
 
 <a id="function-function-minisql-sql-binder-bindwhere-function-bindwhere-expression-table-alias-src-minisql-sql-binder-ml-1300413854"></a>
 ### bindWhere
@@ -614,12 +618,12 @@ Binds where using the supplied inputs. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `alias` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `alias` | `dynamic` | — | alias value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1395)
 
 <a id="function-function-minisql-sql-binder-bindwheresources-function-bindwheresources-expression-sources-operation-database-src-minisql-sql-binder-ml-859913768"></a>
 ### bindWhereSources
@@ -632,13 +636,13 @@ Binds where sources using the supplied inputs. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `database` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1407)
 
 <a id="function-function-minisql-sql-binder-bindwindowexpression-function-bindwindowexpression-expression-sources-database-src-minisql-sql-binder-ml-2026047035"></a>
 ### bindWindowExpression
@@ -656,7 +660,7 @@ Binds one window expression and preserves its ordering metadata arrays.
 | `database` | `dynamic` | — | Catalog handle used by nested expression binding. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1025)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1134)
 
 - [minisql.sql.binder.BoundAlterTable](Type-minisql-sql-binder-boundaltertable-2042442404.md) — struct
 - [minisql.sql.binder.BoundAssignment](Type-minisql-sql-binder-boundassignment-1897273953.md) — struct
@@ -677,11 +681,11 @@ Implements bound item index for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1351)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1482)
 
 - [minisql.sql.binder.BoundJoin](Type-minisql-sql-binder-boundjoin-1558173624.md) — struct
 - [minisql.sql.binder.BoundNamedQuery](Type-minisql-sql-binder-boundnamedquery-1731520155.md) — struct
@@ -700,10 +704,10 @@ Implements bound item index for this module. Returns the computed value or opera
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql sql binder module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2415)
 
 <a id="function-function-minisql-sql-binder-conflictbindingsources-function-conflictbindingsources-table-src-minisql-sql-binder-ml-262429388"></a>
 ### conflictBindingSources
@@ -716,10 +720,10 @@ Implements conflict binding sources for this module. Returns the computed value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `table` | `dynamic` | — |  |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1667)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1817)
 
 <a id="function-function-minisql-sql-binder-conflictconstraint-function-conflictconstraint-database-table-target-src-minisql-sql-binder-ml-1602367482"></a>
 ### conflictConstraint
@@ -732,12 +736,12 @@ Implements conflict constraint for this module. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `target` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `target` | `dynamic` | — | target value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1598)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1745)
 
 <a id="function-function-minisql-sql-binder-constantschemaexpression-function-constantschemaexpression-expression-src-minisql-sql-binder-ml-1144196274"></a>
 ### constantSchemaExpression
@@ -750,10 +754,10 @@ Implements constant schema expression for this module. Returns the computed valu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2089)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2277)
 
 <a id="constant-constant-minisql-sql-binder-constraint-violation-const-constraint-violation-9021-src-minisql-sql-binder-ml-1360484599"></a>
 ### CONSTRAINT_VIOLATION
@@ -762,8 +766,10 @@ Implements constant schema expression for this module. Returns the computed valu
 const CONSTRAINT_VIOLATION = 9021
 ```
 
+Defines the constraint violation constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L28)
 
 <a id="function-function-minisql-sql-binder-containsaggregatelist-function-containsaggregatelist-items-src-minisql-sql-binder-ml-82998576"></a>
 ### containsAggregateList
@@ -776,10 +782,10 @@ Returns whether the supplied value satisfies the aggregate list condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1340)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1469)
 
 <a id="function-function-minisql-sql-binder-crossjoinequalityforsource-function-crossjoinequalityforsource-expression-source-src-minisql-sql-binder-ml-2024335965"></a>
 ### crossJoinEqualityForSource
@@ -792,11 +798,11 @@ Finds one WHERE equality connecting a newly introduced CROSS/comma source to any
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1220)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1334)
 
 <a id="function-function-minisql-sql-binder-decimalliteraltext-function-decimalliteraltext-expression-src-minisql-sql-binder-ml-2069094174"></a>
 ### decimalLiteralText
@@ -809,10 +815,10 @@ Implements decimal literal text for this module. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1892)
 
 <a id="function-function-minisql-sql-binder-ensureboolean-function-ensureboolean-expression-operation-src-minisql-sql-binder-ml-1404901977"></a>
 ### ensureBoolean
@@ -825,11 +831,11 @@ Ensures boolean using the supplied inputs. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L667)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L748)
 
 <a id="function-function-minisql-sql-binder-fail-function-fail-code-operation-message-src-minisql-sql-binder-ml-955327995"></a>
 ### fail
@@ -838,16 +844,16 @@ Ensures boolean using the supplied inputs. Returns the computed value or operati
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql sql binder module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L257)
 
 <a id="function-function-minisql-sql-binder-findboundcolumn-function-findboundcolumn-sources-expression-src-minisql-sql-binder-ml-1713627506"></a>
 ### findBoundColumn
@@ -860,11 +866,11 @@ Finds bound column using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L631)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L708)
 
 <a id="function-function-minisql-sql-binder-findcolumn-function-findcolumn-table-name-src-minisql-sql-binder-ml-1963907833"></a>
 ### findColumn
@@ -877,11 +883,11 @@ Finds column using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `table` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L376)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L414)
 
 <a id="function-function-minisql-sql-binder-findcolumnindex-function-findcolumnindex-table-name-src-minisql-sql-binder-ml-1751556803"></a>
 ### findColumnIndex
@@ -894,11 +900,11 @@ Finds column index using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `table` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L361)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L397)
 
 <a id="function-function-minisql-sql-binder-groupedexpressionsafe-function-groupedexpressionsafe-expression-groups-src-minisql-sql-binder-ml-123069204"></a>
 ### groupedExpressionSafe
@@ -911,11 +917,11 @@ Implements grouped expression safe for this module. Requires arguments that sati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `groups` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `groups` | `dynamic` | — | groups value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1291)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1418)
 
 <a id="function-function-minisql-sql-binder-indexkeyastdeterministic-function-indexkeyastdeterministic-expression-src-minisql-sql-binder-ml-1076658198"></a>
 ### indexKeyAstDeterministic
@@ -928,10 +934,10 @@ Accepts scalar AST shapes whose value is stable for a stored row. This check run
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1936)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2109)
 
 <a id="function-function-minisql-sql-binder-indexkeyexpressionreferencescolumn-function-indexkeyexpressionreferencescolumn-expression-src-minisql-sql-binder-ml-1311537574"></a>
 ### indexKeyExpressionReferencesColumn
@@ -944,10 +950,10 @@ Requires at least one table column so constant scalar expressions cannot create 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1975)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2150)
 
 <a id="function-function-minisql-sql-binder-indexkeyexpressionroundtrips-function-indexkeyexpressionroundtrips-expression-boundexpression-table-src-minisql-sql-binder-ml-1991006508"></a>
 ### indexKeyExpressionRoundTrips
@@ -960,12 +966,12 @@ Verifies that canonical catalog SQL reparses to the same typed expression. Colum
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `boundExpression` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `boundExpression` | `dynamic` | — | boundExpression value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2001)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2180)
 
 <a id="function-function-minisql-sql-binder-indexkeyexpressionsafe-function-indexkeyexpressionsafe-expression-src-minisql-sql-binder-ml-1521052446"></a>
 ### indexKeyExpressionSafe
@@ -978,10 +984,10 @@ Combines reproducible scalar-shape and row-dependency validation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1993)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2169)
 
 <a id="function-function-minisql-sql-binder-indexkeyexpressionshapesafe-function-indexkeyexpressionshapesafe-expression-src-minisql-sql-binder-ml-1128002492"></a>
 ### indexKeyExpressionShapeSafe
@@ -994,10 +1000,10 @@ Accepts the bound scalar shapes that the row evaluator can reproduce during inse
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1955)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2129)
 
 <a id="function-function-minisql-sql-binder-indexpredicatesafe-function-indexpredicatesafe-expression-src-minisql-sql-binder-ml-1720275398"></a>
 ### indexPredicateSafe
@@ -1010,10 +1016,10 @@ Accepts only immutable row-local expression nodes for partial indexes.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1925)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2097)
 
 <a id="constant-constant-minisql-sql-binder-information-columns-const-information-columns-3-src-minisql-sql-binder-ml-844820326"></a>
 ### INFORMATION_COLUMNS
@@ -1022,8 +1028,10 @@ Accepts only immutable row-local expression nodes for partial indexes.
 const INFORMATION_COLUMNS = 3
 ```
 
+Defines the information columns constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L72)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L83)
 
 <a id="constant-constant-minisql-sql-binder-information-routines-const-information-routines-6-src-minisql-sql-binder-ml-1270122887"></a>
 ### INFORMATION_ROUTINES
@@ -1032,8 +1040,10 @@ const INFORMATION_COLUMNS = 3
 const INFORMATION_ROUTINES = 6
 ```
 
+Defines the information routines constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L75)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L89)
 
 <a id="constant-constant-minisql-sql-binder-information-schemata-const-information-schemata-1-src-minisql-sql-binder-ml-1340427120"></a>
 ### INFORMATION_SCHEMATA
@@ -1042,8 +1052,10 @@ const INFORMATION_ROUTINES = 6
 const INFORMATION_SCHEMATA = 1
 ```
 
+Defines the information schemata constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L70)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L79)
 
 <a id="constant-constant-minisql-sql-binder-information-table-constraints-const-information-table-constraints-4-src-minisql-sql-binder-ml-109033043"></a>
 ### INFORMATION_TABLE_CONSTRAINTS
@@ -1052,8 +1064,10 @@ const INFORMATION_SCHEMATA = 1
 const INFORMATION_TABLE_CONSTRAINTS = 4
 ```
 
+Defines the information table constraints constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L73)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L85)
 
 <a id="constant-constant-minisql-sql-binder-information-tables-const-information-tables-2-src-minisql-sql-binder-ml-202796651"></a>
 ### INFORMATION_TABLES
@@ -1062,8 +1076,10 @@ const INFORMATION_TABLE_CONSTRAINTS = 4
 const INFORMATION_TABLES = 2
 ```
 
+Defines the information tables constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L71)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L81)
 
 <a id="constant-constant-minisql-sql-binder-information-views-const-information-views-5-src-minisql-sql-binder-ml-102551372"></a>
 ### INFORMATION_VIEWS
@@ -1072,8 +1088,10 @@ const INFORMATION_TABLES = 2
 const INFORMATION_VIEWS = 5
 ```
 
+Defines the information views constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L74)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L87)
 
 <a id="function-function-minisql-sql-binder-informationschematable-function-informationschematable-name-src-minisql-sql-binder-ml-1979330633"></a>
 ### informationSchemaTable
@@ -1086,10 +1104,10 @@ Builds the stable SQL-visible shape for a supported INFORMATION_SCHEMA relation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L565)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L634)
 
 <a id="constant-constant-minisql-sql-binder-invalid-argument-const-invalid-argument-9001-src-minisql-sql-binder-ml-1288132997"></a>
 ### INVALID_ARGUMENT
@@ -1098,8 +1116,10 @@ Builds the stable SQL-visible shape for a supported INFORMATION_SCHEMA relation.
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L20)
 
 <a id="function-function-minisql-sql-binder-isaggregatename-function-isaggregatename-name-src-minisql-sql-binder-ml-933892693"></a>
 ### isAggregateName
@@ -1112,10 +1132,10 @@ Returns whether the supplied value satisfies the aggregate name condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L684)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L767)
 
 <a id="function-function-minisql-sql-binder-isboundaltertable-function-isboundaltertable-value-src-minisql-sql-binder-ml-2101810291"></a>
 ### isBoundAlterTable
@@ -1128,10 +1148,10 @@ Returns whether the supplied value satisfies the bound alter table condition. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L353)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L387)
 
 <a id="function-function-minisql-sql-binder-isboundcreateindex-function-isboundcreateindex-value-src-minisql-sql-binder-ml-949542075"></a>
 ### isBoundCreateIndex
@@ -1144,10 +1164,10 @@ Returns whether the supplied value satisfies the bound create index condition. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L339)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L371)
 
 <a id="function-function-minisql-sql-binder-isboundcreatetable-function-isboundcreatetable-value-src-minisql-sql-binder-ml-1676883875"></a>
 ### isBoundCreateTable
@@ -1160,10 +1180,10 @@ Returns whether the supplied value satisfies the bound create table condition. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L363)
 
 <a id="function-function-minisql-sql-binder-isbounddelete-function-isbounddelete-value-src-minisql-sql-binder-ml-1537092245"></a>
 ### isBoundDelete
@@ -1176,10 +1196,10 @@ Returns whether the supplied value satisfies the bound delete condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L318)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L347)
 
 <a id="function-function-minisql-sql-binder-isbounddroptable-function-isbounddroptable-value-src-minisql-sql-binder-ml-1251230303"></a>
 ### isBoundDropTable
@@ -1192,10 +1212,10 @@ Returns whether the supplied value satisfies the bound drop table condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L346)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L379)
 
 <a id="function-function-minisql-sql-binder-isboundinformationschemasource-function-isboundinformationschemasource-value-src-minisql-sql-binder-ml-1987111215"></a>
 ### isBoundInformationSchemaSource
@@ -1208,10 +1228,10 @@ Returns whether a source is a virtual INFORMATION_SCHEMA metadata relation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L269)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L291)
 
 <a id="function-function-minisql-sql-binder-isboundinsert-function-isboundinsert-value-src-minisql-sql-binder-ml-335298489"></a>
 ### isBoundInsert
@@ -1224,10 +1244,10 @@ Returns whether the supplied value satisfies the bound insert condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L331)
 
 <a id="function-function-minisql-sql-binder-isboundjoin-function-isboundjoin-value-src-minisql-sql-binder-ml-125981327"></a>
 ### isBoundJoin
@@ -1240,10 +1260,10 @@ Returns whether the supplied value satisfies the bound join condition. Returns t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L276)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L299)
 
 <a id="function-function-minisql-sql-binder-isboundnamedquery-function-isboundnamedquery-value-src-minisql-sql-binder-ml-1652693741"></a>
 ### isBoundNamedQuery
@@ -1256,10 +1276,10 @@ Returns whether the supplied value satisfies the bound named query condition. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L254)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L273)
 
 <a id="function-function-minisql-sql-binder-isboundrecursivequery-function-isboundrecursivequery-value-src-minisql-sql-binder-ml-1376699707"></a>
 ### isBoundRecursiveQuery
@@ -1272,10 +1292,10 @@ Returns whether a named query is an executable recursive fixpoint.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L279)
 
 <a id="function-function-minisql-sql-binder-isboundrecursivereference-function-isboundrecursivereference-value-src-minisql-sql-binder-ml-356110369"></a>
 ### isBoundRecursiveReference
@@ -1288,10 +1308,10 @@ Returns whether a source reads the current recursive working-table delta.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L264)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L285)
 
 <a id="function-function-minisql-sql-binder-isboundreturningitem-function-isboundreturningitem-value-src-minisql-sql-binder-ml-1701564431"></a>
 ### isBoundReturningItem
@@ -1304,10 +1324,10 @@ Returns whether the supplied value satisfies the bound returning item condition.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L297)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L323)
 
 <a id="function-function-minisql-sql-binder-isboundselect-function-isboundselect-value-src-minisql-sql-binder-ml-1446717395"></a>
 ### isBoundSelect
@@ -1320,10 +1340,10 @@ Returns whether the supplied value satisfies the bound select condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L290)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L315)
 
 <a id="function-function-minisql-sql-binder-isboundsetoperation-function-isboundsetoperation-value-src-minisql-sql-binder-ml-1197608773"></a>
 ### isBoundSetOperation
@@ -1336,10 +1356,10 @@ Returns whether the supplied value satisfies the bound set operation condition. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L307)
 
 <a id="function-function-minisql-sql-binder-isboundsource-function-isboundsource-value-src-minisql-sql-binder-ml-503662793"></a>
 ### isBoundSource
@@ -1352,10 +1372,10 @@ Returns whether the supplied value satisfies the bound source condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L265)
 
 <a id="function-function-minisql-sql-binder-isboundtruncate-function-isboundtruncate-value-src-minisql-sql-binder-ml-983406651"></a>
 ### isBoundTruncate
@@ -1368,10 +1388,10 @@ Returns whether the supplied value satisfies the bound truncate condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L325)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L355)
 
 <a id="function-function-minisql-sql-binder-isboundupdate-function-isboundupdate-value-src-minisql-sql-binder-ml-179141801"></a>
 ### isBoundUpdate
@@ -1384,10 +1404,10 @@ Returns whether the supplied value satisfies the bound update condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L339)
 
 <a id="function-function-minisql-sql-binder-isimplemented-function-isimplemented-src-minisql-sql-binder-ml-2075088796"></a>
 ### isImplemented
@@ -1396,10 +1416,10 @@ Returns whether the supplied value satisfies the bound update condition. Returns
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql sql binder module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2429)
 
 <a id="function-function-minisql-sql-binder-isnullboundliteral-function-isnullboundliteral-expression-src-minisql-sql-binder-ml-2141812302"></a>
 ### isNullBoundLiteral
@@ -1412,10 +1432,10 @@ Returns whether the supplied value satisfies the null bound literal condition. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L677)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L759)
 
 <a id="function-function-minisql-sql-binder-isscalarfunctionname-function-isscalarfunctionname-name-src-minisql-sql-binder-ml-1659469437"></a>
 ### isScalarFunctionName
@@ -1428,10 +1448,10 @@ Returns whether the name belongs to the built-in scalar function library.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L694)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L779)
 
 <a id="function-function-minisql-sql-binder-iswindowaggregatename-function-iswindowaggregatename-name-src-minisql-sql-binder-ml-1786535925"></a>
 ### isWindowAggregateName
@@ -1444,10 +1464,10 @@ Returns whether the named aggregate is supported as a window aggregate.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L689)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L773)
 
 <a id="function-function-minisql-sql-binder-literaltype-function-literaltype-value-src-minisql-sql-binder-ml-576161245"></a>
 ### literalType
@@ -1460,10 +1480,10 @@ Implements literal type for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L424)
 
 <a id="function-function-minisql-sql-binder-maskoutercolumn-function-maskoutercolumn-expression-sources-statement-src-minisql-sql-binder-ml-938092317"></a>
 ### maskOuterColumn
@@ -1476,12 +1496,12 @@ Replaces an explicitly qualified outer-column reference with a typed NULL. The p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L885)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L989)
 
 <a id="function-function-minisql-sql-binder-maskouterexpression-function-maskouterexpression-expression-sources-statement-src-minisql-sql-binder-ml-643904041"></a>
 ### maskOuterExpression
@@ -1494,12 +1514,12 @@ Recursively masks outer references throughout one nested expression tree.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L899)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1006)
 
 <a id="function-function-minisql-sql-binder-maskouterselect-function-maskouterselect-statement-sources-src-minisql-sql-binder-ml-278497185"></a>
 ### maskOuterSelect
@@ -1512,11 +1532,11 @@ Copies a nested SELECT while replacing only references resolved against outer so
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L953)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1062)
 
 <a id="function-function-minisql-sql-binder-mergeconcretetypes-function-mergeconcretetypes-left-right-src-minisql-sql-binder-ml-1653122587"></a>
 ### mergeConcreteTypes
@@ -1529,11 +1549,11 @@ Implements merge concrete types for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L708)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L797)
 
 <a id="function-function-minisql-sql-binder-mergeresulttype-function-mergeresulttype-currenttype-hasconcrete-nextexpression-src-minisql-sql-binder-ml-29465115"></a>
 ### mergeResultType
@@ -1546,12 +1566,12 @@ Implements merge result type for this module. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `currentType` | `dynamic` | — |  |
-| `hasConcrete` | `dynamic` | — |  |
-| `nextExpression` | `dynamic` | — |  |
+| `currentType` | `dynamic` | — | currentType value consumed by this operation. |
+| `hasConcrete` | `dynamic` | — | hasConcrete value consumed by this operation. |
+| `nextExpression` | `dynamic` | — | nextExpression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L728)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L820)
 
 <a id="function-function-minisql-sql-binder-namedqueryindex-function-namedqueryindex-availablequeries-name-src-minisql-sql-binder-ml-611887576"></a>
 ### namedQueryIndex
@@ -1564,11 +1584,11 @@ Implements named query index for this module. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `availableQueries` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `availableQueries` | `dynamic` | — | availableQueries value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L527)
 
 <a id="function-function-minisql-sql-binder-namescontain-function-namescontain-names-value-src-minisql-sql-binder-ml-681028295"></a>
 ### namesContain
@@ -1581,11 +1601,11 @@ Implements names contain for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `names` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `names` | `dynamic` | — | names value consumed by this operation. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L542)
 
 <a id="constant-constant-minisql-sql-binder-object-not-found-const-object-not-found-9014-src-minisql-sql-binder-ml-1454386993"></a>
 ### OBJECT_NOT_FOUND
@@ -1594,8 +1614,10 @@ Implements names contain for this module. Returns the computed value or operatio
 const OBJECT_NOT_FOUND = 9014
 ```
 
+Defines the object not found constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L22)
 
 <a id="function-function-minisql-sql-binder-objectlocalname-function-objectlocalname-name-src-minisql-sql-binder-ml-1852020831"></a>
 ### objectLocalName
@@ -1608,10 +1630,10 @@ Returns the unqualified component of a canonical schema-qualified object name.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L423)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L465)
 
 <a id="function-function-minisql-sql-binder-parsesingleselect-function-parsesingleselect-sqltext-operation-src-minisql-sql-binder-ml-471399990"></a>
 ### parseSingleSelect
@@ -1624,11 +1646,11 @@ Parses single select using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sqlText` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L537)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L597)
 
 <a id="function-function-minisql-sql-binder-promotecrossjoinequalities-function-promotecrossjoinequalities-joins-whereexpression-src-minisql-sql-binder-ml-1965746434"></a>
 ### promoteCrossJoinEqualities
@@ -1641,11 +1663,11 @@ Promotes a WHERE-restricted cartesian edge to an INNER equality edge so the exis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `joins` | `dynamic` | — |  |
-| `whereExpression` | `dynamic` | — |  |
+| `joins` | `dynamic` | — | joins value consumed by this operation. |
+| `whereExpression` | `dynamic` | — | whereExpression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1255)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1373)
 
 <a id="function-function-minisql-sql-binder-removeboundconjunct-function-removeboundconjunct-expression-target-src-minisql-sql-binder-ml-1424838385"></a>
 ### removeBoundConjunct
@@ -1658,11 +1680,11 @@ Removes every exact occurrence of one guaranteed conjunct from an AND tree. Rebu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `target` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `target` | `dynamic` | — | target value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1356)
 
 <a id="function-function-minisql-sql-binder-resolveinsertcolumns-function-resolveinsertcolumns-statement-table-src-minisql-sql-binder-ml-2098304109"></a>
 ### resolveInsertColumns
@@ -1675,11 +1697,11 @@ Implements resolve insert columns for this module. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1708)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1866)
 
 <a id="function-function-minisql-sql-binder-resolvenamedquery-function-resolvenamedquery-database-name-availablequeries-viewstack-src-minisql-sql-binder-ml-691584824"></a>
 ### resolveNamedQuery
@@ -1692,13 +1714,13 @@ Implements resolve named query for this module. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `availableQueries` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `availableQueries` | `dynamic` | — | availableQueries value consumed by this operation. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L546)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L610)
 
 <a id="function-function-minisql-sql-binder-resulttypewithnullability-function-resulttypewithnullability-typeinfo-nullable-src-minisql-sql-binder-ml-1140656435"></a>
 ### resultTypeWithNullability
@@ -1711,11 +1733,11 @@ Implements result type with nullability for this module. Returns the computed va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `typeInfo` | `dynamic` | — |  |
-| `nullable` | `dynamic` | — |  |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
+| `nullable` | `dynamic` | — | nullable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L701)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L788)
 
 <a id="function-function-minisql-sql-binder-rewriteconflictexpression-function-rewriteconflictexpression-expression-targetname-src-minisql-sql-binder-ml-692511500"></a>
 ### rewriteConflictExpression
@@ -1728,11 +1750,11 @@ Rewrites conflict expression using the supplied inputs. Requires arguments that 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `targetName` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `targetName` | `dynamic` | — | targetName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1625)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1774)
 
 <a id="function-function-minisql-sql-binder-samenamearray-function-samenamearray-left-right-src-minisql-sql-binder-ml-1290020455"></a>
 ### sameNameArray
@@ -1745,11 +1767,11 @@ Implements same name array for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1585)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1729)
 
 <a id="function-function-minisql-sql-binder-schemapreservingrename-function-schemapreservingrename-currentname-newlocalname-src-minisql-sql-binder-ml-602413340"></a>
 ### schemaPreservingRename
@@ -1762,11 +1784,11 @@ Keeps an unqualified ALTER TABLE rename inside the table's current schema.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `currentName` | `dynamic` | — |  |
-| `newLocalName` | `dynamic` | — |  |
+| `currentName` | `dynamic` | — | currentName value consumed by this operation. |
+| `newLocalName` | `dynamic` | — | newLocalName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L436)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L480)
 
 <a id="function-function-minisql-sql-binder-selectdeclaresqualifier-function-selectdeclaresqualifier-statement-qualifier-src-minisql-sql-binder-ml-282681999"></a>
 ### selectDeclaresQualifier
@@ -1779,11 +1801,11 @@ Returns true when a qualifier belongs to a source declared by this nested SELECT
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `qualifier` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `qualifier` | `dynamic` | — | qualifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L869)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L970)
 
 <a id="function-function-minisql-sql-binder-selectreferencessource-function-selectreferencessource-statement-name-src-minisql-sql-binder-ml-1463936734"></a>
 ### selectReferencesSource
@@ -1796,11 +1818,11 @@ Returns true when a SELECT tree names a candidate recursive working table.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1373)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1507)
 
 <a id="function-function-minisql-sql-binder-sourcetypes-function-sourcetypes-sources-src-minisql-sql-binder-ml-72856834"></a>
 ### sourceTypes
@@ -1813,10 +1835,10 @@ Implements source types for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1494)
 
 <a id="function-function-minisql-sql-binder-sourcevisiblename-function-sourcevisiblename-source-src-minisql-sql-binder-ml-1357318831"></a>
 ### sourceVisibleName
@@ -1829,10 +1851,10 @@ Implements source visible name for this module. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L409)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L450)
 
 <a id="function-function-minisql-sql-binder-sourcewidth-function-sourcewidth-sources-src-minisql-sql-binder-ml-912426732"></a>
 ### sourceWidth
@@ -1845,10 +1867,10 @@ Implements source width for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sources` | `dynamic` | — |  |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L451)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L496)
 
 <a id="function-function-minisql-sql-binder-stringarraycontains-function-stringarraycontains-values-name-src-minisql-sql-binder-ml-93810217"></a>
 ### stringArrayContains
@@ -1861,11 +1883,11 @@ Returns whether a string array contains the requested column name.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2052)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2237)
 
 <a id="function-function-minisql-sql-binder-tableforquery-function-tableforquery-name-bound-explicitnames-src-minisql-sql-binder-ml-677146883"></a>
 ### tableForQuery
@@ -1878,12 +1900,12 @@ Implements table for query for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `explicitNames` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `explicitNames` | `dynamic` | — | explicitNames value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L501)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L556)
 
 <a id="function-function-minisql-sql-binder-targetmilestone-function-targetmilestone-src-minisql-sql-binder-ml-75170918"></a>
 ### targetMilestone
@@ -1892,10 +1914,10 @@ Implements table for query for this module. Requires arguments that satisfy the 
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql sql binder module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L2422)
 
 <a id="constant-constant-minisql-sql-binder-type-mismatch-const-type-mismatch-9017-src-minisql-sql-binder-ml-1772443626"></a>
 ### TYPE_MISMATCH
@@ -1904,8 +1926,10 @@ Implements target milestone for this module. Returns the computed value or opera
 const TYPE_MISMATCH = 9017
 ```
 
+Defines the type mismatch constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L24)
 
 <a id="constant-constant-minisql-sql-binder-unsupported-sql-const-unsupported-sql-9025-src-minisql-sql-binder-ml-2083885539"></a>
 ### UNSUPPORTED_SQL
@@ -1914,8 +1938,10 @@ const TYPE_MISMATCH = 9017
 const UNSUPPORTED_SQL = 9025
 ```
 
+Defines the unsupported sql constant used by the minisql sql binder module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L30)
 
 <a id="function-function-minisql-sql-binder-validatewindowarguments-function-validatewindowarguments-name-ranking-countstar-arguments-src-minisql-sql-binder-ml-180528314"></a>
 ### validateWindowArguments
@@ -1934,7 +1960,7 @@ Validates the arity and types required by one supported window function.
 | `arguments` | `dynamic` | — | Bound window-function arguments. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1009)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1118)
 
 <a id="function-function-minisql-sql-binder-windowtoplevelsafe-function-windowtoplevelsafe-expression-src-minisql-sql-binder-ml-219770398"></a>
 ### windowTopLevelSafe
@@ -1947,7 +1973,7 @@ Implements window top level safe for this module. Returns the computed value or 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L1460)

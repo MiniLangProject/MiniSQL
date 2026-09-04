@@ -12,7 +12,7 @@ struct ColumnRule
 Defines the column rule record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L115)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnName
 Column name field of the column rule.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L117)
 
 <a id="field-field-minisql-catalog-schema-history-columnrule-defaultsql-defaultsql-src-minisql-catalog-schema-history-ml-1792554501"></a>
 ### defaultSql
@@ -38,7 +38,7 @@ defaultSql
 Default sql field of the column rule.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L119)
 
 <a id="field-field-minisql-catalog-schema-history-columnrule-identity-identity-src-minisql-catalog-schema-history-ml-1571119183"></a>
 ### identity
@@ -50,4 +50,4 @@ identity
 Identity field of the column rule.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L121)

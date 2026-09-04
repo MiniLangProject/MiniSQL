@@ -12,7 +12,7 @@ struct OperationalSession
 Mutable process-list entry protected by the database execution-state lock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L77)
 
 ## Members
 
@@ -26,7 +26,7 @@ cancelRequested
 Cooperatively asks the executor owning this session to stop at its next poll.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L99)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-createdat-createdat-src-minisql-server-database-manager-ml-1246861105"></a>
 ### createdAt
@@ -38,7 +38,7 @@ createdAt
 Monotonic connection creation time.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L87)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-lastactivity-lastactivity-src-minisql-server-database-manager-ml-141647183"></a>
 ### lastActivity
@@ -50,7 +50,7 @@ lastActivity
 Monotonic time of the most recent request transition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L89)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-peerendpoint-peerendpoint-src-minisql-server-database-manager-ml-1544493439"></a>
 ### peerEndpoint
@@ -62,7 +62,7 @@ peerEndpoint
 Remote endpoint or the literal "embedded" for local API users.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L81)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-principalid-principalid-src-minisql-server-database-manager-ml-232401217"></a>
 ### principalId
@@ -74,7 +74,7 @@ principalId
 Current authenticated principal identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L85)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-requestcount-requestcount-src-minisql-server-database-manager-ml-1324123645"></a>
 ### requestCount
@@ -86,7 +86,7 @@ requestCount
 Number of statements completed by this session.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L97)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-secure-secure-src-minisql-server-database-manager-ml-1767351563"></a>
 ### secure
@@ -98,7 +98,7 @@ secure
 Indicates whether native TLS protects the connection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L83)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-sessionid-sessionid-src-minisql-server-database-manager-ml-1227573241"></a>
 ### sessionId
@@ -110,7 +110,7 @@ sessionId
 Stable identifier allocated with the executor engine.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L79)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-state-state-src-minisql-server-database-manager-ml-922079065"></a>
 ### state
@@ -122,7 +122,7 @@ state
 Human-readable connection state such as IDLE or EXECUTING.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L95)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-statementstartedat-statementstartedat-src-minisql-server-database-manager-ml-858685703"></a>
 ### statementStartedAt
@@ -134,7 +134,7 @@ statementStartedAt
 Monotonic start time of the active statement, or zero while idle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L91)
 
 <a id="field-field-minisql-server-database-manager-operationalsession-statementtext-statementtext-src-minisql-server-database-manager-ml-1101691477"></a>
 ### statementText
@@ -146,4 +146,4 @@ statementText
 Bounded statement summary suitable for an administrative process list.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L93)

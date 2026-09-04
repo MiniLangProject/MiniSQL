@@ -12,7 +12,7 @@ struct WalAppendBatch
 Holds one bounded WAL append buffer. `nextLsn` advances logically while the physical writer position is published only after the complete transaction batch has been appended successfully.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L136)
 
 ## Members
 
@@ -26,7 +26,7 @@ buffer
 Contiguous encoded records awaiting one file write.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L140)
 
 <a id="field-field-minisql-transaction-wal-walappendbatch-nextlsn-nextlsn-src-minisql-transaction-wal-ml-438606887"></a>
 ### nextLsn
@@ -38,7 +38,7 @@ nextLsn
 Logical LSN assigned to the next record in this batch.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L144)
 
 <a id="field-field-minisql-transaction-wal-walappendbatch-records-records-src-minisql-transaction-wal-ml-925941911"></a>
 ### records
@@ -50,7 +50,7 @@ records
 Number of complete encoded records accumulated in the batch.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L146)
 
 <a id="field-field-minisql-transaction-wal-walappendbatch-used-used-src-minisql-transaction-wal-ml-2089074525"></a>
 ### used
@@ -62,7 +62,7 @@ used
 Number of populated bytes in the bounded append buffer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L142)
 
 <a id="field-field-minisql-transaction-wal-walappendbatch-writer-writer-src-minisql-transaction-wal-ml-553117613"></a>
 ### writer
@@ -74,4 +74,4 @@ writer
 WAL writer whose physical append position is published on commit.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L138)

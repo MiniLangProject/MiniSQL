@@ -12,7 +12,7 @@ struct PageChange
 Defines the page change record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L28)
 
 ## Members
 
@@ -26,7 +26,7 @@ fileId
 File id field of the page change.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L30)
 
 <a id="field-field-minisql-transaction-transaction-pagechange-pagebytes-pagebytes-src-minisql-transaction-transaction-ml-1983284010"></a>
 ### pageBytes
@@ -38,7 +38,7 @@ pageBytes
 Page bytes field of the page change.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L34)
 
 <a id="field-field-minisql-transaction-transaction-pagechange-pagenumber-pagenumber-src-minisql-transaction-transaction-ml-1372839182"></a>
 ### pageNumber
@@ -50,4 +50,4 @@ pageNumber
 Page number field of the page change.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L32)

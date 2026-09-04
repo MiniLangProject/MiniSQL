@@ -12,7 +12,7 @@ struct WaitEdge
 Defines the wait edge record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L22)
 
 ## Members
 
@@ -26,7 +26,7 @@ blockerId
 Blocker id field of the wait edge.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L26)
 
 <a id="field-field-minisql-transaction-lock-manager-waitedge-startedat-startedat-src-minisql-transaction-lock-manager-ml-419044083"></a>
 ### startedAt
@@ -38,7 +38,7 @@ startedAt
 Started at field of the wait edge.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L28)
 
 <a id="field-field-minisql-transaction-lock-manager-waitedge-waiterid-waiterid-src-minisql-transaction-lock-manager-ml-633121761"></a>
 ### waiterId
@@ -50,4 +50,4 @@ waiterId
 Waiter id field of the wait edge.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L24)

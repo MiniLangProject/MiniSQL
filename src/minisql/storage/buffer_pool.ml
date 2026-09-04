@@ -1,3 +1,5 @@
+//! Provides minisql storage buffer pool facilities for this project.
+
 package minisql.storage.buffer_pool
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -9,147 +11,152 @@ import minisql.storage.paged_file as paged_file
 import std.ds.hashmap as hashmap
 import std.threading as threading
 
-// Fixed-capacity buffer pool with explicit pin/unpin guards and CLOCK eviction.
-// Dirty pages are resealed and written through the owning PagedFile before reuse.
+/// Fixed-capacity buffer pool with explicit pin/unpin guards and CLOCK eviction.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the closed handle constant used by the minisql storage buffer pool module.
 const CLOSED_HANDLE = 9008
+/// Defines the buffer pool exhausted constant used by the minisql storage buffer pool module.
 const BUFFER_POOL_EXHAUSTED = 9009
+/// Defines the pinned page constant used by the minisql storage buffer pool module.
 const PINNED_PAGE = 9010
 
-// Defines the buffer frame record used by this module.
+/// Defines the buffer frame record used by this module.
 struct BufferFrame
-  // Valid field of the buffer frame.
+  /// Valid field of the buffer frame.
   valid
-  // Path field of the buffer frame.
+  /// Path field of the buffer frame.
   path
-  // Paged file field of the buffer frame.
+  /// Paged file field of the buffer frame.
   pagedFile
-  // Page number field of the buffer frame.
+  /// Page number field of the buffer frame.
   pageNumber
-  // Data field of the buffer frame.
+  /// Data field of the buffer frame.
   data
-  // Pin count field of the buffer frame.
+  /// Pin count field of the buffer frame.
   pinCount
-  // Dirty field of the buffer frame.
+  /// Dirty field of the buffer frame.
   dirty
-  // Referenced field of the buffer frame.
+  /// Referenced field of the buffer frame.
   referenced
 end struct
 
-// Defines the buffer pool record used by this module.
+/// Defines the buffer pool record used by this module.
 struct BufferPool
-  // Capacity field of the buffer pool.
+  /// Capacity field of the buffer pool.
   capacity
-  // Frames field of the buffer pool.
+  /// Frames field of the buffer pool.
   frames
-  // Clock hand field of the buffer pool.
+  /// Clock hand field of the buffer pool.
   clockHand
-  // Hits field of the buffer pool.
+  /// Hits field of the buffer pool.
   hits
-  // Misses field of the buffer pool.
+  /// Misses field of the buffer pool.
   misses
-  // Evictions field of the buffer pool.
+  /// Evictions field of the buffer pool.
   evictions
-  // Dirty flushes field of the buffer pool.
+  /// Dirty flushes field of the buffer pool.
   dirtyFlushes
-  // Closed field of the buffer pool.
+  /// Closed field of the buffer pool.
   closed
 end struct
 
-// Defines the page guard record used by this module.
+/// Defines the page guard record used by this module.
 struct PageGuard
-  // Pool field of the page guard.
+  /// Pool field of the page guard.
   pool
-  // Frame index field of the page guard.
+  /// Frame index field of the page guard.
   frameIndex
-  // Released field of the page guard.
+  /// Released field of the page guard.
   released
 end struct
 
-// Defines the buffer pool stats record used by this module.
+/// Defines the buffer pool stats record used by this module.
 struct BufferPoolStats
-  // Hits field of the buffer pool stats.
+  /// Hits field of the buffer pool stats.
   hits
-  // Misses field of the buffer pool stats.
+  /// Misses field of the buffer pool stats.
   misses
-  // Evictions field of the buffer pool stats.
+  /// Evictions field of the buffer pool stats.
   evictions
-  // Dirty flushes field of the buffer pool stats.
+  /// Dirty flushes field of the buffer pool stats.
   dirtyFlushes
-  // Resident pages field of the buffer pool stats.
+  /// Resident pages field of the buffer pool stats.
   residentPages
-  // Pinned pages field of the buffer pool stats.
+  /// Pinned pages field of the buffer pool stats.
   pinnedPages
 end struct
 
-// Immutable read-cache frame keyed by a stable file path and page number. It
-// deliberately does not retain a PagedFile handle, allowing short-lived scan
-// handles to close without leaving dangling cache ownership.
+/// Immutable read-cache frame keyed by a stable file path and page number. It
+/// deliberately does not retain a PagedFile handle, allowing short-lived scan
+/// handles to close without leaving dangling cache ownership.
 struct ReadCacheFrame
-  // Stable file-path and page-number identity used by the lookup map.
+  /// Stable file-path and page-number identity used by the lookup map.
   key
-  // Immutable verified-size page image retained independently of file handles.
+  /// Immutable verified-size page image retained independently of file handles.
   data
-  // CLOCK reference bit set by every successful lookup.
+  /// CLOCK reference bit set by every successful lookup.
   referenced
 end struct
 
-// Thread-safe sparse CLOCK cache used by concurrent SQL table scans. Frames
-// are allocated only when populated, so a large byte budget does not eagerly
-// allocate one object per possible page.
+/// Thread-safe sparse CLOCK cache used by concurrent SQL table scans. Frames
+/// are allocated only when populated, so a large byte budget does not eagerly
+/// allocate one object per possible page.
 struct ReadPageCache
-  // Maximum number of page images derived from the configured byte budget.
+  /// Maximum number of page images derived from the configured byte budget.
   maxPages
-  // Sparse CLOCK frame array; unused slots remain void.
+  /// Sparse CLOCK frame array; unused slots remain void.
   frames
-  // Next CLOCK slot examined for insertion or eviction.
+  /// Next CLOCK slot examined for insertion or eviction.
   clockHand
-  // Maps stable page keys to their current frame indexes.
+  /// Maps stable page keys to their current frame indexes.
   index
-  // Memoizes live-row counts for autocommit COUNT(*) queries. The owning
-  // database clears these entries together with page images after every write.
+  /// Memoizes live-row counts for autocommit COUNT(*) queries. The owning
   rowCounts
-  // Serializes lookups and metadata changes without covering disk I/O.
+  /// Serializes lookups and metadata changes without covering disk I/O.
   guard
-  // Number of requests served from resident page images.
+  /// Number of requests served from resident page images.
   hits
-  // Number of requests that required a physical page read.
+  /// Number of requests that required a physical page read.
   misses
-  // Number of resident page images replaced by CLOCK.
+  /// Number of resident page images replaced by CLOCK.
   evictions
-  // Prevents use after the database-owned cache has been released.
+  /// Prevents use after the database-owned cache has been released.
   closed
 end struct
 
-// Snapshot of read-cache counters used by diagnostics and regression tests.
+/// Snapshot of read-cache counters used by diagnostics and regression tests.
 struct ReadPageCacheStats
-  // Snapshot of successful resident lookups.
+  /// Snapshot of successful resident lookups.
   hits
-  // Snapshot of physical-read lookups.
+  /// Snapshot of physical-read lookups.
   misses
-  // Snapshot of CLOCK replacements.
+  /// Snapshot of CLOCK replacements.
   evictions
-  // Number of populated frames at snapshot time.
+  /// Number of populated frames at snapshot time.
   residentPages
-  // Configured maximum number of frames.
+  /// Configured maximum number of frames.
   maxPages
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage buffer pool module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.buffer_pool." + operation + ": " + message)
 end function
 
-// Performs the empty frame operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the empty frame operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function emptyFrame()
   return BufferFrame(false, "", void, -1, bytes(), 0, false, false)
 end function
 
-// Creates the requested value.
-// Inputs: `capacity`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage buffer pool module.
+/// Inputs: `capacity`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param capacity capacity value consumed by this operation.
 function create(capacity)
   if typeof(capacity) != "int" or capacity <= 0 or capacity > 1048576 then
     return fail(INVALID_ARGUMENT, "create", "capacity must be an int in 1..1048576")
@@ -161,8 +168,10 @@ function create(capacity)
   return BufferPool(capacity, frames, 0, 0, 0, 0, 0, false)
 end function
 
-// Creates the for bytes.
-// Inputs: `maxBytes`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the for bytes.
+/// Inputs: `maxBytes`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param maxBytes maxBytes value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
 function createForBytes(maxBytes, pageSize)
   if typeof(maxBytes) != "int" or maxBytes <= 0 then
     return fail(INVALID_ARGUMENT, "createForBytes", "maxBytes must be a positive int")
@@ -186,7 +195,9 @@ function createForBytes(maxBytes, pageSize)
   return create(capacity)
 end function
 
-// Converts a byte budget to pages using the database's validated page size.
+/// Converts a byte budget to pages using the database's validated page size.
+/// @param maxBytes maxBytes value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
 function pageCapacity(maxBytes, pageSize)
   if typeof(maxBytes) != "int" or maxBytes <= 0 then return fail(INVALID_ARGUMENT, "pageCapacity", "maxBytes must be a positive int") end if
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then return fail(INVALID_ARGUMENT, "pageCapacity", "unsupported page size") end if
@@ -201,26 +212,33 @@ function pageCapacity(maxBytes, pageSize)
   return capacity
 end function
 
-// Creates the concurrent read cache for a configured memory budget.
+/// Creates the concurrent read cache for a configured memory budget.
+/// @param maxBytes maxBytes value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
 function createReadCache(maxBytes, pageSize)
   capacity = pageCapacity(maxBytes, pageSize)
   return ReadPageCache(capacity, array(capacity), 0, hashmap.HashMap.withCapacity(capacity * 2), hashmap.HashMap.withCapacity(64), threading.Lock.new(), 0, 0, 0, false)
 end function
 
-// Validates a read cache before synchronization or I/O.
+/// Validates a read cache before synchronization or I/O.
+/// @param cache cache value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateReadCache(cache, operation)
   if cache is not ReadPageCache then return fail(INVALID_ARGUMENT, operation, "cache must be ReadPageCache") end if
   if cache.closed then return fail(CLOSED_HANDLE, operation, "read cache is closed") end if
   return true
 end function
 
-// Builds an unambiguous cache key; page paths cannot contain a NUL character.
+/// Builds an unambiguous cache key; page paths cannot contain a NUL character.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function readCacheKey(pagedFile, pageNumber)
   return pagedFile.path + "\0" + pageNumber
 end function
 
-// Chooses an empty frame or an unreferenced CLOCK victim while the cache guard
-// is held. Read frames are never pinned or dirty, so two passes always suffice.
+/// Chooses an empty frame or an unreferenced CLOCK victim while the cache guard
+/// is held. Read frames are never pinned or dirty, so two passes always suffice.
+/// @param cache cache value consumed by this operation.
 function chooseReadVictim(cache)
   for index = 0 to cache.maxPages - 1
     if cache.frames[index] is void then
@@ -239,8 +257,11 @@ function chooseReadVictim(cache)
   return 0
 end function
 
-// Reads through the concurrent cache. Disk I/O occurs without holding the
-// cache guard; a second lookup collapses races when two readers miss together.
+/// Reads through the concurrent cache. Disk I/O occurs without holding the
+/// cache guard; a second lookup collapses races when two readers miss together.
+/// @param cache cache value consumed by this operation.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function readCached(cache, pagedFile, pageNumber)
   validateReadCache(cache, "readCached")
   paged_file.validateOpen(pagedFile, "buffer_pool.readCached")
@@ -281,7 +302,8 @@ function readCached(cache, pagedFile, pageNumber)
   return loaded
 end function
 
-// Invalidates all cached base pages after a successful database mutation.
+/// Invalidates all cached base pages after a successful database mutation.
+/// @param cache cache value consumed by this operation.
 function clearReadCache(cache)
   validateReadCache(cache, "clearReadCache")
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "clearReadCache", "cache guard is unavailable") end if
@@ -293,7 +315,9 @@ function clearReadCache(cache)
   return true
 end function
 
-// Returns a previously verified autocommit row count or void on a cache miss.
+/// Returns a previously verified autocommit row count or void on a cache miss.
+/// @param cache cache value consumed by this operation.
+/// @param tablePath Path associated with table.
 function cachedRowCount(cache, tablePath)
   validateReadCache(cache, "cachedRowCount")
   if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "cachedRowCount", "table path must be non-empty") end if
@@ -303,8 +327,11 @@ function cachedRowCount(cache, tablePath)
   return result
 end function
 
-// Publishes a verified autocommit row count. Concurrent readers may race to
-// publish the same value because writers are excluded by the execution gate.
+/// Publishes a verified autocommit row count. Concurrent readers may race to
+/// publish the same value because writers are excluded by the execution gate.
+/// @param cache cache value consumed by this operation.
+/// @param tablePath Path associated with table.
+/// @param rowCount Number of row to process.
 function rememberRowCount(cache, tablePath, rowCount)
   validateReadCache(cache, "rememberRowCount")
   if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "rememberRowCount", "table path must be non-empty") end if
@@ -315,7 +342,8 @@ function rememberRowCount(cache, tablePath, rowCount)
   return rowCount
 end function
 
-// Returns a synchronized diagnostic snapshot.
+/// Returns a synchronized diagnostic snapshot.
+/// @param cache cache value consumed by this operation.
 function readCacheStats(cache)
   validateReadCache(cache, "readCacheStats")
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "readCacheStats", "cache guard is unavailable") end if
@@ -324,7 +352,8 @@ function readCacheStats(cache)
   return result
 end function
 
-// Closes a read cache after the owning database execution gate is empty.
+/// Closes a read cache after the owning database execution gate is empty.
+/// @param cache cache value consumed by this operation.
 function closeReadCache(cache)
   validateReadCache(cache, "closeReadCache")
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "closeReadCache", "cache guard is unavailable") end if
@@ -337,16 +366,20 @@ function closeReadCache(cache)
   return true
 end function
 
-// Validates the pool.
-// Inputs: `pool`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the pool.
+/// Inputs: `pool`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pool pool value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validatePool(pool, operation)
   if pool is not BufferPool then return fail(INVALID_ARGUMENT, operation, "pool must be BufferPool") end if
   if pool.closed then return fail(CLOSED_HANDLE, operation, "buffer pool is closed") end if
   return true
 end function
 
-// Validates the guard.
-// Inputs: `guard`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the guard.
+/// Inputs: `guard`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param guard guard value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateGuard(guard, operation)
   if guard is not PageGuard then return fail(INVALID_ARGUMENT, operation, "guard must be PageGuard") end if
   validatePool(guard.pool, operation)
@@ -361,8 +394,10 @@ function validateGuard(guard, operation)
   return frame
 end function
 
-// Performs the frame matches file operation for this module.
-// Inputs: `frame`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the frame matches file operation for this module.
+/// Inputs: `frame`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param frame frame value consumed by this operation.
+/// @param pagedFile pagedFile value consumed by this operation.
 function frameMatchesFile(frame, pagedFile)
   if not frame.valid then return false end if
   if frame.pagedFile.closed or frame.pagedFile.file.closed then return false end if
@@ -371,8 +406,11 @@ function frameMatchesFile(frame, pagedFile)
     frame.path == pagedFile.path
 end function
 
-// Finds the frame.
-// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the frame.
+/// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pool pool value consumed by this operation.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function findFrame(pool, pagedFile, pageNumber)
   for index = 0 to pool.capacity - 1
     frame = pool.frames[index]
@@ -381,8 +419,10 @@ function findFrame(pool, pagedFile, pageNumber)
   return -1
 end function
 
-// Flushes the frame.
-// Inputs: `pool`, `frameIndex`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Flushes the frame.
+/// Inputs: `pool`, `frameIndex`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pool pool value consumed by this operation.
+/// @param frameIndex Zero-based index of frame.
 function flushFrame(pool, frameIndex)
   frame = pool.frames[frameIndex]
   if not frame.valid or not frame.dirty then return false end if
@@ -394,8 +434,9 @@ function flushFrame(pool, frameIndex)
   return true
 end function
 
-// Performs the choose victim operation for this module.
-// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the choose victim operation for this module.
+/// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pool pool value consumed by this operation.
 function chooseVictim(pool)
   for index = 0 to pool.capacity - 1
     if not pool.frames[index].valid then
@@ -421,8 +462,11 @@ function chooseVictim(pool)
   return fail(BUFFER_POOL_EXHAUSTED, "chooseVictim", "all frames are pinned")
 end function
 
-// Performs the pin operation for this module.
-// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the pin operation for this module.
+/// Inputs: `pool`, `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pool pool value consumed by this operation.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function pin(pool, pagedFile, pageNumber)
   validatePool(pool, "pin")
   paged_file.validateOpen(pagedFile, "buffer_pool.pin")
@@ -461,15 +505,17 @@ function pin(pool, pagedFile, pageNumber)
   return PageGuard(pool, victim, false)
 end function
 
-// Performs the data operation for this module.
-// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the data operation for this module.
+/// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param guard guard value consumed by this operation.
 function data(guard)
   frame = validateGuard(guard, "data")
   return frame.data
 end function
 
-// Marks the dirty.
-// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Marks the dirty.
+/// Inputs: `guard`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param guard guard value consumed by this operation.
 function markDirty(guard)
   frame = validateGuard(guard, "markDirty")
   frame.dirty = true
@@ -477,8 +523,9 @@ function markDirty(guard)
   return true
 end function
 
-// Releases the requested value.
-// Inputs: `guard`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Performs the release operation for the minisql storage buffer pool module.
+/// Inputs: `guard`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param guard guard value consumed by this operation.
 function release(guard)
   frame = validateGuard(guard, "release")
   frame.pinCount = frame.pinCount - 1
@@ -486,8 +533,9 @@ function release(guard)
   return true
 end function
 
-// Flushes the all.
-// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Flushes the all.
+/// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pool pool value consumed by this operation.
 function flushAll(pool)
   validatePool(pool, "flushAll")
   flushed = 0
@@ -497,8 +545,10 @@ function flushAll(pool)
   return flushed
 end function
 
-// Performs the invalidate file operation for this module.
-// Inputs: `pool`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the invalidate file operation for this module.
+/// Inputs: `pool`, `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pool pool value consumed by this operation.
+/// @param pagedFile pagedFile value consumed by this operation.
 function invalidateFile(pool, pagedFile)
   validatePool(pool, "invalidateFile")
   paged_file.validateOpen(pagedFile, "buffer_pool.invalidateFile")
@@ -520,8 +570,9 @@ function invalidateFile(pool, pagedFile)
   return invalidated
 end function
 
-// Performs the stats operation for this module.
-// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the stats operation for this module.
+/// Inputs: `pool`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pool pool value consumed by this operation.
 function stats(pool)
   validatePool(pool, "stats")
   resident = 0
@@ -536,8 +587,9 @@ function stats(pool)
   return BufferPoolStats(pool.hits, pool.misses, pool.evictions, pool.dirtyFlushes, resident, pinned)
 end function
 
-// Closes the requested value.
-// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql storage buffer pool module.
+/// Inputs: `pool`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pool pool value consumed by this operation.
 function close(pool)
   validatePool(pool, "close")
   for index = 0 to pool.capacity - 1
@@ -551,20 +603,20 @@ function close(pool)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage buffer pool module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.buffer_pool"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage buffer pool module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M5"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage buffer pool module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct RowEditorState
 Retains modal row-editor state independently from the connected session.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L376)
 
 ## Members
 
@@ -26,7 +26,7 @@ details
 References the immutable table metadata used for validation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L380)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-fieldindex-fieldindex-src-minisql-admin-win32-client-ml-522824621"></a>
 ### fieldIndex
@@ -38,7 +38,7 @@ fieldIndex
 Selects the field presented in the single-line value editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L291)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L384)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-originalrowindex-originalrowindex-src-minisql-admin-win32-client-ml-354481847"></a>
 ### originalRowIndex
@@ -50,7 +50,7 @@ originalRowIndex
 Stores -1 for inserts or the preview row index for updates.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L293)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L386)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-resultsql-resultsql-src-minisql-admin-win32-client-ml-71714037"></a>
 ### resultSql
@@ -62,7 +62,7 @@ resultSql
 Stores the generated SQL after Save or void after cancellation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L297)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L390)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-updatemode-updatemode-src-minisql-admin-win32-client-ml-1214862217"></a>
 ### updateMode
@@ -74,7 +74,7 @@ updateMode
 Selects update generation instead of insert generation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L295)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L388)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-values-values-src-minisql-admin-win32-client-ml-1901633001"></a>
 ### values
@@ -86,7 +86,7 @@ values
 Stores mutable editor values aligned with DESCRIBE rows.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L382)
 
 <a id="field-field-minisql-admin-win32-client-roweditorstate-window-window-src-minisql-admin-win32-client-ml-1410697365"></a>
 ### window
@@ -98,4 +98,4 @@ window
 Owns the native editor controls.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L285)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L378)

@@ -1,3 +1,5 @@
+//! Provides minisql catalog catalog facilities for this project.
+
 package minisql.catalog.catalog
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -16,105 +18,136 @@ import minisql.storage.superblock as superblock
 import minisql.transaction.checkpoint as checkpoint
 import minisql.transaction.wal as wal
 
-// Database catalog lifecycle and durable bootstrap layout. Opening a database
-// validates all format identities before exposing handles; creation publishes
-// fully initialized metadata, WAL, and checkpoint state as one logical unit.
+/// Database catalog lifecycle and durable bootstrap layout. Opening a database
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql catalog catalog module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql catalog catalog module.
 const CLOSED_HANDLE = 9008
+/// Defines the object exists constant used by the minisql catalog catalog module.
 const OBJECT_EXISTS = 9013
+/// Defines the object not found constant used by the minisql catalog catalog module.
 const OBJECT_NOT_FOUND = 9014
+/// Defines the security state constant used by the minisql catalog catalog module.
 const SECURITY_STATE = 9030
 
+/// Defines the database meta file id constant used by the minisql catalog catalog module.
 const DATABASE_META_FILE_ID = 1
+/// Defines the catalog file id constant used by the minisql catalog catalog module.
 const CATALOG_FILE_ID = 2
+/// Defines the security file id constant used by the minisql catalog catalog module.
 const SECURITY_FILE_ID = 0
+/// Defines the security generation file id constant used by the minisql catalog catalog module.
 const SECURITY_GENERATION_FILE_ID = 0
+/// Defines the blob length offset constant used by the minisql catalog catalog module.
 const BLOB_LENGTH_OFFSET = 64
+/// Defines the blob data offset constant used by the minisql catalog catalog module.
 const BLOB_DATA_OFFSET = 68
+/// Defines the paged blob magic constant used by the minisql catalog catalog module.
 const PAGED_BLOB_MAGIC = 0x32424C42
+/// Defines the paged blob version constant used by the minisql catalog catalog module.
 const PAGED_BLOB_VERSION = 1
+/// Defines the paged blob header offset constant used by the minisql catalog catalog module.
 const PAGED_BLOB_HEADER_OFFSET = 64
+/// Defines the paged blob data offset constant used by the minisql catalog catalog module.
 const PAGED_BLOB_DATA_OFFSET = 104
 
-// Defines the database handle record used by this module.
+/// Defines the database handle record used by this module.
 struct DatabaseHandle
-  // Path field of the database handle.
+  /// Path field of the database handle.
   path
-  // Meta file field of the database handle.
+  /// Meta file field of the database handle.
   metaFile
-  // Catalog file field of the database handle.
+  /// Catalog file field of the database handle.
   catalogFile
-  // Security file field of the database handle.
+  /// Security file field of the database handle.
   securityFile
-  // Two independently durable, scalable security-catalog generations.
+  /// Two independently durable, scalable security-catalog generations.
   securityGenerationFiles
-  // Metadata field of the database handle.
+  /// Metadata field of the database handle.
   metadata
-  // Catalog field of the database handle.
+  /// Catalog field of the database handle.
   catalog
-  // Security field of the database handle.
+  /// Security field of the database handle.
   security
-  // Security failed field of the database handle.
+  /// Security failed field of the database handle.
   securityFailed
-  // Closed field of the database handle.
+  /// Closed field of the database handle.
   closed
 end struct
 
-// Evaluates whether the supplied input satisfies the database handle predicate.
-// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the database handle predicate.
+/// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
 function isDatabaseHandle(value)
   return value is DatabaseHandle
 end function
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql catalog catalog module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "catalog.catalog." + operation + ": " + message)
 end function
 
-// Performs the join path operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the join path operation for this module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function joinPath(left, right)
   if len(left) == 0 then return right end if
   return file_api.joinPath(left, right)
 end function
 
-// Performs the table file name operation for this module.
-// Inputs: `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the table file name operation for this module.
+/// Inputs: `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tableId Identifier of table.
 function tableFileName(tableId)
   if typeof(tableId) != "int" or tableId < 0 then return fail(INVALID_ARGUMENT, "tableFileName", "tableId must be non-negative") end if
   return "t" + tableId + ".tbl"
 end function
 
-// Performs the table file path operation for this module.
-// Inputs: `databasePath`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the table file path operation for this module.
+/// Inputs: `databasePath`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
+/// @param tableId Identifier of table.
 function tableFilePath(databasePath, tableId)
   return joinPath(joinPath(databasePath, "tables"), tableFileName(tableId))
 end function
 
-// Performs the security file path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the security file path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function securityFilePath(databasePath)
   return joinPath(joinPath(databasePath, "catalog"), "security.tbl")
 end function
 
-// Returns the scalable security generation path for slot zero or one.
-// Inputs: `databasePath`, `slot`. Returns a path inside the catalog directory.
+/// Returns the scalable security generation path for slot zero or one.
+/// Inputs: `databasePath`, `slot`. Returns a path inside the catalog directory.
+/// @param databasePath Path associated with database.
+/// @param slot slot value consumed by this operation.
 function securityGenerationFilePath(databasePath, slot)
   if slot != 0 and slot != 1 then return fail(INVALID_ARGUMENT, "securityGenerationFilePath", "slot must be zero or one") end if
   return joinPath(joinPath(databasePath, "catalog"), "security." + slot + ".tbl")
 end function
 
-// Returns the durable marker proving that scalable security generations were published.
-// Inputs: `databasePath`. Returns a path inside the catalog directory.
+/// Returns the durable marker proving that scalable security generations were published.
+/// Inputs: `databasePath`. Returns a path inside the catalog directory.
+/// @param databasePath Path associated with database.
 function securityGenerationMarkerPath(databasePath)
   return joinPath(joinPath(databasePath, "catalog"), "security.v2")
 end function
 
-// Creates one complete scalable security generation under its final path.
-// Inputs: `databasePath`, `slot`, `pageSize`, `databaseId`, `encoded`. Returns a closed durable file.
+/// Creates one complete scalable security generation under its final path.
+/// Inputs: `databasePath`, `slot`, `pageSize`, `databaseId`, `encoded`. Returns a closed durable file.
+/// @param databasePath Path associated with database.
+/// @param slot slot value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param databaseId Identifier of database.
+/// @param encoded encoded value consumed by this operation.
 function createSecurityGeneration(databasePath, slot, pageSize, databaseId, encoded)
   destination = securityGenerationFilePath(databasePath, slot)
   temporary = destination + ".creating"
@@ -126,8 +159,9 @@ function createSecurityGeneration(databasePath, slot, pageSize, databaseId, enco
   return true
 end function
 
-// Publishes the marker only after both scalable security generations are durable.
-// Inputs: `databasePath`. Returns true after durable marker creation.
+/// Publishes the marker only after both scalable security generations are durable.
+/// Inputs: `databasePath`. Returns true after durable marker creation.
+/// @param databasePath Path associated with database.
 function publishSecurityGenerationMarker(databasePath)
   markerPath = securityGenerationMarkerPath(databasePath)
   if file_api.fileExists(markerPath) then return true end if
@@ -137,8 +171,10 @@ function publishSecurityGenerationMarker(databasePath)
   return true
 end function
 
-// Validates the name.
-// Inputs: `name`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the name.
+/// Inputs: `name`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param name Name of the affected item.
+/// @param operation operation value consumed by this operation.
 function validateName(name, operation)
   if typeof(name) != "string" or len(name) == 0 or len(bytes(name)) > 128 then return fail(INVALID_ARGUMENT, operation, "name must be 1..128 UTF-8 bytes") end if
   raw = bytes(name)
@@ -149,8 +185,10 @@ function validateName(name, operation)
   return true
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql catalog catalog module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -160,8 +198,11 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Writes the blob page.
-// Inputs: `pagedFile`, `pageNumber`, `encoded`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the blob page.
+/// Inputs: `pagedFile`, `pageNumber`, `encoded`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function writeBlobPage(pagedFile, pageNumber, encoded)
   if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writeBlobPage", "encoded value must be bytes") end if
   if len(encoded) > pagedFile.pageSize - BLOB_DATA_OFFSET then return fail(INVALID_ARGUMENT, "writeBlobPage", "metadata does not fit in one page") end if
@@ -178,8 +219,10 @@ function writeBlobPage(pagedFile, pageNumber, encoded)
   return true
 end function
 
-// Reads the blob page.
-// Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the blob page.
+/// Inputs: `pagedFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function readBlobPage(pagedFile, pageNumber)
   pageBytes = paged_file.readPage(pagedFile, pageNumber)
   header = page.verify(pageBytes)
@@ -189,17 +232,22 @@ function readBlobPage(pagedFile, pageNumber)
   return slice(pageBytes, BLOB_DATA_OFFSET, length)
 end function
 
-// Converts a persisted unsigned 64-bit blob field to the native MiniLang range.
-// Inputs: `words`, `operation`, `name`. Returns the native value or a corruption error when the file requests an unaddressable allocation.
+/// Converts a persisted unsigned 64-bit blob field to the native MiniLang range.
+/// Inputs: `words`, `operation`, `name`. Returns the native value or a corruption error when the file requests an unaddressable allocation.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeBlobNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(CORRUPT_DATA, operation, name + " exceeds the native address range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Computes the number of catalog pages required by a byte payload without a
-// fixed metadata ceiling. The persisted representation is limited only by the
-// paged-file and native address ranges.
-// Inputs: `length`, `capacity`. Returns a positive page count.
+/// Computes the number of catalog pages required by a byte payload without a
+/// fixed metadata ceiling. The persisted representation is limited only by the
+/// paged-file and native address ranges.
+/// Inputs: `length`, `capacity`. Returns a positive page count.
+/// @param length length value consumed by this operation.
+/// @param capacity capacity value consumed by this operation.
 function pagedBlobPageCount(length, capacity)
   if typeof(length) != "int" or length < 0 or typeof(capacity) != "int" or capacity < 1 then return fail(INVALID_ARGUMENT, "pagedBlobPageCount", "invalid blob length or page capacity") end if
   count = 1
@@ -211,10 +259,14 @@ function pagedBlobPageCount(length, capacity)
   return count
 end function
 
-// Builds one independently checksummed page of the scalable catalog blob. Each
-// page repeats the global length and page count so swapped, stale, missing, or
-// reordered continuation pages are detected before decoding metadata.
-// Inputs: `pagedFile`, `pageNumber`, `encoded`, `pageCount`. Returns one sealed page image.
+/// Builds one independently checksummed page of the scalable catalog blob. Each
+/// page repeats the global length and page count so swapped, stale, missing, or
+/// reordered continuation pages are detected before decoding metadata.
+/// Inputs: `pagedFile`, `pageNumber`, `encoded`, `pageCount`. Returns one sealed page image.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
+/// @param pageCount Number of page to process.
 function createPagedBlobPage(pagedFile, pageNumber, encoded, pageCount)
   capacity = pagedFile.pageSize - PAGED_BLOB_DATA_OFFSET
   sourceOffset = pageNumber * capacity
@@ -235,10 +287,12 @@ function createPagedBlobPage(pagedFile, pageNumber, encoded, pageCount)
   return pageBytes
 end function
 
-// Persists an arbitrarily large catalog snapshot across as many pages as it
-// needs. Continuations become durable before page zero publishes the new blob;
-// stale tail pages are removed only after that publication is durable.
-// Inputs: `pagedFile`, `encoded`. Returns true after a complete durable snapshot is published.
+/// Persists an arbitrarily large catalog snapshot across as many pages as it
+/// needs. Continuations become durable before page zero publishes the new blob;
+/// stale tail pages are removed only after that publication is durable.
+/// Inputs: `pagedFile`, `encoded`. Returns true after a complete durable snapshot is published.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function writePagedBlob(pagedFile, encoded)
   if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writePagedBlob", "encoded value must be bytes") end if
   capacity = pagedFile.pageSize - PAGED_BLOB_DATA_OFFSET
@@ -260,10 +314,11 @@ function writePagedBlob(pagedFile, encoded)
   return true
 end function
 
-// Reads the scalable catalog snapshot and transparently accepts the original
-// one-page layout. This makes the first metadata update an online format
-// migration for existing databases.
-// Inputs: `pagedFile`. Returns the exact encoded catalog payload.
+/// Reads the scalable catalog snapshot and transparently accepts the original
+/// one-page layout. This makes the first metadata update an online format
+/// migration for existing databases.
+/// Inputs: `pagedFile`. Returns the exact encoded catalog payload.
+/// @param pagedFile pagedFile value consumed by this operation.
 function readPagedBlob(pagedFile)
   if pagedFile.pageCount < 1 then return fail(CORRUPT_DATA, "readPagedBlob", "metadata file has no pages") end if
   firstPage = paged_file.readPage(pagedFile, 0)
@@ -296,8 +351,9 @@ function readPagedBlob(pagedFile)
   return output
 end function
 
-// Ensures the layout.
-// Inputs: `root`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Ensures the layout.
+/// Inputs: `root`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param root root value consumed by this operation.
 function ensureLayout(root)
   file_api.createDirectory(root)
   file_api.createDirectory(joinPath(root, "catalog"))
@@ -308,8 +364,11 @@ function ensureLayout(root)
   return true
 end function
 
-// Creates the database.
-// Inputs: `dataRoot`, `name`, `defaults`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the database.
+/// Inputs: `dataRoot`, `name`, `defaults`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param dataRoot dataRoot value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param defaults defaults value consumed by this operation.
 function createDatabase(dataRoot, name, defaults)
   if typeof(dataRoot) != "string" or len(dataRoot) == 0 then return fail(INVALID_ARGUMENT, "createDatabase", "dataRoot must be non-empty") end if
   validateName(name, "createDatabase")
@@ -372,8 +431,10 @@ function createDatabase(dataRoot, name, defaults)
   return openDatabase(finalPath)
 end function
 
-// Validates the catalog semantics.
-// Inputs: `databaseMetadata`, `catalogState`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the catalog semantics.
+/// Inputs: `databaseMetadata`, `catalogState`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param databaseMetadata databaseMetadata value consumed by this operation.
+/// @param catalogState catalogState value consumed by this operation.
 function validateCatalogSemantics(databaseMetadata, catalogState)
   if catalogState.nextObjectId > databaseMetadata.nextObjectId then return fail(CORRUPT_DATA, "validateCatalogSemantics", "catalog nextObjectId exceeds durable database allocator") end if
   seenIds = hashmap.HashMap.new()
@@ -396,8 +457,11 @@ function validateCatalogSemantics(databaseMetadata, catalogState)
   return true
 end function
 
-// Validates the table files.
-// Inputs: `path`, `databaseMetadata`, `catalogState`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the table files.
+/// Inputs: `path`, `databaseMetadata`, `catalogState`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param path Path of the file or directory used by the operation.
+/// @param databaseMetadata databaseMetadata value consumed by this operation.
+/// @param catalogState catalogState value consumed by this operation.
 function validateTableFiles(path, databaseMetadata, catalogState)
   for each table in catalogState.tables
     tablePath = tableFilePath(path, table.tableId)
@@ -410,8 +474,9 @@ function validateTableFiles(path, databaseMetadata, catalogState)
   return true
 end function
 
-// Opens the database.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the database.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function openDatabase(path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "openDatabase", "path must be non-empty") end if
   metaFile = paged_file.open(joinPath(path, "db.meta"))
@@ -489,16 +554,19 @@ function openDatabase(path)
   return DatabaseHandle(path, metaFile, catalogFile, securityFile, securityGenerationFiles, databaseMetadata, catalogState, securityState, false, false)
 end function
 
-// Validates the open.
-// Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql catalog catalog workflow.
+/// Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param database database value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(database, operation)
   if database is not DatabaseHandle then return fail(INVALID_ARGUMENT, operation, "database must be DatabaseHandle") end if
   if database.closed then return fail(CLOSED_HANDLE, operation, "database is closed") end if
   return true
 end function
 
-// Performs the persist metadata operation for this module.
-// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the persist metadata operation for this module.
+/// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
 function persistMetadata(database)
   validateOpen(database, "persistMetadata")
   database.catalog.nextObjectId = database.metadata.nextObjectId
@@ -507,8 +575,10 @@ function persistMetadata(database)
   return true
 end function
 
-// Finds the table.
-// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the table.
+/// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
 function findTable(database, name)
   validateOpen(database, "findTable")
   for each table in database.catalog.tables
@@ -517,8 +587,10 @@ function findTable(database, name)
   return void
 end function
 
-// Finds the table by id.
-// Inputs: `database`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the table by id.
+/// Inputs: `database`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param tableId Identifier of table.
 function findTableById(database, tableId)
   validateOpen(database, "findTableById")
   if typeof(tableId) != "int" or tableId < 0 then return fail(INVALID_ARGUMENT, "findTableById", "tableId must be non-negative") end if
@@ -528,14 +600,23 @@ function findTableById(database, tableId)
   return void
 end function
 
-// Performs the define column operation for this module.
-// Inputs: `name`, `typeCode`, `nullable`, `maxLength`, `precision`, `scale`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the define column operation for this module.
+/// Inputs: `name`, `typeCode`, `nullable`, `maxLength`, `precision`, `scale`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param name Name of the affected item.
+/// @param typeCode typeCode value consumed by this operation.
+/// @param nullable nullable value consumed by this operation.
+/// @param maxLength maxLength value consumed by this operation.
+/// @param precision precision value consumed by this operation.
+/// @param scale scale value consumed by this operation.
 function defineColumn(name, typeCode, nullable, maxLength, precision, scale)
   return metadata.createColumn(0, name, typeCode, nullable, maxLength, precision, scale)
 end function
 
-// Creates the table.
-// Inputs: `database`, `name`, `definitions`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the table.
+/// Inputs: `database`, `name`, `definitions`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param definitions definitions value consumed by this operation.
 function createTable(database, name, definitions)
   validateOpen(database, "createTable")
   validateName(name, "createTable")
@@ -584,8 +665,9 @@ function createTable(database, name, definitions)
   return table
 end function
 
-// Allocates the transaction id.
-// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Allocates the transaction id.
+/// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
 function allocateTransactionId(database)
   validateOpen(database, "allocateTransactionId")
   value = database.metadata.nextTransactionId
@@ -595,8 +677,9 @@ function allocateTransactionId(database)
   return value
 end function
 
-// Closes the requested value.
-// Inputs: `database`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql catalog catalog module.
+/// Inputs: `database`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param database database value consumed by this operation.
 function close(database)
   validateOpen(database, "close")
   paged_file.close(database.securityGenerationFiles[0])
@@ -612,8 +695,10 @@ end function
 // M21 DCL, principals, roles and privileges
 // ---------------------------------------------------------------------------
 
-// Finds the principal by id in state.
-// Inputs: `state`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the principal by id in state.
+/// Inputs: `state`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param principalId Identifier of principal.
 function findPrincipalByIdInState(state, principalId)
   if not metadata.isSecurityState(state) then return fail(INVALID_ARGUMENT, "findPrincipalByIdInState", "state must be SecurityState") end if
   for each principal in state.principals
@@ -622,8 +707,10 @@ function findPrincipalByIdInState(state, principalId)
   return void
 end function
 
-// Finds the principal by name in state.
-// Inputs: `state`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the principal by name in state.
+/// Inputs: `state`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param name Name of the affected item.
 function findPrincipalByNameInState(state, name)
   if not metadata.isSecurityState(state) then return fail(INVALID_ARGUMENT, "findPrincipalByNameInState", "state must be SecurityState") end if
   for each principal in state.principals
@@ -632,23 +719,31 @@ function findPrincipalByNameInState(state, name)
   return void
 end function
 
-// Finds the principal.
-// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the principal.
+/// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
 function findPrincipal(database, name)
   validateOpen(database, "findPrincipal")
   return findPrincipalByNameInState(database.security, name)
 end function
 
-// Performs the require principal operation for this module.
-// Inputs: `database`, `name`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the require principal operation for this module.
+/// Inputs: `database`, `name`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param operation operation value consumed by this operation.
 function requirePrincipal(database, name, operation)
   principal = findPrincipal(database, name)
   if principal is void then return fail(OBJECT_NOT_FOUND, operation, "principal does not exist: " + name) end if
   return principal
 end function
 
-// Performs the security array slice operation for this module.
-// Inputs: `values`, `offset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the security array slice operation for this module.
+/// Inputs: `values`, `offset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
 function securityArraySlice(values, offset, count)
   if typeof(values) != "array" or typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 or offset > len(values) or count > len(values) - offset then return fail(INVALID_ARGUMENT, "securityArraySlice", "invalid array range") end if
   output = []
@@ -660,8 +755,10 @@ function securityArraySlice(values, offset, count)
   return output
 end function
 
-// Performs the contains id operation for this module.
-// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the contains id operation for this module.
+/// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param wanted wanted value consumed by this operation.
 function containsId(values, wanted)
   for each value in values
     if value == wanted then return true end if
@@ -669,8 +766,10 @@ function containsId(values, wanted)
   return false
 end function
 
-// Performs the effective principal ids in state operation for this module.
-// Inputs: `state`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the effective principal ids in state operation for this module.
+/// Inputs: `state`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param principalId Identifier of principal.
 function effectivePrincipalIdsInState(state, principalId)
   if findPrincipalByIdInState(state, principalId) is void then return fail(OBJECT_NOT_FOUND, "effectivePrincipalIdsInState", "principal does not exist") end if
   result = [principalId]
@@ -688,8 +787,11 @@ function effectivePrincipalIdsInState(state, principalId)
   return result
 end function
 
-// Validates the security semantics.
-// Inputs: `state`, `databaseId`, `tables`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the security semantics.
+/// Inputs: `state`, `databaseId`, `tables`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param databaseId Identifier of database.
+/// @param tables tables value consumed by this operation.
 function validateSecuritySemantics(state, databaseId, tables)
   if not metadata.isSecurityState(state) then return fail(CORRUPT_DATA, "validateSecuritySemantics", "invalid security state") end if
   if not bytesEqual(state.databaseId, databaseId) then return fail(CORRUPT_DATA, "validateSecuritySemantics", "security catalog belongs to another database") end if
@@ -772,10 +874,14 @@ function validateSecuritySemantics(state, databaseId, tables)
   return true
 end function
 
-// Opens or migrates the two independently durable scalable security snapshots.
-// The marker distinguishes a legacy database from a damaged v2 database: after
-// publication, either missing generation is corruption rather than a downgrade.
-// Inputs: `databasePath`, `legacyFile`, `pageSize`, `databaseId`. Returns two open paged files.
+/// Opens or migrates the two independently durable scalable security snapshots.
+/// The marker distinguishes a legacy database from a damaged v2 database: after
+/// publication, either missing generation is corruption rather than a downgrade.
+/// Inputs: `databasePath`, `legacyFile`, `pageSize`, `databaseId`. Returns two open paged files.
+/// @param databasePath Path associated with database.
+/// @param legacyFile legacyFile value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param databaseId Identifier of database.
 function openSecurityGenerationFiles(databasePath, legacyFile, pageSize, databaseId)
   markerExists = file_api.fileExists(securityGenerationMarkerPath(databasePath))
   firstPath = securityGenerationFilePath(databasePath, 0)
@@ -803,9 +909,11 @@ function openSecurityGenerationFiles(databasePath, legacyFile, pageSize, databas
   return [first, second]
 end function
 
-// Loads the newest valid scalable security generation and retains the older
-// snapshot as a fallback after a torn or checksummed write failure.
-// Inputs: `securityFiles`, `databaseId`. Returns the selected security state.
+/// Loads the newest valid scalable security generation and retains the older
+/// snapshot as a fallback after a torn or checksummed write failure.
+/// Inputs: `securityFiles`, `databaseId`. Returns the selected security state.
+/// @param securityFiles securityFiles value consumed by this operation.
+/// @param databaseId Identifier of database.
 function loadSecurityState(securityFiles, databaseId)
   if typeof(securityFiles) != "array" or len(securityFiles) != 2 then return fail(INVALID_ARGUMENT, "loadSecurityState", "two security generation files are required") end if
   first = try(metadata.decodeSecurity(readPagedBlob(securityFiles[0])))
@@ -823,26 +931,30 @@ function loadSecurityState(securityFiles, databaseId)
   return selected
 end function
 
-// Clones the principal.
-// Inputs: `principal`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Clones the principal.
+/// Inputs: `principal`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param principal principal value consumed by this operation.
 function clonePrincipal(principal)
   return metadata.createPrincipal(principal.principalId, principal.name, principal.principalKind, principal.enabled, principal.canLogin, principal.superuser, principal.builtin, principal.salt, principal.iterations, principal.verifier)
 end function
 
-// Clones the membership.
-// Inputs: `membership`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Clones the membership.
+/// Inputs: `membership`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param membership membership value consumed by this operation.
 function cloneMembership(membership)
   return metadata.createRoleMembership(membership.roleId, membership.memberId, membership.grantorId, membership.adminOption)
 end function
 
-// Clones the privilege grant.
-// Inputs: `grant`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Clones the privilege grant.
+/// Inputs: `grant`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param grant grant value consumed by this operation.
 function clonePrivilegeGrant(grant)
   return metadata.createPrivilegeGrant(grant.granteeId, grant.grantorId, grant.objectType, grant.objectId, grant.privilege, grant.grantOption)
 end function
 
-// Clones the security state.
-// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Clones the security state.
+/// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
 function cloneSecurityState(state)
   if not metadata.isSecurityState(state) then return fail(INVALID_ARGUMENT, "cloneSecurityState", "state must be SecurityState") end if
   principals = []
@@ -860,16 +972,20 @@ function cloneSecurityState(state)
   return metadata.SecurityState(bytes(state.databaseId), state.generation, state.nextPrincipalId, principals, memberships, grants)
 end function
 
-// Validates the security writable.
-// Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the security writable.
+/// Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param database database value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateSecurityWritable(database, operation)
   validateOpen(database, operation)
   if database.securityFailed then return fail(SECURITY_STATE, operation, "security state is uncertain after an I/O failure; close and reopen the database") end if
   return true
 end function
 
-// Commits the security state.
-// Inputs: `database`, `candidate`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Commits the security state.
+/// Inputs: `database`, `candidate`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param database database value consumed by this operation.
+/// @param candidate candidate value consumed by this operation.
 function commitSecurityState(database, candidate)
   validateSecurityWritable(database, "commitSecurityState")
   if not metadata.isSecurityState(candidate) then return fail(INVALID_ARGUMENT, "commitSecurityState", "candidate must be SecurityState") end if
@@ -894,14 +1010,16 @@ function commitSecurityState(database, candidate)
   return true
 end function
 
-// Performs the persist security operation for this module.
-// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the persist security operation for this module.
+/// Inputs: `database`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
 function persistSecurity(database)
   return commitSecurityState(database, cloneSecurityState(database.security))
 end function
 
-// Allocates the principal id in state.
-// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Allocates the principal id in state.
+/// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
 function allocatePrincipalIdInState(state)
   value = state.nextPrincipalId
   if value >= endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "allocatePrincipalIdInState", "principal ID space exhausted") end if
@@ -909,8 +1027,11 @@ function allocatePrincipalIdInState(state)
   return value
 end function
 
-// Creates the user.
-// Inputs: `database`, `name`, `password`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the user.
+/// Inputs: `database`, `name`, `password`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param password password value consumed by this operation.
 function createUser(database, name, password)
   validateSecurityWritable(database, "createUser")
   metadata.validateSecurityName(name, "createUser")
@@ -932,8 +1053,10 @@ function createUser(database, name, password)
   return findPrincipalByIdInState(database.security, principalId)
 end function
 
-// Creates the role.
-// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the role.
+/// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
 function createRole(database, name)
   validateSecurityWritable(database, "createRole")
   metadata.validateSecurityName(name, "createRole")
@@ -946,8 +1069,11 @@ function createRole(database, name)
   return findPrincipalByIdInState(database.security, principalId)
 end function
 
-// Updates the user password.
-// Inputs: `database`, `name`, `password`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Updates the user password.
+/// Inputs: `database`, `name`, `password`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param password password value consumed by this operation.
 function setUserPassword(database, name, password)
   validateSecurityWritable(database, "setUserPassword")
   current = requirePrincipal(database, name, "setUserPassword")
@@ -969,8 +1095,11 @@ function setUserPassword(database, name, password)
   return findPrincipalByIdInState(database.security, current.principalId)
 end function
 
-// Updates the user password bytes.
-// Inputs: `database`, `name`, `passwordBytes`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Updates the user password bytes.
+/// Inputs: `database`, `name`, `passwordBytes`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function setUserPasswordBytes(database, name, passwordBytes)
   validateSecurityWritable(database, "setUserPasswordBytes")
   current = requirePrincipal(database, name, "setUserPasswordBytes")
@@ -992,8 +1121,11 @@ function setUserPasswordBytes(database, name, passwordBytes)
   return findPrincipalByIdInState(database.security, current.principalId)
 end function
 
-// Updates the user enabled.
-// Inputs: `database`, `name`, `enabled`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Updates the user enabled.
+/// Inputs: `database`, `name`, `enabled`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param enabled enabled value consumed by this operation.
 function setUserEnabled(database, name, enabled)
   validateSecurityWritable(database, "setUserEnabled")
   if typeof(enabled) != "bool" then return fail(INVALID_ARGUMENT, "setUserEnabled", "enabled must be bool") end if
@@ -1007,8 +1139,12 @@ function setUserEnabled(database, name, enabled)
   return findPrincipalByIdInState(database.security, current.principalId)
 end function
 
-// Drops the principal.
-// Inputs: `database`, `name`, `expectedKind`, `ifExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Drops the principal.
+/// Inputs: `database`, `name`, `expectedKind`, `ifExists`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param expectedKind expectedKind value consumed by this operation.
+/// @param ifExists ifExists value consumed by this operation.
 function dropPrincipal(database, name, expectedKind, ifExists)
   validateSecurityWritable(database, "dropPrincipal")
   principal = findPrincipal(database, name)
@@ -1041,8 +1177,11 @@ function dropPrincipal(database, name, expectedKind, ifExists)
   return true
 end function
 
-// Performs the role would cycle operation for this module.
-// Inputs: `state`, `roleId`, `memberId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the role would cycle operation for this module.
+/// Inputs: `state`, `roleId`, `memberId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param roleId Identifier of role.
+/// @param memberId Identifier of member.
 function roleWouldCycle(state, roleId, memberId)
   member = findPrincipalByIdInState(state, memberId)
   if member is void or member.principalKind != metadata.PRINCIPAL_ROLE then return false end if
@@ -1050,8 +1189,13 @@ function roleWouldCycle(state, roleId, memberId)
   return containsId(effective, memberId)
 end function
 
-// Performs the grant role operation for this module.
-// Inputs: `database`, `roleName`, `memberName`, `grantorId`, `adminOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the grant role operation for this module.
+/// Inputs: `database`, `roleName`, `memberName`, `grantorId`, `adminOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param roleName roleName value consumed by this operation.
+/// @param memberName memberName value consumed by this operation.
+/// @param grantorId Identifier of grantor.
+/// @param adminOption adminOption value consumed by this operation.
 function grantRole(database, roleName, memberName, grantorId, adminOption)
   validateSecurityWritable(database, "grantRole")
   role = requirePrincipal(database, roleName, "grantRole")
@@ -1076,8 +1220,11 @@ function grantRole(database, roleName, memberName, grantorId, adminOption)
   return membership
 end function
 
-// Performs the role cascade members operation for this module.
-// Inputs: `state`, `roleId`, `rootMemberId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the role cascade members operation for this module.
+/// Inputs: `state`, `roleId`, `rootMemberId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param roleId Identifier of role.
+/// @param rootMemberId Identifier of root member.
 function roleCascadeMembers(state, roleId, rootMemberId)
   // The M30 security catalog stores one durable lineage per role membership.
   // A membership granted by a member that loses ADMIN OPTION depends on that
@@ -1099,8 +1246,12 @@ function roleCascadeMembers(state, roleId, rootMemberId)
   return descendants
 end function
 
-// Performs the revoke role with behavior operation for this module.
-// Inputs: `database`, `roleName`, `memberName`, `cascade`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the revoke role with behavior operation for this module.
+/// Inputs: `database`, `roleName`, `memberName`, `cascade`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param roleName roleName value consumed by this operation.
+/// @param memberName memberName value consumed by this operation.
+/// @param cascade cascade value consumed by this operation.
 function revokeRoleWithBehavior(database, roleName, memberName, cascade)
   validateSecurityWritable(database, "revokeRole")
   if typeof(cascade) != "bool" then return fail(INVALID_ARGUMENT, "revokeRole", "cascade must be bool") end if
@@ -1125,30 +1276,40 @@ function revokeRoleWithBehavior(database, roleName, memberName, cascade)
   return true
 end function
 
-// M21 compatibility entry point: RESTRICT is the safe default.
-// Performs the revoke role operation for this module.
-// Inputs: `database`, `roleName`, `memberName`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// M21 compatibility entry point: RESTRICT is the safe default.
+/// Performs the revoke role operation for this module.
+/// Inputs: `database`, `roleName`, `memberName`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param roleName roleName value consumed by this operation.
+/// @param memberName memberName value consumed by this operation.
 function revokeRole(database, roleName, memberName)
   return revokeRoleWithBehavior(database, roleName, memberName, false)
 end function
 
-// Performs the effective principal ids operation for this module.
-// Inputs: `database`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the effective principal ids operation for this module.
+/// Inputs: `database`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param principalId Identifier of principal.
 function effectivePrincipalIds(database, principalId)
   validateOpen(database, "effectivePrincipalIds")
   return effectivePrincipalIdsInState(database.security, principalId)
 end function
 
-// Evaluates whether the supplied input satisfies the superuser predicate.
-// Inputs: `database`, `principalId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the superuser predicate.
+/// Inputs: `database`, `principalId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param database database value consumed by this operation.
+/// @param principalId Identifier of principal.
 function isSuperuser(database, principalId)
   validateOpen(database, "isSuperuser")
   principal = findPrincipalByIdInState(database.security, principalId)
   return principal is not void and principal.enabled and principal.superuser
 end function
 
-// Evaluates whether the supplied input satisfies the role admin option predicate.
-// Inputs: `database`, `principalId`, `roleId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the role admin option predicate.
+/// Inputs: `database`, `principalId`, `roleId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param database database value consumed by this operation.
+/// @param principalId Identifier of principal.
+/// @param roleId Identifier of role.
 function hasRoleAdminOption(database, principalId, roleId)
   if isSuperuser(database, principalId) then return true end if
   effective = effectivePrincipalIds(database, principalId)
@@ -1158,8 +1319,14 @@ function hasRoleAdminOption(database, principalId, roleId)
   return false
 end function
 
-// Evaluates whether the supplied input satisfies the privilege predicate.
-// Inputs: `database`, `principalId`, `objectType`, `objectId`, `privilege`, `requireGrantOption`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the privilege predicate.
+/// Inputs: `database`, `principalId`, `objectType`, `objectId`, `privilege`, `requireGrantOption`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param database database value consumed by this operation.
+/// @param principalId Identifier of principal.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
+/// @param requireGrantOption requireGrantOption value consumed by this operation.
 function hasPrivilege(database, principalId, objectType, objectId, privilege, requireGrantOption)
   validateOpen(database, "hasPrivilege")
   if isSuperuser(database, principalId) then return true end if
@@ -1174,8 +1341,10 @@ function hasPrivilege(database, principalId, objectType, objectId, privilege, re
   return false
 end function
 
-// Performs the contains privilege code operation for this module.
-// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the contains privilege code operation for this module.
+/// Inputs: `values`, `wanted`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param wanted wanted value consumed by this operation.
 function containsPrivilegeCode(values, wanted)
   for each value in values
     if value == wanted then return true end if
@@ -1183,8 +1352,15 @@ function containsPrivilegeCode(values, wanted)
   return false
 end function
 
-// Performs the grant privileges operation for this module.
-// Inputs: `database`, `granteeName`, `grantorId`, `objectType`, `objectId`, `privileges`, `grantOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the grant privileges operation for this module.
+/// Inputs: `database`, `granteeName`, `grantorId`, `objectType`, `objectId`, `privileges`, `grantOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param granteeName granteeName value consumed by this operation.
+/// @param grantorId Identifier of grantor.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privileges privileges value consumed by this operation.
+/// @param grantOption grantOption value consumed by this operation.
 function grantPrivileges(database, granteeName, grantorId, objectType, objectId, privileges, grantOption)
   validateSecurityWritable(database, "grantPrivileges")
   if typeof(privileges) != "array" or len(privileges) == 0 then return fail(INVALID_ARGUMENT, "grantPrivileges", "privileges must be a non-empty array") end if
@@ -1207,8 +1383,15 @@ function grantPrivileges(database, granteeName, grantorId, objectType, objectId,
   return true
 end function
 
-// Performs the grant privilege operation for this module.
-// Inputs: `database`, `granteeName`, `grantorId`, `objectType`, `objectId`, `privilege`, `grantOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the grant privilege operation for this module.
+/// Inputs: `database`, `granteeName`, `grantorId`, `objectType`, `objectId`, `privilege`, `grantOption`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param granteeName granteeName value consumed by this operation.
+/// @param grantorId Identifier of grantor.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
+/// @param grantOption grantOption value consumed by this operation.
 function grantPrivilege(database, granteeName, grantorId, objectType, objectId, privilege, grantOption)
   grantPrivileges(database, granteeName, grantorId, objectType, objectId, [privilege], grantOption)
   grantee = requirePrincipal(database, granteeName, "grantPrivilege")
@@ -1218,8 +1401,13 @@ function grantPrivilege(database, granteeName, grantorId, objectType, objectId, 
   return fail(SECURITY_STATE, "grantPrivilege", "persisted grant is missing")
 end function
 
-// Performs the privilege cascade grantees operation for this module.
-// Inputs: `state`, `rootGranteeId`, `objectType`, `objectId`, `privilege`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the privilege cascade grantees operation for this module.
+/// Inputs: `state`, `rootGranteeId`, `objectType`, `objectId`, `privilege`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param rootGranteeId Identifier of root grantee.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
 function privilegeCascadeGrantees(state, rootGranteeId, objectType, objectId, privilege)
   grantors = [rootGranteeId]
   descendants = []
@@ -1237,8 +1425,14 @@ function privilegeCascadeGrantees(state, rootGranteeId, objectType, objectId, pr
   return descendants
 end function
 
-// Performs the revoke privileges with behavior operation for this module.
-// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privileges`, `cascade`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the revoke privileges with behavior operation for this module.
+/// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privileges`, `cascade`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param granteeName granteeName value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privileges privileges value consumed by this operation.
+/// @param cascade cascade value consumed by this operation.
 function revokePrivilegesWithBehavior(database, granteeName, objectType, objectId, privileges, cascade)
   validateSecurityWritable(database, "revokePrivileges")
   if typeof(privileges) != "array" or len(privileges) == 0 then return fail(INVALID_ARGUMENT, "revokePrivileges", "privileges must be a non-empty array") end if
@@ -1271,21 +1465,34 @@ function revokePrivilegesWithBehavior(database, granteeName, objectType, objectI
   return true
 end function
 
-// M21 compatibility entry point: RESTRICT is the safe default.
-// Performs the revoke privileges operation for this module.
-// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privileges`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// M21 compatibility entry point: RESTRICT is the safe default.
+/// Performs the revoke privileges operation for this module.
+/// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privileges`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param granteeName granteeName value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privileges privileges value consumed by this operation.
 function revokePrivileges(database, granteeName, objectType, objectId, privileges)
   return revokePrivilegesWithBehavior(database, granteeName, objectType, objectId, privileges, false)
 end function
 
-// Performs the revoke privilege operation for this module.
-// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privilege`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the revoke privilege operation for this module.
+/// Inputs: `database`, `granteeName`, `objectType`, `objectId`, `privilege`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param granteeName granteeName value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
 function revokePrivilege(database, granteeName, objectType, objectId, privilege)
   return revokePrivileges(database, granteeName, objectType, objectId, [privilege])
 end function
 
-// Performs the grant table owner operation for this module.
-// Inputs: `database`, `tableId`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the grant table owner operation for this module.
+/// Inputs: `database`, `tableId`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param tableId Identifier of table.
+/// @param principalId Identifier of principal.
 function grantTableOwner(database, tableId, principalId)
   validateSecurityWritable(database, "grantTableOwner")
   principal = findPrincipalByIdInState(database.security, principalId)
@@ -1293,8 +1500,10 @@ function grantTableOwner(database, tableId, principalId)
   return grantPrivilege(database, principal.name, principalId, metadata.OBJECT_TABLE, tableId, metadata.PRIVILEGE_OWNER, true)
 end function
 
-// Removes the table privileges.
-// Inputs: `database`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Removes the table privileges.
+/// Inputs: `database`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param tableId Identifier of table.
 function removeTablePrivileges(database, tableId)
   validateSecurityWritable(database, "removeTablePrivileges")
   candidate = cloneSecurityState(database.security)
@@ -1310,8 +1519,10 @@ function removeTablePrivileges(database, tableId)
   return changed
 end function
 
-// Performs the authentication material operation for this module.
-// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the authentication material operation for this module.
+/// Inputs: `database`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
 function authenticationMaterial(database, name)
   validateOpen(database, "authenticationMaterial")
   principal = findPrincipal(database, name)
@@ -1319,28 +1530,31 @@ function authenticationMaterial(database, name)
   return principal
 end function
 
-// Performs the authenticate password operation for this module.
-// Inputs: `database`, `name`, `password`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the authenticate password operation for this module.
+/// Inputs: `database`, `name`, `password`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param database database value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param password password value consumed by this operation.
 function authenticatePassword(database, name, password)
   principal = authenticationMaterial(database, name)
   if principal is void then return false end if
   return uuid.verifyPassword(password, principal.salt, principal.iterations, principal.verifier)
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql catalog catalog module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "catalog.catalog"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql catalog catalog module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M8"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql catalog catalog module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct PrivilegeGrant
 Defines the privilege grant record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L461)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L544)
 
 ## Members
 
@@ -26,7 +26,7 @@ granteeId
 Grantee id field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L463)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L546)
 
 <a id="field-field-minisql-catalog-metadata-privilegegrant-grantoption-grantoption-src-minisql-catalog-metadata-ml-856645196"></a>
 ### grantOption
@@ -38,7 +38,7 @@ grantOption
 Grant option field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L473)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L556)
 
 <a id="field-field-minisql-catalog-metadata-privilegegrant-grantorid-grantorid-src-minisql-catalog-metadata-ml-132074576"></a>
 ### grantorId
@@ -50,7 +50,7 @@ grantorId
 Grantor id field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L465)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L548)
 
 <a id="field-field-minisql-catalog-metadata-privilegegrant-objectid-objectid-src-minisql-catalog-metadata-ml-171123276"></a>
 ### objectId
@@ -62,7 +62,7 @@ objectId
 Object id field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L469)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L552)
 
 <a id="field-field-minisql-catalog-metadata-privilegegrant-objecttype-objecttype-src-minisql-catalog-metadata-ml-2084858982"></a>
 ### objectType
@@ -74,7 +74,7 @@ objectType
 Object type field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L467)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L550)
 
 <a id="field-field-minisql-catalog-metadata-privilegegrant-privilege-privilege-src-minisql-catalog-metadata-ml-1206526056"></a>
 ### privilege
@@ -86,4 +86,4 @@ privilege
 Privilege field of the privilege grant.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L471)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L554)

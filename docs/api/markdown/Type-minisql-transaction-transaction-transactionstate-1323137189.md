@@ -12,7 +12,7 @@ enum TransactionState
 Defines the transaction state enumeration used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L80)
 
 ## Members
 
@@ -26,7 +26,7 @@ Aborted = 5
 Aborted variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L92)
 
 <a id="enum_variant-enum-variant-minisql-transaction-transaction-transactionstate-active-active-1-src-minisql-transaction-transaction-ml-376822473"></a>
 ### Active
@@ -38,7 +38,7 @@ Active = 1
 Active variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L84)
 
 <a id="enum_variant-enum-variant-minisql-transaction-transaction-transactionstate-committed-committed-4-src-minisql-transaction-transaction-ml-1131190404"></a>
 ### Committed
@@ -50,7 +50,7 @@ Committed = 4
 Committed variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L90)
 
 <a id="enum_variant-enum-variant-minisql-transaction-transaction-transactionstate-committing-committing-3-src-minisql-transaction-transaction-ml-580756465"></a>
 ### Committing
@@ -62,7 +62,7 @@ Committing = 3
 Committing variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L88)
 
 <a id="enum_variant-enum-variant-minisql-transaction-transaction-transactionstate-failed-failed-2-src-minisql-transaction-transaction-ml-1348292148"></a>
 ### Failed
@@ -74,7 +74,7 @@ Failed = 2
 Failed variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L86)
 
 <a id="enum_variant-enum-variant-minisql-transaction-transaction-transactionstate-idle-idle-0-src-minisql-transaction-transaction-ml-208048136"></a>
 ### Idle
@@ -86,4 +86,4 @@ Idle = 0
 Idle variant of the transaction state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L82)

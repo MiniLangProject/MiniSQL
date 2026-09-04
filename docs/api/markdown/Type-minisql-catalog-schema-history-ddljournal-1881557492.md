@@ -12,7 +12,7 @@ struct DdlJournal
 Defines the ddl journal record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L269)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L305)
 
 ## Members
 
@@ -26,7 +26,7 @@ backupOriginals
 Backup originals field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L285)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L321)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-backuppaths-backuppaths-src-minisql-catalog-schema-history-ml-592173484"></a>
 ### backupPaths
@@ -38,7 +38,7 @@ backupPaths
 Backup paths field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L323)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-finalpaths-finalpaths-src-minisql-catalog-schema-history-ml-305068940"></a>
 ### finalPaths
@@ -50,7 +50,7 @@ finalPaths
 Final paths field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L319)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-oldcatalog-oldcatalog-src-minisql-catalog-schema-history-ml-2050675056"></a>
 ### oldCatalog
@@ -62,7 +62,7 @@ oldCatalog
 Old catalog field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L313)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-oldmeta-oldmeta-src-minisql-catalog-schema-history-ml-1491337440"></a>
 ### oldMeta
@@ -74,7 +74,7 @@ oldMeta
 Old meta field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L311)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-oldschema-oldschema-src-minisql-catalog-schema-history-ml-180490924"></a>
 ### oldSchema
@@ -86,7 +86,7 @@ oldSchema
 Old schema field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L315)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-schemaexisted-schemaexisted-src-minisql-catalog-schema-history-ml-544483648"></a>
 ### schemaExisted
@@ -98,7 +98,7 @@ schemaExisted
 Schema existed field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L273)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L309)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-status-status-src-minisql-catalog-schema-history-ml-930255292"></a>
 ### status
@@ -110,7 +110,7 @@ status
 Status field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L307)
 
 <a id="field-field-minisql-catalog-schema-history-ddljournal-temporarypaths-temporarypaths-src-minisql-catalog-schema-history-ml-310929682"></a>
 ### temporaryPaths
@@ -122,4 +122,4 @@ temporaryPaths
 Temporary paths field of the ddl journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L317)

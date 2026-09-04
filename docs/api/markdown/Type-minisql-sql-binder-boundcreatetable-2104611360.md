@@ -12,7 +12,7 @@ struct BoundCreateTable
 Groups the bound create table state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L202)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L216)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnTypes
 Stores the column types associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L206)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L220)
 
 <a id="field-field-minisql-sql-binder-boundcreatetable-statement-statement-src-minisql-sql-binder-ml-1357394623"></a>
 ### statement
@@ -38,4 +38,4 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L204)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L218)

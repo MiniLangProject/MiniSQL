@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql transaction checkpoint facilities for this project.
+
 Package: [`minisql.transaction.checkpoint`](Package-minisql-transaction-checkpoint-2107964044.md)
 
 Reachable from entry: **yes**
@@ -28,11 +30,11 @@ Begins the wal checkpoint. Inputs: `log`, `checkpointId`. Returns the produced v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `log` | `dynamic` | — |  |
-| `checkpointId` | `dynamic` | — |  |
+| `log` | `dynamic` | — | log value consumed by this operation. |
+| `checkpointId` | `dynamic` | — | Identifier of checkpoint. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L268)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L323)
 
 <a id="function-function-minisql-transaction-checkpoint-bytesequal-function-bytesequal-left-right-src-minisql-transaction-checkpoint-ml-179775275"></a>
 ### bytesEqual
@@ -41,15 +43,15 @@ Begins the wal checkpoint. Inputs: `log`, `checkpointId`. Returns the produced v
 function bytesEqual(left, right)
 ```
 
-Performs the bytes equal operation for this module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the bytesEqual operation for the minisql transaction checkpoint module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L104)
 
 - [minisql.transaction.checkpoint.CheckpointFile](Type-minisql-transaction-checkpoint-checkpointfile-1475200366.md) — struct
 - [minisql.transaction.checkpoint.CheckpointMetadata](Type-minisql-transaction-checkpoint-checkpointmetadata-275933805.md) — struct
@@ -60,8 +62,10 @@ Performs the bytes equal operation for this module. Inputs: `left`, `right`. Ret
 const CHECKSUM_OFFSET = 64
 ```
 
+Defines the checksum offset constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L40)
 
 <a id="function-function-minisql-transaction-checkpoint-choose-function-choose-firstresult-secondresult-src-minisql-transaction-checkpoint-ml-1227770978"></a>
 ### choose
@@ -74,11 +78,11 @@ Performs the choose operation for this module. Inputs: `firstResult`, `secondRes
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `firstResult` | `dynamic` | — |  |
-| `secondResult` | `dynamic` | — |  |
+| `firstResult` | `dynamic` | — | firstResult value consumed by this operation. |
+| `secondResult` | `dynamic` | — | secondResult value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L243)
 
 <a id="function-function-minisql-transaction-checkpoint-close-function-close-checkpointfile-src-minisql-transaction-checkpoint-ml-1754047644"></a>
 ### close
@@ -87,14 +91,14 @@ Performs the choose operation for this module. Inputs: `firstResult`, `secondRes
 function close(checkpointFile)
 ```
 
-Closes the requested value. Inputs: `checkpointFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql transaction checkpoint module. Inputs: `checkpointFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checkpointFile` | `dynamic` | — |  |
+| `checkpointFile` | `dynamic` | — | checkpointFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L295)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L361)
 
 <a id="constant-constant-minisql-transaction-checkpoint-closed-handle-const-closed-handle-9008-src-minisql-transaction-checkpoint-ml-2004125754"></a>
 ### CLOSED_HANDLE
@@ -103,8 +107,10 @@ Closes the requested value. Inputs: `checkpointFile`. Returns the operation resu
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L23)
 
 <a id="function-function-minisql-transaction-checkpoint-completewalcheckpoint-function-completewalcheckpoint-log-checkpointfile-checkpointid-redostartlsn-recordcount-src-minisql-transaction-checkpoint-ml-852147306"></a>
 ### completeWalCheckpoint
@@ -117,14 +123,14 @@ Performs the complete wal checkpoint operation for this module. Inputs: `log`, `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `log` | `dynamic` | — |  |
-| `checkpointFile` | `dynamic` | — |  |
-| `checkpointId` | `dynamic` | — |  |
-| `redoStartLsn` | `dynamic` | — |  |
-| `recordCount` | `dynamic` | — |  |
+| `log` | `dynamic` | — | log value consumed by this operation. |
+| `checkpointFile` | `dynamic` | — | checkpointFile value consumed by this operation. |
+| `checkpointId` | `dynamic` | — | Identifier of checkpoint. |
+| `redoStartLsn` | `dynamic` | — | redoStartLsn value consumed by this operation. |
+| `recordCount` | `dynamic` | — | Number of record to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L334)
 
 <a id="function-function-minisql-transaction-checkpoint-componentname-function-componentname-src-minisql-transaction-checkpoint-ml-172726536"></a>
 ### componentName
@@ -133,10 +139,10 @@ Performs the complete wal checkpoint operation for this module. Inputs: `log`, `
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql transaction checkpoint module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L370)
 
 <a id="function-function-minisql-transaction-checkpoint-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-transaction-checkpoint-ml-2099695941"></a>
 ### copyExact
@@ -145,18 +151,18 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
 ```
 
-Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the copyExact operation for the minisql transaction checkpoint module. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L92)
 
 <a id="constant-constant-minisql-transaction-checkpoint-corrupt-data-const-corrupt-data-9004-src-minisql-transaction-checkpoint-ml-1210441576"></a>
 ### CORRUPT_DATA
@@ -165,8 +171,10 @@ Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceO
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L21)
 
 <a id="function-function-minisql-transaction-checkpoint-create-function-create-path-databaseid-src-minisql-transaction-checkpoint-ml-1463417473"></a>
 ### create
@@ -175,15 +183,15 @@ const CORRUPT_DATA = 9004
 function create(path, databaseId)
 ```
 
-Creates the requested value. Inputs: `path`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql transaction checkpoint module. Inputs: `path`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L265)
 
 <a id="function-function-minisql-transaction-checkpoint-decodenative-function-decodenative-words-operation-name-src-minisql-transaction-checkpoint-ml-2092959195"></a>
 ### decodeNative
@@ -192,16 +200,16 @@ Creates the requested value. Inputs: `path`, `databaseId`. Returns the produced 
 function decodeNative(words, operation, name)
 ```
 
-Decodes the native. Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Decodes native for the minisql transaction checkpoint workflow. Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `words` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `words` | `dynamic` | — | words value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L137)
 
 <a id="function-function-minisql-transaction-checkpoint-decodeslot-function-decodeslot-source-src-minisql-transaction-checkpoint-ml-1969868543"></a>
 ### decodeSlot
@@ -214,10 +222,10 @@ Decodes the slot. Inputs: `source`. Returns the produced value or propagates a s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L184)
 
 <a id="function-function-minisql-transaction-checkpoint-encodeslot-function-encodeslot-value-src-minisql-transaction-checkpoint-ml-471548411"></a>
 ### encodeSlot
@@ -230,10 +238,10 @@ Encodes the slot. Inputs: `value`. Returns the produced value or propagates a st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L162)
 
 <a id="function-function-minisql-transaction-checkpoint-fail-function-fail-code-operation-message-src-minisql-transaction-checkpoint-ml-17392655"></a>
 ### fail
@@ -242,16 +250,16 @@ Encodes the slot. Inputs: `value`. Returns the produced value or propagates a st
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql transaction checkpoint module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L75)
 
 <a id="constant-constant-minisql-transaction-checkpoint-file-size-const-file-size-512-src-minisql-transaction-checkpoint-ml-618877159"></a>
 ### FILE_SIZE
@@ -260,8 +268,10 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const FILE_SIZE = 512
 ```
 
+Defines the file size constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L38)
 
 <a id="constant-constant-minisql-transaction-checkpoint-format-version-const-format-version-1-src-minisql-transaction-checkpoint-ml-71751766"></a>
 ### FORMAT_VERSION
@@ -270,8 +280,10 @@ const FILE_SIZE = 512
 const FORMAT_VERSION = 1
 ```
 
+Defines the format version constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L26)
 
 <a id="constant-constant-minisql-transaction-checkpoint-invalid-argument-const-invalid-argument-9001-src-minisql-transaction-checkpoint-ml-941936781"></a>
 ### INVALID_ARGUMENT
@@ -280,7 +292,7 @@ const FORMAT_VERSION = 1
 const INVALID_ARGUMENT = 9001
 ```
 
-Durable checkpoint metadata and orchestration. A checkpoint flushes dirty database pages before publishing the WAL boundary from which crash recovery may safely resume.
+Durable checkpoint metadata and orchestration. A checkpoint flushes dirty
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L17)
@@ -292,10 +304,10 @@ Durable checkpoint metadata and orchestration. A checkpoint flushes dirty databa
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql transaction checkpoint module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L316)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L382)
 
 <a id="function-function-minisql-transaction-checkpoint-magicbytes-function-magicbytes-src-minisql-transaction-checkpoint-ml-969017320"></a>
 ### magicBytes
@@ -304,10 +316,10 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 function magicBytes()
 ```
 
-Performs the magic bytes operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the magicBytes operation for the minisql transaction checkpoint module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L81)
 
 <a id="function-function-minisql-transaction-checkpoint-newmetadata-function-newmetadata-generation-checkpointlsn-redostartlsn-recordcount-databaseid-src-minisql-transaction-checkpoint-ml-1870545986"></a>
 ### newMetadata
@@ -320,14 +332,14 @@ Performs the new metadata operation for this module. Inputs: `generation`, `chec
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `generation` | `dynamic` | — |  |
-| `checkpointLsn` | `dynamic` | — |  |
-| `redoStartLsn` | `dynamic` | — |  |
-| `recordCount` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `generation` | `dynamic` | — | generation value consumed by this operation. |
+| `checkpointLsn` | `dynamic` | — | checkpointLsn value consumed by this operation. |
+| `redoStartLsn` | `dynamic` | — | redoStartLsn value consumed by this operation. |
+| `recordCount` | `dynamic` | — | Number of record to process. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L149)
 
 <a id="function-function-minisql-transaction-checkpoint-open-function-open-path-src-minisql-transaction-checkpoint-ml-518534133"></a>
 ### open
@@ -336,14 +348,14 @@ Performs the new metadata operation for this module. Inputs: `generation`, `chec
 function open(path)
 ```
 
-Opens the requested value. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Opens open for the minisql transaction checkpoint module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L279)
 
 <a id="function-function-minisql-transaction-checkpoint-perform-function-perform-log-checkpointfile-checkpointid-pagedfiles-redostartlsn-src-minisql-transaction-checkpoint-ml-2046176022"></a>
 ### perform
@@ -356,14 +368,14 @@ Performs the perform operation for this module. Inputs: `log`, `checkpointFile`,
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `log` | `dynamic` | — |  |
-| `checkpointFile` | `dynamic` | — |  |
-| `checkpointId` | `dynamic` | — |  |
-| `pagedFiles` | `dynamic` | — |  |
-| `redoStartLsn` | `dynamic` | — |  |
+| `log` | `dynamic` | — | log value consumed by this operation. |
+| `checkpointFile` | `dynamic` | — | checkpointFile value consumed by this operation. |
+| `checkpointId` | `dynamic` | — | Identifier of checkpoint. |
+| `pagedFiles` | `dynamic` | — | pagedFiles value consumed by this operation. |
+| `redoStartLsn` | `dynamic` | — | redoStartLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L347)
 
 <a id="function-function-minisql-transaction-checkpoint-publish-function-publish-checkpointfile-checkpointlsn-redostartlsn-recordcount-src-minisql-transaction-checkpoint-ml-105464480"></a>
 ### publish
@@ -376,13 +388,13 @@ Performs the publish operation for this module. Inputs: `checkpointFile`, `check
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checkpointFile` | `dynamic` | — |  |
-| `checkpointLsn` | `dynamic` | — |  |
-| `redoStartLsn` | `dynamic` | — |  |
-| `recordCount` | `dynamic` | — |  |
+| `checkpointFile` | `dynamic` | — | checkpointFile value consumed by this operation. |
+| `checkpointLsn` | `dynamic` | — | checkpointLsn value consumed by this operation. |
+| `redoStartLsn` | `dynamic` | — | redoStartLsn value consumed by this operation. |
+| `recordCount` | `dynamic` | — | Number of record to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L306)
 
 <a id="function-function-minisql-transaction-checkpoint-readslot-function-readslot-file-slot-src-minisql-transaction-checkpoint-ml-2118763782"></a>
 ### readSlot
@@ -395,11 +407,11 @@ Reads the slot. Inputs: `file`, `slot`. Returns the produced value or propagates
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L222)
 
 <a id="constant-constant-minisql-transaction-checkpoint-slot-a-const-slot-a-0-src-minisql-transaction-checkpoint-ml-1498131313"></a>
 ### SLOT_A
@@ -408,8 +420,10 @@ Reads the slot. Inputs: `file`, `slot`. Returns the produced value or propagates
 const SLOT_A = 0
 ```
 
+Defines the slot a constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L30)
 
 <a id="constant-constant-minisql-transaction-checkpoint-slot-a-offset-const-slot-a-offset-0-src-minisql-transaction-checkpoint-ml-1753449983"></a>
 ### SLOT_A_OFFSET
@@ -418,8 +432,10 @@ const SLOT_A = 0
 const SLOT_A_OFFSET = 0
 ```
 
+Defines the slot a offset constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L34)
 
 <a id="constant-constant-minisql-transaction-checkpoint-slot-b-const-slot-b-1-src-minisql-transaction-checkpoint-ml-1958200604"></a>
 ### SLOT_B
@@ -428,8 +444,10 @@ const SLOT_A_OFFSET = 0
 const SLOT_B = 1
 ```
 
+Defines the slot b constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L32)
 
 <a id="constant-constant-minisql-transaction-checkpoint-slot-b-offset-const-slot-b-offset-256-src-minisql-transaction-checkpoint-ml-1421527066"></a>
 ### SLOT_B_OFFSET
@@ -438,8 +456,10 @@ const SLOT_B = 1
 const SLOT_B_OFFSET = 256
 ```
 
+Defines the slot b offset constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L36)
 
 <a id="constant-constant-minisql-transaction-checkpoint-slot-size-const-slot-size-256-src-minisql-transaction-checkpoint-ml-1160274022"></a>
 ### SLOT_SIZE
@@ -448,8 +468,10 @@ const SLOT_B_OFFSET = 256
 const SLOT_SIZE = 256
 ```
 
+Defines the slot size constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L28)
 
 <a id="function-function-minisql-transaction-checkpoint-slotoffset-function-slotoffset-slot-src-minisql-transaction-checkpoint-ml-1104826312"></a>
 ### slotOffset
@@ -458,14 +480,14 @@ const SLOT_SIZE = 256
 function slotOffset(slot)
 ```
 
-Performs the slot offset operation for this module. Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the slotOffset operation for the minisql transaction checkpoint module. Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `slot` | `dynamic` | — |  |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L212)
 
 <a id="function-function-minisql-transaction-checkpoint-targetmilestone-function-targetmilestone-src-minisql-transaction-checkpoint-ml-1685547750"></a>
 ### targetMilestone
@@ -474,10 +496,10 @@ Performs the slot offset operation for this module. Inputs: `slot`. Returns the 
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql transaction checkpoint module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L310)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L376)
 
 <a id="constant-constant-minisql-transaction-checkpoint-unsupported-format-const-unsupported-format-9003-src-minisql-transaction-checkpoint-ml-2021314619"></a>
 ### UNSUPPORTED_FORMAT
@@ -486,8 +508,10 @@ Returns the milestone in which this component became available. Takes no caller-
 const UNSUPPORTED_FORMAT = 9003
 ```
 
+Defines the unsupported format constant used by the minisql transaction checkpoint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L19)
 
 <a id="function-function-minisql-transaction-checkpoint-validatedatabaseid-function-validatedatabaseid-databaseid-operation-src-minisql-transaction-checkpoint-ml-105316383"></a>
 ### validateDatabaseId
@@ -496,15 +520,15 @@ const UNSUPPORTED_FORMAT = 9003
 function validateDatabaseId(databaseId, operation)
 ```
 
-Validates the database id. Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates database id for the minisql transaction checkpoint workflow. Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseId` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L127)
 
 <a id="function-function-minisql-transaction-checkpoint-validatenative-function-validatenative-value-operation-name-src-minisql-transaction-checkpoint-ml-2096759679"></a>
 ### validateNative
@@ -513,16 +537,16 @@ Validates the database id. Inputs: `databaseId`, `operation`. Returns success af
 function validateNative(value, operation, name)
 ```
 
-Validates the native. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates native for the minisql transaction checkpoint workflow. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L118)
 
 <a id="function-function-minisql-transaction-checkpoint-validateopen-function-validateopen-checkpointfile-operation-src-minisql-transaction-checkpoint-ml-1272704327"></a>
 ### validateOpen
@@ -531,15 +555,15 @@ Validates the native. Inputs: `value`, `operation`, `name`. Returns success afte
 function validateOpen(checkpointFile, operation)
 ```
 
-Validates the open. Inputs: `checkpointFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql transaction checkpoint workflow. Inputs: `checkpointFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `checkpointFile` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `checkpointFile` | `dynamic` | — | checkpointFile value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L294)
 
 <a id="function-function-minisql-transaction-checkpoint-writeslot-function-writeslot-file-slot-value-src-minisql-transaction-checkpoint-ml-2090083399"></a>
 ### writeSlot
@@ -552,9 +576,9 @@ Writes the slot. Inputs: `file`, `slot`, `value`. Returns the operation result a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L233)

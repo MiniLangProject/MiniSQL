@@ -12,7 +12,7 @@ struct SqlValue
 Groups the SQL value state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L26)
 
 ## Members
 
@@ -26,7 +26,7 @@ isNull
 Indicates whether the is null condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L30)
 
 <a id="field-field-minisql-sql-values-sqlvalue-typekind-typekind-src-minisql-sql-values-ml-652400806"></a>
 ### typeKind
@@ -38,7 +38,7 @@ typeKind
 Stores the type kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L28)
 
 <a id="field-field-minisql-sql-values-sqlvalue-value-value-src-minisql-sql-values-ml-57467238"></a>
 ### value
@@ -50,4 +50,4 @@ value
 Stores the value associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/values.ml#L32)

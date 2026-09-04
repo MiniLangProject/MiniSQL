@@ -12,7 +12,7 @@ struct ServerHelloSelection
 Captures the security-relevant plaintext fields selected by ServerHello.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L94)
 
 ## Members
 
@@ -26,7 +26,7 @@ cipherSuiteId
 Cipher suite selected by the server.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L98)
 
 <a id="field-field-minisql-platform-tls-policy-serverhelloselection-groupid-groupid-src-minisql-platform-tls-policy-ml-182068456"></a>
 ### groupId
@@ -38,7 +38,7 @@ groupId
 Named group selected by the server key_share extension.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L100)
 
 <a id="field-field-minisql-platform-tls-policy-serverhelloselection-protocolversion-protocolversion-src-minisql-platform-tls-policy-ml-1124532088"></a>
 ### protocolVersion
@@ -50,4 +50,4 @@ protocolVersion
 Version selected by the supported_versions extension.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L96)

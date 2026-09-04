@@ -12,7 +12,7 @@ struct SchemaEditorState
 Retains schema-designer modal state until execution, insertion, or cancellation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L327)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L420)
 
 ## Members
 
@@ -26,7 +26,7 @@ executeImmediately
 Selects direct execution instead of worksheet insertion.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L333)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L426)
 
 <a id="field-field-minisql-admin-win32-client-schemaeditorstate-resultsql-resultsql-src-minisql-admin-win32-client-ml-173035928"></a>
 ### resultSql
@@ -38,7 +38,7 @@ resultSql
 Stores generated DDL or void when cancelled.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L331)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L424)
 
 <a id="field-field-minisql-admin-win32-client-schemaeditorstate-window-window-src-minisql-admin-win32-client-ml-626852740"></a>
 ### window
@@ -50,4 +50,4 @@ window
 Owns the modal native controls.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L329)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L422)

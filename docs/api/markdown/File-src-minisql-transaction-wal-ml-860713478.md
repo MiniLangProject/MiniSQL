@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql transaction wal facilities for this project.
+
 Package: [`minisql.transaction.wal`](Package-minisql-transaction-wal-1468394746.md)
 
 Reachable from entry: **yes**
@@ -26,8 +28,10 @@ Reachable from entry: **yes**
 const APPEND_BATCH_BYTES = 4194304
 ```
 
+Defines the append batch bytes constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L42)
 
 <a id="function-function-minisql-transaction-wal-appendabort-function-appendabort-writer-transactionid-src-minisql-transaction-wal-ml-1903344086"></a>
 ### appendAbort
@@ -40,11 +44,11 @@ Appends the abort. Inputs: `writer`, `transactionId`. Returns the produced value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L699)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L800)
 
 <a id="function-function-minisql-transaction-wal-appendbatchrecord-function-appendbatchrecord-batch-record-src-minisql-transaction-wal-ml-854064689"></a>
 ### appendBatchRecord
@@ -57,11 +61,11 @@ Adds one record to the bounded batch, flushing or directly appending records lar
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `batch` | `dynamic` | — |  |
-| `record` | `dynamic` | — |  |
+| `batch` | `dynamic` | — | batch value consumed by this operation. |
+| `record` | `dynamic` | — | record value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L628)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L715)
 
 <a id="function-function-minisql-transaction-wal-appendbegin-function-appendbegin-writer-transactionid-src-minisql-transaction-wal-ml-930188240"></a>
 ### appendBegin
@@ -74,11 +78,11 @@ Appends the begin. Inputs: `writer`, `transactionId`. Returns the produced value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L681)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L773)
 
 <a id="function-function-minisql-transaction-wal-appendcheckpointbegin-function-appendcheckpointbegin-writer-checkpointid-payload-src-minisql-transaction-wal-ml-1634850574"></a>
 ### appendCheckpointBegin
@@ -91,12 +95,12 @@ Appends the checkpoint begin. Inputs: `writer`, `checkpointId`, `payload`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `checkpointId` | `dynamic` | — |  |
-| `payload` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `checkpointId` | `dynamic` | — | Identifier of checkpoint. |
+| `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L705)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L809)
 
 <a id="function-function-minisql-transaction-wal-appendcheckpointend-function-appendcheckpointend-writer-checkpointid-payload-src-minisql-transaction-wal-ml-1723538650"></a>
 ### appendCheckpointEnd
@@ -109,12 +113,12 @@ Appends the checkpoint end. Inputs: `writer`, `checkpointId`, `payload`. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `checkpointId` | `dynamic` | — |  |
-| `payload` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `checkpointId` | `dynamic` | — | Identifier of checkpoint. |
+| `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L711)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L818)
 
 <a id="function-function-minisql-transaction-wal-appendcommit-function-appendcommit-writer-transactionid-src-minisql-transaction-wal-ml-1451373646"></a>
 ### appendCommit
@@ -127,11 +131,11 @@ Appends the commit. Inputs: `writer`, `transactionId`. Returns the produced valu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L693)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L792)
 
 <a id="function-function-minisql-transaction-wal-appendpageimage-function-appendpageimage-writer-transactionid-fileid-pagenumber-pagebytes-src-minisql-transaction-wal-ml-192433459"></a>
 ### appendPageImage
@@ -144,14 +148,14 @@ Appends the page image. Inputs: `writer`, `transactionId`, `fileId`, `pageNumber
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `pageBytes` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L687)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L784)
 
 <a id="function-function-minisql-transaction-wal-appendrecord-function-appendrecord-writer-recordtype-flags-transactionid-fileid-pagenumber-payload-src-minisql-transaction-wal-ml-810671269"></a>
 ### appendRecord
@@ -164,16 +168,16 @@ Appends the record. Inputs: `writer`, `recordType`, `flags`, `transactionId`, `f
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `recordType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `payload` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `recordType` | `dynamic` | — | recordType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L573)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L654)
 
 <a id="function-function-minisql-transaction-wal-appendtransaction-function-appendtransaction-writer-transactionid-changes-src-minisql-transaction-wal-ml-311048587"></a>
 ### appendTransaction
@@ -186,12 +190,12 @@ Appends a complete transaction using a bounded staging buffer. This reduces one 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `changes` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `changes` | `dynamic` | — | changes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L648)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L738)
 
 <a id="function-function-minisql-transaction-wal-bytesequal-function-bytesequal-left-right-src-minisql-transaction-wal-ml-1064207079"></a>
 ### bytesEqual
@@ -200,15 +204,15 @@ Appends a complete transaction using a bounded staging buffer. This reduces one 
 function bytesEqual(left, right)
 ```
 
-Performs the bytes equal operation for this module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the bytesEqual operation for the minisql transaction wal module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L183)
 
 <a id="function-function-minisql-transaction-wal-close-function-close-writer-src-minisql-transaction-wal-ml-1543838361"></a>
 ### close
@@ -217,14 +221,14 @@ Performs the bytes equal operation for this module. Inputs: `left`, `right`. Ret
 function close(writer)
 ```
 
-Closes the requested value. Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql transaction wal module. Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L783)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L898)
 
 <a id="constant-constant-minisql-transaction-wal-closed-handle-const-closed-handle-9008-src-minisql-transaction-wal-ml-652378928"></a>
 ### CLOSED_HANDLE
@@ -233,8 +237,10 @@ Closes the requested value. Inputs: `writer`. Returns the operation result and p
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L27)
 
 <a id="function-function-minisql-transaction-wal-componentname-function-componentname-src-minisql-transaction-wal-ml-1785815390"></a>
 ### componentName
@@ -243,10 +249,10 @@ const CLOSED_HANDLE = 9008
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql transaction wal module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L794)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L909)
 
 <a id="function-function-minisql-transaction-wal-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-transaction-wal-ml-2143075749"></a>
 ### copyExact
@@ -255,18 +261,18 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
 ```
 
-Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the copyExact operation for the minisql transaction wal module. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L171)
 
 <a id="constant-constant-minisql-transaction-wal-corrupt-data-const-corrupt-data-9004-src-minisql-transaction-wal-ml-738627906"></a>
 ### CORRUPT_DATA
@@ -274,6 +280,8 @@ Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceO
 ```ml
 const CORRUPT_DATA = 9004
 ```
+
+Defines the corrupt data constant used by the minisql transaction wal module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L23)
@@ -285,15 +293,15 @@ const CORRUPT_DATA = 9004
 function create(path, segmentBytes)
 ```
 
-Creates the requested value. Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql transaction wal module. Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `segmentBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `segmentBytes` | `dynamic` | — | segmentBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L578)
 
 <a id="function-function-minisql-transaction-wal-createrecord-function-createrecord-recordtype-flags-transactionid-fileid-pagenumber-payload-src-minisql-transaction-wal-ml-1732986708"></a>
 ### createRecord
@@ -306,15 +314,15 @@ Creates the record. Inputs: `recordType`, `flags`, `transactionId`, `fileId`, `p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `recordType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `payload` | `dynamic` | — |  |
+| `recordType` | `dynamic` | — | recordType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L315)
 
 <a id="function-function-minisql-transaction-wal-decode-function-decode-source-src-minisql-transaction-wal-ml-1435933563"></a>
 ### decode
@@ -327,10 +335,10 @@ Public compatibility wrapper. Qualified calls such as wal.decode(...) resolve to
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L483)
 
 <a id="function-function-minisql-transaction-wal-decodedurablemarker-function-decodedurablemarker-source-src-minisql-transaction-wal-ml-1290525973"></a>
 ### decodeDurableMarker
@@ -343,10 +351,10 @@ Decodes the durable marker. Inputs: `source`. Returns the produced value or prop
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L261)
 
 <a id="function-function-minisql-transaction-wal-decodenative-function-decodenative-words-operation-name-src-minisql-transaction-wal-ml-976111771"></a>
 ### decodeNative
@@ -355,16 +363,16 @@ Decodes the durable marker. Inputs: `source`. Returns the produced value or prop
 function decodeNative(words, operation, name)
 ```
 
-Decodes the native. Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Decodes native for the minisql transaction wal workflow. Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `words` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `words` | `dynamic` | — | words value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L209)
 
 <a id="function-function-minisql-transaction-wal-decoderecord-function-decoderecord-source-src-minisql-transaction-wal-ml-673424431"></a>
 ### decodeRecord
@@ -377,10 +385,10 @@ Decodes a compatibility plaintext WAL record.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L473)
 
 <a id="function-function-minisql-transaction-wal-decoderecordwithkey-function-decoderecordwithkey-source-encryptionkey-src-minisql-transaction-wal-ml-419076701"></a>
 ### decodeRecordWithKey
@@ -393,11 +401,11 @@ Decodes one plaintext or encrypted WAL record with an optional DEK.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `encryptionKey` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `encryptionKey` | `dynamic` | — | encryptionKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L366)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L419)
 
 <a id="constant-constant-minisql-transaction-wal-durable-marker-checksum-offset-const-durable-marker-checksum-offset-24-src-minisql-transaction-wal-ml-1253847487"></a>
 ### DURABLE_MARKER_CHECKSUM_OFFSET
@@ -406,8 +414,10 @@ Decodes one plaintext or encrypted WAL record with an optional DEK.
 const DURABLE_MARKER_CHECKSUM_OFFSET = 24
 ```
 
+Defines the durable marker checksum offset constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L44)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L53)
 
 <a id="constant-constant-minisql-transaction-wal-durable-marker-size-const-durable-marker-size-32-src-minisql-transaction-wal-ml-128126620"></a>
 ### DURABLE_MARKER_SIZE
@@ -416,8 +426,10 @@ const DURABLE_MARKER_CHECKSUM_OFFSET = 24
 const DURABLE_MARKER_SIZE = 32
 ```
 
+Defines the durable marker size constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L43)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L51)
 
 <a id="constant-constant-minisql-transaction-wal-durable-marker-version-const-durable-marker-version-1-src-minisql-transaction-wal-ml-103749146"></a>
 ### DURABLE_MARKER_VERSION
@@ -426,10 +438,10 @@ const DURABLE_MARKER_SIZE = 32
 const DURABLE_MARKER_VERSION = 1
 ```
 
-M48 durable-export marker. The WAL itself remains format v1. The sidecar marker records only the prefix known to have completed FlushFileBuffers.
+M48 durable-export marker. The WAL itself remains format v1. The sidecar
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L49)
 
 <a id="function-function-minisql-transaction-wal-durablemarkermagic-function-durablemarkermagic-src-minisql-transaction-wal-ml-856140390"></a>
 ### durableMarkerMagic
@@ -441,7 +453,7 @@ function durableMarkerMagic()
 Performs the durable marker magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L196)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L229)
 
 <a id="function-function-minisql-transaction-wal-durablemarkerpath-function-durablemarkerpath-walpath-src-minisql-transaction-wal-ml-481551449"></a>
 ### durableMarkerPath
@@ -454,10 +466,10 @@ Performs the durable marker path operation for this module. Inputs: `walPath`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `walPath` | `dynamic` | — |  |
+| `walPath` | `dynamic` | — | Path associated with wal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L202)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L236)
 
 <a id="function-function-minisql-transaction-wal-encode-function-encode-record-src-minisql-transaction-wal-ml-1342607379"></a>
 ### encode
@@ -466,14 +478,14 @@ Performs the durable marker path operation for this module. Inputs: `walPath`. R
 function encode(record)
 ```
 
-Encodes the requested value. Inputs: `record`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Encodes encode for the minisql transaction wal workflow. Inputs: `record`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `record` | `dynamic` | — |  |
+| `record` | `dynamic` | — | record value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L310)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L358)
 
 <a id="function-function-minisql-transaction-wal-encodedurablemarker-function-encodedurablemarker-lsn-src-minisql-transaction-wal-ml-546690561"></a>
 ### encodeDurableMarker
@@ -486,10 +498,10 @@ Encodes the durable marker. Inputs: `lsn`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lsn` | `dynamic` | — |  |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L244)
 
 <a id="function-function-minisql-transaction-wal-encoderecordat-function-encoderecordat-writer-record-lsn-src-minisql-transaction-wal-ml-2098018453"></a>
 ### encodeRecordAt
@@ -502,12 +514,12 @@ Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `record` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `record` | `dynamic` | — | record value consumed by this operation. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L600)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L684)
 
 <a id="constant-constant-minisql-transaction-wal-encryption-marker-high-const-encryption-marker-high-827081047-src-minisql-transaction-wal-ml-379574050"></a>
 ### ENCRYPTION_MARKER_HIGH
@@ -516,8 +528,10 @@ Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
 const ENCRYPTION_MARKER_HIGH = 827081047
 ```
 
+Defines the encryption marker high constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L38)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L46)
 
 <a id="constant-constant-minisql-transaction-wal-encryption-marker-low-const-encryption-marker-low-826623060-src-minisql-transaction-wal-ml-103956588"></a>
 ### ENCRYPTION_MARKER_LOW
@@ -526,10 +540,10 @@ const ENCRYPTION_MARKER_HIGH = 827081047
 const ENCRYPTION_MARKER_LOW = 826623060
 ```
 
-The formerly reserved final U64 identifies an encrypted payload without consuming caller-owned record flag bits. Existing v1 records always stored zero here, so the marker is both backward compatible and unambiguous.
+The formerly reserved final U64 identifies an encrypted payload without
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L44)
 
 <a id="function-function-minisql-transaction-wal-fail-function-fail-code-operation-message-src-minisql-transaction-wal-ml-597183503"></a>
 ### fail
@@ -538,16 +552,16 @@ The formerly reserved final U64 identifies an encrypted payload without consumin
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql transaction wal module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L154)
 
 <a id="function-function-minisql-transaction-wal-flush-function-flush-writer-src-minisql-transaction-wal-ml-1449699693"></a>
 ### flush
@@ -556,14 +570,14 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 function flush(writer)
 ```
 
-Flushes the requested value. Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the flush operation for the minisql transaction wal module. Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L734)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L844)
 
 <a id="function-function-minisql-transaction-wal-flushappendbatch-function-flushappendbatch-batch-src-minisql-transaction-wal-ml-960733410"></a>
 ### flushAppendBatch
@@ -576,10 +590,10 @@ Flushes the occupied prefix of a bounded append batch.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `batch` | `dynamic` | — |  |
+| `batch` | `dynamic` | — | batch value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L617)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L702)
 
 <a id="constant-constant-minisql-transaction-wal-format-version-const-format-version-1-src-minisql-transaction-wal-ml-1931763152"></a>
 ### FORMAT_VERSION
@@ -588,8 +602,10 @@ Flushes the occupied prefix of a bounded append batch.
 const FORMAT_VERSION = 1
 ```
 
+Defines the format version constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L30)
 
 <a id="constant-constant-minisql-transaction-wal-header-checksum-offset-const-header-checksum-offset-68-src-minisql-transaction-wal-ml-1338722233"></a>
 ### HEADER_CHECKSUM_OFFSET
@@ -598,8 +614,10 @@ const FORMAT_VERSION = 1
 const HEADER_CHECKSUM_OFFSET = 68
 ```
 
+Defines the header checksum offset constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L38)
 
 <a id="constant-constant-minisql-transaction-wal-header-size-const-header-size-80-src-minisql-transaction-wal-ml-657617671"></a>
 ### HEADER_SIZE
@@ -608,8 +626,10 @@ const HEADER_CHECKSUM_OFFSET = 68
 const HEADER_SIZE = 80
 ```
 
+Defines the header size constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L32)
 
 <a id="function-function-minisql-transaction-wal-injectflushfailure-function-injectflushfailure-writer-src-minisql-transaction-wal-ml-550845309"></a>
 ### injectFlushFailure
@@ -622,10 +642,10 @@ Performs the inject flush failure operation for this module. Inputs: `writer`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L775)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L889)
 
 <a id="function-function-minisql-transaction-wal-injectwritefailure-function-injectwritefailure-writer-src-minisql-transaction-wal-ml-1108506517"></a>
 ### injectWriteFailure
@@ -638,10 +658,10 @@ Performs the inject write failure operation for this module. Inputs: `writer`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L767)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L880)
 
 <a id="constant-constant-minisql-transaction-wal-invalid-argument-const-invalid-argument-9001-src-minisql-transaction-wal-ml-2047170601"></a>
 ### INVALID_ARGUMENT
@@ -650,10 +670,10 @@ Performs the inject write failure operation for this module. Inputs: `writer`. R
 const INVALID_ARGUMENT = 9001
 ```
 
-Write-ahead log format v1. Records are append-only, length-prefixed and independently protected by header and payload CRC-32C values. The current implementation stores logical segments in one durable file; segmentNumber and segmentOffset expose the configured segment geometry so physical segment rotation can be introduced without changing record encoding.
+Write-ahead log format v1. Records are append-only, length-prefixed and
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L19)
 
 <a id="constant-constant-minisql-transaction-wal-io-failure-const-io-failure-9005-src-minisql-transaction-wal-ml-1396012329"></a>
 ### IO_FAILURE
@@ -662,8 +682,10 @@ Write-ahead log format v1. Records are append-only, length-prefixed and independ
 const IO_FAILURE = 9005
 ```
 
+Defines the io failure constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L25)
 
 <a id="function-function-minisql-transaction-wal-isimplemented-function-isimplemented-src-minisql-transaction-wal-ml-972947062"></a>
 ### isImplemented
@@ -672,10 +694,10 @@ const IO_FAILURE = 9005
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql transaction wal module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L806)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L921)
 
 <a id="function-function-minisql-transaction-wal-iswalscan-function-iswalscan-value-src-minisql-transaction-wal-ml-1445900905"></a>
 ### isWalScan
@@ -688,10 +710,10 @@ Evaluates whether the supplied input satisfies the wal scan predicate. Inputs: `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L105)
 
 <a id="constant-constant-minisql-transaction-wal-magic-size-const-magic-size-8-src-minisql-transaction-wal-ml-1057215835"></a>
 ### MAGIC_SIZE
@@ -700,8 +722,10 @@ Evaluates whether the supplied input satisfies the wal scan predicate. Inputs: `
 const MAGIC_SIZE = 8
 ```
 
+Defines the magic size constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L34)
 
 <a id="function-function-minisql-transaction-wal-magicbytes-function-magicbytes-src-minisql-transaction-wal-ml-824236846"></a>
 ### magicBytes
@@ -710,10 +734,10 @@ const MAGIC_SIZE = 8
 function magicBytes()
 ```
 
-Performs the magic bytes operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the magicBytes operation for the minisql transaction wal module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L160)
 
 <a id="constant-constant-minisql-transaction-wal-max-record-size-const-max-record-size-67108864-src-minisql-transaction-wal-ml-1703726415"></a>
 ### MAX_RECORD_SIZE
@@ -722,8 +746,10 @@ Performs the magic bytes operation for this module. Takes no caller-supplied inp
 const MAX_RECORD_SIZE = 67108864
 ```
 
+Defines the max record size constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L40)
 
 <a id="function-function-minisql-transaction-wal-open-function-open-path-segmentbytes-src-minisql-transaction-wal-ml-712970529"></a>
 ### open
@@ -732,15 +758,15 @@ const MAX_RECORD_SIZE = 67108864
 function open(path, segmentBytes)
 ```
 
-Opens the requested value. Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Opens open for the minisql transaction wal module. Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `segmentBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `segmentBytes` | `dynamic` | — | segmentBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L525)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L593)
 
 <a id="constant-constant-minisql-transaction-wal-payload-checksum-offset-const-payload-checksum-offset-64-src-minisql-transaction-wal-ml-1653445853"></a>
 ### PAYLOAD_CHECKSUM_OFFSET
@@ -749,8 +775,10 @@ Opens the requested value. Inputs: `path`, `segmentBytes`. Returns the produced 
 const PAYLOAD_CHECKSUM_OFFSET = 64
 ```
 
+Defines the payload checksum offset constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L36)
 
 <a id="function-function-minisql-transaction-wal-protectrecord-function-protectrecord-record-encryptionkey-src-minisql-transaction-wal-ml-675575781"></a>
 ### protectRecord
@@ -763,11 +791,11 @@ Encrypts a logical WAL payload after its final LSN is assigned.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `record` | `dynamic` | — |  |
-| `encryptionKey` | `dynamic` | — |  |
+| `record` | `dynamic` | — | record value consumed by this operation. |
+| `encryptionKey` | `dynamic` | — | encryptionKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L350)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L401)
 
 <a id="function-function-minisql-transaction-wal-readdurablemarker-function-readdurablemarker-walpath-src-minisql-transaction-wal-ml-2076815543"></a>
 ### readDurableMarker
@@ -780,10 +808,10 @@ Reads the durable marker. Inputs: `walPath`. Returns the produced value or propa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `walPath` | `dynamic` | — |  |
+| `walPath` | `dynamic` | — | Path associated with wal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L278)
 
 <a id="constant-constant-minisql-transaction-wal-record-checkpoint-begin-const-record-checkpoint-begin-5-src-minisql-transaction-wal-ml-668215974"></a>
 ### RECORD_CHECKPOINT_BEGIN
@@ -792,8 +820,10 @@ Reads the durable marker. Inputs: `walPath`. Returns the produced value or propa
 const RECORD_CHECKPOINT_BEGIN = 5
 ```
 
+Defines the record checkpoint begin constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L50)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L64)
 
 <a id="constant-constant-minisql-transaction-wal-record-checkpoint-end-const-record-checkpoint-end-6-src-minisql-transaction-wal-ml-1351871261"></a>
 ### RECORD_CHECKPOINT_END
@@ -802,8 +832,10 @@ const RECORD_CHECKPOINT_BEGIN = 5
 const RECORD_CHECKPOINT_END = 6
 ```
 
+Defines the record checkpoint end constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L51)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L66)
 
 <a id="constant-constant-minisql-transaction-wal-record-page-image-const-record-page-image-2-src-minisql-transaction-wal-ml-406686021"></a>
 ### RECORD_PAGE_IMAGE
@@ -812,8 +844,10 @@ const RECORD_CHECKPOINT_END = 6
 const RECORD_PAGE_IMAGE = 2
 ```
 
+Defines the record page image constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L47)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L58)
 
 <a id="constant-constant-minisql-transaction-wal-record-tx-abort-const-record-tx-abort-4-src-minisql-transaction-wal-ml-1717353835"></a>
 ### RECORD_TX_ABORT
@@ -822,8 +856,10 @@ const RECORD_PAGE_IMAGE = 2
 const RECORD_TX_ABORT = 4
 ```
 
+Defines the record tx abort constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L49)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L62)
 
 <a id="constant-constant-minisql-transaction-wal-record-tx-begin-const-record-tx-begin-1-src-minisql-transaction-wal-ml-535761158"></a>
 ### RECORD_TX_BEGIN
@@ -832,8 +868,10 @@ const RECORD_TX_ABORT = 4
 const RECORD_TX_BEGIN = 1
 ```
 
+Defines the record tx begin constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L46)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L56)
 
 <a id="constant-constant-minisql-transaction-wal-record-tx-commit-const-record-tx-commit-3-src-minisql-transaction-wal-ml-1603961114"></a>
 ### RECORD_TX_COMMIT
@@ -842,8 +880,10 @@ const RECORD_TX_BEGIN = 1
 const RECORD_TX_COMMIT = 3
 ```
 
+Defines the record tx commit constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L48)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L60)
 
 <a id="function-function-minisql-transaction-wal-rewind-function-rewind-writer-lsn-src-minisql-transaction-wal-ml-1515352962"></a>
 ### rewind
@@ -856,11 +896,11 @@ Performs the rewind operation for this module. Inputs: `writer`, `lsn`. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L751)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L863)
 
 <a id="function-function-minisql-transaction-wal-scan-function-scan-writer-repairtail-src-minisql-transaction-wal-ml-1295189914"></a>
 ### scan
@@ -873,11 +913,11 @@ Scans the requested value. Inputs: `writer`, `repairTail`. Returns the produced 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `repairTail` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `repairTail` | `dynamic` | — | repairTail value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L826)
 
 <a id="function-function-minisql-transaction-wal-scanfile-function-scanfile-file-encryptionkey-src-minisql-transaction-wal-ml-8707740"></a>
 ### scanFile
@@ -890,11 +930,11 @@ Scans the file. Inputs: `file`. Returns the produced value or propagates a struc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `encryptionKey` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `encryptionKey` | `dynamic` | — | encryptionKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L434)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L491)
 
 <a id="function-function-minisql-transaction-wal-scansnapshot-function-scansnapshot-source-src-minisql-transaction-wal-ml-1827890139"></a>
 ### scanSnapshot
@@ -907,10 +947,10 @@ Scans the snapshot. Inputs: `source`. Returns the produced value or propagates a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L462)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L520)
 
 <a id="function-function-minisql-transaction-wal-scansnapshotforpath-function-scansnapshotforpath-source-walpath-src-minisql-transaction-wal-ml-95926036"></a>
 ### scanSnapshotForPath
@@ -923,11 +963,11 @@ Scans a WAL snapshot using the database key resolved from its path.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `walPath` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `walPath` | `dynamic` | — | Path associated with wal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L467)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L527)
 
 <a id="function-function-minisql-transaction-wal-scansnapshotwithkey-function-scansnapshotwithkey-source-encryptionkey-src-minisql-transaction-wal-ml-1300245849"></a>
 ### scanSnapshotWithKey
@@ -940,11 +980,11 @@ Scans a bounded snapshot containing plaintext or encrypted records.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `encryptionKey` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `encryptionKey` | `dynamic` | — | encryptionKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L539)
 
 <a id="function-function-minisql-transaction-wal-segmentnumber-function-segmentnumber-writer-lsn-src-minisql-transaction-wal-ml-1265920074"></a>
 ### segmentNumber
@@ -957,11 +997,11 @@ Performs the segment number operation for this module. Inputs: `writer`, `lsn`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L557)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L629)
 
 <a id="function-function-minisql-transaction-wal-segmentoffset-function-segmentoffset-writer-lsn-src-minisql-transaction-wal-ml-1219776114"></a>
 ### segmentOffset
@@ -974,11 +1014,11 @@ Performs the segment offset operation for this module. Inputs: `writer`, `lsn`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L565)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L639)
 
 <a id="function-function-minisql-transaction-wal-targetmilestone-function-targetmilestone-src-minisql-transaction-wal-ml-1227326512"></a>
 ### targetMilestone
@@ -987,10 +1027,10 @@ Performs the segment offset operation for this module. Inputs: `writer`, `lsn`. 
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql transaction wal module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L800)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L915)
 
 <a id="constant-constant-minisql-transaction-wal-unsupported-format-const-unsupported-format-9003-src-minisql-transaction-wal-ml-1857691143"></a>
 ### UNSUPPORTED_FORMAT
@@ -999,8 +1039,10 @@ Returns the milestone in which this component became available. Takes no caller-
 const UNSUPPORTED_FORMAT = 9003
 ```
 
+Defines the unsupported format constant used by the minisql transaction wal module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L21)
 
 <a id="function-function-minisql-transaction-wal-validatenative-function-validatenative-value-operation-name-src-minisql-transaction-wal-ml-1785952243"></a>
 ### validateNative
@@ -1009,16 +1051,16 @@ const UNSUPPORTED_FORMAT = 9003
 function validateNative(value, operation, name)
 ```
 
-Validates the native. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates native for the minisql transaction wal workflow. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L197)
 
 <a id="function-function-minisql-transaction-wal-validateopen-function-validateopen-writer-operation-src-minisql-transaction-wal-ml-420631446"></a>
 ### validateOpen
@@ -1027,15 +1069,15 @@ Validates the native. Inputs: `value`, `operation`, `name`. Returns success afte
 function validateOpen(writer, operation)
 ```
 
-Validates the open. Inputs: `writer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql transaction wal workflow. Inputs: `writer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `writer` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `writer` | `dynamic` | — | writer value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L548)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L618)
 
 <a id="function-function-minisql-transaction-wal-validaterecord-function-validaterecord-record-operation-src-minisql-transaction-wal-ml-1244178532"></a>
 ### validateRecord
@@ -1048,11 +1090,11 @@ Validates the record. Inputs: `record`, `operation`. Returns success after all i
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `record` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `record` | `dynamic` | — | record value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L292)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L339)
 
 <a id="function-function-minisql-transaction-wal-validaterecordtype-function-validaterecordtype-recordtype-operation-src-minisql-transaction-wal-ml-971576724"></a>
 ### validateRecordType
@@ -1065,11 +1107,11 @@ Validates the record type. Inputs: `recordType`, `operation`. Returns success af
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `recordType` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `recordType` | `dynamic` | — | recordType value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L219)
 
 <a id="function-function-minisql-transaction-wal-validatesegmentbytes-function-validatesegmentbytes-segmentbytes-operation-src-minisql-transaction-wal-ml-59993947"></a>
 ### validateSegmentBytes
@@ -1082,11 +1124,11 @@ Validates the segment bytes. Inputs: `segmentBytes`, `operation`. Returns succes
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `segmentBytes` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `segmentBytes` | `dynamic` | — | segmentBytes value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L503)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L567)
 
 <a id="function-function-minisql-transaction-wal-walaad-function-walaad-record-src-minisql-transaction-wal-ml-1107537779"></a>
 ### walAad
@@ -1099,10 +1141,10 @@ Decodes the record. Inputs: `source`. Returns the produced value or propagates a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `record` | `dynamic` | — |  |
+| `record` | `dynamic` | — | record value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L338)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L387)
 
 - [minisql.transaction.wal.WalAppendBatch](Type-minisql-transaction-wal-walappendbatch-530879772.md) — struct
 - [minisql.transaction.wal.WalRecord](Type-minisql-transaction-wal-walrecord-464994145.md) — struct
@@ -1119,8 +1161,8 @@ Writes the durable marker. Inputs: `walPath`, `lsn`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `walPath` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `walPath` | `dynamic` | — | Path associated with wal. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L250)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L289)

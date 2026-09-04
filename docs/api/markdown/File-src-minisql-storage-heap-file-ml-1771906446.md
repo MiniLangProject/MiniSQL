@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql storage heap file facilities for this project.
+
 Package: [`minisql.storage.heap_file`](Package-minisql-storage-heap-file-555422342.md)
 
 Reachable from entry: **yes**
@@ -26,15 +28,15 @@ Reachable from entry: **yes**
 function bytesEqual(left, right)
 ```
 
-Performs the bytes equal operation for this module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the bytesEqual operation for the minisql storage heap file module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L131)
 
 <a id="function-function-minisql-storage-heap-file-classifyheappages-function-classifyheappages-file-startpage-prefix-src-minisql-storage-heap-file-ml-571435123"></a>
 ### classifyHeapPages
@@ -47,12 +49,12 @@ Classifies a source suffix after the caller has established that an existing dir
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `startPage` | `dynamic` | — |  |
-| `prefix` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `startPage` | `dynamic` | — | startPage value consumed by this operation. |
+| `prefix` | `dynamic` | — | prefix value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L263)
 
 <a id="function-function-minisql-storage-heap-file-close-function-close-heap-src-minisql-storage-heap-file-ml-178387068"></a>
 ### close
@@ -61,14 +63,14 @@ Classifies a source suffix after the caller has established that an existing dir
 function close(heap)
 ```
 
-Closes the requested value. Inputs: `heap`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql storage heap file module. Inputs: `heap`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L631)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L699)
 
 <a id="constant-constant-minisql-storage-heap-file-closed-handle-const-closed-handle-9008-src-minisql-storage-heap-file-ml-653597136"></a>
 ### CLOSED_HANDLE
@@ -77,8 +79,10 @@ Closes the requested value. Inputs: `heap`. Returns the operation result and pro
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L23)
 
 <a id="function-function-minisql-storage-heap-file-componentname-function-componentname-src-minisql-storage-heap-file-ml-1344332010"></a>
 ### componentName
@@ -87,10 +91,10 @@ const CLOSED_HANDLE = 9008
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql storage heap file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L640)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L708)
 
 <a id="function-function-minisql-storage-heap-file-containsrowid-function-containsrowid-values-sought-src-minisql-storage-heap-file-ml-1626062382"></a>
 ### containsRowId
@@ -103,11 +107,11 @@ Performs the contains row id operation for this module. Inputs: `values`, `sough
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `sought` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `sought` | `dynamic` | — | sought value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L327)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L363)
 
 <a id="constant-constant-minisql-storage-heap-file-corrupt-data-const-corrupt-data-9004-src-minisql-storage-heap-file-ml-521517622"></a>
 ### CORRUPT_DATA
@@ -116,8 +120,10 @@ Performs the contains row id operation for this module. Inputs: `values`, `sough
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L21)
 
 <a id="function-function-minisql-storage-heap-file-count-function-count-heap-src-minisql-storage-heap-file-ml-1106331446"></a>
 ### count
@@ -130,10 +136,10 @@ Counts the requested value. Inputs: `heap`. Returns the produced value or propag
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L625)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L692)
 
 <a id="function-function-minisql-storage-heap-file-create-function-create-path-pagesize-fileid-databaseid-src-minisql-storage-heap-file-ml-535174448"></a>
 ### create
@@ -142,17 +148,17 @@ Counts the requested value. Inputs: `heap`. Returns the produced value or propag
 function create(path, pageSize, fileId, databaseId)
 ```
 
-Creates the requested value. Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql storage heap file module. Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L363)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L405)
 
 <a id="function-function-minisql-storage-heap-file-decodedirectorynative-function-decodedirectorynative-words-operation-name-src-minisql-storage-heap-file-ml-831587347"></a>
 ### decodeDirectoryNative
@@ -165,12 +171,12 @@ Converts a persisted U64 into the native MiniLang range used by page APIs.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `words` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `words` | `dynamic` | — | words value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L144)
 
 <a id="function-function-minisql-storage-heap-file-decodeforward-function-decodeforward-value-src-minisql-storage-heap-file-ml-135225589"></a>
 ### decodeForward
@@ -183,10 +189,10 @@ Decodes the forward. Inputs: `value`. Returns the produced value or propagates a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L352)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L390)
 
 <a id="function-function-minisql-storage-heap-file-decodepagedirectory-function-decodepagedirectory-file-encoded-src-minisql-storage-heap-file-ml-724228542"></a>
 ### decodePageDirectory
@@ -199,11 +205,11 @@ Decodes and validates a page directory against immutable table identity. Orderin
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L219)
 
 <a id="function-function-minisql-storage-heap-file-encodeforward-function-encodeforward-target-src-minisql-storage-heap-file-ml-357007645"></a>
 ### encodeForward
@@ -216,10 +222,10 @@ Encodes the forward. Inputs: `target`. Returns the produced value or propagates 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | `dynamic` | — |  |
+| `target` | `dynamic` | — | target value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L336)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L373)
 
 <a id="function-function-minisql-storage-heap-file-encodepagedirectory-function-encodepagedirectory-file-directory-src-minisql-storage-heap-file-ml-452538919"></a>
 ### encodePageDirectory
@@ -232,11 +238,11 @@ Encodes the table identity, source frontier, generation, and heap page list. Eve
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `directory` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `directory` | `dynamic` | — | directory value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L172)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L192)
 
 <a id="function-function-minisql-storage-heap-file-fail-function-fail-code-operation-message-src-minisql-storage-heap-file-ml-1461836375"></a>
 ### fail
@@ -245,16 +251,16 @@ Encodes the table identity, source frontier, generation, and heap page list. Eve
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql storage heap file module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L103)
 
 <a id="constant-constant-minisql-storage-heap-file-forward-size-const-forward-size-24-src-minisql-storage-heap-file-ml-2080602417"></a>
 ### FORWARD_SIZE
@@ -263,8 +269,10 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const FORWARD_SIZE = 24
 ```
 
+Defines the forward size constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L30)
 
 <a id="function-function-minisql-storage-heap-file-forwardingmagic-function-forwardingmagic-src-minisql-storage-heap-file-ml-1428612930"></a>
 ### forwardingMagic
@@ -276,7 +284,7 @@ function forwardingMagic()
 Performs the forwarding magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L109)
 
 - [minisql.storage.heap_file.HeapFile](Type-minisql-storage-heap-file-heapfile-2088479080.md) — struct
 - [minisql.storage.heap_file.HeapPageDirectory](Type-minisql-storage-heap-file-heappagedirectory-873951192.md) — struct
@@ -291,10 +299,10 @@ Returns the persistent physical heap-page index for an open table. The immutable
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L288)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L316)
 
 - [minisql.storage.heap_file.HeapRow](Type-minisql-storage-heap-file-heaprow-40418530.md) — struct
 <a id="function-function-minisql-storage-heap-file-initialinsertionpage-function-initialinsertionpage-file-src-minisql-storage-heap-file-ml-1143491132"></a>
@@ -308,10 +316,10 @@ Finds the first page containing a reusable deleted slot after reopening a heap, 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L371)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L414)
 
 <a id="function-function-minisql-storage-heap-file-insert-function-insert-heap-recordbytes-src-minisql-storage-heap-file-ml-253062440"></a>
 ### insert
@@ -320,15 +328,15 @@ Finds the first page containing a reusable deleted slot after reopening a heap, 
 function insert(heap, recordBytes)
 ```
 
-Inserts the requested value. Inputs: `heap`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the insert operation for the minisql storage heap file module. Inputs: `heap`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `recordBytes` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `recordBytes` | `dynamic` | — | recordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L515)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L573)
 
 <a id="function-function-minisql-storage-heap-file-insertwithflags-function-insertwithflags-heap-recordbytes-slotflags-src-minisql-storage-heap-file-ml-1810912075"></a>
 ### insertWithFlags
@@ -341,12 +349,12 @@ Inserts the with flags. Inputs: `heap`, `recordBytes`, `slotFlags`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `recordBytes` | `dynamic` | — |  |
-| `slotFlags` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `recordBytes` | `dynamic` | — | recordBytes value consumed by this operation. |
+| `slotFlags` | `dynamic` | — | slotFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L514)
 
 <a id="constant-constant-minisql-storage-heap-file-invalid-argument-const-invalid-argument-9001-src-minisql-storage-heap-file-ml-145240741"></a>
 ### INVALID_ARGUMENT
@@ -355,7 +363,7 @@ Inserts the with flags. Inputs: `heap`, `recordBytes`, `slotFlags`. Returns the 
 const INVALID_ARGUMENT = 9001
 ```
 
-Heap-file storage built on stable slotted pages. External RowId values contain the slot generation, so a deleted and later reused slot cannot alias an older row. Growing updates preserve the original RowId through forwarding records.
+Heap-file storage built on stable slotted pages. External RowId values contain
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L19)
@@ -371,10 +379,10 @@ Removes the live and interrupted page-directory generations. Callers use this be
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tablePath` | `dynamic` | — |  |
+| `tablePath` | `dynamic` | — | Path associated with table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L301)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L330)
 
 <a id="function-function-minisql-storage-heap-file-isheappagedirectory-function-isheappagedirectory-value-src-minisql-storage-heap-file-ml-1202133551"></a>
 ### isHeapPageDirectory
@@ -387,10 +395,10 @@ Reports whether a value is a decoded heap-page directory snapshot.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L94)
 
 <a id="function-function-minisql-storage-heap-file-isimplemented-function-isimplemented-src-minisql-storage-heap-file-ml-1146114082"></a>
 ### isImplemented
@@ -399,10 +407,10 @@ Reports whether a value is a decoded heap-page directory snapshot.
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql storage heap file module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L652)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L720)
 
 <a id="function-function-minisql-storage-heap-file-loadpagedirectory-function-loadpagedirectory-file-src-minisql-storage-heap-file-ml-944916308"></a>
 ### loadPageDirectory
@@ -415,10 +423,10 @@ Returns a decoded sidecar or void when it is missing, stale, unreadable, or corr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L248)
 
 <a id="function-function-minisql-storage-heap-file-loadslot-function-loadslot-heap-identifier-operation-src-minisql-storage-heap-file-ml-650579536"></a>
 ### loadSlot
@@ -431,12 +439,12 @@ Loads the slot. Inputs: `heap`, `identifier`, `operation`. Returns the produced 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `identifier` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L418)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L469)
 
 <a id="constant-constant-minisql-storage-heap-file-max-forward-depth-const-max-forward-depth-64-src-minisql-storage-heap-file-ml-284393849"></a>
 ### MAX_FORWARD_DEPTH
@@ -445,8 +453,10 @@ Loads the slot. Inputs: `heap`, `identifier`, `operation`. Returns the produced 
 const MAX_FORWARD_DEPTH = 64
 ```
 
+Defines the max forward depth constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L32)
 
 <a id="function-function-minisql-storage-heap-file-open-function-open-path-src-minisql-storage-heap-file-ml-265442793"></a>
 ### open
@@ -455,14 +465,14 @@ const MAX_FORWARD_DEPTH = 64
 function open(path)
 ```
 
-Opens the requested value. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Opens open for the minisql storage heap file module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L391)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L435)
 
 <a id="constant-constant-minisql-storage-heap-file-page-directory-format-version-const-page-directory-format-version-1-src-minisql-storage-heap-file-ml-922673938"></a>
 ### PAGE_DIRECTORY_FORMAT_VERSION
@@ -471,10 +481,10 @@ Opens the requested value. Inputs: `path`. Returns the produced value or propaga
 const PAGE_DIRECTORY_FORMAT_VERSION = 1
 ```
 
-The page directory is derived metadata: it records only physical heap-page numbers and can always be reconstructed from the checksummed table file. Its atomic envelope makes interrupted updates harmless, while the source page count and superblock generation detect stale snapshots after file growth.
+The page directory is derived metadata: it records only physical heap-page
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L35)
 
 <a id="constant-constant-minisql-storage-heap-file-page-directory-header-bytes-const-page-directory-header-bytes-64-src-minisql-storage-heap-file-ml-24710745"></a>
 ### PAGE_DIRECTORY_HEADER_BYTES
@@ -483,8 +493,10 @@ The page directory is derived metadata: it records only physical heap-page numbe
 const PAGE_DIRECTORY_HEADER_BYTES = 64
 ```
 
+Defines the page directory header bytes constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L39)
 
 <a id="constant-constant-minisql-storage-heap-file-page-directory-record-kind-const-page-directory-record-kind-51-src-minisql-storage-heap-file-ml-962896439"></a>
 ### PAGE_DIRECTORY_RECORD_KIND
@@ -493,8 +505,10 @@ const PAGE_DIRECTORY_HEADER_BYTES = 64
 const PAGE_DIRECTORY_RECORD_KIND = 51
 ```
 
+Defines the page directory record kind constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L37)
 
 <a id="function-function-minisql-storage-heap-file-pagedirectorymagic-function-pagedirectorymagic-src-minisql-storage-heap-file-ml-1284114298"></a>
 ### pageDirectoryMagic
@@ -506,7 +520,7 @@ function pageDirectoryMagic()
 Returns the fixed magic used by persistent heap-page directory envelopes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L114)
 
 <a id="function-function-minisql-storage-heap-file-pagedirectorypath-function-pagedirectorypath-tablepath-src-minisql-storage-heap-file-ml-1267126387"></a>
 ### pageDirectoryPath
@@ -519,10 +533,10 @@ Returns the sidecar path associated with a physical table file. Keeping the suff
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tablePath` | `dynamic` | — |  |
+| `tablePath` | `dynamic` | — | Path associated with table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L122)
 
 <a id="function-function-minisql-storage-heap-file-read-function-read-heap-identifier-src-minisql-storage-heap-file-ml-1974969595"></a>
 ### read
@@ -531,15 +545,15 @@ Returns the sidecar path associated with a physical table file. Keeping the suff
 function read(heap, identifier)
 ```
 
-Reads the requested value. Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Reads read for the minisql storage heap file workflow. Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `identifier` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L521)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L581)
 
 <a id="function-function-minisql-storage-heap-file-readdirectorybytes-function-readdirectorybytes-path-src-minisql-storage-heap-file-ml-1696064845"></a>
 ### readDirectoryBytes
@@ -552,10 +566,10 @@ Reads an arbitrarily sized derived sidecar without imposing a catalog-style poli
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L152)
 
 <a id="function-function-minisql-storage-heap-file-rebuildheappagenumbers-synchronized-function-rebuildheappagenumbers-file-src-minisql-storage-heap-file-ml-1781913850"></a>
 ### rebuildHeapPageNumbers
@@ -568,10 +582,10 @@ Rechecks and rebuilds a stale page directory under the process-wide publication 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L286)
 
 <a id="function-function-minisql-storage-heap-file-remove-function-remove-heap-identifier-src-minisql-storage-heap-file-ml-818635795"></a>
 ### remove
@@ -580,15 +594,15 @@ Rechecks and rebuilds a stale page directory under the process-wide publication 
 function remove(heap, identifier)
 ```
 
-Removes the requested value. Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Removes remove from the state managed by the minisql storage heap file module. Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `identifier` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L563)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L628)
 
 <a id="function-function-minisql-storage-heap-file-resolve-function-resolve-heap-identifier-src-minisql-storage-heap-file-ml-657359131"></a>
 ### resolve
@@ -601,11 +615,11 @@ Performs the resolve operation for this module. Inputs: `heap`, `identifier`. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `identifier` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L432)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L485)
 
 - [minisql.storage.heap_file.ResolvedRow](Type-minisql-storage-heap-file-resolvedrow-1857803540.md) — struct
 <a id="constant-constant-minisql-storage-heap-file-row-not-found-const-row-not-found-9016-src-minisql-storage-heap-file-ml-1731797833"></a>
@@ -615,8 +629,10 @@ Performs the resolve operation for this module. Inputs: `heap`, `identifier`. Re
 const ROW_NOT_FOUND = 9016
 ```
 
+Defines the row not found constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L25)
 
 <a id="function-function-minisql-storage-heap-file-rowid-function-rowid-pagenumber-slotid-generation-src-minisql-storage-heap-file-ml-499360953"></a>
 ### rowId
@@ -629,12 +645,12 @@ Performs the row id operation for this module. Inputs: `pageNumber`, `slotId`, `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageNumber` | `dynamic` | — |  |
-| `slotId` | `dynamic` | — |  |
-| `generation` | `dynamic` | — |  |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `slotId` | `dynamic` | — | Identifier of slot. |
+| `generation` | `dynamic` | — | generation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L343)
 
 - [minisql.storage.heap_file.RowId](Type-minisql-storage-heap-file-rowid-60550609.md) — struct
 <a id="function-function-minisql-storage-heap-file-samerowid-function-samerowid-left-right-src-minisql-storage-heap-file-ml-1007505825"></a>
@@ -648,11 +664,11 @@ Compares the row id. Inputs: `left`, `right`. Returns a boolean result; invalid 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L320)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L354)
 
 <a id="function-function-minisql-storage-heap-file-scan-function-scan-heap-src-minisql-storage-heap-file-ml-2129234564"></a>
 ### scan
@@ -665,10 +681,10 @@ Scans the requested value. Inputs: `heap`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L668)
 
 <a id="constant-constant-minisql-storage-heap-file-stale-reference-const-stale-reference-9018-src-minisql-storage-heap-file-ml-244491267"></a>
 ### STALE_REFERENCE
@@ -677,8 +693,10 @@ Scans the requested value. Inputs: `heap`. Returns the produced value or propaga
 const STALE_REFERENCE = 9018
 ```
 
+Defines the stale reference constant used by the minisql storage heap file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L27)
 
 <a id="function-function-minisql-storage-heap-file-targetmilestone-function-targetmilestone-src-minisql-storage-heap-file-ml-1698423216"></a>
 ### targetMilestone
@@ -687,10 +705,10 @@ const STALE_REFERENCE = 9018
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql storage heap file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L646)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L714)
 
 <a id="function-function-minisql-storage-heap-file-update-function-update-heap-identifier-recordbytes-src-minisql-storage-heap-file-ml-1276580385"></a>
 ### update
@@ -703,12 +721,12 @@ Updates the requested value. Inputs: `heap`, `identifier`, `recordBytes`. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `identifier` | `dynamic` | — |  |
-| `recordBytes` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
+| `recordBytes` | `dynamic` | — | recordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L527)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L590)
 
 <a id="function-function-minisql-storage-heap-file-validateidentifier-function-validateidentifier-identifier-operation-src-minisql-storage-heap-file-ml-333123162"></a>
 ### validateIdentifier
@@ -721,11 +739,11 @@ Validates the identifier. Inputs: `identifier`, `operation`. Returns success aft
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `identifier` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `identifier` | `dynamic` | — | identifier value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L410)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L458)
 
 <a id="function-function-minisql-storage-heap-file-validateopen-function-validateopen-heap-operation-src-minisql-storage-heap-file-ml-2137086473"></a>
 ### validateOpen
@@ -734,15 +752,15 @@ Validates the identifier. Inputs: `identifier`, `operation`. Returns success aft
 function validateOpen(heap, operation)
 ```
 
-Validates the open. Inputs: `heap`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql storage heap file workflow. Inputs: `heap`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `heap` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `heap` | `dynamic` | — | heap value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L447)
 
 <a id="function-function-minisql-storage-heap-file-writedirectoryatomic-function-writedirectoryatomic-path-encoded-src-minisql-storage-heap-file-ml-1877778845"></a>
 ### writeDirectoryAtomic
@@ -755,8 +773,8 @@ Atomically publishes a checksummed directory. A crash leaves either the old comp
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L171)

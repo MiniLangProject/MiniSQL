@@ -12,7 +12,7 @@ struct SqlNull
 Defines the sql null record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L66)
 
 ## Members
 
@@ -26,4 +26,4 @@ marker
 Marker field of the sql null.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L68)

@@ -12,7 +12,7 @@ struct NativeFile
 Holds the portable file object and the compatibility cursor used by sequential calls.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L43)
 
 ## Members
 
@@ -26,7 +26,7 @@ cursor
 Logical offset used only by seek plus readCurrent/writeCurrent.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L47)
 
 <a id="field-field-minisql-platform-file-linux-nativefile-file-file-src-minisql-platform-file-linux-ml-2100209502"></a>
 ### file
@@ -38,4 +38,4 @@ file
 Open `std.io.file` object that owns the native descriptor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_linux.ml#L45)

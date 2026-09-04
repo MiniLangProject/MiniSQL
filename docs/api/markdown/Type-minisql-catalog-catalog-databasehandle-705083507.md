@@ -12,7 +12,7 @@ struct DatabaseHandle
 Defines the database handle record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L57)
 
 ## Members
 
@@ -26,7 +26,7 @@ catalog
 Catalog field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L71)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-catalogfile-catalogfile-src-minisql-catalog-catalog-ml-985682822"></a>
 ### catalogFile
@@ -38,7 +38,7 @@ catalogFile
 Catalog file field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L63)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-closed-closed-src-minisql-catalog-catalog-ml-1323552214"></a>
 ### closed
@@ -50,7 +50,7 @@ closed
 Closed field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L77)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-metadata-metadata-src-minisql-catalog-catalog-ml-1845939304"></a>
 ### metadata
@@ -62,7 +62,7 @@ metadata
 Metadata field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L69)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-metafile-metafile-src-minisql-catalog-catalog-ml-611633292"></a>
 ### metaFile
@@ -74,7 +74,7 @@ metaFile
 Meta file field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L61)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-path-path-src-minisql-catalog-catalog-ml-1893562480"></a>
 ### path
@@ -86,7 +86,7 @@ path
 Path field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L59)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-security-security-src-minisql-catalog-catalog-ml-1432305086"></a>
 ### security
@@ -98,7 +98,7 @@ security
 Security field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L73)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-securityfailed-securityfailed-src-minisql-catalog-catalog-ml-1250356320"></a>
 ### securityFailed
@@ -110,7 +110,7 @@ securityFailed
 Security failed field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L75)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-securityfile-securityfile-src-minisql-catalog-catalog-ml-484869654"></a>
 ### securityFile
@@ -122,7 +122,7 @@ securityFile
 Security file field of the database handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L65)
 
 <a id="field-field-minisql-catalog-catalog-databasehandle-securitygenerationfiles-securitygenerationfiles-src-minisql-catalog-catalog-ml-1216541134"></a>
 ### securityGenerationFiles
@@ -134,4 +134,4 @@ securityGenerationFiles
 Two independently durable, scalable security-catalog generations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L67)

@@ -1,3 +1,5 @@
+//! Provides minisql admin connection profiles facilities for this project.
+
 package minisql.admin.connection_profiles
 
 // Copyright 2026 MiniLangProject contributors
@@ -8,23 +10,44 @@ import minisql.admin.fullclient as fullclient
 import minisql.config.loader as json
 import minisql.platform.file as file_api
 
+/// Defines the invalid argument constant used by the minisql admin connection profiles module.
 const INVALID_ARGUMENT = 9001
+/// Defines the max profile document bytes constant used by the minisql admin connection profiles module.
 const MAX_PROFILE_DOCUMENT_BYTES = 16777216
+/// Defines the cp utf8 constant used by the minisql admin connection profiles module.
 const CP_UTF8 = 65001
+/// Defines the wc err invalid chars constant used by the minisql admin connection profiles module.
 const WC_ERR_INVALID_CHARS = 0x80
+/// Defines the max environment utf16 units constant used by the minisql admin connection profiles module.
 const MAX_ENVIRONMENT_UTF16_UNITS = 32768
 
-// Reads a Windows environment variable as UTF-16 so non-ASCII profile paths remain lossless.
+/// Reads a Windows environment variable as UTF-16 so non-ASCII profile paths remain lossless.
+/// @param name Name of the affected item.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param size Size in the units required by the operation.
+/// @returns Native u32 result produced by the call.
 extern function GetEnvironmentVariableW(name as wstr, buffer as bytes, size as u32) from "kernel32.dll" symbol "GetEnvironmentVariableW" returns u32
-// Converts a UTF-16 environment value into the UTF-8 representation used by MiniLang strings.
+/// Converts a UTF-16 environment value into the UTF-8 representation used by MiniLang strings.
+/// @param codePage codePage value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param wideText wideText value consumed by this operation.
+/// @param wideCount Number of wide to process.
+/// @param output Output collection or buffer populated by the operation.
+/// @param outputCount Number of output to process.
+/// @param defaultChar defaultChar value consumed by this operation.
+/// @param usedDefault usedDefault value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as bytes, wideCount as i32, output as bytes, outputCount as i32, defaultChar as ptr, usedDefault as ptr) from "kernel32.dll" symbol "WideCharToMultiByte" returns i32
 
-// Creates a namespaced profile-store error.
+/// Creates a namespaced profile-store error.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "admin.connection_profiles." + operation + ": " + message)
 end function
 
-// Returns one Unicode Windows environment variable as UTF-8 or an empty string when unavailable.
+/// Returns one Unicode Windows environment variable as UTF-8 or an empty string when unavailable.
+/// @param name Name of the affected item.
 function environment(name)
   wide = bytes(MAX_ENVIRONMENT_UTF16_UNITS * 2, 0)
   count = GetEnvironmentVariableW(name, wide, MAX_ENVIRONMENT_UTF16_UNITS)
@@ -39,7 +62,7 @@ function environment(name)
   return value
 end function
 
-// Resolves the per-user connection-alias file and creates its parent directory.
+/// Resolves the per-user connection-alias file and creates its parent directory.
 function defaultPath()
   override = environment("MINISQL_ADMIN_PROFILE_PATH")
   if len(override) > 0 then return override end if
@@ -51,18 +74,20 @@ function defaultPath()
   return file_api.joinPath(directory, "workbench-profiles.json")
 end function
 
-// Returns the first-run trusted-local alias used by the connection manager.
+/// Returns the first-run trusted-local alias used by the connection manager.
 function defaultProfile()
   return fullclient.createProfile("Local MiniSQL", "127.0.0.1", 7432, "localhost", "main", "", false, "", true)
 end function
 
-// Revalidates a profile through the canonical model constructor.
+/// Revalidates a profile through the canonical model constructor.
+/// @param profile profile value consumed by this operation.
 function validate(profile)
   if typeof(profile) != "struct" then return fail("validate", "profile must be ConnectionProfile") end if
   return fullclient.createProfile(profile.name, profile.address, profile.port, profile.serverName, profile.databaseName, profile.userName, profile.tls, profile.pinSha256, profile.trustedLocal)
 end function
 
-// Escapes a UTF-8 profile field while preserving every valid non-ASCII byte unchanged.
+/// Escapes a UTF-8 profile field while preserving every valid non-ASCII byte unchanged.
+/// @param value Value consumed or transformed by the operation.
 function escape(value)
   if typeof(value) != "string" then return fail("escape", "value must be string") end if
   // JSON structural characters become two-byte escape sequences. UTF-8 bytes
@@ -87,7 +112,8 @@ function escape(value)
   return encoded
 end function
 
-// Serializes one validated alias without a password or other secret.
+/// Serializes one validated alias without a password or other secret.
+/// @param profile profile value consumed by this operation.
 function profileJson(profile)
   checked = try(validate(profile))
   if typeof(checked) == "error" then return checked end if
@@ -98,7 +124,8 @@ function profileJson(profile)
   return "{\"name\":\"" + escape(checked.name) + "\",\"address\":\"" + escape(checked.address) + "\",\"port\":" + checked.port + ",\"serverName\":\"" + escape(checked.serverName) + "\",\"database\":\"" + escape(checked.databaseName) + "\",\"user\":\"" + escape(checked.userName) + "\",\"tls\":" + tls + ",\"pinSha256\":\"" + escape(checked.pinSha256) + "\",\"trustedLocal\":" + trusted + "}"
 end function
 
-// Serializes all aliases using a versioned JSON envelope.
+/// Serializes all aliases using a versioned JSON envelope.
+/// @param profiles profiles value consumed by this operation.
 function serialize(profiles)
   if typeof(profiles) != "array" then return fail("serialize", "profiles must be array") end if
   output = "{\"schemaVersion\":2,\"profiles\":["
@@ -113,7 +140,9 @@ function serialize(profiles)
   return output + "]}\n"
 end function
 
-// Durably replaces the alias file through a flushed temporary sibling.
+/// Durably replaces the alias file through a flushed temporary sibling.
+/// @param path Path of the file or directory used by the operation.
+/// @param text Text consumed by the operation.
 function write(path, text)
   temporary = path + ".new"
   // A stale sibling can remain only after an interrupted older save. Removing
@@ -133,7 +162,9 @@ function write(path, text)
   return published
 end function
 
-// Persists aliases atomically and never serializes the connection password.
+/// Persists aliases atomically and never serializes the connection password.
+/// @param path Path of the file or directory used by the operation.
+/// @param profiles profiles value consumed by this operation.
 function save(path, profiles)
   if typeof(path) != "string" or len(path) == 0 then return fail("save", "path must be non-empty") end if
   document = try(serialize(profiles))
@@ -141,7 +172,8 @@ function save(path, profiles)
   return write(path, document)
 end function
 
-// Decodes one schema-version-two profile object.
+/// Decodes one schema-version-two profile object.
+/// @param value Value consumed or transformed by the operation.
 function profileFromJson(value)
   name = try(json.stringMember(value, "name"))
   if typeof(name) == "error" then return name end if
@@ -164,7 +196,8 @@ function profileFromJson(value)
   return fullclient.createProfile(name, address, port, serverName, databaseName, userName, tls, pinSha256, trustedLocal)
 end function
 
-// Loads aliases or returns the first-run default when no file exists.
+/// Loads aliases or returns the first-run default when no file exists.
+/// @param path Path of the file or directory used by the operation.
 function load(path)
   if typeof(path) != "string" or len(path) == 0 then return fail("load", "path must be non-empty") end if
   if not file_api.fileExists(path) then return [defaultProfile()] end if
@@ -185,7 +218,9 @@ function load(path)
   return profiles
 end function
 
-// Replaces an alias by name or appends it when it is new.
+/// Replaces an alias by name or appends it when it is new.
+/// @param profiles profiles value consumed by this operation.
+/// @param profile profile value consumed by this operation.
 function replace(profiles, profile)
   checked = try(validate(profile))
   if typeof(checked) == "error" then return checked end if
@@ -198,7 +233,9 @@ function replace(profiles, profile)
   return output
 end function
 
-// Removes the alias with the supplied exact name.
+/// Removes the alias with the supplied exact name.
+/// @param profiles profiles value consumed by this operation.
+/// @param name Name of the affected item.
 function remove(profiles, name)
   output = []
   for each profile in profiles
@@ -207,17 +244,17 @@ function remove(profiles, name)
   return output
 end function
 
-// Returns the stable module name used by smoke tests.
+/// Performs the componentName operation for the minisql admin connection profiles module.
 function componentName()
   return "admin.connection_profiles"
 end function
 
-// Identifies the GUI integration milestone.
+/// Performs the targetMilestone operation for the minisql admin connection profiles module.
 function targetMilestone()
   return "M74"
 end function
 
-// Reports that persistent aliases are implemented.
+/// Reports that persistent aliases are implemented.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct DropSequenceStatement
 Groups the drop sequence statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L496)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L551)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Stores the if exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L500)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L555)
 
 <a id="field-field-minisql-sql-ast-dropsequencestatement-name-name-src-minisql-sql-ast-ml-260890858"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L498)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L553)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql storage paged file facilities for this project.
+
 Package: [`minisql.storage.paged_file`](Package-minisql-storage-paged-file-923880469.md)
 
 Reachable from entry: **yes**
@@ -31,11 +33,11 @@ Allocates the page. Inputs: `pagedFile`, `pageType`. Returns the produced value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageType` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageType` | `dynamic` | — | pageType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L585)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L661)
 
 <a id="function-function-minisql-storage-paged-file-allocatepages-function-allocatepages-pagedfile-pagetype-count-src-minisql-storage-paged-file-ml-1741497779"></a>
 ### allocatePages
@@ -48,12 +50,12 @@ Allocates a contiguous group of initialized pages with one durability barrier an
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageType` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageType` | `dynamic` | — | pageType value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L592)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L671)
 
 <a id="function-function-minisql-storage-paged-file-appendpage-function-appendpage-pagedfile-pagebytes-src-minisql-storage-paged-file-ml-52306433"></a>
 ### appendPage
@@ -66,11 +68,11 @@ Appends the page. Inputs: `pagedFile`, `pageBytes`. Returns the produced value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageBytes` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L536)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L608)
 
 <a id="function-function-minisql-storage-paged-file-appendpages-function-appendpages-pagedfile-pageimages-src-minisql-storage-paged-file-ml-790093168"></a>
 ### appendPages
@@ -83,11 +85,11 @@ Appends a complete copy-on-write page generation with one data durability barrie
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageImages` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageImages` | `dynamic` | — | pageImages value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L550)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L624)
 
 <a id="function-function-minisql-storage-paged-file-choosemetadata-function-choosemetadata-firstresult-secondresult-src-minisql-storage-paged-file-ml-2045390736"></a>
 ### chooseMetadata
@@ -100,11 +102,11 @@ Performs the choose metadata operation for this module. Inputs: `firstResult`, `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `firstResult` | `dynamic` | — |  |
-| `secondResult` | `dynamic` | — |  |
+| `firstResult` | `dynamic` | — | firstResult value consumed by this operation. |
+| `secondResult` | `dynamic` | — | secondResult value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L303)
 
 <a id="function-function-minisql-storage-paged-file-close-function-close-pagedfile-src-minisql-storage-paged-file-ml-1505146723"></a>
 ### close
@@ -113,14 +115,14 @@ Performs the choose metadata operation for this module. Inputs: `firstResult`, `
 function close(pagedFile)
 ```
 
-Closes the requested value. Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql storage paged file module. Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L668)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L757)
 
 <a id="constant-constant-minisql-storage-paged-file-closed-handle-const-closed-handle-9008-src-minisql-storage-paged-file-ml-402824510"></a>
 ### CLOSED_HANDLE
@@ -129,8 +131,10 @@ Closes the requested value. Inputs: `pagedFile`. Returns the operation result an
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L24)
 
 <a id="function-function-minisql-storage-paged-file-commitmetadata-function-commitmetadata-pagedfile-newpagecount-src-minisql-storage-paged-file-ml-87774543"></a>
 ### commitMetadata
@@ -143,11 +147,11 @@ Commits the metadata. Inputs: `pagedFile`, `newPageCount`. Returns the operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `newPageCount` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `newPageCount` | `dynamic` | — | Number of new page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L176)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L214)
 
 <a id="function-function-minisql-storage-paged-file-committedsize-function-committedsize-pagesize-pagecount-featureflags-src-minisql-storage-paged-file-ml-137586767"></a>
 ### committedSize
@@ -160,12 +164,12 @@ Commits the ted size. Inputs: `pageSize`, `pageCount`. Returns the operation res
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
-| `pageCount` | `dynamic` | — |  |
-| `featureFlags` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `pageCount` | `dynamic` | — | Number of page to process. |
+| `featureFlags` | `dynamic` | — | featureFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L170)
 
 <a id="function-function-minisql-storage-paged-file-componentname-function-componentname-src-minisql-storage-paged-file-ml-1618716352"></a>
 ### componentName
@@ -174,10 +178,10 @@ Commits the ted size. Inputs: `pageSize`, `pageCount`. Returns the operation res
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql storage paged file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L727)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L819)
 
 <a id="constant-constant-minisql-storage-paged-file-corrupt-data-const-corrupt-data-9004-src-minisql-storage-paged-file-ml-433802480"></a>
 ### CORRUPT_DATA
@@ -186,8 +190,10 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L22)
 
 <a id="function-function-minisql-storage-paged-file-create-function-create-path-pagesize-filetype-fileid-databaseid-src-minisql-storage-paged-file-ml-1000346296"></a>
 ### create
@@ -196,18 +202,18 @@ const CORRUPT_DATA = 9004
 function create(path, pageSize, fileType, fileId, databaseId)
 ```
 
-Creates the requested value. Inputs: `path`, `pageSize`, `fileType`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql storage paged file module. Inputs: `path`, `pageSize`, `fileType`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
-| `fileType` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `fileType` | `dynamic` | — | fileType value consumed by this operation. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L236)
 
 <a id="constant-constant-minisql-storage-paged-file-data-offset-const-data-offset-8192-src-minisql-storage-paged-file-ml-929695559"></a>
 ### DATA_OFFSET
@@ -216,8 +222,10 @@ Creates the requested value. Inputs: `path`, `pageSize`, `fileType`, `fileId`, `
 const DATA_OFFSET = 8192
 ```
 
+Defines the data offset constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L35)
 
 <a id="function-function-minisql-storage-paged-file-decodestoredpage-function-decodestoredpage-pagedfile-pagenumber-stored-src-minisql-storage-paged-file-ml-759274120"></a>
 ### decodeStoredPage
@@ -230,12 +238,12 @@ Authenticates and decrypts one physical page record.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `stored` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `stored` | `dynamic` | — | stored value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L497)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L559)
 
 <a id="function-function-minisql-storage-paged-file-encodestoredpage-function-encodestoredpage-pagedfile-pagenumber-plaintext-src-minisql-storage-paged-file-ml-925043848"></a>
 ### encodeStoredPage
@@ -248,12 +256,12 @@ Encrypts one logical page into its nonce/ciphertext/tag record.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `plaintext` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `plaintext` | `dynamic` | — | plaintext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L482)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L541)
 
 <a id="function-function-minisql-storage-paged-file-encryptexisting-function-encryptexisting-path-src-minisql-storage-paged-file-ml-72630673"></a>
 ### encryptExisting
@@ -266,10 +274,10 @@ Converts one closed plaintext paged file to the encrypted physical stride. The o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L703)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L795)
 
 <a id="constant-constant-minisql-storage-paged-file-encryption-nonce-bytes-const-encryption-nonce-bytes-12-src-minisql-storage-paged-file-ml-788842768"></a>
 ### ENCRYPTION_NONCE_BYTES
@@ -278,8 +286,10 @@ Converts one closed plaintext paged file to the encrypted physical stride. The o
 const ENCRYPTION_NONCE_BYTES = 12
 ```
 
+Defines the encryption nonce bytes constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L39)
 
 <a id="constant-constant-minisql-storage-paged-file-encryption-tag-bytes-const-encryption-tag-bytes-16-src-minisql-storage-paged-file-ml-1819616990"></a>
 ### ENCRYPTION_TAG_BYTES
@@ -288,8 +298,10 @@ const ENCRYPTION_NONCE_BYTES = 12
 const ENCRYPTION_TAG_BYTES = 16
 ```
 
+Defines the encryption tag bytes constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L41)
 
 <a id="function-function-minisql-storage-paged-file-fail-function-fail-code-operation-message-src-minisql-storage-paged-file-ml-1707986375"></a>
 ### fail
@@ -298,16 +310,16 @@ const ENCRYPTION_TAG_BYTES = 16
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql storage paged file module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L78)
 
 <a id="constant-constant-minisql-storage-paged-file-feature-page-encryption-const-feature-page-encryption-1-src-minisql-storage-paged-file-ml-74158586"></a>
 ### FEATURE_PAGE_ENCRYPTION
@@ -316,8 +328,10 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const FEATURE_PAGE_ENCRYPTION = 1
 ```
 
+Defines the feature page encryption constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L37)
 
 <a id="function-function-minisql-storage-paged-file-flush-function-flush-pagedfile-src-minisql-storage-paged-file-ml-1417914851"></a>
 ### flush
@@ -326,14 +340,14 @@ const FEATURE_PAGE_ENCRYPTION = 1
 function flush(pagedFile)
 ```
 
-Flushes the requested value. Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the flush operation for the minisql storage paged file module. Inputs: `pagedFile`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L645)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L731)
 
 <a id="constant-constant-minisql-storage-paged-file-invalid-argument-const-invalid-argument-9001-src-minisql-storage-paged-file-ml-1763068441"></a>
 ### INVALID_ARGUMENT
@@ -342,7 +356,7 @@ Flushes the requested value. Inputs: `pagedFile`. Returns the operation result a
 const INVALID_ARGUMENT = 9001
 ```
 
-A paged file begins with two fixed 4096-byte superblock slots followed by a fixed data region at offset 8192. Page size is persisted in both superblocks; the global configuration is never consulted when an existing file is opened.
+A paged file begins with two fixed 4096-byte superblock slots followed by a
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L20)
@@ -358,10 +372,10 @@ Tests the persisted page-encryption feature bit.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `featureFlags` | `dynamic` | — |  |
+| `featureFlags` | `dynamic` | — | featureFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L148)
 
 <a id="function-function-minisql-storage-paged-file-isimplemented-function-isimplemented-src-minisql-storage-paged-file-ml-1444377680"></a>
 ### isImplemented
@@ -370,10 +384,10 @@ Tests the persisted page-encryption feature bit.
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql storage paged file module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L739)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L831)
 
 <a id="function-function-minisql-storage-paged-file-maxpagecountfor-function-maxpagecountfor-pagesize-src-minisql-storage-paged-file-ml-751705560"></a>
 ### maxPageCountFor
@@ -386,10 +400,10 @@ Performs the max page count for operation for this module. Inputs: `pageSize`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L127)
 
 <a id="function-function-minisql-storage-paged-file-metadatafor-function-metadatafor-pagedfile-generation-pagecount-src-minisql-storage-paged-file-ml-2002367455"></a>
 ### metadataFor
@@ -402,12 +416,12 @@ Performs the metadata for operation for this module. Inputs: `pagedFile`, `gener
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `generation` | `dynamic` | — |  |
-| `pageCount` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `generation` | `dynamic` | — | generation value consumed by this operation. |
+| `pageCount` | `dynamic` | — | Number of page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L186)
 
 <a id="function-function-minisql-storage-paged-file-open-function-open-path-src-minisql-storage-paged-file-ml-260561029"></a>
 ### open
@@ -416,14 +430,14 @@ Performs the metadata for operation for this module. Inputs: `pagedFile`, `gener
 function open(path)
 ```
 
-Opens the requested value. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Opens open for the minisql storage paged file module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L329)
 
 <a id="function-function-minisql-storage-paged-file-openreadonly-function-openreadonly-path-src-minisql-storage-paged-file-ml-46309937"></a>
 ### openReadOnly
@@ -436,10 +450,10 @@ Read plans use independent handles with compatible shared byte-range locks. The 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L394)
 
 <a id="function-function-minisql-storage-paged-file-openreadonlymanaged-function-openreadonlymanaged-path-src-minisql-storage-paged-file-ml-114365527"></a>
 ### openReadOnlyManaged
@@ -452,10 +466,10 @@ Opens a persistent read handle without a per-file byte-range lock. This is restr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L404)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L454)
 
 <a id="function-function-minisql-storage-paged-file-pageaad-function-pageaad-pagedfile-pagenumber-src-minisql-storage-paged-file-ml-248335779"></a>
 ### pageAad
@@ -468,11 +482,11 @@ Binds every encrypted record to its immutable database/file/page identity. Movin
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L472)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L528)
 
 - [minisql.storage.paged_file.PagedFile](Type-minisql-storage-paged-file-pagedfile-849665396.md) — struct
 <a id="function-function-minisql-storage-paged-file-pageoffset-function-pageoffset-pagedfile-pagenumber-src-minisql-storage-paged-file-ml-357351073"></a>
@@ -486,11 +500,11 @@ Performs the page offset operation for this module. Inputs: `pagedFile`, `pageNu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L156)
 
 <a id="function-function-minisql-storage-paged-file-physicalpagesize-function-physicalpagesize-pagesize-featureflags-src-minisql-storage-paged-file-ml-1634818569"></a>
 ### physicalPageSize
@@ -503,11 +517,11 @@ Returns the fixed physical stride for plaintext or encrypted page records.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
-| `featureFlags` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `featureFlags` | `dynamic` | — | featureFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L141)
 
 <a id="function-function-minisql-storage-paged-file-readpage-function-readpage-pagedfile-pagenumber-src-minisql-storage-paged-file-ml-2025164005"></a>
 ### readPage
@@ -520,11 +534,11 @@ Reads the page. Inputs: `pagedFile`, `pageNumber`. Returns the produced value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L517)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L584)
 
 <a id="function-function-minisql-storage-paged-file-readpagewithcontext-function-readpagewithcontext-pagedfile-pagenumber-readcontext-src-minisql-storage-paged-file-ml-1803038240"></a>
 ### readPageWithContext
@@ -537,12 +551,12 @@ Reads and verifies one page while reusing the caller's positioned-I/O state.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `readContext` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L522)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L592)
 
 <a id="function-function-minisql-storage-paged-file-readslot-function-readslot-file-slot-src-minisql-storage-paged-file-ml-1083646958"></a>
 ### readSlot
@@ -555,11 +569,11 @@ Reads the slot. Inputs: `file`, `slot`. Returns the produced value or propagates
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L248)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L293)
 
 <a id="constant-constant-minisql-storage-paged-file-slot-a-const-slot-a-0-src-minisql-storage-paged-file-ml-1654825035"></a>
 ### SLOT_A
@@ -568,8 +582,10 @@ Reads the slot. Inputs: `file`, `slot`. Returns the produced value or propagates
 const SLOT_A = 0
 ```
 
+Defines the slot a constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L27)
 
 <a id="constant-constant-minisql-storage-paged-file-slot-a-offset-const-slot-a-offset-0-src-minisql-storage-paged-file-ml-587222861"></a>
 ### SLOT_A_OFFSET
@@ -578,8 +594,10 @@ const SLOT_A = 0
 const SLOT_A_OFFSET = 0
 ```
 
+Defines the slot a offset constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L31)
 
 <a id="constant-constant-minisql-storage-paged-file-slot-b-const-slot-b-1-src-minisql-storage-paged-file-ml-1538045490"></a>
 ### SLOT_B
@@ -588,8 +606,10 @@ const SLOT_A_OFFSET = 0
 const SLOT_B = 1
 ```
 
+Defines the slot b constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L29)
 
 <a id="constant-constant-minisql-storage-paged-file-slot-b-offset-const-slot-b-offset-4096-src-minisql-storage-paged-file-ml-1019520760"></a>
 ### SLOT_B_OFFSET
@@ -598,8 +618,10 @@ const SLOT_B = 1
 const SLOT_B_OFFSET = 4096
 ```
 
+Defines the slot b offset constant used by the minisql storage paged file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L33)
 
 <a id="function-function-minisql-storage-paged-file-slotoffset-function-slotoffset-slot-src-minisql-storage-paged-file-ml-337781288"></a>
 ### slotOffset
@@ -608,14 +630,14 @@ const SLOT_B_OFFSET = 4096
 function slotOffset(slot)
 ```
 
-Performs the slot offset operation for this module. Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the slotOffset operation for the minisql storage paged file module. Inputs: `slot`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `slot` | `dynamic` | — |  |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L118)
 
 <a id="function-function-minisql-storage-paged-file-snapshotdurablebytes-function-snapshotdurablebytes-pagedfile-maxbytes-src-minisql-storage-paged-file-ml-764852268"></a>
 ### snapshotDurableBytes
@@ -628,11 +650,11 @@ Flush and return a byte-for-byte image through the handle that already owns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `maxBytes` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `maxBytes` | `dynamic` | — | maxBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L684)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L775)
 
 <a id="function-function-minisql-storage-paged-file-storepage-function-storepage-pagedfile-pagenumber-plaintext-src-minisql-storage-paged-file-ml-1683452264"></a>
 ### storePage
@@ -645,12 +667,12 @@ Encodes and writes one logical page at its fixed physical offset.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `plaintext` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `plaintext` | `dynamic` | — | plaintext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L507)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L572)
 
 <a id="function-function-minisql-storage-paged-file-targetmilestone-function-targetmilestone-src-minisql-storage-paged-file-ml-334697006"></a>
 ### targetMilestone
@@ -659,10 +681,10 @@ Encodes and writes one logical page at its fixed physical offset.
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql storage paged file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L825)
 
 <a id="function-function-minisql-storage-paged-file-truncatepages-function-truncatepages-pagedfile-newpagecount-src-minisql-storage-paged-file-ml-745997407"></a>
 ### truncatePages
@@ -675,11 +697,11 @@ Shrinks the committed page range without ever advertising bytes that are not dur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `newPageCount` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `newPageCount` | `dynamic` | — | Number of new page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L654)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L742)
 
 <a id="function-function-minisql-storage-paged-file-validatedatabaseid-function-validatedatabaseid-databaseid-operation-src-minisql-storage-paged-file-ml-1749429277"></a>
 ### validateDatabaseId
@@ -688,15 +710,15 @@ Shrinks the committed page range without ever advertising bytes that are not dur
 function validateDatabaseId(databaseId, operation)
 ```
 
-Validates the database id. Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates database id for the minisql storage paged file workflow. Inputs: `databaseId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseId` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L86)
 
 <a id="function-function-minisql-storage-paged-file-validatenativeid-function-validatenativeid-value-operation-name-src-minisql-storage-paged-file-ml-1103863335"></a>
 ### validateNativeId
@@ -705,16 +727,16 @@ Validates the database id. Inputs: `databaseId`, `operation`. Returns success af
 function validateNativeId(value, operation, name)
 ```
 
-Validates the native id. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates native id for the minisql storage paged file workflow. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L98)
 
 <a id="function-function-minisql-storage-paged-file-validateopen-function-validateopen-pagedfile-operation-src-minisql-storage-paged-file-ml-567239104"></a>
 ### validateOpen
@@ -723,15 +745,15 @@ Validates the native id. Inputs: `value`, `operation`, `name`. Returns success a
 function validateOpen(pagedFile, operation)
 ```
 
-Validates the open. Inputs: `pagedFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql storage paged file workflow. Inputs: `pagedFile`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L109)
 
 <a id="function-function-minisql-storage-paged-file-validatepageidentity-function-validatepageidentity-pagedfile-pagebytes-expectedpagenumber-operation-src-minisql-storage-paged-file-ml-339178968"></a>
 ### validatePageIdentity
@@ -744,13 +766,13 @@ Validates the page identity. Inputs: `pagedFile`, `pageBytes`, `expectedPageNumb
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageBytes` | `dynamic` | — |  |
-| `expectedPageNumber` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
+| `expectedPageNumber` | `dynamic` | — | expectedPageNumber value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L455)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L509)
 
 <a id="function-function-minisql-storage-paged-file-writecontiguouspages-function-writecontiguouspages-pagedfile-firstpagenumber-pageimages-src-minisql-storage-paged-file-ml-1947973420"></a>
 ### writeContiguousPages
@@ -763,12 +785,12 @@ Publishes a bounded sequence of consecutive page images with one positioned oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `firstPageNumber` | `dynamic` | — |  |
-| `pageImages` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `firstPageNumber` | `dynamic` | — | firstPageNumber value consumed by this operation. |
+| `pageImages` | `dynamic` | — | pageImages value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L622)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L707)
 
 <a id="function-function-minisql-storage-paged-file-writepage-function-writepage-pagedfile-pagenumber-pagebytes-src-minisql-storage-paged-file-ml-33689443"></a>
 ### writePage
@@ -781,12 +803,12 @@ Writes the page. Inputs: `pagedFile`, `pageNumber`, `pageBytes`. Returns the ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `pageBytes` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L610)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L692)
 
 <a id="function-function-minisql-storage-paged-file-writeslot-function-writeslot-file-slot-metadata-src-minisql-storage-paged-file-ml-547582859"></a>
 ### writeSlot
@@ -799,9 +821,9 @@ Writes the slot. Inputs: `file`, `slot`, `metadata`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
-| `metadata` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
+| `metadata` | `dynamic` | — | metadata value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/paged_file.ml#L204)

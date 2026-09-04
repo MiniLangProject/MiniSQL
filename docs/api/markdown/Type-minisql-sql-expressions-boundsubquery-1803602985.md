@@ -12,7 +12,7 @@ struct BoundSubquery
 Carries a SELECT that must be evaluated against the current outer row. The binder records its SQL result type while the executor substitutes qualified outer references immediately before running the nested query.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L185)
 
 ## Members
 
@@ -26,7 +26,7 @@ negated
 Indicates whether an IN result is negated.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L193)
 
 <a id="field-field-minisql-sql-expressions-boundsubquery-operand-operand-src-minisql-sql-expressions-ml-83531385"></a>
 ### operand
@@ -38,7 +38,7 @@ operand
 Stores the bound left operand for IN, or void for scalar and EXISTS forms.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L191)
 
 <a id="field-field-minisql-sql-expressions-boundsubquery-query-query-src-minisql-sql-expressions-ml-760003633"></a>
 ### query
@@ -50,7 +50,7 @@ query
 Retains the parsed nested SELECT until an outer row is available.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L189)
 
 <a id="field-field-minisql-sql-expressions-boundsubquery-subquerykind-subquerykind-src-minisql-sql-expressions-ml-321200845"></a>
 ### subqueryKind
@@ -62,7 +62,7 @@ subqueryKind
 Identifies scalar, EXISTS, or IN result semantics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L187)
 
 <a id="field-field-minisql-sql-expressions-boundsubquery-typeinfo-typeinfo-src-minisql-sql-expressions-ml-188898661"></a>
 ### typeInfo
@@ -74,4 +74,4 @@ typeInfo
 Stores the statically inferred SQL result type.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L195)

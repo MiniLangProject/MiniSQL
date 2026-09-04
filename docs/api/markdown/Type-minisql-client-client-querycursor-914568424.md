@@ -12,7 +12,7 @@ struct QueryCursor
 Owns one request's continuation frames. Only the current batch is exposed, allowing callers such as the GUI to render or export large results without combining every row in the MiniLang heap.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L43)
 
 ## Members
 
@@ -26,7 +26,7 @@ client
 Client whose connection supplies the response frames.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L45)
 
 <a id="field-field-minisql-client-client-querycursor-columns-columns-src-minisql-client-client-ml-989375487"></a>
 ### columns
@@ -38,7 +38,7 @@ columns
 Column schema established by the first row frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L49)
 
 <a id="field-field-minisql-client-client-querycursor-finished-finished-src-minisql-client-client-ml-1521147323"></a>
 ### finished
@@ -50,7 +50,7 @@ finished
 True after the frame without FLAG_MORE has been consumed.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L51)
 
 <a id="field-field-minisql-client-client-querycursor-requestid-requestid-src-minisql-client-client-ml-864496843"></a>
 ### requestId
@@ -62,4 +62,4 @@ requestId
 Request identifier repeated by every continuation frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L47)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql executor executor facilities for this project.
+
 Package: [`minisql.executor.executor`](Package-minisql-executor-executor-575459312.md)
 
 Reachable from entry: **yes**
@@ -52,10 +54,10 @@ Implements abort for concurrency for this module. Returns its result or propagat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4709)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5173)
 
 <a id="function-function-minisql-executor-executor-allprivilegecodes-function-allprivilegecodes-objecttype-src-minisql-executor-executor-ml-2013702411"></a>
 ### allPrivilegeCodes
@@ -68,10 +70,10 @@ Implements all privilege codes for this module. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `objectType` | `dynamic` | — |  |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3966)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4366)
 
 <a id="constant-constant-minisql-executor-executor-analyze-sample-rows-const-analyze-sample-rows-8192-src-minisql-executor-executor-ml-481528021"></a>
 ### ANALYZE_SAMPLE_ROWS
@@ -80,8 +82,10 @@ Implements all privilege codes for this module. Returns the computed value or op
 const ANALYZE_SAMPLE_ROWS = 8192
 ```
 
+Defines the analyze sample rows constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L49)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L54)
 
 <a id="function-function-minisql-executor-executor-analyzecolumngroups-function-analyzecolumngroups-engine-table-src-minisql-executor-executor-ml-189656278"></a>
 ### analyzeColumnGroups
@@ -94,11 +98,11 @@ Implements analyze table for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3431)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3774)
 
 <a id="function-function-minisql-executor-executor-analyzetable-function-analyzetable-engine-state-table-src-minisql-executor-executor-ml-945335429"></a>
 ### analyzeTable
@@ -111,12 +115,12 @@ Refreshes one table's exact population, bounded sample distributions, joint comp
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3465)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3811)
 
 <a id="function-function-minisql-executor-executor-appendauditoutcome-function-appendauditoutcome-engine-statement-success-detail-src-minisql-executor-executor-ml-1368843043"></a>
 ### appendAuditOutcome
@@ -129,13 +133,13 @@ Appends audit outcome using the supplied inputs. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `success` | `dynamic` | — |  |
-| `detail` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `success` | `dynamic` | — | success value consumed by this operation. |
+| `detail` | `dynamic` | — | detail value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4520)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4975)
 
 <a id="function-function-minisql-executor-executor-attach-function-attach-database-src-minisql-executor-executor-ml-862535765"></a>
 ### attach
@@ -148,10 +152,10 @@ Implements attach for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L459)
 
 <a id="function-function-minisql-executor-executor-auditaction-function-auditaction-statement-src-minisql-executor-executor-ml-1320155247"></a>
 ### auditAction
@@ -164,10 +168,10 @@ Implements audit action for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4453)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4903)
 
 <a id="function-function-minisql-executor-executor-auditeventtype-function-auditeventtype-statement-src-minisql-executor-executor-ml-1385440821"></a>
 ### auditEventType
@@ -180,10 +184,10 @@ Implements audit event type for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4509)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4960)
 
 <a id="constant-constant-minisql-executor-executor-authentication-required-const-authentication-required-9028-src-minisql-executor-executor-ml-41784456"></a>
 ### AUTHENTICATION_REQUIRED
@@ -192,8 +196,10 @@ Implements audit event type for this module. Returns the computed value or opera
 const AUTHENTICATION_REQUIRED = 9028
 ```
 
+Defines the authentication required constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L52)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L60)
 
 <a id="function-function-minisql-executor-executor-authorizedatastatement-function-authorizedatastatement-engine-statement-src-minisql-executor-executor-ml-1255786131"></a>
 ### authorizeDataStatement
@@ -210,7 +216,7 @@ Authorizes INSERT, UPDATE, DELETE, MERGE, and TRUNCATE expression trees.
 | `statement` | `dynamic` | — | Bound data-changing statement to authorize. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3841)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4238)
 
 <a id="function-function-minisql-executor-executor-authorizedefinitionstatement-function-authorizedefinitionstatement-engine-statement-src-minisql-executor-executor-ml-1660165123"></a>
 ### authorizeDefinitionStatement
@@ -227,7 +233,7 @@ Authorizes schema and maintenance statements in one isolated dispatcher.
 | `statement` | `dynamic` | — | Bound definition or maintenance statement to authorize. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3892)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4289)
 
 <a id="function-function-minisql-executor-executor-authorizeexpressionqueriesinternal-function-authorizeexpressionqueriesinternal-engine-expression-viewstack-ctenames-src-minisql-executor-executor-ml-1488344617"></a>
 ### authorizeExpressionQueriesInternal
@@ -240,13 +246,13 @@ Implements authorize expression queries internal for this module. Returns the co
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
-| `cteNames` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
+| `cteNames` | `dynamic` | — | cteNames value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3694)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4079)
 
 <a id="function-function-minisql-executor-executor-authorizenamedsource-function-authorizenamedsource-engine-state-name-viewstack-src-minisql-executor-executor-ml-622327367"></a>
 ### authorizeNamedSource
@@ -259,13 +265,13 @@ Implements authorize named source for this module. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3758)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4147)
 
 <a id="function-function-minisql-executor-executor-authorizeselect-function-authorizeselect-engine-statement-src-minisql-executor-executor-ml-1328749105"></a>
 ### authorizeSelect
@@ -278,11 +284,11 @@ Implements authorize select for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3818)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4213)
 
 <a id="function-function-minisql-executor-executor-authorizeselectinternal-function-authorizeselectinternal-engine-statement-viewstack-inheritedctenames-src-minisql-executor-executor-ml-243315710"></a>
 ### authorizeSelectInternal
@@ -295,13 +301,13 @@ Implements authorize select internal for this module. Requires arguments that sa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `viewStack` | `dynamic` | — |  |
-| `inheritedCteNames` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `viewStack` | `dynamic` | — | viewStack value consumed by this operation. |
+| `inheritedCteNames` | `dynamic` | — | inheritedCteNames value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3781)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4174)
 
 <a id="function-function-minisql-executor-executor-authorizeselectitems-function-authorizeselectitems-engine-items-src-minisql-executor-executor-ml-161153294"></a>
 ### authorizeSelectItems
@@ -314,11 +320,11 @@ Implements authorize select items for this module. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `items` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3825)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4222)
 
 <a id="function-function-minisql-executor-executor-authorizestatement-function-authorizestatement-engine-statement-src-minisql-executor-executor-ml-412202411"></a>
 ### authorizeStatement
@@ -335,7 +341,7 @@ Authorizes a statement against the active engine security context.
 | `statement` | `dynamic` | — | Bound SQL statement to authorize or classify as public. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3926)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4323)
 
 <a id="function-function-minisql-executor-executor-beginexplicit-function-beginexplicit-engine-statement-src-minisql-executor-executor-ml-1230393825"></a>
 ### beginExplicit
@@ -348,11 +354,11 @@ Implements begin explicit for this module. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1274)
 
 <a id="function-function-minisql-executor-executor-beginquerycontrol-function-beginquerycontrol-engine-src-minisql-executor-executor-ml-280625674"></a>
 ### beginQueryControl
@@ -365,10 +371,10 @@ Starts one top-level cooperative token after global memory admission.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L351)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L392)
 
 <a id="function-function-minisql-executor-executor-bind-function-bind-statement-engine-src-minisql-executor-executor-ml-179120623"></a>
 ### bind
@@ -381,11 +387,11 @@ Binds bind using the supplied inputs. Returns the computed value or operation st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `engine` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1326)
 
 <a id="constant-constant-minisql-executor-executor-binding-error-const-binding-error-9020-src-minisql-executor-executor-ml-846252900"></a>
 ### BINDING_ERROR
@@ -394,8 +400,10 @@ Binds bind using the supplied inputs. Returns the computed value or operation st
 const BINDING_ERROR = 9020
 ```
 
+Defines the binding error constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L47)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L50)
 
 <a id="function-function-minisql-executor-executor-boundcolumncount-function-boundcolumncount-bound-src-minisql-executor-executor-ml-244227792"></a>
 ### boundColumnCount
@@ -408,10 +416,10 @@ Computes the global flattened column width of all bound sources.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2472)
 
 <a id="function-function-minisql-executor-executor-buildcanonicalhashbuckets-function-buildcanonicalhashbuckets-engine-rows-keycolumn-operation-src-minisql-executor-executor-ml-1172462147"></a>
 ### buildCanonicalHashBuckets
@@ -430,7 +438,7 @@ Builds the fixed hash-bucket array shared by materializing and COUNT joins.
 | `operation` | `dynamic` | — | Diagnostic operation name used by validation errors. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2356)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2603)
 
 - [minisql.executor.executor.CachedPlan](Type-minisql-executor-executor-cachedplan-851955911.md) — struct
 <a id="function-function-minisql-executor-executor-canonicalequalitycolumns-function-canonicalequalitycolumns-condition-source-src-minisql-executor-executor-ml-997459808"></a>
@@ -444,11 +452,11 @@ Returns [joined-side global column, new-source local column] for a canonical equ
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `condition` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2588)
 
 <a id="function-function-minisql-executor-executor-canonicalhashjoin-function-canonicalhashjoin-engine-bound-leftrows-rightrows-sourceindex-condition-buildright-src-minisql-executor-executor-ml-1834696111"></a>
 ### canonicalHashJoin
@@ -461,16 +469,16 @@ Hash-joins a reordered INNER source while preserving canonical SQL column positi
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `leftRows` | `dynamic` | — |  |
-| `rightRows` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `condition` | `dynamic` | — |  |
-| `buildRight` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
+| `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
+| `buildRight` | `dynamic` | — | buildRight value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2378)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2632)
 
 <a id="function-function-minisql-executor-executor-canonicalhashjoincount-function-canonicalhashjoincount-engine-bound-leftrows-rightrows-sourceindex-condition-buildright-src-minisql-executor-executor-ml-180714507"></a>
 ### canonicalHashJoinCount
@@ -492,7 +500,7 @@ Counts a final reordered hash join without materializing result rows.
 | `buildRight` | `dynamic` | — | Selects which input is used as the hash build side. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2526)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2786)
 
 <a id="function-function-minisql-executor-executor-canonicalhashjoincountprobeleft-function-canonicalhashjoincountprobeleft-engine-bound-leftrows-buckets-sourceindex-condition-joinedcolumn-src-minisql-executor-executor-ml-404477378"></a>
 ### canonicalHashJoinCountProbeLeft
@@ -514,7 +522,7 @@ Probes right-side buckets with canonical left rows and counts valid matches.
 | `joinedColumn` | `dynamic` | — | Bound key expression for the probing row. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2460)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2720)
 
 <a id="function-function-minisql-executor-executor-canonicalhashjoincountproberight-function-canonicalhashjoincountproberight-engine-bound-rightrows-buckets-sourceindex-condition-localcolumn-src-minisql-executor-executor-ml-1377943377"></a>
 ### canonicalHashJoinCountProbeRight
@@ -536,7 +544,7 @@ Probes left-side buckets with compact right rows and counts valid matches.
 | `localColumn` | `dynamic` | — | Bound key expression for the probing row. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2493)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2753)
 
 <a id="function-function-minisql-executor-executor-canonicalizerows-function-canonicalizerows-bound-sourceindex-rows-src-minisql-executor-executor-ml-2021242146"></a>
 ### canonicalizeRows
@@ -549,12 +557,12 @@ Expands a compact source row set into stable global bound-column positions.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2286)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2521)
 
 <a id="function-function-minisql-executor-executor-canonicalnestedjoin-function-canonicalnestedjoin-engine-bound-leftrows-rightrows-sourceindex-condition-src-minisql-executor-executor-ml-1881530059"></a>
 ### canonicalNestedJoin
@@ -567,15 +575,15 @@ Applies the semantic nested-loop fallback to one reordered INNER join edge.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `leftRows` | `dynamic` | — |  |
-| `rightRows` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `condition` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
+| `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2567)
 
 <a id="function-function-minisql-executor-executor-canonicalnestedjoincount-function-canonicalnestedjoincount-engine-bound-leftrows-rightrows-sourceindex-condition-src-minisql-executor-executor-ml-478190553"></a>
 ### canonicalNestedJoinCount
@@ -588,15 +596,15 @@ Counts a final reordered nested-loop join without retaining its joined rows.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `leftRows` | `dynamic` | — |  |
-| `rightRows` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `condition` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
+| `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2435)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2695)
 
 <a id="function-function-minisql-executor-executor-canonicalnullvalues-function-canonicalnullvalues-bound-src-minisql-executor-executor-ml-833623414"></a>
 ### canonicalNullValues
@@ -609,10 +617,10 @@ Creates a complete, type-correct canonical row. Typed SQL NULL placeholders keep
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2485)
 
 <a id="function-function-minisql-executor-executor-canonicalsourcerow-function-canonicalsourcerow-bound-sourceindex-row-src-minisql-executor-executor-ml-186814829"></a>
 ### canonicalSourceRow
@@ -625,12 +633,12 @@ Expands one local source row into canonical bound-column positions. The membersh
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2503)
 
 <a id="function-function-minisql-executor-executor-close-function-close-engine-src-minisql-executor-executor-ml-1972374698"></a>
 ### close
@@ -639,14 +647,14 @@ Expands one local source row into canonical bound-column positions. The membersh
 function close(engine)
 ```
 
-Closes close using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state as documented by the operation name.
+Closes close owned by the minisql executor executor module. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state as documented by the operation name.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4731)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5197)
 
 <a id="constant-constant-minisql-executor-executor-closed-handle-const-closed-handle-9008-src-minisql-executor-executor-ml-1236346350"></a>
 ### CLOSED_HANDLE
@@ -655,8 +663,10 @@ Closes close using the supplied inputs. Returns its result or propagates a struc
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L45)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L46)
 
 <a id="function-function-minisql-executor-executor-closeselectcursor-function-closeselectcursor-cursor-src-minisql-executor-executor-ml-2056924830"></a>
 ### closeSelectCursor
@@ -669,10 +679,10 @@ Releases every resource held by a forward-only SELECT cursor. Cleanup is idempot
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cursor` | `dynamic` | — |  |
+| `cursor` | `dynamic` | — | cursor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3057)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3376)
 
 <a id="function-function-minisql-executor-executor-collectrequiredcolumns-function-collectrequiredcolumns-expression-requiredcolumns-src-minisql-executor-executor-ml-1062741646"></a>
 ### collectRequiredColumns
@@ -685,11 +695,11 @@ Marks every base-table column referenced by an expression tree. Returning false 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2892)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3198)
 
 <a id="function-function-minisql-executor-executor-combinecanonical-function-combinecanonical-bound-left-sourceindex-right-src-minisql-executor-executor-ml-149994786"></a>
 ### combineCanonical
@@ -702,13 +712,13 @@ Adds one compact source row to an already canonical join row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `left` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2295)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2534)
 
 <a id="function-function-minisql-executor-executor-commandresult-function-commandresult-command-affectedrows-message-src-minisql-executor-executor-ml-2114383351"></a>
 ### commandResult
@@ -721,12 +731,12 @@ Implements command result for this module. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `command` | `dynamic` | — |  |
-| `affectedRows` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `command` | `dynamic` | — | command value consumed by this operation. |
+| `affectedRows` | `dynamic` | — | affectedRows value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L293)
 
 <a id="function-function-minisql-executor-executor-commitexplicit-function-commitexplicit-engine-src-minisql-executor-executor-ml-1886859938"></a>
 ### commitExplicit
@@ -739,10 +749,10 @@ Implements commit explicit for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3562)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3916)
 
 <a id="function-function-minisql-executor-executor-commitpagetransaction-function-commitpagetransaction-engine-pagetransaction-deltabound-deltaresult-src-minisql-executor-executor-ml-440886384"></a>
 ### commitPageTransaction
@@ -755,13 +765,13 @@ Implements commit page transaction for this module. Requires arguments that sati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `deltaBound` | `dynamic` | — |  |
-| `deltaResult` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `deltaBound` | `dynamic` | — | deltaBound value consumed by this operation. |
+| `deltaResult` | `dynamic` | — | deltaResult value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1860)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2056)
 
 <a id="function-function-minisql-executor-executor-componentname-function-componentname-src-minisql-executor-executor-ml-404001540"></a>
 ### componentName
@@ -770,10 +780,10 @@ Implements commit page transaction for this module. Requires arguments that sati
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql executor executor module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4748)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5214)
 
 <a id="function-function-minisql-executor-executor-constantparameterexpression-function-constantparameterexpression-expression-src-minisql-executor-executor-ml-141129440"></a>
 ### constantParameterExpression
@@ -786,10 +796,10 @@ Implements constant parameter expression for this module. Returns the computed v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L535)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L600)
 
 <a id="constant-constant-minisql-executor-executor-constraint-violation-const-constraint-violation-9021-src-minisql-executor-executor-ml-335193633"></a>
 ### CONSTRAINT_VIOLATION
@@ -798,8 +808,10 @@ Implements constant parameter expression for this module. Returns the computed v
 const CONSTRAINT_VIOLATION = 9021
 ```
 
+Defines the constraint violation constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L48)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L52)
 
 <a id="function-function-minisql-executor-executor-constraintkindname-function-constraintkindname-kind-src-minisql-executor-executor-ml-59503758"></a>
 ### constraintKindName
@@ -812,10 +824,10 @@ Implements constraint kind name for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `kind` | `dynamic` | — |  |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4606)
 
 <a id="function-function-minisql-executor-executor-controllednestedjoin-function-controllednestedjoin-engine-leftrows-rightrows-boundjoin-src-minisql-executor-executor-ml-1211212559"></a>
 ### controlledNestedJoin
@@ -828,13 +840,13 @@ Applies the semantic nested-loop join while polling inside the candidate loop. K
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `leftRows` | `dynamic` | — |  |
-| `rightRows` | `dynamic` | — |  |
-| `boundJoin` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
+| `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
+| `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2645)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2924)
 
 <a id="constant-constant-minisql-executor-executor-corrupt-data-const-corrupt-data-9004-src-minisql-executor-executor-ml-511771980"></a>
 ### CORRUPT_DATA
@@ -842,6 +854,8 @@ Applies the semantic nested-loop join while polling inside the candidate loop. K
 ```ml
 const CORRUPT_DATA = 9004
 ```
+
+Defines the corrupt data constant used by the minisql executor executor module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L44)
@@ -857,10 +871,10 @@ Returns the process-local planning generation shared across attached sessions. C
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L514)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L576)
 
 <a id="function-function-minisql-executor-executor-currentsequencevalue-function-currentsequencevalue-engine-name-src-minisql-executor-executor-ml-195081905"></a>
 ### currentSequenceValue
@@ -873,11 +887,11 @@ Implements current sequence value for this module. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L502)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L563)
 
 <a id="constant-constant-minisql-executor-executor-cursor-source-batch-rows-const-cursor-source-batch-rows-16-src-minisql-executor-executor-ml-835040656"></a>
 ### CURSOR_SOURCE_BATCH_ROWS
@@ -886,10 +900,10 @@ Implements current sequence value for this module. Requires arguments that satis
 const CURSOR_SOURCE_BATCH_ROWS = 16
 ```
 
-Cursor scans retain at most the historical sixteen source rows at once, then coalesce narrow projected rows until one preferred protocol frame is full.
+Cursor scans retain at most the historical sixteen source rows at once, then
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L80)
 
 <a id="constant-constant-minisql-executor-executor-cursor-target-batch-bytes-const-cursor-target-batch-bytes-1048552-src-minisql-executor-executor-ml-1571366116"></a>
 ### CURSOR_TARGET_BATCH_BYTES
@@ -898,8 +912,10 @@ Cursor scans retain at most the historical sixteen source rows at once, then coa
 const CURSOR_TARGET_BATCH_BYTES = 1048552
 ```
 
+Defines the cursor target batch bytes constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L66)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L82)
 
 <a id="function-function-minisql-executor-executor-databasehandle-function-databasehandle-engine-src-minisql-executor-executor-ml-843164806"></a>
 ### databaseHandle
@@ -912,10 +928,10 @@ Implements database handle for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3641)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4005)
 
 <a id="function-function-minisql-executor-executor-dcltarget-function-dcltarget-engine-objecttype-objectname-src-minisql-executor-executor-ml-115961041"></a>
 ### dclTarget
@@ -928,12 +944,12 @@ Implements dcl target for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectName` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectName` | `dynamic` | — | objectName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3993)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4398)
 
 <a id="constant-constant-minisql-executor-executor-ddl-state-const-ddl-state-9023-src-minisql-executor-executor-ml-2108451247"></a>
 ### DDL_STATE
@@ -942,8 +958,10 @@ Implements dcl target for this module. Returns the computed value or operation s
 const DDL_STATE = 9023
 ```
 
+Defines the ddl state constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L50)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L56)
 
 <a id="function-function-minisql-executor-executor-decodeprocedureparameternames-function-decodeprocedureparameternames-encoded-src-minisql-executor-executor-ml-1001483478"></a>
 ### decodeProcedureParameterNames
@@ -956,10 +974,10 @@ Decodes ordered parameter names while accepting the pre-metadata representation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `encoded` | `dynamic` | — |  |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1703)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1880)
 
 <a id="function-function-minisql-executor-executor-decodeprocedureparametertype-function-decodeprocedureparametertype-encoded-parameterindex-src-minisql-executor-executor-ml-885778835"></a>
 ### decodeProcedureParameterType
@@ -972,11 +990,11 @@ Reconstructs one declared SQL parameter type from flattened durable metadata.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `encoded` | `dynamic` | — |  |
-| `parameterIndex` | `dynamic` | — |  |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
+| `parameterIndex` | `dynamic` | — | Zero-based index of parameter. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1716)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1895)
 
 <a id="constant-constant-minisql-executor-executor-default-query-memory-bytes-const-default-query-memory-bytes-67108864-src-minisql-executor-executor-ml-1329537879"></a>
 ### DEFAULT_QUERY_MEMORY_BYTES
@@ -985,8 +1003,10 @@ Reconstructs one declared SQL parameter type from flattened durable metadata.
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 ```
 
+Defines the default query memory bytes constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L67)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L84)
 
 <a id="function-function-minisql-executor-executor-dmlcommand-function-dmlcommand-bound-src-minisql-executor-executor-ml-254293948"></a>
 ### dmlCommand
@@ -999,10 +1019,10 @@ Implements DML command for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1848)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2040)
 
 <a id="function-function-minisql-executor-executor-encodeprocedureparameters-function-encodeprocedureparameters-parameters-src-minisql-executor-executor-ml-1980748170"></a>
 ### encodeProcedureParameters
@@ -1015,10 +1035,10 @@ Flattens named procedure inputs and their exact SQL types into durable metadata.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parameters` | `dynamic` | — |  |
+| `parameters` | `dynamic` | — | parameters value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1688)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1864)
 
 - [minisql.executor.executor.Engine](Type-minisql-executor-executor-engine-929091680.md) — struct
 <a id="function-function-minisql-executor-executor-ensureexplicitddl-function-ensureexplicitddl-engine-src-minisql-executor-executor-ml-696335918"></a>
@@ -1032,10 +1052,10 @@ Ensures explicit DDL using the supplied inputs. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1198)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1309)
 
 <a id="function-function-minisql-executor-executor-ensureexplicitdml-function-ensureexplicitdml-engine-src-minisql-executor-executor-ml-264740988"></a>
 ### ensureExplicitDml
@@ -1048,10 +1068,10 @@ Ensures explicit DML using the supplied inputs. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1294)
 
 <a id="function-function-minisql-executor-executor-estimatedoperatorbytes-function-estimatedoperatorbytes-engine-rows-src-minisql-executor-executor-ml-1024673711"></a>
 ### estimatedOperatorBytes
@@ -1064,11 +1084,11 @@ Estimates an array of scanned/projected rows and updates the peak diagnostic.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L340)
 
 <a id="function-function-minisql-executor-executor-estimatedvaluebytes-function-estimatedvaluebytes-value-src-minisql-executor-executor-ml-1784020573"></a>
 ### estimatedValueBytes
@@ -1081,10 +1101,10 @@ Estimates the retained representation of one SQL value. This is a soft accountin
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L296)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L330)
 
 <a id="function-function-minisql-executor-executor-evaluaterecursivequery-function-evaluaterecursivequery-engine-query-pagetransaction-src-minisql-executor-executor-ml-1113355987"></a>
 ### evaluateRecursiveQuery
@@ -1097,12 +1117,12 @@ Evaluates anchor rows followed by semi-naive delta iterations until a fixpoint. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `query` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `query` | `dynamic` | — | query value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2078)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2293)
 
 <a id="function-function-minisql-executor-executor-executealteruser-function-executealteruser-engine-statement-src-minisql-executor-executor-ml-911086291"></a>
 ### executeAlterUser
@@ -1115,11 +1135,11 @@ Executes alter user using the supplied inputs. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4024)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4435)
 
 <a id="function-function-minisql-executor-executor-executeanalyze-function-executeanalyze-engine-statement-src-minisql-executor-executor-ml-959348459"></a>
 ### executeAnalyze
@@ -1132,11 +1152,11 @@ Executes analyze using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3825)
 
 <a id="function-function-minisql-executor-executor-executecall-function-executecall-engine-statement-src-minisql-executor-executor-ml-1362716837"></a>
 ### executeCall
@@ -1149,11 +1169,11 @@ Evaluates CALL arguments, substitutes named inputs, and executes the persisted D
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1748)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1931)
 
 <a id="function-function-minisql-executor-executor-executecreateprincipal-function-executecreateprincipal-engine-statement-src-minisql-executor-executor-ml-1740915859"></a>
 ### executeCreatePrincipal
@@ -1166,11 +1186,11 @@ Executes create principal using the supplied inputs. Returns the computed value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4011)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4420)
 
 <a id="function-function-minisql-executor-executor-executedcl-function-executedcl-engine-statement-src-minisql-executor-executor-ml-313676291"></a>
 ### executeDcl
@@ -1183,11 +1203,11 @@ Executes dcl using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4524)
 
 <a id="function-function-minisql-executor-executor-executeddl-function-executeddl-engine-statement-src-minisql-executor-executor-ml-1358160011"></a>
 ### executeDdl
@@ -1200,11 +1220,11 @@ Executes DDL using the supplied inputs. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1794)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1982)
 
 <a id="function-function-minisql-executor-executor-executedeallocate-function-executedeallocate-engine-statement-src-minisql-executor-executor-ml-1991397713"></a>
 ### executeDeallocate
@@ -1217,11 +1237,11 @@ Executes deallocate using the supplied inputs. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1234)
 
 <a id="function-function-minisql-executor-executor-executedescribetable-function-executedescribetable-engine-statement-src-minisql-executor-executor-ml-219793075"></a>
 ### executeDescribeTable
@@ -1234,11 +1254,11 @@ Executes describe table using the supplied inputs. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4254)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4693)
 
 <a id="function-function-minisql-executor-executor-executedml-function-executedml-engine-statement-src-minisql-executor-executor-ml-1540650651"></a>
 ### executeDml
@@ -1251,11 +1271,11 @@ Executes DML using the supplied inputs. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1940)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2143)
 
 <a id="function-function-minisql-executor-executor-executedropprincipal-function-executedropprincipal-engine-statement-src-minisql-executor-executor-ml-1743544287"></a>
 ### executeDropPrincipal
@@ -1268,11 +1288,11 @@ Executes drop principal using the supplied inputs. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4041)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4454)
 
 <a id="function-function-minisql-executor-executor-executeexplain-function-executeexplain-engine-statement-src-minisql-executor-executor-ml-1894687515"></a>
 ### executeExplain
@@ -1285,11 +1305,11 @@ Executes explain using the supplied inputs. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3863)
 
 <a id="function-function-minisql-executor-executor-executegrantprivilege-function-executegrantprivilege-engine-statement-src-minisql-executor-executor-ml-993493515"></a>
 ### executeGrantPrivilege
@@ -1302,11 +1322,11 @@ Executes grant privilege using the supplied inputs. Returns the computed value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4075)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4494)
 
 <a id="function-function-minisql-executor-executor-executegrantrole-function-executegrantrole-engine-statement-src-minisql-executor-executor-ml-639891795"></a>
 ### executeGrantRole
@@ -1319,11 +1339,11 @@ Executes grant role using the supplied inputs. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4055)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4470)
 
 <a id="function-function-minisql-executor-executor-executemerge-function-executemerge-engine-statement-src-minisql-executor-executor-ml-248371447"></a>
 ### executeMerge
@@ -1336,11 +1356,11 @@ Runs MERGE in an existing explicit transaction or creates one atomic implicit tr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2026)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2234)
 
 <a id="function-function-minisql-executor-executor-executeprepare-function-executeprepare-engine-statement-src-minisql-executor-executor-ml-416137443"></a>
 ### executePrepare
@@ -1353,11 +1373,11 @@ Executes prepare using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1098)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1199)
 
 <a id="function-function-minisql-executor-executor-executeprepared-function-executeprepared-engine-statement-src-minisql-executor-executor-ml-1951566227"></a>
 ### executePrepared
@@ -1370,11 +1390,11 @@ Executes prepared using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1210)
 
 <a id="function-function-minisql-executor-executor-executeprocedureddl-function-executeprocedureddl-engine-statement-src-minisql-executor-executor-ml-4246823"></a>
 ### executeProcedureDdl
@@ -1387,11 +1407,11 @@ Creates, replaces, or drops a durable single-statement stored procedure.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1728)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1909)
 
 <a id="function-function-minisql-executor-executor-executereindex-function-executereindex-engine-statement-src-minisql-executor-executor-ml-419889123"></a>
 ### executeReindex
@@ -1404,11 +1424,11 @@ Executes reindex using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4569)
 
 <a id="function-function-minisql-executor-executor-executereleasesavepoint-function-executereleasesavepoint-engine-statement-src-minisql-executor-executor-ml-1062203289"></a>
 ### executeReleaseSavepoint
@@ -1421,11 +1441,11 @@ Executes release savepoint using the supplied inputs. Returns the computed value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3621)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3982)
 
 <a id="function-function-minisql-executor-executor-executerevokeprivilege-function-executerevokeprivilege-engine-statement-src-minisql-executor-executor-ml-1896721351"></a>
 ### executeRevokePrivilege
@@ -1438,11 +1458,11 @@ Executes revoke privilege using the supplied inputs. Returns the computed value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4088)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4509)
 
 <a id="function-function-minisql-executor-executor-executerevokerole-function-executerevokerole-engine-statement-src-minisql-executor-executor-ml-1589397277"></a>
 ### executeRevokeRole
@@ -1455,11 +1475,11 @@ Executes revoke role using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4065)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4482)
 
 <a id="function-function-minisql-executor-executor-executerollbackto-function-executerollbackto-engine-statement-src-minisql-executor-executor-ml-1019368515"></a>
 ### executeRollbackTo
@@ -1472,11 +1492,11 @@ Executes rollback to using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3611)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3970)
 
 <a id="function-function-minisql-executor-executor-executesavepoint-function-executesavepoint-engine-statement-src-minisql-executor-executor-ml-1459858347"></a>
 ### executeSavepoint
@@ -1489,11 +1509,11 @@ Executes savepoint using the supplied inputs. Returns the computed value or oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3600)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3957)
 
 <a id="function-function-minisql-executor-executor-executeschemaddl-function-executeschemaddl-engine-statement-src-minisql-executor-executor-ml-1902403195"></a>
 ### executeSchemaDdl
@@ -1506,11 +1526,11 @@ Executes durable CREATE/DROP SCHEMA operations outside user transactions.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1378)
 
 <a id="function-function-minisql-executor-executor-executeselect-function-executeselect-engine-statement-src-minisql-executor-executor-ml-551814781"></a>
 ### executeSelect
@@ -1523,11 +1543,11 @@ Executes select using the supplied inputs. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3548)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3901)
 
 <a id="function-function-minisql-executor-executor-executesequenceddl-function-executesequenceddl-engine-statement-src-minisql-executor-executor-ml-1664189443"></a>
 ### executeSequenceDdl
@@ -1540,11 +1560,11 @@ Executes sequence DDL using the supplied inputs. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1844)
 
 <a id="function-function-minisql-executor-executor-executeshowindexes-function-executeshowindexes-engine-statement-src-minisql-executor-executor-ml-1639478163"></a>
 ### executeShowIndexes
@@ -1557,11 +1577,11 @@ Executes show indexes using the supplied inputs. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4721)
 
 <a id="function-function-minisql-executor-executor-executeshowprocesslist-function-executeshowprocesslist-engine-src-minisql-executor-executor-ml-706742654"></a>
 ### executeShowProcesslist
@@ -1574,10 +1594,10 @@ Materializes a lock-safe snapshot of active sessions for administrators.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4665)
 
 <a id="function-function-minisql-executor-executor-executeshowstatus-function-executeshowstatus-engine-src-minisql-executor-executor-ml-1664572118"></a>
 ### executeShowStatus
@@ -1590,10 +1610,10 @@ Exposes bounded process-local counters and configured resource ceilings.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4218)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4653)
 
 <a id="function-function-minisql-executor-executor-executeshowtables-function-executeshowtables-engine-src-minisql-executor-executor-ml-1475044292"></a>
 ### executeShowTables
@@ -1606,10 +1626,10 @@ Executes show tables using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4643)
 
 <a id="function-function-minisql-executor-executor-executeshutdown-function-executeshutdown-engine-src-minisql-executor-executor-ml-2009892324"></a>
 ### executeShutdown
@@ -1622,10 +1642,10 @@ Publishes the stop request; the listener sends this response before draining.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4682)
 
 <a id="function-function-minisql-executor-executor-executesql-function-executesql-engine-sqltext-src-minisql-executor-executor-ml-2061122961"></a>
 ### executeSql
@@ -1638,11 +1658,11 @@ Executes SQL using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4684)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5147)
 
 <a id="function-function-minisql-executor-executor-executestatement-function-executestatement-engine-statement-src-minisql-executor-executor-ml-1899332699"></a>
 ### executeStatement
@@ -1655,11 +1675,11 @@ Executes one AST with an implicit token for embedded callers. Network sessions s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5130)
 
 <a id="function-function-minisql-executor-executor-executestatementcontrolled-function-executestatementcontrolled-engine-statement-src-minisql-executor-executor-ml-2028565579"></a>
 ### executeStatementControlled
@@ -1672,11 +1692,11 @@ All callers, including the embedded API, pass through the same physical executio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4604)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5063)
 
 <a id="function-function-minisql-executor-executor-executestatementcore-function-executestatementcore-engine-statement-src-minisql-executor-executor-ml-520162987"></a>
 ### executeStatementCore
@@ -1689,11 +1709,11 @@ Authorizes and executes one statement while managing logical transaction locks. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4536)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4993)
 
 <a id="function-function-minisql-executor-executor-executestatementinner-function-executestatementinner-engine-statement-src-minisql-executor-executor-ml-115241195"></a>
 ### executeStatementInner
@@ -1706,11 +1726,11 @@ Executes statement inner using the supplied inputs. Returns the computed value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4300)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4743)
 
 <a id="function-function-minisql-executor-executor-executetriggerbody-function-executetriggerbody-engine-trigger-sourcetable-oldrow-newrow-pagetransaction-src-minisql-executor-executor-ml-31892013"></a>
 ### executeTriggerBody
@@ -1723,15 +1743,15 @@ Executes trigger body using the supplied inputs. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `trigger` | `dynamic` | — |  |
-| `sourceTable` | `dynamic` | — |  |
-| `oldRow` | `dynamic` | — |  |
-| `newRow` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `trigger` | `dynamic` | — | trigger value consumed by this operation. |
+| `sourceTable` | `dynamic` | — | sourceTable value consumed by this operation. |
+| `oldRow` | `dynamic` | — | oldRow value consumed by this operation. |
+| `newRow` | `dynamic` | — | newRow value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1564)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1730)
 
 <a id="function-function-minisql-executor-executor-executetriggerddl-function-executetriggerddl-engine-statement-src-minisql-executor-executor-ml-1527619189"></a>
 ### executeTriggerDdl
@@ -1744,11 +1764,11 @@ Executes trigger DDL using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1630)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1803)
 
 <a id="function-function-minisql-executor-executor-executevacuum-function-executevacuum-engine-statement-src-minisql-executor-executor-ml-2124883343"></a>
 ### executeVacuum
@@ -1761,11 +1781,11 @@ Executes vacuum using the supplied inputs. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4543)
 
 <a id="function-function-minisql-executor-executor-executeviewddl-function-executeviewddl-engine-statement-src-minisql-executor-executor-ml-1822873027"></a>
 ### executeViewDdl
@@ -1778,11 +1798,11 @@ Executes view DDL using the supplied inputs. Requires arguments that satisfy the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1405)
 
 <a id="constant-constant-minisql-executor-executor-execution-batch-rows-const-execution-batch-rows-128-src-minisql-executor-executor-ml-2038653322"></a>
 ### EXECUTION_BATCH_ROWS
@@ -1791,8 +1811,10 @@ Executes view DDL using the supplied inputs. Requires arguments that satisfy the
 const EXECUTION_BATCH_ROWS = 128
 ```
 
+Defines the execution batch rows constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L62)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L78)
 
 <a id="function-function-minisql-executor-executor-explainbound-function-explainbound-bound-src-minisql-executor-executor-ml-2105905164"></a>
 ### explainBound
@@ -1805,10 +1827,10 @@ Implements explain bound for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3502)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3851)
 
 <a id="function-function-minisql-executor-executor-expressionhaspotentialouterreference-function-expressionhaspotentialouterreference-expression-statement-src-minisql-executor-executor-ml-1441359755"></a>
 ### expressionHasPotentialOuterReference
@@ -1821,11 +1843,11 @@ Detects a qualified column whose source is not declared by its immediate SELECT.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L865)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L949)
 
 <a id="function-function-minisql-executor-executor-expressionusesnextval-function-expressionusesnextval-expression-src-minisql-executor-executor-ml-2108459686"></a>
 ### expressionUsesNextval
@@ -1838,10 +1860,10 @@ Recursively detects NEXTVAL in every expression container, including CASE, windo
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4338)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4782)
 
 <a id="function-function-minisql-executor-executor-fail-function-fail-code-operation-message-src-minisql-executor-executor-ml-2141121417"></a>
 ### fail
@@ -1850,16 +1872,16 @@ Recursively detects NEXTVAL in every expression container, including CASE, windo
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql executor executor module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L228)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L249)
 
 <a id="function-function-minisql-executor-executor-filtersourcerows-function-filtersourcerows-source-rows-predicate-src-minisql-executor-executor-ml-1972927957"></a>
 ### filterSourceRows
@@ -1872,12 +1894,12 @@ Applies a predicate assigned by the optimizer before a source participates in an
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2456)
 
 <a id="function-function-minisql-executor-executor-findcolumnrule-function-findcolumnrule-tableschema-columnname-src-minisql-executor-executor-ml-1670747626"></a>
 ### findColumnRule
@@ -1890,11 +1912,11 @@ Finds column rule using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tableSchema` | `dynamic` | — |  |
-| `columnName` | `dynamic` | — |  |
+| `tableSchema` | `dynamic` | — | tableSchema value consumed by this operation. |
+| `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4594)
 
 <a id="function-function-minisql-executor-executor-findpreparedindex-function-findpreparedindex-engine-name-src-minisql-executor-executor-ml-975534529"></a>
 ### findPreparedIndex
@@ -1907,11 +1929,11 @@ Finds prepared index using the supplied inputs. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L522)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L586)
 
 <a id="function-function-minisql-executor-executor-finishquerycontrol-function-finishquerycontrol-engine-src-minisql-executor-executor-ml-2094669646"></a>
 ### finishQueryControl
@@ -1924,10 +1946,10 @@ Releases reservations and deactivates a completed token.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L365)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L407)
 
 <a id="function-function-minisql-executor-executor-firetriggers-function-firetriggers-engine-bound-result-pagetransaction-src-minisql-executor-executor-ml-1766799936"></a>
 ### fireTriggers
@@ -1940,13 +1962,13 @@ Implements fire triggers for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `result` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1583)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1753)
 
 <a id="function-function-minisql-executor-executor-hasdatabaseadmin-function-hasdatabaseadmin-engine-src-minisql-executor-executor-ml-1419369890"></a>
 ### hasDatabaseAdmin
@@ -1959,10 +1981,10 @@ Returns whether the supplied value satisfies the database admin condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3648)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4013)
 
 <a id="function-function-minisql-executor-executor-informationschemarows-function-informationschemarows-engine-relationkind-src-minisql-executor-executor-ml-1451621596"></a>
 ### informationSchemaRows
@@ -1975,11 +1997,11 @@ Materializes a supported INFORMATION_SCHEMA relation from the live catalog snaps
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `relationKind` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `relationKind` | `dynamic` | — | relationKind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2343)
 
 <a id="constant-constant-minisql-executor-executor-invalid-argument-const-invalid-argument-9001-src-minisql-executor-executor-ml-350166239"></a>
 ### INVALID_ARGUMENT
@@ -1988,10 +2010,10 @@ Materializes a supported INFORMATION_SCHEMA relation from the live catalog snaps
 const INVALID_ARGUMENT = 9001
 ```
 
-SQL execution facade. M16 extends the accepted M15 scan/filter/projection pipeline with joins, grouping, aggregates, set operations and explicit logical and physical plan descriptions. Later milestones add statistics, protocol sessions and savepoints without changing this public execution contract.
+SQL execution facade. M16 extends the accepted M15 scan/filter/projection
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L42)
 
 <a id="function-function-minisql-executor-executor-invalidateplanningcontext-function-invalidateplanningcontext-engine-src-minisql-executor-executor-ml-2113816792"></a>
 ### invalidatePlanningContext
@@ -2004,10 +2026,10 @@ Invalidates only advisory state. Query correctness never depends on the cache, b
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3760)
 
 <a id="function-function-minisql-executor-executor-isauthorizeddatastatement-function-isauthorizeddatastatement-statement-src-minisql-executor-executor-ml-1730684465"></a>
 ### isAuthorizedDataStatement
@@ -2023,7 +2045,7 @@ Returns whether a statement changes or truncates table data.
 | `statement` | `dynamic` | — | Bound SQL statement to classify. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3834)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4231)
 
 <a id="function-function-minisql-executor-executor-isauthorizeddefinitionstatement-function-isauthorizeddefinitionstatement-statement-src-minisql-executor-executor-ml-1467498511"></a>
 ### isAuthorizedDefinitionStatement
@@ -2039,7 +2061,7 @@ Returns whether a statement changes schema or optimizer metadata.
 | `statement` | `dynamic` | — | Bound SQL statement to classify. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3885)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4282)
 
 <a id="function-function-minisql-executor-executor-isengine-function-isengine-value-src-minisql-executor-executor-ml-57134237"></a>
 ### isEngine
@@ -2052,10 +2074,10 @@ Returns whether the supplied value satisfies the engine condition. Returns the c
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L265)
 
 <a id="function-function-minisql-executor-executor-isimplemented-function-isimplemented-src-minisql-executor-executor-ml-2014113356"></a>
 ### isImplemented
@@ -2064,10 +2086,10 @@ Returns whether the supplied value satisfies the engine condition. Returns the c
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql executor executor module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4762)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5228)
 
 <a id="function-function-minisql-executor-executor-isolationvalue-function-isolationvalue-name-src-minisql-executor-executor-ml-1180263519"></a>
 ### isolationValue
@@ -2080,10 +2102,10 @@ Implements isolation value for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1264)
 
 <a id="function-function-minisql-executor-executor-ispreparedstatementstate-function-ispreparedstatementstate-value-src-minisql-executor-executor-ml-1800141301"></a>
 ### isPreparedStatementState
@@ -2096,10 +2118,10 @@ Returns whether the supplied value satisfies the prepared statement state condit
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L464)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L517)
 
 <a id="function-function-minisql-executor-executor-isqueryresult-function-isqueryresult-value-src-minisql-executor-executor-ml-1266785315"></a>
 ### isQueryResult
@@ -2112,10 +2134,10 @@ Returns whether the supplied value satisfies the query result condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L257)
 
 <a id="function-function-minisql-executor-executor-issequencesessionvalue-function-issequencesessionvalue-value-src-minisql-executor-executor-ml-1440773105"></a>
 ### isSequenceSessionValue
@@ -2128,10 +2150,10 @@ Returns whether the supplied value satisfies the sequence session value conditio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L471)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L525)
 
 <a id="function-function-minisql-executor-executor-itemindex-function-itemindex-bound-expression-src-minisql-executor-executor-ml-444739136"></a>
 ### itemIndex
@@ -2144,11 +2166,11 @@ Implements item index for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2776)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3064)
 
 <a id="function-function-minisql-executor-executor-joinedsource-function-joinedsource-engine-bound-pagetransaction-sourceoffset-sourcelimit-requiredcolumns-executable-src-minisql-executor-executor-ml-476399185"></a>
 ### joinedSource
@@ -2161,16 +2183,16 @@ Implements joined source for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `sourceLimit` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
-| `executable` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `sourceLimit` | `dynamic` | — | sourceLimit value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
+| `executable` | `dynamic` | — | executable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2694)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2980)
 
 <a id="function-function-minisql-executor-executor-joinedsourcereordered-function-joinedsourcereordered-engine-bound-pagetransaction-sourceoffset-sourcelimit-requiredcolumns-executable-src-minisql-executor-executor-ml-1305843441"></a>
 ### joinedSourceReordered
@@ -2183,16 +2205,16 @@ Executes the optimizer's canonicalized order for a pure INNER equijoin graph.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `sourceLimit` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
-| `executable` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `sourceLimit` | `dynamic` | — | sourceLimit value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
+| `executable` | `dynamic` | — | executable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2581)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2853)
 
 <a id="function-function-minisql-executor-executor-joinedsourcereorderedcount-function-joinedsourcereorderedcount-engine-bound-pagetransaction-requiredcolumns-executable-src-minisql-executor-executor-ml-766675193"></a>
 ### joinedSourceReorderedCount
@@ -2205,14 +2227,14 @@ Executes all reordered joins except the final edge normally, then turns that edg
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
-| `executable` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
+| `executable` | `dynamic` | — | executable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2543)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2808)
 
 <a id="function-function-minisql-executor-executor-joinindexkeys-function-joinindexkeys-keys-src-minisql-executor-executor-ml-1423789080"></a>
 ### joinIndexKeys
@@ -2225,10 +2247,10 @@ Renders expression-index keys without their internal compatibility marker.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `keys` | `dynamic` | — |  |
+| `keys` | `dynamic` | — | keys value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4630)
 
 <a id="function-function-minisql-executor-executor-joinnames-function-joinnames-names-src-minisql-executor-executor-ml-2005156840"></a>
 ### joinNames
@@ -2241,10 +2263,10 @@ Implements join names for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `names` | `dynamic` | — |  |
+| `names` | `dynamic` | — | names value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4619)
 
 <a id="function-function-minisql-executor-executor-joinprobeguaranteespredicate-function-joinprobeguaranteespredicate-boundjoin-leftrow-predicate-src-minisql-executor-executor-ml-1750283024"></a>
 ### joinProbeGuaranteesPredicate
@@ -2257,12 +2279,12 @@ Proves that one parameterized equality-index probe already guarantees a pushed r
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `boundJoin` | `dynamic` | — |  |
-| `leftRow` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
+| `leftRow` | `dynamic` | — | leftRow value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2614)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2889)
 
 <a id="function-function-minisql-executor-executor-loadplanningcontext-function-loadplanningcontext-engine-src-minisql-executor-executor-ml-71253414"></a>
 ### loadPlanningContext
@@ -2275,10 +2297,10 @@ Builds the optimizer's catalog snapshot without giving planner modules direct ac
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3335)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3673)
 
 <a id="function-function-minisql-executor-executor-loadstatistics-function-loadstatistics-engine-src-minisql-executor-executor-ml-641776954"></a>
 ### loadStatistics
@@ -2291,10 +2313,10 @@ Loads statistics using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3326)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3663)
 
 <a id="function-function-minisql-executor-executor-markexplicitfailure-function-markexplicitfailure-engine-src-minisql-executor-executor-ml-1490166796"></a>
 ### markExplicitFailure
@@ -2307,10 +2329,10 @@ Implements mark explicit failure for this module. Returns its result or propagat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4441)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4890)
 
 <a id="function-function-minisql-executor-executor-materializeboundexpression-function-materializeboundexpression-engine-expression-bound-row-pagetransaction-src-minisql-executor-executor-ml-347857181"></a>
 ### materializeBoundExpression
@@ -2323,14 +2345,14 @@ Rebuilds a bound expression with every deferred subquery replaced by a literal. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2827)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3127)
 
 <a id="function-function-minisql-executor-executor-materializeboundsubquery-function-materializeboundsubquery-engine-expression-bound-row-pagetransaction-src-minisql-executor-executor-ml-104763257"></a>
 ### materializeBoundSubquery
@@ -2343,14 +2365,14 @@ Executes a validated scalar, EXISTS, or IN subquery for one outer source row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2803)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3098)
 
 <a id="function-function-minisql-executor-executor-materializedmlstatement-function-materializedmlstatement-engine-statement-pagetransaction-src-minisql-executor-executor-ml-183510046"></a>
 ### materializeDmlStatement
@@ -2363,12 +2385,12 @@ Implements materialize DML statement for this module. Requires arguments that sa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1046)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1145)
 
 <a id="function-function-minisql-executor-executor-materializeexpression-function-materializeexpression-engine-expression-pagetransaction-defersubqueries-src-minisql-executor-executor-ml-1968497743"></a>
 ### materializeExpression
@@ -2381,13 +2403,13 @@ Implements materialize expression for this module. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `deferSubqueries` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `deferSubqueries` | `dynamic` | — | deferSubqueries value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L721)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L798)
 
 <a id="function-function-minisql-executor-executor-materializeinsertselect-function-materializeinsertselect-engine-bound-pagetransaction-src-minisql-executor-executor-ml-1231635255"></a>
 ### materializeInsertSelect
@@ -2400,12 +2422,12 @@ Implements materialize insert select for this module. Returns the computed value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1897)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2096)
 
 <a id="function-function-minisql-executor-executor-materializeselectstatement-function-materializeselectstatement-engine-statement-pagetransaction-src-minisql-executor-executor-ml-1930561052"></a>
 ### materializeSelectStatement
@@ -2418,12 +2440,12 @@ Implements materialize select statement for this module. Requires arguments that
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L814)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L894)
 
 <a id="constant-constant-minisql-executor-executor-mode-ddl-const-mode-ddl-2-src-minisql-executor-executor-ml-1799859077"></a>
 ### MODE_DDL
@@ -2432,8 +2454,10 @@ Implements materialize select statement for this module. Requires arguments that
 const MODE_DDL = 2
 ```
 
+Defines the mode ddl constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L57)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L69)
 
 <a id="constant-constant-minisql-executor-executor-mode-dml-const-mode-dml-1-src-minisql-executor-executor-ml-935666256"></a>
 ### MODE_DML
@@ -2442,8 +2466,10 @@ const MODE_DDL = 2
 const MODE_DML = 1
 ```
 
+Defines the mode dml constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L56)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L67)
 
 <a id="constant-constant-minisql-executor-executor-mode-none-const-mode-none-0-src-minisql-executor-executor-ml-775891745"></a>
 ### MODE_NONE
@@ -2452,8 +2478,10 @@ const MODE_DML = 1
 const MODE_NONE = 0
 ```
 
+Defines the mode none constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L55)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L65)
 
 <a id="function-function-minisql-executor-executor-nameinlist-function-nameinlist-names-name-src-minisql-executor-executor-ml-1485526323"></a>
 ### nameInList
@@ -2466,11 +2494,11 @@ Implements name in list for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `names` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `names` | `dynamic` | — | names value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3684)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4065)
 
 <a id="function-function-minisql-executor-executor-nestedselectdeclaresqualifier-function-nestedselectdeclaresqualifier-statement-qualifier-src-minisql-executor-executor-ml-161014187"></a>
 ### nestedSelectDeclaresQualifier
@@ -2483,11 +2511,11 @@ Returns true when a nested SELECT declares a qualifier that shadows an outer sou
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `qualifier` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `qualifier` | `dynamic` | — | qualifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L849)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L931)
 
 <a id="function-function-minisql-executor-executor-nextselectbatch-function-nextselectbatch-cursor-maximumrows-src-minisql-executor-executor-ml-1002043475"></a>
 ### nextSelectBatch
@@ -2500,11 +2528,11 @@ Produces at most maximumRows projected rows while retaining no earlier batch. Vo
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cursor` | `dynamic` | — |  |
-| `maximumRows` | `dynamic` | — |  |
+| `cursor` | `dynamic` | — | cursor value consumed by this operation. |
+| `maximumRows` | `dynamic` | — | maximumRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3442)
 
 <a id="function-function-minisql-executor-executor-normalizecompoundorder-function-normalizecompoundorder-rows-bound-src-minisql-executor-executor-ml-142974099"></a>
 ### normalizeCompoundOrder
@@ -2517,11 +2545,11 @@ Normalizes compound order using the supplied inputs. Returns the computed value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2787)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3077)
 
 <a id="function-function-minisql-executor-executor-notequeryspill-function-notequeryspill-engine-rows-src-minisql-executor-executor-ml-621388527"></a>
 ### noteQuerySpill
@@ -2534,11 +2562,11 @@ Records a spill decision using the measured input representation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L381)
 
 <a id="function-function-minisql-executor-executor-open-function-open-databasepath-src-minisql-executor-executor-ml-1288864166"></a>
 ### open
@@ -2547,14 +2575,14 @@ Records a spill decision using the measured input representation.
 function open(databasePath)
 ```
 
-Opens open using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Opens open for the minisql executor executor module. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L424)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L471)
 
 <a id="function-function-minisql-executor-executor-openselectcursor-function-openselectcursor-engine-statement-src-minisql-executor-executor-ml-1915313715"></a>
 ### openSelectCursor
@@ -2567,11 +2595,11 @@ Opens the non-blocking single-table physical pipeline as a forward-only result c
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3075)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3396)
 
 <a id="function-function-minisql-executor-executor-optimizedplanfor-function-optimizedplanfor-engine-bound-src-minisql-executor-executor-ml-1694886294"></a>
 ### optimizedPlanFor
@@ -2584,11 +2612,11 @@ Returns a generation-safe cached physical plan or optimizes and records a new on
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3383)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3723)
 
 <a id="constant-constant-minisql-executor-executor-permission-denied-const-permission-denied-9029-src-minisql-executor-executor-ml-1290569077"></a>
 ### PERMISSION_DENIED
@@ -2597,8 +2625,10 @@ Returns a generation-safe cached physical plan or optimizes and records a new on
 const PERMISSION_DENIED = 9029
 ```
 
+Defines the permission denied constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L53)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L62)
 
 <a id="function-function-minisql-executor-executor-permissionfailure-function-permissionfailure-operation-detail-src-minisql-executor-executor-ml-2072982062"></a>
 ### permissionFailure
@@ -2611,11 +2641,11 @@ Implements permission failure for this module. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `detail` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `detail` | `dynamic` | — | detail value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3634)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3997)
 
 <a id="function-function-minisql-executor-executor-persistedprogrambodysupported-function-persistedprogrambodysupported-statement-src-minisql-executor-executor-ml-1886903471"></a>
 ### persistedProgramBodySupported
@@ -2628,10 +2658,10 @@ Returns whether the persisted statement formatter preserves the entire DML body.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1619)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1790)
 
 <a id="constant-constant-minisql-executor-executor-plan-cache-capacity-const-plan-cache-capacity-64-src-minisql-executor-executor-ml-1481549155"></a>
 ### PLAN_CACHE_CAPACITY
@@ -2640,8 +2670,10 @@ Returns whether the persisted statement formatter preserves the entire DML body.
 const PLAN_CACHE_CAPACITY = 64
 ```
 
+Defines the plan cache capacity constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L61)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L76)
 
 <a id="function-function-minisql-executor-executor-plancacheentrycount-function-plancacheentrycount-engine-src-minisql-executor-executor-ml-1611185358"></a>
 ### planCacheEntryCount
@@ -2654,10 +2686,10 @@ Exposes non-sensitive optimizer cache counters for diagnostics and tests.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L271)
 
 <a id="function-function-minisql-executor-executor-plancachehitcount-function-plancachehitcount-engine-src-minisql-executor-executor-ml-670064736"></a>
 ### planCacheHitCount
@@ -2670,10 +2702,10 @@ Returns cumulative hits of entries still resident in the session cache.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L278)
 
 <a id="function-function-minisql-executor-executor-pollquerycontrol-function-pollquerycontrol-engine-operation-src-minisql-executor-executor-ml-257719047"></a>
 ### pollQueryControl
@@ -2686,11 +2718,11 @@ Polls administrator cancellation and the monotonic execution deadline.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L419)
 
 <a id="function-function-minisql-executor-executor-preparedatabase-function-preparedatabase-database-src-minisql-executor-executor-ml-262138321"></a>
 ### prepareDatabase
@@ -2703,10 +2735,10 @@ Performs the index readiness pass once for an opened database. Clean marker stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L395)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L440)
 
 - [minisql.executor.executor.PreparedStatementState](Type-minisql-executor-executor-preparedstatementstate-1869459177.md) — struct
 <a id="function-function-minisql-executor-executor-principal-function-principal-engine-src-minisql-executor-executor-ml-1645409502"></a>
@@ -2720,10 +2752,10 @@ Implements principal for this module. Returns the computed value or operation st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L446)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L496)
 
 <a id="function-function-minisql-executor-executor-privilegecode-function-privilegecode-name-objecttype-src-minisql-executor-executor-ml-227622704"></a>
 ### privilegeCode
@@ -2736,11 +2768,11 @@ Implements privilege code for this module. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3944)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4343)
 
 <a id="function-function-minisql-executor-executor-privilegecodes-function-privilegecodes-names-objecttype-src-minisql-executor-executor-ml-1500901271"></a>
 ### privilegeCodes
@@ -2753,11 +2785,11 @@ Implements privilege codes for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `names` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
+| `names` | `dynamic` | — | names value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3975)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4377)
 
 <a id="constant-constant-minisql-executor-executor-procedure-parameter-metadata-v1-const-procedure-parameter-metadata-v1-minisql-parameter-metadata-v1-src-minisql-executor-executor-ml-2080838468"></a>
 ### PROCEDURE_PARAMETER_METADATA_V1
@@ -2769,7 +2801,7 @@ const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
 Identifies the flattened, versioned parameter metadata stored with procedures.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L91)
 
 <a id="function-function-minisql-executor-executor-projectsubqueryrows-function-projectsubqueryrows-engine-bound-source-pagetransaction-src-minisql-executor-executor-ml-373874092"></a>
 ### projectSubqueryRows
@@ -2782,13 +2814,13 @@ Filters and projects a non-grouped row set whose expressions contain subqueries.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2865)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3169)
 
 <a id="constant-constant-minisql-executor-executor-query-cancelled-const-query-cancelled-9035-src-minisql-executor-executor-ml-1111187330"></a>
 ### QUERY_CANCELLED
@@ -2797,8 +2829,10 @@ Filters and projects a non-grouped row set whose expressions contain subqueries.
 const QUERY_CANCELLED = 9035
 ```
 
+Defines the query cancelled constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L68)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L86)
 
 <a id="constant-constant-minisql-executor-executor-query-timeout-const-query-timeout-9036-src-minisql-executor-executor-ml-974921613"></a>
 ### QUERY_TIMEOUT
@@ -2807,8 +2841,10 @@ const QUERY_CANCELLED = 9035
 const QUERY_TIMEOUT = 9036
 ```
 
+Defines the query timeout constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L69)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L88)
 
 - [minisql.executor.executor.QueryControl](Type-minisql-executor-executor-querycontrol-502790795.md) — struct
 - [minisql.executor.executor.QueryMemoryManager](Type-minisql-executor-executor-querymemorymanager-1878359024.md) — struct
@@ -2824,11 +2860,11 @@ Derives a spill row threshold from sampled row width and the byte budget.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L360)
 
 <a id="function-function-minisql-executor-executor-rebuildindexesforddl-function-rebuildindexesforddl-engine-bound-statement-src-minisql-executor-executor-ml-1225417799"></a>
 ### rebuildIndexesForDdl
@@ -2841,12 +2877,12 @@ Rebuilds only indexes whose table schema changed in one autocommit DDL. Unrelate
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1779)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1965)
 
 - [minisql.executor.executor.RecursiveCteFrame](Type-minisql-executor-executor-recursivecteframe-1748414545.md) — struct
 <a id="function-function-minisql-executor-executor-recursiverowscontain-function-recursiverowscontain-rows-candidate-src-minisql-executor-executor-ml-685192766"></a>
@@ -2860,11 +2896,11 @@ Returns true when a recursive result row is already present by SQL value equalit
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `candidate` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `candidate` | `dynamic` | — | candidate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2058)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2268)
 
 <a id="function-function-minisql-executor-executor-recursiveworkingrows-function-recursiveworkingrows-engine-name-src-minisql-executor-executor-ml-2002064025"></a>
 ### recursiveWorkingRows
@@ -2877,11 +2913,11 @@ Returns the innermost active delta for a recursive self-reference.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2066)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2278)
 
 <a id="function-function-minisql-executor-executor-remembersequencevalue-function-remembersequencevalue-engine-name-value-src-minisql-executor-executor-ml-941748772"></a>
 ### rememberSequenceValue
@@ -2894,12 +2930,12 @@ Implements remember sequence value for this module. Returns the computed value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L488)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L547)
 
 <a id="function-function-minisql-executor-executor-replacemergecolumn-function-replacemergecolumn-expression-statement-sourcetable-sourcerow-src-minisql-executor-executor-ml-2090429325"></a>
 ### replaceMergeColumn
@@ -2912,13 +2948,13 @@ Resolves one qualified MERGE source/target column for a concrete source row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `sourceTable` | `dynamic` | — |  |
-| `sourceRow` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `sourceTable` | `dynamic` | — | sourceTable value consumed by this operation. |
+| `sourceRow` | `dynamic` | — | sourceRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1564)
 
 <a id="function-function-minisql-executor-executor-replacemergeexpression-function-replacemergeexpression-expression-statement-sourcetable-sourcerow-src-minisql-executor-executor-ml-1329509965"></a>
 ### replaceMergeExpression
@@ -2931,13 +2967,13 @@ Rewrites a MERGE expression for one source row while leaving target columns bind
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `sourceTable` | `dynamic` | — |  |
-| `sourceRow` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `sourceTable` | `dynamic` | — | sourceTable value consumed by this operation. |
+| `sourceRow` | `dynamic` | — | sourceRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1435)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1584)
 
 <a id="function-function-minisql-executor-executor-replaceprocedureexpression-function-replaceprocedureexpression-expression-parameternames-parametervalues-src-minisql-executor-executor-ml-2146441588"></a>
 ### replaceProcedureExpression
@@ -2950,12 +2986,12 @@ Substitutes named procedure inputs throughout a supported DML expression.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `parameterNames` | `dynamic` | — |  |
-| `parameterValues` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `parameterNames` | `dynamic` | — | parameterNames value consumed by this operation. |
+| `parameterValues` | `dynamic` | — | parameterValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1482)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1637)
 
 <a id="function-function-minisql-executor-executor-replaceprocedureparameter-function-replaceprocedureparameter-expression-parameternames-parametervalues-src-minisql-executor-executor-ml-1207754032"></a>
 ### replaceProcedureParameter
@@ -2968,12 +3004,12 @@ Replaces an unqualified procedure parameter reference with its invocation value.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `parameterNames` | `dynamic` | — |  |
-| `parameterValues` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `parameterNames` | `dynamic` | — | parameterNames value consumed by this operation. |
+| `parameterValues` | `dynamic` | — | parameterValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1471)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1623)
 
 <a id="function-function-minisql-executor-executor-replaceprocedurestatement-function-replaceprocedurestatement-statement-parameternames-parametervalues-src-minisql-executor-executor-ml-1689497001"></a>
 ### replaceProcedureStatement
@@ -2986,12 +3022,12 @@ Substitutes procedure parameters in one persisted INSERT, UPDATE, or DELETE body
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `parameterNames` | `dynamic` | — |  |
-| `parameterValues` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `parameterNames` | `dynamic` | — | parameterNames value consumed by this operation. |
+| `parameterValues` | `dynamic` | — | parameterValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1676)
 
 <a id="function-function-minisql-executor-executor-replacetriggerexpression-function-replacetriggerexpression-expression-table-oldrow-newrow-src-minisql-executor-executor-ml-1569511131"></a>
 ### replaceTriggerExpression
@@ -3004,13 +3040,13 @@ Implements replace trigger expression for this module. Requires arguments that s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `oldRow` | `dynamic` | — |  |
-| `newRow` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `oldRow` | `dynamic` | — | oldRow value consumed by this operation. |
+| `newRow` | `dynamic` | — | newRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1327)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1460)
 
 <a id="function-function-minisql-executor-executor-replacetriggerreturning-function-replacetriggerreturning-items-table-oldrow-newrow-src-minisql-executor-executor-ml-2125935561"></a>
 ### replaceTriggerReturning
@@ -3023,13 +3059,13 @@ Implements replace trigger returning for this module. Returns the computed value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `oldRow` | `dynamic` | — |  |
-| `newRow` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `oldRow` | `dynamic` | — | oldRow value consumed by this operation. |
+| `newRow` | `dynamic` | — | newRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1507)
 
 <a id="function-function-minisql-executor-executor-replacetriggerstatement-function-replacetriggerstatement-statement-table-oldrow-newrow-src-minisql-executor-executor-ml-146068100"></a>
 ### replaceTriggerStatement
@@ -3042,13 +3078,13 @@ Implements replace trigger statement for this module. Requires arguments that sa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `table` | `dynamic` | — |  |
-| `oldRow` | `dynamic` | — |  |
-| `newRow` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `oldRow` | `dynamic` | — | oldRow value consumed by this operation. |
+| `newRow` | `dynamic` | — | newRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1382)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1523)
 
 <a id="function-function-minisql-executor-executor-requiregrantoption-function-requiregrantoption-engine-objecttype-objectid-privilege-operation-src-minisql-executor-executor-ml-1575741859"></a>
 ### requireGrantOption
@@ -3061,14 +3097,14 @@ Implements require grant option for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4040)
 
 <a id="function-function-minisql-executor-executor-requireobjectschema-function-requireobjectschema-engine-objectname-operation-src-minisql-executor-executor-ml-1537236189"></a>
 ### requireObjectSchema
@@ -3081,12 +3117,12 @@ Verifies that the namespace of a qualified object exists before object DDL.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `objectName` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `objectName` | `dynamic` | — | objectName value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1248)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1368)
 
 <a id="function-function-minisql-executor-executor-requireprivilege-function-requireprivilege-engine-objecttype-objectid-privilege-operation-src-minisql-executor-executor-ml-1806371971"></a>
 ### requirePrivilege
@@ -3099,14 +3135,14 @@ Implements require privilege for this module. Returns the computed value or oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3656)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4026)
 
 <a id="function-function-minisql-executor-executor-requiresecurityadmin-function-requiresecurityadmin-engine-operation-src-minisql-executor-executor-ml-861651211"></a>
 ### requireSecurityAdmin
@@ -3119,11 +3155,11 @@ Implements require security admin for this module. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4003)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4410)
 
 <a id="function-function-minisql-executor-executor-requiretableprivilegebyname-function-requiretableprivilegebyname-engine-tablename-privilege-operation-src-minisql-executor-executor-ml-1866733741"></a>
 ### requireTablePrivilegeByName
@@ -3136,13 +3172,13 @@ Implements require table privilege by name for this module. Returns the computed
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `tableName` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `tableName` | `dynamic` | — | tableName value consumed by this operation. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3674)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4053)
 
 <a id="function-function-minisql-executor-executor-resetquerymemory-function-resetquerymemory-engine-src-minisql-executor-executor-ml-1057622286"></a>
 ### resetQueryMemory
@@ -3155,10 +3191,10 @@ Clears last-statement accounting without changing the configured policy.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L285)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L318)
 
 <a id="function-function-minisql-executor-executor-resettransaction-function-resettransaction-engine-src-minisql-executor-executor-ml-956724486"></a>
 ### resetTransaction
@@ -3171,10 +3207,10 @@ Resets transaction using the supplied inputs. Returns the computed value or oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1251)
 
 <a id="constant-constant-minisql-executor-executor-result-command-const-result-command-1-src-minisql-executor-executor-ml-1919843868"></a>
 ### RESULT_COMMAND
@@ -3183,8 +3219,10 @@ Resets transaction using the supplied inputs. Returns the computed value or oper
 const RESULT_COMMAND = 1
 ```
 
+Defines the result command constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L59)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L72)
 
 <a id="constant-constant-minisql-executor-executor-result-rows-const-result-rows-2-src-minisql-executor-executor-ml-1453942231"></a>
 ### RESULT_ROWS
@@ -3193,8 +3231,10 @@ const RESULT_COMMAND = 1
 const RESULT_ROWS = 2
 ```
 
+Defines the result rows constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L60)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L74)
 
 <a id="function-function-minisql-executor-executor-returningresult-function-returningresult-bound-result-src-minisql-executor-executor-ml-1838229607"></a>
 ### returningResult
@@ -3207,11 +3247,11 @@ Implements returning result for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `result` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1924)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2125)
 
 <a id="function-function-minisql-executor-executor-rollbackexplicit-function-rollbackexplicit-engine-src-minisql-executor-executor-ml-1519451594"></a>
 ### rollbackExplicit
@@ -3224,10 +3264,10 @@ Implements rollback explicit for this module. Returns the computed value or oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3588)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3943)
 
 <a id="function-function-minisql-executor-executor-rowresult-function-rowresult-columns-rows-src-minisql-executor-executor-ml-2002219676"></a>
 ### rowResult
@@ -3240,11 +3280,11 @@ Implements row result for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `columns` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `columns` | `dynamic` | — | columns value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L272)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L302)
 
 <a id="function-function-minisql-executor-executor-runbounddml-function-runbounddml-engine-bound-pagetransaction-src-minisql-executor-executor-ml-1756577415"></a>
 ### runBoundDml
@@ -3257,12 +3297,12 @@ Runs bound DML using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1837)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2028)
 
 <a id="function-function-minisql-executor-executor-runmerge-function-runmerge-engine-statement-pagetransaction-src-minisql-executor-executor-ml-1875761044"></a>
 ### runMerge
@@ -3275,12 +3315,12 @@ Executes every MERGE source row against the same transactional target snapshot.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1969)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2175)
 
 <a id="function-function-minisql-executor-executor-scanboundsource-function-scanboundsource-engine-source-pagetransaction-offset-limit-requiredcolumns-src-minisql-executor-executor-ml-77683190"></a>
 ### scanBoundSource
@@ -3293,15 +3333,15 @@ Scans a catalog table, named query, recursive fixpoint, or recursive delta sourc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `limit` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `limit` | `dynamic` | — | limit value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2189)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2413)
 
 - [minisql.executor.executor.SelectCursor](Type-minisql-executor-executor-selectcursor-2125118112.md) — struct
 <a id="function-function-minisql-executor-executor-selecthaspotentialouterreferences-function-selecthaspotentialouterreferences-statement-src-minisql-executor-executor-ml-548647991"></a>
@@ -3315,10 +3355,10 @@ Returns whether any expression in a SELECT may need a concrete outer row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L908)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L993)
 
 <a id="function-function-minisql-executor-executor-selectprojected-function-selectprojected-engine-bound-pagetransaction-src-minisql-executor-executor-ml-488636331"></a>
 ### selectProjected
@@ -3331,12 +3371,12 @@ Implements select projected for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3218)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3551)
 
 <a id="function-function-minisql-executor-executor-selectrequiredcolumns-function-selectrequiredcolumns-bound-src-minisql-executor-executor-ml-259646204"></a>
 ### selectRequiredColumns
@@ -3349,10 +3389,10 @@ Computes one stable local column mask per source. Global bound indexes are colle
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2951)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3258)
 
 <a id="function-function-minisql-executor-executor-selectrows-function-selectrows-engine-bound-pagetransaction-src-minisql-executor-executor-ml-1089900231"></a>
 ### selectRows
@@ -3365,12 +3405,12 @@ Implements select rows for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3647)
 
 <a id="function-function-minisql-executor-executor-selectusesnextval-function-selectusesnextval-statement-src-minisql-executor-executor-ml-1850477497"></a>
 ### selectUsesNextval
@@ -3383,10 +3423,10 @@ Walks all SELECT clauses, CTEs, joins, and set-operation branches for NEXTVAL. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4382)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4827)
 
 <a id="function-function-minisql-executor-executor-sequenceargumentname-function-sequenceargumentname-expression-operation-src-minisql-executor-executor-ml-1314049115"></a>
 ### sequenceArgumentName
@@ -3399,11 +3439,11 @@ Implements sequence argument name for this module. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L479)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L535)
 
 - [minisql.executor.executor.SequenceSessionValue](Type-minisql-executor-executor-sequencesessionvalue-1742946274.md) — struct
 <a id="function-function-minisql-executor-executor-sessionidentifier-function-sessionidentifier-engine-src-minisql-executor-executor-ml-473604768"></a>
@@ -3417,10 +3457,10 @@ Implements session identifier for this module. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4723)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5188)
 
 <a id="function-function-minisql-executor-executor-setprincipal-function-setprincipal-engine-principalid-src-minisql-executor-executor-ml-1434755529"></a>
 ### setPrincipal
@@ -3433,11 +3473,11 @@ Implements set principal for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L434)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L483)
 
 <a id="function-function-minisql-executor-executor-setquerymemorylimit-function-setquerymemorylimit-engine-limitbytes-src-minisql-executor-executor-ml-2012910312"></a>
 ### setQueryMemoryLimit
@@ -3450,11 +3490,11 @@ Configures the soft per-query memory budget used by blocking operators.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `limitBytes` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `limitBytes` | `dynamic` | — | limitBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L309)
 
 <a id="function-function-minisql-executor-executor-simplebatcheligible-function-simplebatcheligible-bound-executable-src-minisql-executor-executor-ml-847775378"></a>
 ### simpleBatchEligible
@@ -3467,11 +3507,11 @@ Identifies a pipeline that can filter, project and apply LIMIT directly over bou
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `executable` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `executable` | `dynamic` | — | executable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3009)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3322)
 
 <a id="function-function-minisql-executor-executor-simplebatchprojected-function-simplebatchprojected-engine-bound-pagetransaction-requiredcolumns-wherepredicate-src-minisql-executor-executor-ml-1985148857"></a>
 ### simpleBatchProjected
@@ -3484,14 +3524,14 @@ Executes a non-blocking single-table query with at most one source batch and the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
-| `wherePredicate` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
+| `wherePredicate` | `dynamic` | — | wherePredicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3019)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3337)
 
 <a id="function-function-minisql-executor-executor-simplecountstareligible-function-simplecountstareligible-bound-src-minisql-executor-executor-ml-1341036652"></a>
 ### simpleCountStarEligible
@@ -3504,10 +3544,10 @@ Recognizes the exact aggregate shape whose result depends only on live-slot visi
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2988)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3296)
 
 <a id="function-function-minisql-executor-executor-simplecountstarprojected-function-simplecountstarprojected-engine-bound-pagetransaction-src-minisql-executor-executor-ml-1234174103"></a>
 ### simpleCountStarProjected
@@ -3520,12 +3560,12 @@ Projects a scalar COUNT(*) directly from checksum-verified heap slot headers.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3000)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3311)
 
 <a id="function-function-minisql-executor-executor-simpletopneligible-function-simpletopneligible-bound-executable-src-minisql-executor-executor-ml-1312478808"></a>
 ### simpleTopNEligible
@@ -3538,11 +3578,11 @@ Recognizes an ordered single-table LIMIT that can maintain only the current best
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `executable` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `executable` | `dynamic` | — | executable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3495)
 
 <a id="function-function-minisql-executor-executor-simpletopnprojected-function-simpletopnprojected-engine-bound-pagetransaction-requiredcolumns-wherepredicate-src-minisql-executor-executor-ml-720681283"></a>
 ### simpleTopNProjected
@@ -3555,14 +3595,14 @@ Fuses scan, filter, projection, and bounded Top-N retention. At most one scan ba
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
-| `pageTransaction` | `dynamic` | — |  |
-| `requiredColumns` | `dynamic` | — |  |
-| `wherePredicate` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
+| `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
+| `wherePredicate` | `dynamic` | — | wherePredicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L3511)
 
 <a id="function-function-minisql-executor-executor-splitobjectname-function-splitobjectname-name-src-minisql-executor-executor-ml-822390495"></a>
 ### splitObjectName
@@ -3575,10 +3615,10 @@ Splits a canonical object name into schema and local name, defaulting to public.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L2328)
 
 <a id="function-function-minisql-executor-executor-stageddl-function-stageddl-ddltransaction-bound-src-minisql-executor-executor-ml-1110310964"></a>
 ### stageDdl
@@ -3591,11 +3631,11 @@ Implements stage DDL for this module. Returns the computed value or operation st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `ddlTransaction` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
+| `ddlTransaction` | `dynamic` | — | ddlTransaction value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1220)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1335)
 
 <a id="function-function-minisql-executor-executor-statementisolation-function-statementisolation-engine-src-minisql-executor-executor-ml-1687141350"></a>
 ### statementIsolation
@@ -3608,10 +3648,10 @@ Implements statement isolation for this module. Requires arguments that satisfy 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4431)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4879)
 
 <a id="function-function-minisql-executor-executor-statementusesreadlock-function-statementusesreadlock-statement-src-minisql-executor-executor-ml-927737241"></a>
 ### statementUsesReadLock
@@ -3624,10 +3664,10 @@ Classifies statements that may share physical database execution. Pure SELECT, p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4408)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4854)
 
 <a id="function-function-minisql-executor-executor-statementuseswritelock-function-statementuseswritelock-statement-src-minisql-executor-executor-ml-1933721929"></a>
 ### statementUsesWriteLock
@@ -3640,10 +3680,10 @@ Classifies statements that require exclusive physical database execution. This i
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4418)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4865)
 
 <a id="function-function-minisql-executor-executor-substituteexpression-function-substituteexpression-expression-parameters-src-minisql-executor-executor-ml-1566317082"></a>
 ### substituteExpression
@@ -3656,11 +3696,11 @@ Implements substitute expression for this module. Requires arguments that satisf
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `parameters` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `parameters` | `dynamic` | — | parameters value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L570)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L637)
 
 <a id="function-function-minisql-executor-executor-substituteoutercolumn-function-substituteoutercolumn-expression-sources-rowvalues-statement-src-minisql-executor-executor-ml-2079039637"></a>
 ### substituteOuterColumn
@@ -3673,13 +3713,13 @@ Resolves a qualified outer reference against the current joined source row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `rowValues` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `rowValues` | `dynamic` | — | rowValues value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L933)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1022)
 
 <a id="function-function-minisql-executor-executor-substituteouterexpression-function-substituteouterexpression-expression-sources-rowvalues-statement-src-minisql-executor-executor-ml-544362361"></a>
 ### substituteOuterExpression
@@ -3692,13 +3732,13 @@ Substitutes outer-row values throughout an expression while preserving inner sha
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `rowValues` | `dynamic` | — |  |
-| `statement` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `rowValues` | `dynamic` | — | rowValues value consumed by this operation. |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L954)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1047)
 
 <a id="function-function-minisql-executor-executor-substituteouterselect-function-substituteouterselect-statement-sources-rowvalues-src-minisql-executor-executor-ml-1721802975"></a>
 ### substituteOuterSelect
@@ -3711,12 +3751,12 @@ Copies a nested SELECT with every non-shadowed outer reference replaced by a row
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `rowValues` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `rowValues` | `dynamic` | — | rowValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1008)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1104)
 
 <a id="function-function-minisql-executor-executor-substitutereturning-function-substitutereturning-items-parameters-src-minisql-executor-executor-ml-454875552"></a>
 ### substituteReturning
@@ -3729,11 +3769,11 @@ Implements substitute returning for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `parameters` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `parameters` | `dynamic` | — | parameters value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L667)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L738)
 
 <a id="function-function-minisql-executor-executor-substituteselect-function-substituteselect-statement-parameters-src-minisql-executor-executor-ml-959972121"></a>
 ### substituteSelect
@@ -3746,11 +3786,11 @@ Implements substitute select for this module. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `parameters` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `parameters` | `dynamic` | — | parameters value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L630)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L699)
 
 <a id="function-function-minisql-executor-executor-substitutestatement-function-substitutestatement-statement-parameters-src-minisql-executor-executor-ml-152799815"></a>
 ### substituteStatement
@@ -3763,11 +3803,11 @@ Implements substitute statement for this module. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statement` | `dynamic` | — |  |
-| `parameters` | `dynamic` | — |  |
+| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `parameters` | `dynamic` | — | parameters value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L679)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L752)
 
 <a id="function-function-minisql-executor-executor-targetmilestone-function-targetmilestone-src-minisql-executor-executor-ml-268555050"></a>
 ### targetMilestone
@@ -3776,10 +3816,10 @@ Implements substitute statement for this module. Requires arguments that satisfy
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql executor executor module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4755)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L5221)
 
 <a id="constant-constant-minisql-executor-executor-transaction-state-const-transaction-state-9011-src-minisql-executor-executor-ml-342426264"></a>
 ### TRANSACTION_STATE
@@ -3788,8 +3828,10 @@ Implements target milestone for this module. Returns the computed value or opera
 const TRANSACTION_STATE = 9011
 ```
 
+Defines the transaction state constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L46)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L48)
 
 <a id="function-function-minisql-executor-executor-triggercolumnvalue-function-triggercolumnvalue-table-row-qualifier-columnname-src-minisql-executor-executor-ml-1984102729"></a>
 ### triggerColumnValue
@@ -3802,13 +3844,13 @@ Implements trigger column value for this module. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `table` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
-| `qualifier` | `dynamic` | — |  |
-| `columnName` | `dynamic` | — |  |
+| `table` | `dynamic` | — | table value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
+| `qualifier` | `dynamic` | — | qualifier value consumed by this operation. |
+| `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1316)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1445)
 
 <a id="function-function-minisql-executor-executor-triggereventcode-function-triggereventcode-bound-src-minisql-executor-executor-ml-1747003116"></a>
 ### triggerEventCode
@@ -3821,10 +3863,10 @@ Implements trigger event code for this module. Returns the computed value or ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1305)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1430)
 
 <a id="function-function-minisql-executor-executor-typedescription-function-typedescription-column-src-minisql-executor-executor-ml-348776582"></a>
 ### typeDescription
@@ -3837,10 +3879,10 @@ Implements type description for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `column` | `dynamic` | — |  |
+| `column` | `dynamic` | — | column value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L4581)
 
 <a id="constant-constant-minisql-executor-executor-unsupported-sql-const-unsupported-sql-9025-src-minisql-executor-executor-ml-512500125"></a>
 ### UNSUPPORTED_SQL
@@ -3849,8 +3891,10 @@ Implements type description for this module. Returns the computed value or opera
 const UNSUPPORTED_SQL = 9025
 ```
 
+Defines the unsupported sql constant used by the minisql executor executor module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L51)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L58)
 
 <a id="function-function-minisql-executor-executor-updatetouchestriggercolumn-function-updatetouchestriggercolumn-bound-trigger-src-minisql-executor-executor-ml-225563956"></a>
 ### updateTouchesTriggerColumn
@@ -3863,11 +3907,11 @@ Implements update touches trigger column for this module. Returns the computed v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `trigger` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `trigger` | `dynamic` | — | trigger value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1550)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1710)
 
 <a id="function-function-minisql-executor-executor-validatealtertablerows-function-validatealtertablerows-engine-bound-src-minisql-executor-executor-ml-1988709686"></a>
 ### validateAlterTableRows
@@ -3880,11 +3924,11 @@ Validates ALTER TABLE operations whose safety depends on currently stored rows. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `bound` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L1348)
 
 <a id="function-function-minisql-executor-executor-validateopen-function-validateopen-engine-operation-src-minisql-executor-executor-ml-799733671"></a>
 ### validateOpen
@@ -3893,12 +3937,12 @@ Validates ALTER TABLE operations whose safety depends on currently stored rows. 
 function validateOpen(engine, operation)
 ```
 
-Validates open using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Validates open for the minisql executor executor workflow. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `engine` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `engine` | `dynamic` | — | engine value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L455)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L507)

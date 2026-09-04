@@ -12,7 +12,7 @@ struct ProjectedRow
 Groups the projected row state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L27)
 
 ## Members
 
@@ -26,7 +26,7 @@ orderValues
 Contains the ordered order values collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L33)
 
 <a id="field-field-minisql-executor-projection-projectedrow-source-source-src-minisql-executor-projection-ml-188855655"></a>
 ### source
@@ -38,7 +38,7 @@ source
 Stores the source associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L29)
 
 <a id="field-field-minisql-executor-projection-projectedrow-values-values-src-minisql-executor-projection-ml-871398201"></a>
 ### values
@@ -50,4 +50,4 @@ values
 Contains the ordered values collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L31)

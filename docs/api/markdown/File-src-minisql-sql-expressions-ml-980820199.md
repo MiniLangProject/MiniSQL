@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql sql expressions facilities for this project.
+
 Package: [`minisql.sql.expressions`](Package-minisql-sql-expressions-81527389.md)
 
 Reachable from entry: **yes**
@@ -27,10 +29,10 @@ Returns the absolute value while preserving full-width signed integer semantics.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L967)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1092)
 
 <a id="function-function-minisql-sql-expressions-aggregate-function-aggregate-name-argument-separator-distinct-typeinfo-countstar-src-minisql-sql-expressions-ml-600154012"></a>
 ### aggregate
@@ -43,15 +45,15 @@ Implements aggregate for this module. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `argument` | `dynamic` | — |  |
-| `separator` | `dynamic` | — |  |
-| `distinct` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
-| `countStar` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `argument` | `dynamic` | — | argument value consumed by this operation. |
+| `separator` | `dynamic` | — | separator value consumed by this operation. |
+| `distinct` | `dynamic` | — | distinct value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
+| `countStar` | `dynamic` | — | countStar value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L344)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L400)
 
 <a id="function-function-minisql-sql-expressions-asciicase-function-asciicase-value-upper-src-minisql-sql-expressions-ml-1924295497"></a>
 ### asciiCase
@@ -64,11 +66,11 @@ Applies ASCII case conversion while preserving every non-ASCII UTF-8 byte.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `upper` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `upper` | `dynamic` | — | upper value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L858)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L970)
 
 <a id="function-function-minisql-sql-expressions-betweenpredicate-function-betweenpredicate-operand-lower-upper-negated-src-minisql-sql-expressions-ml-1156326868"></a>
 ### betweenPredicate
@@ -81,13 +83,13 @@ Implements between predicate for this module. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operand` | `dynamic` | — |  |
-| `lower` | `dynamic` | — |  |
-| `upper` | `dynamic` | — |  |
-| `negated` | `dynamic` | — |  |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `lower` | `dynamic` | — | lower value consumed by this operation. |
+| `upper` | `dynamic` | — | upper value consumed by this operation. |
+| `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L412)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L485)
 
 <a id="function-function-minisql-sql-expressions-binary-function-binary-operator-left-right-typeinfo-src-minisql-sql-expressions-ml-2011680027"></a>
 ### binary
@@ -100,13 +102,13 @@ Implements binary for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — |  |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L324)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L372)
 
 <a id="constant-constant-minisql-sql-expressions-binding-error-const-binding-error-9020-src-minisql-sql-expressions-ml-1399282056"></a>
 ### BINDING_ERROR
@@ -115,8 +117,10 @@ Implements binary for this module. Requires arguments that satisfy the validatio
 const BINDING_ERROR = 9020
 ```
 
+Defines the binding error constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L20)
 
 <a id="constant-constant-minisql-sql-expressions-bound-aggregate-const-bound-aggregate-6-src-minisql-sql-expressions-ml-816275085"></a>
 ### BOUND_AGGREGATE
@@ -125,8 +129,10 @@ const BINDING_ERROR = 9020
 const BOUND_AGGREGATE = 6
 ```
 
+Defines the bound aggregate constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L33)
 
 <a id="constant-constant-minisql-sql-expressions-bound-between-const-bound-between-11-src-minisql-sql-expressions-ml-741015819"></a>
 ### BOUND_BETWEEN
@@ -135,8 +141,10 @@ const BOUND_AGGREGATE = 6
 const BOUND_BETWEEN = 11
 ```
 
+Defines the bound between constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L43)
 
 <a id="constant-constant-minisql-sql-expressions-bound-binary-const-bound-binary-4-src-minisql-sql-expressions-ml-2048939277"></a>
 ### BOUND_BINARY
@@ -145,8 +153,10 @@ const BOUND_BETWEEN = 11
 const BOUND_BINARY = 4
 ```
 
+Defines the bound binary constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L29)
 
 <a id="constant-constant-minisql-sql-expressions-bound-case-const-bound-case-7-src-minisql-sql-expressions-ml-747070612"></a>
 ### BOUND_CASE
@@ -155,8 +165,10 @@ const BOUND_BINARY = 4
 const BOUND_CASE = 7
 ```
 
+Defines the bound case constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L35)
 
 <a id="constant-constant-minisql-sql-expressions-bound-cast-const-bound-cast-8-src-minisql-sql-expressions-ml-1628901069"></a>
 ### BOUND_CAST
@@ -165,8 +177,10 @@ const BOUND_CASE = 7
 const BOUND_CAST = 8
 ```
 
+Defines the bound cast constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L37)
 
 <a id="constant-constant-minisql-sql-expressions-bound-column-const-bound-column-2-src-minisql-sql-expressions-ml-1830967293"></a>
 ### BOUND_COLUMN
@@ -175,8 +189,10 @@ const BOUND_CAST = 8
 const BOUND_COLUMN = 2
 ```
 
+Defines the bound column constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L25)
 
 <a id="constant-constant-minisql-sql-expressions-bound-in-const-bound-in-10-src-minisql-sql-expressions-ml-655882104"></a>
 ### BOUND_IN
@@ -185,8 +201,10 @@ const BOUND_COLUMN = 2
 const BOUND_IN = 10
 ```
 
+Defines the bound in constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L41)
 
 <a id="constant-constant-minisql-sql-expressions-bound-is-null-const-bound-is-null-5-src-minisql-sql-expressions-ml-1029242754"></a>
 ### BOUND_IS_NULL
@@ -195,8 +213,10 @@ const BOUND_IN = 10
 const BOUND_IS_NULL = 5
 ```
 
+Defines the bound is null constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L31)
 
 <a id="constant-constant-minisql-sql-expressions-bound-literal-const-bound-literal-1-src-minisql-sql-expressions-ml-2045380418"></a>
 ### BOUND_LITERAL
@@ -205,8 +225,10 @@ const BOUND_IS_NULL = 5
 const BOUND_LITERAL = 1
 ```
 
+Defines the bound literal constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L23)
 
 <a id="constant-constant-minisql-sql-expressions-bound-scalar-const-bound-scalar-9-src-minisql-sql-expressions-ml-265121338"></a>
 ### BOUND_SCALAR
@@ -215,8 +237,10 @@ const BOUND_LITERAL = 1
 const BOUND_SCALAR = 9
 ```
 
+Defines the bound scalar constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L39)
 
 <a id="constant-constant-minisql-sql-expressions-bound-subquery-const-bound-subquery-14-src-minisql-sql-expressions-ml-783498354"></a>
 ### BOUND_SUBQUERY
@@ -225,8 +249,10 @@ const BOUND_SCALAR = 9
 const BOUND_SUBQUERY = 14
 ```
 
+Defines the bound subquery constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L49)
 
 <a id="constant-constant-minisql-sql-expressions-bound-truth-test-const-bound-truth-test-12-src-minisql-sql-expressions-ml-1529943224"></a>
 ### BOUND_TRUTH_TEST
@@ -235,8 +261,10 @@ const BOUND_SUBQUERY = 14
 const BOUND_TRUTH_TEST = 12
 ```
 
+Defines the bound truth test constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L45)
 
 <a id="constant-constant-minisql-sql-expressions-bound-unary-const-bound-unary-3-src-minisql-sql-expressions-ml-394298068"></a>
 ### BOUND_UNARY
@@ -245,8 +273,10 @@ const BOUND_TRUTH_TEST = 12
 const BOUND_UNARY = 3
 ```
 
+Defines the bound unary constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L27)
 
 <a id="constant-constant-minisql-sql-expressions-bound-window-const-bound-window-13-src-minisql-sql-expressions-ml-477633389"></a>
 ### BOUND_WINDOW
@@ -255,8 +285,10 @@ const BOUND_UNARY = 3
 const BOUND_WINDOW = 13
 ```
 
+Defines the bound window constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L47)
 
 - [minisql.sql.expressions.BoundAggregate](Type-minisql-sql-expressions-boundaggregate-321703190.md) — struct
 - [minisql.sql.expressions.BoundBetween](Type-minisql-sql-expressions-boundbetween-1479166313.md) — struct
@@ -280,12 +312,12 @@ Returns whether `needle` occurs in `source` at the supplied byte offset.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `needle` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `needle` | `dynamic` | — | needle value consumed by this operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L895)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1013)
 
 <a id="function-function-minisql-sql-expressions-casebranch-function-casebranch-condition-result-src-minisql-sql-expressions-ml-789695702"></a>
 ### caseBranch
@@ -298,11 +330,11 @@ Implements case branch for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `condition` | `dynamic` | — |  |
-| `result` | `dynamic` | — |  |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L354)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L412)
 
 <a id="function-function-minisql-sql-expressions-caseexpression-function-caseexpression-branches-elseexpression-typeinfo-src-minisql-sql-expressions-ml-854416207"></a>
 ### caseExpression
@@ -315,12 +347,12 @@ Implements case expression for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `branches` | `dynamic` | — |  |
-| `elseExpression` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `branches` | `dynamic` | — | branches value consumed by this operation. |
+| `elseExpression` | `dynamic` | — | elseExpression value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L363)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L424)
 
 <a id="function-function-minisql-sql-expressions-castexpression-function-castexpression-operand-targettype-src-minisql-sql-expressions-ml-152506130"></a>
 ### castExpression
@@ -333,11 +365,11 @@ Casts expression using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operand` | `dynamic` | — |  |
-| `targetType` | `dynamic` | — |  |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `targetType` | `dynamic` | — | targetType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L438)
 
 <a id="function-function-minisql-sql-expressions-checkpasses-function-checkpasses-expression-context-src-minisql-sql-expressions-ml-1778957065"></a>
 ### checkPasses
@@ -350,11 +382,11 @@ Checks passes using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1382)
 
 <a id="function-function-minisql-sql-expressions-civildatefromepochdays-function-civildatefromepochdays-days-src-minisql-sql-expressions-ml-1188779335"></a>
 ### civilDateFromEpochDays
@@ -367,10 +399,10 @@ Converts days since 1970-01-01 to Gregorian year, month and day.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `days` | `dynamic` | — |  |
+| `days` | `dynamic` | — | days value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L949)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1073)
 
 <a id="function-function-minisql-sql-expressions-column-function-column-index-typeinfo-src-minisql-sql-expressions-ml-1864292186"></a>
 ### column
@@ -383,11 +415,11 @@ Implements column for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `index` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `index` | `dynamic` | — | Zero-based index of the affected item. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L306)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L347)
 
 <a id="function-function-minisql-sql-expressions-comparisonresult-function-comparisonresult-left-right-operator-src-minisql-sql-expressions-ml-1687809711"></a>
 ### comparisonResult
@@ -400,12 +432,12 @@ Implements comparison result for this module. Returns the computed value or oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `operator` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `operator` | `dynamic` | — | operator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L778)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L884)
 
 <a id="function-function-minisql-sql-expressions-componentname-function-componentname-src-minisql-sql-expressions-ml-1272046120"></a>
 ### componentName
@@ -414,10 +446,10 @@ Implements comparison result for this module. Returns the computed value or oper
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql sql expressions module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1392)
 
 <a id="function-function-minisql-sql-expressions-containsaggregate-function-containsaggregate-expression-src-minisql-sql-expressions-ml-2077814370"></a>
 ### containsAggregate
@@ -430,10 +462,10 @@ Returns whether the supplied value satisfies the aggregate condition. Requires a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L622)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L718)
 
 <a id="function-function-minisql-sql-expressions-containssubquery-function-containssubquery-expression-src-minisql-sql-expressions-ml-1355758302"></a>
 ### containsSubquery
@@ -446,10 +478,10 @@ Returns true when an expression tree contains a row-dependent nested SELECT.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L437)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L519)
 
 <a id="function-function-minisql-sql-expressions-containssubquerylist-function-containssubquerylist-items-src-minisql-sql-expressions-ml-602274278"></a>
 ### containsSubqueryList
@@ -462,10 +494,10 @@ Returns true when at least one expression in a list contains a subquery.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L487)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L570)
 
 <a id="function-function-minisql-sql-expressions-containswindow-function-containswindow-expression-src-minisql-sql-expressions-ml-1763696578"></a>
 ### containsWindow
@@ -478,10 +510,10 @@ Returns whether the supplied value satisfies the window condition. Requires argu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L517)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L609)
 
 <a id="function-function-minisql-sql-expressions-containswindowlist-function-containswindowlist-items-src-minisql-sql-expressions-ml-1414774230"></a>
 ### containsWindowList
@@ -494,10 +526,10 @@ Returns whether the supplied value satisfies the window list condition. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L555)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L648)
 
 <a id="function-function-minisql-sql-expressions-evaluate-function-evaluate-expression-context-src-minisql-sql-expressions-ml-979657523"></a>
 ### evaluate
@@ -510,11 +542,11 @@ Evaluates evaluate using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1300)
 
 <a id="function-function-minisql-sql-expressions-evaluatebetween-function-evaluatebetween-expression-context-src-minisql-sql-expressions-ml-1591508465"></a>
 ### evaluateBetween
@@ -527,11 +559,11 @@ Evaluates between using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1270)
 
 <a id="function-function-minisql-sql-expressions-evaluatecase-function-evaluatecase-expression-context-src-minisql-sql-expressions-ml-161039363"></a>
 ### evaluateCase
@@ -544,11 +576,11 @@ Evaluates case using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L848)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L958)
 
 <a id="function-function-minisql-sql-expressions-evaluatein-function-evaluatein-expression-context-src-minisql-sql-expressions-ml-1120919715"></a>
 ### evaluateIn
@@ -561,11 +593,11 @@ Evaluates in using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1245)
 
 <a id="function-function-minisql-sql-expressions-evaluatescalar-function-evaluatescalar-expression-context-src-minisql-sql-expressions-ml-259117407"></a>
 ### evaluateScalar
@@ -578,11 +610,11 @@ Evaluates scalar using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1096)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1225)
 
 <a id="function-function-minisql-sql-expressions-evaluatescalarvalues-function-evaluatescalarvalues-expression-arguments-src-minisql-sql-expressions-ml-1180906980"></a>
 ### evaluateScalarValues
@@ -595,11 +627,11 @@ Evaluates a scalar after its arguments have already been evaluated. This entry p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `arguments` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `arguments` | `dynamic` | — | arguments value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L986)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1113)
 
 <a id="function-function-minisql-sql-expressions-evaluatetruthtest-function-evaluatetruthtest-expression-context-src-minisql-sql-expressions-ml-509246463"></a>
 ### evaluateTruthTest
@@ -612,11 +644,11 @@ Evaluates truth test using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1284)
 
 <a id="function-function-minisql-sql-expressions-fail-function-fail-code-operation-message-src-minisql-sql-expressions-ml-1085390465"></a>
 ### fail
@@ -625,16 +657,16 @@ Evaluates truth test using the supplied inputs. Returns the computed value or op
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql sql expressions module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L208)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L233)
 
 <a id="function-function-minisql-sql-expressions-inpredicate-function-inpredicate-operand-candidates-negated-src-minisql-sql-expressions-ml-1643100991"></a>
 ### inPredicate
@@ -647,12 +679,12 @@ Implements in predicate for this module. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operand` | `dynamic` | — |  |
-| `candidates` | `dynamic` | — |  |
-| `negated` | `dynamic` | — |  |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `candidates` | `dynamic` | — | candidates value consumed by this operation. |
+| `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L396)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L465)
 
 <a id="function-function-minisql-sql-expressions-integerdivide-function-integerdivide-left-right-src-minisql-sql-expressions-ml-1001956497"></a>
 ### integerDivide
@@ -665,11 +697,11 @@ Computes exact floor division for native integers.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L941)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1064)
 
 <a id="constant-constant-minisql-sql-expressions-invalid-argument-const-invalid-argument-9001-src-minisql-sql-expressions-ml-719178215"></a>
 ### INVALID_ARGUMENT
@@ -678,8 +710,10 @@ Computes exact floor division for native integers.
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L13)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L16)
 
 <a id="function-function-minisql-sql-expressions-isbaseboundexpression-function-isbaseboundexpression-value-src-minisql-sql-expressions-ml-1439032977"></a>
 ### isBaseBoundExpression
@@ -692,10 +726,10 @@ Returns whether the supplied value satisfies the base bound expression condition
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L236)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L265)
 
 <a id="function-function-minisql-sql-expressions-isboundaggregate-function-isboundaggregate-value-src-minisql-sql-expressions-ml-903333839"></a>
 ### isBoundAggregate
@@ -708,10 +742,10 @@ Returns whether the supplied value satisfies the bound aggregate condition. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L249)
 
 <a id="function-function-minisql-sql-expressions-isboundbetween-function-isboundbetween-value-src-minisql-sql-expressions-ml-1655655883"></a>
 ### isBoundBetween
@@ -724,10 +758,10 @@ Returns whether the supplied value satisfies the bound between condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L305)
 
 <a id="function-function-minisql-sql-expressions-isboundcase-function-isboundcase-value-src-minisql-sql-expressions-ml-74747395"></a>
 ### isBoundCase
@@ -740,10 +774,10 @@ Returns whether the supplied value satisfies the bound case condition. Returns t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L243)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L273)
 
 <a id="function-function-minisql-sql-expressions-isboundcast-function-isboundcast-value-src-minisql-sql-expressions-ml-9631865"></a>
 ### isBoundCast
@@ -756,10 +790,10 @@ Returns whether the supplied value satisfies the bound cast condition. Returns t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L250)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L281)
 
 <a id="function-function-minisql-sql-expressions-isboundexpression-function-isboundexpression-value-src-minisql-sql-expressions-ml-1763501823"></a>
 ### isBoundExpression
@@ -772,10 +806,10 @@ Returns whether the supplied value satisfies the bound expression condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L241)
 
 <a id="function-function-minisql-sql-expressions-isboundin-function-isboundin-value-src-minisql-sql-expressions-ml-1071518137"></a>
 ### isBoundIn
@@ -788,10 +822,10 @@ Returns whether the supplied value satisfies the bound in condition. Returns the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L264)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L297)
 
 <a id="function-function-minisql-sql-expressions-isboundliteral-function-isboundliteral-value-src-minisql-sql-expressions-ml-300714339"></a>
 ### isBoundLiteral
@@ -804,10 +838,10 @@ Returns whether the supplied value satisfies the bound literal condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L257)
 
 <a id="function-function-minisql-sql-expressions-isboundscalar-function-isboundscalar-value-src-minisql-sql-expressions-ml-1513274467"></a>
 ### isBoundScalar
@@ -820,10 +854,10 @@ Returns whether the supplied value satisfies the bound scalar condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L289)
 
 <a id="function-function-minisql-sql-expressions-isboundsubquery-function-isboundsubquery-value-src-minisql-sql-expressions-ml-1508449695"></a>
 ### isBoundSubquery
@@ -836,10 +870,10 @@ Returns whether a bound expression defers a nested SELECT to row evaluation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L290)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L327)
 
 <a id="function-function-minisql-sql-expressions-isboundtruthtest-function-isboundtruthtest-value-src-minisql-sql-expressions-ml-463023955"></a>
 ### isBoundTruthTest
@@ -852,10 +886,10 @@ Returns whether the supplied value satisfies the bound truth test condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L278)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L313)
 
 <a id="function-function-minisql-sql-expressions-isboundwindow-function-isboundwindow-value-src-minisql-sql-expressions-ml-2031183211"></a>
 ### isBoundWindow
@@ -868,10 +902,10 @@ Returns whether the supplied value satisfies the bound window condition. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L285)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L321)
 
 <a id="function-function-minisql-sql-expressions-isimplemented-function-isimplemented-src-minisql-sql-expressions-ml-1402863288"></a>
 ### isImplemented
@@ -880,10 +914,10 @@ Returns whether the supplied value satisfies the bound window condition. Returns
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql sql expressions module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1406)
 
 <a id="function-function-minisql-sql-expressions-isnull-function-isnull-operand-negated-src-minisql-sql-expressions-ml-1696555189"></a>
 ### isNull
@@ -896,11 +930,11 @@ Returns whether the supplied value satisfies the null condition. Requires argume
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operand` | `dynamic` | — |  |
-| `negated` | `dynamic` | — |  |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L333)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L383)
 
 <a id="function-function-minisql-sql-expressions-likeresult-function-likeresult-left-right-src-minisql-sql-expressions-ml-1774863519"></a>
 ### likeResult
@@ -913,11 +947,11 @@ Implements like result for this module. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L795)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L903)
 
 <a id="function-function-minisql-sql-expressions-literal-function-literal-value-typeinfo-src-minisql-sql-expressions-ml-580674141"></a>
 ### literal
@@ -930,11 +964,11 @@ Implements literal for this module. Returns the computed value or operation stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L297)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L336)
 
 <a id="function-function-minisql-sql-expressions-numericresult-function-numericresult-left-right-operator-resulttype-src-minisql-sql-expressions-ml-684013274"></a>
 ### numericResult
@@ -947,13 +981,13 @@ Implements numeric result for this module. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `operator` | `dynamic` | — |  |
-| `resultType` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `resultType` | `dynamic` | — | resultType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L754)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L857)
 
 <a id="function-function-minisql-sql-expressions-predicatepasses-function-predicatepasses-expression-context-src-minisql-sql-expressions-ml-909119135"></a>
 ### predicatePasses
@@ -966,11 +1000,11 @@ Implements predicate passes for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1370)
 
 <a id="function-function-minisql-sql-expressions-referencescolumnatorafter-function-referencescolumnatorafter-expression-minimumindex-src-minisql-sql-expressions-ml-1902384338"></a>
 ### referencesColumnAtOrAfter
@@ -983,11 +1017,11 @@ Implements references column at or after for this module. Requires arguments tha
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `minimumIndex` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `minimumIndex` | `dynamic` | — | Zero-based index of minimum. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L566)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L661)
 
 <a id="function-function-minisql-sql-expressions-replacetext-function-replacetext-sourcetext-searchtext-replacementtext-src-minisql-sql-expressions-ml-726165740"></a>
 ### replaceText
@@ -1000,12 +1034,12 @@ Replaces all non-overlapping UTF-8 byte sequences without changing unaffected by
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sourceText` | `dynamic` | — |  |
-| `searchText` | `dynamic` | — |  |
-| `replacementText` | `dynamic` | — |  |
+| `sourceText` | `dynamic` | — | sourceText value consumed by this operation. |
+| `searchText` | `dynamic` | — | searchText value consumed by this operation. |
+| `replacementText` | `dynamic` | — | replacementText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L904)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1025)
 
 <a id="function-function-minisql-sql-expressions-rowcontext-function-rowcontext-rowvalues-src-minisql-sql-expressions-ml-1875813636"></a>
 ### rowContext
@@ -1018,10 +1052,10 @@ Implements row context for this module. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rowValues` | `dynamic` | — |  |
+| `rowValues` | `dynamic` | — | rowValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L742)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L841)
 
 - [minisql.sql.expressions.RowContext](Type-minisql-sql-expressions-rowcontext-652519886.md) — struct
 <a id="function-function-minisql-sql-expressions-samebinding-function-samebinding-left-right-src-minisql-sql-expressions-ml-720867517"></a>
@@ -1035,11 +1069,11 @@ Implements same binding for this module. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L661)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L759)
 
 <a id="function-function-minisql-sql-expressions-scalar-function-scalar-name-arguments-typeinfo-src-minisql-sql-expressions-ml-1239700967"></a>
 ### scalar
@@ -1052,12 +1086,12 @@ Implements scalar for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `arguments` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `arguments` | `dynamic` | — | arguments value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L384)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L450)
 
 <a id="function-function-minisql-sql-expressions-subquery-function-subquery-subquerykind-query-operand-negated-typeinfo-src-minisql-sql-expressions-ml-792075027"></a>
 ### subquery
@@ -1070,14 +1104,14 @@ Creates a deferred subquery binding after its shape and result type have been va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `subqueryKind` | `dynamic` | — |  |
-| `query` | `dynamic` | — |  |
-| `operand` | `dynamic` | — |  |
-| `negated` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `subqueryKind` | `dynamic` | — | subqueryKind value consumed by this operation. |
+| `query` | `dynamic` | — | query value consumed by this operation. |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `negated` | `dynamic` | — | negated value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L509)
 
 <a id="constant-constant-minisql-sql-expressions-subquery-exists-const-subquery-exists-2-src-minisql-sql-expressions-ml-238240837"></a>
 ### SUBQUERY_EXISTS
@@ -1086,8 +1120,10 @@ Creates a deferred subquery binding after its shape and result type have been va
 const SUBQUERY_EXISTS = 2
 ```
 
+Defines the subquery exists constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L54)
 
 <a id="constant-constant-minisql-sql-expressions-subquery-in-const-subquery-in-3-src-minisql-sql-expressions-ml-673033704"></a>
 ### SUBQUERY_IN
@@ -1096,8 +1132,10 @@ const SUBQUERY_EXISTS = 2
 const SUBQUERY_IN = 3
 ```
 
+Defines the subquery in constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L56)
 
 <a id="constant-constant-minisql-sql-expressions-subquery-scalar-const-subquery-scalar-1-src-minisql-sql-expressions-ml-1379831510"></a>
 ### SUBQUERY_SCALAR
@@ -1106,8 +1144,10 @@ const SUBQUERY_IN = 3
 const SUBQUERY_SCALAR = 1
 ```
 
+Defines the subquery scalar constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L52)
 
 <a id="function-function-minisql-sql-expressions-targetmilestone-function-targetmilestone-src-minisql-sql-expressions-ml-1986052634"></a>
 ### targetMilestone
@@ -1116,10 +1156,10 @@ const SUBQUERY_SCALAR = 1
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql sql expressions module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L1399)
 
 <a id="function-function-minisql-sql-expressions-truthtest-function-truthtest-operand-expected-negated-src-minisql-sql-expressions-ml-67539123"></a>
 ### truthTest
@@ -1132,12 +1172,12 @@ Implements truth test for this module. Requires arguments that satisfy the valid
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operand` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
-| `negated` | `dynamic` | — |  |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
+| `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L422)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L498)
 
 <a id="constant-constant-minisql-sql-expressions-type-mismatch-const-type-mismatch-9017-src-minisql-sql-expressions-ml-391730910"></a>
 ### TYPE_MISMATCH
@@ -1146,8 +1186,10 @@ Implements truth test for this module. Requires arguments that satisfy the valid
 const TYPE_MISMATCH = 9017
 ```
 
+Defines the type mismatch constant used by the minisql sql expressions module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L14)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L18)
 
 <a id="function-function-minisql-sql-expressions-unary-function-unary-operator-operand-typeinfo-src-minisql-sql-expressions-ml-510660709"></a>
 ### unary
@@ -1160,12 +1202,12 @@ Implements unary for this module. Requires arguments that satisfy the validation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — |  |
-| `operand` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operand` | `dynamic` | — | operand value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L315)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L359)
 
 <a id="function-function-minisql-sql-expressions-utf8byteoffset-function-utf8byteoffset-raw-characterindex-src-minisql-sql-expressions-ml-1813106529"></a>
 ### utf8ByteOffset
@@ -1178,11 +1220,11 @@ Maps a zero-based Unicode character index to a UTF-8 byte offset.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `raw` | `dynamic` | — |  |
-| `characterIndex` | `dynamic` | — |  |
+| `raw` | `dynamic` | — | raw value consumed by this operation. |
+| `characterIndex` | `dynamic` | — | Zero-based index of character. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L882)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L997)
 
 <a id="function-function-minisql-sql-expressions-utf8charactercount-function-utf8charactercount-raw-src-minisql-sql-expressions-ml-1224644980"></a>
 ### utf8CharacterCount
@@ -1195,10 +1237,10 @@ Counts Unicode scalar starts in validated UTF-8 text.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `raw` | `dynamic` | — |  |
+| `raw` | `dynamic` | — | raw value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L873)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L986)
 
 <a id="function-function-minisql-sql-expressions-window-function-window-name-arguments-partitionby-orderby-descending-nullsfirst-nullsspecified-typeinfo-src-minisql-sql-expressions-ml-730976289"></a>
 ### window
@@ -1211,14 +1253,14 @@ Implements window for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `arguments` | `dynamic` | — |  |
-| `partitionBy` | `dynamic` | — |  |
-| `orderBy` | `dynamic` | — |  |
-| `descending` | `dynamic` | — |  |
-| `nullsFirst` | `dynamic` | — |  |
-| `nullsSpecified` | `dynamic` | — |  |
-| `typeInfo` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `arguments` | `dynamic` | — | arguments value consumed by this operation. |
+| `partitionBy` | `dynamic` | — | partitionBy value consumed by this operation. |
+| `orderBy` | `dynamic` | — | orderBy value consumed by this operation. |
+| `descending` | `dynamic` | — | descending value consumed by this operation. |
+| `nullsFirst` | `dynamic` | — | nullsFirst value consumed by this operation. |
+| `nullsSpecified` | `dynamic` | — | nullsSpecified value consumed by this operation. |
+| `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L498)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L589)

@@ -12,7 +12,7 @@ struct BoundTruncate
 Groups the bound truncate state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L208)
 
 ## Members
 
@@ -26,7 +26,7 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L196)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L210)
 
 <a id="field-field-minisql-sql-binder-boundtruncate-table-table-src-minisql-sql-binder-ml-2084746221"></a>
 ### table
@@ -38,4 +38,4 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L198)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L212)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql common crc32c facilities for this project.
+
 Package: [`minisql.common.crc32c`](Package-minisql-common-crc32c-843614877.md)
 
 Reachable from entry: **yes**
@@ -19,10 +21,10 @@ Reachable from entry: **yes**
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql common crc32c module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L91)
 
 <a id="function-function-minisql-common-crc32c-compute-function-compute-buffer-src-minisql-common-crc32c-ml-2143744414"></a>
 ### compute
@@ -35,10 +37,10 @@ Computes the requested value. Inputs: `buffer`. Returns the produced value or pr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L69)
 
 <a id="function-function-minisql-common-crc32c-computerange-function-computerange-buffer-offset-length-src-minisql-common-crc32c-ml-132163775"></a>
 ### computeRange
@@ -51,12 +53,12 @@ Computes the range. Inputs: `buffer`, `offset`, `length`. Returns the produced v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `length` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `length` | `dynamic` | — | length value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L62)
 
 <a id="function-function-minisql-common-crc32c-invalid-function-invalid-operation-message-src-minisql-common-crc32c-ml-542999196"></a>
 ### invalid
@@ -65,15 +67,15 @@ Computes the range. Inputs: `buffer`, `offset`, `length`. Returns the produced v
 function invalid(operation, message)
 ```
 
-Creates an invalid-argument error with operation context. Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the invalid operation for the minisql common crc32c module. Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L20)
 
 <a id="constant-constant-minisql-common-crc32c-invalid-argument-const-invalid-argument-9001-src-minisql-common-crc32c-ml-875172417"></a>
 ### INVALID_ARGUMENT
@@ -82,10 +84,10 @@ Creates an invalid-argument error with operation context. Inputs: `operation`, `
 const INVALID_ARGUMENT = 9001
 ```
 
-MiniSQL's stable CRC-32C facade preserves its structured error contract while delegating the checksum hot path to MiniLang's CPU-dispatched implementation. The standard primitive uses SSE4.2 on supported processors and an exact Castagnoli lookup-table fallback everywhere else.
+MiniSQL's stable CRC-32C facade preserves its structured error contract while
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L13)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L12)
 
 <a id="function-function-minisql-common-crc32c-isimplemented-function-isimplemented-src-minisql-common-crc32c-ml-681260826"></a>
 ### isImplemented
@@ -94,10 +96,10 @@ MiniSQL's stable CRC-32C facade preserves its structured error contract while de
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql common crc32c module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L103)
 
 <a id="constant-constant-minisql-common-crc32c-max-u32-const-max-u32-4294967295-src-minisql-common-crc32c-ml-1700760274"></a>
 ### MAX_U32
@@ -105,6 +107,8 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 ```ml
 const MAX_U32 = 4294967295
 ```
+
+Defines the max u32 constant used by the minisql common crc32c module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L14)
@@ -116,10 +120,10 @@ const MAX_U32 = 4294967295
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql common crc32c module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L97)
 
 <a id="function-function-minisql-common-crc32c-update-function-update-previous-buffer-offset-length-src-minisql-common-crc32c-ml-280192266"></a>
 ### update
@@ -132,13 +136,13 @@ Continues a finalized CRC-32C value over the requested byte range. Inputs: `prev
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `previous` | `dynamic` | — |  |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `length` | `dynamic` | — |  |
+| `previous` | `dynamic` | — | previous value consumed by this operation. |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `length` | `dynamic` | — | length value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L49)
 
 <a id="function-function-minisql-common-crc32c-validaterange-function-validaterange-buffer-offset-length-operation-src-minisql-common-crc32c-ml-1376068524"></a>
 ### validateRange
@@ -151,13 +155,13 @@ Validates the range. Inputs: `buffer`, `offset`, `length`, `operation`. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `length` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `length` | `dynamic` | — | length value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L30)
 
 <a id="function-function-minisql-common-crc32c-verifyrange-function-verifyrange-buffer-offset-length-expected-src-minisql-common-crc32c-ml-1408395411"></a>
 ### verifyRange
@@ -170,10 +174,10 @@ Verifies the range. Inputs: `buffer`, `offset`, `length`, `expected`. Returns a 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `length` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `length` | `dynamic` | — | length value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/crc32c.ml#L82)

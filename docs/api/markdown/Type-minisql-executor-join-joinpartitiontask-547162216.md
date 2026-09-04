@@ -12,7 +12,7 @@ struct JoinPartitionTask
 Immutable work package for one independent grace-hash-join partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L40)
 
 ## Members
 
@@ -26,7 +26,7 @@ boundJoin
 Bound join metadata used for equality and residual-predicate checks.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L46)
 
 <a id="field-field-minisql-executor-join-joinpartitiontask-buildright-buildright-src-minisql-executor-join-ml-1124451404"></a>
 ### buildRight
@@ -38,7 +38,7 @@ buildRight
 Optimizer-selected hash-table build orientation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L48)
 
 <a id="field-field-minisql-executor-join-joinpartitiontask-database-database-src-minisql-executor-join-ml-224779910"></a>
 ### database
@@ -50,7 +50,7 @@ database
 Optional managed database used for cooperative worker cancellation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L50)
 
 <a id="field-field-minisql-executor-join-joinpartitiontask-leftrun-leftrun-src-minisql-executor-join-ml-1797459252"></a>
 ### leftRun
@@ -62,7 +62,7 @@ leftRun
 Optional validated spill run for the left input partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L42)
 
 <a id="field-field-minisql-executor-join-joinpartitiontask-rightrun-rightrun-src-minisql-executor-join-ml-1834903494"></a>
 ### rightRun
@@ -74,7 +74,7 @@ rightRun
 Optional validated spill run for the right input partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L44)
 
 <a id="field-field-minisql-executor-join-joinpartitiontask-sessionid-sessionid-src-minisql-executor-join-ml-559716168"></a>
 ### sessionId
@@ -86,4 +86,4 @@ sessionId
 Owning session identifier when database is present.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L52)

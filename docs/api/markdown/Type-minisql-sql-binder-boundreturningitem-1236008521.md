@@ -12,7 +12,7 @@ struct BoundReturningItem
 Groups the bound returning item state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L144)
 
 ## Members
 
@@ -26,7 +26,7 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L132)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L146)
 
 <a id="field-field-minisql-sql-binder-boundreturningitem-name-name-src-minisql-sql-binder-ml-1137577556"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L148)

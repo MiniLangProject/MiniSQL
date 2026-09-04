@@ -1,3 +1,5 @@
+//! Provides minisql catalog statistics facilities for this project.
+
 package minisql.catalog.statistics
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -10,111 +12,134 @@ import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.checksum as checksum
 
-// Persistent table/column statistics used by the M17 cost model. Statistics are
-// advisory: a missing or stale file never changes query correctness. ANALYZE
-// writes a complete new envelope to a temporary durable file and atomically
-// replaces the previous generation.
+/// Persistent table/column statistics used by the M17 cost model. Statistics are
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql catalog statistics module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql catalog statistics module.
 const CORRUPT_DATA = 9004
+/// Defines the io failure constant used by the minisql catalog statistics module.
 const IO_FAILURE = 9005
 
+/// Defines the format version constant used by the minisql catalog statistics module.
 const FORMAT_VERSION = 5
+/// Defines the distribution format version constant used by the minisql catalog statistics module.
 const DISTRIBUTION_FORMAT_VERSION = 4
+/// Defines the bounds format version constant used by the minisql catalog statistics module.
 const BOUNDS_FORMAT_VERSION = 3
+/// Defines the sampled format version constant used by the minisql catalog statistics module.
 const SAMPLED_FORMAT_VERSION = 2
+/// Defines the legacy format version constant used by the minisql catalog statistics module.
 const LEGACY_FORMAT_VERSION = 1
+/// Defines the record kind constant used by the minisql catalog statistics module.
 const RECORD_KIND = 50
+/// Defines the table header bytes constant used by the minisql catalog statistics module.
 const TABLE_HEADER_BYTES = 32
+/// Defines the legacy column bytes constant used by the minisql catalog statistics module.
 const LEGACY_COLUMN_BYTES = 32
+/// Defines the column bytes constant used by the minisql catalog statistics module.
 const COLUMN_BYTES = 232
+/// Defines the legacy column group bytes constant used by the minisql catalog statistics module.
 const LEGACY_COLUMN_GROUP_BYTES = 32
+/// Defines the column group bytes constant used by the minisql catalog statistics module.
 const COLUMN_GROUP_BYTES = 128
+/// Defines the distinct bucket count constant used by the minisql catalog statistics module.
 const DISTINCT_BUCKET_COUNT = 257
+/// Defines the hash mask constant used by the minisql catalog statistics module.
 const HASH_MASK = 2147483647
+/// Defines the column flag integral bounds constant used by the minisql catalog statistics module.
 const COLUMN_FLAG_INTEGRAL_BOUNDS = 1
+/// Defines the column flag hashed mcv constant used by the minisql catalog statistics module.
 const COLUMN_FLAG_HASHED_MCV = 2
+/// Defines the histogram bucket count constant used by the minisql catalog statistics module.
 const HISTOGRAM_BUCKET_COUNT = 8
+/// Defines the most common value count constant used by the minisql catalog statistics module.
 const MOST_COMMON_VALUE_COUNT = 8
+/// Defines the max column group width constant used by the minisql catalog statistics module.
 const MAX_COLUMN_GROUP_WIDTH = 8
 
-// Defines the column statistics record used by this module.
+/// Defines the column statistics record used by this module.
 struct ColumnStatistics
-  // Column index field of the column statistics.
+  /// Column index field of the column statistics.
   columnIndex
-  // Null count field of the column statistics.
+  /// Null count field of the column statistics.
   nullCount
-  // Distinct count field of the column statistics.
+  /// Distinct count field of the column statistics.
   distinctCount
-  // Average width field of the column statistics.
+  /// Average width field of the column statistics.
   averageWidth
-  // True when the sample supplied a comparable signed 32-bit minimum/maximum.
+  /// True when the sample supplied a comparable signed 32-bit minimum/maximum.
   hasIntegralBounds
-  // Smallest sampled SMALLINT, INTEGER, or DATE representation.
+  /// Smallest sampled SMALLINT, INTEGER, or DATE representation.
   minimumIntegral
-  // Largest sampled SMALLINT, INTEGER, or DATE representation.
+  /// Largest sampled SMALLINT, INTEGER, or DATE representation.
   maximumIntegral
-  // Inclusive upper bound of each equi-width integral histogram bucket.
+  /// Inclusive upper bound of each equi-width integral histogram bucket.
   histogramBounds
-  // Estimated cumulative non-NULL population at each histogram bound.
+  /// Estimated cumulative non-NULL population at each histogram bound.
   histogramCounts
-  // Most frequent sampled integral values, ordered by descending frequency.
+  /// Most frequent sampled integral values, ordered by descending frequency.
   mostCommonValues
-  // Estimated table-population frequency paired with mostCommonValues.
+  /// Estimated table-population frequency paired with mostCommonValues.
   mostCommonCounts
-  // True when mostCommonValues contains stable value hashes rather than values.
+  /// True when mostCommonValues contains stable value hashes rather than values.
   mostCommonHashed
 end struct
 
-// Captures joint distinctness for columns that form a composite index key.
-// These statistics prevent the optimizer from assuming that correlated key
-// columns are independent when estimating complete equality probes.
+/// Captures joint distinctness for columns that form a composite index key.
+/// These statistics prevent the optimizer from assuming that correlated key
+/// columns are independent when estimating complete equality probes.
 struct ColumnGroupStatistics
-  // Ordered table-local column indexes in the analyzed key prefix.
+  /// Ordered table-local column indexes in the analyzed key prefix.
   columnIndexes
-  // Estimated number of distinct non-NULL tuples in the table population.
+  /// Estimated number of distinct non-NULL tuples in the table population.
   distinctCount
-  // Stable hashes for the most frequent complete tuples.
+  /// Stable hashes for the most frequent complete tuples.
   mostCommonHashes
-  // Population-scaled frequencies paired with mostCommonHashes.
+  /// Population-scaled frequencies paired with mostCommonHashes.
   mostCommonCounts
 end struct
 
-// Defines the table statistics record used by this module.
+/// Defines the table statistics record used by this module.
 struct TableStatistics
-  // Table id field of the table statistics.
+  /// Table id field of the table statistics.
   tableId
-  // Row count field of the table statistics.
+  /// Row count field of the table statistics.
   rowCount
-  // Page count field of the table statistics.
+  /// Page count field of the table statistics.
   pageCount
-  // Number of decoded rows contributing column distribution statistics.
+  /// Number of decoded rows contributing column distribution statistics.
   sampleCount
-  // Columns field of the table statistics.
+  /// Columns field of the table statistics.
   columns
-  // Joint statistics for bounded-width composite index keys.
+  /// Joint statistics for bounded-width composite index keys.
   columnGroups
 end struct
 
-// Defines the statistics catalog record used by this module.
+/// Defines the statistics catalog record used by this module.
 struct StatisticsCatalog
-  // Database id field of the statistics catalog.
+  /// Database id field of the statistics catalog.
   databaseId
-  // Generation field of the statistics catalog.
+  /// Generation field of the statistics catalog.
   generation
-  // Tables field of the statistics catalog.
+  /// Tables field of the statistics catalog.
   tables
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql catalog statistics module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "catalog.statistics." + operation + ": " + message)
 end function
 
-// Performs the integer divide operation for this module.
-// Inputs: `numerator`, `denominator`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the integer divide operation for this module.
+/// Inputs: `numerator`, `denominator`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if typeof(numerator) != "int" or typeof(denominator) != "int" or numerator < 0 or denominator <= 0 then
     return fail(INVALID_ARGUMENT, "integerDivide", "arguments must be non-negative integers and denominator must be positive")
@@ -138,37 +163,43 @@ function integerDivide(numerator, denominator)
   return quotient
 end function
 
-// Returns a fresh copy of the on-disk format magic bytes.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Returns a fresh copy of the on-disk format magic bytes.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magic()
   return bytes("MSSTAT01")
 end function
 
-// Evaluates whether the supplied input satisfies the column statistics predicate.
-// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the column statistics predicate.
+/// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
 function isColumnStatistics(value)
   return value is ColumnStatistics
 end function
 
-// Reports whether a value is a persisted joint-column statistic.
+/// Reports whether a value is a persisted joint-column statistic.
+/// @param value Value consumed or transformed by the operation.
 function isColumnGroupStatistics(value)
   return value is ColumnGroupStatistics
 end function
 
-// Evaluates whether the supplied input satisfies the table statistics predicate.
-// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the table statistics predicate.
+/// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
 function isTableStatistics(value)
   return value is TableStatistics
 end function
 
-// Evaluates whether the supplied input satisfies the statistics catalog predicate.
-// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the statistics catalog predicate.
+/// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
 function isStatisticsCatalog(value)
   return value is StatisticsCatalog
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql catalog statistics module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -178,22 +209,26 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Creates the requested value.
-// Inputs: `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql catalog statistics module.
+/// Inputs: `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databaseId Identifier of database.
 function create(databaseId)
   if typeof(databaseId) != "bytes" or len(databaseId) != 16 then return fail(INVALID_ARGUMENT, "create", "databaseId must be 16 bytes") end if
   return StatisticsCatalog(bytes(databaseId), 0, [])
 end function
 
-// Performs the path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function path(databasePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "path", "databasePath must be non-empty") end if
   return catalog.joinPath(catalog.joinPath(databasePath, "catalog"), "statistics.tbl")
 end function
 
-// Finds the table.
-// Inputs: `state`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the table.
+/// Inputs: `state`, `tableId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param tableId Identifier of table.
 function findTable(state, tableId)
   if state is not StatisticsCatalog or typeof(tableId) != "int" or tableId < 0 then return fail(INVALID_ARGUMENT, "findTable", "invalid arguments") end if
   for each table in state.tables
@@ -202,8 +237,10 @@ function findTable(state, tableId)
   return void
 end function
 
-// Replaces the table.
-// Inputs: `state`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Replaces the table.
+/// Inputs: `state`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param value Value consumed or transformed by the operation.
 function replaceTable(state, value)
   if state is not StatisticsCatalog or value is not TableStatistics then return fail(INVALID_ARGUMENT, "replaceTable", "invalid arguments") end if
   output = []
@@ -221,8 +258,9 @@ function replaceTable(state, value)
   return value
 end function
 
-// Performs the value width operation for this module.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the value width operation for this module.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function valueWidth(value)
   if not values.isSqlValue(value) or value.isNull then return 0 end if
   if typeof(value.value) == "string" then return len(bytes(value.value)) end if
@@ -230,15 +268,19 @@ function valueWidth(value)
   return 8
 end function
 
-// Compares the value.
-// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Compares the value.
+/// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameValue(left, right)
   if left.isNull or right.isNull then return left.isNull and right.isNull end if
   return values.compareNonNull(left, right) == 0
 end function
 
-// Hashes SQL values into deterministic collision buckets. Full SQL comparison
-// below remains authoritative, so hash collisions can only affect performance.
+/// Hashes SQL values into deterministic collision buckets. Full SQL comparison
+/// below remains authoritative, so hash collisions can only affect performance.
+/// @param input input value consumed by this operation.
+/// @param seed seed value consumed by this operation.
 function hashBytes(input, seed)
   result = seed & HASH_MASK
   if len(input) > 0 then
@@ -249,7 +291,8 @@ function hashBytes(input, seed)
   return result
 end function
 
-// Hashes one non-NULL SQL payload consistently with sameValue comparison.
+/// Hashes one non-NULL SQL payload consistently with sameValue comparison.
+/// @param value Value consumed or transformed by the operation.
 function hashValue(value)
   if value.isNull then return 0 end if
   result = (2166136261 ^ value.typeKind) & HASH_MASK
@@ -279,8 +322,10 @@ function hashValue(value)
   return hashBytes(bytes("" + value.value), result)
 end function
 
-// Performs the distinct count operation for this module.
-// Inputs: `columnIndex`, `rows`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the distinct count operation for this module.
+/// Inputs: `columnIndex`, `rows`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param columnIndex Zero-based index of column.
+/// @param rows rows value consumed by this operation.
 function distinctCount(columnIndex, rows)
   buckets = array(DISTINCT_BUCKET_COUNT, void)
   count = 0
@@ -304,13 +349,15 @@ function distinctCount(columnIndex, rows)
   return count
 end function
 
-// Reports whether a catalog column has an ordered numeric representation that
-// can use compact signed-32-bit quantile bounds when its sampled values fit.
+/// Reports whether a catalog column has an ordered numeric representation that
+/// can use compact signed-32-bit quantile bounds when its sampled values fit.
+/// @param column column value consumed by this operation.
 function supportsIntegralBounds(column)
   return column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date or column.typeCode == types.SqlTypeKind.Decimal
 end function
 
-// Converts one ordered SQL value to the compact histogram scalar when possible.
+/// Converts one ordered SQL value to the compact histogram scalar when possible.
+/// @param candidate candidate value consumed by this operation.
 function compactStatisticScalar(candidate)
   if typeof(candidate.value) == "int" then return candidate.value end if
   if endian.isInt64Words(candidate.value) then
@@ -320,9 +367,11 @@ function compactStatisticScalar(candidate)
   return void
 end function
 
-// Finds sampled minimum and maximum values for a compact integral column. The
-// boolean prefix distinguishes an all-NULL sample from a legitimate [0, 0]
-// domain and keeps older statistics versions unambiguous.
+/// Finds sampled minimum and maximum values for a compact integral column. The
+/// boolean prefix distinguishes an all-NULL sample from a legitimate [0, 0]
+/// domain and keeps older statistics versions unambiguous.
+/// @param columnIndex Zero-based index of column.
+/// @param rows rows value consumed by this operation.
 function integralBounds(columnIndex, rows)
   found = false
   minimum = 0
@@ -340,7 +389,10 @@ function integralBounds(columnIndex, rows)
   return [found, minimum, maximum]
 end function
 
-// In-place quicksort for the bounded ANALYZE scalar sample.
+/// In-place quicksort for the bounded ANALYZE scalar sample.
+/// @param items Items consumed or updated by the operation.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sortStatisticScalars(items, left, right)
   if left >= right then return items end if
   low = left
@@ -366,9 +418,13 @@ function sortStatisticScalars(items, left, right)
   return items
 end function
 
-// Builds an equi-depth cumulative histogram and an exact top-frequency list
-// from the bounded ANALYZE sample. Population frequencies are scaled once here,
-// allowing the optimizer hot path to use only small fixed arrays.
+/// Builds an equi-depth cumulative histogram and an exact top-frequency list
+/// from the bounded ANALYZE sample. Population frequencies are scaled once here,
+/// allowing the optimizer hot path to use only small fixed arrays.
+/// @param columnIndex Zero-based index of column.
+/// @param rows rows value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param bounds bounds value consumed by this operation.
 function integralDistribution(columnIndex, rows, populationRows, bounds)
   if not bounds[0] or len(rows) == 0 then return [[], [], [], []] end if
   minimum = bounds[1]
@@ -455,7 +511,10 @@ function integralDistribution(columnIndex, rows, populationRows, bounds)
   return [histogramBounds, histogramCounts, mostCommonValues, mostCommonCounts]
 end function
 
-// Selects the eight most frequent stable hashes from a bounded sample.
+/// Selects the eight most frequent stable hashes from a bounded sample.
+/// @param hashes hashes value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param sampleRows sampleRows value consumed by this operation.
 function topHashFrequencies(hashes, populationRows, sampleRows)
   buckets = array(DISTINCT_BUCKET_COUNT, void)
   for each currentHash in hashes
@@ -502,7 +561,10 @@ function topHashFrequencies(hashes, populationRows, sampleRows)
   return [outputHashes, outputCounts]
 end function
 
-// Builds hash-based equality MCVs for text, binary, and wide decimal values.
+/// Builds hash-based equality MCVs for text, binary, and wide decimal values.
+/// @param columnIndex Zero-based index of column.
+/// @param rows rows value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
 function hashedDistribution(columnIndex, rows, populationRows)
   hashes = []
   for each row in rows
@@ -512,7 +574,9 @@ function hashedDistribution(columnIndex, rows, populationRows)
   return topHashFrequencies(hashes, populationRows, len(rows))
 end function
 
-// Computes the stable hash shared by group ANALYZE and optimizer probes.
+/// Computes the stable hash shared by group ANALYZE and optimizer probes.
+/// @param columnIndexes columnIndexes value consumed by this operation.
+/// @param sqlValues sqlValues value consumed by this operation.
 function tupleHash(columnIndexes, sqlValues)
   result = 2166136261 & HASH_MASK
   for each columnIndex in columnIndexes
@@ -523,7 +587,10 @@ function tupleHash(columnIndexes, sqlValues)
   return result
 end function
 
-// Builds a bounded most-common tuple list for one analyzed column group.
+/// Builds a bounded most-common tuple list for one analyzed column group.
+/// @param columnIndexes columnIndexes value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
 function groupDistribution(columnIndexes, rows, populationRows)
   hashes = []
   for each row in rows
@@ -533,9 +600,11 @@ function groupDistribution(columnIndexes, rows, populationRows)
   return topHashFrequencies(hashes, populationRows, len(rows))
 end function
 
-// Counts distinct non-NULL tuples for one bounded-width column group. A hash
-// bucket narrows comparisons, while complete SQL value comparison remains the
-// authority and therefore makes collisions harmless.
+/// Counts distinct non-NULL tuples for one bounded-width column group. A hash
+/// bucket narrows comparisons, while complete SQL value comparison remains the
+/// authority and therefore makes collisions harmless.
+/// @param columnIndexes columnIndexes value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function groupDistinctCount(columnIndexes, rows)
   buckets = array(DISTINCT_BUCKET_COUNT, void)
   count = 0
@@ -569,7 +638,10 @@ function groupDistinctCount(columnIndexes, rows)
   return count
 end function
 
-// Scales a sample count without overflowing MiniLang's native integer range.
+/// Scales a sample count without overflowing MiniLang's native integer range.
+/// @param sampleValue sampleValue value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param sampleRows sampleRows value consumed by this operation.
 function scaleSampleCount(sampleValue, populationRows, sampleRows)
   if sampleRows == 0 then return 0 end if
   quotient = integerDivide(populationRows, sampleRows)
@@ -577,10 +649,15 @@ function scaleSampleCount(sampleValue, populationRows, sampleRows)
   return quotient * sampleValue + integerDivide(remainder * sampleValue, sampleRows)
 end function
 
-// Builds bounded-memory statistics from a uniformly spaced sample. Small
-// tables, whose sample contains every row, remain exact. Low-cardinality values
-// seen repeatedly are treated as saturated; high-cardinality samples are scaled
-// conservatively and capped by the estimated non-NULL population.
+/// Builds bounded-memory statistics from a uniformly spaced sample. Small
+/// tables, whose sample contains every row, remain exact. Low-cardinality values
+/// seen repeatedly are treated as saturated; high-cardinality samples are scaled
+/// conservatively and capped by the estimated non-NULL population.
+/// @param table table value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param pageCount Number of page to process.
+/// @param columnGroups columnGroups value consumed by this operation.
 function analyzeSampleWithGroups(table, populationRows, rows, pageCount, columnGroups)
   if typeof(table) != "struct" or typeof(populationRows) != "int" or populationRows < 0 or typeof(rows) != "array" or typeof(pageCount) != "int" or pageCount < 0 or typeof(columnGroups) != "array" then return fail(INVALID_ARGUMENT, "analyzeSampleWithGroups", "invalid arguments") end if
   sampleCount = len(rows)
@@ -633,19 +710,27 @@ function analyzeSampleWithGroups(table, populationRows, rows, pageCount, columnG
   return TableStatistics(table.tableId, populationRows, pageCount, sampleCount, columns, groups)
 end function
 
-// Retains the public single-column ANALYZE API used by older callers.
+/// Retains the public single-column ANALYZE API used by older callers.
+/// @param table table value consumed by this operation.
+/// @param populationRows populationRows value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param pageCount Number of page to process.
 function analyzeSample(table, populationRows, rows, pageCount)
   return analyzeSampleWithGroups(table, populationRows, rows, pageCount, [])
 end function
 
-// Performs the analyze table operation for this module.
-// Inputs: `table`, `rows`, `pageCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the analyze table operation for this module.
+/// Inputs: `table`, `rows`, `pageCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param table table value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param pageCount Number of page to process.
 function analyzeTable(table, rows, pageCount)
   return analyzeSample(table, len(rows), rows, pageCount)
 end function
 
-// Encodes the d size.
-// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the d size.
+/// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
 function encodedSize(state)
   size = 32
   for each table in state.tables
@@ -654,8 +739,11 @@ function encodedSize(state)
   return size
 end function
 
-// Validates the native.
-// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native for the minisql catalog statistics workflow.
+/// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function validateNative(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, operation, name + " must be non-negative native int") end if
   return true
@@ -796,8 +884,9 @@ function encodeTableRecord(payload, cursor, table)
   return cursor
 end function
 
-// Encodes the requested value.
-// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes encode for the minisql catalog statistics workflow.
+/// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
 function encode(state)
   if state is not StatisticsCatalog then return fail(INVALID_ARGUMENT, "encode", "state must be StatisticsCatalog") end if
   if typeof(state.databaseId) != "bytes" or len(state.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encode", "databaseId must be 16 bytes") end if
@@ -815,8 +904,11 @@ function encode(state)
   return checksum.encodeEnvelope(magic(), FORMAT_VERSION, RECORD_KIND, 0, payload)
 end function
 
-// Decodes the native.
-// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes native for the minisql catalog statistics workflow.
+/// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
@@ -936,8 +1028,9 @@ function decodeColumnGroupRecord(payload, cursor, encodedVersion, rowCount, dest
   return cursor + groupBytes
 end function
 
-// Decodes the catalog.
-// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the catalog.
+/// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param encoded encoded value consumed by this operation.
 function decodeCatalog(encoded)
   if typeof(encoded) != "bytes" or len(encoded) < 32 then return fail(CORRUPT_DATA, "decode", "encoded statistics are truncated") end if
   encodedVersion = endian.readU16LE(encoded, 8)
@@ -992,18 +1085,20 @@ function decodeCatalog(encoded)
   return state
 end function
 
-// Keep the qualified public API statistics.decode(...), while every internal
-// call uses an unambiguous helper. MiniLang also exposes decode(bytes) as a
-// builtin, so an unqualified internal decode(...) call may otherwise bind to
-// UTF-8 decoding instead of the statistics catalog decoder.
-// Decodes the requested value.
-// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Keep the qualified public API statistics.decode(...), while every internal
+/// call uses an unambiguous helper. MiniLang also exposes decode(bytes) as a
+/// builtin, so an unqualified internal decode(...) call may otherwise bind to
+/// UTF-8 decoding instead of the statistics catalog decoder.
+/// Decodes the requested value.
+/// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param encoded encoded value consumed by this operation.
 function decode(encoded)
   return decodeCatalog(encoded)
 end function
 
-// Reads the whole.
-// Inputs: `filePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads whole for the minisql catalog statistics workflow.
+/// Inputs: `filePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param filePath Path associated with file.
 function readWhole(filePath)
   handle = file_api.openRead(filePath)
   size = file_api.size(handle)
@@ -1013,8 +1108,10 @@ function readWhole(filePath)
   return output
 end function
 
-// Writes the atomic.
-// Inputs: `filePath`, `encoded`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the atomic.
+/// Inputs: `filePath`, `encoded`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param filePath Path associated with file.
+/// @param encoded encoded value consumed by this operation.
 function writeAtomic(filePath, encoded)
   if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writeAtomic", "encoded must be bytes") end if
   temporary = filePath + ".new"
@@ -1030,8 +1127,10 @@ function writeAtomic(filePath, encoded)
   return true
 end function
 
-// Persists the requested value.
-// Inputs: `databasePath`, `state`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Persists the requested value.
+/// Inputs: `databasePath`, `state`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param databasePath Path associated with database.
+/// @param state Mutable state inspected or updated by the operation.
 function save(databasePath, state)
   if state is not StatisticsCatalog then return fail(INVALID_ARGUMENT, "save", "state must be StatisticsCatalog") end if
   previous = state.generation
@@ -1043,8 +1142,10 @@ function save(databasePath, state)
   return state.generation
 end function
 
-// Loads the or create.
-// Inputs: `databasePath`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Loads the or create.
+/// Inputs: `databasePath`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
+/// @param databaseId Identifier of database.
 function loadOrCreate(databasePath, databaseId)
   filePath = path(databasePath)
   if not file_api.fileExists(filePath) then return create(databaseId) end if
@@ -1054,20 +1155,20 @@ function loadOrCreate(databasePath, databaseId)
   return state
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql catalog statistics module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "catalog.statistics"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql catalog statistics module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M17"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql catalog statistics module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

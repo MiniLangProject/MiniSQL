@@ -1,3 +1,5 @@
+//! Provides minisql tools backup facilities for this project.
+
 package minisql.tools.backup
 
 // Copyright 2026 MiniLangProject contributors
@@ -24,29 +26,35 @@ import minisql.transaction.wal as wal
 import minisql.transaction.checkpoint as checkpoint
 import std.crypto.aes_gcm as aes_gcm
 
-// M20 verified directory backup. A backup is a self-contained directory with
-// byte-identical database files plus a CRC-protected manifest. The database-wide
-// lock remains held while every owner-handle snapshot is taken.
+/// M20 verified directory backup. A backup is a self-contained directory with
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql tools backup module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql tools backup module.
 const CORRUPT_DATA = 9004
+/// Defines the object exists constant used by the minisql tools backup module.
 const OBJECT_EXISTS = 9013
 
+/// Defines the format version constant used by the minisql tools backup module.
 const FORMAT_VERSION = 1
+/// Defines the manifest kind constant used by the minisql tools backup module.
 const MANIFEST_KIND = 60
+/// Defines the max path bytes constant used by the minisql tools backup module.
 const MAX_PATH_BYTES = 240
-// Backup v1 encodes file lengths as U64 and entry counts as U32. Snapshot and
-// CRC APIs accept one U32-sized byte buffer at a time, while aggregate backup
-// size uses the native address-space domain. These guards therefore express
-// persisted/API representation limits rather than arbitrary database caps.
+/// Backup v1 encodes file lengths as U64 and entry counts as U32. Snapshot and
 const MAX_FILE_BYTES = 4294967295
+/// Defines the max total bytes constant used by the minisql tools backup module.
 const MAX_TOTAL_BYTES = 1152921504606846975
+/// Defines the max file count constant used by the minisql tools backup module.
 const MAX_FILE_COUNT = 4294967295
 
-// WAL archives contain authoritative table-page images, while B+ tree files
-// remain derived from the base backup. Rebuild them before publishing any
-// recovered generation that applied post-base WAL records.
+/// WAL archives contain authoritative table-page images, while B+ tree files
+/// remain derived from the base backup. Rebuild them before publishing any
+/// recovered generation that applied post-base WAL records.
+/// @param database database value consumed by this operation.
+/// @param required required value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function repairRecoveredIndexes(database, required, operation)
   if typeof(required) != "bool" then return fail(INVALID_ARGUMENT, operation, "required must be bool") end if
   if not required then return true end if
@@ -57,101 +65,109 @@ function repairRecoveredIndexes(database, required, operation)
   return true
 end function
 
-// Groups the captured file state and preserves the field relationships documented below.
+/// Groups the captured file state and preserves the field relationships documented below.
 struct CapturedFile
-  // Stores the filesystem relative path.
+  /// Stores the filesystem relative path.
   relativePath
-  // Stores the data associated with this value.
+  /// Stores the data associated with this value.
   data
 end struct
 
-// Groups the backup entry state and preserves the field relationships documented below.
+/// Groups the backup entry state and preserves the field relationships documented below.
 struct BackupEntry
-  // Stores the filesystem relative path.
+  /// Stores the filesystem relative path.
   relativePath
-  // Tracks the length numeric value.
+  /// Tracks the length numeric value.
   length
-  // Stores the checksum associated with this value.
+  /// Stores the checksum associated with this value.
   checksum
 end struct
 
-// Groups the backup manifest state and preserves the field relationships documented below.
+/// Groups the backup manifest state and preserves the field relationships documented below.
 struct BackupManifest
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Contains the ordered entries collection.
+  /// Contains the ordered entries collection.
   entries
 end struct
 
-// Groups the backup report state and preserves the field relationships documented below.
+/// Groups the backup report state and preserves the field relationships documented below.
 struct BackupReport
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Tracks the file count numeric value.
+  /// Tracks the file count numeric value.
   fileCount
-  // Tracks the total bytes numeric value.
+  /// Tracks the total bytes numeric value.
   totalBytes
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
 end struct
 
-// Groups the restore report state and preserves the field relationships documented below.
+/// Groups the restore report state and preserves the field relationships documented below.
 struct RestoreReport
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Tracks the file count numeric value.
+  /// Tracks the file count numeric value.
   fileCount
-  // Tracks the total bytes numeric value.
+  /// Tracks the total bytes numeric value.
   totalBytes
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql tools backup module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "tools.backup." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the backup manifest condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the backup manifest condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBackupManifest(value)
   return value is BackupManifest
 end function
 
-// Returns whether the supplied value satisfies the backup report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the backup report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBackupReport(value)
   return value is BackupReport
 end function
 
-// Returns whether the supplied value satisfies the restore report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the restore report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isRestoreReport(value)
   return value is RestoreReport
 end function
 
-// Implements manifest magic for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements manifest magic for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function manifestMagic()
   return bytes("MSBKP001")
 end function
 
-// Implements bytes equal for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the bytesEqual operation for the minisql tools backup module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -161,9 +177,14 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Implements copy exact for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements copy exact for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count <= 0 then return true end if
   for index = 0 to count - 1
@@ -172,9 +193,11 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
-// Returns whether the supplied value satisfies the int condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the int condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param values values value consumed by this operation.
+/// @param expected expected value consumed by this operation.
 function containsInt(values, expected)
   for each value in values
     if value == expected then return true end if
@@ -182,10 +205,12 @@ function containsInt(values, expected)
   return false
 end function
 
-// Validates relative path using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates relative path using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param relativePath Path associated with relative.
+/// @param operation operation value consumed by this operation.
 function validateRelativePath(relativePath, operation)
   if typeof(relativePath) != "string" or len(relativePath) == 0 or len(bytes(relativePath)) > MAX_PATH_BYTES then return fail(INVALID_ARGUMENT, operation, "relative path length is invalid") end if
   raw = bytes(relativePath)
@@ -201,18 +226,22 @@ function validateRelativePath(relativePath, operation)
   return true
 end function
 
-// Ensures directory using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Ensures directory using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
 function ensureDirectory(path)
   if file_api.directoryExists(path) then return true end if
   return file_api.createDirectory(path)
 end function
 
-// Publishes a staged file or directory despite short-lived Windows scanner or
-// indexer handles. Each attempt is still the same atomic MoveFileEx operation;
-// permanent errors remain visible after a bounded one-second retry window.
-// Inputs: `source`, `destination`, and replacement policy. Returns true after publication.
+/// Publishes a staged file or directory despite short-lived Windows scanner or
+/// indexer handles. Each attempt is still the same atomic MoveFileEx operation;
+/// permanent errors remain visible after a bounded one-second retry window.
+/// Inputs: `source`, `destination`, and replacement policy. Returns true after publication.
+/// @param source source value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param replaceExisting replaceExisting value consumed by this operation.
 function movePathReliably(source, destination, replaceExisting)
   lastResult = void
   for attempt = 0 to 40
@@ -223,9 +252,10 @@ function movePathReliably(source, destination, replaceExisting)
   return lastResult
 end function
 
-// Creates layout using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Creates layout using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param root root value consumed by this operation.
 function createLayout(root)
   ensureDirectory(root)
   ensureDirectory(file_api.joinPath(root, "catalog"))
@@ -237,9 +267,12 @@ function createLayout(root)
   return true
 end function
 
-// Reads handle using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads handle using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param handle Native or runtime handle used by the operation.
+/// @param maxBytes maxBytes value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function readHandle(handle, maxBytes, operation)
   file_api.validateOpen(handle, "tools.backup." + operation)
   file_api.flush(handle)
@@ -250,10 +283,12 @@ function readHandle(handle, maxBytes, operation)
   return output
 end function
 
-// Reads whole using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads whole using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param maxBytes maxBytes value consumed by this operation.
 function readWhole(path, maxBytes)
   handle = try(file_api.openRead(path))
   if typeof(handle) == "error" then return handle end if
@@ -269,10 +304,12 @@ function readWhole(path, maxBytes)
   return output
 end function
 
-// Writes whole using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Writes whole using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param data Input data consumed by the operation.
 function writeWhole(path, data)
   if typeof(data) != "bytes" then return fail(INVALID_ARGUMENT, "writeWhole", "data must be bytes") end if
   handle = try(file_api.createNewDurable(path))
@@ -287,10 +324,13 @@ function writeWhole(path, data)
   return true
 end function
 
-// Adds capture using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Adds capture using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param files files value consumed by this operation.
+/// @param relativePath Path associated with relative.
+/// @param data Input data consumed by the operation.
 function addCapture(files, relativePath, data)
   validateRelativePath(relativePath, "addCapture")
   if typeof(data) != "bytes" or len(data) > MAX_FILE_BYTES then return fail(CORRUPT_DATA, "addCapture", "captured file exceeds safety limit") end if
@@ -301,9 +341,13 @@ function addCapture(files, relativePath, data)
   return files + [CapturedFile(relativePath, bytes(data))]
 end function
 
-// Implements capture path for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements capture path for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param files files value consumed by this operation.
+/// @param databasePath Path associated with database.
+/// @param relativePath Path associated with relative.
+/// @param required required value consumed by this operation.
 function capturePath(files, databasePath, relativePath, required)
   fullPath = file_api.joinPath(databasePath, relativePath)
   if not file_api.fileExists(fullPath) then
@@ -313,9 +357,10 @@ function capturePath(files, databasePath, relativePath, required)
   return addCapture(files, relativePath, readWhole(fullPath, MAX_FILE_BYTES))
 end function
 
-// Implements index ids for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements index ids for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function indexIds(state)
   output = []
   for each table in state.tables
@@ -326,10 +371,11 @@ function indexIds(state)
   return output
 end function
 
-// Implements capture database for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements capture database for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function captureDatabase(database)
   files = []
   files = addCapture(files, "db.meta", paged_file.snapshotDurableBytes(database.catalogHandle.metaFile, MAX_FILE_BYTES))
@@ -380,9 +426,12 @@ function captureDatabase(database)
   return files
 end function
 
-// Implements manifest from files for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements manifest from files for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databaseId Identifier of database.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param files files value consumed by this operation.
 function manifestFromFiles(databaseId, pageSize, files)
   entries = []
   total = 0
@@ -394,10 +443,11 @@ function manifestFromFiles(databaseId, pageSize, files)
   return BackupManifest(bytes(databaseId), pageSize, entries)
 end function
 
-// Encodes manifest using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes manifest using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param manifest manifest value consumed by this operation.
 function encodeManifest(manifest)
   if manifest is not BackupManifest then return fail(INVALID_ARGUMENT, "encodeManifest", "manifest must be BackupManifest") end if
   if typeof(manifest.databaseId) != "bytes" or len(manifest.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encodeManifest", "databaseId must be 16 bytes") end if
@@ -429,9 +479,10 @@ function encodeManifest(manifest)
   return checksum.encodeEnvelope(manifestMagic(), FORMAT_VERSION, MANIFEST_KIND, 0, payload)
 end function
 
-// Decodes manifest using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Decodes manifest using the supplied inputs.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param source source value consumed by this operation.
 function decodeManifest(source)
   envelope = checksum.decodeEnvelope(source, manifestMagic(), FORMAT_VERSION, MANIFEST_KIND)
   payload = envelope.payload
@@ -466,9 +517,11 @@ function decodeManifest(source)
   return manifest
 end function
 
-// Writes captured files using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Writes captured files using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param root root value consumed by this operation.
+/// @param files files value consumed by this operation.
 function writeCapturedFiles(root, files)
   createLayout(root)
   for each file in files
@@ -477,9 +530,11 @@ function writeCapturedFiles(root, files)
   return true
 end function
 
-// Verifies backup files using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Verifies backup files using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param backupPath Path associated with backup.
+/// @param manifest manifest value consumed by this operation.
 function verifyBackupFiles(backupPath, manifest)
   total = 0
   for each entry in manifest.entries
@@ -494,10 +549,12 @@ function verifyBackupFiles(backupPath, manifest)
   return total
 end function
 
-// Runs open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Runs open using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
+/// @param backupPath Path associated with backup.
 function runOpen(database, backupPath)
   database_manager.validateOpen(database, "tools.backup.runOpen")
   if typeof(backupPath) != "string" or len(backupPath) == 0 then return fail(INVALID_ARGUMENT, "runOpen", "backupPath must be non-empty") end if
@@ -513,10 +570,12 @@ function runOpen(database, backupPath)
   return BackupReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, backupPath)
 end function
 
-// Runs run using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Runs run for the minisql tools backup workflow.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param backupPath Path associated with backup.
 function run(databasePath, backupPath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 or typeof(backupPath) != "string" or len(backupPath) == 0 then return fail(INVALID_ARGUMENT, "run", "paths must be non-empty") end if
   database = void
@@ -530,12 +589,16 @@ function run(databasePath, backupPath)
   return report
 end function
 
-// Creates domain-separated AAD bound to one backup-relative path.
+/// Creates domain-separated AAD bound to one backup-relative path.
+/// @param relativePath Path associated with relative.
 function backupAad(relativePath)
   return bytes("MiniSQL-BACKUP-1|" + relativePath)
 end function
 
-// Encrypts one captured backup file independently.
+/// Encrypts one captured backup file independently.
+/// @param key key value consumed by this operation.
+/// @param relativePath Path associated with relative.
+/// @param plaintext plaintext value consumed by this operation.
 function encryptBackupData(key, relativePath, plaintext)
   nonce = try(uuid.randomBytes(12))
   if typeof(nonce) == "error" then return nonce end if
@@ -547,7 +610,10 @@ function encryptBackupData(key, relativePath, plaintext)
   return output
 end function
 
-// Authenticates and decrypts one captured backup file.
+/// Authenticates and decrypts one captured backup file.
+/// @param key key value consumed by this operation.
+/// @param relativePath Path associated with relative.
+/// @param encoded encoded value consumed by this operation.
 function decryptBackupData(key, relativePath, encoded)
   if typeof(encoded) != "bytes" or len(encoded) < 36 or slice(encoded, 0, 8) != bytes("MSBAKENC") then return fail(CORRUPT_DATA, "decryptBackupData", "encrypted backup record is invalid") end if
   plaintext = try(aes_gcm.open(key, slice(encoded, 8, 12), slice(encoded, 20, len(encoded) - 20), backupAad(relativePath), 16))
@@ -555,7 +621,11 @@ function decryptBackupData(key, relativePath, encoded)
   return plaintext
 end function
 
-// Captures and publishes an encrypted backup from an open database.
+/// Captures and publishes an encrypted backup from an open database.
+/// @param database database value consumed by this operation.
+/// @param backupPath Path associated with backup.
+/// @param key key value consumed by this operation.
+/// @param provider provider value consumed by this operation.
 function runOpenEncrypted(database, backupPath, key, provider)
   database_manager.validateOpen(database, "tools.backup.runOpenEncrypted")
   if file_api.pathExists(backupPath) or file_api.pathExists(backupPath + ".new") then return fail(OBJECT_EXISTS, "runOpenEncrypted", "backup destination already exists") end if
@@ -585,7 +655,10 @@ function runOpenEncrypted(database, backupPath, key, provider)
   return BackupReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, backupPath)
 end function
 
-// Opens a database and creates a verified encrypted backup export.
+/// Opens a database and creates a verified encrypted backup export.
+/// @param databasePath Path associated with database.
+/// @param backupPath Path associated with backup.
+/// @param keyFilePath Path associated with key file.
 function runEncrypted(databasePath, backupPath, keyFilePath)
   provider = try(key_provider.fileProvider(keyFilePath))
   key = try(key_provider.loadProviderKey(provider))
@@ -600,7 +673,10 @@ function runEncrypted(databasePath, backupPath, keyFilePath)
   return report
 end function
 
-// Restores and validates an encrypted backup before atomic publication.
+/// Restores and validates an encrypted backup before atomic publication.
+/// @param backupPath Path associated with backup.
+/// @param databasePath Path associated with database.
+/// @param keyFilePath Path associated with key file.
 function restoreEncrypted(backupPath, databasePath, keyFilePath)
   if not file_api.fileExists(file_api.joinPath(backupPath, "backup.encrypted")) then return fail(CORRUPT_DATA, "restoreEncrypted", "encrypted-backup marker is missing") end if
   if file_api.pathExists(databasePath) or file_api.pathExists(databasePath + ".restore-new") then return fail(OBJECT_EXISTS, "restoreEncrypted", "database destination already exists") end if
@@ -636,19 +712,22 @@ function restoreEncrypted(backupPath, databasePath, keyFilePath)
   return RestoreReport(bytes(manifest.databaseId), manifest.pageSize, len(manifest.entries), total, databasePath)
 end function
 
-// Reads manifest using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads manifest using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param backupPath Path associated with backup.
 function readManifest(backupPath)
   path = file_api.joinPath(backupPath, "backup.manifest")
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "readManifest", "backup.manifest is missing") end if
   return decodeManifest(readWhole(path, MAX_FILE_BYTES))
 end function
 
-// Implements restore for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements restore for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param backupPath Path associated with backup.
+/// @param databasePath Path associated with database.
 function restore(backupPath, databasePath)
   if typeof(backupPath) != "string" or len(backupPath) == 0 or typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "restore", "paths must be non-empty") end if
   if not file_api.directoryExists(backupPath) then return fail(CORRUPT_DATA, "restore", "backup directory is missing") end if
@@ -677,151 +756,160 @@ function restore(backupPath, databasePath)
 end function
 
 
-// M31 offline WAL archive and point-in-time recovery. Archive generations store
-// complete, validated WAL prefixes. This is intentionally conservative: it
-// trades archive space for simple continuity validation and deterministic PITR.
+/// M31 offline WAL archive and point-in-time recovery. Archive generations store
 const ARCHIVE_FORMAT_VERSION = 1
+/// Defines the archive kind constant used by the minisql tools backup module.
 const ARCHIVE_KIND = 80
+/// Defines the standby format version constant used by the minisql tools backup module.
 const STANDBY_FORMAT_VERSION = 1
+/// Defines the standby kind constant used by the minisql tools backup module.
 const STANDBY_KIND = 81
-// Archive generations use an on-disk U32. M48 live shipping may run for a
-// long-lived server, so the implementation accepts the full representable
-// range instead of the original M31 test-oriented cap of 1024 snapshots.
+/// Archive generations use an on-disk U32. M48 live shipping may run for a
 const MAX_ARCHIVE_GENERATIONS = 4294967295
 
-// Groups the archive manifest state and preserves the field relationships documented below.
+/// Groups the archive manifest state and preserves the field relationships documented below.
 struct ArchiveManifest
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Stores the generation associated with this value.
+  /// Stores the generation associated with this value.
   generation
-  // Stores the base end LSN associated with this value.
+  /// Stores the base end LSN associated with this value.
   baseEndLsn
-  // Stores the latest end LSN associated with this value.
+  /// Stores the latest end LSN associated with this value.
   latestEndLsn
-  // Stores the WAL file name associated with this value.
+  /// Stores the WAL file name associated with this value.
   walFileName
-  // Tracks the WAL length numeric value.
+  /// Tracks the WAL length numeric value.
   walLength
-  // Stores the WAL checksum associated with this value.
+  /// Stores the WAL checksum associated with this value.
   walChecksum
 end struct
 
-// Groups the archive report state and preserves the field relationships documented below.
+/// Groups the archive report state and preserves the field relationships documented below.
 struct ArchiveReport
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Stores the generation associated with this value.
+  /// Stores the generation associated with this value.
   generation
-  // Stores the base end LSN associated with this value.
+  /// Stores the base end LSN associated with this value.
   baseEndLsn
-  // Stores the latest end LSN associated with this value.
+  /// Stores the latest end LSN associated with this value.
   latestEndLsn
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
 end struct
 
-// Groups the point-in-time recovery report state and preserves the field relationships documented below.
+/// Groups the point-in-time recovery report state and preserves the field relationships documented below.
 struct PitrReport
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Stores the target LSN associated with this value.
+  /// Stores the target LSN associated with this value.
   targetLsn
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
 end struct
 
-// Groups the standby state state and preserves the field relationships documented below.
+/// Groups the standby state state and preserves the field relationships documented below.
 struct StandbyState
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Stores the archive generation associated with this value.
+  /// Stores the archive generation associated with this value.
   archiveGeneration
-  // Stores the applied LSN associated with this value.
+  /// Stores the applied LSN associated with this value.
   appliedLsn
 end struct
 
-// Groups the standby report state and preserves the field relationships documented below.
+/// Groups the standby report state and preserves the field relationships documented below.
 struct StandbyReport
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Stores the archive generation associated with this value.
+  /// Stores the archive generation associated with this value.
   archiveGeneration
-  // Stores the applied LSN associated with this value.
+  /// Stores the applied LSN associated with this value.
   appliedLsn
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
 end struct
 
-// Returns whether the supplied value satisfies the archive manifest condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the archive manifest condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isArchiveManifest(value)
   return value is ArchiveManifest
 end function
 
-// Returns whether the supplied value satisfies the archive report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the archive report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isArchiveReport(value)
   return value is ArchiveReport
 end function
 
-// Returns whether the supplied value satisfies the point-in-time recovery report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the point-in-time recovery report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isPitrReport(value)
   return value is PitrReport
 end function
 
-// Returns whether the supplied value satisfies the standby state condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the standby state condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isStandbyState(value)
   return value is StandbyState
 end function
 
-// Returns whether the supplied value satisfies the standby report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the standby report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isStandbyReport(value)
   return value is StandbyReport
 end function
 
-// Implements archive magic for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements archive magic for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function archiveMagic()
   return bytes("MSARC001")
 end function
 
-// Implements archive manifest path for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive manifest path for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
 function archiveManifestPath(archivePath)
   return file_api.joinPath(archivePath, "archive.manifest")
 end function
 
-// Implements archive WAL directory for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive WAL directory for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
 function archiveWalDirectory(archivePath)
   return file_api.joinPath(archivePath, "wal")
 end function
 
-// Implements archive WAL name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements archive WAL name for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param generation generation value consumed by this operation.
 function archiveWalName(generation)
   return "wal-" + generation + ".log"
 end function
 
-// Implements overwrite whole for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements overwrite whole for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param data Input data consumed by the operation.
 function overwriteWhole(path, data)
   if typeof(data) != "bytes" then return fail(INVALID_ARGUMENT, "overwriteWhole", "data must be bytes") end if
   handle = try(file_api.createDurable(path))
@@ -836,9 +924,11 @@ function overwriteWhole(path, data)
   return true
 end function
 
-// Implements replace whole atomic for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements replace whole atomic for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param data Input data consumed by the operation.
 function replaceWholeAtomic(path, data)
   temporary = path + ".new"
   if file_api.fileExists(temporary) then file_api.deletePath(temporary) end if
@@ -847,10 +937,11 @@ function replaceWholeAtomic(path, data)
   return true
 end function
 
-// Encodes archive manifest using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes archive manifest using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param manifest manifest value consumed by this operation.
 function encodeArchiveManifest(manifest)
   if manifest is not ArchiveManifest then return fail(INVALID_ARGUMENT, "encodeArchiveManifest", "manifest must be ArchiveManifest") end if
   if typeof(manifest.databaseId) != "bytes" or len(manifest.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encodeArchiveManifest", "databaseId is invalid") end if
@@ -877,9 +968,10 @@ function encodeArchiveManifest(manifest)
   return checksum.encodeEnvelope(archiveMagic(), ARCHIVE_FORMAT_VERSION, ARCHIVE_KIND, 0, payload)
 end function
 
-// Decodes archive manifest using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Decodes archive manifest using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
 function decodeArchiveManifest(source)
   envelope = checksum.decodeEnvelope(source, archiveMagic(), ARCHIVE_FORMAT_VERSION, ARCHIVE_KIND)
   payload = envelope.payload
@@ -904,18 +996,21 @@ function decodeArchiveManifest(source)
   return ArchiveManifest(slice(payload, 0, 16), pageSize, generation, baseEnd, latestEnd, name, walLength, endian.readU32LE(payload, 48))
 end function
 
-// Reads archive manifest using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads archive manifest using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
 function readArchiveManifest(archivePath)
   path = archiveManifestPath(archivePath)
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "readArchiveManifest", "archive.manifest is missing") end if
   return decodeArchiveManifest(readWhole(path, 1048576))
 end function
 
-// Implements backup entry length for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements backup entry length for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param manifest manifest value consumed by this operation.
+/// @param relativePath Path associated with relative.
 function backupEntryLength(manifest, relativePath)
   for each entry in manifest.entries
     if entry.relativePath == relativePath then return entry.length end if
@@ -923,9 +1018,10 @@ function backupEntryLength(manifest, relativePath)
   return fail(CORRUPT_DATA, "backupEntryLength", "backup entry is missing: " + relativePath)
 end function
 
-// Implements snapshot WAL for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements snapshot WAL for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function snapshotWal(database)
   scanned = wal.scan(database.walWriter, true)
   file_api.flush(database.walWriter.file)
@@ -934,17 +1030,21 @@ function snapshotWal(database)
   return output
 end function
 
-// Implements archive WAL path for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive WAL path for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
+/// @param manifest manifest value consumed by this operation.
 function archiveWalPath(archivePath, manifest)
   return file_api.joinPath(archiveWalDirectory(archivePath), manifest.walFileName)
 end function
 
-// Verifies WAL snapshot using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Verifies WAL snapshot using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param manifest manifest value consumed by this operation.
+/// @param walBytes walBytes value consumed by this operation.
 function verifyWalSnapshot(manifest, walBytes)
   if typeof(walBytes) != "bytes" or len(walBytes) != manifest.walLength then return fail(CORRUPT_DATA, "verifyWalSnapshot", "WAL length mismatch") end if
   if crc32c.compute(walBytes) != manifest.walChecksum then return fail(CORRUPT_DATA, "verifyWalSnapshot", "WAL checksum mismatch") end if
@@ -960,10 +1060,11 @@ function verifyWalSnapshot(manifest, walBytes)
   return true
 end function
 
-// Verifies archive using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Verifies archive using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
 function verifyArchive(archivePath)
   if typeof(archivePath) != "string" or len(archivePath) == 0 or not file_api.directoryExists(archivePath) then return fail(CORRUPT_DATA, "verifyArchive", "archive directory is missing") end if
   manifest = readArchiveManifest(archivePath)
@@ -977,10 +1078,12 @@ function verifyArchive(archivePath)
   return manifest
 end function
 
-// Implements archive init for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive init for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param archivePath Path associated with archive.
 function archiveInit(databasePath, archivePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 or typeof(archivePath) != "string" or len(archivePath) == 0 then return fail(INVALID_ARGUMENT, "archiveInit", "paths must be non-empty") end if
   if file_api.pathExists(archivePath) or file_api.pathExists(archivePath + ".new") then return fail(OBJECT_EXISTS, "archiveInit", "archive destination already exists") end if
@@ -1009,9 +1112,11 @@ function archiveInit(databasePath, archivePath)
   return ArchiveReport(bytes(manifest.databaseId), manifest.generation, manifest.baseEndLsn, manifest.latestEndLsn, archivePath)
 end function
 
-// Implements prefix matches for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements prefix matches for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param previous previous value consumed by this operation.
+/// @param current current value consumed by this operation.
 function prefixMatches(previous, current)
   if len(current) < len(previous) then return false end if
   if len(previous) == 0 then return true end if
@@ -1021,19 +1126,21 @@ function prefixMatches(previous, current)
   return true
 end function
 
-// Implements live WAL path for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements live WAL path for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function liveWalPath(databasePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "liveWalPath", "databasePath must be non-empty") end if
   return file_api.joinPath(file_api.joinPath(databasePath, "wal"), "wal.log")
 end function
 
-// Implements snapshot durable WAL live for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements snapshot durable WAL live for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function snapshotDurableWalLive(databasePath)
   walPath = liveWalPath(databasePath)
   durableLsn = wal.readDurableMarker(walPath)
@@ -1055,9 +1162,11 @@ function snapshotDurableWalLive(databasePath)
   return output
 end function
 
-// Implements archive WAL live for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive WAL live for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param archivePath Path associated with archive.
 function archiveWalLive(databasePath, archivePath)
   manifest = verifyArchive(archivePath)
   previous = readWhole(archiveWalPath(archivePath, manifest), MAX_FILE_BYTES)
@@ -1076,10 +1185,12 @@ function archiveWalLive(databasePath, archivePath)
   return ArchiveReport(bytes(next.databaseId), next.generation, next.baseEndLsn, next.latestEndLsn, archivePath)
 end function
 
-// Implements archive WAL for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements archive WAL for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param archivePath Path associated with archive.
 function archiveWal(databasePath, archivePath)
   manifest = verifyArchive(archivePath)
   if manifest.generation >= MAX_ARCHIVE_GENERATIONS then return fail(UNSUPPORTED_FORMAT, "archiveWal", "archive generation limit reached") end if
@@ -1102,10 +1213,12 @@ function archiveWal(databasePath, archivePath)
   return ArchiveReport(bytes(next.databaseId), next.generation, next.baseEndLsn, next.latestEndLsn, archivePath)
 end function
 
-// Implements WAL prefix at for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements WAL prefix at for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param walBytes walBytes value consumed by this operation.
+/// @param targetLsn targetLsn value consumed by this operation.
 function walPrefixAt(walBytes, targetLsn)
   if typeof(targetLsn) != "int" or targetLsn < 0 or targetLsn > len(walBytes) then return fail(INVALID_ARGUMENT, "walPrefixAt", "target LSN is outside the archive") end if
   cursor = 0
@@ -1121,10 +1234,13 @@ function walPrefixAt(walBytes, targetLsn)
   return slice(walBytes, 0, targetLsn)
 end function
 
-// Implements restore to LSN for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements restore to LSN for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
+/// @param databasePath Path associated with database.
+/// @param targetLsn targetLsn value consumed by this operation.
 function restoreToLsn(archivePath, databasePath, targetLsn)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "restoreToLsn", "databasePath must be non-empty") end if
   if file_api.pathExists(databasePath) or file_api.pathExists(databasePath + ".pitr-stage") then return fail(OBJECT_EXISTS, "restoreToLsn", "database destination already exists") end if
@@ -1154,39 +1270,44 @@ function restoreToLsn(archivePath, databasePath, targetLsn)
   return PitrReport(bytes(manifest.databaseId), targetLsn, databasePath)
 end function
 
-// Implements restore latest for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements restore latest for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param archivePath Path associated with archive.
+/// @param databasePath Path associated with database.
 function restoreLatest(archivePath, databasePath)
   manifest = verifyArchive(archivePath)
   return restoreToLsn(archivePath, databasePath, manifest.latestEndLsn)
 end function
 
-// Implements standby magic for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements standby magic for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function standbyMagic()
   return bytes("MSSTB001")
 end function
 
-// Implements standby state path for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements standby state path for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function standbyStatePath(databasePath)
   return file_api.joinPath(databasePath, "standby.state")
 end function
 
-// Implements standby promoted path for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements standby promoted path for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function standbyPromotedPath(databasePath)
   return file_api.joinPath(databasePath, "standby.promoted")
 end function
 
-// Encodes standby state using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes standby state using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function encodeStandbyState(state)
   if state is not StandbyState then return fail(INVALID_ARGUMENT, "encodeStandbyState", "state must be StandbyState") end if
   if typeof(state.databaseId) != "bytes" or len(state.databaseId) != 16 then return fail(INVALID_ARGUMENT, "encodeStandbyState", "databaseId is invalid") end if
@@ -1201,9 +1322,10 @@ function encodeStandbyState(state)
   return checksum.encodeEnvelope(standbyMagic(), STANDBY_FORMAT_VERSION, STANDBY_KIND, 0, payload)
 end function
 
-// Decodes standby state using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Decodes standby state using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
 function decodeStandbyState(source)
   envelope = checksum.decodeEnvelope(source, standbyMagic(), STANDBY_FORMAT_VERSION, STANDBY_KIND)
   payload = envelope.payload
@@ -1216,26 +1338,31 @@ function decodeStandbyState(source)
   return StandbyState(slice(payload, 0, 16), generation, endian.uint64ToInt(lsnWords))
 end function
 
-// Reads standby state using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads standby state using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function readStandbyState(databasePath)
   path = standbyStatePath(databasePath)
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "readStandbyState", "standby.state is missing or standby is already promoted") end if
   return decodeStandbyState(readWhole(path, 1048576))
 end function
 
-// Writes standby state using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Writes standby state using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
+/// @param state Mutable state inspected or updated by the operation.
 function writeStandbyState(databasePath, state)
   return replaceWholeAtomic(standbyStatePath(databasePath), encodeStandbyState(state))
 end function
 
-// Implements materialize standby for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements materialize standby for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
+/// @param databasePath Path associated with database.
 function materializeStandby(archivePath, databasePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "materializeStandby", "databasePath must be non-empty") end if
   stage = databasePath + ".standby-stage"
@@ -1251,10 +1378,12 @@ function materializeStandby(archivePath, databasePath)
   return StandbyReport(bytes(state.databaseId), state.archiveGeneration, state.appliedLsn, databasePath)
 end function
 
-// Implements refresh standby for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements refresh standby for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param archivePath Path associated with archive.
+/// @param databasePath Path associated with database.
 function refreshStandby(archivePath, databasePath)
   manifest = verifyArchive(archivePath)
   state = readStandbyState(databasePath)
@@ -1286,10 +1415,11 @@ function refreshStandby(archivePath, databasePath)
   return StandbyReport(bytes(next.databaseId), next.archiveGeneration, next.appliedLsn, databasePath)
 end function
 
-// Implements promote standby for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements promote standby for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function promoteStandby(databasePath)
   state = readStandbyState(databasePath)
   database = try(database_manager.openStandby(databasePath))
@@ -1305,44 +1435,45 @@ function promoteStandby(databasePath)
   return StandbyReport(bytes(state.databaseId), state.archiveGeneration, state.appliedLsn, databasePath)
 end function
 
-// Implements standby status for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements standby status for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
 function standbyStatus(databasePath)
   return readStandbyState(databasePath)
 end function
 
-// Implements m0 self test line for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the m0SelfTestLine operation for the minisql tools backup module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function m0SelfTestLine()
   return "MiniSQL backup tool M0 self-test: SUCCESS"
 end function
 
-// Implements version line for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the versionLine operation for the minisql tools backup module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function versionLine()
   return version.versionLine("backup")
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql tools backup module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "tools.backup"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql tools backup module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M20"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql tools backup module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

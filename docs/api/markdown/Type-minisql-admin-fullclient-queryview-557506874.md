@@ -12,7 +12,7 @@ struct QueryView
 Summarizes the outcome of one editor execution.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L131)
 
 ## Members
 
@@ -26,7 +26,7 @@ commandCount
 Counts command responses returned by the server.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L135)
 
 <a id="field-field-minisql-admin-fullclient-queryview-resulttext-resulttext-src-minisql-admin-fullclient-ml-1625522880"></a>
 ### resultText
@@ -38,7 +38,7 @@ resultText
 Stores the combined human-readable server output.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L141)
 
 <a id="field-field-minisql-admin-fullclient-queryview-rowcount-rowcount-src-minisql-admin-fullclient-ml-1807126006"></a>
 ### rowCount
@@ -50,7 +50,7 @@ rowCount
 Counts rows in the final row-producing response.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L137)
 
 <a id="field-field-minisql-admin-fullclient-queryview-statementcount-statementcount-src-minisql-admin-fullclient-ml-297402384"></a>
 ### statementCount
@@ -62,7 +62,7 @@ statementCount
 Counts statements submitted by the editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L133)
 
 <a id="field-field-minisql-admin-fullclient-queryview-success-success-src-minisql-admin-fullclient-ml-1432819564"></a>
 ### success
@@ -74,4 +74,4 @@ success
 Indicates whether every response completed successfully.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L139)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql common uuid facilities for this project.
+
 Package: [`minisql.common.uuid`](Package-minisql-common-uuid-362882266.md)
 
 Reachable from entry: **yes**
@@ -23,8 +25,10 @@ Reachable from entry: **yes**
 const AES_GCM_NONCE_BYTES = 12
 ```
 
+Defines the aes gcm nonce bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L44)
 
 <a id="constant-constant-minisql-common-uuid-aes-gcm-tag-bytes-const-aes-gcm-tag-bytes-16-src-minisql-common-uuid-ml-663786028"></a>
 ### AES_GCM_TAG_BYTES
@@ -33,8 +37,10 @@ const AES_GCM_NONCE_BYTES = 12
 const AES_GCM_TAG_BYTES = 16
 ```
 
+Defines the aes gcm tag bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L46)
 
 <a id="constant-constant-minisql-common-uuid-auth-nonce-bytes-const-auth-nonce-bytes-32-src-minisql-common-uuid-ml-531540344"></a>
 ### AUTH_NONCE_BYTES
@@ -43,8 +49,10 @@ const AES_GCM_TAG_BYTES = 16
 const AUTH_NONCE_BYTES = 32
 ```
 
+Defines the auth nonce bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L32)
 
 <a id="constant-constant-minisql-common-uuid-auth-scheme-legacy-const-auth-scheme-legacy-1-src-minisql-common-uuid-ml-1540627870"></a>
 ### AUTH_SCHEME_LEGACY
@@ -53,8 +61,10 @@ const AUTH_NONCE_BYTES = 32
 const AUTH_SCHEME_LEGACY = 1
 ```
 
+Defines the auth scheme legacy constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L28)
 
 <a id="constant-constant-minisql-common-uuid-auth-scheme-scram-sha256-const-auth-scheme-scram-sha256-2-src-minisql-common-uuid-ml-976696171"></a>
 ### AUTH_SCHEME_SCRAM_SHA256
@@ -63,8 +73,10 @@ const AUTH_SCHEME_LEGACY = 1
 const AUTH_SCHEME_SCRAM_SHA256 = 2
 ```
 
+Defines the auth scheme scram sha256 constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L30)
 
 <a id="constant-constant-minisql-common-uuid-authentication-failed-const-authentication-failed-9027-src-minisql-common-uuid-ml-424372815"></a>
 ### AUTHENTICATION_FAILED
@@ -73,8 +85,10 @@ const AUTH_SCHEME_SCRAM_SHA256 = 2
 const AUTHENTICATION_FAILED = 9027
 ```
 
+Defines the authentication failed constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L19)
 
 <a id="function-function-minisql-common-uuid-authenticationfailure-function-authenticationfailure-src-minisql-common-uuid-ml-708460816"></a>
 ### authenticationFailure
@@ -86,7 +100,7 @@ function authenticationFailure()
 Performs the authentication failure operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L757)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L962)
 
 <a id="function-function-minisql-common-uuid-authenticationscheme-function-authenticationscheme-credential-src-minisql-common-uuid-ml-1414162749"></a>
 ### authenticationScheme
@@ -99,10 +113,10 @@ Returns the wire authentication scheme implied by persisted credential material.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `credential` | `dynamic` | — |  |
+| `credential` | `dynamic` | — | credential value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L335)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L470)
 
 <a id="function-function-minisql-common-uuid-authmodeinfo-function-authmodeinfo-nonce-aad-tag-datalength-src-minisql-common-uuid-ml-1604481321"></a>
 ### authModeInfo
@@ -115,13 +129,13 @@ Performs the auth mode info operation for this module. Inputs: `nonce`, `aad`, `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `nonce` | `dynamic` | — |  |
-| `aad` | `dynamic` | — |  |
-| `tag` | `dynamic` | — |  |
-| `dataLength` | `dynamic` | — |  |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `aad` | `dynamic` | — | aad value consumed by this operation. |
+| `tag` | `dynamic` | — | tag value consumed by this operation. |
+| `dataLength` | `dynamic` | — | dataLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L673)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L864)
 
 <a id="function-function-minisql-common-uuid-authproof-function-authproof-verifier-nonce-username-label-src-minisql-common-uuid-ml-1073916209"></a>
 ### authProof
@@ -134,13 +148,13 @@ Performs the auth proof operation for this module. Inputs: `verifier`, `nonce`, 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `verifier` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `label` | `dynamic` | — |  |
+| `verifier` | `dynamic` | — | verifier value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `label` | `dynamic` | — | label value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L619)
 
 <a id="constant-constant-minisql-common-uuid-bcrypt-alg-handle-hmac-flag-const-bcrypt-alg-handle-hmac-flag-8-src-minisql-common-uuid-ml-1040902093"></a>
 ### BCRYPT_ALG_HANDLE_HMAC_FLAG
@@ -149,8 +163,10 @@ Performs the auth proof operation for this module. Inputs: `verifier`, `nonce`, 
 const BCRYPT_ALG_HANDLE_HMAC_FLAG = 8
 ```
 
+Defines the bcrypt alg handle hmac flag constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L40)
 
 <a id="constant-constant-minisql-common-uuid-bcrypt-auth-mode-info-bytes-const-bcrypt-auth-mode-info-bytes-88-src-minisql-common-uuid-ml-1519533489"></a>
 ### BCRYPT_AUTH_MODE_INFO_BYTES
@@ -159,8 +175,10 @@ const BCRYPT_ALG_HANDLE_HMAC_FLAG = 8
 const BCRYPT_AUTH_MODE_INFO_BYTES = 88
 ```
 
+Defines the bcrypt auth mode info bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L48)
 
 <a id="constant-constant-minisql-common-uuid-bcrypt-use-system-preferred-rng-const-bcrypt-use-system-preferred-rng-2-src-minisql-common-uuid-ml-1008996683"></a>
 ### BCRYPT_USE_SYSTEM_PREFERRED_RNG
@@ -169,8 +187,10 @@ const BCRYPT_AUTH_MODE_INFO_BYTES = 88
 const BCRYPT_USE_SYSTEM_PREFERRED_RNG = 2
 ```
 
+Defines the bcrypt use system preferred rng constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L42)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptclosealgorithmprovider-extern-function-bcryptclosealgorithmprovider-algorithm-as-ptr-flags-as-u32-from-bcrypt-dll-symbol-bcryptclosealgorithmprovider-returns-i32-src-minisql-common-uuid-ml-380193502"></a>
 ### BCryptCloseAlgorithmProvider
@@ -183,11 +203,13 @@ Closes an algorithm-provider handle and returns its NTSTATUS result.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `algorithm` | `ptr` | — |  |
-| `flags` | `u32` | — |  |
+| `algorithm` | `ptr` | — | algorithm value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L47)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L85)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptcreatehash-extern-function-bcryptcreatehash-algorithm-as-ptr-hashout-as-bytes-hashobject-as-bytes-hashobjectlength-as-u32-secret-as-ptr-secretlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptcreatehash-returns-i32-src-minisql-common-uuid-ml-1313116512"></a>
 ### BCryptCreateHash
@@ -200,16 +222,18 @@ Allocates a keyed or unkeyed CNG hash object and writes its handle to `hashOut`.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `algorithm` | `ptr` | — |  |
-| `hashOut` | `bytes` | — |  |
-| `hashObject` | `bytes` | — |  |
-| `hashObjectLength` | `u32` | — |  |
-| `secret` | `ptr` | — |  |
-| `secretLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `algorithm` | `ptr` | — | algorithm value consumed by this operation. |
+| `hashOut` | `bytes` | — | hashOut value consumed by this operation. |
+| `hashObject` | `bytes` | — | hashObject value consumed by this operation. |
+| `hashObjectLength` | `u32` | — | hashObjectLength value consumed by this operation. |
+| `secret` | `ptr` | — | secret value consumed by this operation. |
+| `secretLength` | `u32` | — | secretLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L61)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L152)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptdecrypt-extern-function-bcryptdecrypt-key-as-ptr-input-as-bytes-inputlength-as-u32-paddinginfo-as-bytes-iv-as-ptr-ivlength-as-u32-output-as-bytes-outputlength-as-u32-resultlength-as-bytes-flags-as-u32-from-bcrypt-dll-symbol-bcryptdecrypt-returns-i32-src-minisql-common-uuid-ml-757458927"></a>
 ### BCryptDecrypt
@@ -222,19 +246,21 @@ Authenticates and decrypts one buffer, returning NTSTATUS on tag mismatch or fai
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `ptr` | — |  |
-| `input` | `bytes` | — |  |
-| `inputLength` | `u32` | — |  |
-| `paddingInfo` | `bytes` | — |  |
-| `iv` | `ptr` | — |  |
-| `ivLength` | `u32` | — |  |
-| `output` | `bytes` | — |  |
-| `outputLength` | `u32` | — |  |
-| `resultLength` | `bytes` | — |  |
-| `flags` | `u32` | — |  |
+| `key` | `ptr` | — | key value consumed by this operation. |
+| `input` | `bytes` | — | input value consumed by this operation. |
+| `inputLength` | `u32` | — | inputLength value consumed by this operation. |
+| `paddingInfo` | `bytes` | — | paddingInfo value consumed by this operation. |
+| `iv` | `ptr` | — | iv value consumed by this operation. |
+| `ivLength` | `u32` | — | ivLength value consumed by this operation. |
+| `output` | `bytes` | — | Output collection or buffer populated by the operation. |
+| `outputLength` | `u32` | — | outputLength value consumed by this operation. |
+| `resultLength` | `bytes` | — | resultLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L59)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L142)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptderivekeypbkdf2-extern-function-bcryptderivekeypbkdf2-algorithm-as-ptr-secret-as-bytes-secretlength-as-u32-salt-as-bytes-saltlength-as-u32-iterations-as-u64-output-as-bytes-outputlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptderivekeypbkdf2-returns-i32-src-minisql-common-uuid-ml-369480865"></a>
 ### BCryptDeriveKeyPBKDF2
@@ -247,18 +273,20 @@ Derives `outputLength` PBKDF2 bytes from the supplied secret, salt, and iteratio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `algorithm` | `ptr` | — |  |
-| `secret` | `bytes` | — |  |
-| `secretLength` | `u32` | — |  |
-| `salt` | `bytes` | — |  |
-| `saltLength` | `u32` | — |  |
-| `iterations` | `u64` | — |  |
-| `output` | `bytes` | — |  |
-| `outputLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `algorithm` | `ptr` | — | algorithm value consumed by this operation. |
+| `secret` | `bytes` | — | secret value consumed by this operation. |
+| `secretLength` | `u32` | — | secretLength value consumed by this operation. |
+| `salt` | `bytes` | — | salt value consumed by this operation. |
+| `saltLength` | `u32` | — | saltLength value consumed by this operation. |
+| `iterations` | `u64` | — | iterations value consumed by this operation. |
+| `output` | `bytes` | — | Output collection or buffer populated by the operation. |
+| `outputLength` | `u32` | — | outputLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L45)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L80)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptdestroyhash-extern-function-bcryptdestroyhash-hash-as-ptr-from-bcrypt-dll-symbol-bcryptdestroyhash-returns-i32-src-minisql-common-uuid-ml-487174622"></a>
 ### BCryptDestroyHash
@@ -271,10 +299,12 @@ Destroys a CNG hash handle and returns its NTSTATUS result.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hash` | `ptr` | — |  |
+| `hash` | `ptr` | — | hash value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L67)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L170)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptdestroykey-extern-function-bcryptdestroykey-key-as-ptr-from-bcrypt-dll-symbol-bcryptdestroykey-returns-i32-src-minisql-common-uuid-ml-1835198388"></a>
 ### BCryptDestroyKey
@@ -287,10 +317,12 @@ Destroys a CNG symmetric-key handle and returns its NTSTATUS result.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `ptr` | — |  |
+| `key` | `ptr` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L55)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L116)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptencrypt-extern-function-bcryptencrypt-key-as-ptr-input-as-bytes-inputlength-as-u32-paddinginfo-as-bytes-iv-as-ptr-ivlength-as-u32-output-as-bytes-outputlength-as-u32-resultlength-as-bytes-flags-as-u32-from-bcrypt-dll-symbol-bcryptencrypt-returns-i32-src-minisql-common-uuid-ml-282512647"></a>
 ### BCryptEncrypt
@@ -303,19 +335,21 @@ Encrypts one buffer with the supplied key, AEAD metadata, and output bounds.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `ptr` | — |  |
-| `input` | `bytes` | — |  |
-| `inputLength` | `u32` | — |  |
-| `paddingInfo` | `bytes` | — |  |
-| `iv` | `ptr` | — |  |
-| `ivLength` | `u32` | — |  |
-| `output` | `bytes` | — |  |
-| `outputLength` | `u32` | — |  |
-| `resultLength` | `bytes` | — |  |
-| `flags` | `u32` | — |  |
+| `key` | `ptr` | — | key value consumed by this operation. |
+| `input` | `bytes` | — | input value consumed by this operation. |
+| `inputLength` | `u32` | — | inputLength value consumed by this operation. |
+| `paddingInfo` | `bytes` | — | paddingInfo value consumed by this operation. |
+| `iv` | `ptr` | — | iv value consumed by this operation. |
+| `ivLength` | `u32` | — | ivLength value consumed by this operation. |
+| `output` | `bytes` | — | Output collection or buffer populated by the operation. |
+| `outputLength` | `u32` | — | outputLength value consumed by this operation. |
+| `resultLength` | `bytes` | — | resultLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L57)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L129)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptfinishhash-extern-function-bcryptfinishhash-hash-as-ptr-output-as-bytes-outputlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptfinishhash-returns-i32-src-minisql-common-uuid-ml-785077071"></a>
 ### BCryptFinishHash
@@ -328,13 +362,15 @@ Finalizes a CNG hash into the bounded output buffer and returns NTSTATUS.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hash` | `ptr` | — |  |
-| `output` | `bytes` | — |  |
-| `outputLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `hash` | `ptr` | — | hash value consumed by this operation. |
+| `output` | `bytes` | — | Output collection or buffer populated by the operation. |
+| `outputLength` | `u32` | — | outputLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L65)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L166)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptgeneratesymmetrickey-extern-function-bcryptgeneratesymmetrickey-algorithm-as-ptr-keyout-as-bytes-keyobject-as-bytes-keyobjectlength-as-u32-secret-as-bytes-secretlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptgeneratesymmetrickey-returns-i32-src-minisql-common-uuid-ml-697467311"></a>
 ### BCryptGenerateSymmetricKey
@@ -347,16 +383,18 @@ Expands secret bytes into a CNG symmetric-key object and returns its handle.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `algorithm` | `ptr` | — |  |
-| `keyOut` | `bytes` | — |  |
-| `keyObject` | `bytes` | — |  |
-| `keyObjectLength` | `u32` | — |  |
-| `secret` | `bytes` | — |  |
-| `secretLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `algorithm` | `ptr` | — | algorithm value consumed by this operation. |
+| `keyOut` | `bytes` | — | keyOut value consumed by this operation. |
+| `keyObject` | `bytes` | — | keyObject value consumed by this operation. |
+| `keyObjectLength` | `u32` | — | keyObjectLength value consumed by this operation. |
+| `secret` | `bytes` | — | secret value consumed by this operation. |
+| `secretLength` | `u32` | — | secretLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L53)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L112)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptgenrandom-extern-function-bcryptgenrandom-algorithm-as-ptr-buffer-as-bytes-count-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptgenrandom-returns-i32-src-minisql-common-uuid-ml-253216805"></a>
 ### BCryptGenRandom
@@ -369,13 +407,15 @@ Fills `buffer` with cryptographically secure random bytes and returns NTSTATUS.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `algorithm` | `ptr` | — |  |
-| `buffer` | `bytes` | — |  |
-| `count` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `algorithm` | `ptr` | — | algorithm value consumed by this operation. |
+| `buffer` | `bytes` | — | Buffer that receives or supplies the operation data. |
+| `count` | `u32` | — | Number of items or units to process. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L41)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L61)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptgetproperty-extern-function-bcryptgetproperty-object-as-ptr-propertyname-as-wstr-output-as-bytes-outputlength-as-u32-resultlength-as-bytes-flags-as-u32-from-bcrypt-dll-symbol-bcryptgetproperty-returns-i32-src-minisql-common-uuid-ml-862825824"></a>
 ### BCryptGetProperty
@@ -388,15 +428,17 @@ Reads a named CNG property into `output` and reports the produced length.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `ptr` | — |  |
-| `propertyName` | `wstr` | — |  |
-| `output` | `bytes` | — |  |
-| `outputLength` | `u32` | — |  |
-| `resultLength` | `bytes` | — |  |
-| `flags` | `u32` | — |  |
+| `object` | `ptr` | — | object value consumed by this operation. |
+| `propertyName` | `wstr` | — | propertyName value consumed by this operation. |
+| `output` | `bytes` | — | Output collection or buffer populated by the operation. |
+| `outputLength` | `u32` | — | outputLength value consumed by this operation. |
+| `resultLength` | `bytes` | — | resultLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L49)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L94)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcrypthashdata-extern-function-bcrypthashdata-hash-as-ptr-input-as-bytes-inputlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcrypthashdata-returns-i32-src-minisql-common-uuid-ml-1964116126"></a>
 ### BCryptHashData
@@ -409,13 +451,15 @@ Incorporates `inputLength` bytes into the in-progress CNG hash.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hash` | `ptr` | — |  |
-| `input` | `bytes` | — |  |
-| `inputLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `hash` | `ptr` | — | hash value consumed by this operation. |
+| `input` | `bytes` | — | input value consumed by this operation. |
+| `inputLength` | `u32` | — | inputLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L63)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L159)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptopenalgorithmprovider-extern-function-bcryptopenalgorithmprovider-handleout-as-bytes-algorithmid-as-wstr-implementation-as-wstr-flags-as-u32-from-bcrypt-dll-symbol-bcryptopenalgorithmprovider-returns-i32-src-minisql-common-uuid-ml-695754952"></a>
 ### BCryptOpenAlgorithmProvider
@@ -428,13 +472,15 @@ Opens the requested CNG algorithm provider and writes its handle to `handleOut`.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handleOut` | `bytes` | — |  |
-| `algorithmId` | `wstr` | — |  |
-| `implementation` | `wstr` | — |  |
-| `flags` | `u32` | — |  |
+| `handleOut` | `bytes` | — | handleOut value consumed by this operation. |
+| `algorithmId` | `wstr` | — | Identifier of algorithm. |
+| `implementation` | `wstr` | — | implementation value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L43)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L68)
 
 <a id="extern_function-extern-function-minisql-common-uuid-bcryptsetproperty-extern-function-bcryptsetproperty-object-as-ptr-propertyname-as-wstr-input-as-bytes-inputlength-as-u32-flags-as-u32-from-bcrypt-dll-symbol-bcryptsetproperty-returns-i32-src-minisql-common-uuid-ml-203120914"></a>
 ### BCryptSetProperty
@@ -447,14 +493,16 @@ Updates a named CNG property from the supplied byte representation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `ptr` | — |  |
-| `propertyName` | `wstr` | — |  |
-| `input` | `bytes` | — |  |
-| `inputLength` | `u32` | — |  |
-| `flags` | `u32` | — |  |
+| `object` | `ptr` | — | object value consumed by this operation. |
+| `propertyName` | `wstr` | — | propertyName value consumed by this operation. |
+| `input` | `bytes` | — | input value consumed by this operation. |
+| `inputLength` | `u32` | — | inputLength value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L51)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L102)
 
 <a id="function-function-minisql-common-uuid-closeaesgcm-function-closeaesgcm-state-src-minisql-common-uuid-ml-69705125"></a>
 ### closeAesGcm
@@ -467,10 +515,10 @@ Closes the aes gcm. Inputs: `state`. Returns the operation result and propagates
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L634)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L814)
 
 <a id="extern_function-extern-function-minisql-common-uuid-cocreateguid-extern-function-cocreateguid-buffer-as-bytes-from-ole32-dll-symbol-cocreateguid-returns-i32-src-minisql-common-uuid-ml-524876179"></a>
 ### CoCreateGuid
@@ -483,10 +531,12 @@ Writes a new RFC-compatible GUID to `buffer` and returns the HRESULT status.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `bytes` | — |  |
+| `buffer` | `bytes` | — | Buffer that receives or supplies the operation data. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L39)
+**Returns:** Native i32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L54)
 
 <a id="function-function-minisql-common-uuid-componentname-function-componentname-src-minisql-common-uuid-ml-1136681416"></a>
 ### componentName
@@ -495,10 +545,10 @@ Writes a new RFC-compatible GUID to `buffer` and returns the HRESULT status.
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql common uuid module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L763)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L968)
 
 <a id="function-function-minisql-common-uuid-constanttimeequals-function-constanttimeequals-left-right-src-minisql-common-uuid-ml-1441361977"></a>
 ### constantTimeEquals
@@ -511,11 +561,11 @@ Performs the constant time equals operation for this module. Inputs: `left`, `ri
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L456)
 
 <a id="function-function-minisql-common-uuid-create-function-create-src-minisql-common-uuid-ml-622113340"></a>
 ### create
@@ -524,10 +574,10 @@ Performs the constant time equals operation for this module. Inputs: `left`, `ri
 function create()
 ```
 
-Creates the requested value. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql common uuid module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L202)
 
 <a id="function-function-minisql-common-uuid-createpasswordmaterial-function-createpasswordmaterial-password-src-minisql-common-uuid-ml-1560751545"></a>
 ### createPasswordMaterial
@@ -540,10 +590,10 @@ Creates the password material. Inputs: `password`. Returns the produced value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `password` | `dynamic` | — |  |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L249)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L372)
 
 <a id="function-function-minisql-common-uuid-createpasswordmaterialbytes-function-createpasswordmaterialbytes-passwordbytes-src-minisql-common-uuid-ml-1472981518"></a>
 ### createPasswordMaterialBytes
@@ -556,10 +606,10 @@ Creates the password material bytes. Inputs: `passwordBytes`. Returns the produc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `passwordBytes` | `dynamic` | — |  |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L356)
 
 <a id="constant-constant-minisql-common-uuid-default-pbkdf2-iterations-const-default-pbkdf2-iterations-600000-src-minisql-common-uuid-ml-1769710915"></a>
 ### DEFAULT_PBKDF2_ITERATIONS
@@ -568,8 +618,10 @@ Creates the password material bytes. Inputs: `passwordBytes`. Returns the produc
 const DEFAULT_PBKDF2_ITERATIONS = 600000
 ```
 
+Defines the default pbkdf2 iterations constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L34)
 
 <a id="function-function-minisql-common-uuid-derivekey-synchronized-function-derivekey-secret-salt-iterations-outputlength-src-minisql-common-uuid-ml-1938893919"></a>
 ### deriveKey
@@ -582,13 +634,13 @@ Performs the PBKDF2 sequence under the same process-wide monitor as all other CN
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `secret` | `dynamic` | — |  |
-| `salt` | `dynamic` | — |  |
-| `iterations` | `dynamic` | — |  |
-| `outputLength` | `dynamic` | — |  |
+| `secret` | `dynamic` | — | secret value consumed by this operation. |
+| `salt` | `dynamic` | — | salt value consumed by this operation. |
+| `iterations` | `dynamic` | — | iterations value consumed by this operation. |
+| `outputLength` | `dynamic` | — | outputLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L295)
 
 <a id="function-function-minisql-common-uuid-equals-function-equals-left-right-src-minisql-common-uuid-ml-1940324165"></a>
 ### equals
@@ -601,11 +653,11 @@ Compares the s. Inputs: `left`, `right`. Returns a boolean result; invalid input
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L229)
 
 <a id="function-function-minisql-common-uuid-fail-function-fail-code-operation-message-src-minisql-common-uuid-ml-1285503545"></a>
 ### fail
@@ -614,16 +666,16 @@ Compares the s. Inputs: `left`, `right`. Returns a boolean result; invalid input
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql common uuid module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L196)
 
 <a id="function-function-minisql-common-uuid-hmacsha256-synchronized-function-hmacsha256-key-input-src-minisql-common-uuid-ml-706360499"></a>
 ### hmacSha256
@@ -636,11 +688,11 @@ Performs the HMAC provider lifecycle under the native-crypto monitor. Inputs: `k
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `dynamic` | — |  |
-| `input` | `dynamic` | — |  |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L504)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L668)
 
 <a id="constant-constant-minisql-common-uuid-invalid-argument-const-invalid-argument-9001-src-minisql-common-uuid-ml-297786311"></a>
 ### INVALID_ARGUMENT
@@ -649,7 +701,7 @@ Performs the HMAC provider lifecycle under the native-crypto monitor. Inputs: `k
 const INVALID_ARGUMENT = 9001
 ```
 
-Cryptographic utility layer for identifiers, password verification, message authentication, and authenticated encryption. Random material comes from the operating system; secret comparisons use constant-time native primitives.
+Cryptographic utility layer for identifiers, password verification, message
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L15)
@@ -661,8 +713,10 @@ Cryptographic utility layer for identifiers, password verification, message auth
 const IO_FAILURE = 9005
 ```
 
+Defines the io failure constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L17)
 
 <a id="function-function-minisql-common-uuid-isaeadpacket-function-isaeadpacket-value-src-minisql-common-uuid-ml-476358729"></a>
 ### isAeadPacket
@@ -675,10 +729,10 @@ Evaluates whether the supplied input satisfies the aead packet predicate. Inputs
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L751)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L956)
 
 <a id="function-function-minisql-common-uuid-isimplemented-function-isimplemented-src-minisql-common-uuid-ml-707123216"></a>
 ### isImplemented
@@ -687,10 +741,10 @@ Evaluates whether the supplied input satisfies the aead packet predicate. Inputs
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql common uuid module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L775)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L980)
 
 <a id="constant-constant-minisql-common-uuid-max-pbkdf2-iterations-const-max-pbkdf2-iterations-5000000-src-minisql-common-uuid-ml-2023220400"></a>
 ### MAX_PBKDF2_ITERATIONS
@@ -699,8 +753,10 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 const MAX_PBKDF2_ITERATIONS = 5000000
 ```
 
+Defines the max pbkdf2 iterations constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L38)
 
 <a id="constant-constant-minisql-common-uuid-min-pbkdf2-iterations-const-min-pbkdf2-iterations-10000-src-minisql-common-uuid-ml-1285971028"></a>
 ### MIN_PBKDF2_ITERATIONS
@@ -709,8 +765,10 @@ const MAX_PBKDF2_ITERATIONS = 5000000
 const MIN_PBKDF2_ITERATIONS = 10000
 ```
 
+Defines the min pbkdf2 iterations constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L36)
 
 <a id="function-function-minisql-common-uuid-nativehandle-function-nativehandle-handlebytes-operation-src-minisql-common-uuid-ml-1777666770"></a>
 ### nativeHandle
@@ -723,11 +781,11 @@ Performs the native handle operation for this module. Inputs: `handleBytes`, `op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handleBytes` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `handleBytes` | `dynamic` | — | handleBytes value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L596)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L774)
 
 <a id="function-function-minisql-common-uuid-openaesgcm-function-openaesgcm-keybytes-src-minisql-common-uuid-ml-1165519534"></a>
 ### openAesGcm
@@ -740,10 +798,10 @@ Opens the aes gcm. Inputs: `keyBytes`. Returns the produced value or propagates 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `keyBytes` | `dynamic` | — |  |
+| `keyBytes` | `dynamic` | — | keyBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L604)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L783)
 
 <a id="function-function-minisql-common-uuid-opensha256hmac-function-opensha256hmac-src-minisql-common-uuid-ml-1248782724"></a>
 ### openSha256Hmac
@@ -755,7 +813,7 @@ function openSha256Hmac()
 Opens the sha256 hmac. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L275)
 
 <a id="function-function-minisql-common-uuid-parsehex-function-parsehex-text-src-minisql-common-uuid-ml-1061204819"></a>
 ### parseHex
@@ -768,10 +826,10 @@ Parses the hex. Inputs: `text`. Returns the produced value or propagates a struc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `dynamic` | — |  |
+| `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L249)
 
 <a id="constant-constant-minisql-common-uuid-password-credential-bytes-const-password-credential-bytes-64-src-minisql-common-uuid-ml-2095181411"></a>
 ### PASSWORD_CREDENTIAL_BYTES
@@ -780,10 +838,10 @@ Parses the hex. Inputs: `text`. Returns the produced value or propagates a struc
 const PASSWORD_CREDENTIAL_BYTES = 64
 ```
 
-New credentials keep a SCRAM-style StoredKey and ServerKey rather than a password-equivalent verifier. Legacy 32-byte verifiers remain readable so a database can be upgraded without invalidating every account at once.
+New credentials keep a SCRAM-style StoredKey and ServerKey rather than a
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L26)
 
 <a id="constant-constant-minisql-common-uuid-password-salt-bytes-const-password-salt-bytes-16-src-minisql-common-uuid-ml-1198248304"></a>
 ### PASSWORD_SALT_BYTES
@@ -792,8 +850,10 @@ New credentials keep a SCRAM-style StoredKey and ServerKey rather than a passwor
 const PASSWORD_SALT_BYTES = 16
 ```
 
+Defines the password salt bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L22)
 
 <a id="constant-constant-minisql-common-uuid-password-verifier-bytes-const-password-verifier-bytes-32-src-minisql-common-uuid-ml-167314654"></a>
 ### PASSWORD_VERIFIER_BYTES
@@ -802,8 +862,10 @@ const PASSWORD_SALT_BYTES = 16
 const PASSWORD_VERIFIER_BYTES = 32
 ```
 
+Defines the password verifier bytes constant used by the minisql common uuid module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L24)
 
 - [minisql.common.uuid.PasswordMaterial](Type-minisql-common-uuid-passwordmaterial-1953062680.md) — struct
 <a id="function-function-minisql-common-uuid-randombytes-synchronized-function-randombytes-count-src-minisql-common-uuid-ml-1700952893"></a>
@@ -817,10 +879,10 @@ Performs the random bytes operation under the common native-crypto monitor. Inpu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `count` | `dynamic` | — |  |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L259)
 
 <a id="function-function-minisql-common-uuid-scramclientproof-function-scramclientproof-saltedpassword-nonce-username-src-minisql-common-uuid-ml-256654331"></a>
 ### scramClientProof
@@ -833,12 +895,12 @@ Creates the client proof from the password-derived salted secret. The proof does
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `saltedPassword` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `saltedPassword` | `dynamic` | — | saltedPassword value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L369)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L510)
 
 <a id="function-function-minisql-common-uuid-scramcredential-function-scramcredential-saltedpassword-src-minisql-common-uuid-ml-937153390"></a>
 ### scramCredential
@@ -851,10 +913,10 @@ Derives the non-password-equivalent StoredKey || ServerKey representation used b
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `saltedPassword` | `dynamic` | — |  |
+| `saltedPassword` | `dynamic` | — | saltedPassword value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L344)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L480)
 
 <a id="function-function-minisql-common-uuid-scramserverprooffromcredential-function-scramserverprooffromcredential-credential-nonce-username-src-minisql-common-uuid-ml-1742649256"></a>
 ### scramServerProofFromCredential
@@ -867,12 +929,12 @@ Computes the server's transcript signature. A client derives the same ServerKey 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `credential` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `credential` | `dynamic` | — | credential value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L416)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L564)
 
 <a id="function-function-minisql-common-uuid-scramserverprooffrompassword-function-scramserverprooffrompassword-saltedpassword-nonce-username-src-minisql-common-uuid-ml-1541025011"></a>
 ### scramServerProofFromPassword
@@ -885,12 +947,12 @@ Derives the reciprocal server proof from a client-owned salted password.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `saltedPassword` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `saltedPassword` | `dynamic` | — | saltedPassword value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L579)
 
 <a id="function-function-minisql-common-uuid-scramsessionsecretfromcredential-function-scramsessionsecretfromcredential-credential-nonce-username-src-minisql-common-uuid-ml-1105645176"></a>
 ### scramSessionSecretFromCredential
@@ -903,12 +965,12 @@ Derives a shared session secret from both stored halves. Possession of this valu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `credential` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `credential` | `dynamic` | — | credential value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L438)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L592)
 
 <a id="function-function-minisql-common-uuid-scramsessionsecretfrompassword-function-scramsessionsecretfrompassword-saltedpassword-nonce-username-src-minisql-common-uuid-ml-275649243"></a>
 ### scramSessionSecretFromPassword
@@ -921,12 +983,12 @@ Derives the shared session secret from a client-owned salted password.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `saltedPassword` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `saltedPassword` | `dynamic` | — | saltedPassword value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L448)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L605)
 
 <a id="function-function-minisql-common-uuid-scramtranscript-function-scramtranscript-nonce-username-src-minisql-common-uuid-ml-1247213635"></a>
 ### scramTranscript
@@ -939,11 +1001,11 @@ Produces the single transcript shared by client proof, server proof and transpor
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L361)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L499)
 
 <a id="function-function-minisql-common-uuid-sequencebytes-function-sequencebytes-sequence-src-minisql-common-uuid-ml-1765847813"></a>
 ### sequenceBytes
@@ -956,10 +1018,10 @@ Performs the sequence bytes operation for this module. Inputs: `sequence`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sequence` | `dynamic` | — |  |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L572)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L747)
 
 <a id="function-function-minisql-common-uuid-sha256-synchronized-function-sha256-input-src-minisql-common-uuid-ml-1582142376"></a>
 ### sha256
@@ -972,10 +1034,10 @@ Performs the SHA-256 provider lifecycle under the native-crypto monitor. Inputs:
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L469)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L631)
 
 <a id="function-function-minisql-common-uuid-targetmilestone-function-targetmilestone-src-minisql-common-uuid-ml-135178886"></a>
 ### targetMilestone
@@ -984,10 +1046,10 @@ Performs the SHA-256 provider lifecycle under the native-crypto monitor. Inputs:
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql common uuid module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L769)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L974)
 
 <a id="function-function-minisql-common-uuid-tohex-function-tohex-value-src-minisql-common-uuid-ml-1261156297"></a>
 ### toHex
@@ -1000,10 +1062,10 @@ Converts the hex. Inputs: `value`. Returns the produced value or propagates a st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L241)
 
 <a id="function-function-minisql-common-uuid-transportassociateddata-function-transportassociateddata-messagetype-flags-requestid-sequence-payloadlength-src-minisql-common-uuid-ml-1838685649"></a>
 ### transportAssociatedData
@@ -1016,14 +1078,14 @@ Performs the transport associated data operation for this module. Inputs: `messa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `messageType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `requestId` | `dynamic` | — |  |
-| `sequence` | `dynamic` | — |  |
-| `payloadLength` | `dynamic` | — |  |
+| `messageType` | `dynamic` | — | messageType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `requestId` | `dynamic` | — | Identifier of request. |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
+| `payloadLength` | `dynamic` | — | payloadLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L660)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L847)
 
 <a id="function-function-minisql-common-uuid-transportdecrypt-synchronized-function-transportdecrypt-key-sequence-messagetype-flags-requestid-ciphertext-tag-src-minisql-common-uuid-ml-798815898"></a>
 ### transportDecrypt
@@ -1036,16 +1098,16 @@ Authenticates and decrypts one transport frame under the synchronized native gua
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `dynamic` | — |  |
-| `sequence` | `dynamic` | — |  |
-| `messageType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `requestId` | `dynamic` | — |  |
-| `ciphertext` | `dynamic` | — |  |
-| `tag` | `dynamic` | — |  |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
+| `messageType` | `dynamic` | — | messageType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `requestId` | `dynamic` | — | Identifier of request. |
+| `ciphertext` | `dynamic` | — | ciphertext value consumed by this operation. |
+| `tag` | `dynamic` | — | tag value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L720)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L924)
 
 <a id="function-function-minisql-common-uuid-transportencrypt-synchronized-function-transportencrypt-key-sequence-messagetype-flags-requestid-plaintext-src-minisql-common-uuid-ml-543060365"></a>
 ### transportEncrypt
@@ -1058,15 +1120,15 @@ The CNG AEAD setup passes pointers into several managed temporary buffers. All s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `dynamic` | — |  |
-| `sequence` | `dynamic` | — |  |
-| `messageType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `requestId` | `dynamic` | — |  |
-| `plaintext` | `dynamic` | — |  |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
+| `messageType` | `dynamic` | — | messageType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `requestId` | `dynamic` | — | Identifier of request. |
+| `plaintext` | `dynamic` | — | plaintext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L690)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L887)
 
 <a id="function-function-minisql-common-uuid-transportkey-function-transportkey-verifier-nonce-username-label-src-minisql-common-uuid-ml-1453655573"></a>
 ### transportKey
@@ -1079,13 +1141,13 @@ Performs the transport key operation for this module. Inputs: `verifier`, `nonce
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `verifier` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `label` | `dynamic` | — |  |
+| `verifier` | `dynamic` | — | verifier value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `label` | `dynamic` | — | label value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L540)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L708)
 
 <a id="function-function-minisql-common-uuid-transportnonce-function-transportnonce-key-sequence-src-minisql-common-uuid-ml-1306717174"></a>
 ### transportNonce
@@ -1098,11 +1160,11 @@ Performs the transport nonce operation for this module. Inputs: `key`, `sequence
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `dynamic` | — |  |
-| `sequence` | `dynamic` | — |  |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L646)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L828)
 
 <a id="function-function-minisql-common-uuid-transporttag-function-transporttag-key-messagetype-flags-requestid-sequence-authenticated-src-minisql-common-uuid-ml-246267829"></a>
 ### transportTag
@@ -1115,15 +1177,15 @@ Compatibility keyed authenticator used by the M30 audit-chain format. The domain
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `key` | `dynamic` | — |  |
-| `messageType` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
-| `requestId` | `dynamic` | — |  |
-| `sequence` | `dynamic` | — |  |
-| `authenticated` | `dynamic` | — |  |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `messageType` | `dynamic` | — | messageType value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
+| `requestId` | `dynamic` | — | Identifier of request. |
+| `sequence` | `dynamic` | — | sequence value consumed by this operation. |
+| `authenticated` | `dynamic` | — | authenticated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L553)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L727)
 
 <a id="function-function-minisql-common-uuid-utf16ascii-function-utf16ascii-text-src-minisql-common-uuid-ml-1589900535"></a>
 ### utf16Ascii
@@ -1136,10 +1198,10 @@ Performs the utf16 ascii operation for this module. Inputs: `text`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `dynamic` | — |  |
+| `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L581)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L757)
 
 <a id="function-function-minisql-common-uuid-validate-function-validate-value-src-minisql-common-uuid-ml-594413105"></a>
 ### validate
@@ -1148,14 +1210,14 @@ Performs the utf16 ascii operation for this module. Inputs: `text`. Returns the 
 function validate(value)
 ```
 
-Validates the requested value. Inputs: `value`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates validate for the minisql common uuid workflow. Inputs: `value`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L218)
 
 <a id="function-function-minisql-common-uuid-validatepassword-function-validatepassword-password-operation-src-minisql-common-uuid-ml-1723286562"></a>
 ### validatePassword
@@ -1168,11 +1230,11 @@ Validates the password. Inputs: `password`, `operation`. Returns success after a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `password` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `password` | `dynamic` | — | password value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L348)
 
 <a id="function-function-minisql-common-uuid-validatepasswordbytes-function-validatepasswordbytes-passwordbytes-operation-src-minisql-common-uuid-ml-1213368049"></a>
 ### validatePasswordBytes
@@ -1185,11 +1247,11 @@ Validates the password bytes. Inputs: `passwordBytes`, `operation`. Returns succ
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `passwordBytes` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L328)
 
 <a id="function-function-minisql-common-uuid-verifypassword-function-verifypassword-password-salt-iterations-expected-src-minisql-common-uuid-ml-1735102989"></a>
 ### verifyPassword
@@ -1202,13 +1264,13 @@ Verifies the password. Inputs: `password`, `salt`, `iterations`, `expected`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `password` | `dynamic` | — |  |
-| `salt` | `dynamic` | — |  |
-| `iterations` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `password` | `dynamic` | — | password value consumed by this operation. |
+| `salt` | `dynamic` | — | salt value consumed by this operation. |
+| `iterations` | `dynamic` | — | iterations value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L430)
 
 <a id="function-function-minisql-common-uuid-verifypasswordbytes-function-verifypasswordbytes-passwordbytes-salt-iterations-expected-src-minisql-common-uuid-ml-1422455410"></a>
 ### verifyPasswordBytes
@@ -1221,13 +1283,13 @@ Verifies the password bytes. Inputs: `passwordBytes`, `salt`, `iterations`, `exp
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `passwordBytes` | `dynamic` | — |  |
-| `salt` | `dynamic` | — |  |
-| `iterations` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
+| `salt` | `dynamic` | — | salt value consumed by this operation. |
+| `iterations` | `dynamic` | — | iterations value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L402)
 
 <a id="function-function-minisql-common-uuid-verifyscramclientproof-function-verifyscramclientproof-credential-nonce-username-proof-src-minisql-common-uuid-ml-830430578"></a>
 ### verifyScramClientProof
@@ -1240,13 +1302,13 @@ Verifies a hardened client proof without reconstructing or storing the password-
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `credential` | `dynamic` | — |  |
-| `nonce` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `proof` | `dynamic` | — |  |
+| `credential` | `dynamic` | — | credential value consumed by this operation. |
+| `nonce` | `dynamic` | — | nonce value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `proof` | `dynamic` | — | proof value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L537)
 
 <a id="function-function-minisql-common-uuid-wipepasswordmaterial-function-wipepasswordmaterial-material-src-minisql-common-uuid-ml-220067909"></a>
 ### wipePasswordMaterial
@@ -1259,10 +1321,10 @@ Performs the wipe password material operation for this module. Inputs: `material
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `material` | `dynamic` | — |  |
+| `material` | `dynamic` | — | material value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L264)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L388)
 
 <a id="function-function-minisql-common-uuid-wipesecret-function-wipesecret-secret-src-minisql-common-uuid-ml-1761080720"></a>
 ### wipeSecret
@@ -1275,7 +1337,7 @@ Performs the wipe secret operation for this module. Inputs: `secret`. Returns th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `secret` | `dynamic` | — |  |
+| `secret` | `dynamic` | — | secret value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L318)

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+//! Provides apps minisqld main facilities for this project.
+
 import minisql.catalog.catalog as catalog
 import minisql.client.console as console
 import minisql.common.limits as limits
@@ -13,9 +15,9 @@ import minisql.server.database_manager as database_manager
 import minisql.server.server as server
 import minisql.tools.encryption as encryption
 
-// Prints usage using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Prints usage using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function printUsage()
   print "MiniSQL database server"
   print ""
@@ -50,18 +52,20 @@ function printUsage()
   print "  minisqld.exe --serve-auth-many <database-path> <port> <max-clients> [max-requests]"
 end function
 
-// Prints app error using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Prints app error using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
 function printAppError(value)
   print "ERROR " + value.code + ": " + value.message
   return 1
 end function
 
-// Implements server result for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements server result for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param result Result object populated or inspected by the operation.
 function serverResult(result)
   code = 0
   if typeof(result) == "error" then
@@ -75,14 +79,18 @@ function serverResult(result)
   return code
 end function
 
-// Applies validated configuration to the process-wide logger singleton.
-// Inputs: `config`. Returns true after stdout, rolling file, threshold and binlog settings are active.
+/// Applies validated configuration to the process-wide logger singleton.
+/// Inputs: `config`. Returns true after stdout, rolling file, threshold and binlog settings are active.
+/// @param config Configuration used by the operation.
 function configureLogger(config)
   return logger.configure(config.runtime.logLevel, config.paths.logDirectory, config.logging.stdoutEnabled, config.logging.fileEnabled, config.logging.fileName, config.logging.rotationHours, config.binlog.enabled, config.binlog.fileName)
 end function
 
-// Starts an operational server entirely from a JSON configuration file.
-// Inputs: `mode`, `databasePath`, `configPath`. Returns the public process exit code.
+/// Starts an operational server entirely from a JSON configuration file.
+/// Inputs: `mode`, `databasePath`, `configPath`. Returns the public process exit code.
+/// @param mode Mode selecting the requested behavior.
+/// @param databasePath Path associated with database.
+/// @param configPath Path associated with config.
 function runConfiguredServer(mode, databasePath, configPath)
   config = try(config_loader.load(configPath))
   if typeof(config) == "error" then return printAppError(config) end if
@@ -107,16 +115,19 @@ function runConfiguredServer(mode, databasePath, configPath)
   return serverResult(try(server.serveConcurrentWithOperationalLimits(databasePath, config.server.port, config.server.maxConnections, 0, config.runtime.queryTimeoutMs, config.runtime.checkpointWalBytes, config.runtime.bufferPoolBytes, config.runtime.temporaryMemoryBytes, config.server.maxStatementBytes, config.server.maxFrameBytes, config.server.maxResultRows, config.server.maxResultBytes, config.server.idleTimeoutMs, config.runtime.processMemoryBytes, config.runtime.temporaryStorageBytes, config.runtime.slowQueryMs)))
 end function
 
-// Enables documented default logging for legacy explicit-argument server modes.
-// Takes no caller inputs. Returns true after the singleton is configured.
+/// Enables documented default logging for legacy explicit-argument server modes.
+/// Takes no caller inputs. Returns true after the singleton is configured.
 function configureDefaultLogger()
   return configureLogger(config_model.defaultConfig("./data"))
 end function
 
-// Implements initialize database for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements initialize database for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param dataRoot dataRoot value consumed by this operation.
+/// @param databaseName databaseName value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
 function initializeDatabase(dataRoot, databaseName, pageSize)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     print "ERROR 9001: page-size must be one of 4096, 8192, 16384 or 32768"
@@ -134,10 +145,12 @@ function initializeDatabase(dataRoot, databaseName, pageSize)
   return 0
 end function
 
-// Implements set user password for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements set user password for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param username username value consumed by this operation.
 function setUserPassword(databasePath, username)
   secret = try(console.readPasswordConfirmed("Password: ", "Confirm password: "))
   if typeof(secret) == "error" then return printAppError(secret) end if
@@ -152,9 +165,15 @@ function setUserPassword(databasePath, username)
   return 0
 end function
 
-// Implements announce server for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements announce server for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param mode Mode selecting the requested behavior.
+/// @param databasePath Path associated with database.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param maximumClients maximumClients value consumed by this operation.
+/// @param maximumRequests maximumRequests value consumed by this operation.
 function announceServer(mode, databasePath, address, port, maximumClients, maximumRequests)
   budget = "unlimited"
   if maximumRequests > 0 then budget = "" + maximumRequests end if
@@ -169,10 +188,11 @@ function announceServer(mode, databasePath, address, port, maximumClients, maxim
   return true
 end function
 
-// Implements main for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the main operation for the apps minisqld main module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param args Command-line or caller-supplied arguments.
 function main(args)
   // QuickEdit suspends console writers while text is selected. Disable it
   // before operational logging so an accidental click cannot freeze every

@@ -1,3 +1,5 @@
+//! Provides minisql tools check facilities for this project.
+
 package minisql.tools.check
 
 // Copyright 2026 MiniLangProject contributors
@@ -15,50 +17,56 @@ import minisql.platform.file as file_api
 import minisql.server.database_manager as database_manager
 import minisql.storage.btree as btree
 
-// M20 offline consistency checker. The database manager obtains the database-wide
-// exclusive lock and completes WAL recovery before any structural checks begin.
+/// M20 offline consistency checker. The database manager obtains the database-wide
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql tools check module.
 const CORRUPT_DATA = 9004
 
-// Groups the check report state and preserves the field relationships documented below.
+/// Groups the check report state and preserves the field relationships documented below.
 struct CheckReport
-  // Stores the database name associated with this value.
+  /// Stores the database name associated with this value.
   databaseName
-  // Identifies the database identifier.
+  /// Identifies the database identifier.
   databaseId
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Tracks the table count numeric value.
+  /// Tracks the table count numeric value.
   tableCount
-  // Tracks the row count numeric value.
+  /// Tracks the row count numeric value.
   rowCount
-  // Tracks the index count numeric value.
+  /// Tracks the index count numeric value.
   indexCount
-  // Tracks the statistics table count numeric value.
+  /// Tracks the statistics table count numeric value.
   statisticsTableCount
-  // Stores the warnings associated with this value.
+  /// Stores the warnings associated with this value.
   warnings
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql tools check module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "tools.check." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the check report condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the check report condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isCheckReport(value)
   return value is CheckReport
 end function
 
-// Implements bytes equal for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the bytesEqual operation for the minisql tools check module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -68,9 +76,11 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Returns whether the supplied value satisfies the int condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the int condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param values values value consumed by this operation.
+/// @param expected expected value consumed by this operation.
 function containsInt(values, expected)
   for each value in values
     if value == expected then return true end if
@@ -78,9 +88,11 @@ function containsInt(values, expected)
   return false
 end function
 
-// Implements catalog has table for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements catalog has table for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
+/// @param tableId Identifier of table.
 function catalogHasTable(database, tableId)
   for each table in database.catalogHandle.catalog.tables
     if table.tableId == tableId then return true end if
@@ -88,9 +100,11 @@ function catalogHasTable(database, tableId)
   return false
 end function
 
-// Implements schema has table for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements schema has table for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param tableId Identifier of table.
 function schemaHasTable(state, tableId)
   for each table in state.tables
     if table.tableId == tableId then return true end if
@@ -98,10 +112,12 @@ function schemaHasTable(state, tableId)
   return false
 end function
 
-// Verifies index using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Verifies index using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
+/// @param indexId Identifier of index.
 function verifyIndex(databasePath, indexId)
   path = schema_history.indexFilePath(databasePath, indexId)
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "verifyIndex", "index file is missing: " + path) end if
@@ -114,9 +130,10 @@ function verifyIndex(databasePath, indexId)
   return true
 end function
 
-// Checks open using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Checks open using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param database database value consumed by this operation.
 function checkOpen(database)
   securityValid = catalog.validateSecuritySemantics(database.catalogHandle.security, database.catalogHandle.metadata.databaseId, database.catalogHandle.catalog.tables)
   auditReport = diagnostics.verifyAudit(database.path)
@@ -181,10 +198,11 @@ function checkOpen(database)
   )
 end function
 
-// Runs run using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Runs run for the minisql tools check workflow.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param databasePath Path associated with database.
 function run(databasePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "run", "databasePath must be non-empty") end if
   database = void
@@ -197,37 +215,37 @@ function run(databasePath)
   return result
 end function
 
-// Implements m0 self test line for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the m0SelfTestLine operation for the minisql tools check module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function m0SelfTestLine()
   return "MiniSQL check tool M0 self-test: SUCCESS"
 end function
 
-// Implements version line for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the versionLine operation for the minisql tools check module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function versionLine()
   return version.versionLine("check")
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql tools check module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "tools.check"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql tools check module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M20"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql tools check module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

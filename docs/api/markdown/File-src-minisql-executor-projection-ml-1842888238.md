@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql executor projection facilities for this project.
+
 Package: [`minisql.executor.projection`](Package-minisql-executor-projection-1281772020.md)
 
 Reachable from entry: **yes**
@@ -27,12 +29,12 @@ Applies apply using the supplied inputs. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `selectExpressions` | `dynamic` | — |  |
-| `orderExpressions` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `selectExpressions` | `dynamic` | — | selectExpressions value consumed by this operation. |
+| `orderExpressions` | `dynamic` | — | orderExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L79)
 
 <a id="function-function-minisql-executor-projection-applywindows-function-applywindows-rows-selectexpressions-orderexpressions-src-minisql-executor-projection-ml-768487643"></a>
 ### applyWindows
@@ -45,12 +47,12 @@ Applies windows using the supplied inputs. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `selectExpressions` | `dynamic` | — |  |
-| `orderExpressions` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `selectExpressions` | `dynamic` | — | selectExpressions value consumed by this operation. |
+| `orderExpressions` | `dynamic` | — | orderExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L357)
 
 <a id="function-function-minisql-executor-projection-comparenullable-function-comparenullable-left-right-descending-nullsfirst-nullsspecified-src-minisql-executor-projection-ml-236766771"></a>
 ### compareNullable
@@ -63,14 +65,14 @@ Compares nullable using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `descending` | `dynamic` | — |  |
-| `nullsFirst` | `dynamic` | — |  |
-| `nullsSpecified` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `descending` | `dynamic` | — | descending value consumed by this operation. |
+| `nullsFirst` | `dynamic` | — | nullsFirst value consumed by this operation. |
+| `nullsSpecified` | `dynamic` | — | nullsSpecified value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L365)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L420)
 
 <a id="function-function-minisql-executor-projection-comparerows-function-comparerows-left-right-orderitems-src-minisql-executor-projection-ml-829552429"></a>
 ### compareRows
@@ -83,12 +85,12 @@ Compares rows using the supplied inputs. Requires arguments that satisfy the val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L443)
 
 <a id="function-function-minisql-executor-projection-comparewindowrows-function-comparewindowrows-left-right-expression-src-minisql-executor-projection-ml-967938227"></a>
 ### compareWindowRows
@@ -101,12 +103,12 @@ Compares window rows using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L141)
 
 <a id="function-function-minisql-executor-projection-componentname-function-componentname-src-minisql-executor-projection-ml-1073572968"></a>
 ### componentName
@@ -115,10 +117,10 @@ Compares window rows using the supplied inputs. Returns the computed value or op
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql executor projection module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L461)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L527)
 
 <a id="function-function-minisql-executor-projection-distinct-function-distinct-rows-src-minisql-executor-projection-ml-2085779269"></a>
 ### distinct
@@ -131,10 +133,10 @@ Implements distinct for this module. Requires arguments that satisfy the validat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L348)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L398)
 
 <a id="function-function-minisql-executor-projection-evaluatelist-function-evaluatelist-boundexpressions-context-operation-src-minisql-executor-projection-ml-397712523"></a>
 ### evaluateList
@@ -147,12 +149,12 @@ Evaluates list using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `boundExpressions` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `boundExpressions` | `dynamic` | — | boundExpressions value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L61)
 
 <a id="function-function-minisql-executor-projection-evaluatewindowargument-function-evaluatewindowargument-expression-argumentindex-row-src-minisql-executor-projection-ml-1614095541"></a>
 ### evaluateWindowArgument
@@ -165,12 +167,12 @@ Evaluates a window argument in the context of one selected partition row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `argumentIndex` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `argumentIndex` | `dynamic` | — | Zero-based index of argument. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L252)
 
 <a id="function-function-minisql-executor-projection-evaluatewindowlist-function-evaluatewindowlist-boundexpressions-allrows-row-src-minisql-executor-projection-ml-2105108981"></a>
 ### evaluateWindowList
@@ -183,12 +185,12 @@ Evaluates window list using the supplied inputs. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `boundExpressions` | `dynamic` | — |  |
-| `allRows` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `boundExpressions` | `dynamic` | — | boundExpressions value consumed by this operation. |
+| `allRows` | `dynamic` | — | allRows value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L299)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L341)
 
 <a id="function-function-minisql-executor-projection-fail-function-fail-code-operation-message-src-minisql-executor-projection-ml-1320360245"></a>
 ### fail
@@ -197,16 +199,16 @@ Evaluates window list using the supplied inputs. Returns the computed value or o
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql executor projection module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L42)
 
 <a id="function-function-minisql-executor-projection-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-projection-ml-1365264531"></a>
 ### integerDivide
@@ -219,11 +221,11 @@ Performs truncating integer division without converting window cardinalities to 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `numerator` | `dynamic` | — |  |
-| `denominator` | `dynamic` | — |  |
+| `numerator` | `dynamic` | — | numerator value consumed by this operation. |
+| `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L16)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L21)
 
 <a id="constant-constant-minisql-executor-projection-invalid-argument-const-invalid-argument-9001-src-minisql-executor-projection-ml-19400567"></a>
 ### INVALID_ARGUMENT
@@ -232,8 +234,10 @@ Performs truncating integer division without converting window cardinalities to 
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql executor projection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L13)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L16)
 
 <a id="function-function-minisql-executor-projection-isimplemented-function-isimplemented-src-minisql-executor-projection-ml-1722773056"></a>
 ### isImplemented
@@ -242,10 +246,10 @@ const INVALID_ARGUMENT = 9001
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql executor projection module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L475)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L541)
 
 <a id="function-function-minisql-executor-projection-isprojectedrow-function-isprojectedrow-value-src-minisql-executor-projection-ml-727211189"></a>
 ### isProjectedRow
@@ -258,10 +262,10 @@ Returns whether the supplied value satisfies the projected row condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L50)
 
 <a id="function-function-minisql-executor-projection-merge-function-merge-left-right-orderitems-src-minisql-executor-projection-ml-1747901045"></a>
 ### merge
@@ -274,12 +278,12 @@ Implements merge for this module. Returns the computed value or operation status
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L462)
 
 <a id="function-function-minisql-executor-projection-mergewindow-function-mergewindow-left-right-expression-src-minisql-executor-projection-ml-312816011"></a>
 ### mergeWindow
@@ -292,12 +296,12 @@ Implements merge window for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L132)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L159)
 
 - [minisql.executor.projection.ProjectedRow](Type-minisql-executor-projection-projectedrow-333893506.md) — struct
 <a id="function-function-minisql-executor-projection-samerow-function-samerow-left-right-src-minisql-executor-projection-ml-1679890197"></a>
@@ -311,11 +315,11 @@ Implements same row for this module. Requires arguments that satisfy the validat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L335)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L384)
 
 <a id="function-function-minisql-executor-projection-samevalue-function-samevalue-left-right-src-minisql-executor-projection-ml-1871791763"></a>
 ### sameValue
@@ -328,11 +332,11 @@ Implements same value for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L325)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L372)
 
 <a id="function-function-minisql-executor-projection-samevalues-function-samevalues-left-right-src-minisql-executor-projection-ml-187905965"></a>
 ### sameValues
@@ -345,11 +349,11 @@ Implements same values for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L98)
 
 <a id="function-function-minisql-executor-projection-slicerows-function-slicerows-rows-offset-limit-src-minisql-executor-projection-ml-1123347503"></a>
 ### sliceRows
@@ -362,12 +366,12 @@ Implements slice rows for this module. Requires arguments that satisfy the valid
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `limit` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `limit` | `dynamic` | — | limit value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L445)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L511)
 
 <a id="function-function-minisql-executor-projection-sort-function-sort-rows-orderitems-src-minisql-executor-projection-ml-230044301"></a>
 ### sort
@@ -380,11 +384,11 @@ Sorts sort using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L429)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L492)
 
 <a id="function-function-minisql-executor-projection-sortwindowrows-function-sortwindowrows-rows-expression-src-minisql-executor-projection-ml-27484951"></a>
 ### sortWindowRows
@@ -397,11 +401,11 @@ Sorts window rows using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `expression` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L188)
 
 <a id="function-function-minisql-executor-projection-targetmilestone-function-targetmilestone-src-minisql-executor-projection-ml-893382450"></a>
 ### targetMilestone
@@ -410,10 +414,10 @@ Sorts window rows using the supplied inputs. Returns the computed value or opera
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql executor projection module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L468)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L534)
 
 <a id="function-function-minisql-executor-projection-windowaggregate-function-windowaggregate-expression-partitionrows-src-minisql-executor-projection-ml-2036664787"></a>
 ### windowAggregate
@@ -426,11 +430,11 @@ Implements window aggregate for this module. Requires arguments that satisfy the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `partitionRows` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `partitionRows` | `dynamic` | — | partitionRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L174)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L205)
 
 <a id="function-function-minisql-executor-projection-windowinteger-function-windowinteger-value-operation-src-minisql-executor-projection-ml-1093985762"></a>
 ### windowInteger
@@ -443,11 +447,11 @@ Decodes an integral SQL window argument and rejects NULL or non-integral values.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L208)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L241)
 
 <a id="function-function-minisql-executor-projection-windowordervalues-function-windowordervalues-expression-row-src-minisql-executor-projection-ml-1642483494"></a>
 ### windowOrderValues
@@ -460,11 +464,11 @@ Implements window order values for this module. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L126)
 
 <a id="function-function-minisql-executor-projection-windowpartitionkey-function-windowpartitionkey-expression-row-src-minisql-executor-projection-ml-2040949518"></a>
 ### windowPartitionKey
@@ -477,11 +481,11 @@ Implements window partition key for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `row` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L112)
 
 <a id="function-function-minisql-executor-projection-windowvalue-function-windowvalue-expression-allrows-currentrow-src-minisql-executor-projection-ml-1459242917"></a>
 ### windowValue
@@ -494,9 +498,9 @@ Implements window value for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `allRows` | `dynamic` | — |  |
-| `currentRow` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `allRows` | `dynamic` | — | allRows value consumed by this operation. |
+| `currentRow` | `dynamic` | — | currentRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/projection.ml#L262)

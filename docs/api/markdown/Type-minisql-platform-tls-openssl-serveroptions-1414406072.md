@@ -12,7 +12,7 @@ struct ServerOptions
 Describes the server certificate and protocol settings passed to OpenSSL.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L49)
 
 ## Members
 
@@ -26,7 +26,7 @@ certificateReference
 PEM certificate-chain path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L51)
 
 <a id="field-field-minisql-platform-tls-openssl-serveroptions-minimumversion-minimumversion-src-minisql-platform-tls-openssl-ml-1026603624"></a>
 ### minimumVersion
@@ -38,7 +38,7 @@ minimumVersion
 Minimum encoded TLS protocol version.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L57)
 
 <a id="field-field-minisql-platform-tls-openssl-serveroptions-privatekeyreference-privatekeyreference-src-minisql-platform-tls-openssl-ml-1659881376"></a>
 ### privateKeyReference
@@ -50,7 +50,7 @@ privateKeyReference
 PEM private-key path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L53)
 
 <a id="field-field-minisql-platform-tls-openssl-serveroptions-requireclientcertificate-requireclientcertificate-src-minisql-platform-tls-openssl-ml-1449140274"></a>
 ### requireClientCertificate
@@ -62,4 +62,4 @@ requireClientCertificate
 Whether the server requires a client certificate.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L55)

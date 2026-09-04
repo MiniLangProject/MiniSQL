@@ -2,13 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+//! Provides apps minisql backup main facilities for this project.
+
 import minisql.tools.backup as backup
 
 
-// Runs point-in-time recovery using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Runs point-in-time recovery using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param archivePath Path associated with archive.
+/// @param databasePath Path associated with database.
+/// @param targetText targetText value consumed by this operation.
 function runPitr(archivePath, databasePath, targetText)
   if targetText == "latest" then
     latestReport = try(backup.restoreLatest(archivePath, databasePath))
@@ -24,10 +29,11 @@ function runPitr(archivePath, databasePath, targetText)
   return 0
 end function
 
-// Implements main for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the main operation for the apps minisql backup main module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param args Command-line or caller-supplied arguments.
 function main(args)
   if len(args) == 1 and args[0] == "--version" then print backup.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print backup.m0SelfTestLine(); return 0 end if

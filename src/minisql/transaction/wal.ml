@@ -1,3 +1,5 @@
+//! Provides minisql transaction wal facilities for this project.
+
 package minisql.transaction.wal
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -12,139 +14,160 @@ import minisql.storage.page as page
 import std.ds.list as list
 import std.crypto.aes_gcm as aes_gcm
 
-// Write-ahead log format v1. Records are append-only, length-prefixed and
-// independently protected by header and payload CRC-32C values. The current
-// implementation stores logical segments in one durable file; segmentNumber
-// and segmentOffset expose the configured segment geometry so physical segment
-// rotation can be introduced without changing record encoding.
+/// Write-ahead log format v1. Records are append-only, length-prefixed and
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql transaction wal module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql transaction wal module.
 const CORRUPT_DATA = 9004
+/// Defines the io failure constant used by the minisql transaction wal module.
 const IO_FAILURE = 9005
+/// Defines the closed handle constant used by the minisql transaction wal module.
 const CLOSED_HANDLE = 9008
 
+/// Defines the format version constant used by the minisql transaction wal module.
 const FORMAT_VERSION = 1
+/// Defines the header size constant used by the minisql transaction wal module.
 const HEADER_SIZE = 80
+/// Defines the magic size constant used by the minisql transaction wal module.
 const MAGIC_SIZE = 8
+/// Defines the payload checksum offset constant used by the minisql transaction wal module.
 const PAYLOAD_CHECKSUM_OFFSET = 64
+/// Defines the header checksum offset constant used by the minisql transaction wal module.
 const HEADER_CHECKSUM_OFFSET = 68
+/// Defines the max record size constant used by the minisql transaction wal module.
 const MAX_RECORD_SIZE = 67108864
+/// Defines the append batch bytes constant used by the minisql transaction wal module.
 const APPEND_BATCH_BYTES = 4194304
-// The formerly reserved final U64 identifies an encrypted payload without
-// consuming caller-owned record flag bits. Existing v1 records always stored
-// zero here, so the marker is both backward compatible and unambiguous.
+/// The formerly reserved final U64 identifies an encrypted payload without
 const ENCRYPTION_MARKER_LOW = 0x31454454
+/// Defines the encryption marker high constant used by the minisql transaction wal module.
 const ENCRYPTION_MARKER_HIGH = 0x314C4157
 
-// M48 durable-export marker. The WAL itself remains format v1. The sidecar
-// marker records only the prefix known to have completed FlushFileBuffers.
+/// M48 durable-export marker. The WAL itself remains format v1. The sidecar
 const DURABLE_MARKER_VERSION = 1
+/// Defines the durable marker size constant used by the minisql transaction wal module.
 const DURABLE_MARKER_SIZE = 32
+/// Defines the durable marker checksum offset constant used by the minisql transaction wal module.
 const DURABLE_MARKER_CHECKSUM_OFFSET = 24
 
+/// Defines the record tx begin constant used by the minisql transaction wal module.
 const RECORD_TX_BEGIN = 1
+/// Defines the record page image constant used by the minisql transaction wal module.
 const RECORD_PAGE_IMAGE = 2
+/// Defines the record tx commit constant used by the minisql transaction wal module.
 const RECORD_TX_COMMIT = 3
+/// Defines the record tx abort constant used by the minisql transaction wal module.
 const RECORD_TX_ABORT = 4
+/// Defines the record checkpoint begin constant used by the minisql transaction wal module.
 const RECORD_CHECKPOINT_BEGIN = 5
+/// Defines the record checkpoint end constant used by the minisql transaction wal module.
 const RECORD_CHECKPOINT_END = 6
 
-// Defines the wal record record used by this module.
+/// Defines the wal record record used by this module.
 struct WalRecord
-  // Record type field of the wal record.
+  /// Record type field of the wal record.
   recordType
-  // Flags field of the wal record.
+  /// Flags field of the wal record.
   flags
-  // Lsn field of the wal record.
+  /// Lsn field of the wal record.
   lsn
-  // Total length field of the wal record.
+  /// Total length field of the wal record.
   totalLength
-  // Transaction id field of the wal record.
+  /// Transaction id field of the wal record.
   transactionId
-  // File id field of the wal record.
+  /// File id field of the wal record.
   fileId
-  // Page number field of the wal record.
+  /// Page number field of the wal record.
   pageNumber
-  // Page lsn field of the wal record.
+  /// Page lsn field of the wal record.
   pageLsn
-  // Payload field of the wal record.
+  /// Payload field of the wal record.
   payload
-  // True only while the encoded payload contains nonce, ciphertext and tag.
-  // Decoders clear this implementation field before returning a logical record.
+  /// True only while the encoded payload contains nonce, ciphertext and tag.
   encryptedPayload
 end struct
 
-// Defines the wal scan record used by this module.
+/// Defines the wal scan record used by this module.
 struct WalScan
-  // Records field of the wal scan.
+  /// Records field of the wal scan.
   records
-  // Valid bytes field of the wal scan.
+  /// Valid bytes field of the wal scan.
   validBytes
-  // Truncated tail field of the wal scan.
+  /// Truncated tail field of the wal scan.
   truncatedTail
 end struct
 
-// Evaluates whether the supplied input satisfies the wal scan predicate.
-// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the wal scan predicate.
+/// Inputs: `value`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
 function isWalScan(value)
   return value is WalScan
 end function
 
-// Defines the wal writer record used by this module.
+/// Defines the wal writer record used by this module.
 struct WalWriter
-  // Path field of the wal writer.
+  /// Path field of the wal writer.
   path
-  // File field of the wal writer.
+  /// File field of the wal writer.
   file
-  // Segment bytes field of the wal writer.
+  /// Segment bytes field of the wal writer.
   segmentBytes
-  // Next lsn field of the wal writer.
+  /// Next lsn field of the wal writer.
   nextLsn
-  // Last flushed lsn field of the wal writer.
+  /// Last flushed lsn field of the wal writer.
   lastFlushedLsn
-  // Record count field of the wal writer.
+  /// Record count field of the wal writer.
   recordCount
-  // Database TDE key, or void for a plaintext database.
+  /// Database TDE key, or void for a plaintext database.
   encryptionKey
-  // Fail next write field of the wal writer.
+  /// Fail next write field of the wal writer.
   failNextWrite
-  // Fail next flush field of the wal writer.
+  /// Fail next flush field of the wal writer.
   failNextFlush
-  // Closed field of the wal writer.
+  /// Closed field of the wal writer.
   closed
 end struct
 
-// Holds one bounded WAL append buffer. `nextLsn` advances logically while the
-// physical writer position is published only after the complete transaction
-// batch has been appended successfully.
+/// Holds one bounded WAL append buffer. `nextLsn` advances logically while the
+/// physical writer position is published only after the complete transaction
+/// batch has been appended successfully.
 struct WalAppendBatch
-  // WAL writer whose physical append position is published on commit.
+  /// WAL writer whose physical append position is published on commit.
   writer
-  // Contiguous encoded records awaiting one file write.
+  /// Contiguous encoded records awaiting one file write.
   buffer
-  // Number of populated bytes in the bounded append buffer.
+  /// Number of populated bytes in the bounded append buffer.
   used
-  // Logical LSN assigned to the next record in this batch.
+  /// Logical LSN assigned to the next record in this batch.
   nextLsn
-  // Number of complete encoded records accumulated in the batch.
+  /// Number of complete encoded records accumulated in the batch.
   records
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql transaction wal module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "transaction.wal." + operation + ": " + message)
 end function
 
-// Performs the magic bytes operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the magicBytes operation for the minisql transaction wal module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSQLWAL1")
 end function
 
-// Copies the exact.
-// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the copyExact operation for the minisql transaction wal module.
+/// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -153,8 +176,10 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql transaction wal module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -164,8 +189,11 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Validates the native.
-// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native for the minisql transaction wal workflow.
+/// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function validateNative(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -173,16 +201,21 @@ function validateNative(value, operation, name)
   return true
 end function
 
-// Decodes the native.
-// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes native for the minisql transaction wal workflow.
+/// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNative(words, operation, name)
   endian.validateUInt64Words(words, "transaction.wal." + operation + "." + name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Validates the record type.
-// Inputs: `recordType`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the record type.
+/// Inputs: `recordType`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param recordType recordType value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateRecordType(recordType, operation)
   if typeof(recordType) != "int" or recordType < RECORD_TX_BEGIN or recordType > RECORD_CHECKPOINT_END then
     return fail(INVALID_ARGUMENT, operation, "unknown WAL record type")
@@ -191,21 +224,23 @@ function validateRecordType(recordType, operation)
 end function
 
 
-// Performs the durable marker magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the durable marker magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function durableMarkerMagic()
   return bytes("MSWDL001")
 end function
 
-// Performs the durable marker path operation for this module.
-// Inputs: `walPath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the durable marker path operation for this module.
+/// Inputs: `walPath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param walPath Path associated with wal.
 function durableMarkerPath(walPath)
   if typeof(walPath) != "string" or len(walPath) == 0 then return fail(INVALID_ARGUMENT, "durableMarkerPath", "walPath must be non-empty") end if
   return walPath + ".durable"
 end function
 
-// Encodes the durable marker.
-// Inputs: `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the durable marker.
+/// Inputs: `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param lsn lsn value consumed by this operation.
 function encodeDurableMarker(lsn)
   validateNative(lsn, "encodeDurableMarker", "lsn")
   output = bytes(DURABLE_MARKER_SIZE, 0)
@@ -220,8 +255,9 @@ function encodeDurableMarker(lsn)
   return output
 end function
 
-// Decodes the durable marker.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the durable marker.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function decodeDurableMarker(source)
   if typeof(source) != "bytes" or len(source) != DURABLE_MARKER_SIZE then return fail(CORRUPT_DATA, "decodeDurableMarker", "marker size is invalid") end if
   if not bytesEqual(slice(source, 0, 8), durableMarkerMagic()) then return fail(UNSUPPORTED_FORMAT, "decodeDurableMarker", "marker magic mismatch") end if
@@ -236,8 +272,9 @@ function decodeDurableMarker(source)
   return endian.uint64ToInt(words)
 end function
 
-// Reads the durable marker.
-// Inputs: `walPath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the durable marker.
+/// Inputs: `walPath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param walPath Path associated with wal.
 function readDurableMarker(walPath)
   path = durableMarkerPath(walPath)
   if not file_api.fileExists(path) then return -1 end if
@@ -245,8 +282,10 @@ function readDurableMarker(walPath)
   return decodeDurableMarker(encoded)
 end function
 
-// Writes the durable marker.
-// Inputs: `walPath`, `lsn`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the durable marker.
+/// Inputs: `walPath`, `lsn`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param walPath Path associated with wal.
+/// @param lsn lsn value consumed by this operation.
 function writeDurableMarker(walPath, lsn)
   encoded = encodeDurableMarker(lsn)
   path = durableMarkerPath(walPath)
@@ -265,8 +304,14 @@ function writeDurableMarker(walPath, lsn)
   return lsn
 end function
 
-// Creates the record.
-// Inputs: `recordType`, `flags`, `transactionId`, `fileId`, `pageNumber`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the record.
+/// Inputs: `recordType`, `flags`, `transactionId`, `fileId`, `pageNumber`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param recordType recordType value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param transactionId Identifier of transaction.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param payload payload value consumed by this operation.
 function createRecord(recordType, flags, transactionId, fileId, pageNumber, payload)
   validateRecordType(recordType, "createRecord")
   if typeof(flags) != "int" or flags < 0 or flags > 65535 then return fail(INVALID_ARGUMENT, "createRecord", "flags must fit U16") end if
@@ -287,8 +332,10 @@ function createRecord(recordType, flags, transactionId, fileId, pageNumber, payl
   return WalRecord(recordType, flags, 0, HEADER_SIZE + len(payload), transactionId, fileId, pageNumber, 0, bytes(payload), false)
 end function
 
-// Validates the record.
-// Inputs: `record`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the record.
+/// Inputs: `record`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param record record value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateRecord(record, operation)
   if record is not WalRecord then return fail(INVALID_ARGUMENT, operation, "record must be WalRecord") end if
   validateRecordType(record.recordType, operation)
@@ -305,8 +352,9 @@ function validateRecord(record, operation)
   return true
 end function
 
-// Encodes the requested value.
-// Inputs: `record`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes encode for the minisql transaction wal workflow.
+/// Inputs: `record`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param record record value consumed by this operation.
 function encode(record)
   validateRecord(record, "encode")
   output = bytes(record.totalLength, 0)
@@ -333,8 +381,9 @@ function encode(record)
   return output
 end function
 
-// Decodes the record.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the record.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param record record value consumed by this operation.
 function walAad(record)
   output = bytes(56, 0)
   copyBytes(output, 0, bytes("MiniSQL-WAL-1"), 0, 13)
@@ -346,7 +395,9 @@ function walAad(record)
   return output
 end function
 
-// Encrypts a logical WAL payload after its final LSN is assigned.
+/// Encrypts a logical WAL payload after its final LSN is assigned.
+/// @param record record value consumed by this operation.
+/// @param encryptionKey encryptionKey value consumed by this operation.
 function protectRecord(record, encryptionKey)
   if typeof(encryptionKey) != "bytes" then return record end if
   nonce = try(uuid.randomBytes(12))
@@ -362,7 +413,9 @@ function protectRecord(record, encryptionKey)
   return protected
 end function
 
-// Decodes one plaintext or encrypted WAL record with an optional DEK.
+/// Decodes one plaintext or encrypted WAL record with an optional DEK.
+/// @param source source value consumed by this operation.
+/// @param encryptionKey encryptionKey value consumed by this operation.
 function decodeRecordWithKey(source, encryptionKey)
   if typeof(source) != "bytes" or len(source) < HEADER_SIZE then return fail(CORRUPT_DATA, "decode", "record is shorter than header") end if
   if len(source) > MAX_RECORD_SIZE then return fail(CORRUPT_DATA, "decode", "record exceeds safety limit") end if
@@ -415,22 +468,26 @@ function decodeRecordWithKey(source, encryptionKey)
   return record
 end function
 
-// Decodes a compatibility plaintext WAL record.
+/// Decodes a compatibility plaintext WAL record.
+/// @param source source value consumed by this operation.
 function decodeRecord(source)
   return decodeRecordWithKey(source, void)
 end function
 
-// Public compatibility wrapper. Qualified calls such as wal.decode(...) resolve
-// to this package function. Internal WAL code deliberately uses decodeRecord so
-// the MiniLang builtin decode(bytes) cannot shadow the WAL record decoder.
-// Decodes the requested value.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Public compatibility wrapper. Qualified calls such as wal.decode(...) resolve
+/// to this package function. Internal WAL code deliberately uses decodeRecord so
+/// the MiniLang builtin decode(bytes) cannot shadow the WAL record decoder.
+/// Decodes the requested value.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function decode(source)
   return decodeRecord(source)
 end function
 
-// Scans the file.
-// Inputs: `file`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the file.
+/// Inputs: `file`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param encryptionKey encryptionKey value consumed by this operation.
 function scanFile(file, encryptionKey)
   file_api.validateOpen(file, "wal.scanFile")
   length = file_api.size(file)
@@ -457,13 +514,16 @@ function scanFile(file, encryptionKey)
   return WalScan(records.toArray(), offset, truncated)
 end function
 
-// Scans the snapshot.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the snapshot.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function scanSnapshot(source)
   return scanSnapshotWithKey(source, void)
 end function
 
-// Scans a WAL snapshot using the database key resolved from its path.
+/// Scans a WAL snapshot using the database key resolved from its path.
+/// @param source source value consumed by this operation.
+/// @param walPath Path associated with wal.
 function scanSnapshotForPath(source, walPath)
   material = try(key_provider.loadForPath(walPath, void))
   encryptionKey = void
@@ -473,7 +533,9 @@ function scanSnapshotForPath(source, walPath)
   return result
 end function
 
-// Scans a bounded snapshot containing plaintext or encrypted records.
+/// Scans a bounded snapshot containing plaintext or encrypted records.
+/// @param source source value consumed by this operation.
+/// @param encryptionKey encryptionKey value consumed by this operation.
 function scanSnapshotWithKey(source, encryptionKey)
   if typeof(source) != "bytes" then return fail(INVALID_ARGUMENT, "scanSnapshot", "source must be bytes") end if
   offset = 0
@@ -498,8 +560,10 @@ function scanSnapshotWithKey(source, encryptionKey)
   return WalScan(records.toArray(), offset, truncated)
 end function
 
-// Validates the segment bytes.
-// Inputs: `segmentBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the segment bytes.
+/// Inputs: `segmentBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param segmentBytes segmentBytes value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateSegmentBytes(segmentBytes, operation)
   if typeof(segmentBytes) != "int" or segmentBytes < 4096 or segmentBytes > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, "segmentBytes must be at least 4096")
@@ -507,8 +571,10 @@ function validateSegmentBytes(segmentBytes, operation)
   return true
 end function
 
-// Creates the requested value.
-// Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql transaction wal module.
+/// Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param segmentBytes segmentBytes value consumed by this operation.
 function create(path, segmentBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "create", "path must be non-empty") end if
   validateSegmentBytes(segmentBytes, "create")
@@ -520,8 +586,10 @@ function create(path, segmentBytes)
   return WalWriter(path, file, segmentBytes, 0, 0, 0, encryptionKey, false, false, false)
 end function
 
-// Opens the requested value.
-// Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens open for the minisql transaction wal module.
+/// Inputs: `path`, `segmentBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param segmentBytes segmentBytes value consumed by this operation.
 function open(path, segmentBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "open", "path must be non-empty") end if
   validateSegmentBytes(segmentBytes, "open")
@@ -543,8 +611,10 @@ function open(path, segmentBytes)
   return WalWriter(path, file, segmentBytes, scanned.validBytes, scanned.validBytes, len(scanned.records), encryptionKey, false, false, false)
 end function
 
-// Validates the open.
-// Inputs: `writer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql transaction wal workflow.
+/// Inputs: `writer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param writer writer value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(writer, operation)
   if writer is not WalWriter then return fail(INVALID_ARGUMENT, operation, "writer must be WalWriter") end if
   if writer.closed then return fail(CLOSED_HANDLE, operation, "WAL is closed") end if
@@ -552,24 +622,35 @@ function validateOpen(writer, operation)
   return true
 end function
 
-// Performs the segment number operation for this module.
-// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the segment number operation for this module.
+/// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param lsn lsn value consumed by this operation.
 function segmentNumber(writer, lsn)
   validateOpen(writer, "segmentNumber")
   validateNative(lsn, "segmentNumber", "lsn")
   return lsn / writer.segmentBytes
 end function
 
-// Performs the segment offset operation for this module.
-// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the segment offset operation for this module.
+/// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param lsn lsn value consumed by this operation.
 function segmentOffset(writer, lsn)
   validateOpen(writer, "segmentOffset")
   validateNative(lsn, "segmentOffset", "lsn")
   return lsn % writer.segmentBytes
 end function
 
-// Appends the record.
-// Inputs: `writer`, `recordType`, `flags`, `transactionId`, `fileId`, `pageNumber`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the record.
+/// Inputs: `writer`, `recordType`, `flags`, `transactionId`, `fileId`, `pageNumber`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param recordType recordType value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param transactionId Identifier of transaction.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param payload payload value consumed by this operation.
 function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumber, payload)
   validateOpen(writer, "appendRecord")
   if writer.failNextWrite then
@@ -596,7 +677,10 @@ function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumb
   return record
 end function
 
-// Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
+/// Assigns an LSN, updates a PAGE_IMAGE header and returns the encoded record.
+/// @param writer writer value consumed by this operation.
+/// @param record record value consumed by this operation.
+/// @param lsn lsn value consumed by this operation.
 function encodeRecordAt(writer, record, lsn)
   record.lsn = lsn
   if record.recordType == RECORD_PAGE_IMAGE then
@@ -613,7 +697,8 @@ function encodeRecordAt(writer, record, lsn)
   return encode(protected)
 end function
 
-// Flushes the occupied prefix of a bounded append batch.
+/// Flushes the occupied prefix of a bounded append batch.
+/// @param batch batch value consumed by this operation.
 function flushAppendBatch(batch)
   if batch is not WalAppendBatch then return fail(INVALID_ARGUMENT, "flushAppendBatch", "batch must be WalAppendBatch") end if
   if batch.used == 0 then return false end if
@@ -623,8 +708,10 @@ function flushAppendBatch(batch)
   return true
 end function
 
-// Adds one record to the bounded batch, flushing or directly appending records
-// larger than the staging buffer. At most APPEND_BATCH_BYTES are duplicated.
+/// Adds one record to the bounded batch, flushing or directly appending records
+/// larger than the staging buffer. At most APPEND_BATCH_BYTES are duplicated.
+/// @param batch batch value consumed by this operation.
+/// @param record record value consumed by this operation.
 function appendBatchRecord(batch, record)
   encoded = try(encodeRecordAt(batch.writer, record, batch.nextLsn))
   if len(encoded) > len(batch.buffer) then
@@ -641,10 +728,13 @@ function appendBatchRecord(batch, record)
   return record.lsn
 end function
 
-// Appends a complete transaction using a bounded staging buffer. This reduces
-// one kernel write per page image to roughly one write per 4 MiB while retaining
-// the existing single FlushFileBuffers durability boundary and rewind-on-error
-// behavior. `changes` contain fileId, pageNumber and pageBytes fields.
+/// Appends a complete transaction using a bounded staging buffer. This reduces
+/// one kernel write per page image to roughly one write per 4 MiB while retaining
+/// the existing single FlushFileBuffers durability boundary and rewind-on-error
+/// behavior. `changes` contain fileId, pageNumber and pageBytes fields.
+/// @param writer writer value consumed by this operation.
+/// @param transactionId Identifier of transaction.
+/// @param changes changes value consumed by this operation.
 function appendTransaction(writer, transactionId, changes)
   validateOpen(writer, "appendTransaction")
   validateNative(transactionId, "appendTransaction", "transactionId")
@@ -676,44 +766,63 @@ function appendTransaction(writer, transactionId, changes)
   return [beginLsn, commitLsn]
 end function
 
-// Appends the begin.
-// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the begin.
+/// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function appendBegin(writer, transactionId)
   return appendRecord(writer, RECORD_TX_BEGIN, 0, transactionId, 0, 0, bytes())
 end function
 
-// Appends the page image.
-// Inputs: `writer`, `transactionId`, `fileId`, `pageNumber`, `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the page image.
+/// Inputs: `writer`, `transactionId`, `fileId`, `pageNumber`, `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param transactionId Identifier of transaction.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param pageBytes pageBytes value consumed by this operation.
 function appendPageImage(writer, transactionId, fileId, pageNumber, pageBytes)
   return appendRecord(writer, RECORD_PAGE_IMAGE, 0, transactionId, fileId, pageNumber, pageBytes)
 end function
 
-// Appends the commit.
-// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the commit.
+/// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function appendCommit(writer, transactionId)
   return appendRecord(writer, RECORD_TX_COMMIT, 0, transactionId, 0, 0, bytes())
 end function
 
-// Appends the abort.
-// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the abort.
+/// Inputs: `writer`, `transactionId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param transactionId Identifier of transaction.
 function appendAbort(writer, transactionId)
   return appendRecord(writer, RECORD_TX_ABORT, 0, transactionId, 0, 0, bytes())
 end function
 
-// Appends the checkpoint begin.
-// Inputs: `writer`, `checkpointId`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the checkpoint begin.
+/// Inputs: `writer`, `checkpointId`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param checkpointId Identifier of checkpoint.
+/// @param payload payload value consumed by this operation.
 function appendCheckpointBegin(writer, checkpointId, payload)
   return appendRecord(writer, RECORD_CHECKPOINT_BEGIN, 0, checkpointId, 0, 0, payload)
 end function
 
-// Appends the checkpoint end.
-// Inputs: `writer`, `checkpointId`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the checkpoint end.
+/// Inputs: `writer`, `checkpointId`, `payload`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param checkpointId Identifier of checkpoint.
+/// @param payload payload value consumed by this operation.
 function appendCheckpointEnd(writer, checkpointId, payload)
   return appendRecord(writer, RECORD_CHECKPOINT_END, 0, checkpointId, 0, 0, payload)
 end function
 
-// Scans the requested value.
-// Inputs: `writer`, `repairTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the requested value.
+/// Inputs: `writer`, `repairTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param repairTail repairTail value consumed by this operation.
 function scan(writer, repairTail)
   validateOpen(writer, "scan")
   if typeof(repairTail) != "bool" then return fail(INVALID_ARGUMENT, "scan", "repairTail must be bool") end if
@@ -729,8 +838,9 @@ function scan(writer, repairTail)
   return result
 end function
 
-// Flushes the requested value.
-// Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Performs the flush operation for the minisql transaction wal module.
+/// Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param writer writer value consumed by this operation.
 function flush(writer)
   validateOpen(writer, "flush")
   if writer.failNextFlush then
@@ -746,8 +856,10 @@ function flush(writer)
   return writer.lastFlushedLsn
 end function
 
-// Performs the rewind operation for this module.
-// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the rewind operation for this module.
+/// Inputs: `writer`, `lsn`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
+/// @param lsn lsn value consumed by this operation.
 function rewind(writer, lsn)
   validateOpen(writer, "rewind")
   validateNative(lsn, "rewind", "lsn")
@@ -762,24 +874,27 @@ function rewind(writer, lsn)
   return true
 end function
 
-// Performs the inject write failure operation for this module.
-// Inputs: `writer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the inject write failure operation for this module.
+/// Inputs: `writer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
 function injectWriteFailure(writer)
   validateOpen(writer, "injectWriteFailure")
   writer.failNextWrite = true
   return true
 end function
 
-// Performs the inject flush failure operation for this module.
-// Inputs: `writer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the inject flush failure operation for this module.
+/// Inputs: `writer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param writer writer value consumed by this operation.
 function injectFlushFailure(writer)
   validateOpen(writer, "injectFlushFailure")
   writer.failNextFlush = true
   return true
 end function
 
-// Closes the requested value.
-// Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql transaction wal module.
+/// Inputs: `writer`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param writer writer value consumed by this operation.
 function close(writer)
   validateOpen(writer, "close")
   flush(writer)
@@ -789,20 +904,20 @@ function close(writer)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql transaction wal module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "transaction.wal"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql transaction wal module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M6"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql transaction wal module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

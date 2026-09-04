@@ -12,7 +12,7 @@ struct BackupManifest
 Groups the backup manifest state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L87)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L89)
 
 <a id="field-field-minisql-tools-backup-backupmanifest-entries-entries-src-minisql-tools-backup-ml-662165636"></a>
 ### entries
@@ -38,7 +38,7 @@ entries
 Contains the ordered entries collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L93)
 
 <a id="field-field-minisql-tools-backup-backupmanifest-pagesize-pagesize-src-minisql-tools-backup-ml-1546384008"></a>
 ### pageSize
@@ -50,4 +50,4 @@ pageSize
 Tracks the page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L91)

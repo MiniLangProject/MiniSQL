@@ -12,7 +12,7 @@ struct SqlType
 Groups the SQL type state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L59)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L61)
 
 <a id="field-field-minisql-sql-types-sqltype-length-length-src-minisql-sql-types-ml-326951271"></a>
 ### length
@@ -38,7 +38,7 @@ length
 Tracks the length numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L63)
 
 <a id="field-field-minisql-sql-types-sqltype-nullable-nullable-src-minisql-sql-types-ml-2059003189"></a>
 ### nullable
@@ -50,7 +50,7 @@ nullable
 Indicates whether the nullable condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L69)
 
 <a id="field-field-minisql-sql-types-sqltype-precision-precision-src-minisql-sql-types-ml-811895603"></a>
 ### precision
@@ -62,7 +62,7 @@ precision
 Stores the precision associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L65)
 
 <a id="field-field-minisql-sql-types-sqltype-scale-scale-src-minisql-sql-types-ml-1124682599"></a>
 ### scale
@@ -74,4 +74,4 @@ scale
 Stores the scale associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L67)

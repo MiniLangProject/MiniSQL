@@ -12,7 +12,7 @@ struct CreateSchemaStatement
 Represents creation of a durable SQL object namespace.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L444)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L499)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifNotExists
 Indicates whether an existing schema is accepted.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L448)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L503)
 
 <a id="field-field-minisql-sql-ast-createschemastatement-name-name-src-minisql-sql-ast-ml-290096517"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the schema name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L446)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L501)

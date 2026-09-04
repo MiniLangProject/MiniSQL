@@ -10,7 +10,12 @@ target = "windows-x64"
 [documentation]
 include_internal = false
 reachable_only = false
-strict = false
+strict = true
+dependencies = "summary"
+contract_warnings = "public"
+summary_quality_warnings = "public"
+duplicate_summary_threshold = 40
+page_granularity = "container"
 
 [output]
 formats = ["html", "markdown"]

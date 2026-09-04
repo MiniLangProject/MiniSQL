@@ -12,7 +12,7 @@ struct SqlSyntaxNode
 Links presentation spans during a linear-time lexer pass.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L155)
 
 ## Members
 
@@ -26,7 +26,7 @@ next
 Points to the next node or void at the tail.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L159)
 
 <a id="field-field-minisql-admin-fullclient-sqlsyntaxnode-span-span-src-minisql-admin-fullclient-ml-938750254"></a>
 ### span
@@ -38,4 +38,4 @@ span
 Stores the syntax span owned by this node.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L157)

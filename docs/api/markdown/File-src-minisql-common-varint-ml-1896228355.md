@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql common varint facilities for this project.
+
 Package: [`minisql.common.varint`](Package-minisql-common-varint-2057421671.md)
 
 Reachable from entry: **no**
@@ -19,10 +21,10 @@ Reachable from entry: **no**
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql common varint module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L328)
 
 <a id="function-function-minisql-common-varint-corrupt-function-corrupt-operation-message-src-minisql-common-varint-ml-962564292"></a>
 ### corrupt
@@ -35,11 +37,11 @@ Performs the corrupt operation for this module. Inputs: `operation`, `message`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L52)
 
 <a id="constant-constant-minisql-common-varint-corrupt-data-const-corrupt-data-9004-src-minisql-common-varint-ml-251948934"></a>
 ### CORRUPT_DATA
@@ -48,8 +50,10 @@ Performs the corrupt operation for this module. Inputs: `operation`, `message`. 
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql common varint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L12)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L14)
 
 <a id="function-function-minisql-common-varint-encodedlengthu32-function-encodedlengthu32-value-src-minisql-common-varint-ml-1141514753"></a>
 ### encodedLengthU32
@@ -62,10 +66,10 @@ Encodes the d length u32. Inputs: `value`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L94)
 
 <a id="function-function-minisql-common-varint-encodedlengthu64-function-encodedlengthu64-value-src-minisql-common-varint-ml-655623993"></a>
 ### encodedLengthU64
@@ -78,10 +82,10 @@ Encodes the d length u64. Inputs: `value`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L110)
 
 <a id="function-function-minisql-common-varint-invalid-function-invalid-operation-message-src-minisql-common-varint-ml-1475661228"></a>
 ### invalid
@@ -90,15 +94,15 @@ Encodes the d length u64. Inputs: `value`. Returns the produced value or propaga
 function invalid(operation, message)
 ```
 
-Creates an invalid-argument error with operation context. Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the invalid operation for the minisql common varint module. Inputs: `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L44)
 
 <a id="constant-constant-minisql-common-varint-invalid-argument-const-invalid-argument-9001-src-minisql-common-varint-ml-2068598785"></a>
 ### INVALID_ARGUMENT
@@ -107,10 +111,10 @@ Creates an invalid-argument error with operation context. Inputs: `operation`, `
 const INVALID_ARGUMENT = 9001
 ```
 
-Canonical unsigned LEB128 plus ZigZag signed codecs. Full 64-bit domains use the M1 UInt64Words/Int64Words representation.
+Canonical unsigned LEB128 plus ZigZag signed codecs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L11)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L12)
 
 <a id="function-function-minisql-common-varint-isimplemented-function-isimplemented-src-minisql-common-varint-ml-688073018"></a>
 ### isImplemented
@@ -119,10 +123,10 @@ Canonical unsigned LEB128 plus ZigZag signed codecs. Full 64-bit domains use the
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql common varint module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L299)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L340)
 
 <a id="constant-constant-minisql-common-varint-max-u32-bytes-const-max-u32-bytes-5-src-minisql-common-varint-ml-365598440"></a>
 ### MAX_U32_BYTES
@@ -131,8 +135,10 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 const MAX_U32_BYTES = 5
 ```
 
+Defines the max u32 bytes constant used by the minisql common varint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L13)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L16)
 
 <a id="constant-constant-minisql-common-varint-max-u64-bytes-const-max-u64-bytes-10-src-minisql-common-varint-ml-1486673076"></a>
 ### MAX_U64_BYTES
@@ -141,8 +147,10 @@ const MAX_U32_BYTES = 5
 const MAX_U64_BYTES = 10
 ```
 
+Defines the max u64 bytes constant used by the minisql common varint module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L14)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L18)
 
 <a id="function-function-minisql-common-varint-readi32-function-readi32-buffer-offset-src-minisql-common-varint-ml-1655665547"></a>
 ### readI32
@@ -155,11 +163,11 @@ Reads the i32. Inputs: `buffer`, `offset`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L275)
 
 <a id="function-function-minisql-common-varint-readi64-function-readi64-buffer-offset-src-minisql-common-varint-ml-1703899737"></a>
 ### readI64
@@ -172,11 +180,11 @@ Reads the i64. Inputs: `buffer`, `offset`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L321)
 
 <a id="function-function-minisql-common-varint-readu32-function-readu32-buffer-offset-src-minisql-common-varint-ml-1246037371"></a>
 ### readU32
@@ -189,11 +197,11 @@ Reads the u32. Inputs: `buffer`, `offset`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L146)
 
 <a id="function-function-minisql-common-varint-readu64-function-readu64-buffer-offset-src-minisql-common-varint-ml-718251201"></a>
 ### readU64
@@ -206,11 +214,11 @@ Reads the u64. Inputs: `buffer`, `offset`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L198)
 
 <a id="function-function-minisql-common-varint-targetmilestone-function-targetmilestone-src-minisql-common-varint-ml-1474775132"></a>
 ### targetMilestone
@@ -219,10 +227,10 @@ Reads the u64. Inputs: `buffer`, `offset`. Returns the produced value or propaga
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql common varint module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L293)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L334)
 
 <a id="function-function-minisql-common-varint-validatebufferoffset-function-validatebufferoffset-buffer-offset-operation-src-minisql-common-varint-ml-1278018834"></a>
 ### validateBufferOffset
@@ -235,12 +243,12 @@ Validates the buffer offset. Inputs: `buffer`, `offset`, `operation`. Returns su
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L61)
 
 <a id="function-function-minisql-common-varint-validatewriterange-function-validatewriterange-buffer-offset-width-operation-src-minisql-common-varint-ml-617212410"></a>
 ### validateWriteRange
@@ -253,13 +261,13 @@ Validates the write range. Inputs: `buffer`, `offset`, `width`, `operation`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `width` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `width` | `dynamic` | — | Width in the coordinate or storage units used by the caller. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L80)
 
 - [minisql.common.varint.Varint32Result](Type-minisql-common-varint-varint32result-1135300293.md) — struct
 - [minisql.common.varint.Varint64Result](Type-minisql-common-varint-varint64result-1745848426.md) — struct
@@ -274,12 +282,12 @@ Writes the i32. Inputs: `buffer`, `offset`, `value`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L267)
 
 <a id="function-function-minisql-common-varint-writei64-function-writei64-buffer-offset-value-src-minisql-common-varint-ml-1334453846"></a>
 ### writeI64
@@ -292,12 +300,12 @@ Writes the i64. Inputs: `buffer`, `offset`, `value`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L313)
 
 <a id="function-function-minisql-common-varint-writeu32-function-writeu32-buffer-offset-value-src-minisql-common-varint-ml-671714290"></a>
 ### writeU32
@@ -310,12 +318,12 @@ Writes the u32. Inputs: `buffer`, `offset`, `value`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L128)
 
 <a id="function-function-minisql-common-varint-writeu64-function-writeu64-buffer-offset-value-src-minisql-common-varint-ml-717802894"></a>
 ### writeU64
@@ -328,12 +336,12 @@ Writes the u64. Inputs: `buffer`, `offset`, `value`. Returns the operation resul
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L178)
 
 <a id="function-function-minisql-common-varint-zigzagdecodei32-function-zigzagdecodei32-value-src-minisql-common-varint-ml-1073412801"></a>
 ### zigZagDecodeI32
@@ -346,10 +354,10 @@ Performs the zig zag decode i32 operation for this module. Inputs: `value`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L251)
 
 <a id="function-function-minisql-common-varint-zigzagdecodei64-function-zigzagdecodei64-value-src-minisql-common-varint-ml-1276168987"></a>
 ### zigZagDecodeI64
@@ -362,10 +370,10 @@ Performs the zig zag decode i64 operation for this module. Inputs: `value`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L261)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L297)
 
 <a id="function-function-minisql-common-varint-zigzagencodei32-function-zigzagencodei32-value-src-minisql-common-varint-ml-680792409"></a>
 ### zigZagEncodeI32
@@ -378,10 +386,10 @@ Performs the zig zag encode i32 operation for this module. Inputs: `value`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L238)
 
 <a id="function-function-minisql-common-varint-zigzagencodei64-function-zigzagencodei64-value-src-minisql-common-varint-ml-1451841023"></a>
 ### zigZagEncodeI64
@@ -394,7 +402,7 @@ Performs the zig zag encode i64 operation for this module. Inputs: `value`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L248)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/varint.ml#L283)

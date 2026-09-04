@@ -12,7 +12,7 @@ struct RecoveryTarget
 Defines the recovery target record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L22)
 
 ## Members
 
@@ -26,7 +26,7 @@ fileId
 File id field of the recovery target.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L24)
 
 <a id="field-field-minisql-transaction-recovery-recoverytarget-pagedfile-pagedfile-src-minisql-transaction-recovery-ml-1803173749"></a>
 ### pagedFile
@@ -38,7 +38,7 @@ pagedFile
 Open paged file that receives redo, or void for a deliberately retired file ID.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L26)
 
 <a id="field-field-minisql-transaction-recovery-recoverytarget-retired-retired-src-minisql-transaction-recovery-ml-127667469"></a>
 ### retired
@@ -50,4 +50,4 @@ retired
 Distinguishes a dropped file from an accidentally omitted live recovery target.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L28)

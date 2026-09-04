@@ -1,3 +1,5 @@
+//! Provides minisql executor projection facilities for this project.
+
 package minisql.executor.projection
 
 // Copyright 2026 MiniLangProject contributors
@@ -10,42 +12,52 @@ import minisql.sql.expressions as expressions
 import minisql.sql.types as types
 import minisql.sql.values as values
 
+/// Defines the invalid argument constant used by the minisql executor projection module.
 const INVALID_ARGUMENT = 9001
 
-// Performs truncating integer division without converting window cardinalities to floats.
+/// Performs truncating integer division without converting window cardinalities to floats.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "denominator must be positive") end if
   return (numerator - (numerator % denominator)) / denominator
 end function
 
-// Groups the projected row state and preserves the field relationships documented below.
+/// Groups the projected row state and preserves the field relationships documented below.
 struct ProjectedRow
-  // Stores the source associated with this value.
+  /// Stores the source associated with this value.
   source
-  // Contains the ordered values collection.
+  /// Contains the ordered values collection.
   values
-  // Contains the ordered order values collection.
+  /// Contains the ordered order values collection.
   orderValues
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor projection module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.projection." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the projected row condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the projected row condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isProjectedRow(value)
   return value is ProjectedRow
 end function
 
-// Evaluates list using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates list using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param boundExpressions boundExpressions value consumed by this operation.
+/// @param context Context that carries state for the operation.
+/// @param operation operation value consumed by this operation.
 function evaluateList(boundExpressions, context, operation)
   if typeof(boundExpressions) != "array" then return fail(INVALID_ARGUMENT, operation, "expressions must be array") end if
   output = array(len(boundExpressions))
@@ -57,10 +69,13 @@ function evaluateList(boundExpressions, context, operation)
   return output
 end function
 
-// Applies apply using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Applies apply using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param orderExpressions orderExpressions value consumed by this operation.
 function apply(rows, selectExpressions, orderExpressions)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "apply", "rows must be array") end if
   output = array(len(rows))
@@ -75,9 +90,11 @@ function apply(rows, selectExpressions, orderExpressions)
   return output
 end function
 
-// Implements same values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameValues(left, right)
   if len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -87,9 +104,11 @@ function sameValues(left, right)
   return true
 end function
 
-// Implements window partition key for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements window partition key for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param row row value consumed by this operation.
 function windowPartitionKey(expression, row)
   context = expressions.rowContext(row.values)
   output = []
@@ -99,9 +118,11 @@ function windowPartitionKey(expression, row)
   return output
 end function
 
-// Implements window order values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements window order values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param row row value consumed by this operation.
 function windowOrderValues(expression, row)
   context = expressions.rowContext(row.values)
   output = []
@@ -111,9 +132,12 @@ function windowOrderValues(expression, row)
   return output
 end function
 
-// Compares window rows using the supplied inputs.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Compares window rows using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param expression expression value consumed by this operation.
 function compareWindowRows(left, right, expression)
   leftValues = windowOrderValues(expression, left)
   rightValues = windowOrderValues(expression, right)
@@ -126,9 +150,12 @@ function compareWindowRows(left, right, expression)
   return 0
 end function
 
-// Implements merge window for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements merge window for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param expression expression value consumed by this operation.
 function mergeWindow(left, right, expression)
   output = []
   leftIndex = 0
@@ -153,9 +180,11 @@ function mergeWindow(left, right, expression)
   return output
 end function
 
-// Sorts window rows using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Sorts window rows using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param expression expression value consumed by this operation.
 function sortWindowRows(rows, expression)
   if len(rows) <= 1 or len(expression.orderBy) == 0 then return rows end if
   middle = len(rows) >> 1
@@ -167,10 +196,12 @@ function sortWindowRows(rows, expression)
   return mergeWindow(sortWindowRows(left, expression), sortWindowRows(right, expression), expression)
 end function
 
-// Implements window aggregate for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements window aggregate for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param partitionRows partitionRows value consumed by this operation.
 function windowAggregate(expression, partitionRows)
   name = expression.name
   candidates = []
@@ -204,7 +235,9 @@ function windowAggregate(expression, partitionRows)
   return fail(INVALID_ARGUMENT, "windowAggregate", "unsupported window aggregate " + name)
 end function
 
-// Decodes an integral SQL window argument and rejects NULL or non-integral values.
+/// Decodes an integral SQL window argument and rejects NULL or non-integral values.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
 function windowInteger(value, operation)
   if value.isNull then return fail(INVALID_ARGUMENT, operation, "argument cannot be NULL") end if
   if value.typeKind == types.SqlTypeKind.BigInt then return endian.int64ToInt(value.value) end if
@@ -212,14 +245,20 @@ function windowInteger(value, operation)
   return fail(INVALID_ARGUMENT, operation, "argument must be integral")
 end function
 
-// Evaluates a window argument in the context of one selected partition row.
+/// Evaluates a window argument in the context of one selected partition row.
+/// @param expression expression value consumed by this operation.
+/// @param argumentIndex Zero-based index of argument.
+/// @param row row value consumed by this operation.
 function evaluateWindowArgument(expression, argumentIndex, row)
   return expressions.evaluate(expression.arguments[argumentIndex], expressions.rowContext(row.values))
 end function
 
-// Implements window value for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements window value for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param allRows allRows value consumed by this operation.
+/// @param currentRow currentRow value consumed by this operation.
 function windowValue(expression, allRows, currentRow)
   partitionRows = []
   key = windowPartitionKey(expression, currentRow)
@@ -293,9 +332,12 @@ function windowValue(expression, allRows, currentRow)
   return fail(INVALID_ARGUMENT, "windowValue", "unknown window function " + expression.name)
 end function
 
-// Evaluates window list using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates window list using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param boundExpressions boundExpressions value consumed by this operation.
+/// @param allRows allRows value consumed by this operation.
+/// @param row row value consumed by this operation.
 function evaluateWindowList(boundExpressions, allRows, row)
   output = []
   context = expressions.rowContext(row.values)
@@ -305,10 +347,13 @@ function evaluateWindowList(boundExpressions, allRows, row)
   return output
 end function
 
-// Applies windows using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Applies windows using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param selectExpressions selectExpressions value consumed by this operation.
+/// @param orderExpressions orderExpressions value consumed by this operation.
 function applyWindows(rows, selectExpressions, orderExpressions)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "applyWindows", "rows must be array") end if
   output = []
@@ -319,19 +364,23 @@ function applyWindows(rows, selectExpressions, orderExpressions)
   return output
 end function
 
-// Implements same value for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same value for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameValue(left, right)
   if not values.isSqlValue(left) or not values.isSqlValue(right) then return fail(INVALID_ARGUMENT, "sameValue", "values must be SqlValue") end if
   if left.isNull or right.isNull then return left.isNull and right.isNull end if
   return values.compareNonNull(left, right) == 0
 end function
 
-// Implements same row for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same row for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameRow(left, right)
   if left is not ProjectedRow or right is not ProjectedRow or len(left.values) != len(right.values) then return false end if
   if len(left.values) == 0 then return true end if
@@ -341,10 +390,11 @@ function sameRow(left, right)
   return true
 end function
 
-// Implements distinct for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements distinct for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
 function distinct(rows)
   if typeof(rows) != "array" then return fail(INVALID_ARGUMENT, "distinct", "rows must be array") end if
   output = []
@@ -359,9 +409,14 @@ function distinct(rows)
   return output
 end function
 
-// Compares nullable using the supplied inputs.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Compares nullable using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param descending descending value consumed by this operation.
+/// @param nullsFirst nullsFirst value consumed by this operation.
+/// @param nullsSpecified nullsSpecified value consumed by this operation.
 function compareNullable(left, right, descending, nullsFirst, nullsSpecified)
   if not values.isSqlValue(left) or not values.isSqlValue(right) then return fail(INVALID_ARGUMENT, "compareNullable", "values must be SqlValue") end if
   if left.isNull or right.isNull then
@@ -378,10 +433,13 @@ function compareNullable(left, right, descending, nullsFirst, nullsSpecified)
   return result
 end function
 
-// Compares rows using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Compares rows using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function compareRows(left, right, orderItems)
   if left is not ProjectedRow or right is not ProjectedRow then return fail(INVALID_ARGUMENT, "compareRows", "rows must be ProjectedRow") end if
   if len(left.orderValues) != len(orderItems) or len(right.orderValues) != len(orderItems) then return fail(INVALID_ARGUMENT, "compareRows", "order value count mismatch") end if
@@ -395,9 +453,12 @@ function compareRows(left, right, orderItems)
   return 0
 end function
 
-// Implements merge for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements merge for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function merge(left, right, orderItems)
   output = []
   leftIndex = 0
@@ -422,10 +483,12 @@ function merge(left, right, orderItems)
   return output
 end function
 
-// Sorts sort using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Sorts sort using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function sort(rows, orderItems)
   if typeof(rows) != "array" or typeof(orderItems) != "array" then return fail(INVALID_ARGUMENT, "sort", "rows/orderItems must be arrays") end if
   if len(rows) <= 1 or len(orderItems) == 0 then return rows end if
@@ -438,10 +501,13 @@ function sort(rows, orderItems)
   return merge(sort(left, orderItems), sort(right, orderItems), orderItems)
 end function
 
-// Implements slice rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements slice rows for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
 function sliceRows(rows, offset, limit)
   if typeof(rows) != "array" or typeof(offset) != "int" or offset < 0 or typeof(limit) != "int" or limit < -1 then return fail(INVALID_ARGUMENT, "sliceRows", "invalid slice") end if
   output = []
@@ -455,23 +521,23 @@ function sliceRows(rows, offset, limit)
   return output
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor projection module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.projection"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor projection module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor projection module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

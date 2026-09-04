@@ -12,7 +12,7 @@ struct ServerConfig
 Groups the server config state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L20)
 
 ## Members
 
@@ -26,7 +26,7 @@ bindAddress
 Stores the bind address associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L22)
 
 <a id="field-field-minisql-config-model-serverconfig-idletimeoutms-idletimeoutms-src-minisql-config-model-ml-312974048"></a>
 ### idleTimeoutMs
@@ -38,7 +38,7 @@ idleTimeoutMs
 Disconnects inactive clients after this many milliseconds.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L36)
 
 <a id="field-field-minisql-config-model-serverconfig-maxconnections-maxconnections-src-minisql-config-model-ml-1243267766"></a>
 ### maxConnections
@@ -50,7 +50,7 @@ maxConnections
 Stores the max connections associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L26)
 
 <a id="field-field-minisql-config-model-serverconfig-maxframebytes-maxframebytes-src-minisql-config-model-ml-2004772328"></a>
 ### maxFrameBytes
@@ -62,7 +62,7 @@ maxFrameBytes
 Tracks the max frame bytes numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L30)
 
 <a id="field-field-minisql-config-model-serverconfig-maxresultbytes-maxresultbytes-src-minisql-config-model-ml-1800387992"></a>
 ### maxResultBytes
@@ -74,7 +74,7 @@ maxResultBytes
 Caps the aggregate encoded response bytes returned by one statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L34)
 
 <a id="field-field-minisql-config-model-serverconfig-maxresultrows-maxresultrows-src-minisql-config-model-ml-36726728"></a>
 ### maxResultRows
@@ -86,7 +86,7 @@ maxResultRows
 Caps rows returned by one statement before the server rejects the result.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L32)
 
 <a id="field-field-minisql-config-model-serverconfig-maxstatementbytes-maxstatementbytes-src-minisql-config-model-ml-1945360984"></a>
 ### maxStatementBytes
@@ -98,7 +98,7 @@ maxStatementBytes
 Tracks the max statement bytes numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L28)
 
 <a id="field-field-minisql-config-model-serverconfig-port-port-src-minisql-config-model-ml-58333258"></a>
 ### port
@@ -110,4 +110,4 @@ port
 Tracks the port numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L24)

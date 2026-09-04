@@ -12,7 +12,7 @@ struct BoundAlterTable
 Groups the bound alter table state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L226)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L240)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnType
 Stores the column type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L246)
 
 <a id="field-field-minisql-sql-binder-boundaltertable-command-command-src-minisql-sql-binder-ml-45311603"></a>
 ### command
@@ -38,7 +38,7 @@ command
 Preserves the user-visible DDL command when several syntaxes share one journal action.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L248)
 
 <a id="field-field-minisql-sql-binder-boundaltertable-statement-statement-src-minisql-sql-binder-ml-1129455587"></a>
 ### statement
@@ -50,7 +50,7 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L228)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L242)
 
 <a id="field-field-minisql-sql-binder-boundaltertable-table-table-src-minisql-sql-binder-ml-1660743915"></a>
 ### table
@@ -62,4 +62,4 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L244)

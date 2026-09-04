@@ -1,3 +1,5 @@
+//! Provides minisql client console facilities for this project.
+
 package minisql.client.console
 
 // Copyright 2026 MiniLangProject contributors
@@ -12,50 +14,92 @@ import minisql.platform.file as file_api
 import minisql.protocol.constants as constants
 import std.console as console_api
 
+/// Defines the invalid argument constant used by the minisql client console module.
 const INVALID_ARGUMENT = 9001
+/// Defines the io failure constant used by the minisql client console module.
 const IO_FAILURE = 9005
+/// Defines the std input handle constant used by the minisql client console module.
 const STD_INPUT_HANDLE = -10
+/// Defines the std output handle constant used by the minisql client console module.
 const STD_OUTPUT_HANDLE = -11
+/// Defines the enable echo input constant used by the minisql client console module.
 const ENABLE_ECHO_INPUT = 4
+/// Defines the enable quick edit mode constant used by the minisql client console module.
 const ENABLE_QUICK_EDIT_MODE = 0x40
+/// Defines the enable extended flags constant used by the minisql client console module.
 const ENABLE_EXTENDED_FLAGS = 0x80
+/// Defines the cp utf8 constant used by the minisql client console module.
 const CP_UTF8 = 65001
+/// Defines the wc err invalid chars constant used by the minisql client console module.
 const WC_ERR_INVALID_CHARS = 0x80
+/// Defines the max password utf16 units constant used by the minisql client console module.
 const MAX_PASSWORD_UTF16_UNITS = 1024
 
-// Splits complete SQL statements from an unfinished interactive input suffix.
+/// Splits complete SQL statements from an unfinished interactive input suffix.
 struct SqlBatch
-  // Complete statements, in source order and without their delimiters.
+  /// Complete statements, in source order and without their delimiters.
   statements
-  // Trailing text that does not yet form a complete statement.
+  /// Trailing text that does not yet form a complete statement.
   remainder
 end struct
 
 #if TARGET_OS == "windows"
-// Returns the Windows standard-stream handle identified by `kind`; failure uses an invalid native handle.
+/// Returns the Windows standard-stream handle identified by `kind`; failure uses an invalid native handle.
+/// @param kind kind value consumed by this operation.
+/// @returns Native ptr result produced by the call.
 extern function GetStdHandle(kind as i32) from "kernel32.dll" symbol "GetStdHandle" returns ptr
-// Reads console-mode flags into `mode` and returns false on a Win32 error.
+/// Reads console-mode flags into `mode` and returns false on a Win32 error.
+/// @param handle Native or runtime handle used by the operation.
+/// @param mode Mode selecting the requested behavior.
+/// @returns Native bool result produced by the call.
 extern function GetConsoleMode(handle as ptr, mode as bytes) from "kernel32.dll" symbol "GetConsoleMode" returns bool
-// Replaces console-mode flags and returns false on a Win32 error.
+/// Replaces console-mode flags and returns false on a Win32 error.
+/// @param handle Native or runtime handle used by the operation.
+/// @param mode Mode selecting the requested behavior.
+/// @returns Native bool result produced by the call.
 extern function SetConsoleMode(handle as ptr, mode as u32) from "kernel32.dll" symbol "SetConsoleMode" returns bool
-// Reads UTF-16 console input into `buffer`, reporting the unit count through `readOut`.
+/// Reads UTF-16 console input into `buffer`, reporting the unit count through `readOut`.
+/// @param handle Native or runtime handle used by the operation.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param count Number of items or units to process.
+/// @param readOut readOut value consumed by this operation.
+/// @param control control value consumed by this operation.
+/// @returns Native bool result produced by the call.
 extern function ReadConsoleW(handle as ptr, buffer as bytes, count as u32, readOut as bytes, control as ptr) from "kernel32.dll" symbol "ReadConsoleW" returns bool
-// Writes UTF-16 console text and reports the unit count through `writtenOut`.
+/// Writes UTF-16 console text and reports the unit count through `writtenOut`.
+/// @param handle Native or runtime handle used by the operation.
+/// @param text Text consumed by the operation.
+/// @param count Number of items or units to process.
+/// @param writtenOut writtenOut value consumed by this operation.
+/// @param reserved reserved value consumed by this operation.
+/// @returns Native bool result produced by the call.
 extern function WriteConsoleW(handle as ptr, text as wstr, count as u32, writtenOut as bytes, reserved as ptr) from "kernel32.dll" symbol "WriteConsoleW" returns bool
-// Converts UTF-16 units to the requested code page; returns bytes written or zero on failure.
+/// Converts UTF-16 units to the requested code page; returns bytes written or zero on failure.
+/// @param codePage codePage value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param wideText wideText value consumed by this operation.
+/// @param wideCount Number of wide to process.
+/// @param output Output collection or buffer populated by the operation.
+/// @param outputCount Number of output to process.
+/// @param defaultChar defaultChar value consumed by this operation.
+/// @param usedDefault usedDefault value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function WideCharToMultiByte(codePage as u32, flags as u32, wideText as bytes, wideCount as i32, output as bytes, outputCount as i32, defaultChar as ptr, usedDefault as ptr) from "kernel32.dll" symbol "WideCharToMultiByte" returns i32
 #endif
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Performs the fail operation for the minisql client console module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "client.console." + operation + ": " + message)
 end function
 
-// Prevents accidental mouse selection from suspending a Windows console
-// server. Redirected standard input and service processes have no console and
-// are treated as already safe; a real console-mode update reports failures.
+/// Prevents accidental mouse selection from suspending a Windows console
+/// server. Redirected standard input and service processes have no console and
+/// are treated as already safe; a real console-mode update reports failures.
 function disableQuickEdit()
 #if TARGET_OS == "windows"
   inputHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -72,32 +116,38 @@ function disableQuickEdit()
 #endif
 end function
 
-// Returns whether the supplied value satisfies the meta command condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the meta command condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param text Text consumed by the operation.
 function isMetaCommand(text)
   return typeof(text) == "string" and len(text) > 0 and bytes(text)[0] == 92
 end function
 
-// Executes once using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes once using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param activeClient activeClient value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function executeOnce(activeClient, sqlText)
   return formatter.formatResponse(client.query(activeClient, sqlText))
 end function
 
-// Implements wipe password for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements wipe password for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function wipePassword(passwordBytes)
   return uuid.wipeSecret(passwordBytes)
 end function
 
-// Writes prompt using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Writes prompt using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param outputHandle outputHandle value consumed by this operation.
+/// @param prompt prompt value consumed by this operation.
 function writePrompt(outputHandle, prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "writePrompt", "prompt must be string") end if
   promptBytes = bytes(prompt)
@@ -114,10 +164,12 @@ function writePrompt(outputHandle, prompt)
   return true
 end function
 
-// Implements utf16 password to UTF-8 for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements utf16 password to UTF-8 for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param wide wide value consumed by this operation.
+/// @param units units value consumed by this operation.
 function utf16PasswordToUtf8(wide, units)
   if typeof(wide) != "bytes" or typeof(units) != "int" or units < 0 or units > MAX_PASSWORD_UTF16_UNITS then return fail(INVALID_ARGUMENT, "utf16PasswordToUtf8", "invalid UTF-16 input") end if
   if units == 0 then return bytes(0) end if
@@ -133,10 +185,11 @@ function utf16PasswordToUtf8(wide, units)
 #endif
 end function
 
-// Reads password using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads password using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param prompt prompt value consumed by this operation.
 function readPassword(prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "readPassword", "prompt must be string") end if
 #if TARGET_OS == "windows"
@@ -183,10 +236,12 @@ function readPassword(prompt)
 #endif
 end function
 
-// Reads password confirmed using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Reads password confirmed using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param prompt prompt value consumed by this operation.
+/// @param confirmationPrompt confirmationPrompt value consumed by this operation.
 function readPasswordConfirmed(prompt, confirmationPrompt)
   first = try(readPassword(prompt))
   if typeof(first) == "error" then return first end if
@@ -198,10 +253,13 @@ function readPasswordConfirmed(prompt, confirmationPrompt)
   return first
 end function
 
-// Opens authenticated prompt using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens authenticated prompt using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openAuthenticatedPrompt(address, port, username)
   secret = try(readPassword("Password: "))
   if typeof(secret) == "error" then return secret end if
@@ -211,7 +269,11 @@ function openAuthenticatedPrompt(address, port, username)
   return active
 end function
 
-// Prompts for a password and opens native TLS using Windows certificate trust.
+/// Prompts for a password and opens native TLS using Windows certificate trust.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openTlsAuthenticatedPrompt(address, port, serverName, username)
   secret = try(readPassword("Password: "))
   if typeof(secret) == "error" then return secret end if
@@ -221,7 +283,12 @@ function openTlsAuthenticatedPrompt(address, port, serverName, username)
   return active
 end function
 
-// Prompts for a password and opens native TLS using an exact leaf SHA-256 pin.
+/// Prompts for a password and opens native TLS using an exact leaf SHA-256 pin.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openTlsPinnedAuthenticatedPrompt(address, port, serverName, pinText, username)
   secret = try(readPassword("Password: "))
   if typeof(secret) == "error" then return secret end if
@@ -231,10 +298,11 @@ function openTlsPinnedAuthenticatedPrompt(address, port, serverName, pinText, us
   return active
 end function
 
-// Implements trim ascii for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements trim ascii for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function trimAscii(text)
   if typeof(text) != "string" then return fail(INVALID_ARGUMENT, "trimAscii", "text must be string") end if
   raw = bytes(text)
@@ -250,20 +318,25 @@ function trimAscii(text)
   return decode(slice(raw, first, last - first))
 end function
 
-// Implements starts with bytes for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements starts with bytes for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
+/// @param first first value consumed by this operation.
+/// @param second second value consumed by this operation.
 function startsWithBytes(text, first, second)
   if typeof(text) != "string" or typeof(first) != "int" or typeof(second) != "int" then return false end if
   raw = bytes(text)
   return len(raw) >= 2 and raw[0] == first and raw[1] == second
 end function
 
-// Implements starts with text for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements starts with text for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
+/// @param prefix prefix value consumed by this operation.
 function startsWithText(text, prefix)
   if typeof(text) != "string" or typeof(prefix) != "string" then return false end if
   raw = bytes(text)
@@ -277,10 +350,11 @@ function startsWithText(text, prefix)
   return true
 end function
 
-// Returns whether the supplied value satisfies the script comment condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the script comment condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param line line value consumed by this operation.
 function isScriptComment(line)
   if typeof(line) != "string" or len(line) == 0 then return false end if
   raw = bytes(line)
@@ -288,10 +362,11 @@ function isScriptComment(line)
   return startsWithBytes(line, 45, 45)
 end function
 
-// Implements split lines for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements split lines for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function splitLines(text)
   if typeof(text) != "string" then return fail(INVALID_ARGUMENT, "splitLines", "text must be string") end if
   raw = bytes(text)
@@ -317,24 +392,29 @@ function splitLines(text)
   return lines
 end function
 
-// Returns whether the supplied value satisfies the SQL batch condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the SQL batch condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isSqlBatch(value)
   return value is SqlBatch
 end function
 
-// Returns whether the supplied value satisfies the whitespace byte condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the whitespace byte condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isWhitespaceByte(value)
   return value == 32 or value == 9 or value == 10 or value == 13
 end function
 
-// Implements raw text for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements raw text for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
 function rawText(source, offset, count)
   if count <= 0 then return "" end if
   value = decode(slice(source, offset, count))
@@ -342,9 +422,14 @@ function rawText(source, offset, count)
   return value
 end function
 
-// Appends SQL fragment using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Appends SQL fragment using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statements statements value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param startOffset startOffset value consumed by this operation.
+/// @param endOffset endOffset value consumed by this operation.
+/// @param hasToken hasToken value consumed by this operation.
 function appendSqlFragment(statements, source, startOffset, endOffset, hasToken)
   if not hasToken or endOffset <= startOffset then return statements end if
   text = trimAscii(rawText(source, startOffset, endOffset - startOffset))
@@ -352,14 +437,16 @@ function appendSqlFragment(statements, source, startOffset, endOffset, hasToken)
   return statements + [text]
 end function
 
-// Split complete SQL statements without treating semicolons inside quoted
-// strings, quoted identifiers or comments as terminators. When finalInput is
-// false, an incomplete suffix is returned for the interactive continuation
-// prompt. When finalInput is true, a final statement may omit its semicolon.
-// Scans SQL batch using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Split complete SQL statements without treating semicolons inside quoted
+/// strings, quoted identifiers or comments as terminators. When finalInput is
+/// false, an incomplete suffix is returned for the interactive continuation
+/// prompt. When finalInput is true, a final statement may omit its semicolon.
+/// Scans SQL batch using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
+/// @param finalInput finalInput value consumed by this operation.
 function scanSqlBatch(text, finalInput)
   if typeof(text) != "string" or typeof(finalInput) != "bool" then return fail(INVALID_ARGUMENT, "scanSqlBatch", "invalid arguments") end if
   source = bytes(text)
@@ -438,17 +525,19 @@ function scanSqlBatch(text, finalInput)
   return SqlBatch(statements, remainder)
 end function
 
-// Implements split SQL statements for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements split SQL statements for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function splitSqlStatements(text)
   return scanSqlBatch(text, true).statements
 end function
 
-// Prints query response using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Prints query response using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param response response value consumed by this operation.
 function printQueryResponse(response)
   formatted = try(formatter.formatResponse(response))
   if typeof(formatted) == "error" then return formatted end if
@@ -456,10 +545,12 @@ function printQueryResponse(response)
   return true
 end function
 
-// Executes statements using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes statements using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param activeClient activeClient value consumed by this operation.
+/// @param statements statements value consumed by this operation.
 function executeStatements(activeClient, statements)
   if typeof(statements) != "array" then return fail(INVALID_ARGUMENT, "executeStatements", "statements must be array") end if
   executed = 0
@@ -481,10 +572,12 @@ function executeStatements(activeClient, statements)
   return executed
 end function
 
-// Runs script using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Runs script using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param activeClient activeClient value consumed by this operation.
+/// @param path Path of the file or directory used by the operation.
 function runScript(activeClient, path)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "runScript", "path must be non-empty") end if
   content = try(file_api.readAllText(path, 1048576))
@@ -494,10 +587,12 @@ function runScript(activeClient, path)
   return executeStatements(activeClient, batch.statements)
 end function
 
-// Implements command argument for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements command argument for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param line line value consumed by this operation.
+/// @param prefix prefix value consumed by this operation.
 function commandArgument(line, prefix)
   if typeof(line) != "string" or typeof(prefix) != "string" then return "" end if
   raw = bytes(line)
@@ -506,9 +601,11 @@ function commandArgument(line, prefix)
   return trimAscii(rawText(raw, len(prefixRaw), len(raw) - len(prefixRaw)))
 end function
 
-// Returns whether the supplied value satisfies the identifier byte condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the identifier byte condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
+/// @param first first value consumed by this operation.
 function isIdentifierByte(value, first)
   if value >= 65 and value <= 90 then return true end if
   if value >= 97 and value <= 122 then return true end if
@@ -516,10 +613,11 @@ function isIdentifierByte(value, first)
   return not first and value >= 48 and value <= 57
 end function
 
-// Returns whether the supplied value satisfies the safe meta identifier condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the safe meta identifier condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isSafeMetaIdentifier(value)
   if typeof(value) != "string" or len(value) == 0 then return false end if
   raw = bytes(value)
@@ -532,9 +630,9 @@ function isSafeMetaIdentifier(value)
   return true
 end function
 
-// Prints shell help using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Prints shell help using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function printShellHelp()
   print "MiniSQL shell commands:"
   print "  \\q or \\quit          close the session"
@@ -550,10 +648,12 @@ function printShellHelp()
   return true
 end function
 
-// Executes meta using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes meta using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param activeClient activeClient value consumed by this operation.
+/// @param line line value consumed by this operation.
 function executeMeta(activeClient, line)
   if line == "\\ping" then
     pong = try(client.ping(activeClient))
@@ -584,10 +684,12 @@ function executeMeta(activeClient, line)
   return false
 end function
 
-// Runs shell using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Runs shell using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param activeClient activeClient value consumed by this operation.
+/// @param prompt prompt value consumed by this operation.
 function runShell(activeClient, prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "runShell", "prompt must be string") end if
   print "MiniSQL interactive client. Type \\help for help and \\q to quit."
@@ -642,23 +744,23 @@ function runShell(activeClient, prompt)
   return true
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql client console module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "client.console"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql client console module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql client console module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct TlsNamedGroup
 Describes one TLS named group independently of the platform provider.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L56)
 
 ## Members
 
@@ -26,7 +26,7 @@ family
 Key-agreement family used for security review and diagnostics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L62)
 
 <a id="field-field-minisql-platform-tls-policy-tlsnamedgroup-name-name-src-minisql-platform-tls-policy-ml-1862155528"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stable IANA group name used by configuration and diagnostics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L60)
 
 <a id="field-field-minisql-platform-tls-policy-tlsnamedgroup-publickeybytes-publickeybytes-src-minisql-platform-tls-policy-ml-493311268"></a>
 ### publicKeyBytes
@@ -50,7 +50,7 @@ publicKeyBytes
 Encoded public-key length expected in a ServerHello key share.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L64)
 
 <a id="field-field-minisql-platform-tls-policy-tlsnamedgroup-sharedsecretbytes-sharedsecretbytes-src-minisql-platform-tls-policy-ml-1819365086"></a>
 ### sharedSecretBytes
@@ -62,7 +62,7 @@ sharedSecretBytes
 Shared-secret length produced by the key agreement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L66)
 
 <a id="field-field-minisql-platform-tls-policy-tlsnamedgroup-wireid-wireid-src-minisql-platform-tls-policy-ml-997059422"></a>
 ### wireId
@@ -74,4 +74,4 @@ wireId
 Two-byte IANA NamedGroup identifier carried in the key_share extension.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L58)

@@ -12,7 +12,7 @@ struct HeapFile
 Defines the heap file record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L72)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 Closed field of the heap file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L78)
 
 <a id="field-field-minisql-storage-heap-file-heapfile-insertionpagehint-insertionpagehint-src-minisql-storage-heap-file-ml-1619094899"></a>
 ### insertionPageHint
@@ -38,7 +38,7 @@ insertionPageHint
 Page most likely to accept the next row without a whole-file free-space scan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L76)
 
 <a id="field-field-minisql-storage-heap-file-heapfile-pagedfile-pagedfile-src-minisql-storage-heap-file-ml-1786440263"></a>
 ### pagedFile
@@ -50,4 +50,4 @@ pagedFile
 Paged file field of the heap file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L74)

@@ -12,7 +12,7 @@ struct BoundDelete
 Groups the bound delete state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L196)
 
 ## Members
 
@@ -26,7 +26,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L204)
 
 <a id="field-field-minisql-sql-binder-bounddelete-statement-statement-src-minisql-sql-binder-ml-920806536"></a>
 ### statement
@@ -38,7 +38,7 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L198)
 
 <a id="field-field-minisql-sql-binder-bounddelete-table-table-src-minisql-sql-binder-ml-249333032"></a>
 ### table
@@ -50,7 +50,7 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L200)
 
 <a id="field-field-minisql-sql-binder-bounddelete-whereexpression-whereexpression-src-minisql-sql-binder-ml-1021239164"></a>
 ### whereExpression
@@ -62,4 +62,4 @@ whereExpression
 Stores the where expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L202)

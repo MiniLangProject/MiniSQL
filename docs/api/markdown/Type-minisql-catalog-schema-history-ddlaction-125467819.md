@@ -12,7 +12,7 @@ struct DdlAction
 Defines the ddl action record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L249)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Kind field of the ddl action.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L251)
 
 <a id="field-field-minisql-catalog-schema-history-ddlaction-payload-payload-src-minisql-catalog-schema-history-ml-1495199647"></a>
 ### payload
@@ -38,4 +38,4 @@ payload
 Payload field of the ddl action.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L253)

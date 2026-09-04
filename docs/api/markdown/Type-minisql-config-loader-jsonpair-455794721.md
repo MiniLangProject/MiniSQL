@@ -12,7 +12,7 @@ struct JsonPair
 Groups the JSON pair state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L42)
 
 ## Members
 
@@ -26,7 +26,7 @@ key
 Stores the key associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L44)
 
 <a id="field-field-minisql-config-loader-jsonpair-value-value-src-minisql-config-loader-ml-862797269"></a>
 ### value
@@ -38,4 +38,4 @@ value
 Stores the value associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L46)

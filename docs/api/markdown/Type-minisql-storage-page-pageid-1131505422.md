@@ -12,7 +12,7 @@ struct PageId
 Defines the page id record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L47)
 
 ## Members
 
@@ -26,7 +26,7 @@ fileId
 File id field of the page id.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L49)
 
 <a id="field-field-minisql-storage-page-pageid-pagenumber-pagenumber-src-minisql-storage-page-ml-1135253049"></a>
 ### pageNumber
@@ -38,4 +38,4 @@ pageNumber
 Page number field of the page id.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L51)

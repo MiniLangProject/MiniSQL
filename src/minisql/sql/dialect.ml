@@ -1,3 +1,5 @@
+//! Provides minisql sql dialect facilities for this project.
+
 package minisql.sql.dialect
 
 // Copyright 2026 MiniLangProject contributors
@@ -8,10 +10,11 @@ package minisql.sql.dialect
 // canonicalized to lower case by the lexer while quoted identifiers preserve
 // spelling and case.
 
-// Implements ascii upper for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements ascii upper for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function asciiUpper(text)
   if typeof(text) != "string" then return error(9001, "sql.dialect.asciiUpper: text must be string") end if
   raw = bytes(text)
@@ -23,10 +26,11 @@ function asciiUpper(text)
   return decode(raw)
 end function
 
-// Implements ascii lower for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements ascii lower for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function asciiLower(text)
   if typeof(text) != "string" then return error(9001, "sql.dialect.asciiLower: text must be string") end if
   raw = bytes(text)
@@ -38,9 +42,9 @@ function asciiLower(text)
   return decode(raw)
 end function
 
-// Implements keyword list for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements keyword list for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function keywordList()
   return [
     "ABS", "ACTION", "ADD", "ADMIN", "AFTER", "ALL", "ALTER", "ALWAYS", "ANALYZE", "AND", "AS", "ASC", "AUTO_INCREMENT", "AUTOINCREMENT", "AVG", "BEFORE", "BEGIN", "BETWEEN", "BIGINT", "BINARY", "BLOB", "BOOL_AND", "BOOL_OR", "BOOLEAN",
@@ -57,10 +61,11 @@ function keywordList()
   ]
 end function
 
-// Returns whether the supplied value satisfies the keyword condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the keyword condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param text Text consumed by the operation.
 function isKeyword(text)
   if typeof(text) != "string" then return false end if
   upper = asciiUpper(text)
@@ -70,13 +75,13 @@ function isKeyword(text)
   return false
 end function
 
-// MiniSQL distinguishes fully reserved grammar words from contextual words.
-// SQL type names and aggregate function names are keywords while parsing their
-// dedicated constructs, but remain legal unquoted identifiers where an object,
-// column, alias, savepoint or principal name is expected.
-// Implements non reserved identifier keyword list for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// MiniSQL distinguishes fully reserved grammar words from contextual words.
+/// SQL type names and aggregate function names are keywords while parsing their
+/// dedicated constructs, but remain legal unquoted identifiers where an object,
+/// column, alias, savepoint or principal name is expected.
+/// Implements non reserved identifier keyword list for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function nonReservedIdentifierKeywordList()
   return [
     "ABS", "ACTION", "AVG", "BIGINT", "BINARY", "BLOB", "BOOL_AND", "BOOL_OR", "BOOLEAN", "CEIL", "CHAR", "CHAR_LENGTH", "CONCAT", "COUNT",
@@ -86,10 +91,11 @@ function nonReservedIdentifierKeywordList()
   ]
 end function
 
-// Returns whether the supplied value satisfies the non reserved identifier keyword condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the non reserved identifier keyword condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param text Text consumed by the operation.
 function isNonReservedIdentifierKeyword(text)
   if typeof(text) != "string" then return false end if
   upper = asciiUpper(text)
@@ -99,33 +105,35 @@ function isNonReservedIdentifierKeyword(text)
   return false
 end function
 
-// Implements canonical identifier for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Does not modify its inputs.
+/// Implements canonical identifier for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Does not modify its inputs.
+/// @param text Text consumed by the operation.
+/// @param quoted quoted value consumed by this operation.
 function canonicalIdentifier(text, quoted)
   if typeof(text) != "string" or typeof(quoted) != "bool" then return error(9001, "sql.dialect.canonicalIdentifier: invalid arguments") end if
   if quoted then return text end if
   return asciiLower(text)
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql sql dialect module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.dialect"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql sql dialect module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M12"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql sql dialect module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct BoundExpression
 Groups the bound expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L59)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnIndex
 Tracks the column index numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L69)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-kind-kind-src-minisql-sql-expressions-ml-2019013985"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L61)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-left-left-src-minisql-sql-expressions-ml-380907627"></a>
 ### left
@@ -50,7 +50,7 @@ left
 Stores the left associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L71)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-literal-literal-src-minisql-sql-expressions-ml-636602433"></a>
 ### literal
@@ -62,7 +62,7 @@ literal
 Stores the literal associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L67)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-operator-operator-src-minisql-sql-expressions-ml-1692230269"></a>
 ### operator
@@ -74,7 +74,7 @@ operator
 Stores the operator associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L63)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-right-right-src-minisql-sql-expressions-ml-1955733765"></a>
 ### right
@@ -86,7 +86,7 @@ right
 Stores the right associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L73)
 
 <a id="field-field-minisql-sql-expressions-boundexpression-typeinfo-typeinfo-src-minisql-sql-expressions-ml-1855730373"></a>
 ### typeInfo
@@ -98,4 +98,4 @@ typeInfo
 Stores the type info associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L65)

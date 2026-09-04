@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+//! Provides apps minisql main facilities for this project.
+
 import minisql.client.client as client
 import minisql.client.formatter as formatter
 import minisql.client.console as console
 
-// Prints command-line syntax for trusted, authenticated, and encrypted client modes.
-// Writes only to standard output and returns void.
+/// Prints command-line syntax for trusted, authenticated, and encrypted client modes.
+/// Writes only to standard output and returns void.
 function printUsage()
   print "MiniSQL console client"
   print ""
@@ -39,14 +41,17 @@ function printUsage()
   print "  (ping, query, and script variants use the same argument order)"
 end function
 
-// Prints a structured client error and returns the conventional failure status.
+/// Prints a structured client error and returns the conventional failure status.
+/// @param value Value consumed or transformed by the operation.
 function printClientError(value)
   print "ERROR " + value.code + ": " + value.message
   return 1
 end function
 
-// Closes a client after an operation and converts either error to a process status.
-// Returns zero only when both the operation and close completed successfully.
+/// Closes a client after an operation and converts either error to a process status.
+/// Returns zero only when both the operation and close completed successfully.
+/// @param active active value consumed by this operation.
+/// @param result Result object populated or inspected by the operation.
 function closeAfter(active, result)
   closed = try(client.close(active))
   if typeof(result) == "error" then return printClientError(result) end if
@@ -54,8 +59,9 @@ function closeAfter(active, result)
   return 0
 end function
 
-// Sends PING, closes the connection, and prints PONG on success.
-// Returns zero on success and one for protocol, close, or negative-ping failures.
+/// Sends PING, closes the connection, and prints PONG on success.
+/// Returns zero on success and one for protocol, close, or negative-ping failures.
+/// @param active active value consumed by this operation.
 function runPing(active)
   result = try(client.ping(active))
   closed = try(client.close(active))
@@ -66,8 +72,10 @@ function runPing(active)
   return 0
 end function
 
-// Executes and formats one SQL query before closing the connection.
-// Returns one for protocol ERROR responses or client/formatting failures.
+/// Executes and formats one SQL query before closing the connection.
+/// Returns one for protocol ERROR responses or client/formatting failures.
+/// @param active active value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function runQuery(active, sqlText)
   response = try(client.query(active, sqlText))
   closed = try(client.close(active))
@@ -80,14 +88,17 @@ function runQuery(active, sqlText)
   return 0
 end function
 
-// Runs the interactive shell and always closes its client afterward.
+/// Runs the interactive shell and always closes its client afterward.
+/// @param active active value consumed by this operation.
 function runShell(active)
   result = try(console.runShell(active, "minisql> "))
   return closeAfter(active, result)
 end function
 
-// Executes a SQL script, closes the client, and reports the statement count.
-// Returns a nonzero status for script or cleanup errors.
+/// Executes a SQL script, closes the client, and reports the statement count.
+/// Returns a nonzero status for script or cleanup errors.
+/// @param active active value consumed by this operation.
+/// @param path Path of the file or directory used by the operation.
 function runScript(active, path)
   result = try(console.runScript(active, path))
   status = closeAfter(active, result)
@@ -96,28 +107,42 @@ function runScript(active, path)
   return 0
 end function
 
-// Opens an unauthenticated loopback client for the supplied port.
+/// Opens an unauthenticated loopback client for the supplied port.
+/// @param port port value consumed by this operation.
 function openTrusted(port)
   return client.openLoopback(port)
 end function
 
-// Prompts for credentials and opens an authenticated connection to the address.
+/// Prompts for credentials and opens an authenticated connection to the address.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openPrompt(address, port, username)
   return console.openAuthenticatedPrompt(address, port, username)
 end function
 
-// Prompts for credentials and opens native TLS with Windows certificate trust.
+/// Prompts for credentials and opens native TLS with Windows certificate trust.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openTlsPrompt(address, port, serverName, username)
   return console.openTlsAuthenticatedPrompt(address, port, serverName, username)
 end function
 
-// Prompts for credentials and opens native TLS with exact leaf-certificate pinning.
+/// Prompts for credentials and opens native TLS with exact leaf-certificate pinning.
+/// @param address address value consumed by this operation.
+/// @param port port value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
+/// @param username username value consumed by this operation.
 function openTlsPinnedPrompt(address, port, serverName, pinText, username)
   return console.openTlsPinnedAuthenticatedPrompt(address, port, serverName, pinText, username)
 end function
 
-// Dispatches the public CLI modes after validating arity and numeric ports.
-// Returns zero on success, one on operational failure, or two for usage errors.
+/// Dispatches the public CLI modes after validating arity and numeric ports.
+/// Returns zero on success, one on operational failure, or two for usage errors.
+/// @param args Command-line or caller-supplied arguments.
 function main(args)
   if len(args) == 1 and args[0] == "--version" then print client.versionLine(); return 0 end if
   if len(args) == 1 and args[0] == "--m0-self-test" then print client.m0SelfTestLine(); return 0 end if

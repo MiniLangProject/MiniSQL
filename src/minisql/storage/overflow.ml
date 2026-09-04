@@ -1,3 +1,5 @@
+//! Provides minisql storage overflow facilities for this project.
+
 package minisql.storage.overflow
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -9,68 +11,82 @@ import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.row_codec as row_codec
 
-// Overflow-chain format v1 for large TEXT/BLOB values. Every chain page is a
-// normal checksummed MiniSQL page and additionally carries owner, sequence and
-// total-length metadata. The pointer stores a whole-value CRC-32C.
+/// Overflow-chain format v1 for large TEXT/BLOB values. Every chain page is a
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql storage overflow module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql storage overflow module.
 const CORRUPT_DATA = 9004
 
+/// Defines the format version constant used by the minisql storage overflow module.
 const FORMAT_VERSION = 1
+/// Defines the pointer size constant used by the minisql storage overflow module.
 const POINTER_SIZE = 48
+/// Defines the chain header offset constant used by the minisql storage overflow module.
 const CHAIN_HEADER_OFFSET = 64
+/// Defines the chain header size constant used by the minisql storage overflow module.
 const CHAIN_HEADER_SIZE = 40
+/// Defines the data offset constant used by the minisql storage overflow module.
 const DATA_OFFSET = 104
+/// Defines the next page offset constant used by the minisql storage overflow module.
 const NEXT_PAGE_OFFSET = 80
+/// Defines the chunk length offset constant used by the minisql storage overflow module.
 const CHUNK_LENGTH_OFFSET = 88
+/// Defines the total length offset constant used by the minisql storage overflow module.
 const TOTAL_LENGTH_OFFSET = 92
+/// Defines the sequence offset constant used by the minisql storage overflow module.
 const SEQUENCE_OFFSET = 96
 
-// Defines the overflow pointer record used by this module.
+/// Defines the overflow pointer record used by this module.
 struct OverflowPointer
-  // File id field of the overflow pointer.
+  /// File id field of the overflow pointer.
   fileId
-  // First page field of the overflow pointer.
+  /// First page field of the overflow pointer.
   firstPage
-  // Total length field of the overflow pointer.
+  /// Total length field of the overflow pointer.
   totalLength
-  // Owner id field of the overflow pointer.
+  /// Owner id field of the overflow pointer.
   ownerId
-  // Value checksum field of the overflow pointer.
+  /// Value checksum field of the overflow pointer.
   valueChecksum
 end struct
 
-// Defines the overflow replacement record used by this module.
+/// Defines the overflow replacement record used by this module.
 struct OverflowReplacement
-  // Old pointer field of the overflow replacement.
+  /// Old pointer field of the overflow replacement.
   oldPointer
-  // New pointer field of the overflow replacement.
+  /// New pointer field of the overflow replacement.
   newPointer
-  // Completed field of the overflow replacement.
+  /// Completed field of the overflow replacement.
   completed
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage overflow module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.overflow." + operation + ": " + message)
 end function
 
-// Performs the pointer magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the pointer magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pointerMagic()
   return bytes("MSOP")
 end function
 
-// Performs the page magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the page magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function pageMagic()
   return bytes("MSOV")
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql storage overflow module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -80,8 +96,12 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Validates the native.
-// Inputs: `value`, `operation`, `name`, `allowMinusOne`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native for the minisql storage overflow workflow.
+/// Inputs: `value`, `operation`, `name`, `allowMinusOne`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param allowMinusOne allowMinusOne value consumed by this operation.
 function validateNative(value, operation, name, allowMinusOne)
   if typeof(value) != "int" then return fail(INVALID_ARGUMENT, operation, name + " must be int") end if
   if allowMinusOne and value == -1 then return true end if
@@ -89,8 +109,13 @@ function validateNative(value, operation, name, allowMinusOne)
   return true
 end function
 
-// Creates the pointer.
-// Inputs: `fileId`, `firstPage`, `totalLength`, `ownerId`, `valueChecksum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the pointer.
+/// Inputs: `fileId`, `firstPage`, `totalLength`, `ownerId`, `valueChecksum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param fileId Identifier of file.
+/// @param firstPage firstPage value consumed by this operation.
+/// @param totalLength totalLength value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param valueChecksum valueChecksum value consumed by this operation.
 function createPointer(fileId, firstPage, totalLength, ownerId, valueChecksum)
   validateNative(fileId, "createPointer", "fileId", false)
   validateNative(firstPage, "createPointer", "firstPage", true)
@@ -103,8 +128,9 @@ function createPointer(fileId, firstPage, totalLength, ownerId, valueChecksum)
   return OverflowPointer(fileId, firstPage, totalLength, ownerId, valueChecksum)
 end function
 
-// Encodes the pointer.
-// Inputs: `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the pointer.
+/// Inputs: `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pointer pointer value consumed by this operation.
 function encodePointer(pointer)
   if pointer is not OverflowPointer then return fail(INVALID_ARGUMENT, "encodePointer", "value must be OverflowPointer") end if
   checked = createPointer(pointer.fileId, pointer.firstPage, pointer.totalLength, pointer.ownerId, pointer.valueChecksum)
@@ -125,15 +151,19 @@ function encodePointer(pointer)
   return output
 end function
 
-// Decodes the native.
-// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes native for the minisql storage overflow workflow.
+/// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Decodes the pointer.
-// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the pointer.
+/// Inputs: `encoded`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param encoded encoded value consumed by this operation.
 function decodePointer(encoded)
   if typeof(encoded) != "bytes" or len(encoded) != POINTER_SIZE then return fail(CORRUPT_DATA, "decodePointer", "pointer must be 48 bytes") end if
   if not bytesEqual(slice(encoded, 0, 4), pointerMagic()) then return fail(UNSUPPORTED_FORMAT, "decodePointer", "pointer magic mismatch") end if
@@ -150,29 +180,39 @@ function decodePointer(encoded)
   )
 end function
 
-// Converts the external.
-// Inputs: `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Converts the external.
+/// Inputs: `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pointer pointer value consumed by this operation.
 function toExternal(pointer)
   return row_codec.external(encodePointer(pointer))
 end function
 
-// Constructs the external.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Constructs the external.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function fromExternal(value)
   if not row_codec.isExternalValue(value) then return fail(INVALID_ARGUMENT, "fromExternal", "value must be ExternalValue") end if
   return decodePointer(value.encodedPointer)
 end function
 
-// Performs the chunk capacity operation for this module.
-// Inputs: `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the chunk capacity operation for this module.
+/// Inputs: `pagedFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
 function chunkCapacity(pagedFile)
   paged_file.validateOpen(pagedFile, "overflow.chunkCapacity")
   if pagedFile.pageSize <= DATA_OFFSET then return fail(INVALID_ARGUMENT, "chunkCapacity", "page size is too small") end if
   return pagedFile.pageSize - DATA_OFFSET
 end function
 
-// Encodes the page.
-// Inputs: `pagedFile`, `pageNumber`, `ownerId`, `nextPage`, `totalLength`, `sequence`, `chunk`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the page.
+/// Inputs: `pagedFile`, `pageNumber`, `ownerId`, `nextPage`, `totalLength`, `sequence`, `chunk`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param nextPage nextPage value consumed by this operation.
+/// @param totalLength totalLength value consumed by this operation.
+/// @param sequence sequence value consumed by this operation.
+/// @param chunk chunk value consumed by this operation.
 function encodePage(pagedFile, pageNumber, ownerId, nextPage, totalLength, sequence, chunk)
   validateNative(ownerId, "encodePage", "ownerId", false)
   validateNative(nextPage, "encodePage", "nextPage", true)
@@ -198,16 +238,22 @@ function encodePage(pagedFile, pageNumber, ownerId, nextPage, totalLength, seque
   return result
 end function
 
-// Decodes the next.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the next.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function decodeNext(pageBytes)
   words = endian.readU64LE(pageBytes, NEXT_PAGE_OFFSET)
   if words.high == endian.MAX_U32 and words.low == endian.MAX_U32 then return -1 end if
   return decodeNative(words, "decodeNext", "nextPage")
 end function
 
-// Validates the chain page.
-// Inputs: `pagedFile`, `pageBytes`, `pointer`, `expectedPage`, `expectedSequence`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the chain page.
+/// Inputs: `pagedFile`, `pageBytes`, `pointer`, `expectedPage`, `expectedSequence`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
+/// @param expectedPage expectedPage value consumed by this operation.
+/// @param expectedSequence expectedSequence value consumed by this operation.
 function validateChainPage(pagedFile, pageBytes, pointer, expectedPage, expectedSequence)
   header = page.verify(pageBytes)
   if header.pageType != page.TYPE_OVERFLOW or header.pageId.fileId != pointer.fileId or header.pageId.pageNumber != expectedPage then return fail(CORRUPT_DATA, "validateChainPage", "overflow page identity/type mismatch") end if
@@ -222,8 +268,10 @@ function validateChainPage(pagedFile, pageBytes, pointer, expectedPage, expected
   return chunkLength
 end function
 
-// Performs the page count for length operation for this module.
-// Inputs: `pagedFile`, `length`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the page count for length operation for this module.
+/// Inputs: `pagedFile`, `length`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param length length value consumed by this operation.
 function pageCountForLength(pagedFile, length)
   if typeof(length) != "int" or length < 0 then return fail(INVALID_ARGUMENT, "pageCountForLength", "length must be non-negative") end if
   if length == 0 then return 0 end if
@@ -237,8 +285,10 @@ function pageCountForLength(pagedFile, length)
   return count
 end function
 
-// Allocates the page numbers.
-// Inputs: `pagedFile`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Allocates the page numbers.
+/// Inputs: `pagedFile`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param count Number of items or units to process.
 function allocatePageNumbers(pagedFile, count)
   if typeof(count) != "int" or count < 0 then return fail(INVALID_ARGUMENT, "allocatePageNumbers", "count must be non-negative") end if
   result = array(count)
@@ -274,8 +324,11 @@ function allocatePageNumbers(pagedFile, count)
   return result
 end function
 
-// Writes the requested value.
-// Inputs: `pagedFile`, `ownerId`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the requested value.
+/// Inputs: `pagedFile`, `ownerId`, `value`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param value Value consumed or transformed by the operation.
 function write(pagedFile, ownerId, value)
   paged_file.validateOpen(pagedFile, "overflow.write")
   validateNative(ownerId, "write", "ownerId", false)
@@ -300,8 +353,11 @@ function write(pagedFile, ownerId, value)
   return createPointer(pagedFile.fileId, pageNumbers[0], len(value), ownerId, crc32c.compute(value))
 end function
 
-// Validates the pointer for file.
-// Inputs: `pagedFile`, `pointer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the pointer for file.
+/// Inputs: `pagedFile`, `pointer`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validatePointerForFile(pagedFile, pointer, operation)
   paged_file.validateOpen(pagedFile, "overflow." + operation)
   if pointer is not OverflowPointer then return fail(INVALID_ARGUMENT, operation, "pointer must be OverflowPointer") end if
@@ -310,11 +366,15 @@ function validatePointerForFile(pagedFile, pointer, operation)
   return true
 end function
 
-// Traverses and validates the complete chain while copying only the requested
-// range. This keeps range reads bounded by the requested output size while still
-// checking the whole-value checksum and every chain link.
-// Reads the range.
-// Inputs: `pagedFile`, `pointer`, `requestedOffset`, `requestedLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Traverses and validates the complete chain while copying only the requested
+/// range. This keeps range reads bounded by the requested output size while still
+/// checking the whole-value checksum and every chain link.
+/// Reads the range.
+/// Inputs: `pagedFile`, `pointer`, `requestedOffset`, `requestedLength`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
+/// @param requestedOffset requestedOffset value consumed by this operation.
+/// @param requestedLength requestedLength value consumed by this operation.
 function readRange(pagedFile, pointer, requestedOffset, requestedLength)
   validatePointerForFile(pagedFile, pointer, "readRange")
   if typeof(requestedOffset) != "int" or typeof(requestedLength) != "int" or requestedOffset < 0 or requestedLength < 0 or requestedOffset > pointer.totalLength or requestedLength > pointer.totalLength - requestedOffset then return fail(INVALID_ARGUMENT, "readRange", "range exceeds value") end if
@@ -366,15 +426,19 @@ function readRange(pagedFile, pointer, requestedOffset, requestedLength)
   return output
 end function
 
-// Reads the requested value.
-// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads read for the minisql storage overflow workflow.
+/// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
 function read(pagedFile, pointer)
   validatePointerForFile(pagedFile, pointer, "read")
   return readRange(pagedFile, pointer, 0, pointer.totalLength)
 end function
 
-// Releases the requested value.
-// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the free operation for the minisql storage overflow module.
+/// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
 function free(pagedFile, pointer)
   validatePointerForFile(pagedFile, pointer, "free")
   // Validate the complete chain before mutating any page.
@@ -395,8 +459,12 @@ function free(pagedFile, pointer)
   return freed
 end function
 
-// Performs the prepare replace operation for this module.
-// Inputs: `pagedFile`, `oldPointer`, `ownerId`, `newValue`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the prepare replace operation for this module.
+/// Inputs: `pagedFile`, `oldPointer`, `ownerId`, `newValue`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param oldPointer oldPointer value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param newValue newValue value consumed by this operation.
 function prepareReplace(pagedFile, oldPointer, ownerId, newValue)
   validatePointerForFile(pagedFile, oldPointer, "prepareReplace")
   ignored = readRange(pagedFile, oldPointer, 0, 0)
@@ -405,8 +473,10 @@ function prepareReplace(pagedFile, oldPointer, ownerId, newValue)
   return OverflowReplacement(oldPointer, newPointer, false)
 end function
 
-// Commits the replace.
-// Inputs: `pagedFile`, `replacement`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Commits the replace.
+/// Inputs: `pagedFile`, `replacement`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param replacement replacement value consumed by this operation.
 function commitReplace(pagedFile, replacement)
   if replacement is not OverflowReplacement then return fail(INVALID_ARGUMENT, "commitReplace", "replacement must be OverflowReplacement") end if
   if replacement.completed then return fail(INVALID_ARGUMENT, "commitReplace", "replacement is already completed") end if
@@ -417,8 +487,10 @@ function commitReplace(pagedFile, replacement)
   return replacement.newPointer
 end function
 
-// Performs the abort replace operation for this module.
-// Inputs: `pagedFile`, `replacement`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the abort replace operation for this module.
+/// Inputs: `pagedFile`, `replacement`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param replacement replacement value consumed by this operation.
 function abortReplace(pagedFile, replacement)
   if replacement is not OverflowReplacement then return fail(INVALID_ARGUMENT, "abortReplace", "replacement must be OverflowReplacement") end if
   if replacement.completed then return fail(INVALID_ARGUMENT, "abortReplace", "replacement is already completed") end if
@@ -427,44 +499,53 @@ function abortReplace(pagedFile, replacement)
   return replacement.oldPointer
 end function
 
-// Convenience helper with leak-safe semantics: write and return the new value,
-// but never destroy oldPointer implicitly. Call free(oldPointer) only after the
-// new pointer is durably published.
-// Replaces the requested value.
-// Inputs: `pagedFile`, `oldPointer`, `ownerId`, `newValue`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Convenience helper with leak-safe semantics: write and return the new value,
+/// but never destroy oldPointer implicitly. Call free(oldPointer) only after the
+/// new pointer is durably published.
+/// Replaces the requested value.
+/// Inputs: `pagedFile`, `oldPointer`, `ownerId`, `newValue`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param oldPointer oldPointer value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param newValue newValue value consumed by this operation.
 function replace(pagedFile, oldPointer, ownerId, newValue)
   return prepareReplace(pagedFile, oldPointer, ownerId, newValue).newPointer
 end function
 
-// Performs the store text operation for this module.
-// Inputs: `pagedFile`, `ownerId`, `text`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the store text operation for this module.
+/// Inputs: `pagedFile`, `ownerId`, `text`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param ownerId Identifier of owner.
+/// @param text Text consumed by the operation.
 function storeText(pagedFile, ownerId, text)
   if typeof(text) != "string" then return fail(INVALID_ARGUMENT, "storeText", "text must be string") end if
   return write(pagedFile, ownerId, bytes(text))
 end function
 
-// Reads the text.
-// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the text.
+/// Inputs: `pagedFile`, `pointer`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pagedFile pagedFile value consumed by this operation.
+/// @param pointer pointer value consumed by this operation.
 function readText(pagedFile, pointer)
   text = decode(read(pagedFile, pointer))
   if typeof(text) != "string" then return fail(CORRUPT_DATA, "readText", "stored text is not valid UTF-8") end if
   return text
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage overflow module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.overflow"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage overflow module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M10"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage overflow module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct RewriteMigrationReport
 Groups the rewrite migration report state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L116)
 
 ## Members
 
@@ -26,7 +26,7 @@ indexCount
 Tracks the index count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L130)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-rowcount-rowcount-src-minisql-tools-migrate-ml-1210457707"></a>
 ### rowCount
@@ -38,7 +38,7 @@ rowCount
 Tracks the row count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L128)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-sourcepagesize-sourcepagesize-src-minisql-tools-migrate-ml-245469795"></a>
 ### sourcePageSize
@@ -50,7 +50,7 @@ sourcePageSize
 Tracks the source page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L122)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-sourcepath-sourcepath-src-minisql-tools-migrate-ml-997818893"></a>
 ### sourcePath
@@ -62,7 +62,7 @@ sourcePath
 Stores the filesystem source path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L118)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-tablecount-tablecount-src-minisql-tools-migrate-ml-1312100687"></a>
 ### tableCount
@@ -74,7 +74,7 @@ tableCount
 Tracks the table count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L126)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-targetpagesize-targetpagesize-src-minisql-tools-migrate-ml-531790743"></a>
 ### targetPageSize
@@ -86,7 +86,7 @@ targetPageSize
 Tracks the target page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L124)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-targetpath-targetpath-src-minisql-tools-migrate-ml-611553677"></a>
 ### targetPath
@@ -98,7 +98,7 @@ targetPath
 Stores the filesystem target path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L120)
 
 <a id="field-field-minisql-tools-migrate-rewritemigrationreport-verified-verified-src-minisql-tools-migrate-ml-1420420741"></a>
 ### verified
@@ -110,4 +110,4 @@ verified
 Stores the verified associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L132)

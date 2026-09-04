@@ -12,7 +12,7 @@ struct BoundJoin
 Groups the bound join state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L92)
 
 ## Members
 
@@ -26,7 +26,7 @@ condition
 Stores the condition associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L98)
 
 <a id="field-field-minisql-sql-binder-boundjoin-jointype-jointype-src-minisql-sql-binder-ml-1842894535"></a>
 ### joinType
@@ -38,7 +38,7 @@ joinType
 Stores the join type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L94)
 
 <a id="field-field-minisql-sql-binder-boundjoin-lefttypes-lefttypes-src-minisql-sql-binder-ml-1306065287"></a>
 ### leftTypes
@@ -50,7 +50,7 @@ leftTypes
 Stores the left types associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L100)
 
 <a id="field-field-minisql-sql-binder-boundjoin-source-source-src-minisql-sql-binder-ml-1132863597"></a>
 ### source
@@ -62,4 +62,4 @@ source
 Stores the source associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L96)

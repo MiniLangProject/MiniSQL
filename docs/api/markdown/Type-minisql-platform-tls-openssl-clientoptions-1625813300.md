@@ -12,7 +12,7 @@ struct ClientOptions
 These option records mirror the backend-neutral std.tls contract without importing its conditional facade into a Linux-only adapter.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L35)
 
 ## Members
 
@@ -26,7 +26,7 @@ caFile
 Optional explicit CA bundle path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L45)
 
 <a id="field-field-minisql-platform-tls-openssl-clientoptions-minimumversion-minimumversion-src-minisql-platform-tls-openssl-ml-572479452"></a>
 ### minimumVersion
@@ -38,7 +38,7 @@ minimumVersion
 Minimum TLS protocol version.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L43)
 
 <a id="field-field-minisql-platform-tls-openssl-clientoptions-servername-servername-src-minisql-platform-tls-openssl-ml-1505067768"></a>
 ### serverName
@@ -50,7 +50,7 @@ serverName
 DNS name required for SNI and hostname validation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L37)
 
 <a id="field-field-minisql-platform-tls-openssl-clientoptions-sha256pin-sha256pin-src-minisql-platform-tls-openssl-ml-715742560"></a>
 ### sha256Pin
@@ -62,7 +62,7 @@ sha256Pin
 Optional exact SHA-256 leaf pin bytes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L41)
 
 <a id="field-field-minisql-platform-tls-openssl-clientoptions-verifypeer-verifypeer-src-minisql-platform-tls-openssl-ml-275076238"></a>
 ### verifyPeer
@@ -74,4 +74,4 @@ verifyPeer
 Whether the server certificate chain must be verified.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L39)

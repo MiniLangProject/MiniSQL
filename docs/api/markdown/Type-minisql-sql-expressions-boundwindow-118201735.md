@@ -12,7 +12,7 @@ struct BoundWindow
 Groups the bound window state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L200)
 
 ## Members
 
@@ -26,7 +26,7 @@ arguments
 Contains the ordered arguments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L206)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-descending-descending-src-minisql-sql-expressions-ml-1074278399"></a>
 ### descending
@@ -38,7 +38,7 @@ descending
 Stores the descending associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L212)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-kind-kind-src-minisql-sql-expressions-ml-1268537627"></a>
 ### kind
@@ -50,7 +50,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L180)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L202)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-name-name-src-minisql-sql-expressions-ml-1682536921"></a>
 ### name
@@ -62,7 +62,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L204)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-nullsfirst-nullsfirst-src-minisql-sql-expressions-ml-1918201871"></a>
 ### nullsFirst
@@ -74,7 +74,7 @@ nullsFirst
 Stores the nulls first associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L192)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L214)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-nullsspecified-nullsspecified-src-minisql-sql-expressions-ml-458128495"></a>
 ### nullsSpecified
@@ -86,7 +86,7 @@ nullsSpecified
 Stores the nulls specified associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L216)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-orderby-orderby-src-minisql-sql-expressions-ml-1857233983"></a>
 ### orderBy
@@ -98,7 +98,7 @@ orderBy
 Contains the ordered order by collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L210)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-partitionby-partitionby-src-minisql-sql-expressions-ml-1866143907"></a>
 ### partitionBy
@@ -110,7 +110,7 @@ partitionBy
 Stores the partition by associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L208)
 
 <a id="field-field-minisql-sql-expressions-boundwindow-typeinfo-typeinfo-src-minisql-sql-expressions-ml-136680815"></a>
 ### typeInfo
@@ -122,4 +122,4 @@ typeInfo
 Stores the type info associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L196)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L218)

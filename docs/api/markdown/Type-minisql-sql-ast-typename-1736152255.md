@@ -12,7 +12,7 @@ struct TypeName
 Groups the type name state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L139)
 
 ## Members
 
@@ -26,7 +26,7 @@ length
 Tracks the length numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L143)
 
 <a id="field-field-minisql-sql-ast-typename-name-name-src-minisql-sql-ast-ml-857306696"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L141)
 
 <a id="field-field-minisql-sql-ast-typename-precision-precision-src-minisql-sql-ast-ml-184861862"></a>
 ### precision
@@ -50,7 +50,7 @@ precision
 Stores the precision associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L145)
 
 <a id="field-field-minisql-sql-ast-typename-scale-scale-src-minisql-sql-ast-ml-1271478770"></a>
 ### scale
@@ -62,4 +62,4 @@ scale
 Stores the scale associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L147)

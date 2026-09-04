@@ -1,3 +1,5 @@
+//! Provides minisql tools encryption facilities for this project.
+
 package minisql.tools.encryption
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -12,14 +14,19 @@ import minisql.server.database_manager as database_manager
 import minisql.storage.paged_file as paged_file
 import minisql.common.uuid as uuid
 
+/// Defines the invalid argument constant used by the minisql tools encryption module.
 const INVALID_ARGUMENT = 9001
 
-// Creates a structured encryption-administration error.
+/// Creates a structured encryption-administration error.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "tools.encryption." + operation + ": " + message)
 end function
 
-// Tests integer membership in a bounded metadata array.
+/// Tests integer membership in a bounded metadata array.
+/// @param values values value consumed by this operation.
+/// @param wanted wanted value consumed by this operation.
 function contains(values, wanted)
   for each value in values
     if value == wanted then return true end if
@@ -27,7 +34,8 @@ function contains(values, wanted)
   return false
 end function
 
-// Collects unique physical index identifiers from schema constraints.
+/// Collects unique physical index identifiers from schema constraints.
+/// @param state Mutable state inspected or updated by the operation.
 function indexIds(state)
   output = []
   for each table in state.tables
@@ -38,13 +46,17 @@ function indexIds(state)
   return output
 end function
 
-// Adds one existing physical artifact to a migration plan.
+/// Adds one existing physical artifact to a migration plan.
+/// @param paths paths value consumed by this operation.
+/// @param path Path of the file or directory used by the operation.
 function addIfExists(paths, path)
   if file_api.fileExists(path) then return paths + [path] end if
   return paths
 end function
 
-// Releases the migration's process-visible database lock and owning handle.
+/// Releases the migration's process-visible database lock and owning handle.
+/// @param lockToken lockToken value consumed by this operation.
+/// @param lockFile lockFile value consumed by this operation.
 function releaseMigrationLock(lockToken, lockFile)
   released = try(file_lock.release(lockToken))
   closed = try(file_api.close(lockFile))
@@ -52,9 +64,11 @@ function releaseMigrationLock(lockToken, lockFile)
   return closed
 end function
 
-// Enables resumable TDE migration. Mixed plaintext/encrypted files are valid
-// during conversion because every superblock carries its own feature bit.
-// Enables or resumes offline TDE migration for one database.
+/// Enables resumable TDE migration. Mixed plaintext/encrypted files are valid
+/// during conversion because every superblock carries its own feature bit.
+/// Enables or resumes offline TDE migration for one database.
+/// @param databasePath Path associated with database.
+/// @param keyFilePath Path associated with key file.
 function enable(databasePath, keyFilePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail("enable", "database path must be non-empty") end if
   provider = try(key_provider.fileProvider(keyFilePath))
@@ -101,14 +115,17 @@ function enable(databasePath, keyFilePath)
   return len(paths)
 end function
 
-// Rewraps the database DEK under a new external KEK.
+/// Rewraps the database DEK under a new external KEK.
+/// @param databasePath Path associated with database.
+/// @param newKeyFilePath Path associated with new key file.
 function rotate(databasePath, newKeyFilePath)
   provider = try(key_provider.fileProvider(newKeyFilePath))
   if typeof(provider) == "error" then return provider end if
   return key_provider.rotateEnvelope(databasePath, provider)
 end function
 
-// Creates a durable new raw 256-bit provider key.
+/// Creates a durable new raw 256-bit provider key.
+/// @param path Path of the file or directory used by the operation.
 function generateKeyFile(path)
   if typeof(path) != "string" or len(path) == 0 or file_api.pathExists(path) then return fail("generateKeyFile", "destination must be a new path") end if
   key = try(uuid.randomBytes(32))
@@ -124,17 +141,17 @@ function generateKeyFile(path)
   return closed
 end function
 
-// Returns the stable component name.
+/// Returns the stable component name.
 function componentName()
   return "tools.encryption"
 end function
 
-// Returns the milestone introducing this component.
+/// Returns the milestone introducing this component.
 function targetMilestone()
   return "M79"
 end function
 
-// Reports that the component is implemented.
+/// Returns whether implemented satisfies the condition required by the minisql tools encryption module.
 function isImplemented()
   return true
 end function

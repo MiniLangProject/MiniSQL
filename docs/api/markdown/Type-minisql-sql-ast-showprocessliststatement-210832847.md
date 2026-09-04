@@ -12,7 +12,7 @@ struct ShowProcesslistStatement
 Requests the active session registry for operational diagnosis.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L886)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L941)
 
 ## Members
 
@@ -26,4 +26,4 @@ marker
 Keeps the statement non-empty without attaching mutable execution state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L888)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L943)

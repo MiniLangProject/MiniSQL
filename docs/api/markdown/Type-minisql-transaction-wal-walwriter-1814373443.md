@@ -12,7 +12,7 @@ struct WalWriter
 Defines the wal writer record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L110)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 Closed field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L130)
 
 <a id="field-field-minisql-transaction-wal-walwriter-encryptionkey-encryptionkey-src-minisql-transaction-wal-ml-1417692174"></a>
 ### encryptionKey
@@ -38,7 +38,7 @@ encryptionKey
 Database TDE key, or void for a plaintext database.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L124)
 
 <a id="field-field-minisql-transaction-wal-walwriter-failnextflush-failnextflush-src-minisql-transaction-wal-ml-599617762"></a>
 ### failNextFlush
@@ -50,7 +50,7 @@ failNextFlush
 Fail next flush field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L128)
 
 <a id="field-field-minisql-transaction-wal-walwriter-failnextwrite-failnextwrite-src-minisql-transaction-wal-ml-437440998"></a>
 ### failNextWrite
@@ -62,7 +62,7 @@ failNextWrite
 Fail next write field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L126)
 
 <a id="field-field-minisql-transaction-wal-walwriter-file-file-src-minisql-transaction-wal-ml-746721454"></a>
 ### file
@@ -74,7 +74,7 @@ file
 File field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L114)
 
 <a id="field-field-minisql-transaction-wal-walwriter-lastflushedlsn-lastflushedlsn-src-minisql-transaction-wal-ml-701690094"></a>
 ### lastFlushedLsn
@@ -86,7 +86,7 @@ lastFlushedLsn
 Last flushed lsn field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L120)
 
 <a id="field-field-minisql-transaction-wal-walwriter-nextlsn-nextlsn-src-minisql-transaction-wal-ml-947079014"></a>
 ### nextLsn
@@ -98,7 +98,7 @@ nextLsn
 Next lsn field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L118)
 
 <a id="field-field-minisql-transaction-wal-walwriter-path-path-src-minisql-transaction-wal-ml-1335834076"></a>
 ### path
@@ -110,7 +110,7 @@ path
 Path field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L112)
 
 <a id="field-field-minisql-transaction-wal-walwriter-recordcount-recordcount-src-minisql-transaction-wal-ml-119002258"></a>
 ### recordCount
@@ -122,7 +122,7 @@ recordCount
 Record count field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L122)
 
 <a id="field-field-minisql-transaction-wal-walwriter-segmentbytes-segmentbytes-src-minisql-transaction-wal-ml-1206048598"></a>
 ### segmentBytes
@@ -134,4 +134,4 @@ segmentBytes
 Segment bytes field of the wal writer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L116)

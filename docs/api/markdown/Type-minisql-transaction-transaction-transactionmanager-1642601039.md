@@ -12,7 +12,7 @@ struct TransactionManager
 Defines the transaction manager record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L74)
 
 ## Members
 
@@ -26,4 +26,4 @@ nextTransactionId
 Next transaction id field of the transaction manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L76)

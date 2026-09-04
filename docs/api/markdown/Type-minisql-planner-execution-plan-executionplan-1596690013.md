@@ -12,7 +12,7 @@ struct ExecutionPlan
 Complete executable contract for one BoundSelect.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L124)
 
 ## Members
 
@@ -26,7 +26,7 @@ aggregateAlgorithm
 AGGREGATE_* strategy selected for the query.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L132)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-constantempty-constantempty-src-minisql-planner-execution-plan-ml-1365142978"></a>
 ### constantEmpty
@@ -38,7 +38,7 @@ constantEmpty
 True when a constant WHERE predicate proves the input empty.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L136)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-joins-joins-src-minisql-planner-execution-plan-ml-1379362894"></a>
 ### joins
@@ -50,7 +50,7 @@ joins
 Physical join steps in execution order.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L128)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-reorderedjoins-reorderedjoins-src-minisql-planner-execution-plan-ml-938301472"></a>
 ### reorderedJoins
@@ -62,7 +62,7 @@ reorderedJoins
 True when join steps differ from bound SQL order.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L140)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-sortalgorithm-sortalgorithm-src-minisql-planner-execution-plan-ml-1080693110"></a>
 ### sortAlgorithm
@@ -74,7 +74,7 @@ sortAlgorithm
 SORT_* strategy selected for the query.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L134)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-sources-sources-src-minisql-planner-execution-plan-ml-1451754302"></a>
 ### sources
@@ -86,7 +86,7 @@ sources
 Access decision indexed by bound source position.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L126)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-startsource-startsource-src-minisql-planner-execution-plan-ml-1936488314"></a>
 ### startSource
@@ -98,7 +98,7 @@ startSource
 Source that seeds a reordered inner-join graph.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L130)
 
 <a id="field-field-minisql-planner-execution-plan-executionplan-wherepredicate-wherepredicate-src-minisql-planner-execution-plan-ml-358688662"></a>
 ### wherePredicate
@@ -110,4 +110,4 @@ wherePredicate
 Simplified WHERE expression retained as the correctness filter.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L138)

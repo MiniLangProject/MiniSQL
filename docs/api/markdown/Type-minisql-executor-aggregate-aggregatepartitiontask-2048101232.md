@@ -12,7 +12,7 @@ struct AggregatePartitionTask
 Immutable work package for one independent aggregate hash partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L64)
 
 ## Members
 
@@ -26,7 +26,7 @@ groupExpressions
 Bound grouping expressions whose hash selected this partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L70)
 
 <a id="field-field-minisql-executor-aggregate-aggregatepartitiontask-havingexpression-havingexpression-src-minisql-executor-aggregate-ml-1750267517"></a>
 ### havingExpression
@@ -38,7 +38,7 @@ havingExpression
 Optional bound HAVING predicate.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L72)
 
 <a id="field-field-minisql-executor-aggregate-aggregatepartitiontask-orderexpressions-orderexpressions-src-minisql-executor-aggregate-ml-1568939309"></a>
 ### orderExpressions
@@ -50,7 +50,7 @@ orderExpressions
 Bound ORDER BY expressions retained for the final merge/sort stage.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L74)
 
 <a id="field-field-minisql-executor-aggregate-aggregatepartitiontask-run-run-src-minisql-executor-aggregate-ml-1918718779"></a>
 ### run
@@ -62,7 +62,7 @@ run
 Validated spill run containing every row for this hash partition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L66)
 
 <a id="field-field-minisql-executor-aggregate-aggregatepartitiontask-selectexpressions-selectexpressions-src-minisql-executor-aggregate-ml-1345213179"></a>
 ### selectExpressions
@@ -74,4 +74,4 @@ selectExpressions
 Bound SELECT expressions evaluated for each completed group.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L68)

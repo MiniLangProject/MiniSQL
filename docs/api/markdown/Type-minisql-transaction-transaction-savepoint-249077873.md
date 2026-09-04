@@ -12,7 +12,7 @@ struct Savepoint
 Defines the savepoint record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L38)
 
 ## Members
 
@@ -26,7 +26,7 @@ changes
 Changes field of the savepoint.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L42)
 
 <a id="field-field-minisql-transaction-transaction-savepoint-name-name-src-minisql-transaction-transaction-ml-1859992226"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Name field of the savepoint.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L40)

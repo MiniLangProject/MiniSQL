@@ -12,7 +12,7 @@ struct ConflictMatch
 Groups the conflict match state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L75)
 
 ## Members
 
@@ -26,7 +26,7 @@ constraint
 Stores the constraint associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L81)
 
 <a id="field-field-minisql-executor-dml-conflictmatch-reference-reference-src-minisql-executor-dml-ml-209172294"></a>
 ### reference
@@ -38,7 +38,7 @@ reference
 Stores the reference associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L77)
 
 <a id="field-field-minisql-executor-dml-conflictmatch-values-values-src-minisql-executor-dml-ml-1134926122"></a>
 ### values
@@ -50,4 +50,4 @@ values
 Contains the ordered values collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L79)

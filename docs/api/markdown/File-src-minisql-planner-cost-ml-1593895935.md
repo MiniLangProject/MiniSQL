@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql planner cost facilities for this project.
+
 Package: [`minisql.planner.cost`](Package-minisql-planner-cost-781112943.md)
 
 Reachable from entry: **yes**
@@ -19,11 +21,11 @@ Implements aggregate for this module. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
-| `groupRows` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
+| `groupRows` | `dynamic` | — | groupRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L150)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L186)
 
 <a id="function-function-minisql-planner-cost-componentname-function-componentname-src-minisql-planner-cost-ml-536142480"></a>
 ### componentName
@@ -32,10 +34,10 @@ Implements aggregate for this module. Requires arguments that satisfy the valida
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql planner cost module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L258)
 
 - [minisql.planner.cost.CostEstimate](Type-minisql-planner-cost-costestimate-1352627348.md) — struct
 <a id="function-function-minisql-planner-cost-estimate-function-estimate-startup-total-rows-algorithm-src-minisql-planner-cost-ml-770386993"></a>
@@ -49,13 +51,13 @@ Estimates estimate using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `startup` | `dynamic` | — |  |
-| `total` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
-| `algorithm` | `dynamic` | — |  |
+| `startup` | `dynamic` | — | startup value consumed by this operation. |
+| `total` | `dynamic` | — | total value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `algorithm` | `dynamic` | — | algorithm value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L63)
 
 <a id="function-function-minisql-planner-cost-externalsort-function-externalsort-input-src-minisql-planner-cost-ml-71143082"></a>
 ### externalSort
@@ -68,10 +70,10 @@ Implements external sort for this module. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L213)
 
 <a id="function-function-minisql-planner-cost-fail-function-fail-code-operation-message-src-minisql-planner-cost-ml-821851967"></a>
 ### fail
@@ -80,16 +82,16 @@ Implements external sort for this module. Requires arguments that satisfy the va
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql planner cost module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L31)
 
 <a id="function-function-minisql-planner-cost-filter-function-filter-input-outputrows-src-minisql-planner-cost-ml-1300402690"></a>
 ### filter
@@ -102,11 +104,11 @@ Implements filter for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L126)
 
 <a id="function-function-minisql-planner-cost-hashjoin-function-hashjoin-left-right-outputrows-src-minisql-planner-cost-ml-372953793"></a>
 ### hashJoin
@@ -119,12 +121,12 @@ Implements hash join for this module. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L153)
 
 <a id="function-function-minisql-planner-cost-indexnestedloop-function-indexnestedloop-left-indexheight-expectedmatchesperprobe-outputrows-src-minisql-planner-cost-ml-1725905444"></a>
 ### indexNestedLoop
@@ -137,13 +139,13 @@ Estimates a parameterized nested loop whose inner side performs one B+-tree look
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `indexHeight` | `dynamic` | — |  |
-| `expectedMatchesPerProbe` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `indexHeight` | `dynamic` | — | indexHeight value consumed by this operation. |
+| `expectedMatchesPerProbe` | `dynamic` | — | expectedMatchesPerProbe value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L167)
 
 <a id="function-function-minisql-planner-cost-indexonlyscan-function-indexonlyscan-height-indexrows-outputrows-uniquelookup-src-minisql-planner-cost-ml-1163232707"></a>
 ### indexOnlyScan
@@ -156,13 +158,13 @@ Estimates an index-only scan whose key contains every column needed by the predi
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `height` | `dynamic` | — |  |
-| `indexRows` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
-| `uniqueLookup` | `dynamic` | — |  |
+| `height` | `dynamic` | — | Height in the coordinate or storage units used by the caller. |
+| `indexRows` | `dynamic` | — | indexRows value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
+| `uniqueLookup` | `dynamic` | — | uniqueLookup value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L109)
 
 <a id="function-function-minisql-planner-cost-indexscan-function-indexscan-height-heaprows-outputrows-uniquelookup-src-minisql-planner-cost-ml-2039395077"></a>
 ### indexScan
@@ -175,13 +177,13 @@ Estimates a B+-tree lookup plus the heap fetches expected for qualifying rows. `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `height` | `dynamic` | — |  |
-| `heapRows` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
-| `uniqueLookup` | `dynamic` | — |  |
+| `height` | `dynamic` | — | Height in the coordinate or storage units used by the caller. |
+| `heapRows` | `dynamic` | — | heapRows value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
+| `uniqueLookup` | `dynamic` | — | uniqueLookup value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L89)
 
 <a id="constant-constant-minisql-planner-cost-invalid-argument-const-invalid-argument-9001-src-minisql-planner-cost-ml-1569172149"></a>
 ### INVALID_ARGUMENT
@@ -190,10 +192,10 @@ Estimates a B+-tree lookup plus the heap fetches expected for qualifying rows. `
 const INVALID_ARGUMENT = 9001
 ```
 
-Integer cost model. Costs are abstract work units, deliberately deterministic so plans and acceptance tests do not depend on wall-clock timing.
+Integer cost model. Costs are abstract work units, deliberately deterministic
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L10)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L11)
 
 <a id="function-function-minisql-planner-cost-iscostestimate-function-iscostestimate-value-src-minisql-planner-cost-ml-327219777"></a>
 ### isCostEstimate
@@ -206,10 +208,10 @@ Returns whether the supplied value satisfies the cost estimate condition. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L39)
 
 <a id="function-function-minisql-planner-cost-isimplemented-function-isimplemented-src-minisql-planner-cost-ml-329775880"></a>
 ### isImplemented
@@ -218,10 +220,10 @@ Returns whether the supplied value satisfies the cost estimate condition. Return
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql planner cost module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L272)
 
 <a id="function-function-minisql-planner-cost-nestedloop-function-nestedloop-left-right-outputrows-src-minisql-planner-cost-ml-658383525"></a>
 ### nestedLoop
@@ -234,12 +236,12 @@ Implements nested loop for this module. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L139)
 
 <a id="function-function-minisql-planner-cost-project-function-project-input-outputrows-src-minisql-planner-cost-ml-1266302472"></a>
 ### project
@@ -252,11 +254,11 @@ Implements project for this module. Requires arguments that satisfy the validati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L249)
 
 <a id="function-function-minisql-planner-cost-sequentialscan-function-sequentialscan-pagecount-rowcount-src-minisql-planner-cost-ml-55353789"></a>
 ### sequentialScan
@@ -269,11 +271,11 @@ Implements sequential scan for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageCount` | `dynamic` | — |  |
-| `rowCount` | `dynamic` | — |  |
+| `pageCount` | `dynamic` | — | Number of page to process. |
+| `rowCount` | `dynamic` | — | Number of row to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L76)
 
 <a id="function-function-minisql-planner-cost-sort-function-sort-input-src-minisql-planner-cost-ml-1367315482"></a>
 ### sort
@@ -286,10 +288,10 @@ Sorts sort using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L197)
 
 <a id="function-function-minisql-planner-cost-targetmilestone-function-targetmilestone-src-minisql-planner-cost-ml-1432677034"></a>
 ### targetMilestone
@@ -298,10 +300,10 @@ Sorts sort using the supplied inputs. Requires arguments that satisfy the valida
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql planner cost module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L265)
 
 <a id="function-function-minisql-planner-cost-topn-function-topn-input-windowrows-src-minisql-planner-cost-ml-80907153"></a>
 ### topN
@@ -314,11 +316,11 @@ Estimates a bounded top-N heap/insertion set. The executor uses this only for sm
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
-| `windowRows` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
+| `windowRows` | `dynamic` | — | windowRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L231)
 
 <a id="function-function-minisql-planner-cost-validaterows-function-validaterows-value-operation-name-src-minisql-planner-cost-ml-48230131"></a>
 ### validateRows
@@ -331,9 +333,9 @@ Validates rows using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L50)

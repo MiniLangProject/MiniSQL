@@ -12,7 +12,7 @@ struct IsNullExpression
 Groups the is null expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L201)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L203)
 
 <a id="field-field-minisql-sql-ast-isnullexpression-negated-negated-src-minisql-sql-ast-ml-375653930"></a>
 ### negated
@@ -38,7 +38,7 @@ negated
 Indicates whether the negated condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L152)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L207)
 
 <a id="field-field-minisql-sql-ast-isnullexpression-operand-operand-src-minisql-sql-ast-ml-357552222"></a>
 ### operand
@@ -50,4 +50,4 @@ operand
 Stores the operand associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L150)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L205)

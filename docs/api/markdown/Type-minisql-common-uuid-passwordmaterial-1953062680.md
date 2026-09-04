@@ -12,7 +12,7 @@ struct PasswordMaterial
 Defines the password material record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L174)
 
 ## Members
 
@@ -26,7 +26,7 @@ iterations
 Iterations field of the password material.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L178)
 
 <a id="field-field-minisql-common-uuid-passwordmaterial-salt-salt-src-minisql-common-uuid-ml-171310961"></a>
 ### salt
@@ -38,7 +38,7 @@ salt
 Salt field of the password material.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L176)
 
 <a id="field-field-minisql-common-uuid-passwordmaterial-verifier-verifier-src-minisql-common-uuid-ml-1605721177"></a>
 ### verifier
@@ -50,4 +50,4 @@ verifier
 Verifier field of the password material.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/uuid.ml#L180)

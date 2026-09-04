@@ -1,3 +1,5 @@
+//! Provides minisql planner rewrites facilities for this project.
+
 package minisql.planner.rewrites
 
 // Copyright 2026 MiniLangProject contributors
@@ -11,23 +13,26 @@ import minisql.sql.expressions as expressions
 import minisql.sql.types as types
 import minisql.sql.values as values
 
-// Safe, semantics-preserving planner rewrites and selectivity helpers. Literal
-// folding follows evaluator short-circuit order, while predicate pushdown is
-// restricted to deterministic source-local expressions and safe join shapes.
+/// Safe, semantics-preserving planner rewrites and selectivity helpers. Literal
 
 const INVALID_ARGUMENT = 9001
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql planner rewrites module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "planner.rewrites." + operation + ": " + message)
 end function
 
-// Implements integer divide for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements integer divide for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if typeof(numerator) != "int" or typeof(denominator) != "int" or numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
   quotient = 0
@@ -46,19 +51,21 @@ function integerDivide(numerator, denominator)
   return quotient
 end function
 
-// Implements clamp rows for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements clamp rows for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
 function clampRows(value)
   if typeof(value) != "int" then return fail(INVALID_ARGUMENT, "clampRows", "value must be int") end if
   if value < 0 then return 0 end if
   return value
 end function
 
-// Returns whether the supplied value satisfies the column equality condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the column equality condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param expression expression value consumed by this operation.
 function isColumnEquality(expression)
   if not expressions.isBaseBoundExpression(expression) then return false end if
   if expression.kind != expressions.BOUND_BINARY or expression.operator != "=" then return false end if
@@ -66,19 +73,22 @@ function isColumnEquality(expression)
   return expression.left.kind == expressions.BOUND_COLUMN and expression.right.kind == expressions.BOUND_COLUMN
 end function
 
-// Returns whether the supplied value satisfies the constant boolean condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the constant boolean condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param expression expression value consumed by this operation.
+/// @param expected expected value consumed by this operation.
 function isConstantBoolean(expression, expected)
   if not expressions.isBaseBoundExpression(expression) then return false end if
   if expression.kind != expressions.BOUND_LITERAL or expression.literal.isNull or typeof(expression.literal.value) != "bool" then return false end if
   return expression.literal.value == expected
 end function
 
-// Implements selectivity permille for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements selectivity permille for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
 function selectivityPermille(expression)
   if expression is void then return 1000 end if
   if not expressions.isBaseBoundExpression(expression) then return 500 end if
@@ -102,9 +112,11 @@ function selectivityPermille(expression)
   return 500
 end function
 
-// Estimates filtered rows using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Estimates filtered rows using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param inputRows inputRows value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function estimateFilteredRows(inputRows, predicate)
   inputRows = clampRows(inputRows)
   if inputRows == 0 then return 0 end if
@@ -113,9 +125,10 @@ function estimateFilteredRows(inputRows, predicate)
   return estimate
 end function
 
-// Folds deterministic literal-only base expressions and left-hand boolean
-// identities. Restricting identities to the evaluator's short-circuit side
-// preserves the observable behavior of volatile scalar functions.
+/// Folds deterministic literal-only base expressions and left-hand boolean
+/// identities. Restricting identities to the evaluator's short-circuit side
+/// preserves the observable behavior of volatile scalar functions.
+/// @param expression expression value consumed by this operation.
 function simplify(expression)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return expression end if
   if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return expression end if
@@ -158,9 +171,11 @@ function simplify(expression)
   return expression
 end function
 
-// Collects every bound column index referenced by an expression. Returning
-// false for an unknown expression shape deliberately disables pushdown rather
-// than risking a semantic change when the SQL surface grows.
+/// Collects every bound column index referenced by an expression. Returning
+/// false for an unknown expression shape deliberately disables pushdown rather
+/// than risking a semantic change when the SQL surface grows.
+/// @param expression expression value consumed by this operation.
+/// @param indexes indexes value consumed by this operation.
 function collectColumnIndexes(expression, indexes)
   if expression is void then return indexes end if
   if not expressions.isBoundExpression(expression) then return false end if
@@ -221,8 +236,10 @@ function collectColumnIndexes(expression, indexes)
   return false
 end function
 
-// Maps an expression to its sole source, -1 for a constant, or -2 when the
-// expression spans sources or cannot be analyzed safely.
+/// Maps an expression to its sole source, -1 for a constant, or -2 when the
+/// expression spans sources or cannot be analyzed safely.
+/// @param expression expression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
 function singleSource(expression, sources)
   indexes = collectColumnIndexes(expression, [])
   if typeof(indexes) == "bool" then return -2 end if
@@ -242,7 +259,9 @@ function singleSource(expression, sources)
   return selected
 end function
 
-// Reports whether an integer array contains the requested value.
+/// Reports whether an integer array contains the requested value.
+/// @param items Items consumed or updated by the operation.
+/// @param value Value consumed or transformed by the operation.
 function intContains(items, value)
   for each item in items
     if item == value then return true end if
@@ -250,8 +269,10 @@ function intContains(items, value)
   return false
 end function
 
-// Returns the unique source indexes referenced by an expression, or void when
-// a newly introduced expression shape cannot be analyzed conservatively.
+/// Returns the unique source indexes referenced by an expression, or void when
+/// a newly introduced expression shape cannot be analyzed conservatively.
+/// @param expression expression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
 function referencedSources(expression, sources)
   indexes = collectColumnIndexes(expression, [])
   if typeof(indexes) == "bool" then return void end if
@@ -270,21 +291,24 @@ function referencedSources(expression, sources)
   return output
 end function
 
-// Flattens an AND tree without changing the relative order of predicates.
+/// Flattens an AND tree without changing the relative order of predicates.
+/// @param expression expression value consumed by this operation.
 function conjuncts(expression)
   if expression is void then return [] end if
   if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then return conjuncts(expression.left) + conjuncts(expression.right) end if
   return [expression]
 end function
 
-// Flattens an OR tree without changing predicate order.
+/// Flattens an OR tree without changing predicate order.
+/// @param expression expression value consumed by this operation.
 function disjuncts(expression)
   if expression is void then return [] end if
   if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operator == "OR" then return disjuncts(expression.left) + disjuncts(expression.right) end if
   return [expression]
 end function
 
-// Normalizes a column/literal comparison so the column is always on the left.
+/// Normalizes a column/literal comparison so the column is always on the left.
+/// @param expression expression value consumed by this operation.
 function comparisonConstraint(expression)
   if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
   operator = expression.operator
@@ -300,7 +324,9 @@ function comparisonConstraint(expression)
   return [column.columnIndex, operator, literal.literal]
 end function
 
-// Proves implication between two normalized single-column literal bounds.
+/// Proves implication between two normalized single-column literal bounds.
+/// @param candidate candidate value consumed by this operation.
+/// @param required required value consumed by this operation.
 function comparisonImplies(candidate, required)
   candidateBound = comparisonConstraint(candidate)
   requiredBound = comparisonConstraint(required)
@@ -329,7 +355,9 @@ function comparisonImplies(candidate, required)
   return false
 end function
 
-// Proves one required conjunct from one query conjunct without widening either.
+/// Proves one required conjunct from one query conjunct without widening either.
+/// @param candidate candidate value consumed by this operation.
+/// @param required required value consumed by this operation.
 function conjunctImplies(candidate, required)
   if expressions.sameBinding(candidate, required) then return true end if
   if comparisonImplies(candidate, required) then return true end if
@@ -340,10 +368,12 @@ function conjunctImplies(candidate, required)
   return false
 end function
 
-// Proves the deliberately bounded partial-index implication contract. Every
-// required index conjunct must occur identically or follow from a stronger
-// typed single-column literal bound in the query predicate. This recognizes
-// additional/reordered conjuncts without general Boolean theorem proving.
+/// Proves the deliberately bounded partial-index implication contract. Every
+/// required index conjunct must occur identically or follow from a stronger
+/// typed single-column literal bound in the query predicate. This recognizes
+/// additional/reordered conjuncts without general Boolean theorem proving.
+/// @param queryPredicate queryPredicate value consumed by this operation.
+/// @param requiredPredicate requiredPredicate value consumed by this operation.
 function predicateImplies(queryPredicate, requiredPredicate)
   if requiredPredicate is void then return true end if
   if queryPredicate is void then return false end if
@@ -358,7 +388,8 @@ function predicateImplies(queryPredicate, requiredPredicate)
   return true
 end function
 
-// Reassembles predicates with SQL boolean semantics intact.
+/// Reassembles predicates with SQL boolean semantics intact.
+/// @param items Items consumed or updated by the operation.
 function combineConjuncts(items)
   if len(items) == 0 then return void end if
   output = items[0]
@@ -370,9 +401,12 @@ function combineConjuncts(items)
   return output
 end function
 
-// Adds undirected column-equality edges from top-level AND conjuncts. Bound
-// column types are retained so propagated constants can construct typed source
-// predicates without returning to parser or catalog representations.
+/// Adds undirected column-equality edges from top-level AND conjuncts. Bound
+/// column types are retained so propagated constants can construct typed source
+/// predicates without returning to parser or catalog representations.
+/// @param expression expression value consumed by this operation.
+/// @param links links value consumed by this operation.
+/// @param columnTypes columnTypes value consumed by this operation.
 function collectEqualityLinks(expression, links, columnTypes)
   for each predicate in conjuncts(expression)
     if isColumnEquality(predicate) then
@@ -388,7 +422,9 @@ function collectEqualityLinks(expression, links, columnTypes)
   end for
 end function
 
-// Reports whether one predicate bucket already contains the same typed binding.
+/// Reports whether one predicate bucket already contains the same typed binding.
+/// @param bucket bucket value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function predicateBucketContains(bucket, predicate)
   if bucket is void then return false end if
   for each existing in bucket
@@ -397,9 +433,13 @@ function predicateBucketContains(bucket, predicate)
   return false
 end function
 
-// Propagates non-NULL equality constants through INNER/CROSS join equality
-// classes. The inferred expressions are execution hints only: the original
-// WHERE remains the final semantic guard and outer joins are never rewritten.
+/// Propagates non-NULL equality constants through INNER/CROSS join equality
+/// classes. The inferred expressions are execution hints only: the original
+/// WHERE remains the final semantic guard and outer joins are never rewritten.
+/// @param whereExpression whereExpression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param joins joins value consumed by this operation.
+/// @param buckets buckets value consumed by this operation.
 function propagateJoinConstants(whereExpression, sources, joins, buckets)
   for each joined in joins
     if joined.joinType != ast.JOIN_INNER and joined.joinType != ast.JOIN_CROSS then return buckets end if
@@ -455,9 +495,10 @@ function propagateJoinConstants(whereExpression, sources, joins, buckets)
   return buckets
 end function
 
-// Predicate pushdown must not duplicate observable evaluation of volatile
-// nested query expressions. Deterministic scalar and cast trees are safe when
-// each argument is itself source-local, which also enables functional indexes.
+/// Predicate pushdown must not duplicate observable evaluation of volatile
+/// nested query expressions. Deterministic scalar and cast trees are safe when
+/// each argument is itself source-local, which also enables functional indexes.
+/// @param expression expression value consumed by this operation.
 function pushdownSafe(expression)
   if expression is void then return false end if
   if expressions.isBaseBoundExpression(expression) then
@@ -476,9 +517,12 @@ function pushdownSafe(expression)
   return false
 end function
 
-// Returns one safe per-source predicate. Pushdown is initially limited to
-// inner/cross join trees; outer-join NULL extension requires a dedicated
-// null-rejection proof and therefore keeps the original WHERE placement.
+/// Returns one safe per-source predicate. Pushdown is initially limited to
+/// inner/cross join trees; outer-join NULL extension requires a dedicated
+/// null-rejection proof and therefore keeps the original WHERE placement.
+/// @param whereExpression whereExpression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param joins joins value consumed by this operation.
 function sourcePredicates(whereExpression, sources, joins)
   output = array(len(sources), void)
   for each joined in joins
@@ -503,9 +547,12 @@ function sourcePredicates(whereExpression, sources, joins)
   return output
 end function
 
-// Returns the WHERE conjuncts that could not be assigned to a safe source
-// pushdown. The executor still evaluates the complete simplified WHERE as a
-// correctness guard; this residual is used for cardinality and cost only.
+/// Returns the WHERE conjuncts that could not be assigned to a safe source
+/// pushdown. The executor still evaluates the complete simplified WHERE as a
+/// correctness guard; this residual is used for cardinality and cost only.
+/// @param whereExpression whereExpression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param joins joins value consumed by this operation.
 function residualPredicate(whereExpression, sources, joins)
   for each joined in joins
     if joined.joinType != ast.JOIN_INNER and joined.joinType != ast.JOIN_CROSS then return whereExpression end if
@@ -517,17 +564,20 @@ function residualPredicate(whereExpression, sources, joins)
   return combineConjuncts(residual)
 end function
 
-// Recognizes a literal WHERE that can never pass SQL's three-valued predicate
-// test. It is safe to replace the source with an empty relation even for a
-// global aggregate, whose aggregate operator will still emit its empty-group
-// result.
+/// Recognizes a literal WHERE that can never pass SQL's three-valued predicate
+/// test. It is safe to replace the source with an empty relation even for a
+/// global aggregate, whose aggregate operator will still emit its empty-group
+/// result.
+/// @param expression expression value consumed by this operation.
 function constantWhereEmpty(expression)
   if expression is void or not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_LITERAL then return false end if
   return values.truth(expression.literal) != 1
 end function
 
-// Finds a column/literal comparison inside a conjunction. The returned tuple
-// is [found, normalized operator, literal].
+/// Finds a column/literal comparison inside a conjunction. The returned tuple
+/// is [found, normalized operator, literal].
+/// @param expression expression value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
 function comparisonForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
@@ -545,7 +595,9 @@ function comparisonForColumn(expression, columnIndex)
   return [false, "", void]
 end function
 
-// Finds a literal comparison whose other side matches one bound key expression.
+/// Finds a literal comparison whose other side matches one bound key expression.
+/// @param expression expression value consumed by this operation.
+/// @param keyExpression keyExpression value consumed by this operation.
 function comparisonForExpression(expression, keyExpression)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
@@ -563,23 +615,23 @@ function comparisonForExpression(expression, keyExpression)
   return [false, "", void]
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql planner rewrites module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "planner.rewrites"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql planner rewrites module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M17"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql planner rewrites module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

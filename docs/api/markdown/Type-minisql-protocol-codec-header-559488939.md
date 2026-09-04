@@ -12,7 +12,7 @@ struct Header
 Groups the header state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L22)
 
 ## Members
 
@@ -26,7 +26,7 @@ flags
 Stores the flags associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L26)
 
 <a id="field-field-minisql-protocol-codec-header-messagetype-messagetype-src-minisql-protocol-codec-ml-1569695528"></a>
 ### messageType
@@ -38,7 +38,7 @@ messageType
 Stores the message type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L24)
 
 <a id="field-field-minisql-protocol-codec-header-payloadchecksum-payloadchecksum-src-minisql-protocol-codec-ml-570964464"></a>
 ### payloadChecksum
@@ -50,7 +50,7 @@ payloadChecksum
 Stores the payload checksum associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L32)
 
 <a id="field-field-minisql-protocol-codec-header-payloadlength-payloadlength-src-minisql-protocol-codec-ml-1659069500"></a>
 ### payloadLength
@@ -62,7 +62,7 @@ payloadLength
 Tracks the payload length numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L30)
 
 <a id="field-field-minisql-protocol-codec-header-requestid-requestid-src-minisql-protocol-codec-ml-2056050428"></a>
 ### requestId
@@ -74,4 +74,4 @@ requestId
 Identifies the request identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/codec.ml#L28)

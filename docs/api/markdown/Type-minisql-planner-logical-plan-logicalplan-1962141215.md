@@ -12,7 +12,7 @@ struct LogicalPlan
 Groups the logical plan state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L38)
 
 ## Members
 
@@ -26,7 +26,7 @@ children
 Stores the children associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L48)
 
 <a id="field-field-minisql-planner-logical-plan-logicalplan-details-details-src-minisql-planner-logical-plan-ml-1126726897"></a>
 ### details
@@ -38,7 +38,7 @@ details
 Stores the details associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L44)
 
 <a id="field-field-minisql-planner-logical-plan-logicalplan-estimatedrows-estimatedrows-src-minisql-planner-logical-plan-ml-111385313"></a>
 ### estimatedRows
@@ -50,7 +50,7 @@ estimatedRows
 Stores the estimated rows associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L46)
 
 <a id="field-field-minisql-planner-logical-plan-logicalplan-kind-kind-src-minisql-planner-logical-plan-ml-1030219621"></a>
 ### kind
@@ -62,7 +62,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L40)
 
 <a id="field-field-minisql-planner-logical-plan-logicalplan-name-name-src-minisql-planner-logical-plan-ml-1236275435"></a>
 ### name
@@ -74,4 +74,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L42)

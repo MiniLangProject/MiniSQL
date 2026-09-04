@@ -1,3 +1,5 @@
+//! Provides minisql storage heap file facilities for this project.
+
 package minisql.storage.heap_file
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -12,110 +14,120 @@ import minisql.storage.slotted_page as slotted
 import minisql.storage.superblock as superblock
 import std.ds.list as list
 
-// Heap-file storage built on stable slotted pages. External RowId values contain
-// the slot generation, so a deleted and later reused slot cannot alias an older
-// row. Growing updates preserve the original RowId through forwarding records.
+/// Heap-file storage built on stable slotted pages. External RowId values contain
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql storage heap file module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql storage heap file module.
 const CLOSED_HANDLE = 9008
+/// Defines the row not found constant used by the minisql storage heap file module.
 const ROW_NOT_FOUND = 9016
+/// Defines the stale reference constant used by the minisql storage heap file module.
 const STALE_REFERENCE = 9018
 
+/// Defines the forward size constant used by the minisql storage heap file module.
 const FORWARD_SIZE = 24
+/// Defines the max forward depth constant used by the minisql storage heap file module.
 const MAX_FORWARD_DEPTH = 64
 
-// The page directory is derived metadata: it records only physical heap-page
-// numbers and can always be reconstructed from the checksummed table file. Its
-// atomic envelope makes interrupted updates harmless, while the source page
-// count and superblock generation detect stale snapshots after file growth.
+/// The page directory is derived metadata: it records only physical heap-page
 const PAGE_DIRECTORY_FORMAT_VERSION = 1
+/// Defines the page directory record kind constant used by the minisql storage heap file module.
 const PAGE_DIRECTORY_RECORD_KIND = 51
+/// Defines the page directory header bytes constant used by the minisql storage heap file module.
 const PAGE_DIRECTORY_HEADER_BYTES = 64
 
-// Defines the row id record used by this module.
+/// Defines the row id record used by this module.
 struct RowId
-  // Page number field of the row id.
+  /// Page number field of the row id.
   pageNumber
-  // Slot id field of the row id.
+  /// Slot id field of the row id.
   slotId
-  // Generation field of the row id.
+  /// Generation field of the row id.
   generation
 end struct
 
-// Defines the heap row record used by this module.
+/// Defines the heap row record used by this module.
 struct HeapRow
-  // Identifier field of the heap row.
+  /// Identifier field of the heap row.
   identifier
-  // Value field of the heap row.
+  /// Value field of the heap row.
   value
 end struct
 
-// Defines the resolved row record used by this module.
+/// Defines the resolved row record used by this module.
 struct ResolvedRow
-  // Leaf field of the resolved row.
+  /// Leaf field of the resolved row.
   leaf
-  // Value field of the resolved row.
+  /// Value field of the resolved row.
   value
-  // Flags field of the resolved row.
+  /// Flags field of the resolved row.
   flags
-  // Chain field of the resolved row.
+  /// Chain field of the resolved row.
   chain
 end struct
 
-// Defines the heap file record used by this module.
+/// Defines the heap file record used by this module.
 struct HeapFile
-  // Paged file field of the heap file.
+  /// Paged file field of the heap file.
   pagedFile
-  // Page most likely to accept the next row without a whole-file free-space scan.
+  /// Page most likely to accept the next row without a whole-file free-space scan.
   insertionPageHint
-  // Closed field of the heap file.
+  /// Closed field of the heap file.
   closed
 end struct
 
-// Represents one validated snapshot of the heap pages in a table file. The
-// generation belongs to the paged-file superblock at `indexedPageCount`.
+/// Represents one validated snapshot of the heap pages in a table file. The
+/// generation belongs to the paged-file superblock at `indexedPageCount`.
 struct HeapPageDirectory
-  // Number of source pages classified by this snapshot.
+  /// Number of source pages classified by this snapshot.
   indexedPageCount
-  // Source superblock generation at publication time.
+  /// Source superblock generation at publication time.
   generation
-  // Strictly increasing physical page numbers whose type is TYPE_HEAP.
+  /// Strictly increasing physical page numbers whose type is TYPE_HEAP.
   pageNumbers
 end struct
 
-// Reports whether a value is a decoded heap-page directory snapshot.
+/// Reports whether a value is a decoded heap-page directory snapshot.
+/// @param value Value consumed or transformed by the operation.
 function isHeapPageDirectory(value)
   return value is HeapPageDirectory
 end function
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage heap file module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.heap_file." + operation + ": " + message)
 end function
 
-// Performs the forwarding magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the forwarding magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function forwardingMagic()
   return bytes("MSFW")
 end function
 
-// Returns the fixed magic used by persistent heap-page directory envelopes.
+/// Returns the fixed magic used by persistent heap-page directory envelopes.
 function pageDirectoryMagic()
   return bytes("MSQLHPD1")
 end function
 
-// Returns the sidecar path associated with a physical table file. Keeping the
-// suffix next to the table makes backup/restore tooling able to ignore it as
-// derived state without changing the authoritative database format.
+/// Returns the sidecar path associated with a physical table file. Keeping the
+/// suffix next to the table makes backup/restore tooling able to ignore it as
+/// derived state without changing the authoritative database format.
+/// @param tablePath Path associated with table.
 function pageDirectoryPath(tablePath)
   if typeof(tablePath) != "string" or len(tablePath) == 0 then return fail(INVALID_ARGUMENT, "pageDirectoryPath", "tablePath must be non-empty") end if
   return tablePath + ".heap-pages"
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql storage heap file module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -125,14 +137,18 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Converts a persisted U64 into the native MiniLang range used by page APIs.
+/// Converts a persisted U64 into the native MiniLang range used by page APIs.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeDirectoryNative(words, operation, name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(CORRUPT_DATA, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Reads an arbitrarily sized derived sidecar without imposing a catalog-style
-// policy limit. The native file and byte-array limits remain the only bounds.
+/// Reads an arbitrarily sized derived sidecar without imposing a catalog-style
+/// policy limit. The native file and byte-array limits remain the only bounds.
+/// @param path Path of the file or directory used by the operation.
 function readDirectoryBytes(path)
   handle = try(file_api.openRead(path))
   if typeof(handle) == "error" then return handle end if
@@ -148,8 +164,10 @@ function readDirectoryBytes(path)
   return output
 end function
 
-// Atomically publishes a checksummed directory. A crash leaves either the old
-// complete generation or an ignorable `.new` file, never a partial live map.
+/// Atomically publishes a checksummed directory. A crash leaves either the old
+/// complete generation or an ignorable `.new` file, never a partial live map.
+/// @param path Path of the file or directory used by the operation.
+/// @param encoded encoded value consumed by this operation.
 function writeDirectoryAtomic(path, encoded)
   if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "writeDirectoryAtomic", "encoded must be bytes") end if
   temporary = path + ".new"
@@ -167,8 +185,10 @@ function writeDirectoryAtomic(path, encoded)
   return true
 end function
 
-// Encodes the table identity, source frontier, generation, and heap page list.
-// Every number is U64 on disk so directory capacity follows the table format.
+/// Encodes the table identity, source frontier, generation, and heap page list.
+/// Every number is U64 on disk so directory capacity follows the table format.
+/// @param file file value consumed by this operation.
+/// @param directory directory value consumed by this operation.
 function encodePageDirectory(file, directory)
   paged_file.validateOpen(file, "heap_file.encodePageDirectory")
   if directory is not HeapPageDirectory then return fail(INVALID_ARGUMENT, "encodePageDirectory", "directory must be HeapPageDirectory") end if
@@ -191,9 +211,11 @@ function encodePageDirectory(file, directory)
   return checksum.encodeEnvelope(pageDirectoryMagic(), PAGE_DIRECTORY_FORMAT_VERSION, PAGE_DIRECTORY_RECORD_KIND, 0, payload)
 end function
 
-// Decodes and validates a page directory against immutable table identity.
-// Ordering and bounds checks prevent a malformed sidecar from causing repeated,
-// out-of-range, or non-monotonic page reads.
+/// Decodes and validates a page directory against immutable table identity.
+/// Ordering and bounds checks prevent a malformed sidecar from causing repeated,
+/// out-of-range, or non-monotonic page reads.
+/// @param file file value consumed by this operation.
+/// @param encoded encoded value consumed by this operation.
 function decodePageDirectory(file, encoded)
   paged_file.validateOpen(file, "heap_file.decodePageDirectory")
   envelope = checksum.decodeEnvelope(encoded, pageDirectoryMagic(), PAGE_DIRECTORY_FORMAT_VERSION, PAGE_DIRECTORY_RECORD_KIND)
@@ -220,8 +242,9 @@ function decodePageDirectory(file, encoded)
   return HeapPageDirectory(indexedPageCount, endian.readU64LE(payload, 40), pages)
 end function
 
-// Returns a decoded sidecar or void when it is missing, stale, unreadable, or
-// corrupt. Derived metadata never makes authoritative table data unavailable.
+/// Returns a decoded sidecar or void when it is missing, stale, unreadable, or
+/// corrupt. Derived metadata never makes authoritative table data unavailable.
+/// @param file file value consumed by this operation.
 function loadPageDirectory(file)
   path = pageDirectoryPath(file.path)
   if not file_api.fileExists(path) then return void end if
@@ -232,8 +255,11 @@ function loadPageDirectory(file)
   return decoded
 end function
 
-// Classifies a source suffix after the caller has established that an existing
-// directory prefix is reusable. Each new page is checksum-verified exactly once.
+/// Classifies a source suffix after the caller has established that an existing
+/// directory prefix is reusable. Each new page is checksum-verified exactly once.
+/// @param file file value consumed by this operation.
+/// @param startPage startPage value consumed by this operation.
+/// @param prefix prefix value consumed by this operation.
 function classifyHeapPages(file, startPage, prefix)
   output = list.List.new()
   for each pageNumber in prefix
@@ -253,9 +279,10 @@ function classifyHeapPages(file, startPage, prefix)
   return output.toArray()
 end function
 
-// Rechecks and rebuilds a stale page directory under the process-wide
-// publication guard. The single return path is intentional: every platform
-// must release the synchronized-function guard before a caller can retry.
+/// Rechecks and rebuilds a stale page directory under the process-wide
+/// publication guard. The single return path is intentional: every platform
+/// must release the synchronized-function guard before a caller can retry.
+/// @param file file value consumed by this operation.
 function synchronized rebuildHeapPageNumbers(file)
   directory = loadPageDirectory(file)
   startPage = 0
@@ -281,10 +308,11 @@ function synchronized rebuildHeapPageNumbers(file)
   return pages
 end function
 
-// Returns the persistent physical heap-page index for an open table. The
-// immutable exact-generation fast path is safe for parallel readers and avoids
-// serializing every SELECT. Only stale or missing sidecars enter the guarded
-// rebuild, which rechecks after acquiring the publication lock.
+/// Returns the persistent physical heap-page index for an open table. The
+/// immutable exact-generation fast path is safe for parallel readers and avoids
+/// serializing every SELECT. Only stale or missing sidecars enter the guarded
+/// rebuild, which rechecks after acquiring the publication lock.
+/// @param file file value consumed by this operation.
 function heapPageNumbers(file)
   paged_file.validateOpen(file, "heap_file.heapPageNumbers")
   if file.fileType != superblock.FILE_TYPE_TABLE then return fail(INVALID_ARGUMENT, "heapPageNumbers", "file must be a table") end if
@@ -296,8 +324,9 @@ function heapPageNumbers(file)
   return rebuildHeapPageNumbers(file)
 end function
 
-// Removes the live and interrupted page-directory generations. Callers use
-// this before physical table replacement; a subsequent scan rebuilds safely.
+/// Removes the live and interrupted page-directory generations. Callers use
+/// this before physical table replacement; a subsequent scan rebuilds safely.
+/// @param tablePath Path associated with table.
 function synchronized invalidatePageDirectory(tablePath)
   path = pageDirectoryPath(tablePath)
   temporary = path + ".new"
@@ -306,8 +335,11 @@ function synchronized invalidatePageDirectory(tablePath)
   return true
 end function
 
-// Performs the row id operation for this module.
-// Inputs: `pageNumber`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the row id operation for this module.
+/// Inputs: `pageNumber`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param generation generation value consumed by this operation.
 function rowId(pageNumber, slotId, generation)
   if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "rowId", "pageNumber must be non-negative") end if
   if typeof(slotId) != "int" or slotId < 0 or slotId > 65535 then return fail(INVALID_ARGUMENT, "rowId", "slotId must fit U16") end if
@@ -315,15 +347,19 @@ function rowId(pageNumber, slotId, generation)
   return RowId(pageNumber, slotId, generation)
 end function
 
-// Compares the row id.
-// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Compares the row id.
+/// Inputs: `left`, `right`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameRowId(left, right)
   if left is not RowId or right is not RowId then return false end if
   return left.pageNumber == right.pageNumber and left.slotId == right.slotId and left.generation == right.generation
 end function
 
-// Performs the contains row id operation for this module.
-// Inputs: `values`, `sought`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the contains row id operation for this module.
+/// Inputs: `values`, `sought`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param sought sought value consumed by this operation.
 function containsRowId(values, sought)
   for each value in values
     if sameRowId(value, sought) then return true end if
@@ -331,8 +367,9 @@ function containsRowId(values, sought)
   return false
 end function
 
-// Encodes the forward.
-// Inputs: `target`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the forward.
+/// Inputs: `target`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param target target value consumed by this operation.
 function encodeForward(target)
   if target is not RowId then return fail(INVALID_ARGUMENT, "encodeForward", "target must be RowId") end if
   checked = rowId(target.pageNumber, target.slotId, target.generation)
@@ -347,8 +384,9 @@ function encodeForward(target)
   return output
 end function
 
-// Decodes the forward.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the forward.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function decodeForward(value)
   if typeof(value) != "bytes" or len(value) != FORWARD_SIZE then return fail(CORRUPT_DATA, "decodeForward", "forwarding record has the wrong size") end if
   if not bytesEqual(slice(value, 0, 4), forwardingMagic()) then return fail(CORRUPT_DATA, "decodeForward", "forwarding magic mismatch") end if
@@ -358,16 +396,21 @@ function decodeForward(value)
   return rowId(endian.uint64ToInt(pageWords), endian.readU32LE(value, 16), endian.readU16LE(value, 20))
 end function
 
-// Creates the requested value.
-// Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage heap file module.
+/// Inputs: `path`, `pageSize`, `fileId`, `databaseId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param fileId Identifier of file.
+/// @param databaseId Identifier of database.
 function create(path, pageSize, fileId, databaseId)
   file = paged_file.create(path, pageSize, superblock.FILE_TYPE_TABLE, fileId, databaseId)
   return HeapFile(file, -1, false)
 end function
 
-// Finds the first page containing a reusable deleted slot after reopening a
-// heap, otherwise selecting the append frontier. The one-time scan preserves
-// durable slot reuse without repeating it for every row in a batch.
+/// Finds the first page containing a reusable deleted slot after reopening a
+/// heap, otherwise selecting the append frontier. The one-time scan preserves
+/// durable slot reuse without repeating it for every row in a batch.
+/// @param file file value consumed by this operation.
 function initialInsertionPage(file)
   if file.pageCount == 0 then return -1 end if
   lastHeapPage = -1
@@ -386,8 +429,9 @@ function initialInsertionPage(file)
   return lastHeapPage
 end function
 
-// Opens the requested value.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens open for the minisql storage heap file module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function open(path)
   file = paged_file.open(path)
   if file.fileType != superblock.FILE_TYPE_TABLE then paged_file.close(file); return fail(CORRUPT_DATA, "open", "file is not a table") end if
@@ -396,8 +440,10 @@ function open(path)
   return HeapFile(file, hint, false)
 end function
 
-// Validates the open.
-// Inputs: `heap`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql storage heap file workflow.
+/// Inputs: `heap`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param heap heap value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(heap, operation)
   if heap is not HeapFile then return fail(INVALID_ARGUMENT, operation, "heap must be HeapFile") end if
   if heap.closed then return fail(CLOSED_HANDLE, operation, "heap is closed") end if
@@ -405,16 +451,21 @@ function validateOpen(heap, operation)
   return true
 end function
 
-// Validates the identifier.
-// Inputs: `identifier`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the identifier.
+/// Inputs: `identifier`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param identifier identifier value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateIdentifier(identifier, operation)
   if identifier is not RowId then return fail(INVALID_ARGUMENT, operation, "identifier must be RowId") end if
   rowId(identifier.pageNumber, identifier.slotId, identifier.generation)
   return true
 end function
 
-// Loads the slot.
-// Inputs: `heap`, `identifier`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Loads the slot.
+/// Inputs: `heap`, `identifier`, `operation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param identifier identifier value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function loadSlot(heap, identifier, operation)
   validateIdentifier(identifier, operation)
   if identifier.pageNumber >= heap.pagedFile.pageCount then return fail(ROW_NOT_FOUND, operation, "page does not exist") end if
@@ -427,8 +478,10 @@ function loadSlot(heap, identifier, operation)
   return [pageBytes, current, value]
 end function
 
-// Performs the resolve operation for this module.
-// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the resolve operation for this module.
+/// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param identifier identifier value consumed by this operation.
 function resolve(heap, identifier)
   validateOpen(heap, "resolve")
   validateIdentifier(identifier, "resolve")
@@ -453,8 +506,11 @@ function resolve(heap, identifier)
   end while
 end function
 
-// Inserts the with flags.
-// Inputs: `heap`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Inserts the with flags.
+/// Inputs: `heap`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param recordBytes recordBytes value consumed by this operation.
+/// @param slotFlags slotFlags value consumed by this operation.
 function insertWithFlags(heap, recordBytes, slotFlags)
   validateOpen(heap, "insertWithFlags")
   if typeof(recordBytes) != "bytes" or len(recordBytes) == 0 then return fail(INVALID_ARGUMENT, "insertWithFlags", "record must be non-empty bytes") end if
@@ -510,20 +566,27 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   return rowId(pageNumber, slotId, generation)
 end function
 
-// Inserts the requested value.
-// Inputs: `heap`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the insert operation for the minisql storage heap file module.
+/// Inputs: `heap`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param recordBytes recordBytes value consumed by this operation.
 function insert(heap, recordBytes)
   return insertWithFlags(heap, recordBytes, slotted.SLOT_FLAG_LIVE)
 end function
 
-// Reads the requested value.
-// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads read for the minisql storage heap file workflow.
+/// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param identifier identifier value consumed by this operation.
 function read(heap, identifier)
   return resolve(heap, identifier).value
 end function
 
-// Updates the requested value.
-// Inputs: `heap`, `identifier`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Updates the requested value.
+/// Inputs: `heap`, `identifier`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param identifier identifier value consumed by this operation.
+/// @param recordBytes recordBytes value consumed by this operation.
 function update(heap, identifier, recordBytes)
   validateOpen(heap, "update")
   validateIdentifier(identifier, "update")
@@ -558,8 +621,10 @@ function update(heap, identifier, recordBytes)
   return identifier
 end function
 
-// Removes the requested value.
-// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Removes remove from the state managed by the minisql storage heap file module.
+/// Inputs: `heap`, `identifier`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
+/// @param identifier identifier value consumed by this operation.
 function remove(heap, identifier)
   validateOpen(heap, "remove")
   validateIdentifier(identifier, "remove")
@@ -597,8 +662,9 @@ function remove(heap, identifier)
   return true
 end function
 
-// Scans the requested value.
-// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the requested value.
+/// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
 function scan(heap)
   validateOpen(heap, "scan")
   rows = []
@@ -620,14 +686,16 @@ function scan(heap)
   return rows
 end function
 
-// Counts the requested value.
-// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Counts the requested value.
+/// Inputs: `heap`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param heap heap value consumed by this operation.
 function count(heap)
   return len(scan(heap))
 end function
 
-// Closes the requested value.
-// Inputs: `heap`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql storage heap file module.
+/// Inputs: `heap`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param heap heap value consumed by this operation.
 function close(heap)
   validateOpen(heap, "close")
   paged_file.close(heap.pagedFile)
@@ -635,20 +703,20 @@ function close(heap)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage heap file module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.heap_file"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage heap file module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M9"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage heap file module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

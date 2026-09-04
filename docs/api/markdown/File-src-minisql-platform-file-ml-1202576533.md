@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql platform file facilities for this project.
+
 Package: [`minisql.platform.file`](Package-minisql-platform-file-714344185.md)
 
 Reachable from entry: **yes**
@@ -25,11 +27,11 @@ Applies the all-or-nothing injected write budget before native I/O.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `count` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L90)
 
 <a id="function-function-minisql-platform-file-append-function-append-file-source-sourceoffset-count-src-minisql-platform-file-ml-404046332"></a>
 ### append
@@ -42,13 +44,13 @@ Appends the requested value. Inputs: `file`, `source`, `sourceOffset`, `count`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L307)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L362)
 
 <a id="function-function-minisql-platform-file-clearwritefault-function-clearwritefault-src-minisql-platform-file-ml-216085062"></a>
 ### clearWriteFault
@@ -60,7 +62,7 @@ function clearWriteFault()
 Disarms deterministic storage exhaustion. Tests call this before cleanup so close/recovery operations use the real file system again.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L81)
 
 <a id="function-function-minisql-platform-file-close-function-close-file-src-minisql-platform-file-ml-194667004"></a>
 ### close
@@ -69,14 +71,14 @@ Disarms deterministic storage exhaustion. Tests call this before cleanup so clos
 function close(file)
 ```
 
-Closes the requested value. Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql platform file module. Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L401)
 
 <a id="constant-constant-minisql-platform-file-closed-handle-const-closed-handle-9008-src-minisql-platform-file-ml-1648641084"></a>
 ### CLOSED_HANDLE
@@ -85,8 +87,10 @@ Closes the requested value. Inputs: `file`. Returns the operation result and pro
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql platform file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L22)
 
 <a id="function-function-minisql-platform-file-closereadcontext-function-closereadcontext-context-src-minisql-platform-file-ml-741193535"></a>
 ### closeReadContext
@@ -99,10 +103,10 @@ Closes a reusable read context after every dependent I/O has completed.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `context` | `dynamic` | — |  |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L154)
 
 <a id="function-function-minisql-platform-file-componentname-function-componentname-src-minisql-platform-file-ml-1704078582"></a>
 ### componentName
@@ -111,10 +115,10 @@ Closes a reusable read context after every dependent I/O has completed.
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql platform file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L450)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L525)
 
 <a id="function-function-minisql-platform-file-configurewritefault-function-configurewritefault-remainingbytes-src-minisql-platform-file-ml-1320596275"></a>
 ### configureWriteFault
@@ -127,10 +131,10 @@ Arms a deterministic storage-exhaustion boundary. Complete writes whose payload 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `remainingBytes` | `dynamic` | — |  |
+| `remainingBytes` | `dynamic` | — | remainingBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L70)
 
 <a id="function-function-minisql-platform-file-create-function-create-path-src-minisql-platform-file-ml-76522757"></a>
 ### create
@@ -139,14 +143,14 @@ Arms a deterministic storage-exhaustion boundary. Complete writes whose payload 
 function create(path)
 ```
 
-Creates the requested value. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql platform file module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L187)
 
 <a id="function-function-minisql-platform-file-createdirectory-function-createdirectory-path-src-minisql-platform-file-ml-391039311"></a>
 ### createDirectory
@@ -159,10 +163,10 @@ Creates the directory. Inputs: `path`. Returns the produced value or propagates 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L380)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L445)
 
 <a id="function-function-minisql-platform-file-createdurable-function-createdurable-path-src-minisql-platform-file-ml-1282355547"></a>
 ### createDurable
@@ -175,10 +179,10 @@ Creates the durable. Inputs: `path`. Returns the produced value or propagates a 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L205)
 
 <a id="function-function-minisql-platform-file-createnew-function-createnew-path-src-minisql-platform-file-ml-1084414609"></a>
 ### createNew
@@ -191,10 +195,10 @@ Creates the new. Inputs: `path`. Returns the produced value or propagates a stru
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L177)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L196)
 
 <a id="function-function-minisql-platform-file-createnewdurable-function-createnewdurable-path-src-minisql-platform-file-ml-1765222449"></a>
 ### createNewDurable
@@ -207,10 +211,10 @@ Creates the new durable. Inputs: `path`. Returns the produced value or propagate
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L214)
 
 <a id="function-function-minisql-platform-file-createreadcontext-function-createreadcontext-src-minisql-platform-file-ml-1923465644"></a>
 ### createReadContext
@@ -222,7 +226,7 @@ function createReadContext()
 Creates a context reusable by sequential reads in one query or cursor lease.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L142)
 
 <a id="function-function-minisql-platform-file-deletepath-function-deletepath-path-src-minisql-platform-file-ml-1747539309"></a>
 ### deletePath
@@ -235,10 +239,10 @@ Deletes the path. Inputs: `path`. Returns the produced value or propagates a str
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L355)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L416)
 
 <a id="function-function-minisql-platform-file-directoryexists-function-directoryexists-path-src-minisql-platform-file-ml-1695769859"></a>
 ### directoryExists
@@ -251,10 +255,10 @@ Performs the directory exists operation for this module. Inputs: `path`. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L374)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L438)
 
 <a id="function-function-minisql-platform-file-fail-function-fail-code-operation-message-src-minisql-platform-file-ml-888822391"></a>
 ### fail
@@ -263,16 +267,16 @@ Performs the directory exists operation for this module. Inputs: `path`. Returns
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql platform file module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L62)
 
 <a id="function-function-minisql-platform-file-fileexists-function-fileexists-path-src-minisql-platform-file-ml-628133865"></a>
 ### fileExists
@@ -285,10 +289,10 @@ Performs the file exists operation for this module. Inputs: `path`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L368)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L431)
 
 - [minisql.platform.file.FileHandle](Type-minisql-platform-file-filehandle-777631733.md) — struct
 <a id="function-function-minisql-platform-file-flush-function-flush-file-src-minisql-platform-file-ml-529228700"></a>
@@ -298,14 +302,14 @@ Performs the file exists operation for this module. Inputs: `path`. Returns the 
 function flush(file)
 ```
 
-Flushes the requested value. Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the flush operation for the minisql platform file module. Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L333)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L392)
 
 <a id="constant-constant-minisql-platform-file-invalid-argument-const-invalid-argument-9001-src-minisql-platform-file-ml-1882476529"></a>
 ### INVALID_ARGUMENT
@@ -314,7 +318,7 @@ Flushes the requested value. Inputs: `file`. Returns the operation result and pr
 const INVALID_ARGUMENT = 9001
 ```
 
-Validated, lifetime-safe file API layered over the raw Win32 bindings. Positioned operations preserve the caller's logical cursor and reject use of closed handles before crossing the native boundary.
+Validated, lifetime-safe file API layered over the raw Win32 bindings.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L18)
@@ -326,8 +330,10 @@ Validated, lifetime-safe file API layered over the raw Win32 bindings. Positione
 const IO_FAILURE = 9005
 ```
 
+Defines the io failure constant used by the minisql platform file module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L20)
 
 <a id="function-function-minisql-platform-file-isimplemented-function-isimplemented-src-minisql-platform-file-ml-952729126"></a>
 ### isImplemented
@@ -336,10 +342,10 @@ const IO_FAILURE = 9005
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql platform file module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L462)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L537)
 
 <a id="function-function-minisql-platform-file-joinpath-function-joinpath-left-right-src-minisql-platform-file-ml-1503589553"></a>
 ### joinPath
@@ -352,11 +358,11 @@ Performs the join path operation for this module. Inputs: `left`, `right`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L503)
 
 <a id="function-function-minisql-platform-file-movepath-function-movepath-source-destination-replaceexisting-src-minisql-platform-file-ml-974284334"></a>
 ### movePath
@@ -369,12 +375,12 @@ Performs the move path operation for this module. Inputs: `source`, `destination
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `replaceExisting` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `replaceExisting` | `dynamic` | — | replaceExisting value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L461)
 
 <a id="function-function-minisql-platform-file-openread-function-openread-path-src-minisql-platform-file-ml-1665753393"></a>
 ### openRead
@@ -387,10 +393,10 @@ Opens the read. Inputs: `path`. Returns the produced value or propagates a struc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L136)
 
 <a id="function-function-minisql-platform-file-openreadwrite-function-openreadwrite-path-createifmissing-src-minisql-platform-file-ml-1520217242"></a>
 ### openReadWrite
@@ -403,11 +409,11 @@ Opens the read write. Inputs: `path`, `createIfMissing`. Returns the produced va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `createIfMissing` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `createIfMissing` | `dynamic` | — | createIfMissing value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L175)
 
 <a id="function-function-minisql-platform-file-pathexists-function-pathexists-path-src-minisql-platform-file-ml-513324869"></a>
 ### pathExists
@@ -416,14 +422,14 @@ Opens the read write. Inputs: `path`, `createIfMissing`. Returns the produced va
 function pathExists(path)
 ```
 
-Performs the path exists operation for this module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the pathExists operation for the minisql platform file module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L424)
 
 - [minisql.platform.file.PositionedReadContext](Type-minisql-platform-file-positionedreadcontext-2034619142.md) — struct
 <a id="function-function-minisql-platform-file-readallbytes-function-readallbytes-path-maximumbytes-src-minisql-platform-file-ml-1191943440"></a>
@@ -437,11 +443,11 @@ Reads the all bytes. Inputs: `path`, `maximumBytes`. Returns the produced value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `maximumBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `maximumBytes` | `dynamic` | — | maximumBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L398)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L469)
 
 <a id="function-function-minisql-platform-file-readalltext-function-readalltext-path-maximumbytes-src-minisql-platform-file-ml-764688648"></a>
 ### readAllText
@@ -454,11 +460,11 @@ Reads the all text. Inputs: `path`, `maximumBytes`. Returns the produced value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `maximumBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `maximumBytes` | `dynamic` | — | maximumBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L418)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L491)
 
 <a id="function-function-minisql-platform-file-readat-function-readat-file-fileoffset-destination-destinationoffset-count-src-minisql-platform-file-ml-809176179"></a>
 ### readAt
@@ -471,14 +477,14 @@ Reads without retaining setup across calls.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L292)
 
 <a id="function-function-minisql-platform-file-readatwithcontext-function-readatwithcontext-file-fileoffset-destination-destinationoffset-count-context-src-minisql-platform-file-ml-12711364"></a>
 ### readAtWithContext
@@ -491,15 +497,15 @@ Reads the at. Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L246)
 
 <a id="function-function-minisql-platform-file-readcontextoperations-function-readcontextoperations-context-src-minisql-platform-file-ml-1369871121"></a>
 ### readContextOperations
@@ -512,10 +518,10 @@ Reports successful positioned operations performed through this context.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `context` | `dynamic` | — |  |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L166)
 
 <a id="function-function-minisql-platform-file-readexactat-function-readexactat-file-fileoffset-destination-destinationoffset-count-src-minisql-platform-file-ml-280244823"></a>
 ### readExactAt
@@ -528,14 +534,14 @@ Reads the exact at. Inputs: `file`, `fileOffset`, `destination`, `destinationOff
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L303)
 
 <a id="function-function-minisql-platform-file-readexactatwithcontext-function-readexactatwithcontext-file-fileoffset-destination-destinationoffset-count-context-src-minisql-platform-file-ml-1112220952"></a>
 ### readExactAtWithContext
@@ -548,15 +554,15 @@ Reads one exact range through a caller-owned query-local context.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L316)
 
 <a id="function-function-minisql-platform-file-removedirectory-function-removedirectory-path-src-minisql-platform-file-ml-2116911231"></a>
 ### removeDirectory
@@ -569,10 +575,10 @@ Removes the directory. Inputs: `path`. Returns the produced value or propagates 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L386)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L452)
 
 <a id="function-function-minisql-platform-file-shareall-function-shareall-src-minisql-platform-file-ml-2020273142"></a>
 ### shareAll
@@ -584,7 +590,7 @@ function shareAll()
 Performs the share all operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L129)
 
 <a id="function-function-minisql-platform-file-size-function-size-file-src-minisql-platform-file-ml-299421568"></a>
 ### size
@@ -597,10 +603,10 @@ Computes the size of the requested value. Inputs: `file`. Returns the produced v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L315)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L371)
 
 <a id="function-function-minisql-platform-file-targetmilestone-function-targetmilestone-src-minisql-platform-file-ml-1127409804"></a>
 ### targetMilestone
@@ -609,10 +615,10 @@ Computes the size of the requested value. Inputs: `file`. Returns the produced v
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql platform file module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L456)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L531)
 
 <a id="function-function-minisql-platform-file-truncate-function-truncate-file-newsize-src-minisql-platform-file-ml-770243553"></a>
 ### truncate
@@ -625,11 +631,11 @@ Performs the truncate operation for this module. Inputs: `file`, `newSize`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `newSize` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `newSize` | `dynamic` | — | newSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L380)
 
 <a id="function-function-minisql-platform-file-validatefilerange-function-validatefilerange-fileoffset-count-operation-src-minisql-platform-file-ml-167451537"></a>
 ### validateFileRange
@@ -642,12 +648,12 @@ Validates the file range. Inputs: `fileOffset`, `count`, `operation`. Returns su
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `fileOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L225)
 
 <a id="function-function-minisql-platform-file-validateopen-function-validateopen-file-operation-src-minisql-platform-file-ml-770869255"></a>
 ### validateOpen
@@ -656,15 +662,15 @@ Validates the file range. Inputs: `fileOffset`, `count`, `operation`. Returns su
 function validateOpen(file, operation)
 ```
 
-Validates the open. Inputs: `file`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql platform file workflow. Inputs: `file`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L104)
 
 <a id="function-function-minisql-platform-file-validateslice-function-validateslice-buffer-offset-count-operation-src-minisql-platform-file-ml-1697818811"></a>
 ### validateSlice
@@ -677,13 +683,13 @@ Validates the slice. Inputs: `buffer`, `offset`, `count`, `operation`. Returns s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `buffer` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `buffer` | `dynamic` | — | Buffer that receives or supplies the operation data. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L116)
 
 <a id="function-function-minisql-platform-file-writeat-function-writeat-file-fileoffset-source-sourceoffset-count-src-minisql-platform-file-ml-216703943"></a>
 ### writeAt
@@ -696,14 +702,14 @@ Writes the at. Inputs: `file`, `fileOffset`, `source`, `sourceOffset`, `count`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `file` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `file` | `dynamic` | — | file value consumed by this operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L278)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L329)
 
 <a id="global-global-minisql-platform-file-writefaultremainingbytes-writefaultremainingbytes-src-minisql-platform-file-ml-2080116284"></a>
 ### writeFaultRemainingBytes
@@ -712,7 +718,7 @@ Writes the at. Inputs: `file`, `fileOffset`, `source`, `sourceOffset`, `count`. 
 writeFaultRemainingBytes
 ```
 
-Process-local deterministic write-failure state used exclusively by native fault-injection tests. Production code never enables it, and no environment variable or server configuration can activate it accidentally.
+Process-local deterministic write-failure state used exclusively by native
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file.ml#L25)

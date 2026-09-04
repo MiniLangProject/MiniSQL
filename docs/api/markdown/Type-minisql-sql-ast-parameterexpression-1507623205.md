@@ -12,7 +12,7 @@ struct ParameterExpression
 Groups the parameter expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L223)
 
 ## Members
 
@@ -26,7 +26,7 @@ index
 Tracks the index numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L172)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L227)
 
 <a id="field-field-minisql-sql-ast-parameterexpression-kind-kind-src-minisql-sql-ast-ml-431360148"></a>
 ### kind
@@ -38,4 +38,4 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L225)

@@ -1,3 +1,5 @@
+//! Provides minisql sql expressions facilities for this project.
+
 package minisql.sql.expressions
 
 // Copyright 2026 MiniLangProject contributors
@@ -10,326 +12,374 @@ import minisql.common.endian as endian
 import minisql.sql.types as types
 import minisql.sql.values as values
 
+/// Defines the invalid argument constant used by the minisql sql expressions module.
 const INVALID_ARGUMENT = 9001
+/// Defines the type mismatch constant used by the minisql sql expressions module.
 const TYPE_MISMATCH = 9017
+/// Defines the binding error constant used by the minisql sql expressions module.
 const BINDING_ERROR = 9020
 
+/// Defines the bound literal constant used by the minisql sql expressions module.
 const BOUND_LITERAL = 1
+/// Defines the bound column constant used by the minisql sql expressions module.
 const BOUND_COLUMN = 2
+/// Defines the bound unary constant used by the minisql sql expressions module.
 const BOUND_UNARY = 3
+/// Defines the bound binary constant used by the minisql sql expressions module.
 const BOUND_BINARY = 4
+/// Defines the bound is null constant used by the minisql sql expressions module.
 const BOUND_IS_NULL = 5
+/// Defines the bound aggregate constant used by the minisql sql expressions module.
 const BOUND_AGGREGATE = 6
+/// Defines the bound case constant used by the minisql sql expressions module.
 const BOUND_CASE = 7
+/// Defines the bound cast constant used by the minisql sql expressions module.
 const BOUND_CAST = 8
+/// Defines the bound scalar constant used by the minisql sql expressions module.
 const BOUND_SCALAR = 9
+/// Defines the bound in constant used by the minisql sql expressions module.
 const BOUND_IN = 10
+/// Defines the bound between constant used by the minisql sql expressions module.
 const BOUND_BETWEEN = 11
+/// Defines the bound truth test constant used by the minisql sql expressions module.
 const BOUND_TRUTH_TEST = 12
+/// Defines the bound window constant used by the minisql sql expressions module.
 const BOUND_WINDOW = 13
+/// Defines the bound subquery constant used by the minisql sql expressions module.
 const BOUND_SUBQUERY = 14
 
+/// Defines the subquery scalar constant used by the minisql sql expressions module.
 const SUBQUERY_SCALAR = 1
+/// Defines the subquery exists constant used by the minisql sql expressions module.
 const SUBQUERY_EXISTS = 2
+/// Defines the subquery in constant used by the minisql sql expressions module.
 const SUBQUERY_IN = 3
 
-// Groups the bound expression state and preserves the field relationships documented below.
+/// Groups the bound expression state and preserves the field relationships documented below.
 struct BoundExpression
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the operator associated with this value.
+  /// Stores the operator associated with this value.
   operator
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
-  // Stores the literal associated with this value.
+  /// Stores the literal associated with this value.
   literal
-  // Tracks the column index numeric value.
+  /// Tracks the column index numeric value.
   columnIndex
-  // Stores the left associated with this value.
+  /// Stores the left associated with this value.
   left
-  // Stores the right associated with this value.
+  /// Stores the right associated with this value.
   right
 end struct
 
-// Groups the bound aggregate state and preserves the field relationships documented below.
+/// Groups the bound aggregate state and preserves the field relationships documented below.
 struct BoundAggregate
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the name associated with this value.
+  /// Stores the name associated with this value.
   name
-  // Stores the argument associated with this value.
+  /// Stores the argument associated with this value.
   argument
-  // Stores the optional delimiter or secondary aggregate argument.
+  /// Stores the optional delimiter or secondary aggregate argument.
   separator
-  // Indicates whether the distinct condition is active.
+  /// Indicates whether the distinct condition is active.
   distinct
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
-  // Stores the count star associated with this value.
+  /// Stores the count star associated with this value.
   countStar
 end struct
 
-// Groups the bound case branch state and preserves the field relationships documented below.
+/// Groups the bound case branch state and preserves the field relationships documented below.
 struct BoundCaseBranch
-  // Stores the condition associated with this value.
+  /// Stores the condition associated with this value.
   condition
-  // Stores the result associated with this value.
+  /// Stores the result associated with this value.
   result
 end struct
 
-// Groups the bound case state and preserves the field relationships documented below.
+/// Groups the bound case state and preserves the field relationships documented below.
 struct BoundCase
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Contains the ordered branches collection.
+  /// Contains the ordered branches collection.
   branches
-  // Stores the else expression associated with this value.
+  /// Stores the else expression associated with this value.
   elseExpression
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the bound cast state and preserves the field relationships documented below.
+/// Groups the bound cast state and preserves the field relationships documented below.
 struct BoundCast
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the operand associated with this value.
+  /// Stores the operand associated with this value.
   operand
-  // Stores the target type associated with this value.
+  /// Stores the target type associated with this value.
   targetType
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the bound scalar state and preserves the field relationships documented below.
+/// Groups the bound scalar state and preserves the field relationships documented below.
 struct BoundScalar
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the name associated with this value.
+  /// Stores the name associated with this value.
   name
-  // Contains the ordered arguments collection.
+  /// Contains the ordered arguments collection.
   arguments
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the bound in state and preserves the field relationships documented below.
+/// Groups the bound in state and preserves the field relationships documented below.
 struct BoundIn
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the operand associated with this value.
+  /// Stores the operand associated with this value.
   operand
-  // Stores the candidates associated with this value.
+  /// Stores the candidates associated with this value.
   candidates
-  // Indicates whether the negated condition is active.
+  /// Indicates whether the negated condition is active.
   negated
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the bound between state and preserves the field relationships documented below.
+/// Groups the bound between state and preserves the field relationships documented below.
 struct BoundBetween
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the operand associated with this value.
+  /// Stores the operand associated with this value.
   operand
-  // Stores the lower associated with this value.
+  /// Stores the lower associated with this value.
   lower
-  // Stores the upper associated with this value.
+  /// Stores the upper associated with this value.
   upper
-  // Indicates whether the negated condition is active.
+  /// Indicates whether the negated condition is active.
   negated
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the bound truth test state and preserves the field relationships documented below.
+/// Groups the bound truth test state and preserves the field relationships documented below.
 struct BoundTruthTest
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the operand associated with this value.
+  /// Stores the operand associated with this value.
   operand
-  // Stores the expected associated with this value.
+  /// Stores the expected associated with this value.
   expected
-  // Indicates whether the negated condition is active.
+  /// Indicates whether the negated condition is active.
   negated
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Carries a SELECT that must be evaluated against the current outer row.
-// The binder records its SQL result type while the executor substitutes
-// qualified outer references immediately before running the nested query.
+/// Carries a SELECT that must be evaluated against the current outer row.
+/// The binder records its SQL result type while the executor substitutes
+/// qualified outer references immediately before running the nested query.
 struct BoundSubquery
-  // Identifies scalar, EXISTS, or IN result semantics.
+  /// Identifies scalar, EXISTS, or IN result semantics.
   subqueryKind
-  // Retains the parsed nested SELECT until an outer row is available.
+  /// Retains the parsed nested SELECT until an outer row is available.
   query
-  // Stores the bound left operand for IN, or void for scalar and EXISTS forms.
+  /// Stores the bound left operand for IN, or void for scalar and EXISTS forms.
   operand
-  // Indicates whether an IN result is negated.
+  /// Indicates whether an IN result is negated.
   negated
-  // Stores the statically inferred SQL result type.
+  /// Stores the statically inferred SQL result type.
   typeInfo
 end struct
 
 
-// Groups the bound window state and preserves the field relationships documented below.
+/// Groups the bound window state and preserves the field relationships documented below.
 struct BoundWindow
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the name associated with this value.
+  /// Stores the name associated with this value.
   name
-  // Contains the ordered arguments collection.
+  /// Contains the ordered arguments collection.
   arguments
-  // Stores the partition by associated with this value.
+  /// Stores the partition by associated with this value.
   partitionBy
-  // Contains the ordered order by collection.
+  /// Contains the ordered order by collection.
   orderBy
-  // Stores the descending associated with this value.
+  /// Stores the descending associated with this value.
   descending
-  // Stores the nulls first associated with this value.
+  /// Stores the nulls first associated with this value.
   nullsFirst
-  // Stores the nulls specified associated with this value.
+  /// Stores the nulls specified associated with this value.
   nullsSpecified
-  // Stores the type info associated with this value.
+  /// Stores the type info associated with this value.
   typeInfo
 end struct
 
-// Groups the row context state and preserves the field relationships documented below.
+/// Groups the row context state and preserves the field relationships documented below.
 struct RowContext
-  // Contains the ordered values collection.
+  /// Contains the ordered values collection.
   values
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql sql expressions module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "sql.expressions." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the bound expression condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound expression condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundExpression(value)
   return value is BoundExpression or value is BoundAggregate or value is BoundCase or value is BoundCast or value is BoundScalar or value is BoundIn or value is BoundBetween or value is BoundTruthTest or value is BoundWindow or value is BoundSubquery
 end function
 
-// Returns whether the supplied value satisfies the bound aggregate condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound aggregate condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundAggregate(value)
   return value is BoundAggregate
 end function
 
-// Returns whether the supplied value satisfies the bound literal condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound literal condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundLiteral(value)
   return value is BoundExpression and value.kind == BOUND_LITERAL
 end function
 
-// Returns whether the supplied value satisfies the base bound expression condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the base bound expression condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBaseBoundExpression(value)
   return value is BoundExpression
 end function
 
-// Returns whether the supplied value satisfies the bound case condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound case condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundCase(value)
   return value is BoundCase
 end function
 
-// Returns whether the supplied value satisfies the bound cast condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound cast condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundCast(value)
   return value is BoundCast
 end function
 
-// Returns whether the supplied value satisfies the bound scalar condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound scalar condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundScalar(value)
   return value is BoundScalar
 end function
 
-// Returns whether the supplied value satisfies the bound in condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound in condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundIn(value)
   return value is BoundIn
 end function
 
-// Returns whether the supplied value satisfies the bound between condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound between condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundBetween(value)
   return value is BoundBetween
 end function
 
-// Returns whether the supplied value satisfies the bound truth test condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound truth test condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundTruthTest(value)
   return value is BoundTruthTest
 end function
 
-// Returns whether the supplied value satisfies the bound window condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the bound window condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isBoundWindow(value)
   return value is BoundWindow
 end function
 
-// Returns whether a bound expression defers a nested SELECT to row evaluation.
+/// Returns whether a bound expression defers a nested SELECT to row evaluation.
+/// @param value Value consumed or transformed by the operation.
 function isBoundSubquery(value)
   return value is BoundSubquery
 end function
 
-// Implements literal for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements literal for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function literal(value, typeInfo)
   if not values.isSqlValue(value) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "literal", "invalid literal") end if
   return BoundExpression(BOUND_LITERAL, "", typeInfo, value, -1, void, void)
 end function
 
-// Implements column for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements column for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param index Zero-based index of the affected item.
+/// @param typeInfo typeInfo value consumed by this operation.
 function column(index, typeInfo)
   if typeof(index) != "int" or index < 0 or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "column", "invalid column binding") end if
   return BoundExpression(BOUND_COLUMN, "", typeInfo, void, index, void, void)
 end function
 
-// Implements unary for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements unary for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operator operator value consumed by this operation.
+/// @param operand operand value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function unary(operator, operand, typeInfo)
   if typeof(operator) != "string" or not isBoundExpression(operand) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "unary", "invalid unary binding") end if
   return BoundExpression(BOUND_UNARY, operator, typeInfo, void, -1, operand, void)
 end function
 
-// Implements binary for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements binary for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operator operator value consumed by this operation.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function binary(operator, left, right, typeInfo)
   if typeof(operator) != "string" or not isBoundExpression(left) or not isBoundExpression(right) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "binary", "invalid binary binding") end if
   return BoundExpression(BOUND_BINARY, operator, typeInfo, void, -1, left, right)
 end function
 
-// Returns whether the supplied value satisfies the null condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the null condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param operand operand value consumed by this operation.
+/// @param negated negated value consumed by this operation.
 function isNull(operand, negated)
   if not isBoundExpression(operand) or typeof(negated) != "bool" then return fail(INVALID_ARGUMENT, "isNull", "invalid IS NULL binding") end if
   operator = "IS NULL"
@@ -337,10 +387,16 @@ function isNull(operand, negated)
   return BoundExpression(BOUND_IS_NULL, operator, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false), void, -1, operand, void)
 end function
 
-// Implements aggregate for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements aggregate for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param name Name of the affected item.
+/// @param argument argument value consumed by this operation.
+/// @param separator separator value consumed by this operation.
+/// @param distinct distinct value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
+/// @param countStar countStar value consumed by this operation.
 function aggregate(name, argument, separator, distinct, typeInfo, countStar)
   if typeof(name) != "string" or len(name) == 0 or typeof(distinct) != "bool" or not types.isSqlType(typeInfo) or typeof(countStar) != "bool" then return fail(INVALID_ARGUMENT, "aggregate", "invalid aggregate binding") end if
   if not countStar and not isBoundExpression(argument) then return fail(INVALID_ARGUMENT, "aggregate", "aggregate argument must be bound") end if
@@ -348,18 +404,23 @@ function aggregate(name, argument, separator, distinct, typeInfo, countStar)
   return BoundAggregate(BOUND_AGGREGATE, name, argument, separator, distinct, typeInfo, countStar)
 end function
 
-// Implements case branch for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements case branch for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param condition condition value consumed by this operation.
+/// @param result Result object populated or inspected by the operation.
 function caseBranch(condition, result)
   if not isBoundExpression(condition) or not isBoundExpression(result) then return fail(INVALID_ARGUMENT, "caseBranch", "invalid CASE branch") end if
   return BoundCaseBranch(condition, result)
 end function
 
-// Implements case expression for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements case expression for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param branches branches value consumed by this operation.
+/// @param elseExpression elseExpression value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function caseExpression(branches, elseExpression, typeInfo)
   if typeof(branches) != "array" or len(branches) == 0 or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "caseExpression", "invalid CASE expression") end if
   for each branch in branches
@@ -369,18 +430,23 @@ function caseExpression(branches, elseExpression, typeInfo)
   return BoundCase(BOUND_CASE, branches, elseExpression, typeInfo)
 end function
 
-// Casts expression using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Casts expression using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operand operand value consumed by this operation.
+/// @param targetType targetType value consumed by this operation.
 function castExpression(operand, targetType)
   if not isBoundExpression(operand) or not types.isSqlType(targetType) then return fail(INVALID_ARGUMENT, "castExpression", "invalid CAST expression") end if
   return BoundCast(BOUND_CAST, operand, targetType, targetType)
 end function
 
-// Implements scalar for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements scalar for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param name Name of the affected item.
+/// @param arguments arguments value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function scalar(name, arguments, typeInfo)
   if typeof(name) != "string" or len(name) == 0 or typeof(arguments) != "array" or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "scalar", "invalid scalar function") end if
   for each argument in arguments
@@ -389,10 +455,13 @@ function scalar(name, arguments, typeInfo)
   return BoundScalar(BOUND_SCALAR, name, arguments, typeInfo)
 end function
 
-// Implements in predicate for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements in predicate for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operand operand value consumed by this operation.
+/// @param candidates candidates value consumed by this operation.
+/// @param negated negated value consumed by this operation.
 function inPredicate(operand, candidates, negated)
   if not isBoundExpression(operand) or typeof(candidates) != "array" or len(candidates) == 0 or typeof(negated) != "bool" then return fail(INVALID_ARGUMENT, "inPredicate", "invalid IN predicate") end if
   for each candidate in candidates
@@ -405,26 +474,38 @@ function inPredicate(operand, candidates, negated)
   return BoundIn(BOUND_IN, operand, candidates, negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, nullable))
 end function
 
-// Implements between predicate for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements between predicate for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operand operand value consumed by this operation.
+/// @param lower lower value consumed by this operation.
+/// @param upper upper value consumed by this operation.
+/// @param negated negated value consumed by this operation.
 function betweenPredicate(operand, lower, upper, negated)
   if not isBoundExpression(operand) or not isBoundExpression(lower) or not isBoundExpression(upper) or typeof(negated) != "bool" then return fail(INVALID_ARGUMENT, "betweenPredicate", "invalid BETWEEN predicate") end if
   nullable = operand.typeInfo.nullable or lower.typeInfo.nullable or upper.typeInfo.nullable
   return BoundBetween(BOUND_BETWEEN, operand, lower, upper, negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, nullable))
 end function
 
-// Implements truth test for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements truth test for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operand operand value consumed by this operation.
+/// @param expected expected value consumed by this operation.
+/// @param negated negated value consumed by this operation.
 function truthTest(operand, expected, negated)
   if not isBoundExpression(operand) or typeof(expected) != "string" or typeof(negated) != "bool" then return fail(INVALID_ARGUMENT, "truthTest", "invalid truth test") end if
   return BoundTruthTest(BOUND_TRUTH_TEST, operand, expected, negated, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false))
 end function
 
-// Creates a deferred subquery binding after its shape and result type have been validated.
+/// Creates a deferred subquery binding after its shape and result type have been validated.
+/// @param subqueryKind subqueryKind value consumed by this operation.
+/// @param query query value consumed by this operation.
+/// @param operand operand value consumed by this operation.
+/// @param negated negated value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function subquery(subqueryKind, query, operand, negated, typeInfo)
   if typeof(subqueryKind) != "int" or typeof(negated) != "bool" or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "subquery", "invalid subquery binding") end if
   if subqueryKind != SUBQUERY_SCALAR and subqueryKind != SUBQUERY_EXISTS and subqueryKind != SUBQUERY_IN then return fail(INVALID_ARGUMENT, "subquery", "unknown subquery kind") end if
@@ -433,7 +514,8 @@ function subquery(subqueryKind, query, operand, negated, typeInfo)
   return BoundSubquery(subqueryKind, query, operand, negated, typeInfo)
 end function
 
-// Returns true when an expression tree contains a row-dependent nested SELECT.
+/// Returns true when an expression tree contains a row-dependent nested SELECT.
+/// @param expression expression value consumed by this operation.
 function containsSubquery(expression)
   if expression is void then return false end if
   if expression is BoundSubquery then return true end if
@@ -483,7 +565,8 @@ function containsSubquery(expression)
   return false
 end function
 
-// Returns true when at least one expression in a list contains a subquery.
+/// Returns true when at least one expression in a list contains a subquery.
+/// @param items Items consumed or updated by the operation.
 function containsSubqueryList(items)
   for each item in items
     if containsSubquery(item) then return true end if
@@ -491,10 +574,18 @@ function containsSubqueryList(items)
   return false
 end function
 
-// Implements window for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements window for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param name Name of the affected item.
+/// @param arguments arguments value consumed by this operation.
+/// @param partitionBy partitionBy value consumed by this operation.
+/// @param orderBy orderBy value consumed by this operation.
+/// @param descending descending value consumed by this operation.
+/// @param nullsFirst nullsFirst value consumed by this operation.
+/// @param nullsSpecified nullsSpecified value consumed by this operation.
+/// @param typeInfo typeInfo value consumed by this operation.
 function window(name, arguments, partitionBy, orderBy, descending, nullsFirst, nullsSpecified, typeInfo)
   if typeof(name) != "string" or typeof(arguments) != "array" or typeof(partitionBy) != "array" or typeof(orderBy) != "array" or typeof(descending) != "array" or typeof(nullsFirst) != "array" or typeof(nullsSpecified) != "array" or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "window", "invalid window binding") end if
   if len(orderBy) != len(descending) or len(orderBy) != len(nullsFirst) or len(orderBy) != len(nullsSpecified) then return fail(INVALID_ARGUMENT, "window", "window order metadata mismatch") end if
@@ -510,10 +601,11 @@ function window(name, arguments, partitionBy, orderBy, descending, nullsFirst, n
   return BoundWindow(BOUND_WINDOW, name, arguments, partitionBy, orderBy, descending, nullsFirst, nullsSpecified, typeInfo)
 end function
 
-// Returns whether the supplied value satisfies the window condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the window condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param expression expression value consumed by this operation.
 function containsWindow(expression)
   if expression is void then return false end if
   if expression is BoundWindow then return true end if
@@ -549,9 +641,10 @@ function containsWindow(expression)
   return false
 end function
 
-// Returns whether the supplied value satisfies the window list condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the window list condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param items Items consumed or updated by the operation.
 function containsWindowList(items)
   for each item in items
     if containsWindow(item) then return true end if
@@ -559,10 +652,12 @@ function containsWindowList(items)
   return false
 end function
 
-// Implements references column at or after for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements references column at or after for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param minimumIndex Zero-based index of minimum.
 function referencesColumnAtOrAfter(expression, minimumIndex)
   if expression is void then return false end if
   if expression is BoundSubquery then return referencesColumnAtOrAfter(expression.operand, minimumIndex) end if
@@ -615,10 +710,11 @@ function referencesColumnAtOrAfter(expression, minimumIndex)
   return false
 end function
 
-// Returns whether the supplied value satisfies the aggregate condition.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the aggregate condition.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param expression expression value consumed by this operation.
 function containsAggregate(expression)
   if expression is BoundWindow then return false end if
   if expression is BoundSubquery then return false end if
@@ -654,10 +750,12 @@ function containsAggregate(expression)
   return false
 end function
 
-// Implements same binding for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements same binding for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function sameBinding(left, right)
   if left is BoundSubquery or right is BoundSubquery then return false end if
   if left is BoundAggregate or right is BoundAggregate then
@@ -735,10 +833,11 @@ function sameBinding(left, right)
   return false
 end function
 
-// Implements row context for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements row context for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rowValues rowValues value consumed by this operation.
 function rowContext(rowValues)
   if typeof(rowValues) != "array" then return fail(INVALID_ARGUMENT, "rowContext", "values must be array") end if
   for each value in rowValues
@@ -747,10 +846,14 @@ function rowContext(rowValues)
   return RowContext(rowValues)
 end function
 
-// Implements numeric result for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements numeric result for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param operator operator value consumed by this operation.
+/// @param resultType resultType value consumed by this operation.
 function numericResult(left, right, operator, resultType)
   if left.isNull or right.isNull then return values.nullValue(resultType.kind) end if
   leftNumber = values.asNumber(left)
@@ -772,9 +875,12 @@ function numericResult(left, right, operator, resultType)
   return values.convert(values.of(sourceType.kind, result), resultType)
 end function
 
-// Implements comparison result for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements comparison result for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param operator operator value consumed by this operation.
 function comparisonResult(left, right, operator)
   if left.isNull or right.isNull then return values.nullValue(types.SqlTypeKind.Boolean) end if
   comparison = values.compareNonNull(left, right)
@@ -788,10 +894,12 @@ function comparisonResult(left, right, operator)
   return values.boolean(result)
 end function
 
-// Implements like result for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements like result for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function likeResult(left, right)
   if left.isNull or right.isNull then return values.nullValue(types.SqlTypeKind.Boolean) end if
   if typeof(left.value) != "string" or typeof(right.value) != "string" then return fail(TYPE_MISMATCH, "likeResult", "LIKE requires text operands") end if
@@ -842,9 +950,11 @@ function likeResult(left, right)
   return values.boolean(patternIndex == len(patternBytes))
 end function
 
-// Evaluates case using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates case using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluateCase(expression, context)
   for each branch in expression.branches
     condition = evaluate(branch.condition, context)
@@ -854,7 +964,9 @@ function evaluateCase(expression, context)
   return values.convert(evaluate(expression.elseExpression, context), expression.typeInfo)
 end function
 
-// Applies ASCII case conversion while preserving every non-ASCII UTF-8 byte.
+/// Applies ASCII case conversion while preserving every non-ASCII UTF-8 byte.
+/// @param value Value consumed or transformed by the operation.
+/// @param upper upper value consumed by this operation.
 function asciiCase(value, upper)
   raw = bytes(value)
   output = bytes(len(raw))
@@ -869,7 +981,8 @@ function asciiCase(value, upper)
   return decode(output)
 end function
 
-// Counts Unicode scalar starts in validated UTF-8 text.
+/// Counts Unicode scalar starts in validated UTF-8 text.
+/// @param raw raw value consumed by this operation.
 function utf8CharacterCount(raw)
   count = 0
   for each value in raw
@@ -878,7 +991,9 @@ function utf8CharacterCount(raw)
   return count
 end function
 
-// Maps a zero-based Unicode character index to a UTF-8 byte offset.
+/// Maps a zero-based Unicode character index to a UTF-8 byte offset.
+/// @param raw raw value consumed by this operation.
+/// @param characterIndex Zero-based index of character.
 function utf8ByteOffset(raw, characterIndex)
   if characterIndex <= 0 then return 0 end if
   seen = 0
@@ -891,7 +1006,10 @@ function utf8ByteOffset(raw, characterIndex)
   return len(raw)
 end function
 
-// Returns whether `needle` occurs in `source` at the supplied byte offset.
+/// Returns whether `needle` occurs in `source` at the supplied byte offset.
+/// @param source source value consumed by this operation.
+/// @param needle needle value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
 function bytesMatchAt(source, needle, offset)
   if len(needle) == 0 or offset < 0 or offset > len(source) - len(needle) then return false end if
   for index = 0 to len(needle) - 1
@@ -900,7 +1018,10 @@ function bytesMatchAt(source, needle, offset)
   return true
 end function
 
-// Replaces all non-overlapping UTF-8 byte sequences without changing unaffected bytes.
+/// Replaces all non-overlapping UTF-8 byte sequences without changing unaffected bytes.
+/// @param sourceText sourceText value consumed by this operation.
+/// @param searchText searchText value consumed by this operation.
+/// @param replacementText replacementText value consumed by this operation.
 function replaceText(sourceText, searchText, replacementText)
   source = bytes(sourceText)
   search = bytes(searchText)
@@ -937,7 +1058,9 @@ function replaceText(sourceText, searchText, replacementText)
   return decode(output)
 end function
 
-// Computes exact floor division for native integers.
+/// Computes exact floor division for native integers.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function integerDivide(left, right)
   remainder = left % right
   quotient = (left - remainder) / right
@@ -945,7 +1068,8 @@ function integerDivide(left, right)
   return quotient
 end function
 
-// Converts days since 1970-01-01 to Gregorian year, month and day.
+/// Converts days since 1970-01-01 to Gregorian year, month and day.
+/// @param days days value consumed by this operation.
 function civilDateFromEpochDays(days)
   shifted = days + 719468
   eraInput = shifted
@@ -963,7 +1087,8 @@ function civilDateFromEpochDays(days)
   return [year, month, day]
 end function
 
-// Returns the absolute value while preserving full-width signed integer semantics.
+/// Returns the absolute value while preserving full-width signed integer semantics.
+/// @param value Value consumed or transformed by the operation.
 function absoluteValue(value)
   if value.isNull then return values.nullValue(value.typeKind) end if
   if endian.isInt64Words(value.value) then
@@ -981,8 +1106,10 @@ function absoluteValue(value)
   return values.of(value.typeKind, number)
 end function
 
-// Evaluates a scalar after its arguments have already been evaluated.
-// This entry point is also used by grouped expressions containing aggregates.
+/// Evaluates a scalar after its arguments have already been evaluated.
+/// This entry point is also used by grouped expressions containing aggregates.
+/// @param expression expression value consumed by this operation.
+/// @param arguments arguments value consumed by this operation.
 function evaluateScalarValues(expression, arguments)
   name = expression.name
   if name != "COALESCE" then
@@ -1090,9 +1217,11 @@ function evaluateScalarValues(expression, arguments)
   return fail(BINDING_ERROR, "evaluateScalarValues", "unknown scalar function " + name)
 end function
 
-// Evaluates scalar using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates scalar using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluateScalar(expression, context)
   if expression.name == "COALESCE" then
     for each argument in expression.arguments
@@ -1108,9 +1237,11 @@ function evaluateScalar(expression, context)
   return evaluateScalarValues(expression, arguments)
 end function
 
-// Evaluates in using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates in using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluateIn(expression, context)
   operand = evaluate(expression.operand, context)
   if operand.isNull then return values.nullValue(types.SqlTypeKind.Boolean) end if
@@ -1131,9 +1262,11 @@ function evaluateIn(expression, context)
   return result
 end function
 
-// Evaluates between using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates between using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluateBetween(expression, context)
   operand = evaluate(expression.operand, context)
   lower = evaluate(expression.lower, context)
@@ -1143,9 +1276,11 @@ function evaluateBetween(expression, context)
   return result
 end function
 
-// Evaluates truth test using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates truth test using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluateTruthTest(expression, context)
   truthValue = values.truth(evaluate(expression.operand, context))
   result = false
@@ -1156,10 +1291,12 @@ function evaluateTruthTest(expression, context)
   return values.boolean(result)
 end function
 
-// Evaluates evaluate using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Evaluates evaluate using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function evaluate(expression, context)
   if not isBoundExpression(expression) then return fail(INVALID_ARGUMENT, "evaluate", "expression must be bound") end if
   if expression is BoundAggregate then return fail(BINDING_ERROR, "evaluate", "aggregate requires a group context") end if
@@ -1225,9 +1362,11 @@ function evaluate(expression, context)
   return fail(BINDING_ERROR, "evaluate", "unknown bound expression kind")
 end function
 
-// Implements predicate passes for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements predicate passes for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function predicatePasses(expression, context)
   if expression is void then return true end if
   result = evaluate(expression, context)
@@ -1235,9 +1374,11 @@ function predicatePasses(expression, context)
   return truthValue == 1
 end function
 
-// Checks passes using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Checks passes using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function checkPasses(expression, context)
   // SQL CHECK constraints reject FALSE; TRUE and UNKNOWN both satisfy them.
   if expression is void then return true end if
@@ -1245,23 +1386,23 @@ function checkPasses(expression, context)
   return values.truth(result) != 0
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql sql expressions module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.expressions"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql sql expressions module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M13"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql sql expressions module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

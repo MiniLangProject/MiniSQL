@@ -12,7 +12,7 @@ struct CertificatePolicy
 Defines how a client authenticates the peer certificate.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L70)
 
 ## Members
 
@@ -26,7 +26,7 @@ mode
 Either `system` for Windows trust or `pin-sha256` for an exact leaf pin.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L72)
 
 <a id="field-field-minisql-platform-tls-policy-certificatepolicy-pinnedleafsha256-pinnedleafsha256-src-minisql-platform-tls-policy-ml-1700318756"></a>
 ### pinnedLeafSha256
@@ -38,7 +38,7 @@ pinnedLeafSha256
 Exact SHA-256 digest of the leaf certificate DER, or empty for system trust.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L76)
 
 <a id="field-field-minisql-platform-tls-policy-certificatepolicy-servername-servername-src-minisql-platform-tls-policy-ml-1514282278"></a>
 ### serverName
@@ -50,4 +50,4 @@ serverName
 DNS name checked against the certificate and sent as TLS SNI.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L74)

@@ -1,3 +1,5 @@
+//! Provides minisql admin win32 client facilities for this project.
+
 package minisql.admin.win32_client
 
 // Copyright 2026 MiniLangProject contributors
@@ -12,415 +14,509 @@ import minisql.platform.clock as clock
 import minisql.platform.file as file_api
 import minisql.platform.win32_gui as gui
 
+/// Defines the invalid argument constant used by the minisql admin win32 client module.
 const INVALID_ARGUMENT = 9001
+/// Defines the lbn selchange constant used by the minisql admin win32 client module.
 const LBN_SELCHANGE = 1
+/// Defines the lbn dblclk constant used by the minisql admin win32 client module.
 const LBN_DBLCLK = 2
+/// Defines the tcn selchange constant used by the minisql admin win32 client module.
 const TCN_SELCHANGE = -551
+/// Defines the tvn selchangedw constant used by the minisql admin win32 client module.
 const TVN_SELCHANGEDW = -451
+/// Defines the nm click constant used by the minisql admin win32 client module.
 const NM_CLICK = -2
+/// Defines the nm dblclk constant used by the minisql admin win32 client module.
 const NM_DBLCLK = -3
+/// Defines the lvn columnclick constant used by the minisql admin win32 client module.
 const LVN_COLUMNCLICK = -108
+/// Defines the en change constant used by the minisql admin win32 client module.
 const EN_CHANGE = 0x0300
 
+/// Defines the query execute constant used by the minisql admin win32 client module.
 const QUERY_EXECUTE = 1
+/// Defines the query explain constant used by the minisql admin win32 client module.
 const QUERY_EXPLAIN = 2
+/// Defines the query begin constant used by the minisql admin win32 client module.
 const QUERY_BEGIN = 3
+/// Defines the query commit constant used by the minisql admin win32 client module.
 const QUERY_COMMIT = 4
+/// Defines the query rollback constant used by the minisql admin win32 client module.
 const QUERY_ROLLBACK = 5
+/// Defines the query refresh constant used by the minisql admin win32 client module.
 const QUERY_REFRESH = 6
+/// Defines the query describe constant used by the minisql admin win32 client module.
 const QUERY_DESCRIBE = 7
+/// Defines the query data mutation constant used by the minisql admin win32 client module.
 const QUERY_DATA_MUTATION = 8
+/// Defines the query schema mutation constant used by the minisql admin win32 client module.
 const QUERY_SCHEMA_MUTATION = 9
 
+/// Defines the id profile list constant used by the minisql admin win32 client module.
 const ID_PROFILE_LIST = 8001
+/// Defines the id profile name constant used by the minisql admin win32 client module.
 const ID_PROFILE_NAME = 8002
+/// Defines the id profile address constant used by the minisql admin win32 client module.
 const ID_PROFILE_ADDRESS = 8003
+/// Defines the id profile port constant used by the minisql admin win32 client module.
 const ID_PROFILE_PORT = 8004
+/// Defines the id profile server constant used by the minisql admin win32 client module.
 const ID_PROFILE_SERVER = 8005
+/// Defines the id profile database constant used by the minisql admin win32 client module.
 const ID_PROFILE_DATABASE = 8006
+/// Defines the id profile user constant used by the minisql admin win32 client module.
 const ID_PROFILE_USER = 8007
+/// Defines the id profile password constant used by the minisql admin win32 client module.
 const ID_PROFILE_PASSWORD = 8008
+/// Defines the id profile tls constant used by the minisql admin win32 client module.
 const ID_PROFILE_TLS = 8009
+/// Defines the id profile trusted constant used by the minisql admin win32 client module.
 const ID_PROFILE_TRUSTED = 8010
+/// Defines the id profile pin constant used by the minisql admin win32 client module.
 const ID_PROFILE_PIN = 8011
+/// Defines the id profile save constant used by the minisql admin win32 client module.
 const ID_PROFILE_SAVE = 8012
+/// Defines the id profile connect constant used by the minisql admin win32 client module.
 const ID_PROFILE_CONNECT = 8013
+/// Defines the id profile delete constant used by the minisql admin win32 client module.
 const ID_PROFILE_DELETE = 8014
+/// Defines the id profile new constant used by the minisql admin win32 client module.
 const ID_PROFILE_NEW = 8015
+/// Defines the id profile close constant used by the minisql admin win32 client module.
 const ID_PROFILE_CLOSE = 8016
 
+/// Defines the id sidebar tabs constant used by the minisql admin win32 client module.
 const ID_SIDEBAR_TABS = 8101
+/// Defines the id object tree constant used by the minisql admin win32 client module.
 const ID_OBJECT_TREE = 8102
+/// Defines the id bookmark list constant used by the minisql admin win32 client module.
 const ID_BOOKMARK_LIST = 8103
+/// Defines the id history list constant used by the minisql admin win32 client module.
 const ID_HISTORY_LIST = 8104
+/// Defines the id workspace tabs constant used by the minisql admin win32 client module.
 const ID_WORKSPACE_TABS = 8105
+/// Defines the id detail tabs constant used by the minisql admin win32 client module.
 const ID_DETAIL_TABS = 8106
+/// Defines the id result tabs constant used by the minisql admin win32 client module.
 const ID_RESULT_TABS = 8107
+/// Defines the id result grid constant used by the minisql admin win32 client module.
 const ID_RESULT_GRID = 8108
+/// Defines the id refresh constant used by the minisql admin win32 client module.
 const ID_REFRESH = 8110
+/// Defines the id open object constant used by the minisql admin win32 client module.
 const ID_OPEN_OBJECT = 8111
+/// Defines the id new sql constant used by the minisql admin win32 client module.
 const ID_NEW_SQL = 8112
+/// Defines the id execute constant used by the minisql admin win32 client module.
 const ID_EXECUTE = 8113
+/// Defines the id explain constant used by the minisql admin win32 client module.
 const ID_EXPLAIN = 8114
+/// Defines the id begin constant used by the minisql admin win32 client module.
 const ID_BEGIN = 8115
+/// Defines the id commit constant used by the minisql admin win32 client module.
 const ID_COMMIT = 8116
+/// Defines the id rollback constant used by the minisql admin win32 client module.
 const ID_ROLLBACK = 8117
+/// Defines the id stop constant used by the minisql admin win32 client module.
 const ID_STOP = 8118
+/// Defines the id clear constant used by the minisql admin win32 client module.
 const ID_CLEAR = 8119
+/// Defines the id close constant used by the minisql admin win32 client module.
 const ID_CLOSE = 8120
+/// Defines the id execute script constant used by the minisql admin win32 client module.
 const ID_EXECUTE_SCRIPT = 8121
+/// Defines the id query edit constant used by the minisql admin win32 client module.
 const ID_QUERY_EDIT = 8122
+/// Defines the id detail grid constant used by the minisql admin win32 client module.
 const ID_DETAIL_GRID = 8123
+/// Defines the id data add constant used by the minisql admin win32 client module.
 const ID_DATA_ADD = 8124
+/// Defines the id data copy constant used by the minisql admin win32 client module.
 const ID_DATA_COPY = 8125
+/// Defines the id data edit constant used by the minisql admin win32 client module.
 const ID_DATA_EDIT = 8126
+/// Defines the id data delete constant used by the minisql admin win32 client module.
 const ID_DATA_DELETE = 8127
+/// Defines the id data refresh constant used by the minisql admin win32 client module.
 const ID_DATA_REFRESH = 8128
+/// Defines the id data copy clipboard constant used by the minisql admin win32 client module.
 const ID_DATA_COPY_CLIPBOARD = 8129
+/// Defines the id data paste constant used by the minisql admin win32 client module.
 const ID_DATA_PASTE = 8130
+/// Defines the id data filter constant used by the minisql admin win32 client module.
 const ID_DATA_FILTER = 8131
+/// Defines the id data filter apply constant used by the minisql admin win32 client module.
 const ID_DATA_FILTER_APPLY = 8132
+/// Defines the id data previous page constant used by the minisql admin win32 client module.
 const ID_DATA_PREVIOUS_PAGE = 8133
+/// Defines the id data next page constant used by the minisql admin win32 client module.
 const ID_DATA_NEXT_PAGE = 8134
+/// Defines the id data page label constant used by the minisql admin win32 client module.
 const ID_DATA_PAGE_LABEL = 8135
+/// Defines the id data apply changes constant used by the minisql admin win32 client module.
 const ID_DATA_APPLY_CHANGES = 8136
+/// Defines the id data revert changes constant used by the minisql admin win32 client module.
 const ID_DATA_REVERT_CHANGES = 8137
+/// Defines the id data preview changes constant used by the minisql admin win32 client module.
 const ID_DATA_PREVIEW_CHANGES = 8138
+/// Defines the id schema designer constant used by the minisql admin win32 client module.
 const ID_SCHEMA_DESIGNER = 8139
+/// Defines the id export csv constant used by the minisql admin win32 client module.
 const ID_EXPORT_CSV = 8140
+/// Defines the id close sql constant used by the minisql admin win32 client module.
 const ID_CLOSE_SQL = 8141
+/// Defines the id worksheet tabs constant used by the minisql admin win32 client module.
 const ID_WORKSHEET_TABS = 8142
+/// Defines the id history filter constant used by the minisql admin win32 client module.
 const ID_HISTORY_FILTER = 8143
 
+/// Defines the id row values constant used by the minisql admin win32 client module.
 const ID_ROW_VALUES = 8201
+/// Defines the id row value constant used by the minisql admin win32 client module.
 const ID_ROW_VALUE = 8202
+/// Defines the id row previous constant used by the minisql admin win32 client module.
 const ID_ROW_PREVIOUS = 8203
+/// Defines the id row next constant used by the minisql admin win32 client module.
 const ID_ROW_NEXT = 8204
+/// Defines the id row save constant used by the minisql admin win32 client module.
 const ID_ROW_SAVE = 8205
+/// Defines the id row cancel constant used by the minisql admin win32 client module.
 const ID_ROW_CANCEL = 8206
 
+/// Defines the id schema actions constant used by the minisql admin win32 client module.
 const ID_SCHEMA_ACTIONS = 8301
+/// Defines the id schema table constant used by the minisql admin win32 client module.
 const ID_SCHEMA_TABLE = 8302
+/// Defines the id schema object constant used by the minisql admin win32 client module.
 const ID_SCHEMA_OBJECT = 8303
+/// Defines the id schema definition constant used by the minisql admin win32 client module.
 const ID_SCHEMA_DEFINITION = 8304
+/// Defines the id schema option constant used by the minisql admin win32 client module.
 const ID_SCHEMA_OPTION = 8305
+/// Defines the id schema preview constant used by the minisql admin win32 client module.
 const ID_SCHEMA_PREVIEW = 8306
+/// Defines the id schema execute constant used by the minisql admin win32 client module.
 const ID_SCHEMA_EXECUTE = 8307
+/// Defines the id schema insert constant used by the minisql admin win32 client module.
 const ID_SCHEMA_INSERT = 8308
+/// Defines the id schema cancel constant used by the minisql admin win32 client module.
 const ID_SCHEMA_CANCEL = 8309
 
-// Owns all native controls in the connection-alias window.
+/// Owns all native controls in the connection-alias window.
 struct ConnectionWindow
-  // Stores the top-level connection window handle.
+  /// Stores the top-level connection window handle.
   hwnd
-  // Stores the primary connection-manager heading.
+  /// Stores the primary connection-manager heading.
   titleLabel
-  // Stores the explanatory connection-manager subheading.
+  /// Stores the explanatory connection-manager subheading.
   subtitleLabel
-  // Stores the alias list control.
+  /// Stores the alias list control.
   aliasList
-  // Stores the section heading above editable connection fields.
+  /// Stores the section heading above editable connection fields.
   detailsLabel
-  // Stores the ordered labels paired with the connection editors.
+  /// Stores the ordered labels paired with the connection editors.
   fieldLabels
-  // Stores the alias-name editor.
+  /// Stores the alias-name editor.
   nameEdit
-  // Stores the network-address editor.
+  /// Stores the network-address editor.
   addressEdit
-  // Stores the network-port editor.
+  /// Stores the network-port editor.
   portEdit
-  // Stores the TLS server-name editor.
+  /// Stores the TLS server-name editor.
   serverEdit
-  // Stores the database-label editor.
+  /// Stores the database-label editor.
   databaseEdit
-  // Stores the MiniSQL user editor.
+  /// Stores the MiniSQL user editor.
   userEdit
-  // Stores the transient password editor.
+  /// Stores the transient password editor.
   passwordEdit
-  // Stores the optional certificate-pin editor.
+  /// Stores the optional certificate-pin editor.
   pinEdit
-  // Stores the native TLS checkbox.
+  /// Stores the native TLS checkbox.
   tlsCheck
-  // Stores the trusted-local checkbox.
+  /// Stores the trusted-local checkbox.
   trustedCheck
-  // Stores the explanatory certificate and password note.
+  /// Stores the explanatory certificate and password note.
   hintLabel
-  // Stores the new-alias action button.
+  /// Stores the new-alias action button.
   newButton
-  // Stores the delete-alias action button.
+  /// Stores the delete-alias action button.
   deleteButton
-  // Stores the save-alias action button.
+  /// Stores the save-alias action button.
   saveButton
-  // Stores the default connect action button.
+  /// Stores the default connect action button.
   connectButton
-  // Stores the close-window action button.
+  /// Stores the close-window action button.
   closeButton
-  // Stores the connection-manager status label.
+  /// Stores the connection-manager status label.
   statusLabel
 end struct
 
-// Owns all native controls in one MiniSQL session workbench.
+/// Owns all native controls in one MiniSQL session workbench.
 struct AdminWindow
-  // Stores the top-level workbench handle.
+  /// Stores the top-level workbench handle.
   hwnd
-  // Stores the active endpoint heading.
+  /// Stores the active endpoint heading.
   connectionLabel
-  // Stores the sidebar tab control.
+  /// Stores the sidebar tab control.
   sidebarTabs
-  // Stores the hierarchical database object browser.
+  /// Stores the hierarchical database object browser.
   objectTree
-  // Stores reusable SQL bookmarks.
+  /// Stores reusable SQL bookmarks.
   bookmarkList
-  // Stores redacted SQL history.
+  /// Stores redacted SQL history.
   historyList
-  // Stores the SQL/details workspace tab control.
+  /// Stores the SQL/details workspace tab control.
   workspaceTabs
-  // Stores table-detail page tabs.
+  /// Stores table-detail page tabs.
   detailTabs
-  // Stores SQL result tabs.
+  /// Stores SQL result tabs.
   resultTabs
-  // Stores the multiline SQL editor.
+  /// Stores the multiline SQL editor.
   queryEdit
-  // Stores read-only table-detail text.
+  /// Stores read-only table-detail text.
   detailEdit
-  // Stores structured Columns, Indexes, Data, and Row Count detail pages.
+  /// Stores structured Columns, Indexes, Data, and Row Count detail pages.
   detailGrid
-  // Starts a blank row editor on the Data page.
+  /// Starts a blank row editor on the Data page.
   dataAddButton
-  // Starts an insert editor populated from the selected row.
+  /// Starts an insert editor populated from the selected row.
   dataCopyButton
-  // Starts an update editor for the selected keyed row.
+  /// Starts an update editor for the selected keyed row.
   dataEditButton
-  // Deletes the selected keyed row after explicit confirmation.
+  /// Deletes the selected keyed row after explicit confirmation.
   dataDeleteButton
-  // Reloads table metadata and preview rows.
+  /// Reloads table metadata and preview rows.
   dataRefreshButton
-  // Stores structured SQL result rows.
+  /// Stores structured SQL result rows.
   resultGrid
-  // Stores the object-tree refresh button.
+  /// Stores the object-tree refresh button.
   refreshButton
-  // Stores the open-object button.
+  /// Stores the open-object button.
   openButton
-  // Stores the new-worksheet button.
+  /// Stores the new-worksheet button.
   newSqlButton
-  // Stores the execute button.
+  /// Stores the execute button.
   executeButton
-  // Stores the whole-script execution button.
+  /// Stores the whole-script execution button.
   executeScriptButton
-  // Stores the explain button.
+  /// Stores the explain button.
   explainButton
-  // Stores the begin-transaction button.
+  /// Stores the begin-transaction button.
   beginButton
-  // Stores the commit button.
+  /// Stores the commit button.
   commitButton
-  // Stores the rollback button.
+  /// Stores the rollback button.
   rollbackButton
-  // Stores the stop-worker button.
+  /// Stores the stop-worker button.
   stopButton
-  // Stores the clear-results button.
+  /// Stores the clear-results button.
   clearButton
-  // Stores the close-session button.
+  /// Stores the close-session button.
   closeButton
-  // Stores the workbench status line.
+  /// Stores the workbench status line.
   statusLabel
-  // Stores independent SQL worksheet tabs above the active editor.
+  /// Stores independent SQL worksheet tabs above the active editor.
   worksheetTabs
-  // Closes the active SQL worksheet while retaining at least one page.
+  /// Closes the active SQL worksheet while retaining at least one page.
   closeSqlButton
-  // Exports the active structured result page as UTF-8 CSV.
+  /// Exports the active structured result page as UTF-8 CSV.
   exportCsvButton
-  // Opens the structured MiniSQL schema designer.
+  /// Opens the structured MiniSQL schema designer.
   schemaButton
-  // Filters the History sidebar without changing retained history.
+  /// Filters the History sidebar without changing retained history.
   historyFilterEdit
-  // Copies every selected data row to escaped TSV clipboard text.
+  /// Copies every selected data row to escaped TSV clipboard text.
   dataCopyClipboardButton
-  // Stages clipboard TSV rows as INSERT changes.
+  /// Stages clipboard TSV rows as INSERT changes.
   dataPasteButton
-  // Stores the server-side WHERE predicate used by the Data page.
+  /// Stores the server-side WHERE predicate used by the Data page.
   dataFilterEdit
-  // Applies the current Data-page filter and resets pagination.
+  /// Applies the current Data-page filter and resets pagination.
   dataFilterButton
-  // Loads the preceding bounded Data page.
+  /// Loads the preceding bounded Data page.
   dataPreviousButton
-  // Loads the next bounded Data page.
+  /// Loads the next bounded Data page.
   dataNextButton
-  // Shows current page, page size, and pending-change count.
+  /// Shows current page, page size, and pending-change count.
   dataPageLabel
-  // Executes all previewed row changes through the background worker.
+  /// Executes all previewed row changes through the background worker.
   dataApplyButton
-  // Discards every unapplied row change.
+  /// Discards every unapplied row change.
   dataRevertButton
-  // Shows the exact generated SQL for pending changes.
+  /// Shows the exact generated SQL for pending changes.
   dataPreviewButton
 end struct
 
-// Owns the bounded modal editor used for arbitrary-width table rows.
+/// Owns the bounded modal editor used for arbitrary-width table rows.
 struct RowEditorWindow
-  // Stores the modal top-level window handle.
+  /// Stores the modal top-level window handle.
   hwnd
-  // Describes the table and insert/update mode.
+  /// Describes the table and insert/update mode.
   titleLabel
-  // Shows the currently edited column name, type, and null/default policy.
+  /// Shows the currently edited column name, type, and null/default policy.
   fieldLabel
-  // Shows all column values in a structured review grid.
+  /// Shows all column values in a structured review grid.
   valuesGrid
-  // Edits the current field without truncating long text.
+  /// Edits the current field without truncating long text.
   valueEdit
-  // Documents the explicit NULL and DEFAULT sentinel values.
+  /// Documents the explicit NULL and DEFAULT sentinel values.
   hintLabel
-  // Moves to the preceding field.
+  /// Moves to the preceding field.
   previousButton
-  // Applies the value and moves to the following field.
+  /// Applies the value and moves to the following field.
   nextButton
-  // Validates the draft and returns a mutation statement.
+  /// Validates the draft and returns a mutation statement.
   saveButton
-  // Discards the row draft.
+  /// Discards the row draft.
   cancelButton
 end struct
 
-// Retains modal row-editor state independently from the connected session.
+/// Retains modal row-editor state independently from the connected session.
 struct RowEditorState
-  // Owns the native editor controls.
+  /// Owns the native editor controls.
   window
-  // References the immutable table metadata used for validation.
+  /// References the immutable table metadata used for validation.
   details
-  // Stores mutable editor values aligned with DESCRIBE rows.
+  /// Stores mutable editor values aligned with DESCRIBE rows.
   values
-  // Selects the field presented in the single-line value editor.
+  /// Selects the field presented in the single-line value editor.
   fieldIndex
-  // Stores -1 for inserts or the preview row index for updates.
+  /// Stores -1 for inserts or the preview row index for updates.
   originalRowIndex
-  // Selects update generation instead of insert generation.
+  /// Selects update generation instead of insert generation.
   updateMode
-  // Stores the generated SQL after Save or void after cancellation.
+  /// Stores the generated SQL after Save or void after cancellation.
   resultSql
 end struct
 
-// Owns the structured schema designer controls.
+/// Owns the structured schema designer controls.
 struct SchemaEditorWindow
-  // Stores the modal top-level schema designer handle.
+  /// Stores the modal top-level schema designer handle.
   hwnd
-  // Stores the ordered schema action list.
+  /// Stores the ordered schema action list.
   actionList
-  // Edits the target table name.
+  /// Edits the target table name.
   tableEdit
-  // Edits a column, index, or constraint name.
+  /// Edits a column, index, or constraint name.
   objectEdit
-  // Edits column definitions, index columns, or constraint expressions.
+  /// Edits column definitions, index columns, or constraint expressions.
   definitionEdit
-  // Edits action-specific options such as UNIQUE or a rename target.
+  /// Edits action-specific options such as UNIQUE or a rename target.
   optionEdit
-  // Shows the exact generated DDL before submission.
+  /// Shows the exact generated DDL before submission.
   previewEdit
-  // Returns the generated DDL for immediate execution.
+  /// Returns the generated DDL for immediate execution.
   executeButton
-  // Returns the generated DDL for insertion into a worksheet.
+  /// Returns the generated DDL for insertion into a worksheet.
   insertButton
-  // Closes the designer without returning DDL.
+  /// Closes the designer without returning DDL.
   cancelButton
-  // Stores explanatory labels for all editable fields.
+  /// Stores explanatory labels for all editable fields.
   labels
 end struct
 
-// Retains schema-designer modal state until execution, insertion, or cancellation.
+/// Retains schema-designer modal state until execution, insertion, or cancellation.
 struct SchemaEditorState
-  // Owns the modal native controls.
+  /// Owns the modal native controls.
   window
-  // Stores generated DDL or void when cancelled.
+  /// Stores generated DDL or void when cancelled.
   resultSql
-  // Selects direct execution instead of worksheet insertion.
+  /// Selects direct execution instead of worksheet insertion.
   executeImmediately
 end struct
 
-// Bundles immutable input for any protocol operation executed off the UI thread.
+/// Bundles immutable input for any protocol operation executed off the UI thread.
 struct QueryTask
-  // Stores the fullclient state owned by the session.
+  /// Stores the fullclient state owned by the session.
   state
-  // Selects execute, transaction, refresh, or table-description behavior.
+  /// Selects execute, transaction, refresh, or table-description behavior.
   operation
-  // Stores SQL submitted to execute or explain operations.
+  /// Stores SQL submitted to execute or explain operations.
   sqlText
-  // Stores the table selected for an asynchronous description operation.
+  /// Stores the table selected for an asynchronous description operation.
   tableName
-  // Stores the immutable page/filter/sort request for table description refreshes.
+  /// Stores the immutable page/filter/sort request for table description refreshes.
   browseOptions
 end struct
 
-// Carries one worker result and its optional object-tree refresh back to the UI.
+/// Carries one worker result and its optional object-tree refresh back to the UI.
 struct QueryCompletion
-  // Identifies the operation that produced this completion.
+  /// Identifies the operation that produced this completion.
   operation
-  // Stores the primary operation result or structured error.
+  /// Stores the primary operation result or structured error.
   result
-  // Stores the follow-up refresh result or void when no refresh was required.
+  /// Stores the follow-up refresh result or void when no refresh was required.
   refreshResult
-  // Preserves the primary status text before a refresh updates shared state.
+  /// Preserves the primary status text before a refresh updates shared state.
   statusText
 end struct
 
-// Owns credentials while one connection handshake runs outside the UI thread.
+/// Owns credentials while one connection handshake runs outside the UI thread.
 struct ConnectionTask
-  // Stores the validated, secret-free connection profile.
+  /// Stores the validated, secret-free connection profile.
   profile
-  // Stores transient password bytes read from the password editor.
+  /// Stores transient password bytes read from the password editor.
   password
 end struct
 
-// Tracks a connection worker and guarantees eventual credential destruction.
+/// Tracks a connection worker and guarantees eventual credential destruction.
 struct ConnectionAttempt
-  // Stores the active native handshake worker or void.
+  /// Stores the active native handshake worker or void.
   worker
-  // Stores the caller-owned password bytes until the worker has terminated.
+  /// Stores the caller-owned password bytes until the worker has terminated.
   password
-  // Indicates whether a handshake is currently in flight.
+  /// Indicates whether a handshake is currently in flight.
   busy
 end struct
 
-// Combines one native window, client state, and optional running query worker.
+/// Combines one native window, client state, and optional running query worker.
 struct AdminSession
-  // Owns the native workbench controls.
+  /// Owns the native workbench controls.
   window
-  // Owns the protocol and result model.
+  /// Owns the protocol and result model.
   state
-  // Stores the active native worker or void.
+  /// Stores the active native worker or void.
   worker
-  // Indicates whether SQL is currently executing.
+  /// Indicates whether SQL is currently executing.
   busy
-  // Records whether the editor currently contains a submitted secret-bearing DCL statement.
+  /// Records whether the editor currently contains a submitted secret-bearing DCL statement.
   sensitiveSql
-  // Requires transport abort because cancellation invalidated protocol framing.
+  /// Requires transport abort because cancellation invalidated protocol framing.
   aborted
-  // Requests one deferred full-editor syntax recolor after text changes.
+  /// Requests one deferred full-editor syntax recolor after text changes.
   highlightDirty
-  // Stores the monotonic idle deadline used to debounce worksheet recoloring.
+  /// Stores the monotonic idle deadline used to debounce worksheet recoloring.
   highlightAfterMilliseconds
-  // Persists the selected SQL/details workspace across asynchronous renders.
+  /// Persists the selected SQL/details workspace across asynchronous renders.
   workspacePage
-  // Retains every independent SQL worksheet.
+  /// Retains every independent SQL worksheet.
   worksheets
-  // Selects the worksheet currently loaded in the RichEdit control.
+  /// Selects the worksheet currently loaded in the RichEdit control.
   selectedWorksheetIndex
-  // Allocates monotonically increasing worksheet labels.
+  /// Allocates monotonically increasing worksheet labels.
   nextWorksheetNumber
-  // Retains unapplied INSERT, UPDATE, and DELETE previews.
+  /// Retains unapplied INSERT, UPDATE, and DELETE previews.
   pendingChanges
-  // Stores the active Data-page filter, order, and pagination settings.
+  /// Stores the active Data-page filter, order, and pagination settings.
   dataOptions
-  // Stores the case-insensitive History sidebar filter.
+  /// Stores the case-insensitive History sidebar filter.
   historyFilter
-  // Stores the optional per-user window-layout file path.
+  /// Stores the optional per-user window-layout file path.
   layoutPath
-  // Retains the last live top-level rectangle for persistence after WM_CLOSE.
+  /// Retains the last live top-level rectangle for persistence after WM_CLOSE.
   windowRect
 end struct
 
-// Creates a namespaced GUI-controller error.
+/// Creates a namespaced GUI-controller error.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "admin.win32_client." + operation + ": " + message)
 end function
 
-// Returns the first failed native-control creation from a heterogeneous handle array.
+/// Returns the first failed native-control creation from a heterogeneous handle array.
+/// @param controls controls value consumed by this operation.
 function firstControlError(controls)
   for each control in controls
     if typeof(control) == "error" then return control end if
@@ -428,7 +524,8 @@ function firstControlError(controls)
   return void
 end function
 
-// Recomputes all presentation spans and applies them without moving the caret.
+/// Recomputes all presentation spans and applies them without moving the caret.
+/// @param window window value consumed by this operation.
 function highlightSqlEditor(window)
   if window is not AdminWindow then return fail("highlightSqlEditor", "window must be AdminWindow") end if
   sqlText = try(gui.getText(window.queryEdit))
@@ -438,7 +535,9 @@ function highlightSqlEditor(window)
   return gui.applySqlSyntaxStyles(window.queryEdit, spans)
 end function
 
-// Reads the whole script, explicit selection, or statement under the caret.
+/// Reads the whole script, explicit selection, or statement under the caret.
+/// @param window window value consumed by this operation.
+/// @param wholeScript wholeScript value consumed by this operation.
 function editorSqlForCommand(window, wholeScript)
   if window is not AdminWindow or typeof(wholeScript) != "bool" then return fail("editorSqlForCommand", "invalid window or execution mode") end if
   sqlText = try(gui.getText(window.queryEdit))
@@ -448,7 +547,8 @@ function editorSqlForCommand(window, wholeScript)
   return fullclient.editorSqlForExecution(sqlText, selection[0], selection[1], wholeScript)
 end function
 
-// Creates the modern alias manager used before a MiniSQL session opens.
+/// Creates the modern alias manager used before a MiniSQL session opens.
+/// @param visible visible value consumed by this operation.
 function createConnectionWindow(visible)
   hwnd = try(gui.createTopLevel("MiniSQL Workbench — Connections", 940, 650, false))
   if typeof(hwnd) == "error" then return hwnd end if
@@ -495,7 +595,8 @@ function createConnectionWindow(visible)
   return window
 end function
 
-// Reflows the alias list and all connection fields in logical DPI-independent units.
+/// Reflows the alias list and all connection fields in logical DPI-independent units.
+/// @param window window value consumed by this operation.
 function layoutConnectionWindow(window)
   size = try(gui.clientSizeDip(window.hwnd))
   if typeof(size) == "error" then return size end if
@@ -543,7 +644,9 @@ function layoutConnectionWindow(window)
   return true
 end function
 
-// Finds an alias by exact user-visible name.
+/// Finds an alias by exact user-visible name.
+/// @param profiles profiles value consumed by this operation.
+/// @param name Name of the affected item.
 function profileByName(profiles, name)
   for each profile in profiles
     if profile.name == name then return profile end if
@@ -551,7 +654,9 @@ function profileByName(profiles, name)
   return void
 end function
 
-// Copies an alias into connection-manager controls and clears the password.
+/// Copies an alias into connection-manager controls and clears the password.
+/// @param window window value consumed by this operation.
+/// @param profile profile value consumed by this operation.
 function renderConnectionProfile(window, profile)
   gui.setText(window.nameEdit, profile.name)
   gui.setText(window.addressEdit, profile.address)
@@ -566,7 +671,9 @@ function renderConnectionProfile(window, profile)
   return true
 end function
 
-// Rebuilds the alias list while keeping the first row selected.
+/// Rebuilds the alias list while keeping the first row selected.
+/// @param window window value consumed by this operation.
+/// @param profiles profiles value consumed by this operation.
 function renderConnectionProfiles(window, profiles)
   gui.listReset(window.aliasList)
   for each profile in profiles
@@ -576,12 +683,14 @@ function renderConnectionProfiles(window, profiles)
   return true
 end function
 
-// Clears fields to a sensible new local alias template.
+/// Clears fields to a sensible new local alias template.
+/// @param window window value consumed by this operation.
 function renderNewProfile(window)
   return renderConnectionProfile(window, connection_profiles.defaultProfile())
 end function
 
-// Validates connection-manager fields into a secret-free profile.
+/// Validates connection-manager fields into a secret-free profile.
+/// @param window window value consumed by this operation.
 function profileFromWindow(window)
   name = try(gui.getText(window.nameEdit))
   if typeof(name) == "error" then return name end if
@@ -602,7 +711,9 @@ function profileFromWindow(window)
   return fullclient.createProfile(name, address, port, serverName, databaseName, userName, gui.checkBoxChecked(window.tlsCheck), pinSha256, gui.checkBoxChecked(window.trustedCheck))
 end function
 
-// Reads transient credentials, allowing password-free trusted-local sessions.
+/// Reads transient credentials, allowing password-free trusted-local sessions.
+/// @param window window value consumed by this operation.
+/// @param profile profile value consumed by this operation.
 function passwordFromWindow(window, profile)
   if profile.trustedLocal then
     gui.setText(window.passwordEdit, "")
@@ -611,12 +722,15 @@ function passwordFromWindow(window, profile)
   return gui.getSecretBytes(window.passwordEdit)
 end function
 
-// Opens one profile on a native worker so DNS, TCP, TLS, and authentication cannot freeze the UI.
+/// Opens one profile on a native worker so DNS, TCP, TLS, and authentication cannot freeze the UI.
+/// @param task task value consumed by this operation.
 function connectionWorker(task)
   return fullclient.openProfile(task.profile, task.password)
 end function
 
-// Prevents profile edits while the worker reads its immutable profile snapshot.
+/// Prevents profile edits while the worker reads its immutable profile snapshot.
+/// @param window window value consumed by this operation.
+/// @param busy busy value consumed by this operation.
 function setConnectionBusy(window, busy)
   enabled = not busy
   gui.setEnabled(window.aliasList, enabled)
@@ -637,7 +751,9 @@ function setConnectionBusy(window, busy)
   return true
 end function
 
-// Starts an asynchronous connection attempt and transfers password ownership to it.
+/// Starts an asynchronous connection attempt and transfers password ownership to it.
+/// @param window window value consumed by this operation.
+/// @param profile profile value consumed by this operation.
 function startConnection(window, profile)
   password = try(passwordFromWindow(window, profile))
   if typeof(password) == "error" then return password end if
@@ -650,7 +766,8 @@ function startConnection(window, profile)
   return ConnectionAttempt(worker, password, true)
 end function
 
-// Returns void while connecting, then publishes the state or error and wipes credentials.
+/// Returns void while connecting, then publishes the state or error and wipes credentials.
+/// @param attempt attempt value consumed by this operation.
 function pollConnection(attempt)
   if not attempt.busy or attempt.worker is void then return void end if
   if not attempt.worker.Join(0) then return void end if
@@ -663,7 +780,8 @@ function pollConnection(attempt)
   return result
 end function
 
-// Cancels a handshake without wiping bytes until the native worker has terminated.
+/// Cancels a handshake without wiping bytes until the native worker has terminated.
+/// @param attempt attempt value consumed by this operation.
 function stopConnection(attempt)
   if not attempt.busy or attempt.worker is void then return true end if
   if attempt.worker.Join(0) then
@@ -681,7 +799,8 @@ function stopConnection(attempt)
   return true
 end function
 
-// Translates common WinSock failures into actionable connection guidance.
+/// Translates common WinSock failures into actionable connection guidance.
+/// @param value Value consumed or transformed by the operation.
 function connectionFailureText(value)
   if typeof(value) != "error" then return "Unknown connection error" end if
   if fullclient.textContains(value.message, "10061") then return "Connection refused. Verify address/port and start minisqld for this database." end if
@@ -689,7 +808,10 @@ function connectionFailureText(value)
   return value.message
 end function
 
-// Reports a failed handshake without closing the manager so the user can retry.
+/// Reports a failed handshake without closing the manager so the user can retry.
+/// @param window window value consumed by this operation.
+/// @param value Value consumed or transformed by the operation.
+/// @param showDialog showDialog value consumed by this operation.
 function reportConnectionFailure(window, value, showDialog)
   if window is not ConnectionWindow or typeof(showDialog) != "bool" then return fail("reportConnectionFailure", "invalid connection window or dialog mode") end if
   message = connectionFailureText(value)
@@ -700,7 +822,9 @@ function reportConnectionFailure(window, value, showDialog)
   return message
 end function
 
-// Runs the native alias manager using an explicit profile path for tests.
+/// Runs the native alias manager using an explicit profile path for tests.
+/// @param path Path of the file or directory used by the operation.
+/// @param visible visible value consumed by this operation.
 function runConnectionManagerWithPath(path, visible)
   profiles = try(connection_profiles.load(path))
   if typeof(profiles) == "error" then return profiles end if
@@ -788,31 +912,40 @@ function runConnectionManagerWithPath(path, visible)
   return true
 end function
 
-// Launches the per-user connection manager.
+/// Launches the per-user connection manager.
 function launchConnectionManager()
   path = try(connection_profiles.defaultPath())
   if typeof(path) == "error" then return path end if
   return runConnectionManagerWithPath(path, true)
 end function
 
-// Runs a hidden connection-manager construction smoke test.
+/// Runs a hidden connection-manager construction smoke test.
+/// @param path Path of the file or directory used by the operation.
 function connectionManagerSmoke(path)
   return runConnectionManagerWithPath(path, false)
 end function
 
-// Returns true when a child rectangle is positive and fully contained by a client area.
+/// Returns true when a child rectangle is positive and fully contained by a client area.
+/// @param rectangle rectangle value consumed by this operation.
+/// @param width Width in the coordinate or storage units used by the caller.
+/// @param height Height in the coordinate or storage units used by the caller.
 function rectangleInside(rectangle, width, height)
   if typeof(rectangle) != "array" or len(rectangle) != 4 then return false end if
   return rectangle[0] >= 0 and rectangle[1] >= 0 and rectangle[2] > 0 and rectangle[3] > 0 and rectangle[0] + rectangle[2] <= width + 2 and rectangle[1] + rectangle[3] <= height + 2
 end function
 
-// Detects whether two parent-relative rectangles consume the same layout area.
+/// Detects whether two parent-relative rectangles consume the same layout area.
+/// @param first first value consumed by this operation.
+/// @param second second value consumed by this operation.
 function rectanglesOverlap(first, second)
   if typeof(first) != "array" or typeof(second) != "array" or len(first) != 4 or len(second) != 4 then return true end if
   return first[0] < second[0] + second[2] and second[0] < first[0] + first[2] and first[1] < second[1] + second[3] and second[1] < first[1] + first[3]
 end function
 
-// Verifies one responsive connection-manager size through actual Win32 child rectangles.
+/// Verifies one responsive connection-manager size through actual Win32 child rectangles.
+/// @param window window value consumed by this operation.
+/// @param width Width in the coordinate or storage units used by the caller.
+/// @param height Height in the coordinate or storage units used by the caller.
 function verifyConnectionLayout(window, width, height)
   resized = try(gui.setClientSizeDip(window.hwnd, width, height, true))
   if typeof(resized) == "error" or not resized then return fail("verifyConnectionLayout", "top-level resize failed") end if
@@ -835,7 +968,8 @@ function verifyConnectionLayout(window, width, height)
   return true
 end function
 
-// Exercises responsive geometry, editor roundtrips, checkboxes, and command delivery for supplied aliases.
+/// Exercises responsive geometry, editor roundtrips, checkboxes, and command delivery for supplied aliases.
+/// @param profiles profiles value consumed by this operation.
 function connectionLayoutProbe(profiles)
   window = try(createConnectionWindow(false))
   if typeof(window) == "error" then return window end if
@@ -864,14 +998,16 @@ function connectionLayoutProbe(profiles)
   return true
 end function
 
-// Loads aliases from a test path and runs the complete connection-layout probe.
+/// Loads aliases from a test path and runs the complete connection-layout probe.
+/// @param path Path of the file or directory used by the operation.
 function connectionLayoutSmoke(path)
   profiles = try(connection_profiles.load(path))
   if typeof(profiles) == "error" then return profiles end if
   return connectionLayoutProbe(profiles)
 end function
 
-// Creates the SQuirreL-style MiniSQL session workbench.
+/// Creates the SQuirreL-style MiniSQL session workbench.
+/// @param visible visible value consumed by this operation.
 function createWindow(visible)
   hwnd = try(gui.createTopLevel("MiniSQL Workbench", 1440, 900, false))
   if typeof(hwnd) == "error" then return hwnd end if
@@ -951,12 +1087,14 @@ function createWindow(visible)
   return window
 end function
 
-// Parks one inactive notebook page outside the client area without destroying it.
+/// Parks one inactive notebook page outside the client area without destroying it.
+/// @param hwnd hwnd value consumed by this operation.
 function parkControl(hwnd)
   return gui.moveDip(hwnd, -32000, -32000, 1, 1)
 end function
 
-// Reflows every workbench pane after a top-level resize.
+/// Reflows every workbench pane after a top-level resize.
+/// @param window window value consumed by this operation.
 function layoutWindow(window)
   size = try(gui.clientSizeDip(window.hwnd))
   if typeof(size) == "error" then return size end if
@@ -1112,7 +1250,10 @@ function layoutWindow(window)
   return true
 end function
 
-// Verifies one workbench size through actual native child rectangles and pane separation.
+/// Verifies one workbench size through actual native child rectangles and pane separation.
+/// @param window window value consumed by this operation.
+/// @param width Width in the coordinate or storage units used by the caller.
+/// @param height Height in the coordinate or storage units used by the caller.
 function verifyWorkbenchLayout(window, width, height)
   resized = try(gui.setClientSizeDip(window.hwnd, width, height, true))
   if typeof(resized) == "error" or not resized then return fail("verifyWorkbenchLayout", "top-level resize failed") end if
@@ -1140,7 +1281,7 @@ function verifyWorkbenchLayout(window, width, height)
   return true
 end function
 
-// Exercises geometry, native SQL coloring, selection stability, and both execution commands.
+/// Exercises geometry, native SQL coloring, selection stability, and both execution commands.
 function workbenchLayoutSmoke()
   window = try(createWindow(false))
   if typeof(window) == "error" then return window end if
@@ -1215,14 +1356,15 @@ function workbenchLayoutSmoke()
   return true
 end function
 
-// Runs both responsive native-window probes against the per-user profile location.
+/// Runs both responsive native-window probes against the per-user profile location.
 function layoutSmoke()
   connection = try(connectionLayoutProbe([connection_profiles.defaultProfile()]))
   if typeof(connection) == "error" then return connection end if
   return workbenchLayoutSmoke()
 end function
 
-// Shows controls belonging to the selected sidebar and workspace tabs.
+/// Shows controls belonging to the selected sidebar and workspace tabs.
+/// @param window window value consumed by this operation.
 function applyVisibility(window)
   side = gui.tabSelectedIndex(window.sidebarTabs)
   gui.show(window.objectTree, side == 0)
@@ -1258,7 +1400,9 @@ function applyVisibility(window)
   return layoutWindow(window)
 end function
 
-// Selects and persists one main workspace page before updating child visibility.
+/// Selects and persists one main workspace page before updating child visibility.
+/// @param session session value consumed by this operation.
+/// @param page page value consumed by this operation.
 function selectWorkspace(session, page)
   if session is not AdminSession or typeof(page) != "int" or page < 0 or page > 1 then return fail("selectWorkspace", "workspace page must be zero or one") end if
   session.workspacePage = page
@@ -1266,7 +1410,8 @@ function selectWorkspace(session, page)
   return applyVisibility(session.window)
 end function
 
-// Reconciles a user-driven native tab selection before asynchronous rendering.
+/// Reconciles a user-driven native tab selection before asynchronous rendering.
+/// @param session session value consumed by this operation.
 function synchronizeWorkspace(session)
   if session is not AdminSession then return fail("synchronizeWorkspace", "session must be AdminSession") end if
   selectedPage = gui.tabSelectedIndex(session.window.workspaceTabs)
@@ -1278,14 +1423,17 @@ function synchronizeWorkspace(session)
   return true
 end function
 
-// Restores the session-owned page after native controls were repopulated.
+/// Restores the session-owned page after native controls were repopulated.
+/// @param session session value consumed by this operation.
 function restoreWorkspace(session)
   if session is not AdminSession then return fail("restoreWorkspace", "session must be AdminSession") end if
   if gui.tabSelectedIndex(session.window.workspaceTabs) != session.workspacePage then ignoredSelection = gui.tabSelect(session.window.workspaceTabs, session.workspacePage) end if
   return applyVisibility(session.window)
 end function
 
-// Populates a list box from ordered display strings.
+/// Populates a list box from ordered display strings.
+/// @param hwnd hwnd value consumed by this operation.
+/// @param values values value consumed by this operation.
 function fillList(hwnd, values)
   reset = try(gui.listReset(hwnd))
   if typeof(reset) == "error" then return reset end if
@@ -1296,7 +1444,9 @@ function fillList(hwnd, values)
   return true
 end function
 
-// Rebuilds the MiniSQL-only database object hierarchy.
+/// Rebuilds the MiniSQL-only database object hierarchy.
+/// @param window window value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function fillObjectTree(window, state)
   reset = try(gui.treeReset(window.objectTree))
   if typeof(reset) == "error" then return reset end if
@@ -1327,7 +1477,10 @@ function fillObjectTree(window, state)
   return true
 end function
 
-// Replaces tab captions and restores a valid selection.
+/// Replaces tab captions and restores a valid selection.
+/// @param hwnd hwnd value consumed by this operation.
+/// @param labels labels value consumed by this operation.
+/// @param selected selected value consumed by this operation.
 function fillTabs(hwnd, labels, selected)
   reset = try(gui.tabReset(hwnd))
   if typeof(reset) == "error" then return reset end if
@@ -1342,7 +1495,10 @@ function fillTabs(hwnd, labels, selected)
   return true
 end function
 
-// Renders notebook labels with a trailing multiplication-sign close target.
+/// Renders notebook labels with a trailing multiplication-sign close target.
+/// @param hwnd hwnd value consumed by this operation.
+/// @param labels labels value consumed by this operation.
+/// @param selected selected value consumed by this operation.
 function fillClosableTabs(hwnd, labels, selected)
   closable = []
   for each label in labels
@@ -1351,7 +1507,9 @@ function fillClosableTabs(hwnd, labels, selected)
   return fillTabs(hwnd, closable, selected)
 end function
 
-// Renders the active structured result into the native ListView grid.
+/// Renders the active structured result into the native ListView grid.
+/// @param window window value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function fillResultGrid(window, state)
   resetRows = try(gui.listViewReset(window.resultGrid))
   if typeof(resetRows) == "error" then return resetRows end if
@@ -1386,7 +1544,8 @@ function fillResultGrid(window, state)
   return true
 end function
 
-// Chooses readable report-column widths while keeping compact metadata flags narrow.
+/// Chooses readable report-column widths while keeping compact metadata flags narrow.
+/// @param caption caption value consumed by this operation.
 function detailColumnWidthDip(caption)
   if caption == "ordinal" or caption == "id" or caption == "nullable" or caption == "identity" or caption == "unique" or caption == "row_count" then return 100 end if
   if caption == "data_type" or caption == "default_sql" or caption == "index_kind" then return 150 end if
@@ -1394,7 +1553,9 @@ function detailColumnWidthDip(caption)
   return 180
 end function
 
-// Renders a structured object-detail response into the shared native report grid.
+/// Renders a structured object-detail response into the shared native report grid.
+/// @param session session value consumed by this operation.
+/// @param detailName detailName value consumed by this operation.
 function fillDetailGrid(session, detailName)
   window = session.window
   state = session.state
@@ -1423,7 +1584,8 @@ function fillDetailGrid(session, detailName)
   return true
 end function
 
-// Enables query actions only when no native SQL worker owns the client session.
+/// Enables query actions only when no native SQL worker owns the client session.
+/// @param session session value consumed by this operation.
 function setBusyControls(session)
   enabled = not session.busy
   gui.setEnabled(session.window.sidebarTabs, enabled)
@@ -1468,7 +1630,8 @@ function setBusyControls(session)
   return true
 end function
 
-// Renders all workbench panes from the current fullclient model.
+/// Renders all workbench panes from the current fullclient model.
+/// @param session session value consumed by this operation.
 function render(session)
   treeRendered = try(fillObjectTree(session.window, session.state))
   if typeof(treeRendered) == "error" then return treeRendered end if
@@ -1507,7 +1670,9 @@ function render(session)
   return true
 end function
 
-// Creates the modal structured MiniSQL schema designer.
+/// Creates the modal structured MiniSQL schema designer.
+/// @param tableName tableName value consumed by this operation.
+/// @param visible visible value consumed by this operation.
 function createSchemaEditorWindow(tableName, visible)
   hwnd = try(gui.createTopLevel("MiniSQL Schema Designer", 900, 650, false))
   if typeof(hwnd) == "error" then return hwnd end if
@@ -1541,7 +1706,8 @@ function createSchemaEditorWindow(tableName, visible)
   return window
 end function
 
-// Reflows the schema designer at its current DPI and client size.
+/// Reflows the schema designer at its current DPI and client size.
+/// @param window window value consumed by this operation.
 function layoutSchemaEditor(window)
   size = try(gui.clientSizeDip(window.hwnd))
   if typeof(size) == "error" then return size end if
@@ -1574,7 +1740,8 @@ function layoutSchemaEditor(window)
   return true
 end function
 
-// Rebuilds the exact DDL preview from all current schema-designer fields.
+/// Rebuilds the exact DDL preview from all current schema-designer fields.
+/// @param editor editor value consumed by this operation.
 function renderSchemaEditor(editor)
   action = gui.listSelectedIndex(editor.window.actionList)
   tableName = try(gui.getText(editor.window.tableEdit))
@@ -1587,7 +1754,8 @@ function renderSchemaEditor(editor)
   return sqlText
 end function
 
-// Runs the modal schema designer and returns generated SQL plus execution intent.
+/// Runs the modal schema designer and returns generated SQL plus execution intent.
+/// @param session session value consumed by this operation.
 function runSchemaEditor(session)
   window = try(createSchemaEditorWindow(session.state.selectedTable, false))
   if typeof(window) == "error" then return window end if
@@ -1621,7 +1789,8 @@ function runSchemaEditor(session)
   return [editor.resultSql, editor.executeImmediately]
 end function
 
-// Opens the schema designer and either executes or inserts its generated DDL.
+/// Opens the schema designer and either executes or inserts its generated DDL.
+/// @param session session value consumed by this operation.
 function openSchemaDesigner(session)
   result = try(runSchemaEditor(session))
   if typeof(result) == "error" then session.state.statusText = result.message; return result end if
@@ -1633,7 +1802,10 @@ function openSchemaDesigner(session)
   return addWorksheet(session, result[0])
 end function
 
-// Creates the modal field-by-field editor used for inserts, copies, and updates.
+/// Creates the modal field-by-field editor used for inserts, copies, and updates.
+/// @param details details value consumed by this operation.
+/// @param updateMode updateMode value consumed by this operation.
+/// @param visible visible value consumed by this operation.
 function createRowEditorWindow(details, updateMode, visible)
   if typeof(details) != "struct" or typeof(updateMode) != "bool" or typeof(visible) != "bool" then return fail("createRowEditorWindow", "invalid row-editor arguments") end if
   title = "Add row — " + details.tableName
@@ -1661,7 +1833,8 @@ function createRowEditorWindow(details, updateMode, visible)
   return window
 end function
 
-// Reflows the modal row editor for DPI changes and user-driven resizing.
+/// Reflows the modal row editor for DPI changes and user-driven resizing.
+/// @param window window value consumed by this operation.
 function layoutRowEditor(window)
   size = try(gui.clientSizeDip(window.hwnd))
   if typeof(size) == "error" then return size end if
@@ -1686,7 +1859,8 @@ function layoutRowEditor(window)
   return true
 end function
 
-// Rebuilds the row-editor review table and focuses the active field value.
+/// Rebuilds the row-editor review table and focuses the active field value.
+/// @param editor editor value consumed by this operation.
 function renderRowEditor(editor)
   if editor is not RowEditorState or len(editor.details.columnsGrid.rows) == 0 then return fail("renderRowEditor", "row editor has no columns") end if
   if editor.fieldIndex < 0 then editor.fieldIndex = 0 end if
@@ -1716,7 +1890,8 @@ function renderRowEditor(editor)
   return true
 end function
 
-// Copies the active text box into its aligned row-editor draft slot.
+/// Copies the active text box into its aligned row-editor draft slot.
+/// @param editor editor value consumed by this operation.
 function storeRowEditorValue(editor)
   if editor is not RowEditorState or editor.fieldIndex < 0 or editor.fieldIndex >= len(editor.values) then return fail("storeRowEditorValue", "active field is invalid") end if
   value = try(gui.getText(editor.window.valueEdit))
@@ -1725,7 +1900,9 @@ function storeRowEditorValue(editor)
   return true
 end function
 
-// Commits the active value and navigates by one bounded field.
+/// Commits the active value and navigates by one bounded field.
+/// @param editor editor value consumed by this operation.
+/// @param delta delta value consumed by this operation.
 function moveRowEditor(editor, delta)
   stored = try(storeRowEditorValue(editor))
   if typeof(stored) == "error" then return stored end if
@@ -1736,7 +1913,8 @@ function moveRowEditor(editor, delta)
   return renderRowEditor(editor)
 end function
 
-// Validates the complete draft and builds its INSERT or keyed UPDATE statement.
+/// Validates the complete draft and builds its INSERT or keyed UPDATE statement.
+/// @param editor editor value consumed by this operation.
 function rowEditorSql(editor)
   stored = try(storeRowEditorValue(editor))
   if typeof(stored) == "error" then return stored end if
@@ -1747,7 +1925,12 @@ function rowEditorSql(editor)
   return fullclient.insertDataSql(editor.details, editor.values)
 end function
 
-// Runs one modal row editor and returns generated SQL plus its preview values.
+/// Runs one modal row editor and returns generated SQL plus its preview values.
+/// @param session session value consumed by this operation.
+/// @param rowIndex Zero-based index of row.
+/// @param duplicate duplicate value consumed by this operation.
+/// @param updateMode updateMode value consumed by this operation.
+/// @param initialField initialField value consumed by this operation.
 function runRowEditor(session, rowIndex, duplicate, updateMode, initialField)
   values = try(fullclient.dataEditorValues(session.state.tableDetails, rowIndex, duplicate))
   if typeof(values) == "error" then return values end if
@@ -1795,14 +1978,17 @@ function runRowEditor(session, rowIndex, duplicate, updateMode, initialField)
   return [editor.resultSql, editor.values]
 end function
 
-// Returns the selected Data-grid row index or a descriptive validation error.
+/// Returns the selected Data-grid row index or a descriptive validation error.
+/// @param session session value consumed by this operation.
 function selectedDataRow(session)
   selected = gui.listViewSelectedIndex(session.window.detailGrid)
   if selected < 0 or selected >= len(session.state.tableDetails.contentsGrid.rows) then return fail("selectedDataRow", "select a row in the Data grid first") end if
   return selected
 end function
 
-// Resolves a SELECT-grid column to its DESCRIBE editor field.
+/// Resolves a SELECT-grid column to its DESCRIBE editor field.
+/// @param details details value consumed by this operation.
+/// @param dataColumn dataColumn value consumed by this operation.
 function editorFieldForDataColumn(details, dataColumn)
   if typeof(details) != "struct" or typeof(dataColumn) != "int" or dataColumn < 0 or dataColumn >= len(details.contentsGrid.columns) then return 0 end if
   name = details.contentsGrid.columns[dataColumn]
@@ -1813,7 +1999,9 @@ function editorFieldForDataColumn(details, dataColumn)
   return 0
 end function
 
-// Returns whether one preview row already has an unapplied update or delete.
+/// Returns whether one preview row already has an unapplied update or delete.
+/// @param session session value consumed by this operation.
+/// @param rowIndex Zero-based index of row.
 function rowHasPendingChange(session, rowIndex)
   for each change in session.pendingChanges
     if change.rowIndex == rowIndex then return true end if
@@ -1821,7 +2009,12 @@ function rowHasPendingChange(session, rowIndex)
   return false
 end function
 
-// Opens an insert/update draft and stages its exact SQL after explicit preview.
+/// Opens an insert/update draft and stages its exact SQL after explicit preview.
+/// @param session session value consumed by this operation.
+/// @param rowIndex Zero-based index of row.
+/// @param duplicate duplicate value consumed by this operation.
+/// @param updateMode updateMode value consumed by this operation.
+/// @param initialField initialField value consumed by this operation.
 function editDataRow(session, rowIndex, duplicate, updateMode, initialField)
   if updateMode and rowHasPendingChange(session, rowIndex) then session.state.statusText = "This row already has a pending change; apply or revert it first"; return false end if
   editResult = try(runRowEditor(session, rowIndex, duplicate, updateMode, initialField))
@@ -1840,7 +2033,8 @@ function editDataRow(session, rowIndex, duplicate, updateMode, initialField)
   return true
 end function
 
-// Saves the RichEdit contents into the selected worksheet model.
+/// Saves the RichEdit contents into the selected worksheet model.
+/// @param session session value consumed by this operation.
 function storeActiveWorksheet(session)
   if session is not AdminSession or session.selectedWorksheetIndex < 0 or session.selectedWorksheetIndex >= len(session.worksheets) then return fail("storeActiveWorksheet", "active worksheet is invalid") end if
   text = try(gui.getText(session.window.queryEdit))
@@ -1849,7 +2043,9 @@ function storeActiveWorksheet(session)
   return true
 end function
 
-// Loads one worksheet into the shared colorized RichEdit control.
+/// Loads one worksheet into the shared colorized RichEdit control.
+/// @param session session value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function activateWorksheet(session, index)
   if session is not AdminSession or typeof(index) != "int" or index < 0 or index >= len(session.worksheets) then return fail("activateWorksheet", "worksheet index is invalid") end if
   stored = try(storeActiveWorksheet(session))
@@ -1863,7 +2059,9 @@ function activateWorksheet(session, index)
   return true
 end function
 
-// Adds and activates a separately retained SQL worksheet.
+/// Adds and activates a separately retained SQL worksheet.
+/// @param session session value consumed by this operation.
+/// @param initialSql initialSql value consumed by this operation.
 function addWorksheet(session, initialSql)
   if typeof(initialSql) != "string" then return fail("addWorksheet", "initial SQL must be a string") end if
   stored = try(storeActiveWorksheet(session))
@@ -1885,7 +2083,9 @@ function addWorksheet(session, initialSql)
   return true
 end function
 
-// Closes any worksheet tab and selects the nearest surviving editor page.
+/// Closes any worksheet tab and selects the nearest surviving editor page.
+/// @param session session value consumed by this operation.
+/// @param closingIndex Zero-based index of closing.
 function closeWorksheetAt(session, closingIndex)
   if session is not AdminSession or typeof(closingIndex) != "int" or closingIndex < 0 or closingIndex >= len(session.worksheets) then return fail("closeWorksheetAt", "worksheet index is invalid") end if
   stored = try(storeActiveWorksheet(session))
@@ -1918,19 +2118,24 @@ function closeWorksheetAt(session, closingIndex)
   return true
 end function
 
-// Closes the worksheet currently loaded in the shared RichEdit control.
+/// Closes the worksheet currently loaded in the shared RichEdit control.
+/// @param session session value consumed by this operation.
 function closeWorksheet(session)
   return closeWorksheetAt(session, session.selectedWorksheetIndex)
 end function
 
-// Closes one structured result page selected through its tab-header glyph.
+/// Closes one structured result page selected through its tab-header glyph.
+/// @param session session value consumed by this operation.
+/// @param closingIndex Zero-based index of closing.
 function closeResultAt(session, closingIndex)
   closed = try(fullclient.closeResultTab(session.state, closingIndex))
   if typeof(closed) == "error" then return closed end if
   return render(session)
 end function
 
-// Writes a complete UTF-8 text artifact and flushes it before returning success.
+/// Writes a complete UTF-8 text artifact and flushes it before returning success.
+/// @param path Path of the file or directory used by the operation.
+/// @param text Text consumed by the operation.
 function writeTextFile(path, text)
   if typeof(path) != "string" or len(path) == 0 or typeof(text) != "string" then return fail("writeTextFile", "path and text are required") end if
   handle = try(file_api.create(path))
@@ -1944,7 +2149,8 @@ function writeTextFile(path, text)
   return closed
 end function
 
-// Exports the active result grid through the native Save As dialog.
+/// Exports the active result grid through the native Save As dialog.
+/// @param session session value consumed by this operation.
 function exportActiveResult(session)
   tab = fullclient.activeResultTab(session.state)
   if tab is void then session.state.statusText = "There is no active result to export"; return false end if
@@ -1962,7 +2168,8 @@ function exportActiveResult(session)
   return true
 end function
 
-// Copies all selected preview rows as escaped, header-bearing TSV.
+/// Copies all selected preview rows as escaped, header-bearing TSV.
+/// @param session session value consumed by this operation.
 function copySelectedDataRows(session)
   selected = gui.listViewSelectedIndices(session.window.detailGrid)
   if len(selected) == 0 then session.state.statusText = "Select one or more Data rows first"; return false end if
@@ -1986,7 +2193,9 @@ function copySelectedDataRows(session)
   return true
 end function
 
-// Tests whether a clipboard row is the exact Data-grid header.
+/// Tests whether a clipboard row is the exact Data-grid header.
+/// @param details details value consumed by this operation.
+/// @param row row value consumed by this operation.
 function clipboardHeader(details, row)
   if typeof(row) != "array" or len(row) != len(details.contentsGrid.columns) then return false end if
   for index = 0 to len(row) - 1
@@ -1995,7 +2204,9 @@ function clipboardHeader(details, row)
   return true
 end function
 
-// Converts one SELECT-ordered clipboard row into DESCRIBE-ordered editor values.
+/// Converts one SELECT-ordered clipboard row into DESCRIBE-ordered editor values.
+/// @param details details value consumed by this operation.
+/// @param row row value consumed by this operation.
 function clipboardEditorValues(details, row)
   if typeof(row) != "array" or len(row) != len(details.contentsGrid.columns) then return fail("clipboardEditorValues", "clipboard column count does not match the table") end if
   values = try(fullclient.dataEditorValues(details, -1, false))
@@ -2012,7 +2223,8 @@ function clipboardEditorValues(details, row)
   return values
 end function
 
-// Stages clipboard TSV rows as validated INSERT statements.
+/// Stages clipboard TSV rows as validated INSERT statements.
+/// @param session session value consumed by this operation.
 function pasteDataRows(session)
   text = try(gui.clipboardText(session.window.hwnd))
   if typeof(text) == "error" then session.state.statusText = text.message; return text end if
@@ -2039,7 +2251,8 @@ function pasteDataRows(session)
   return true
 end function
 
-// Stages safe key-constrained DELETE statements for all selected rows.
+/// Stages safe key-constrained DELETE statements for all selected rows.
+/// @param session session value consumed by this operation.
 function stageSelectedDeletes(session)
   selected = gui.listViewSelectedIndices(session.window.detailGrid)
   if len(selected) == 0 then session.state.statusText = "Select one or more Data rows first"; return false end if
@@ -2061,7 +2274,9 @@ function stageSelectedDeletes(session)
   return true
 end function
 
-// Applies a new filter/page/sort request only when pending row indices remain stable.
+/// Applies a new filter/page/sort request only when pending row indices remain stable.
+/// @param session session value consumed by this operation.
+/// @param options Options controlling the operation.
 function startDataPage(session, options)
   if len(session.pendingChanges) > 0 then session.state.statusText = "Apply or revert pending changes before filtering, sorting, or changing page"; return false end if
   if typeof(options) != "struct" then return fail("startDataPage", "options must be DataBrowseOptions") end if
@@ -2069,14 +2284,18 @@ function startDataPage(session, options)
   return startDescribe(session, session.state.selectedTable)
 end function
 
-// Persists one validated physical window rectangle as a tiny JSON document.
+/// Persists one validated physical window rectangle as a tiny JSON document.
+/// @param path Path of the file or directory used by the operation.
+/// @param rectangle rectangle value consumed by this operation.
 function saveWindowLayout(path, rectangle)
   if typeof(path) != "string" or len(path) == 0 or typeof(rectangle) != "array" or len(rectangle) != 4 then return false end if
   document = "{\"schemaVersion\":1,\"left\":" + rectangle[0] + ",\"top\":" + rectangle[1] + ",\"width\":" + rectangle[2] + ",\"height\":" + rectangle[3] + "}\n"
   return connection_profiles.write(path, document)
 end function
 
-// Restores a previously persisted workbench rectangle when every field is valid.
+/// Restores a previously persisted workbench rectangle when every field is valid.
+/// @param path Path of the file or directory used by the operation.
+/// @param hwnd hwnd value consumed by this operation.
 function restoreWindowLayout(path, hwnd)
   if typeof(path) != "string" or len(path) == 0 or not file_api.fileExists(path) then return false end if
   text = try(file_api.readAllText(path, 4096))
@@ -2092,7 +2311,9 @@ function restoreWindowLayout(path, hwnd)
   return gui.setTopLevelRect(hwnd, [left, top, width, height])
 end function
 
-// Wraps an existing connected state in a native workbench window.
+/// Wraps an existing connected state in a native workbench window.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param visible visible value consumed by this operation.
 function openState(state, visible)
   window = try(createWindow(visible))
   if typeof(window) == "error" then return window end if
@@ -2111,7 +2332,10 @@ function openState(state, visible)
   return session
 end function
 
-// Opens a profile directly for command-line and network smoke workflows.
+/// Opens a profile directly for command-line and network smoke workflows.
+/// @param profile profile value consumed by this operation.
+/// @param passwordBytes passwordBytes value consumed by this operation.
+/// @param visible visible value consumed by this operation.
 function openProfile(profile, passwordBytes, visible)
   state = try(fullclient.openProfile(profile, passwordBytes))
   if typeof(state) == "error" then return state end if
@@ -2120,7 +2344,8 @@ function openProfile(profile, passwordBytes, visible)
   return session
 end function
 
-// Executes one protocol operation and any dependent refresh on the same worker.
+/// Executes one protocol operation and any dependent refresh on the same worker.
+/// @param task task value consumed by this operation.
 function queryWorker(task)
   if task.operation == QUERY_REFRESH then
     result = try(fullclient.refresh(task.state))
@@ -2159,7 +2384,11 @@ function queryWorker(task)
   return QueryCompletion(task.operation, result, refreshed, statusText)
 end function
 
-// Starts one responsive background protocol operation.
+/// Starts one responsive background protocol operation.
+/// @param session session value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
+/// @param tableName tableName value consumed by this operation.
 function startOperation(session, operation, sqlText, tableName)
   if session.aborted then return fail("startQuery", "the cancelled session cannot be reused") end if
   if session.busy then return fail("startQuery", "a query is already running") end if
@@ -2179,7 +2408,10 @@ function startOperation(session, operation, sqlText, tableName)
   return true
 end function
 
-// Starts normal or EXPLAIN SQL while preserving the established public API.
+/// Starts normal or EXPLAIN SQL while preserving the established public API.
+/// @param session session value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
+/// @param explain explain value consumed by this operation.
 function startQuery(session, sqlText, explain)
   operation = QUERY_EXECUTE
   if explain then operation = QUERY_EXPLAIN end if
@@ -2189,29 +2421,37 @@ function startQuery(session, sqlText, explain)
   return startOperation(session, operation, sqlText, "")
 end function
 
-// Starts a background object-tree refresh.
+/// Starts a background object-tree refresh.
+/// @param session session value consumed by this operation.
 function startRefresh(session)
   return startOperation(session, QUERY_REFRESH, "", "")
 end function
 
-// Starts background metadata loading for one validated tree selection.
+/// Starts background metadata loading for one validated tree selection.
+/// @param session session value consumed by this operation.
+/// @param tableName tableName value consumed by this operation.
 function startDescribe(session, tableName)
   return startOperation(session, QUERY_DESCRIBE, "", tableName)
 end function
 
-// Starts a generated INSERT, UPDATE, or DELETE and reloads the edited table preview.
+/// Starts a generated INSERT, UPDATE, or DELETE and reloads the edited table preview.
+/// @param session session value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function startDataMutation(session, sqlText)
   if session is not AdminSession or typeof(sqlText) != "string" or len(sqlText) == 0 or len(session.state.selectedTable) == 0 then return fail("startDataMutation", "a selected table and generated SQL are required") end if
   return startOperation(session, QUERY_DATA_MUTATION, sqlText, session.state.selectedTable)
 end function
 
-// Starts one generated schema mutation and reloads the object tree on success.
+/// Starts one generated schema mutation and reloads the object tree on success.
+/// @param session session value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function startSchemaMutation(session, sqlText)
   if session is not AdminSession or typeof(sqlText) != "string" or len(sqlText) == 0 then return fail("startSchemaMutation", "generated DDL is required") end if
   return startOperation(session, QUERY_SCHEMA_MUTATION, sqlText, "")
 end function
 
-// Publishes a completed worker result without performing network I/O on the UI thread.
+/// Publishes a completed worker result without performing network I/O on the UI thread.
+/// @param session session value consumed by this operation.
 function pollQuery(session)
   if not session.busy or session.worker is void then return false end if
   if not session.worker.Join(0) then return false end if
@@ -2240,7 +2480,8 @@ function pollQuery(session)
   return true
 end function
 
-// Stops the native worker before disconnecting the affected session.
+/// Stops the native worker before disconnecting the affected session.
+/// @param session session value consumed by this operation.
 function stopQuery(session)
   if not session.busy or session.worker is void then return false end if
   stopped = session.worker.Stop()
@@ -2257,7 +2498,8 @@ function stopQuery(session)
   return stopped
 end function
 
-// Opens table details for the current object-tree selection.
+/// Opens table details for the current object-tree selection.
+/// @param session session value consumed by this operation.
 function openSelectedObject(session)
   selected = try(gui.treeSelectedText(session.window.objectTree))
   if typeof(selected) != "string" or not fullclient.containsText(session.state.tables, selected) then session.state.statusText = "Select a table in the object tree"; return false end if
@@ -2266,7 +2508,8 @@ function openSelectedObject(session)
   return startDescribe(session, selected)
 end function
 
-// Inserts a table preview query for the selected object.
+/// Inserts a table preview query for the selected object.
+/// @param session session value consumed by this operation.
 function querySelectedObject(session)
   selected = try(gui.treeSelectedText(session.window.objectTree))
   if typeof(selected) != "string" or not fullclient.containsText(session.state.tables, selected) then session.state.statusText = "Select a table in the object tree"; return false end if
@@ -2278,7 +2521,8 @@ function querySelectedObject(session)
   return true
 end function
 
-// Inserts a selected bookmark into the SQL worksheet.
+/// Inserts a selected bookmark into the SQL worksheet.
+/// @param session session value consumed by this operation.
 function insertSelectedBookmark(session)
   label = try(gui.listSelectedText(session.window.bookmarkList))
   sqlText = fullclient.bookmarkSqlForSelection(session.state, label)
@@ -2289,7 +2533,8 @@ function insertSelectedBookmark(session)
   return true
 end function
 
-// Reopens a redacted history item in the SQL worksheet.
+/// Reopens a redacted history item in the SQL worksheet.
+/// @param session session value consumed by this operation.
 function insertSelectedHistory(session)
   sqlText = try(gui.listSelectedText(session.window.historyList))
   if typeof(sqlText) != "string" or len(sqlText) == 0 or fullclient.textContains(sqlText, "redacted") then return false end if
@@ -2299,7 +2544,10 @@ function insertSelectedHistory(session)
   return true
 end function
 
-// Resolves the requested editor scope and starts its background execution.
+/// Resolves the requested editor scope and starts its background execution.
+/// @param session session value consumed by this operation.
+/// @param wholeScript wholeScript value consumed by this operation.
+/// @param explain explain value consumed by this operation.
 function startEditorCommand(session, wholeScript, explain)
   stored = try(storeActiveWorksheet(session))
   if typeof(stored) == "error" then session.state.statusText = stored.message; return stored end if
@@ -2310,7 +2558,9 @@ function startEditorCommand(session, wholeScript, explain)
   return started
 end function
 
-// Handles a native menu or toolbar command.
+/// Handles a native menu or toolbar command.
+/// @param session session value consumed by this operation.
+/// @param command command value consumed by this operation.
 function handleCommand(session, command)
   if session.busy and command != ID_STOP and command != gui.MENU_SQL_CANCEL and command != ID_CLOSE and command != gui.MENU_FILE_CLOSE and command != gui.MENU_FILE_EXIT then return true end if
   if command == ID_CLOSE or command == gui.MENU_FILE_CLOSE or command == gui.MENU_FILE_EXIT then
@@ -2507,7 +2757,8 @@ function handleSessionEvent(session, event)
   return true
 end function
 
-// Runs the responsive Win32 event loop for one connected session.
+/// Runs the responsive Win32 event loop for one connected session.
+/// @param session session value consumed by this operation.
 function runSession(session)
   while gui.isOpen(session.window.hwnd)
     ignoredPump = gui.pumpMessages()
@@ -2538,7 +2789,8 @@ function runSession(session)
   return true
 end function
 
-// Runs a hidden workbench construction smoke test against an existing state.
+/// Runs a hidden workbench construction smoke test against an existing state.
+/// @param state Mutable state inspected or updated by the operation.
 function stateSmoke(state)
   session = try(openState(state, false))
   if typeof(session) == "error" then return session end if
@@ -2548,17 +2800,17 @@ function stateSmoke(state)
   return true
 end function
 
-// Returns the stable module name used by smoke tests.
+/// Performs the componentName operation for the minisql admin win32 client module.
 function componentName()
   return "admin.win32_client"
 end function
 
-// Identifies the GUI integration milestone.
+/// Performs the targetMilestone operation for the minisql admin win32 client module.
 function targetMilestone()
   return "M74"
 end function
 
-// Reports that the native workbench is implemented.
+/// Reports that the native workbench is implemented.
 function isImplemented()
   return true
 end function

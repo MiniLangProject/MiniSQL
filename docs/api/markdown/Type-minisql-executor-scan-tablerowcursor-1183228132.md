@@ -12,7 +12,7 @@ struct TableRowCursor
 Holds a forward-only live-row scan. The cursor retains one heap page and one decoded row at a time; callers can therefore validate or consume tables whose total payload is much larger than the MiniLang heap.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L87)
 
 ## Members
 
@@ -23,10 +23,10 @@ Holds a forward-only live-row scan. The cursor retains one heap page and one dec
 endPageIndex
 ```
 
-Exclusive heap-page index at which this cursor stops. Keeping the bound in the cursor lets independent read-only workers scan disjoint page ranges.
+Exclusive heap-page index at which this cursor stops. Keeping the bound in
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L97)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-finished-finished-src-minisql-executor-scan-ml-492790583"></a>
 ### finished
@@ -38,7 +38,7 @@ finished
 Indicates that every page and slot has been consumed.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L103)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-heappages-heappages-src-minisql-executor-scan-ml-828741607"></a>
 ### heapPages
@@ -50,7 +50,7 @@ heapPages
 Persistent-directory result containing physical heap page numbers only.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L93)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-pagebytes-pagebytes-src-minisql-executor-scan-ml-1626194367"></a>
 ### pageBytes
@@ -62,7 +62,7 @@ pageBytes
 Checksummed bytes for the current heap page, or void between pages.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L98)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L99)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-pageindex-pageindex-src-minisql-executor-scan-ml-1601405411"></a>
 ### pageIndex
@@ -74,7 +74,7 @@ pageIndex
 Index of the heap page currently being visited.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L95)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-reader-reader-src-minisql-executor-scan-ml-385669045"></a>
 ### reader
@@ -86,7 +86,7 @@ reader
 Reader that supplies transaction visibility, schema, and overflow access.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L89)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-requiredcolumns-requiredcolumns-src-minisql-executor-scan-ml-772596447"></a>
 ### requiredColumns
@@ -98,7 +98,7 @@ requiredColumns
 Optional column mask used to avoid unrelated overflow payload reads.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L91)
 
 <a id="field-field-minisql-executor-scan-tablerowcursor-slotid-slotid-src-minisql-executor-scan-ml-2127051457"></a>
 ### slotId
@@ -110,4 +110,4 @@ slotId
 Next slot to inspect within pageBytes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L101)

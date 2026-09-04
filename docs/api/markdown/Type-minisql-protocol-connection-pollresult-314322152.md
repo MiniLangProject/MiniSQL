@@ -12,7 +12,7 @@ struct PollResult
 Groups the poll result state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L67)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 Indicates whether the closed condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L71)
 
 <a id="field-field-minisql-protocol-connection-pollresult-message-message-src-minisql-protocol-connection-ml-53610813"></a>
 ### message
@@ -38,4 +38,4 @@ message
 Stores the message associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L69)

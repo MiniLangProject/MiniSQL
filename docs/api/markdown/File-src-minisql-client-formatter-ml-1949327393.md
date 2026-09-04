@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql client formatter facilities for this project.
+
 Package: [`minisql.client.formatter`](Package-minisql-client-formatter-1915397479.md)
 
 Reachable from entry: **yes**
@@ -25,10 +27,10 @@ Reachable from entry: **yes**
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql client formatter module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L140)
 
 <a id="function-function-minisql-client-formatter-fail-function-fail-operation-message-src-minisql-client-formatter-ml-1783362182"></a>
 ### fail
@@ -37,15 +39,15 @@ Implements component name for this module. Returns the computed value or operati
 function fail(operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql client formatter module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L25)
 
 <a id="function-function-minisql-client-formatter-formatresponse-function-formatresponse-response-src-minisql-client-formatter-ml-1721415347"></a>
 ### formatResponse
@@ -58,10 +60,10 @@ Formats response using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `response` | `dynamic` | — |  |
+| `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L112)
 
 <a id="constant-constant-minisql-client-formatter-invalid-argument-const-invalid-argument-9001-src-minisql-client-formatter-ml-1234415967"></a>
 ### INVALID_ARGUMENT
@@ -70,8 +72,10 @@ Formats response using the supplied inputs. Returns the computed value or operat
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql client formatter module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L18)
 
 <a id="function-function-minisql-client-formatter-isimplemented-function-isimplemented-src-minisql-client-formatter-ml-1855313398"></a>
 ### isImplemented
@@ -80,10 +84,10 @@ const INVALID_ARGUMENT = 9001
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql client formatter module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L154)
 
 <a id="function-function-minisql-client-formatter-responsefromresult-function-responsefromresult-result-src-minisql-client-formatter-ml-1767604357"></a>
 ### responseFromResult
@@ -96,10 +100,10 @@ Implements response from result for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `result` | `dynamic` | — |  |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L56)
 
 <a id="function-function-minisql-client-formatter-responsesfromresult-function-responsesfromresult-result-src-minisql-client-formatter-ml-332183251"></a>
 ### responsesFromResult
@@ -112,10 +116,10 @@ Converts a query result into bounded protocol responses. Row conversion and payl
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `result` | `dynamic` | — |  |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L79)
 
 <a id="function-function-minisql-client-formatter-targetmilestone-function-targetmilestone-src-minisql-client-formatter-ml-1425316000"></a>
 ### targetMilestone
@@ -124,10 +128,10 @@ Converts a query result into bounded protocol responses. Row conversion and payl
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql client formatter module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L147)
 
 <a id="function-function-minisql-client-formatter-valuetext-function-valuetext-value-src-minisql-client-formatter-ml-290748291"></a>
 ### valueText
@@ -140,7 +144,7 @@ Implements value text for this module. Requires arguments that satisfy the valid
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/formatter.ml#L34)

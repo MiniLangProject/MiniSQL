@@ -12,7 +12,7 @@ struct AlterUserStatement
 Groups the alter user statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L756)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L811)
 
 ## Members
 
@@ -26,7 +26,7 @@ action
 Stores the action associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L760)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L815)
 
 <a id="field-field-minisql-sql-ast-alteruserstatement-name-name-src-minisql-sql-ast-ml-1327077609"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L758)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L813)
 
 <a id="field-field-minisql-sql-ast-alteruserstatement-password-password-src-minisql-sql-ast-ml-1719213085"></a>
 ### password
@@ -50,4 +50,4 @@ password
 Stores the password associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L762)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L817)

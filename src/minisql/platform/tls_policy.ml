@@ -1,3 +1,5 @@
+//! Provides minisql platform tls policy facilities for this project.
+
 package minisql.platform.tls_policy
 
 // Copyright 2026 MiniLangProject contributors
@@ -6,118 +8,127 @@ package minisql.platform.tls_policy
 
 import minisql.common.endian as endian
 
-// This module is the fail-closed MiniSQL TLS profile. Schannel performs the
-// cryptographic protocol, while these registries and wire checks keep the
-// accepted TLS version, cipher suite, named group, and certificate policy
-// explicit. Adding a future algorithm requires a new registry entry and a new
-// policy; it never silently broadens the current default.
+/// This module is the fail-closed MiniSQL TLS profile. Schannel performs the
 
 const INVALID_ARGUMENT = 9001
+/// Defines the tls error constant used by the minisql platform tls policy module.
 const TLS_ERROR = 9034
+/// Defines the tls 1 2 legacy version constant used by the minisql platform tls policy module.
 const TLS_1_2_LEGACY_VERSION = 0x0303
+/// Defines the tls 1 3 version constant used by the minisql platform tls policy module.
 const TLS_1_3_VERSION = 0x0304
+/// Defines the tls aes 256 gcm sha384 id constant used by the minisql platform tls policy module.
 const TLS_AES_256_GCM_SHA384_ID = 0x1302
+/// Defines the x25519 id constant used by the minisql platform tls policy module.
 const X25519_ID = 0x001D
+/// Defines the tls handshake record constant used by the minisql platform tls policy module.
 const TLS_HANDSHAKE_RECORD = 22
+/// Defines the server hello message constant used by the minisql platform tls policy module.
 const SERVER_HELLO_MESSAGE = 2
+/// Defines the supported versions extension constant used by the minisql platform tls policy module.
 const SUPPORTED_VERSIONS_EXTENSION = 0x002B
+/// Defines the key share extension constant used by the minisql platform tls policy module.
 const KEY_SHARE_EXTENSION = 0x0033
+/// Defines the max handshake transcript bytes constant used by the minisql platform tls policy module.
 const MAX_HANDSHAKE_TRANSCRIPT_BYTES = 262144
 
-// Describes one TLS 1.3 cipher suite independently of the platform provider.
+/// Describes one TLS 1.3 cipher suite independently of the platform provider.
 struct TlsCipherSuite
-  // Two-byte IANA cipher-suite identifier carried in ServerHello.
+  /// Two-byte IANA cipher-suite identifier carried in ServerHello.
   wireId
-  // Stable IANA cipher-suite name used by configuration and diagnostics.
+  /// Stable IANA cipher-suite name used by configuration and diagnostics.
   name
-  // AEAD primitive that protects TLS application records.
+  /// AEAD primitive that protects TLS application records.
   aead
-  // Number of traffic-key bytes required by the AEAD primitive.
+  /// Number of traffic-key bytes required by the AEAD primitive.
   keyBytes
-  // Number of static IV bytes used by the TLS record nonce construction.
+  /// Number of static IV bytes used by the TLS record nonce construction.
   ivBytes
-  // Authentication-tag size emitted for every encrypted TLS record.
+  /// Authentication-tag size emitted for every encrypted TLS record.
   tagBytes
-  // HKDF transcript hash selected by this TLS 1.3 cipher suite.
+  /// HKDF transcript hash selected by this TLS 1.3 cipher suite.
   hash
-  // Digest size of the selected transcript hash.
+  /// Digest size of the selected transcript hash.
   hashBytes
 end struct
 
-// Describes one TLS named group independently of the platform provider.
+/// Describes one TLS named group independently of the platform provider.
 struct TlsNamedGroup
-  // Two-byte IANA NamedGroup identifier carried in the key_share extension.
+  /// Two-byte IANA NamedGroup identifier carried in the key_share extension.
   wireId
-  // Stable IANA group name used by configuration and diagnostics.
+  /// Stable IANA group name used by configuration and diagnostics.
   name
-  // Key-agreement family used for security review and diagnostics.
+  /// Key-agreement family used for security review and diagnostics.
   family
-  // Encoded public-key length expected in a ServerHello key share.
+  /// Encoded public-key length expected in a ServerHello key share.
   publicKeyBytes
-  // Shared-secret length produced by the key agreement.
+  /// Shared-secret length produced by the key agreement.
   sharedSecretBytes
 end struct
 
-// Defines how a client authenticates the peer certificate.
+/// Defines how a client authenticates the peer certificate.
 struct CertificatePolicy
-  // Either `system` for Windows trust or `pin-sha256` for an exact leaf pin.
+  /// Either `system` for Windows trust or `pin-sha256` for an exact leaf pin.
   mode
-  // DNS name checked against the certificate and sent as TLS SNI.
+  /// DNS name checked against the certificate and sent as TLS SNI.
   serverName
-  // Exact SHA-256 digest of the leaf certificate DER, or empty for system trust.
+  /// Exact SHA-256 digest of the leaf certificate DER, or empty for system trust.
   pinnedLeafSha256
 end struct
 
-// Collects all independently extensible TLS policy dimensions.
+/// Collects all independently extensible TLS policy dimensions.
 struct TlsPolicy
-  // Minimum accepted TLS protocol version.
+  /// Minimum accepted TLS protocol version.
   minimumVersion
-  // Maximum accepted TLS protocol version.
+  /// Maximum accepted TLS protocol version.
   maximumVersion
-  // Explicit allow-list of accepted TLS 1.3 cipher suites.
+  /// Explicit allow-list of accepted TLS 1.3 cipher suites.
   cipherSuites
-  // Explicit allow-list of accepted key-exchange groups.
+  /// Explicit allow-list of accepted key-exchange groups.
   groups
-  // Peer certificate authentication policy used by a client.
+  /// Peer certificate authentication policy used by a client.
   certificatePolicy
 end struct
 
-// Captures the security-relevant plaintext fields selected by ServerHello.
+/// Captures the security-relevant plaintext fields selected by ServerHello.
 struct ServerHelloSelection
-  // Version selected by the supported_versions extension.
+  /// Version selected by the supported_versions extension.
   protocolVersion
-  // Cipher suite selected by the server.
+  /// Cipher suite selected by the server.
   cipherSuiteId
-  // Named group selected by the server key_share extension.
+  /// Named group selected by the server key_share extension.
   groupId
 end struct
 
-// Creates a structured TLS-policy failure.
+/// Creates a structured TLS-policy failure.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(TLS_ERROR, "platform.tls_policy." + operation + ": " + message)
 end function
 
-// Returns the only cipher suite enabled by the MiniSQL 1.0 TLS profile.
+/// Returns the only cipher suite enabled by the MiniSQL 1.0 TLS profile.
 function tlsAes256GcmSha384()
   return TlsCipherSuite(TLS_AES_256_GCM_SHA384_ID, "TLS_AES_256_GCM_SHA384", "AES-256-GCM", 32, 12, 16, "SHA-384", 48)
 end function
 
-// Returns the only key-exchange group enabled by the MiniSQL 1.0 TLS profile.
+/// Returns the only key-exchange group enabled by the MiniSQL 1.0 TLS profile.
 function x25519()
   return TlsNamedGroup(X25519_ID, "X25519", "ECDHE Montgomery curve", 32, 32)
 end function
 
-// Returns the complete compiled cipher registry; new versions extend this list.
+/// Returns the complete compiled cipher registry; new versions extend this list.
 function supportedCipherSuites()
   return [tlsAes256GcmSha384()]
 end function
 
-// Returns the complete compiled named-group registry; new versions extend this list.
+/// Returns the complete compiled named-group registry; new versions extend this list.
 function supportedGroups()
   return [x25519()]
 end function
 
-// Finds a registered cipher suite by its wire identifier.
+/// Finds a registered cipher suite by its wire identifier.
+/// @param wireId Identifier of wire.
 function cipherSuiteById(wireId)
   if typeof(wireId) != "int" then return error(INVALID_ARGUMENT, "platform.tls_policy.cipherSuiteById: wireId must be int") end if
   suites = supportedCipherSuites()
@@ -127,7 +138,8 @@ function cipherSuiteById(wireId)
   return void
 end function
 
-// Finds a registered named group by its wire identifier.
+/// Finds a registered named group by its wire identifier.
+/// @param wireId Identifier of wire.
 function groupById(wireId)
   if typeof(wireId) != "int" then return error(INVALID_ARGUMENT, "platform.tls_policy.groupById: wireId must be int") end if
   groups = supportedGroups()
@@ -137,7 +149,8 @@ function groupById(wireId)
   return void
 end function
 
-// Converts one ASCII hexadecimal digit to its numeric value.
+/// Converts one ASCII hexadecimal digit to its numeric value.
+/// @param value Value consumed or transformed by the operation.
 function hexValue(value)
   if value >= 48 and value <= 57 then return value - 48 end if
   if value >= 65 and value <= 70 then return value - 55 end if
@@ -145,7 +158,8 @@ function hexValue(value)
   return -1
 end function
 
-// Parses an exact SHA-256 certificate pin, accepting an optional sha256 prefix.
+/// Parses an exact SHA-256 certificate pin, accepting an optional sha256 prefix.
+/// @param text Text consumed by the operation.
 function parseSha256Pin(text)
   if typeof(text) != "string" then return error(INVALID_ARGUMENT, "platform.tls_policy.parseSha256Pin: pin must be string") end if
   raw = bytes(text)
@@ -162,13 +176,16 @@ function parseSha256Pin(text)
   return result
 end function
 
-// Builds Windows trust-store validation with mandatory DNS-name verification.
+/// Builds Windows trust-store validation with mandatory DNS-name verification.
+/// @param serverName serverName value consumed by this operation.
 function systemCertificatePolicy(serverName)
   if typeof(serverName) != "string" or len(bytes(serverName)) == 0 then return error(INVALID_ARGUMENT, "platform.tls_policy.systemCertificatePolicy: serverName must be non-empty") end if
   return CertificatePolicy("system", serverName, bytes(0))
 end function
 
-// Builds exact leaf-certificate pinning for private or self-signed deployments.
+/// Builds exact leaf-certificate pinning for private or self-signed deployments.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
 function pinnedCertificatePolicy(serverName, pinText)
   if typeof(serverName) != "string" or len(bytes(serverName)) == 0 then return error(INVALID_ARGUMENT, "platform.tls_policy.pinnedCertificatePolicy: serverName must be non-empty") end if
   pin = try(parseSha256Pin(pinText))
@@ -176,7 +193,8 @@ function pinnedCertificatePolicy(serverName, pinText)
   return CertificatePolicy("pin-sha256", serverName, pin)
 end function
 
-// Validates the complete policy without silently substituting algorithms.
+/// Validates the complete policy without silently substituting algorithms.
+/// @param policy policy value consumed by this operation.
 function validate(policy)
   if policy is not TlsPolicy then return error(INVALID_ARGUMENT, "platform.tls_policy.validate: policy must be TlsPolicy") end if
   if policy.minimumVersion != TLS_1_3_VERSION or policy.maximumVersion != TLS_1_3_VERSION then return fail("validate", "MiniSQL requires TLS 1.3 exactly") end if
@@ -195,26 +213,31 @@ function validate(policy)
   return true
 end function
 
-// Creates the current default client policy using the Windows root store.
+/// Creates the current default client policy using the Windows root store.
+/// @param serverName serverName value consumed by this operation.
 function defaultClientPolicy(serverName)
   certificatePolicy = try(systemCertificatePolicy(serverName))
   if typeof(certificatePolicy) == "error" then return certificatePolicy end if
   return TlsPolicy(TLS_1_3_VERSION, TLS_1_3_VERSION, [tlsAes256GcmSha384()], [x25519()], certificatePolicy)
 end function
 
-// Creates the current client policy for exact SHA-256 certificate pinning.
+/// Creates the current client policy for exact SHA-256 certificate pinning.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
 function pinnedClientPolicy(serverName, pinText)
   certificatePolicy = try(pinnedCertificatePolicy(serverName, pinText))
   if typeof(certificatePolicy) == "error" then return certificatePolicy end if
   return TlsPolicy(TLS_1_3_VERSION, TLS_1_3_VERSION, [tlsAes256GcmSha384()], [x25519()], certificatePolicy)
 end function
 
-// Creates the server-side algorithm policy; servers do not validate a peer certificate.
+/// Creates the server-side algorithm policy; servers do not validate a peer certificate.
 function defaultServerPolicy()
   return TlsPolicy(TLS_1_3_VERSION, TLS_1_3_VERSION, [tlsAes256GcmSha384()], [x25519()], CertificatePolicy("system", "server", bytes(0)))
 end function
 
-// Appends a bounded handshake fragment without exposing unbounded allocations.
+/// Appends a bounded handshake fragment without exposing unbounded allocations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function appendHandshakeBytes(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_policy.appendHandshakeBytes: values must be bytes") end if
   if len(left) > MAX_HANDSHAKE_TRANSCRIPT_BYTES - len(right) then return fail("appendHandshakeBytes", "TLS handshake transcript exceeds the safety bound") end if
@@ -224,7 +247,8 @@ function appendHandshakeBytes(left, right)
   return output
 end function
 
-// Returns true for the RFC 8446 HelloRetryRequest sentinel random value.
+/// Returns true for the RFC 8446 HelloRetryRequest sentinel random value.
+/// @param body body value consumed by this operation.
 function isHelloRetryRequest(body)
   expected = [207, 33, 173, 116, 229, 154, 97, 17, 190, 29, 140, 2, 30, 101, 184, 145, 194, 162, 17, 22, 122, 187, 140, 94, 7, 158, 9, 226, 200, 168, 51, 156]
   if len(body) < 34 then return false end if
@@ -234,7 +258,8 @@ function isHelloRetryRequest(body)
   return true
 end function
 
-// Parses one complete ServerHello body and returns only policy-relevant fields.
+/// Parses one complete ServerHello body and returns only policy-relevant fields.
+/// @param body body value consumed by this operation.
 function parseServerHelloBody(body)
   if typeof(body) != "bytes" or len(body) < 40 then return fail("parseServerHelloBody", "ServerHello is truncated") end if
   if endian.readU16BE(body, 0) != TLS_1_2_LEGACY_VERSION then return fail("parseServerHelloBody", "ServerHello legacy_version is invalid") end if
@@ -273,7 +298,8 @@ function parseServerHelloBody(body)
   return ServerHelloSelection(selectedVersion, cipherSuiteId, selectedGroup)
 end function
 
-// Extracts plaintext handshake payloads from complete TLS records in one direction.
+/// Extracts plaintext handshake payloads from complete TLS records in one direction.
+/// @param transcript transcript value consumed by this operation.
 function collectHandshakeMessages(transcript)
   if typeof(transcript) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_policy.collectHandshakeMessages: transcript must be bytes") end if
   if len(transcript) > MAX_HANDSHAKE_TRANSCRIPT_BYTES then return fail("collectHandshakeMessages", "TLS handshake transcript exceeds the safety bound") end if
@@ -293,7 +319,8 @@ function collectHandshakeMessages(transcript)
   return messages
 end function
 
-// Finds the final non-HelloRetryRequest ServerHello in a directional transcript.
+/// Finds the final non-HelloRetryRequest ServerHello in a directional transcript.
+/// @param transcript transcript value consumed by this operation.
 function serverHelloSelection(transcript)
   handshake = try(collectHandshakeMessages(transcript))
   if typeof(handshake) == "error" then return handshake end if
@@ -313,7 +340,9 @@ function serverHelloSelection(transcript)
   return selected
 end function
 
-// Returns whether a cipher suite is explicitly allowed by the policy.
+/// Returns whether a cipher suite is explicitly allowed by the policy.
+/// @param policy policy value consumed by this operation.
+/// @param wireId Identifier of wire.
 function cipherAllowed(policy, wireId)
   for index = 0 to len(policy.cipherSuites) - 1
     if policy.cipherSuites[index].wireId == wireId then return true end if
@@ -321,7 +350,9 @@ function cipherAllowed(policy, wireId)
   return false
 end function
 
-// Returns whether a named group is explicitly allowed by the policy.
+/// Returns whether a named group is explicitly allowed by the policy.
+/// @param policy policy value consumed by this operation.
+/// @param wireId Identifier of wire.
 function groupAllowed(policy, wireId)
   for index = 0 to len(policy.groups) - 1
     if policy.groups[index].wireId == wireId then return true end if
@@ -329,7 +360,9 @@ function groupAllowed(policy, wireId)
   return false
 end function
 
-// Enforces the negotiated ServerHello against every fail-closed policy dimension.
+/// Enforces the negotiated ServerHello against every fail-closed policy dimension.
+/// @param policy policy value consumed by this operation.
+/// @param transcript transcript value consumed by this operation.
 function verifyServerHello(policy, transcript)
   valid = try(validate(policy))
   if typeof(valid) == "error" then return valid end if
@@ -346,17 +379,17 @@ function verifyServerHello(policy, transcript)
   return selection
 end function
 
-// Returns the stable module name used by diagnostics and documentation.
+/// Returns the stable module name used by diagnostics and documentation.
 function componentName()
   return "platform.tls_policy"
 end function
 
-// Returns the implementation milestone for native TLS 1.3.
+/// Returns the implementation milestone for native TLS 1.3.
 function targetMilestone()
   return "M73"
 end function
 
-// Reports that the native TLS policy implementation is available.
+/// Reports that the native TLS policy implementation is available.
 function isImplemented()
   return true
 end function

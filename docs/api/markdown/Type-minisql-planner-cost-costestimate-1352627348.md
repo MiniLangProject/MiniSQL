@@ -12,7 +12,7 @@ struct CostEstimate
 Groups the cost estimate state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L13)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L14)
 
 ## Members
 
@@ -26,7 +26,7 @@ algorithm
 Stores the algorithm associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L22)
 
 <a id="field-field-minisql-planner-cost-costestimate-rows-rows-src-minisql-planner-cost-ml-965806466"></a>
 ### rows
@@ -38,7 +38,7 @@ rows
 Contains the ordered rows collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L20)
 
 <a id="field-field-minisql-planner-cost-costestimate-startup-startup-src-minisql-planner-cost-ml-1386425224"></a>
 ### startup
@@ -50,7 +50,7 @@ startup
 Stores the startup associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L16)
 
 <a id="field-field-minisql-planner-cost-costestimate-total-total-src-minisql-planner-cost-ml-1206359604"></a>
 ### total
@@ -62,4 +62,4 @@ total
 Stores the total associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/cost.ml#L18)

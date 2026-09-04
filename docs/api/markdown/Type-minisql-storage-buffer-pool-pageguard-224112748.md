@@ -12,7 +12,7 @@ struct PageGuard
 Defines the page guard record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L65)
 
 ## Members
 
@@ -26,7 +26,7 @@ frameIndex
 Frame index field of the page guard.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L69)
 
 <a id="field-field-minisql-storage-buffer-pool-pageguard-pool-pool-src-minisql-storage-buffer-pool-ml-926214715"></a>
 ### pool
@@ -38,7 +38,7 @@ pool
 Pool field of the page guard.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L67)
 
 <a id="field-field-minisql-storage-buffer-pool-pageguard-released-released-src-minisql-storage-buffer-pool-ml-827743549"></a>
 ### released
@@ -50,4 +50,4 @@ released
 Released field of the page guard.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L71)

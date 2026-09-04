@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql executor sort facilities for this project.
+
 Package: [`minisql.executor.sort`](Package-minisql-executor-sort-1346135293.md)
 
 Reachable from entry: **yes**
@@ -28,15 +30,15 @@ Reachable from entry: **yes**
 function bytesEqual(left, right)
 ```
 
-Implements bytes equal for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the bytesEqual operation for the minisql executor sort module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L74)
 
 <a id="function-function-minisql-executor-sort-cleanupruns-function-cleanupruns-runs-src-minisql-executor-sort-ml-1620652992"></a>
 ### cleanupRuns
@@ -49,10 +51,10 @@ Implements cleanup runs for this module. Returns its result or propagates a stru
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `runs` | `dynamic` | — |  |
+| `runs` | `dynamic` | — | runs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L456)
 
 <a id="function-function-minisql-executor-sort-combinedvalues-function-combinedvalues-row-src-minisql-executor-sort-ml-1768930856"></a>
 ### combinedValues
@@ -65,10 +67,10 @@ Implements combined values for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `row` | `dynamic` | — |  |
+| `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L240)
 
 <a id="function-function-minisql-executor-sort-comparenullable-function-comparenullable-left-right-descending-nullsfirst-nullsspecified-src-minisql-executor-sort-ml-2086897419"></a>
 ### compareNullable
@@ -81,14 +83,14 @@ Compares nullable using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `descending` | `dynamic` | — |  |
-| `nullsFirst` | `dynamic` | — |  |
-| `nullsSpecified` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `descending` | `dynamic` | — | descending value consumed by this operation. |
+| `nullsFirst` | `dynamic` | — | nullsFirst value consumed by this operation. |
+| `nullsSpecified` | `dynamic` | — | nullsSpecified value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L91)
 
 <a id="function-function-minisql-executor-sort-comparerows-function-comparerows-left-right-orderitems-src-minisql-executor-sort-ml-1321908421"></a>
 ### compareRows
@@ -101,12 +103,12 @@ Compares rows using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L113)
 
 <a id="function-function-minisql-executor-sort-componentname-function-componentname-src-minisql-executor-sort-ml-1485606542"></a>
 ### componentName
@@ -115,10 +117,10 @@ Compares rows using the supplied inputs. Returns the computed value or operation
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql executor sort module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L504)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L554)
 
 <a id="constant-constant-minisql-executor-sort-corrupt-data-const-corrupt-data-9004-src-minisql-executor-sort-ml-949147782"></a>
 ### CORRUPT_DATA
@@ -127,8 +129,10 @@ Implements component name for this module. Returns the computed value or operati
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql executor sort module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L24)
 
 <a id="function-function-minisql-executor-sort-decodesqlvalue-function-decodesqlvalue-kind-raw-src-minisql-executor-sort-ml-660078412"></a>
 ### decodeSqlValue
@@ -141,11 +145,11 @@ Decodes SQL value using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `kind` | `dynamic` | — |  |
-| `raw` | `dynamic` | — |  |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
+| `raw` | `dynamic` | — | raw value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L330)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L371)
 
 <a id="function-function-minisql-executor-sort-encodeheader-function-encodeheader-valuecount-ordercount-encrypted-src-minisql-executor-sort-ml-887163397"></a>
 ### encodeHeader
@@ -158,12 +162,12 @@ Encodes header using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `valueCount` | `dynamic` | — |  |
-| `orderCount` | `dynamic` | — |  |
-| `encrypted` | `dynamic` | — |  |
+| `valueCount` | `dynamic` | — | Number of value to process. |
+| `orderCount` | `dynamic` | — | Number of order to process. |
+| `encrypted` | `dynamic` | — | encrypted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L292)
 
 <a id="function-function-minisql-executor-sort-fail-function-fail-code-operation-message-src-minisql-executor-sort-ml-952056199"></a>
 ### fail
@@ -172,16 +176,16 @@ Encodes header using the supplied inputs. Returns the computed value or operatio
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql executor sort module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L57)
 
 <a id="constant-constant-minisql-executor-sort-invalid-argument-const-invalid-argument-9001-src-minisql-executor-sort-ml-450573233"></a>
 ### INVALID_ARGUMENT
@@ -190,10 +194,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_ARGUMENT = 9001
 ```
 
-Stable merge sorting for projected rows. M46 adds a correctness-first external-run path: initial sorted chunks are encoded with row_codec into durable temporary files and merged pairwise. The current pairwise merge reads two complete runs and the QueryResult contract materializes the final array, so this is not yet a hard total-memory bound or a fully streaming executor.
+Stable merge sorting for projected rows. M46 adds a correctness-first
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L22)
 
 <a id="function-function-minisql-executor-sort-isimplemented-function-isimplemented-src-minisql-executor-sort-ml-1237356158"></a>
 ### isImplemented
@@ -202,10 +206,10 @@ Stable merge sorting for projected rows. M46 adds a correctness-first external-r
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql executor sort module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L568)
 
 <a id="constant-constant-minisql-executor-sort-max-spill-file-bytes-const-max-spill-file-bytes-268435456-src-minisql-executor-sort-ml-128573526"></a>
 ### MAX_SPILL_FILE_BYTES
@@ -214,8 +218,10 @@ Returns whether the supplied value satisfies the implemented condition. Returns 
 const MAX_SPILL_FILE_BYTES = 268435456
 ```
 
+Defines the max spill file bytes constant used by the minisql executor sort module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L30)
 
 <a id="function-function-minisql-executor-sort-merge-function-merge-left-right-orderitems-src-minisql-executor-sort-ml-954716497"></a>
 ### merge
@@ -228,12 +234,12 @@ Implements merge for this module. Returns the computed value or operation status
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L131)
 
 <a id="function-function-minisql-executor-sort-nextspilltoken-synchronized-function-nextspilltoken-src-minisql-executor-sort-ml-510667170"></a>
 ### nextSpillToken
@@ -245,7 +251,7 @@ synchronized function nextSpillToken()
 Generates a process-unique spill namespace under an intrinsic function lock. The synchronized modifier serializes nonce updates across parallel SELECT workers.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L422)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L465)
 
 <a id="function-function-minisql-executor-sort-rawvalues-function-rawvalues-input-src-minisql-executor-sort-ml-1645235892"></a>
 ### rawValues
@@ -258,10 +264,10 @@ Implements raw values for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `input` | `dynamic` | — |  |
+| `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L278)
 
 <a id="function-function-minisql-executor-sort-readrun-function-readrun-run-src-minisql-executor-sort-ml-865847215"></a>
 ### readRun
@@ -274,10 +280,10 @@ Reads run using the supplied inputs. Requires arguments that satisfy the validat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `run` | `dynamic` | — |  |
+| `run` | `dynamic` | — | run value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L339)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L381)
 
 <a id="function-function-minisql-executor-sort-runpath-function-runpath-root-token-index-src-minisql-executor-sort-ml-1486832257"></a>
 ### runPath
@@ -290,12 +296,12 @@ Runs path using the supplied inputs. Returns the computed value or operation sta
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `root` | `dynamic` | — |  |
-| `token` | `dynamic` | — |  |
-| `index` | `dynamic` | — |  |
+| `root` | `dynamic` | — | root value consumed by this operation. |
+| `token` | `dynamic` | — | token value consumed by this operation. |
+| `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L432)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L478)
 
 <a id="function-function-minisql-executor-sort-sortprojected-function-sortprojected-rows-orderitems-src-minisql-executor-sort-ml-1723376011"></a>
 ### sortProjected
@@ -308,11 +314,11 @@ Sorts projected using the supplied inputs. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L161)
 
 <a id="function-function-minisql-executor-sort-sortprojectedwithspill-function-sortprojectedwithspill-rows-orderitems-temporaryroot-threshold-src-minisql-executor-sort-ml-1872830833"></a>
 ### sortProjectedWithSpill
@@ -325,13 +331,13 @@ Performs stable external merge sorting when rows exceed `threshold`. Sorted chun
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
-| `temporaryRoot` | `dynamic` | — |  |
-| `threshold` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
+| `temporaryRoot` | `dynamic` | — | temporaryRoot value consumed by this operation. |
+| `threshold` | `dynamic` | — | threshold value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L439)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L489)
 
 <a id="constant-constant-minisql-executor-sort-spill-header-size-const-spill-header-size-16-src-minisql-executor-sort-ml-117544562"></a>
 ### SPILL_HEADER_SIZE
@@ -340,8 +346,10 @@ Performs stable external merge sorting when rows exceed `threshold`. Sorted chun
 const SPILL_HEADER_SIZE = 16
 ```
 
+Defines the spill header size constant used by the minisql executor sort module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L28)
 
 <a id="constant-constant-minisql-executor-sort-spill-version-const-spill-version-1-src-minisql-executor-sort-ml-1734409364"></a>
 ### SPILL_VERSION
@@ -349,6 +357,8 @@ const SPILL_HEADER_SIZE = 16
 ```ml
 const SPILL_VERSION = 1
 ```
+
+Defines the spill version constant used by the minisql executor sort module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L26)
@@ -364,10 +374,10 @@ Creates domain-separated AAD for one ordered spill row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rowIndex` | `dynamic` | — |  |
+| `rowIndex` | `dynamic` | — | Zero-based index of row. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L269)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L304)
 
 <a id="function-function-minisql-executor-sort-spillmagic-function-spillmagic-src-minisql-executor-sort-ml-244061314"></a>
 ### spillMagic
@@ -379,7 +389,7 @@ function spillMagic()
 Implements spill magic for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L64)
 
 <a id="global-global-minisql-executor-sort-spillnonce-spillnonce-src-minisql-executor-sort-ml-2117164018"></a>
 ### spillNonce
@@ -388,8 +398,10 @@ Implements spill magic for this module. Returns the computed value or operation 
 spillNonce
 ```
 
+Stores module-wide spill nonce state for the minisql executor sort module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L33)
 
 - [minisql.executor.sort.SpillRun](Type-minisql-executor-sort-spillrun-632012310.md) — struct
 <a id="function-function-minisql-executor-sort-spillschema-function-spillschema-rows-valuecount-ordercount-src-minisql-executor-sort-ml-1979130154"></a>
@@ -403,12 +415,12 @@ Implements spill schema for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `valueCount` | `dynamic` | — |  |
-| `orderCount` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `valueCount` | `dynamic` | — | Number of value to process. |
+| `orderCount` | `dynamic` | — | Number of order to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L251)
 
 <a id="function-function-minisql-executor-sort-spillspec-function-spillspec-kind-src-minisql-executor-sort-ml-1981031390"></a>
 ### spillSpec
@@ -421,10 +433,10 @@ Implements spill spec for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `kind` | `dynamic` | — |  |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L229)
 
 <a id="function-function-minisql-executor-sort-spilltype-function-spilltype-kind-src-minisql-executor-sort-ml-20392400"></a>
 ### spillType
@@ -437,10 +449,10 @@ Implements spill type for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `kind` | `dynamic` | — |  |
+| `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L219)
 
 <a id="function-function-minisql-executor-sort-targetmilestone-function-targetmilestone-src-minisql-executor-sort-ml-206580668"></a>
 ### targetMilestone
@@ -449,10 +461,10 @@ Implements spill type for this module. Returns the computed value or operation s
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql executor sort module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L561)
 
 <a id="function-function-minisql-executor-sort-topnprojected-function-topnprojected-rows-orderitems-count-src-minisql-executor-sort-ml-1665386162"></a>
 ### topNProjected
@@ -465,12 +477,12 @@ Retains only the best `count` rows in stable ORDER BY order. The optimizer limit
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rows` | `dynamic` | — |  |
-| `orderItems` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `orderItems` | `dynamic` | — | orderItems value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L179)
 
 <a id="function-function-minisql-executor-sort-writerun-function-writerun-path-rows-valuecount-ordercount-src-minisql-executor-sort-ml-1745860299"></a>
 ### writeRun
@@ -483,10 +495,10 @@ Writes run using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
-| `valueCount` | `dynamic` | — |  |
-| `orderCount` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `valueCount` | `dynamic` | — | Number of value to process. |
+| `orderCount` | `dynamic` | — | Number of order to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L316)

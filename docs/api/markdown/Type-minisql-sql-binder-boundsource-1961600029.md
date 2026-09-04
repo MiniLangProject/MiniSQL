@@ -12,7 +12,7 @@ struct BoundSource
 Groups the bound source state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L33)
 
 ## Members
 
@@ -26,7 +26,7 @@ alias
 Stores the alias associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L37)
 
 <a id="field-field-minisql-sql-binder-boundsource-offset-offset-src-minisql-sql-binder-ml-1206926764"></a>
 ### offset
@@ -38,7 +38,7 @@ offset
 Tracks the offset numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L39)
 
 <a id="field-field-minisql-sql-binder-boundsource-query-query-src-minisql-sql-binder-ml-1403659898"></a>
 ### query
@@ -50,7 +50,7 @@ query
 Stores the query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L41)
 
 <a id="field-field-minisql-sql-binder-boundsource-table-table-src-minisql-sql-binder-ml-594101466"></a>
 ### table
@@ -62,4 +62,4 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L35)

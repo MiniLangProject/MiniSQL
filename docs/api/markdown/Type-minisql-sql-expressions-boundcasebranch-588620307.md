@@ -12,7 +12,7 @@ struct BoundCaseBranch
 Groups the bound case branch state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L95)
 
 ## Members
 
@@ -26,7 +26,7 @@ condition
 Stores the condition associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L97)
 
 <a id="field-field-minisql-sql-expressions-boundcasebranch-result-result-src-minisql-sql-expressions-ml-1386217081"></a>
 ### result
@@ -38,4 +38,4 @@ result
 Stores the result associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L99)

@@ -12,7 +12,7 @@ struct RowData
 Defines the row data record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L94)
 
 ## Members
 
@@ -26,7 +26,7 @@ schemaVersion
 Schema version field of the row data.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L96)
 
 <a id="field-field-minisql-storage-row-codec-rowdata-values-values-src-minisql-storage-row-codec-ml-1674404311"></a>
 ### values
@@ -38,4 +38,4 @@ values
 Values field of the row data.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L98)

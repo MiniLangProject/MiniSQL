@@ -12,7 +12,7 @@ struct WindowMinimum
 Retains a top-level window's minimum client dimensions in DPI-independent pixels.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L432)
 
 ## Members
 
@@ -26,7 +26,7 @@ height
 Stores the minimum usable client height in DIPs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L438)
 
 <a id="field-field-minisql-platform-win32-gui-windowminimum-hwnd-hwnd-src-minisql-platform-win32-gui-ml-944164759"></a>
 ### hwnd
@@ -38,7 +38,7 @@ hwnd
 Identifies the top-level window governed by this constraint.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L434)
 
 <a id="field-field-minisql-platform-win32-gui-windowminimum-width-width-src-minisql-platform-win32-gui-ml-451109877"></a>
 ### width
@@ -50,4 +50,4 @@ width
 Stores the minimum usable client width in DIPs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L239)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L436)

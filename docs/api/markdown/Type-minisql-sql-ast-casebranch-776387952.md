@@ -12,7 +12,7 @@ struct CaseBranch
 Groups the case branch state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L176)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L231)
 
 ## Members
 
@@ -26,7 +26,7 @@ condition
 Stores the condition associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L233)
 
 <a id="field-field-minisql-sql-ast-casebranch-result-result-src-minisql-sql-ast-ml-765830529"></a>
 ### result
@@ -38,4 +38,4 @@ result
 Stores the result associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L180)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L235)

@@ -1,3 +1,5 @@
+//! Provides minisql executor executor facilities for this project.
+
 package minisql.executor.executor
 
 // Copyright 2026 MiniLangProject contributors
@@ -35,221 +37,244 @@ import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.transaction as transaction
 import std.ds.list as list
 
-// SQL execution facade. M16 extends the accepted M15 scan/filter/projection
-// pipeline with joins, grouping, aggregates, set operations and explicit logical
-// and physical plan descriptions. Later milestones add statistics, protocol
-// sessions and savepoints without changing this public execution contract.
+/// SQL execution facade. M16 extends the accepted M15 scan/filter/projection
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql executor executor module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql executor executor module.
 const CLOSED_HANDLE = 9008
+/// Defines the transaction state constant used by the minisql executor executor module.
 const TRANSACTION_STATE = 9011
+/// Defines the binding error constant used by the minisql executor executor module.
 const BINDING_ERROR = 9020
+/// Defines the constraint violation constant used by the minisql executor executor module.
 const CONSTRAINT_VIOLATION = 9021
+/// Defines the analyze sample rows constant used by the minisql executor executor module.
 const ANALYZE_SAMPLE_ROWS = 8192
+/// Defines the ddl state constant used by the minisql executor executor module.
 const DDL_STATE = 9023
+/// Defines the unsupported sql constant used by the minisql executor executor module.
 const UNSUPPORTED_SQL = 9025
+/// Defines the authentication required constant used by the minisql executor executor module.
 const AUTHENTICATION_REQUIRED = 9028
+/// Defines the permission denied constant used by the minisql executor executor module.
 const PERMISSION_DENIED = 9029
 
+/// Defines the mode none constant used by the minisql executor executor module.
 const MODE_NONE = 0
+/// Defines the mode dml constant used by the minisql executor executor module.
 const MODE_DML = 1
+/// Defines the mode ddl constant used by the minisql executor executor module.
 const MODE_DDL = 2
 
+/// Defines the result command constant used by the minisql executor executor module.
 const RESULT_COMMAND = 1
+/// Defines the result rows constant used by the minisql executor executor module.
 const RESULT_ROWS = 2
+/// Defines the plan cache capacity constant used by the minisql executor executor module.
 const PLAN_CACHE_CAPACITY = 64
+/// Defines the execution batch rows constant used by the minisql executor executor module.
 const EXECUTION_BATCH_ROWS = 128
-// Cursor scans retain at most the historical sixteen source rows at once, then
-// coalesce narrow projected rows until one preferred protocol frame is full.
+/// Cursor scans retain at most the historical sixteen source rows at once, then
 const CURSOR_SOURCE_BATCH_ROWS = 16
+/// Defines the cursor target batch bytes constant used by the minisql executor executor module.
 const CURSOR_TARGET_BATCH_BYTES = 1048552
+/// Defines the default query memory bytes constant used by the minisql executor executor module.
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
+/// Defines the query cancelled constant used by the minisql executor executor module.
 const QUERY_CANCELLED = 9035
+/// Defines the query timeout constant used by the minisql executor executor module.
 const QUERY_TIMEOUT = 9036
 
-// Identifies the flattened, versioned parameter metadata stored with procedures.
+/// Identifies the flattened, versioned parameter metadata stored with procedures.
 const PROCEDURE_PARAMETER_METADATA_V1 = "__minisql_parameter_metadata_v1__"
 
-// Groups the query result state and preserves the field relationships documented below.
+/// Groups the query result state and preserves the field relationships documented below.
 struct QueryResult
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the command associated with this value.
+  /// Stores the command associated with this value.
   command
-  // Contains the ordered columns collection.
+  /// Contains the ordered columns collection.
   columns
-  // Contains the ordered rows collection.
+  /// Contains the ordered rows collection.
   rows
-  // Stores the affected rows associated with this value.
+  /// Stores the affected rows associated with this value.
   affectedRows
-  // Stores the message associated with this value.
+  /// Stores the message associated with this value.
   message
 end struct
 
-// Groups the prepared statement state state and preserves the field relationships documented below.
+/// Groups the prepared statement state state and preserves the field relationships documented below.
 struct PreparedStatementState
-  // Stores the name associated with this value.
+  /// Stores the name associated with this value.
   name
-  // Stores the statement associated with this value.
+  /// Stores the statement associated with this value.
   statement
-  // Tracks the parameter count numeric value.
+  /// Tracks the parameter count numeric value.
   parameterCount
-  // Stores the schema generation associated with this value.
+  /// Stores the schema generation associated with this value.
   schemaGeneration
 end struct
 
-// Groups the sequence session value state and preserves the field relationships documented below.
+/// Groups the sequence session value state and preserves the field relationships documented below.
 struct SequenceSessionValue
-  // Stores the name associated with this value.
+  /// Stores the name associated with this value.
   name
-  // Stores the value associated with this value.
+  /// Stores the value associated with this value.
   value
 end struct
 
-// Stores one active recursive CTE working table on the session-local evaluation stack.
+/// Stores one active recursive CTE working table on the session-local evaluation stack.
 struct RecursiveCteFrame
-  // Stores the CTE name used by bound self-reference sources.
+  /// Stores the CTE name used by bound self-reference sources.
   name
-  // Contains the current iteration's delta rows.
+  /// Contains the current iteration's delta rows.
   rows
 end struct
 
-// Session-local reusable physical plan. Entries are generation-bound and the
-// cache is invalidated atomically with local DDL or statistics maintenance.
+/// Session-local reusable physical plan. Entries are generation-bound and the
+/// cache is invalidated atomically with local DDL or statistics maintenance.
 struct CachedPlan
-  // Canonical formatted SELECT text used for lookup.
+  /// Canonical formatted SELECT text used for lookup.
   key
-  // Shared catalog/maintenance generation at planning time.
+  /// Shared catalog/maintenance generation at planning time.
   schemaGeneration
-  // Persistent statistics generation at planning time.
+  /// Persistent statistics generation at planning time.
   statisticsGeneration
-  // Costed physical and executable plan.
+  /// Costed physical and executable plan.
   optimized
-  // Number of successful reuses since insertion.
+  /// Number of successful reuses since insertion.
   hits
 end struct
 
-// Groups the engine state and preserves the field relationships documented below.
+/// Groups the engine state and preserves the field relationships documented below.
 struct Engine
-  // Stores the database associated with this value.
+  /// Stores the database associated with this value.
   database
-  // Stores the owns database associated with this value.
+  /// Stores the owns database associated with this value.
   ownsDatabase
-  // Stores the explicit transaction associated with this value.
+  /// Stores the explicit transaction associated with this value.
   explicitTransaction
-  // Stores the transaction mode associated with this value.
+  /// Stores the transaction mode associated with this value.
   transactionMode
-  // Stores the page transaction associated with this value.
+  /// Stores the page transaction associated with this value.
   pageTransaction
-  // Stores the DDL transaction associated with this value.
+  /// Stores the DDL transaction associated with this value.
   ddlTransaction
-  // Stores the failed associated with this value.
+  /// Stores the failed associated with this value.
   failed
-  // Indicates whether the closed condition is active.
+  /// Indicates whether the closed condition is active.
   closed
-  // Stores the trusted associated with this value.
+  /// Stores the trusted associated with this value.
   trusted
-  // Identifies the principal identifier.
+  /// Identifies the principal identifier.
   principalId
-  // Stores the prepared statements associated with this value.
+  /// Stores the prepared statements associated with this value.
   preparedStatements
-  // Identifies the session identifier.
+  /// Identifies the session identifier.
   sessionId
-  // Stores the sequence values associated with this value.
+  /// Stores the sequence values associated with this value.
   sequenceValues
-  // Tracks the trigger depth numeric value.
+  /// Tracks the trigger depth numeric value.
   triggerDepth
-  // Contains nested recursive-CTE working tables for this isolated session.
+  /// Contains nested recursive-CTE working tables for this isolated session.
   recursiveCteFrames
-  // Caches advisory statistics and index metadata for physical planning.
+  /// Caches advisory statistics and index metadata for physical planning.
   planningContext
-  // Contains bounded reusable physical plans for normalized SELECT text.
+  /// Contains bounded reusable physical plans for normalized SELECT text.
   planCache
-  // Exact caller SQL consumed by the first/top-level physical-plan lookup.
-  // Nested SELECTs fall back to canonical AST keys after this value is cleared.
+  /// Exact caller SQL consumed by the first/top-level physical-plan lookup.
   activePlanKey
-  // Soft-limit policy and diagnostics for the current or most recent statement.
+  /// Soft-limit policy and diagnostics for the current or most recent statement.
   queryMemory
-  // Cooperative cancellation/deadline state for the active top-level statement.
+  /// Cooperative cancellation/deadline state for the active top-level statement.
   queryControl
 end struct
 
-// Holds the resources of a simple forward-only SELECT. The physical read gate
-// and logical statement lease remain owned until exhaustion or explicit close,
-// preventing writers from changing pages while protocol batches are emitted.
+/// Holds the resources of a simple forward-only SELECT. The physical read gate
+/// and logical statement lease remain owned until exhaustion or explicit close,
+/// preventing writers from changing pages while protocol batches are emitted.
 struct SelectCursor
-  // Session engine that owns permissions, locks, and database handles.
+  /// Session engine that owns permissions, locks, and database handles.
   engine
-  // Bound SELECT expressions and LIMIT/OFFSET metadata.
+  /// Bound SELECT expressions and LIMIT/OFFSET metadata.
   bound
-  // Optimizer-normalized predicate evaluated for every source row.
+  /// Optimizer-normalized predicate evaluated for every source row.
   wherePredicate
-  // Open table reader retained for the cursor lifetime.
+  /// Open table reader retained for the cursor lifetime.
   reader
-  // Bounded storage cursor over the selected source columns.
+  /// Bounded storage cursor over the selected source columns.
   scanCursor
-  // Logical statement read lease released at cursor completion.
+  /// Logical statement read lease released at cursor completion.
   readLease
-  // Number of qualifying rows discarded for OFFSET.
+  /// Number of qualifying rows discarded for OFFSET.
   skipped
-  // Number of projected rows returned to the caller.
+  /// Number of projected rows returned to the caller.
   emitted
-  // True after resources have been released.
+  /// True after resources have been released.
   closed
 end struct
 
-// Per-session query memory policy and last-statement diagnostics. Operators use
-// byte-derived row thresholds instead of assuming that every row has one size.
+/// Per-session query memory policy and last-statement diagnostics. Operators use
+/// byte-derived row thresholds instead of assuming that every row has one size.
 struct QueryMemoryManager
-  // Configured soft memory limit for blocking operators.
+  /// Configured soft memory limit for blocking operators.
   limitBytes
-  // Largest estimated resident operator input observed by the statement.
+  /// Largest estimated resident operator input observed by the statement.
   peakBytes
-  // Estimated bytes delegated to temporary spill runs.
+  /// Estimated bytes delegated to temporary spill runs.
   spillBytes
-  // Number of blocking operators that selected a spill path.
+  /// Number of blocking operators that selected a spill path.
   spillRuns
 end struct
 
-// Session-local token polled at bounded executor and storage batch boundaries.
+/// Session-local token polled at bounded executor and storage batch boundaries.
 struct QueryControl
-  // True while a top-level statement or streaming cursor owns the token.
+  /// True while a top-level statement or streaming cursor owns the token.
   active
-  // Monotonic timestamp at which the top-level statement was admitted.
+  /// Monotonic timestamp at which the top-level statement was admitted.
   startedAt
-  // Absolute monotonic timestamp after which cooperative polling fails.
+  /// Absolute monotonic timestamp after which cooperative polling fails.
   deadlineAt
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor executor module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.executor." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the query result condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the query result condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isQueryResult(value)
   return value is QueryResult
 end function
 
-// Returns whether the supplied value satisfies the engine condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the engine condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isEngine(value)
   return value is Engine
 end function
 
-// Exposes non-sensitive optimizer cache counters for diagnostics and tests.
+/// Exposes non-sensitive optimizer cache counters for diagnostics and tests.
+/// @param engine engine value consumed by this operation.
 function planCacheEntryCount(engine)
   validateOpen(engine, "planCacheEntryCount")
   return len(engine.planCache)
 end function
 
-// Returns cumulative hits of entries still resident in the session cache.
+/// Returns cumulative hits of entries still resident in the session cache.
+/// @param engine engine value consumed by this operation.
 function planCacheHitCount(engine)
   validateOpen(engine, "planCacheHitCount")
   hits = 0
@@ -259,21 +284,28 @@ function planCacheHitCount(engine)
   return hits
 end function
 
-// Implements command result for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements command result for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param command command value consumed by this operation.
+/// @param affectedRows affectedRows value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function commandResult(command, affectedRows, message)
   return QueryResult(RESULT_COMMAND, command, [], [], affectedRows, message)
 end function
 
-// Implements row result for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements row result for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param columns columns value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function rowResult(columns, rows)
   return QueryResult(RESULT_ROWS, "SELECT", columns, rows, len(rows), "")
 end function
 
-// Configures the soft per-query memory budget used by blocking operators.
+/// Configures the soft per-query memory budget used by blocking operators.
+/// @param engine engine value consumed by this operation.
+/// @param limitBytes limitBytes value consumed by this operation.
 function setQueryMemoryLimit(engine, limitBytes)
   validateOpen(engine, "setQueryMemoryLimit")
   if typeof(limitBytes) != "int" or limitBytes < 1048576 then return fail(INVALID_ARGUMENT, "setQueryMemoryLimit", "limit must be at least 1 MiB") end if
@@ -281,7 +313,8 @@ function setQueryMemoryLimit(engine, limitBytes)
   return true
 end function
 
-// Clears last-statement accounting without changing the configured policy.
+/// Clears last-statement accounting without changing the configured policy.
+/// @param engine engine value consumed by this operation.
 function resetQueryMemory(engine)
   if engine.queryMemory.spillBytes > 0 then ignoredRelease = try(database_manager.releaseTemporaryStorage(engine.database, engine.queryMemory.spillBytes)) end if
   engine.queryMemory.peakBytes = 0
@@ -290,9 +323,10 @@ function resetQueryMemory(engine)
   return true
 end function
 
-// Estimates the retained representation of one SQL value. This is a soft
-// accounting model, not a heap allocator contract; variable payload bytes are
-// nevertheless measured exactly so wide-row spill decisions are meaningful.
+/// Estimates the retained representation of one SQL value. This is a soft
+/// accounting model, not a heap allocator contract; variable payload bytes are
+/// nevertheless measured exactly so wide-row spill decisions are meaningful.
+/// @param value Value consumed or transformed by the operation.
 function estimatedValueBytes(value)
   if value.isNull then return 16 end if
   if typeof(value.value) == "string" then return 32 + len(bytes(value.value)) end if
@@ -300,7 +334,9 @@ function estimatedValueBytes(value)
   return 24
 end function
 
-// Estimates an array of scanned/projected rows and updates the peak diagnostic.
+/// Estimates an array of scanned/projected rows and updates the peak diagnostic.
+/// @param engine engine value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function estimatedOperatorBytes(engine, rows)
   if typeof(rows) != "array" then return 0 end if
   total = 24 * len(rows)
@@ -318,7 +354,9 @@ function estimatedOperatorBytes(engine, rows)
   return total
 end function
 
-// Derives a spill row threshold from sampled row width and the byte budget.
+/// Derives a spill row threshold from sampled row width and the byte budget.
+/// @param engine engine value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function queryRowThreshold(engine, rows)
   if len(rows) == 0 then return 128 end if
   sampleCount = len(rows)
@@ -337,7 +375,9 @@ function queryRowThreshold(engine, rows)
   return threshold
 end function
 
-// Records a spill decision using the measured input representation.
+/// Records a spill decision using the measured input representation.
+/// @param engine engine value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function noteQuerySpill(engine, rows)
   reservedBytes = estimatedOperatorBytes(engine, rows)
   reserved = try(database_manager.reserveTemporaryStorage(engine.database, reservedBytes))
@@ -347,7 +387,8 @@ function noteQuerySpill(engine, rows)
   return true
 end function
 
-// Starts one top-level cooperative token after global memory admission.
+/// Starts one top-level cooperative token after global memory admission.
+/// @param engine engine value consumed by this operation.
 function beginQueryControl(engine)
   validateOpen(engine, "beginQueryControl")
   if engine.queryControl.active then return true end if
@@ -361,7 +402,8 @@ function beginQueryControl(engine)
   return true
 end function
 
-// Releases reservations and deactivates a completed token.
+/// Releases reservations and deactivates a completed token.
+/// @param engine engine value consumed by this operation.
 function finishQueryControl(engine)
   if not isEngine(engine) then return true end if
   resetQueryMemory(engine)
@@ -371,7 +413,9 @@ function finishQueryControl(engine)
   return true
 end function
 
-// Polls administrator cancellation and the monotonic execution deadline.
+/// Polls administrator cancellation and the monotonic execution deadline.
+/// @param engine engine value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function pollQueryControl(engine, operation)
   validateOpen(engine, operation)
   if not engine.queryControl.active then return true end if
@@ -388,10 +432,11 @@ function pollQueryControl(engine, operation)
   return true
 end function
 
-// Performs the index readiness pass once for an opened database. Clean marker
-// state needs only derived-file existence checks; a dirty marker or missing
-// file performs the expensive rebuild/verification path. A double check inside
-// the exclusive gate lets concurrent connection accepts share either result.
+/// Performs the index readiness pass once for an opened database. Clean marker
+/// state needs only derived-file existence checks; a dirty marker or missing
+/// file performs the expensive rebuild/verification path. A double check inside
+/// the exclusive gate lets concurrent connection accepts share either result.
+/// @param database database value consumed by this operation.
 function prepareDatabase(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "prepareDatabase", "database must be ManagedDatabase") end if
   if database_manager.indexesReady(database) then return true end if
@@ -406,10 +451,11 @@ function prepareDatabase(database)
   return result
 end function
 
-// Implements attach for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements attach for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function attach(database)
   if not database_manager.isManagedDatabase(database) then return fail(INVALID_ARGUMENT, "attach", "database must be ManagedDatabase") end if
   prepared = try(prepareDatabase(database))
@@ -417,10 +463,11 @@ function attach(database)
   return Engine(database, false, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0), QueryControl(false, 0, 0))
 end function
 
-// Opens open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens open for the minisql executor executor module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
 function open(databasePath)
   database = database_manager.open(databasePath)
   prepared = try(prepareDatabase(database))
@@ -428,9 +475,11 @@ function open(databasePath)
   return Engine(database, true, false, MODE_NONE, void, void, false, false, true, metadata.PRINCIPAL_ADMIN_ID, [], database_manager.allocateSessionId(database), [], 0, [], void, [], "", QueryMemoryManager(DEFAULT_QUERY_MEMORY_BYTES, 0, 0, 0), QueryControl(false, 0, 0))
 end function
 
-// Implements set principal for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements set principal for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param principalId Identifier of principal.
 function setPrincipal(engine, principalId)
   validateOpen(engine, "setPrincipal")
   principal = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, principalId)
@@ -440,51 +489,61 @@ function setPrincipal(engine, principalId)
   return true
 end function
 
-// Implements principal for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements principal for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function principal(engine)
   validateOpen(engine, "principal")
   return catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, engine.principalId)
 end function
 
-// Validates open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates open for the minisql executor executor workflow.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(engine, operation)
   if engine is not Engine then return fail(INVALID_ARGUMENT, operation, "engine must be Engine") end if
   if engine.closed then return fail(CLOSED_HANDLE, operation, "engine is closed") end if
   return true
 end function
 
-// Returns whether the supplied value satisfies the prepared statement state condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the prepared statement state condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isPreparedStatementState(value)
   return value is PreparedStatementState
 end function
 
-// Returns whether the supplied value satisfies the sequence session value condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the sequence session value condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isSequenceSessionValue(value)
   return value is SequenceSessionValue
 end function
 
-// Implements sequence argument name for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements sequence argument name for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function sequenceArgumentName(expression, operation)
   if ast.isLiteralExpression(expression) and expression.literalKind == ast.LITERAL_STRING then return expression.value end if
   if ast.isTypedLiteralExpression(expression) and values.isSqlValue(expression.value) and not expression.value.isNull and typeof(expression.value.value) == "string" then return expression.value.value end if
   return fail(BINDING_ERROR, operation, "sequence name must be a string literal")
 end function
 
-// Implements remember sequence value for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements remember sequence value for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param name Name of the affected item.
+/// @param value Value consumed or transformed by the operation.
 function rememberSequenceValue(engine, name, value)
   if len(engine.sequenceValues) > 0 then
     for index = 0 to len(engine.sequenceValues) - 1
@@ -495,10 +554,12 @@ function rememberSequenceValue(engine, name, value)
   return true
 end function
 
-// Implements current sequence value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements current sequence value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param name Name of the affected item.
 function currentSequenceValue(engine, name)
   for each current in engine.sequenceValues
     if current.name == name then return current.value end if
@@ -506,19 +567,22 @@ function currentSequenceValue(engine, name)
   return fail(BINDING_ERROR, "currval", "CURRVAL is not defined in this session for sequence " + name)
 end function
 
-// Returns the process-local planning generation shared across attached
-// sessions. Committed DDL and statistics maintenance advance this counter while
-// the execution gate is held, avoiding a schema-history file read per EXECUTE.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Returns the process-local planning generation shared across attached
+/// sessions. Committed DDL and statistics maintenance advance this counter while
+/// the execution gate is held, avoiding a schema-history file read per EXECUTE.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function currentPlanningGeneration(engine)
   return database_manager.planningGeneration(engine.database)
 end function
 
-// Finds prepared index using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds prepared index using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param name Name of the affected item.
 function findPreparedIndex(engine, name)
   if typeof(name) != "string" then return fail(INVALID_ARGUMENT, "findPreparedIndex", "name must be string") end if
   if len(engine.preparedStatements) > 0 then
@@ -529,9 +593,10 @@ function findPreparedIndex(engine, name)
   return -1
 end function
 
-// Implements constant parameter expression for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements constant parameter expression for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
 function constantParameterExpression(expression)
   if ast.isLiteralExpression(expression) then return true end if
   if ast.isUnaryExpression(expression) then return constantParameterExpression(expression.operand) end if
@@ -563,10 +628,12 @@ function constantParameterExpression(expression)
   return false
 end function
 
-// Implements substitute expression for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements substitute expression for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param parameters parameters value consumed by this operation.
 function substituteExpression(expression, parameters)
   if ast.isParameterExpression(expression) then
     if expression.index < 0 or expression.index >= len(parameters) then return fail(BINDING_ERROR, "substituteExpression", "parameter index is outside EXECUTE arguments") end if
@@ -623,10 +690,12 @@ function substituteExpression(expression, parameters)
   return fail(BINDING_ERROR, "substituteExpression", "unsupported prepared expression")
 end function
 
-// Implements substitute select for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements substitute select for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
+/// @param parameters parameters value consumed by this operation.
 function substituteSelect(statement, parameters)
   items = []
   for each item in statement.items
@@ -661,9 +730,11 @@ function substituteSelect(statement, parameters)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
-// Implements substitute returning for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements substitute returning for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param items Items consumed or updated by the operation.
+/// @param parameters parameters value consumed by this operation.
 function substituteReturning(items, parameters)
   output = []
   for each item in items
@@ -672,10 +743,12 @@ function substituteReturning(items, parameters)
   return output
 end function
 
-// Implements substitute statement for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements substitute statement for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
+/// @param parameters parameters value consumed by this operation.
 function substituteStatement(statement, parameters)
   if ast.isSelectStatement(statement) then return substituteSelect(statement, parameters) end if
   if ast.isInsertStatement(statement) then
@@ -714,10 +787,14 @@ function substituteStatement(statement, parameters)
   return fail(UNSUPPORTED_SQL, "substituteStatement", "prepared statement type is unsupported")
 end function
 
-// Implements materialize expression for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements materialize expression for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param deferSubqueries deferSubqueries value consumed by this operation.
 function materializeExpression(engine, expression, pageTransaction, deferSubqueries)
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isColumnExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
   if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries)) end if
@@ -807,10 +884,13 @@ function materializeExpression(engine, expression, pageTransaction, deferSubquer
   return fail(BINDING_ERROR, "materializeExpression", "unsupported expression")
 end function
 
-// Implements materialize select statement for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements materialize select statement for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function materializeSelectStatement(engine, statement, pageTransaction)
   items = []
   for each item in statement.items
@@ -845,7 +925,9 @@ function materializeSelectStatement(engine, statement, pageTransaction)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
-// Returns true when a nested SELECT declares a qualifier that shadows an outer source.
+/// Returns true when a nested SELECT declares a qualifier that shadows an outer source.
+/// @param statement statement value consumed by this operation.
+/// @param qualifier qualifier value consumed by this operation.
 function nestedSelectDeclaresQualifier(statement, qualifier)
   if statement.tableName is not void then
     tableParts = splitObjectName(statement.tableName)
@@ -861,7 +943,9 @@ function nestedSelectDeclaresQualifier(statement, qualifier)
   return false
 end function
 
-// Detects a qualified column whose source is not declared by its immediate SELECT.
+/// Detects a qualified column whose source is not declared by its immediate SELECT.
+/// @param expression expression value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function expressionHasPotentialOuterReference(expression, statement)
   if ast.isColumnExpression(expression) then return expression.qualifier is not void and not nestedSelectDeclaresQualifier(statement, expression.qualifier) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return false end if
@@ -904,7 +988,8 @@ function expressionHasPotentialOuterReference(expression, statement)
   return false
 end function
 
-// Returns whether any expression in a SELECT may need a concrete outer row.
+/// Returns whether any expression in a SELECT may need a concrete outer row.
+/// @param statement statement value consumed by this operation.
 function selectHasPotentialOuterReferences(statement)
   for each item in statement.items
     if expressionHasPotentialOuterReference(item.expression, statement) then return true end if
@@ -929,7 +1014,11 @@ function selectHasPotentialOuterReferences(statement)
   return false
 end function
 
-// Resolves a qualified outer reference against the current joined source row.
+/// Resolves a qualified outer reference against the current joined source row.
+/// @param expression expression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param rowValues rowValues value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function substituteOuterColumn(expression, sources, rowValues, statement)
   if expression.qualifier is void or nestedSelectDeclaresQualifier(statement, expression.qualifier) then return expression end if
   for each source in sources
@@ -950,7 +1039,11 @@ function substituteOuterColumn(expression, sources, rowValues, statement)
   return expression
 end function
 
-// Substitutes outer-row values throughout an expression while preserving inner shadowing.
+/// Substitutes outer-row values throughout an expression while preserving inner shadowing.
+/// @param expression expression value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param rowValues rowValues value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function substituteOuterExpression(expression, sources, rowValues, statement)
   if ast.isColumnExpression(expression) then return substituteOuterColumn(expression, sources, rowValues, statement) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
@@ -1004,7 +1097,10 @@ function substituteOuterExpression(expression, sources, rowValues, statement)
   return fail(BINDING_ERROR, "correlatedSubquery", "unsupported nested expression")
 end function
 
-// Copies a nested SELECT with every non-shadowed outer reference replaced by a row literal.
+/// Copies a nested SELECT with every non-shadowed outer reference replaced by a row literal.
+/// @param statement statement value consumed by this operation.
+/// @param sources sources value consumed by this operation.
+/// @param rowValues rowValues value consumed by this operation.
 function substituteOuterSelect(statement, sources, rowValues)
   items = []
   for each item in statement.items
@@ -1039,10 +1135,13 @@ function substituteOuterSelect(statement, sources, rowValues)
   return ast.SelectStatement(statement.distinct, items, statement.tableName, statement.tableAlias, joins, whereExpression, groups, havingExpression, setOperations, orderBy, statement.limit, statement.offset, ctes)
 end function
 
-// Implements materialize DML statement for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements materialize DML statement for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function materializeDmlStatement(engine, statement, pageTransaction)
   if ast.isInsertStatement(statement) then
     rows = []
@@ -1092,18 +1191,22 @@ function materializeDmlStatement(engine, statement, pageTransaction)
   return statement
 end function
 
-// Executes prepare using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Executes prepare using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executePrepare(engine, statement)
   if findPreparedIndex(engine, statement.name) >= 0 then return fail(BINDING_ERROR, "prepare", "prepared statement already exists: " + statement.name) end if
   engine.preparedStatements = engine.preparedStatements + [PreparedStatementState(statement.name, statement.statement, statement.parameterCount, currentPlanningGeneration(engine))]
   return commandResult("PREPARE", 0, statement.name + " parameters=" + statement.parameterCount)
 end function
 
-// Executes prepared using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Executes prepared using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executePrepared(engine, statement)
   index = findPreparedIndex(engine, statement.name)
   if index < 0 then return fail(BINDING_ERROR, "executePrepared", "prepared statement not found: " + statement.name) end if
@@ -1123,9 +1226,11 @@ function executePrepared(engine, statement)
   return executeStatementCore(engine, expanded)
 end function
 
-// Executes deallocate using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Executes deallocate using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDeallocate(engine, statement)
   index = findPreparedIndex(engine, statement.name)
   if index < 0 then return fail(BINDING_ERROR, "deallocate", "prepared statement not found: " + statement.name) end if
@@ -1139,9 +1244,10 @@ function executeDeallocate(engine, statement)
   return commandResult("DEALLOCATE", 0, statement.name)
 end function
 
-// Resets transaction using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Resets transaction using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function resetTransaction(engine)
   engine.explicitTransaction = false
   engine.transactionMode = MODE_NONE
@@ -1151,17 +1257,20 @@ function resetTransaction(engine)
   return true
 end function
 
-// Implements isolation value for this module.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Implements isolation value for this module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param name Name of the affected item.
 function isolationValue(name)
   if name == "READ COMMITTED" then return transaction.ISOLATION_READ_COMMITTED end if
   return transaction.ISOLATION_SERIALIZABLE
 end function
 
-// Implements begin explicit for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements begin explicit for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function beginExplicit(engine, statement)
   validateOpen(engine, "begin")
   if engine.explicitTransaction then return fail(TRANSACTION_STATE, "begin", "transaction already active") end if
@@ -1177,10 +1286,11 @@ function beginExplicit(engine, statement)
   return commandResult("BEGIN", 0, "transaction started")
 end function
 
-// Ensures explicit DML using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Ensures explicit DML using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function ensureExplicitDml(engine)
   if engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "ensureExplicitDml", "mixing DDL and DML in one M15 transaction is not supported") end if
   if engine.transactionMode == MODE_NONE then
@@ -1191,10 +1301,11 @@ function ensureExplicitDml(engine)
   return engine.pageTransaction
 end function
 
-// Ensures explicit DDL using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Ensures explicit DDL using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function ensureExplicitDdl(engine)
   if engine.transactionMode == MODE_DML then return fail(UNSUPPORTED_SQL, "ensureExplicitDdl", "mixing DML and DDL in one M15 transaction is not supported") end if
   if engine.transactionMode == MODE_NONE then
@@ -1207,16 +1318,20 @@ function ensureExplicitDdl(engine)
   return engine.ddlTransaction
 end function
 
-// Binds bind using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Binds bind using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
+/// @param engine engine value consumed by this operation.
 function bind(statement, engine)
   return binder.bindStatement(statement, engine.database.catalogHandle)
 end function
 
-// Implements stage DDL for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements stage DDL for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param ddlTransaction ddlTransaction value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function stageDdl(ddlTransaction, bound)
   if binder.isBoundCreateTable(bound) then schema_history.stageCreateTable(ddlTransaction, bound); return "CREATE TABLE" end if
   if binder.isBoundCreateIndex(bound) then schema_history.stageCreateIndex(ddlTransaction, bound); return "CREATE INDEX" end if
@@ -1225,9 +1340,11 @@ function stageDdl(ddlTransaction, bound)
   return fail(BINDING_ERROR, "stageDdl", "unsupported bound DDL statement")
 end function
 
-// Validates ALTER TABLE operations whose safety depends on currently stored rows.
-// DROP COLUMN deliberately starts with empty tables so the versioned row codec
-// never has to reinterpret a wider historical row as a shorter layout.
+/// Validates ALTER TABLE operations whose safety depends on currently stored rows.
+/// DROP COLUMN deliberately starts with empty tables so the versioned row codec
+/// never has to reinterpret a wider historical row as a shorter layout.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function validateAlterTableRows(engine, bound)
   if not binder.isBoundAlterTable(bound) or bound.table is void then return true end if
   action = bound.statement.action
@@ -1244,7 +1361,10 @@ function validateAlterTableRows(engine, bound)
   return true
 end function
 
-// Verifies that the namespace of a qualified object exists before object DDL.
+/// Verifies that the namespace of a qualified object exists before object DDL.
+/// @param engine engine value consumed by this operation.
+/// @param objectName objectName value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function requireObjectSchema(engine, objectName, operation)
   parts = splitObjectName(objectName)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
@@ -1252,7 +1372,9 @@ function requireObjectSchema(engine, objectName, operation)
   return true
 end function
 
-// Executes durable CREATE/DROP SCHEMA operations outside user transactions.
+/// Executes durable CREATE/DROP SCHEMA operations outside user transactions.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeSchemaDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeSchemaDdl", "schema DDL is autocommit-only") end if
   databaseId = engine.database.catalogHandle.metadata.databaseId
@@ -1274,10 +1396,12 @@ function executeSchemaDdl(engine, statement)
   return fail(BINDING_ERROR, "executeSchemaDdl", "unsupported schema DDL")
 end function
 
-// Executes view DDL using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes view DDL using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeViewDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeViewDdl", "view DDL is autocommit-only in M43") end if
   database = engine.database.catalogHandle
@@ -1299,9 +1423,10 @@ function executeViewDdl(engine, statement)
   return fail(BINDING_ERROR, "executeViewDdl", "unsupported view DDL")
 end function
 
-// Implements trigger event code for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements trigger event code for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
 function triggerEventCode(bound)
   if binder.isBoundInsert(bound) then return schema_history.TRIGGER_INSERT end if
   if binder.isBoundUpdate(bound) then return schema_history.TRIGGER_UPDATE end if
@@ -1309,10 +1434,14 @@ function triggerEventCode(bound)
   return 0
 end function
 
-// Implements trigger column value for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements trigger column value for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param table table value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param qualifier qualifier value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function triggerColumnValue(table, row, qualifier, columnName)
   if row is void then return fail(BINDING_ERROR, "triggerColumnValue", qualifier + "." + columnName + " is not available for this trigger event") end if
   columnIndex = binder.findColumnIndex(table, columnName)
@@ -1320,10 +1449,14 @@ function triggerColumnValue(table, row, qualifier, columnName)
   return ast.typedLiteralExpression(row[columnIndex])
 end function
 
-// Implements replace trigger expression for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements replace trigger expression for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param expression expression value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param oldRow oldRow value consumed by this operation.
+/// @param newRow newRow value consumed by this operation.
 function replaceTriggerExpression(expression, table, oldRow, newRow)
   if ast.isColumnExpression(expression) then
     if expression.qualifier == "old" or expression.qualifier == "OLD" then return triggerColumnValue(table, oldRow, "OLD", expression.name) end if
@@ -1364,9 +1497,13 @@ function replaceTriggerExpression(expression, table, oldRow, newRow)
   return fail(BINDING_ERROR, "replaceTriggerExpression", "unsupported trigger expression")
 end function
 
-// Implements replace trigger returning for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements replace trigger returning for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param items Items consumed or updated by the operation.
+/// @param table table value consumed by this operation.
+/// @param oldRow oldRow value consumed by this operation.
+/// @param newRow newRow value consumed by this operation.
 function replaceTriggerReturning(items, table, oldRow, newRow)
   output = []
   for each item in items
@@ -1375,10 +1512,14 @@ function replaceTriggerReturning(items, table, oldRow, newRow)
   return output
 end function
 
-// Implements replace trigger statement for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements replace trigger statement for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
+/// @param table table value consumed by this operation.
+/// @param oldRow oldRow value consumed by this operation.
+/// @param newRow newRow value consumed by this operation.
 function replaceTriggerStatement(statement, table, oldRow, newRow)
   if ast.isInsertStatement(statement) then
     rows = []
@@ -1415,7 +1556,11 @@ function replaceTriggerStatement(statement, table, oldRow, newRow)
   return fail(UNSUPPORTED_SQL, "replaceTriggerStatement", "trigger body must be INSERT, UPDATE or DELETE")
 end function
 
-// Resolves one qualified MERGE source/target column for a concrete source row.
+/// Resolves one qualified MERGE source/target column for a concrete source row.
+/// @param expression expression value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param sourceTable sourceTable value consumed by this operation.
+/// @param sourceRow sourceRow value consumed by this operation.
 function replaceMergeColumn(expression, statement, sourceTable, sourceRow)
   sourceName = statement.sourceAlias
   if sourceName is void then sourceName = splitObjectName(statement.sourceTable)[1] end if
@@ -1431,7 +1576,11 @@ function replaceMergeColumn(expression, statement, sourceTable, sourceRow)
   return fail(BINDING_ERROR, "merge", "unknown MERGE qualifier " + expression.qualifier)
 end function
 
-// Rewrites a MERGE expression for one source row while leaving target columns bindable.
+/// Rewrites a MERGE expression for one source row while leaving target columns bindable.
+/// @param expression expression value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param sourceTable sourceTable value consumed by this operation.
+/// @param sourceRow sourceRow value consumed by this operation.
 function replaceMergeExpression(expression, statement, sourceTable, sourceRow)
   if ast.isColumnExpression(expression) then return replaceMergeColumn(expression, statement, sourceTable, sourceRow) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isParameterExpression(expression) then return expression end if
@@ -1467,7 +1616,10 @@ function replaceMergeExpression(expression, statement, sourceTable, sourceRow)
   return fail(UNSUPPORTED_SQL, "merge", "MERGE actions do not support stars, subqueries, or windows")
 end function
 
-// Replaces an unqualified procedure parameter reference with its invocation value.
+/// Replaces an unqualified procedure parameter reference with its invocation value.
+/// @param expression expression value consumed by this operation.
+/// @param parameterNames parameterNames value consumed by this operation.
+/// @param parameterValues parameterValues value consumed by this operation.
 function replaceProcedureParameter(expression, parameterNames, parameterValues)
   if expression.qualifier is not void then return expression end if
   if len(parameterNames) > 0 then
@@ -1478,7 +1630,10 @@ function replaceProcedureParameter(expression, parameterNames, parameterValues)
   return expression
 end function
 
-// Substitutes named procedure inputs throughout a supported DML expression.
+/// Substitutes named procedure inputs throughout a supported DML expression.
+/// @param expression expression value consumed by this operation.
+/// @param parameterNames parameterNames value consumed by this operation.
+/// @param parameterValues parameterValues value consumed by this operation.
 function replaceProcedureExpression(expression, parameterNames, parameterValues)
   if ast.isColumnExpression(expression) then return replaceProcedureParameter(expression, parameterNames, parameterValues) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
@@ -1514,7 +1669,10 @@ function replaceProcedureExpression(expression, parameterNames, parameterValues)
   return fail(UNSUPPORTED_SQL, "procedure", "procedure parameters are not supported inside subqueries or windows")
 end function
 
-// Substitutes procedure parameters in one persisted INSERT, UPDATE, or DELETE body.
+/// Substitutes procedure parameters in one persisted INSERT, UPDATE, or DELETE body.
+/// @param statement statement value consumed by this operation.
+/// @param parameterNames parameterNames value consumed by this operation.
+/// @param parameterValues parameterValues value consumed by this operation.
 function replaceProcedureStatement(statement, parameterNames, parameterValues)
   if ast.isInsertStatement(statement) then
     rows = []
@@ -1544,9 +1702,11 @@ function replaceProcedureStatement(statement, parameterNames, parameterValues)
   return fail(CORRUPT_DATA, "procedure", "stored procedure body is not supported DML")
 end function
 
-// Implements update touches trigger column for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements update touches trigger column for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param trigger trigger value consumed by this operation.
 function updateTouchesTriggerColumn(bound, trigger)
   if trigger.targetColumn == "" then return true end if
   targetIndex = binder.findColumnIndex(bound.table, trigger.targetColumn)
@@ -1557,10 +1717,16 @@ function updateTouchesTriggerColumn(bound, trigger)
   return false
 end function
 
-// Executes trigger body using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Executes trigger body using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param trigger trigger value consumed by this operation.
+/// @param sourceTable sourceTable value consumed by this operation.
+/// @param oldRow oldRow value consumed by this operation.
+/// @param newRow newRow value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function executeTriggerBody(engine, trigger, sourceTable, oldRow, newRow, pageTransaction)
   if engine.triggerDepth >= 8 then return fail(CONSTRAINT_VIOLATION, "executeTriggerBody", "maximum trigger recursion depth exceeded") end if
   parsed = parser.parseSql(trigger.expressionSql)
@@ -1577,9 +1743,13 @@ function executeTriggerBody(engine, trigger, sourceTable, oldRow, newRow, pageTr
   return result
 end function
 
-// Implements fire triggers for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements fire triggers for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param result Result object populated or inspected by the operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function fireTriggers(engine, bound, result, pageTransaction)
   eventType = triggerEventCode(bound)
   if eventType == 0 or not dml.isDmlResult(result) then return result end if
@@ -1615,7 +1785,8 @@ function fireTriggers(engine, bound, result, pageTransaction)
   return result
 end function
 
-// Returns whether the persisted statement formatter preserves the entire DML body.
+/// Returns whether the persisted statement formatter preserves the entire DML body.
+/// @param statement statement value consumed by this operation.
 function persistedProgramBodySupported(statement)
   if ast.isInsertStatement(statement) then
     return statement.sourceQuery is void and statement.conflictAction == ast.CONFLICT_NONE and len(statement.returning) == 0
@@ -1624,9 +1795,11 @@ function persistedProgramBodySupported(statement)
   return false
 end function
 
-// Executes trigger DDL using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes trigger DDL using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeTriggerDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "trigger DDL is autocommit-only in M45") end if
   database = engine.database.catalogHandle
@@ -1663,9 +1836,11 @@ function executeTriggerDdl(engine, statement)
   return fail(BINDING_ERROR, "executeTriggerDdl", "unsupported trigger DDL")
 end function
 
-// Executes sequence DDL using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes sequence DDL using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeSequenceDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeSequenceDdl", "sequence DDL is autocommit-only in M45") end if
   database = engine.database.catalogHandle
@@ -1684,7 +1859,8 @@ function executeSequenceDdl(engine, statement)
   return fail(BINDING_ERROR, "executeSequenceDdl", "unsupported sequence DDL")
 end function
 
-// Flattens named procedure inputs and their exact SQL types into durable metadata.
+/// Flattens named procedure inputs and their exact SQL types into durable metadata.
+/// @param parameters parameters value consumed by this operation.
 function encodeProcedureParameters(parameters)
   encoded = [PROCEDURE_PARAMETER_METADATA_V1]
   names = []
@@ -1699,7 +1875,8 @@ function encodeProcedureParameters(parameters)
   return encoded
 end function
 
-// Decodes ordered parameter names while accepting the pre-metadata representation.
+/// Decodes ordered parameter names while accepting the pre-metadata representation.
+/// @param encoded encoded value consumed by this operation.
 function decodeProcedureParameterNames(encoded)
   if len(encoded) == 0 or encoded[0] != PROCEDURE_PARAMETER_METADATA_V1 then return encoded end if
   if (len(encoded) - 1) % 5 != 0 then return fail(CORRUPT_DATA, "procedureParameters", "stored procedure parameter metadata is malformed") end if
@@ -1712,7 +1889,9 @@ function decodeProcedureParameterNames(encoded)
   return names
 end function
 
-// Reconstructs one declared SQL parameter type from flattened durable metadata.
+/// Reconstructs one declared SQL parameter type from flattened durable metadata.
+/// @param encoded encoded value consumed by this operation.
+/// @param parameterIndex Zero-based index of parameter.
 function decodeProcedureParameterType(encoded, parameterIndex)
   if len(encoded) == 0 or encoded[0] != PROCEDURE_PARAMETER_METADATA_V1 then return void end if
   offset = 1 + parameterIndex * 5
@@ -1724,7 +1903,9 @@ function decodeProcedureParameterType(encoded, parameterIndex)
   return types.fromTypeName(ast.typeName(encoded[offset + 1], lengthValue, precisionValue, scaleValue), true)
 end function
 
-// Creates, replaces, or drops a durable single-statement stored procedure.
+/// Creates, replaces, or drops a durable single-statement stored procedure.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeProcedureDdl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeProcedureDdl", "procedure DDL is autocommit-only") end if
   databaseId = engine.database.catalogHandle.metadata.databaseId
@@ -1744,7 +1925,9 @@ function executeProcedureDdl(engine, statement)
   return fail(BINDING_ERROR, "executeProcedureDdl", "unsupported procedure DDL")
 end function
 
-// Evaluates CALL arguments, substitutes named inputs, and executes the persisted DML body.
+/// Evaluates CALL arguments, substitutes named inputs, and executes the persisted DML body.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeCall(engine, statement)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   procedure = schema_history.findProcedure(state, statement.name)
@@ -1773,9 +1956,12 @@ function executeCall(engine, statement)
   return result
 end function
 
-// Rebuilds only indexes whose table schema changed in one autocommit DDL.
-// Unrelated tables remain byte-for-byte untouched; the durable dirty marker
-// still triggers the conservative all-index repair after a rebuild failure.
+/// Rebuilds only indexes whose table schema changed in one autocommit DDL.
+/// Unrelated tables remain byte-for-byte untouched; the durable dirty marker
+/// still triggers the conservative all-index repair after a rebuild failure.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function rebuildIndexesForDdl(engine, bound, statement)
   target = void
   if ast.isCreateTableStatement(statement) then
@@ -1787,10 +1973,12 @@ function rebuildIndexesForDdl(engine, bound, statement)
   return dml.rebuildIndexesForTable(engine.database, target)
 end function
 
-// Executes DDL using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes DDL using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDdl(engine, statement)
   if ast.isCreateTableStatement(statement) then
     requireObjectSchema(engine, statement.name, "executeDdl")
@@ -1831,9 +2019,12 @@ function executeDdl(engine, statement)
   return commandResult(staged, 0, "DDL committed")
 end function
 
-// Runs bound DML using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Runs bound DML using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function runBoundDml(engine, bound, pageTransaction)
   if binder.isBoundInsert(bound) then return dml.insert(engine.database, engine.sessionId, bound, pageTransaction) end if
   if binder.isBoundUpdate(bound) then return dml.update(engine.database, engine.sessionId, bound, pageTransaction) end if
@@ -1842,9 +2033,10 @@ function runBoundDml(engine, bound, pageTransaction)
   return fail(BINDING_ERROR, "runBoundDml", "unsupported bound DML statement")
 end function
 
-// Implements DML command for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements DML command for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
 function dmlCommand(bound)
   if binder.isBoundInsert(bound) then return "INSERT" end if
   if binder.isBoundUpdate(bound) then return "UPDATE" end if
@@ -1853,10 +2045,14 @@ function dmlCommand(bound)
   return "DML"
 end function
 
-// Implements commit page transaction for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements commit page transaction for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param deltaBound deltaBound value consumed by this operation.
+/// @param deltaResult deltaResult value consumed by this operation.
 function commitPageTransaction(engine, pageTransaction, deltaBound, deltaResult)
   changedIds = []
   fenced = try(database_manager.validateWriteFence(engine.database))
@@ -1891,9 +2087,12 @@ function commitPageTransaction(engine, pageTransaction, deltaBound, deltaResult)
   return commitLsn
 end function
 
-// Implements materialize insert select for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements materialize insert select for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function materializeInsertSelect(engine, bound, pageTransaction)
   if not binder.isBoundInsert(bound) or bound.sourceQuery is void then return true end if
   sourceResult = selectRows(engine, bound.sourceQuery, pageTransaction)
@@ -1918,9 +2117,11 @@ function materializeInsertSelect(engine, bound, pageTransaction)
   return true
 end function
 
-// Implements returning result for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements returning result for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param result Result object populated or inspected by the operation.
 function returningResult(bound, result)
   if not dml.isDmlResult(result) then return fail(INVALID_ARGUMENT, "returningResult", "result must be DmlResult") end if
   returning = []
@@ -1933,10 +2134,12 @@ function returningResult(bound, result)
   return QueryResult(RESULT_ROWS, dmlCommand(bound), columns, result.rows, result.affectedRows, "")
 end function
 
-// Executes DML using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes DML using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDml(engine, statement)
   if engine.explicitTransaction then
     pageTransaction = ensureExplicitDml(engine)
@@ -1965,7 +2168,10 @@ function executeDml(engine, statement)
   return commandResult(dmlCommand(bound), result.affectedRows, "DML committed")
 end function
 
-// Executes every MERGE source row against the same transactional target snapshot.
+/// Executes every MERGE source row against the same transactional target snapshot.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function runMerge(engine, statement, pageTransaction)
   sourceTable = catalog.findTable(engine.database.catalogHandle, statement.sourceTable)
   targetTable = catalog.findTable(engine.database.catalogHandle, statement.targetTable)
@@ -2022,7 +2228,9 @@ function runMerge(engine, statement, pageTransaction)
   return affected
 end function
 
-// Runs MERGE in an existing explicit transaction or creates one atomic implicit transaction.
+/// Runs MERGE in an existing explicit transaction or creates one atomic implicit transaction.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeMerge(engine, statement)
   if engine.explicitTransaction then
     pageTransaction = ensureExplicitDml(engine)
@@ -2054,7 +2262,9 @@ function executeMerge(engine, statement)
   return commandResult("MERGE", affected, "MERGE committed")
 end function
 
-// Returns true when a recursive result row is already present by SQL value equality.
+/// Returns true when a recursive result row is already present by SQL value equality.
+/// @param rows rows value consumed by this operation.
+/// @param candidate candidate value consumed by this operation.
 function recursiveRowsContain(rows, candidate)
   for each row in rows
     if projection.sameValues(row, candidate) then return true end if
@@ -2062,7 +2272,9 @@ function recursiveRowsContain(rows, candidate)
   return false
 end function
 
-// Returns the innermost active delta for a recursive self-reference.
+/// Returns the innermost active delta for a recursive self-reference.
+/// @param engine engine value consumed by this operation.
+/// @param name Name of the affected item.
 function recursiveWorkingRows(engine, name)
   found = void
   for each frame in engine.recursiveCteFrames
@@ -2072,9 +2284,12 @@ function recursiveWorkingRows(engine, name)
   return found
 end function
 
-// Evaluates anchor rows followed by semi-naive delta iterations until a fixpoint.
-// UNION removes rows already seen; UNION ALL preserves bags and therefore relies
-// on an empty recursive result to terminate. The depth guard diagnoses runaway SQL.
+/// Evaluates anchor rows followed by semi-naive delta iterations until a fixpoint.
+/// UNION removes rows already seen; UNION ALL preserves bags and therefore relies
+/// on an empty recursive result to terminate. The depth guard diagnoses runaway SQL.
+/// @param engine engine value consumed by this operation.
+/// @param query query value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function evaluateRecursiveQuery(engine, query, pageTransaction)
   anchorResult = selectRows(engine, query.anchor, pageTransaction)
   output = anchorResult.rows
@@ -2108,7 +2323,8 @@ function evaluateRecursiveQuery(engine, query, pageTransaction)
   return output
 end function
 
-// Splits a canonical object name into schema and local name, defaulting to public.
+/// Splits a canonical object name into schema and local name, defaulting to public.
+/// @param name Name of the affected item.
 function splitObjectName(name)
   raw = bytes(name)
   dot = -1
@@ -2121,7 +2337,9 @@ function splitObjectName(name)
   return [decode(slice(raw, 0, dot)), decode(slice(raw, dot + 1, len(raw) - dot - 1))]
 end function
 
-// Materializes a supported INFORMATION_SCHEMA relation from the live catalog snapshot.
+/// Materializes a supported INFORMATION_SCHEMA relation from the live catalog snapshot.
+/// @param engine engine value consumed by this operation.
+/// @param relationKind relationKind value consumed by this operation.
 function informationSchemaRows(engine, relationKind)
   rows = []
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
@@ -2185,7 +2403,13 @@ function informationSchemaRows(engine, relationKind)
   return fail(BINDING_ERROR, "informationSchema", "unsupported metadata relation")
 end function
 
-// Scans a catalog table, named query, recursive fixpoint, or recursive delta source.
+/// Scans a catalog table, named query, recursive fixpoint, or recursive delta source.
+/// @param engine engine value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param limit limit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function scanBoundSource(engine, source, pageTransaction, offset, limit, requiredColumns)
   polled = try(pollQueryControl(engine, "scanBoundSource"))
   if typeof(polled) == "error" then return polled end if
@@ -2222,10 +2446,13 @@ function scanBoundSource(engine, source, pageTransaction, offset, limit, require
   return output
 end function
 
-// Applies a predicate assigned by the optimizer before a source participates in
-// an inner join. Bound column indexes are global, so non-leading sources receive
-// an offset-sized placeholder prefix during evaluation while retaining their
-// compact local row representation for the join operator.
+/// Applies a predicate assigned by the optimizer before a source participates in
+/// an inner join. Bound column indexes are global, so non-leading sources receive
+/// an offset-sized placeholder prefix during evaluation while retaining their
+/// compact local row representation for the join operator.
+/// @param source source value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function filterSourceRows(source, rows, predicate)
   if predicate is void then return rows end if
   output = []
@@ -2240,7 +2467,8 @@ function filterSourceRows(source, rows, predicate)
   return output
 end function
 
-// Computes the global flattened column width of all bound sources.
+/// Computes the global flattened column width of all bound sources.
+/// @param bound bound value consumed by this operation.
 function boundColumnCount(bound)
   count = 0
   for each source in bound.sources
@@ -2250,9 +2478,10 @@ function boundColumnCount(bound)
   return count
 end function
 
-// Creates a complete, type-correct canonical row. Typed SQL NULL placeholders
-// keep global bound-column positions evaluable while a reordered join has not
-// yet attached every source.
+/// Creates a complete, type-correct canonical row. Typed SQL NULL placeholders
+/// keep global bound-column positions evaluable while a reordered join has not
+/// yet attached every source.
+/// @param bound bound value consumed by this operation.
 function canonicalNullValues(bound)
   output = array(boundColumnCount(bound))
   for each source in bound.sources
@@ -2265,9 +2494,12 @@ function canonicalNullValues(bound)
   return output
 end function
 
-// Expands one local source row into canonical bound-column positions. The
-// membership/reference array lets a reordered join fill sources without
-// inferring presence from SQL NULL values.
+/// Expands one local source row into canonical bound-column positions. The
+/// membership/reference array lets a reordered join fill sources without
+/// inferring presence from SQL NULL values.
+/// @param bound bound value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param row row value consumed by this operation.
 function canonicalSourceRow(bound, sourceIndex, row)
   source = bound.sources[sourceIndex]
   output = canonicalNullValues(bound)
@@ -2282,7 +2514,10 @@ function canonicalSourceRow(bound, sourceIndex, row)
   return scan.ScannedRow(references, output)
 end function
 
-// Expands a compact source row set into stable global bound-column positions.
+/// Expands a compact source row set into stable global bound-column positions.
+/// @param bound bound value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param rows rows value consumed by this operation.
 function canonicalizeRows(bound, sourceIndex, rows)
   output = []
   for each row in rows
@@ -2291,7 +2526,11 @@ function canonicalizeRows(bound, sourceIndex, rows)
   return output
 end function
 
-// Adds one compact source row to an already canonical join row.
+/// Adds one compact source row to an already canonical join row.
+/// @param bound bound value consumed by this operation.
+/// @param left left value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param right right value consumed by this operation.
 function combineCanonical(bound, left, sourceIndex, right)
   source = bound.sources[sourceIndex]
   output = canonicalNullValues(bound)
@@ -2318,7 +2557,13 @@ function combineCanonical(bound, left, sourceIndex, right)
   return scan.ScannedRow(references, output)
 end function
 
-// Applies the semantic nested-loop fallback to one reordered INNER join edge.
+/// Applies the semantic nested-loop fallback to one reordered INNER join edge.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param condition condition value consumed by this operation.
 function canonicalNestedJoin(engine, bound, leftRows, rightRows, sourceIndex, condition)
   output = []
   pollCounter = 0
@@ -2336,8 +2581,10 @@ function canonicalNestedJoin(engine, bound, leftRows, rightRows, sourceIndex, co
   return output
 end function
 
-// Returns [joined-side global column, new-source local column] for a canonical
-// equality join, or void for an unsupported condition.
+/// Returns [joined-side global column, new-source local column] for a canonical
+/// equality join, or void for an unsupported condition.
+/// @param condition condition value consumed by this operation.
+/// @param source source value consumed by this operation.
 function canonicalEqualityColumns(condition, source)
   if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
   if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return void end if
@@ -2373,8 +2620,15 @@ function buildCanonicalHashBuckets(engine, rows, keyColumn, operation)
   return buckets
 end function
 
-// Hash-joins a reordered INNER source while preserving canonical SQL column
-// positions. Full key equality and predicate rechecks resolve collisions.
+/// Hash-joins a reordered INNER source while preserving canonical SQL column
+/// positions. Full key equality and predicate rechecks resolve collisions.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param condition condition value consumed by this operation.
+/// @param buildRight buildRight value consumed by this operation.
 function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, condition, buildRight)
   source = bound.sources[sourceIndex]
   columns = canonicalEqualityColumns(condition, source)
@@ -2431,7 +2685,13 @@ function canonicalHashJoin(engine, bound, leftRows, rightRows, sourceIndex, cond
   return output
 end function
 
-// Counts a final reordered nested-loop join without retaining its joined rows.
+/// Counts a final reordered nested-loop join without retaining its joined rows.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
+/// @param condition condition value consumed by this operation.
 function canonicalNestedJoinCount(engine, bound, leftRows, rightRows, sourceIndex, condition)
   count = 0
   pollCounter = 0
@@ -2537,9 +2797,14 @@ function canonicalHashJoinCount(engine, bound, leftRows, rightRows, sourceIndex,
   return canonicalHashJoinCountProbeRight(engine, bound, rightRows, buckets, sourceIndex, condition, localColumn)
 end function
 
-// Executes all reordered joins except the final edge normally, then turns that
-// edge directly into a cardinality. This bounds retained memory by the largest
-// intermediate before the final fan-out rather than the final result size.
+/// Executes all reordered joins except the final edge normally, then turns that
+/// edge directly into a cardinality. This bounds retained memory by the largest
+/// intermediate before the final fan-out rather than the final result size.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param executable executable value consumed by this operation.
 function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColumns, executable)
   polled = try(pollQueryControl(engine, "joinedSourceReorderedCount"))
   if typeof(polled) == "error" then return polled end if
@@ -2577,7 +2842,14 @@ function joinedSourceReorderedCount(engine, bound, pageTransaction, requiredColu
   return len(output)
 end function
 
-// Executes the optimizer's canonicalized order for a pure INNER equijoin graph.
+/// Executes the optimizer's canonicalized order for a pure INNER equijoin graph.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param sourceLimit sourceLimit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param executable executable value consumed by this operation.
 function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
   polled = try(pollQueryControl(engine, "joinedSourceReordered"))
   if typeof(polled) == "error" then return polled end if
@@ -2607,10 +2879,13 @@ function joinedSourceReordered(engine, bound, pageTransaction, sourceOffset, sou
   return output
 end function
 
-// Proves that one parameterized equality-index probe already guarantees a
-// pushed right-source predicate for the current left row. This removes only
-// simple typed column=literal predicates (and AND trees composed of them);
-// every other source filter retains ordinary evaluation.
+/// Proves that one parameterized equality-index probe already guarantees a
+/// pushed right-source predicate for the current left row. This removes only
+/// simple typed column=literal predicates (and AND trees composed of them);
+/// every other source filter retains ordinary evaluation.
+/// @param boundJoin boundJoin value consumed by this operation.
+/// @param leftRow leftRow value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate)
   if predicate is void then return true end if
   if not expressions.isBaseBoundExpression(predicate) then return false end if
@@ -2639,9 +2914,13 @@ function joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate)
   return values.compareNonNull(leftValue, predicateLiteral.literal) == 0
 end function
 
-// Applies the semantic nested-loop join while polling inside the candidate
-// loop. Keeping the control-aware orchestration in this module avoids coupling
-// the reusable row-combination module to server session state.
+/// Applies the semantic nested-loop join while polling inside the candidate
+/// loop. Keeping the control-aware orchestration in this module avoids coupling
+/// the reusable row-combination module to server session state.
+/// @param engine engine value consumed by this operation.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param boundJoin boundJoin value consumed by this operation.
 function controlledNestedJoin(engine, leftRows, rightRows, boundJoin)
   output = []
   rightMatched = array(len(rightRows), false)
@@ -2688,9 +2967,16 @@ function controlledNestedJoin(engine, leftRows, rightRows, boundJoin)
   return output
 end function
 
-// Implements joined source for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements joined source for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param sourceLimit sourceLimit value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param executable executable value consumed by this operation.
 function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit, requiredColumns, executable)
   polled = try(pollQueryControl(engine, "joinedSource"))
   if typeof(polled) == "error" then return polled end if
@@ -2770,9 +3056,11 @@ function joinedSource(engine, bound, pageTransaction, sourceOffset, sourceLimit,
   return output
 end function
 
-// Implements item index for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements item index for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param expression expression value consumed by this operation.
 function itemIndex(bound, expression)
   if len(bound.items) == 0 then return -1 end if
   for index = 0 to len(bound.items) - 1
@@ -2781,9 +3069,11 @@ function itemIndex(bound, expression)
   return -1
 end function
 
-// Normalizes compound order using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Normalizes compound order using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function normalizeCompoundOrder(rows, bound)
   if len(bound.setOperations) == 0 or len(bound.orderExpressions) == 0 then return rows end if
   output = []
@@ -2799,7 +3089,12 @@ function normalizeCompoundOrder(rows, bound)
   return output
 end function
 
-// Executes a validated scalar, EXISTS, or IN subquery for one outer source row.
+/// Executes a validated scalar, EXISTS, or IN subquery for one outer source row.
+/// @param engine engine value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function materializeBoundSubquery(engine, expression, bound, row, pageTransaction)
   query = substituteOuterSelect(expression.query, bound.sources, row.values)
   query = materializeSelectStatement(engine, query, pageTransaction)
@@ -2822,8 +3117,13 @@ function materializeBoundSubquery(engine, expression, bound, row, pageTransactio
   return expressions.literal(expressions.evaluate(predicate, expressions.rowContext(row.values)), expression.typeInfo)
 end function
 
-// Rebuilds a bound expression with every deferred subquery replaced by a literal.
-// Reusing the ordinary expression evaluator keeps SQL NULL and boolean semantics centralized.
+/// Rebuilds a bound expression with every deferred subquery replaced by a literal.
+/// Reusing the ordinary expression evaluator keeps SQL NULL and boolean semantics centralized.
+/// @param engine engine value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param row row value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function materializeBoundExpression(engine, expression, bound, row, pageTransaction)
   if expressions.isBoundSubquery(expression) then return materializeBoundSubquery(engine, expression, bound, row, pageTransaction) end if
   if expressions.isBaseBoundExpression(expression) then
@@ -2861,7 +3161,11 @@ function materializeBoundExpression(engine, expression, bound, row, pageTransact
   return fail(BINDING_ERROR, "correlatedSubquery", "unsupported outer expression shape")
 end function
 
-// Filters and projects a non-grouped row set whose expressions contain subqueries.
+/// Filters and projects a non-grouped row set whose expressions contain subqueries.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function projectSubqueryRows(engine, bound, source, pageTransaction)
   output = []
   for each row in source
@@ -2886,9 +3190,11 @@ function projectSubqueryRows(engine, bound, source, pageTransaction)
   return output
 end function
 
-// Marks every base-table column referenced by an expression tree. Returning
-// false disables projection pushdown for shapes whose dependencies cannot be
-// proven locally (notably correlated subqueries).
+/// Marks every base-table column referenced by an expression tree. Returning
+/// false disables projection pushdown for shapes whose dependencies cannot be
+/// proven locally (notably correlated subqueries).
+/// @param expression expression value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
 function collectRequiredColumns(expression, requiredColumns)
   if expression is void then return true end if
   if expressions.isBoundSubquery(expression) then return false end if
@@ -2945,9 +3251,10 @@ function collectRequiredColumns(expression, requiredColumns)
   return false
 end function
 
-// Computes one stable local column mask per source. Global bound indexes are
-// collected before slicing at source offsets, allowing joins to avoid fetching
-// unrelated external values while retaining canonical flattened row positions.
+/// Computes one stable local column mask per source. Global bound indexes are
+/// collected before slicing at source offsets, allowing joins to avoid fetching
+/// unrelated external values while retaining canonical flattened row positions.
+/// @param bound bound value consumed by this operation.
 function selectRequiredColumns(bound)
   if len(bound.sources) == 0 then return void end if
   totalColumns = 0
@@ -2983,8 +3290,9 @@ function selectRequiredColumns(bound)
   return output
 end function
 
-// Recognizes the exact aggregate shape whose result depends only on live-slot
-// visibility. More complex COUNT variants retain the general relational path.
+/// Recognizes the exact aggregate shape whose result depends only on live-slot
+/// visibility. More complex COUNT variants retain the general relational path.
+/// @param bound bound value consumed by this operation.
 function simpleCountStarEligible(bound)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
   if len(bound.items) != 1 or not expressions.isBoundAggregate(bound.items[0]) then return false end if
@@ -2996,16 +3304,21 @@ function simpleCountStarEligible(bound)
   return true
 end function
 
-// Projects a scalar COUNT(*) directly from checksum-verified heap slot headers.
+/// Projects a scalar COUNT(*) directly from checksum-verified heap slot headers.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function simpleCountStarProjected(engine, bound, pageTransaction)
   rowCount = scan.countTableRowsCachedControlled(engine.database, engine.sessionId, bound.sources[0].table, pageTransaction)
   countValue = values.of(types.SqlTypeKind.BigInt, endian.int64FromInt(rowCount))
   return [projection.ProjectedRow(void, [countValue], [])]
 end function
 
-// Identifies a pipeline that can filter, project and apply LIMIT directly over
-// bounded scan batches. Blocking relational operators retain their specialized
-// materializing paths.
+/// Identifies a pipeline that can filter, project and apply LIMIT directly over
+/// bounded scan batches. Blocking relational operators retain their specialized
+/// materializing paths.
+/// @param bound bound value consumed by this operation.
+/// @param executable executable value consumed by this operation.
 function simpleBatchEligible(bound, executable)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
   if bound.aggregateQuery or bound.windowQuery or bound.statement.distinct or len(bound.setOperations) != 0 or len(bound.statement.orderBy) != 0 then return false end if
@@ -3013,9 +3326,14 @@ function simpleBatchEligible(bound, executable)
   return executable.sources[0].accessKind == execution_plan.ACCESS_SEQUENTIAL
 end function
 
-// Executes a non-blocking single-table query with at most one source batch and
-// the final result resident at once. This removes the former full scanned-row
-// materialization while preserving the QueryResult API required by protocol v1.
+/// Executes a non-blocking single-table query with at most one source batch and
+/// the final result resident at once. This removes the former full scanned-row
+/// materialization while preserving the QueryResult API required by protocol v1.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param wherePredicate wherePredicate value consumed by this operation.
 function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, wherePredicate)
   if bound.statement.limit == 0 then return [] end if
   mask = void
@@ -3052,8 +3370,9 @@ function simpleBatchProjected(engine, bound, pageTransaction, requiredColumns, w
   return output.toArray()
 end function
 
-// Releases every resource held by a forward-only SELECT cursor. Cleanup is
-// idempotent so protocol disconnect and normal exhaustion can share this path.
+/// Releases every resource held by a forward-only SELECT cursor. Cleanup is
+/// idempotent so protocol disconnect and normal exhaustion can share this path.
+/// @param cursor cursor value consumed by this operation.
 function closeSelectCursor(cursor)
   if cursor is not SelectCursor then return fail(INVALID_ARGUMENT, "closeSelectCursor", "cursor must be SelectCursor") end if
   if cursor.closed then return true end if
@@ -3069,9 +3388,11 @@ function closeSelectCursor(cursor)
   return true
 end function
 
-// Opens the non-blocking single-table physical pipeline as a forward-only
-// result cursor. Unsupported/blocking shapes return void so callers can use the
-// ordinary executor without changing SQL semantics.
+/// Opens the non-blocking single-table physical pipeline as a forward-only
+/// result cursor. Unsupported/blocking shapes return void so callers can use the
+/// ordinary executor without changing SQL semantics.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function openSelectCursor(engine, statement)
   validateOpen(engine, "openSelectCursor")
   polled = try(pollQueryControl(engine, "openSelectCursor"))
@@ -3114,8 +3435,10 @@ function openSelectCursor(engine, statement)
   return SelectCursor(engine, bound, optimized.execution.wherePredicate, reader, scanCursor, readLease, 0, 0, false)
 end function
 
-// Produces at most maximumRows projected rows while retaining no earlier batch.
-// Void denotes end-of-stream and guarantees that the read lease is released.
+/// Produces at most maximumRows projected rows while retaining no earlier batch.
+/// Void denotes end-of-stream and guarantees that the read lease is released.
+/// @param cursor cursor value consumed by this operation.
+/// @param maximumRows maximumRows value consumed by this operation.
 function nextSelectBatch(cursor, maximumRows)
   if cursor is not SelectCursor or typeof(maximumRows) != "int" or maximumRows <= 0 then return fail(INVALID_ARGUMENT, "nextSelectBatch", "invalid arguments") end if
   if cursor.closed then return void end if
@@ -3164,9 +3487,11 @@ function nextSelectBatch(cursor, maximumRows)
   return rowResult(cursor.bound.itemNames, rows)
 end function
 
-// Recognizes an ordered single-table LIMIT that can maintain only the current
-// best window while scanning. Projection and ORDER BY expressions must be
-// row-local because subqueries require the general materializing pipeline.
+/// Recognizes an ordered single-table LIMIT that can maintain only the current
+/// best window while scanning. Projection and ORDER BY expressions must be
+/// row-local because subqueries require the general materializing pipeline.
+/// @param bound bound value consumed by this operation.
+/// @param executable executable value consumed by this operation.
 function simpleTopNEligible(bound, executable)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
   if executable.sortAlgorithm != execution_plan.SORT_TOP_N or executable.sources[0].accessKind != execution_plan.ACCESS_SEQUENTIAL then return false end if
@@ -3175,9 +3500,14 @@ function simpleTopNEligible(bound, executable)
   return true
 end function
 
-// Fuses scan, filter, projection, and bounded Top-N retention. At most one scan
-// batch plus LIMIT+OFFSET projected rows are resident, so large source tables
-// no longer dominate memory for small ordered result windows.
+/// Fuses scan, filter, projection, and bounded Top-N retention. At most one scan
+/// batch plus LIMIT+OFFSET projected rows are resident, so large source tables
+/// no longer dominate memory for small ordered result windows.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
+/// @param requiredColumns requiredColumns value consumed by this operation.
+/// @param wherePredicate wherePredicate value consumed by this operation.
 function simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, wherePredicate)
   windowRows = bound.statement.limit + bound.statement.offset
   if windowRows == 0 then return [] end if
@@ -3212,9 +3542,12 @@ function simpleTopNProjected(engine, bound, pageTransaction, requiredColumns, wh
   return projection.sliceRows(retained, bound.statement.offset, bound.statement.limit)
 end function
 
-// Implements select projected for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements select projected for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function selectProjected(engine, bound, pageTransaction)
   polled = try(pollQueryControl(engine, "selectProjected"))
   if typeof(polled) == "error" then return polled end if
@@ -3305,9 +3638,12 @@ function selectProjected(engine, bound, pageTransaction)
   return projected
 end function
 
-// Implements select rows for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements select rows for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
+/// @param pageTransaction pageTransaction value consumed by this operation.
 function selectRows(engine, bound, pageTransaction)
   projected = selectProjected(engine, bound, pageTransaction)
   rows = array(len(projected))
@@ -3320,18 +3656,20 @@ function selectRows(engine, bound, pageTransaction)
   return rowResult(bound.itemNames, rows)
 end function
 
-// Loads statistics using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Loads statistics using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function loadStatistics(engine)
   if engine.planningContext is not void then return engine.planningContext.statistics end if
   return statistics.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
 end function
 
-// Builds the optimizer's catalog snapshot without giving planner modules direct
-// access to files or mutable database handles. The snapshot is advisory; an
-// index disappearing between planning and execution causes a semantic fallback
-// rather than a failed or incorrect query.
+/// Builds the optimizer's catalog snapshot without giving planner modules direct
+/// access to files or mutable database handles. The snapshot is advisory; an
+/// index disappearing between planning and execution causes a semantic fallback
+/// rather than a failed or incorrect query.
+/// @param engine engine value consumed by this operation.
 function loadPlanningContext(engine)
   planningGeneration = database_manager.planningGeneration(engine.database)
   if engine.planningContext is not void and engine.planningContext.schemaGeneration == planningGeneration then return engine.planningContext end if
@@ -3376,10 +3714,12 @@ function loadPlanningContext(engine)
   return engine.planningContext
 end function
 
-// Returns a generation-safe cached physical plan or optimizes and records a new
-// one. Executor-created typed literals format opaquely, so correlated and
-// parameter-materialized SELECTs bypass caching rather than reusing a plan that
-// embeds another invocation's literal value.
+/// Returns a generation-safe cached physical plan or optimizes and records a new
+/// one. Executor-created typed literals format opaquely, so correlated and
+/// parameter-materialized SELECTs bypass caching rather than reusing a plan that
+/// embeds another invocation's literal value.
+/// @param engine engine value consumed by this operation.
+/// @param bound bound value consumed by this operation.
 function optimizedPlanFor(engine, bound)
   context = loadPlanningContext(engine)
   key = ""
@@ -3414,20 +3754,23 @@ function optimizedPlanFor(engine, bound)
   return optimized
 end function
 
-// Invalidates only advisory state. Query correctness never depends on the cache,
-// but local DDL/ANALYZE must expose new access paths and estimates immediately.
+/// Invalidates only advisory state. Query correctness never depends on the cache,
+/// but local DDL/ANALYZE must expose new access paths and estimates immediately.
+/// @param engine engine value consumed by this operation.
 function invalidatePlanningContext(engine)
   engine.planningContext = void
   engine.planCache = []
   return true
 end function
 
-// Implements analyze table for this module.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
-// Returns distinct composite index keys eligible for joint NDV statistics.
-// ANALYZE limits persisted groups to eight columns so the v4 catalog remains
-// compact and deterministic even when applications define very wide indexes.
+/// Implements analyze table for this module.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// Returns distinct composite index keys eligible for joint NDV statistics.
+/// ANALYZE limits persisted groups to eight columns so the v4 catalog remains
+/// compact and deterministic even when applications define very wide indexes.
+/// @param engine engine value consumed by this operation.
+/// @param table table value consumed by this operation.
 function analyzeColumnGroups(engine, table)
   schemas = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   tableSchema = schema_history.findTableSchema(schemas, table.tableId)
@@ -3460,8 +3803,11 @@ function analyzeColumnGroups(engine, table)
   return output
 end function
 
-// Refreshes one table's exact population, bounded sample distributions, joint
-// composite-key statistics, and physical page count in the supplied catalog.
+/// Refreshes one table's exact population, bounded sample distributions, joint
+/// composite-key statistics, and physical page count in the supplied catalog.
+/// @param engine engine value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param table table value consumed by this operation.
 function analyzeTable(engine, state, table)
   populationRows = scan.countTableRowsCached(engine.database.path, table, void, engine.database.readCache)
   rows = scan.sampleTableRowsCached(engine.database.path, table, populationRows, ANALYZE_SAMPLE_ROWS, engine.database.readCache)
@@ -3471,9 +3817,11 @@ function analyzeTable(engine, state, table)
   return statistics.replaceTable(state, statistics.analyzeSampleWithGroups(table, populationRows, rows, pageCount, analyzeColumnGroups(engine, table)))
 end function
 
-// Executes analyze using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes analyze using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeAnalyze(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "analyze", "ANALYZE is an autocommit maintenance command") end if
   state = loadStatistics(engine)
@@ -3496,19 +3844,22 @@ function executeAnalyze(engine, statement)
   return commandResult("ANALYZE", analyzed, "statistics generation " + state.generation)
 end function
 
-// Implements explain bound for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements explain bound for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
 function explainBound(bound)
   logical = logical_plan.build(bound)
   physical = physical_plan.fromLogical(logical)
   return physical_plan.render(physical)
 end function
 
-// Executes explain using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes explain using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeExplain(engine, statement)
   if not ast.isSelectStatement(statement.statement) then return fail(UNSUPPORTED_SQL, "explain", "M17 EXPLAIN supports SELECT") end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "explain", "EXPLAIN after staged DDL is not supported") end if
@@ -3541,10 +3892,12 @@ function executeExplain(engine, statement)
   return rowResult(["QUERY PLAN"], rows)
 end function
 
-// Executes select using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes select using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeSelect(engine, statement)
   if engine.explicitTransaction and engine.failed then return fail(TRANSACTION_STATE, "select", "transaction is failed; ROLLBACK required") end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "select", "SELECT after staged DDL is not supported in M15") end if
@@ -3555,10 +3908,11 @@ function executeSelect(engine, statement)
   return selectRows(engine, bound, pageTransaction)
 end function
 
-// Implements commit explicit for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements commit explicit for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function commitExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "commit", "no explicit transaction") end if
   if engine.failed then return fail(TRANSACTION_STATE, "commit", "transaction is failed; ROLLBACK required") end if
@@ -3582,9 +3936,10 @@ function commitExplicit(engine)
   return commandResult("COMMIT", 0, "transaction committed")
 end function
 
-// Implements rollback explicit for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements rollback explicit for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function rollbackExplicit(engine)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "rollback", "no explicit transaction") end if
   if engine.transactionMode == MODE_DML then transaction.rollback(engine.pageTransaction) end if
@@ -3594,9 +3949,11 @@ function rollbackExplicit(engine)
   return commandResult("ROLLBACK", 0, "transaction rolled back")
 end function
 
-// Executes savepoint using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes savepoint using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeSavepoint(engine, statement)
   if not engine.explicitTransaction then return fail(TRANSACTION_STATE, "savepoint", "SAVEPOINT requires an explicit transaction") end if
   if engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "savepoint", "DDL savepoints are not supported") end if
@@ -3605,9 +3962,11 @@ function executeSavepoint(engine, statement)
   return commandResult("SAVEPOINT", 0, statement.name)
 end function
 
-// Executes rollback to using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Executes rollback to using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeRollbackTo(engine, statement)
   if not engine.explicitTransaction or engine.transactionMode != MODE_DML then return fail(TRANSACTION_STATE, "rollbackTo", "ROLLBACK TO requires a DML savepoint") end if
   transaction.rollbackToSavepoint(engine.pageTransaction, statement.name)
@@ -3615,9 +3974,11 @@ function executeRollbackTo(engine, statement)
   return commandResult("ROLLBACK TO", 0, statement.name)
 end function
 
-// Executes release savepoint using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes release savepoint using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeReleaseSavepoint(engine, statement)
   if not engine.explicitTransaction or engine.transactionMode != MODE_DML then return fail(TRANSACTION_STATE, "releaseSavepoint", "RELEASE requires a DML savepoint") end if
   transaction.releaseSavepoint(engine.pageTransaction, statement.name)
@@ -3628,49 +3989,67 @@ end function
 // M21 authorization and DCL
 // ---------------------------------------------------------------------------
 
-// Implements permission failure for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements permission failure for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operation operation value consumed by this operation.
+/// @param detail detail value consumed by this operation.
 function permissionFailure(operation, detail)
   return fail(PERMISSION_DENIED, operation, "permission denied: " + detail)
 end function
 
-// Implements database handle for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements database handle for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function databaseHandle(engine)
   return engine.database.catalogHandle
 end function
 
-// Returns whether the supplied value satisfies the database admin condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the database admin condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param engine engine value consumed by this operation.
 function hasDatabaseAdmin(engine)
   if engine.trusted then return true end if
   return catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_ADMIN, false)
 end function
 
-// Implements require privilege for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements require privilege for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function requirePrivilege(engine, objectType, objectId, privilege, operation)
   if engine.trusted then return true end if
   if catalog.hasPrivilege(databaseHandle(engine), engine.principalId, objectType, objectId, privilege, false) then return true end if
   return permissionFailure(operation, "required privilege " + privilege + " on object " + objectId)
 end function
 
-// Implements require grant option for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements require grant option for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectId Identifier of object.
+/// @param privilege privilege value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function requireGrantOption(engine, objectType, objectId, privilege, operation)
   if engine.trusted or hasDatabaseAdmin(engine) then return true end if
   if catalog.hasPrivilege(databaseHandle(engine), engine.principalId, objectType, objectId, privilege, true) then return true end if
   return permissionFailure(operation, "grant option is required")
 end function
 
-// Implements require table privilege by name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements require table privilege by name for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param tableName tableName value consumed by this operation.
+/// @param privilege privilege value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function requireTablePrivilegeByName(engine, tableName, privilege, operation)
   table = catalog.findTable(databaseHandle(engine), tableName)
   if table is void then return fail(BINDING_ERROR, operation, "unknown table " + tableName) end if
@@ -3678,9 +4057,11 @@ function requireTablePrivilegeByName(engine, tableName, privilege, operation)
   return table
 end function
 
-// Implements name in list for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements name in list for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param names names value consumed by this operation.
+/// @param name Name of the affected item.
 function nameInList(names, name)
   for each existing in names
     if existing == name then return true end if
@@ -3688,9 +4069,13 @@ function nameInList(names, name)
   return false
 end function
 
-// Implements authorize expression queries internal for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authorize expression queries internal for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param expression expression value consumed by this operation.
+/// @param viewStack viewStack value consumed by this operation.
+/// @param cteNames cteNames value consumed by this operation.
 function authorizeExpressionQueriesInternal(engine, expression, viewStack, cteNames)
   if expression is void then return true end if
   if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) then
@@ -3751,10 +4136,14 @@ function authorizeExpressionQueriesInternal(engine, expression, viewStack, cteNa
   return true
 end function
 
-// Implements authorize named source for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authorize named source for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param name Name of the affected item.
+/// @param viewStack viewStack value consumed by this operation.
 function authorizeNamedSource(engine, state, name, viewStack)
   parts = splitObjectName(name)
   if parts[0] == "information_schema" then return true end if
@@ -3774,10 +4163,14 @@ function authorizeNamedSource(engine, state, name, viewStack)
   return authorizeSelectInternal(engine, parsed[0], viewStack + [name], [])
 end function
 
-// Implements authorize select internal for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authorize select internal for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param viewStack viewStack value consumed by this operation.
+/// @param inheritedCteNames inheritedCteNames value consumed by this operation.
 function authorizeSelectInternal(engine, statement, viewStack, inheritedCteNames)
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
   availableCtes = inheritedCteNames
@@ -3812,16 +4205,20 @@ function authorizeSelectInternal(engine, statement, viewStack, inheritedCteNames
   return true
 end function
 
-// Implements authorize select for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authorize select for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function authorizeSelect(engine, statement)
   return authorizeSelectInternal(engine, statement, [], [])
 end function
 
-// Implements authorize select items for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authorize select items for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param items Items consumed or updated by the operation.
 function authorizeSelectItems(engine, items)
   for each item in items
     authorizeExpressionQueriesInternal(engine, item.expression, [], [])
@@ -3938,9 +4335,11 @@ function authorizeStatement(engine, statement)
   return permissionFailure("authorizeStatement", "statement is not authorized")
 end function
 
-// Implements privilege code for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements privilege code for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param name Name of the affected item.
+/// @param objectType objectType value consumed by this operation.
 function privilegeCode(name, objectType)
   if objectType == metadata.OBJECT_DATABASE then
     if name == "CONNECT" then return metadata.PRIVILEGE_CONNECT end if
@@ -3960,18 +4359,21 @@ function privilegeCode(name, objectType)
   return fail(INVALID_ARGUMENT, "privilegeCode", "invalid table privilege " + name)
 end function
 
-// Implements all privilege codes for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements all privilege codes for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param objectType objectType value consumed by this operation.
 function allPrivilegeCodes(objectType)
   if objectType == metadata.OBJECT_DATABASE then return [metadata.PRIVILEGE_CONNECT, metadata.PRIVILEGE_CREATE, metadata.PRIVILEGE_MAINTAIN, metadata.PRIVILEGE_ADMIN] end if
   return [metadata.PRIVILEGE_SELECT, metadata.PRIVILEGE_INSERT, metadata.PRIVILEGE_UPDATE, metadata.PRIVILEGE_DELETE, metadata.PRIVILEGE_REFERENCES, metadata.PRIVILEGE_INDEX, metadata.PRIVILEGE_ALTER, metadata.PRIVILEGE_DROP]
 end function
 
-// Implements privilege codes for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements privilege codes for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param names names value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
 function privilegeCodes(names, objectType)
   if typeof(names) != "array" or len(names) == 0 then return fail(INVALID_ARGUMENT, "privilegeCodes", "privilege list is empty") end if
   if len(names) == 1 and names[0] == "ALL" then return allPrivilegeCodes(objectType) end if
@@ -3987,9 +4389,12 @@ function privilegeCodes(names, objectType)
   return output
 end function
 
-// Implements dcl target for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements dcl target for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param objectType objectType value consumed by this operation.
+/// @param objectName objectName value consumed by this operation.
 function dclTarget(engine, objectType, objectName)
   if objectType == ast.DCL_OBJECT_DATABASE then return [metadata.OBJECT_DATABASE, 0] end if
   table = catalog.findTable(databaseHandle(engine), objectName)
@@ -3997,17 +4402,21 @@ function dclTarget(engine, objectType, objectName)
   return [metadata.OBJECT_TABLE, table.tableId]
 end function
 
-// Implements require security admin for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements require security admin for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function requireSecurityAdmin(engine, operation)
   if engine.trusted or hasDatabaseAdmin(engine) then return true end if
   return permissionFailure(operation, "database ADMIN privilege is required")
 end function
 
-// Executes create principal using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes create principal using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeCreatePrincipal(engine, statement)
   requireSecurityAdmin(engine, "createPrincipal")
   if statement.principalKind == ast.PRINCIPAL_USER then
@@ -4018,9 +4427,11 @@ function executeCreatePrincipal(engine, statement)
   return commandResult("CREATE ROLE", 0, statement.name)
 end function
 
-// Executes alter user using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes alter user using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeAlterUser(engine, statement)
   target = catalog.requirePrincipal(databaseHandle(engine), statement.name, "alterUser")
   selfPassword = statement.action == ast.ALTER_USER_PASSWORD and target.principalId == engine.principalId
@@ -4035,9 +4446,11 @@ function executeAlterUser(engine, statement)
   return commandResult("ALTER USER", 0, statement.name)
 end function
 
-// Executes drop principal using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes drop principal using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDropPrincipal(engine, statement)
   requireSecurityAdmin(engine, "dropPrincipal")
   expected = metadata.PRINCIPAL_USER
@@ -4049,9 +4462,11 @@ function executeDropPrincipal(engine, statement)
   return commandResult(command, affected, statement.name)
 end function
 
-// Executes grant role using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes grant role using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeGrantRole(engine, statement)
   role = catalog.requirePrincipal(databaseHandle(engine), statement.roleName, "grantRole")
   if not engine.trusted and not hasDatabaseAdmin(engine) and not catalog.hasRoleAdminOption(databaseHandle(engine), engine.principalId, role.principalId) then return permissionFailure("grantRole", "ADMIN OPTION for role is required") end if
@@ -4059,9 +4474,11 @@ function executeGrantRole(engine, statement)
   return commandResult("GRANT ROLE", 0, statement.roleName + " TO " + statement.memberName)
 end function
 
-// Executes revoke role using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes revoke role using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeRevokeRole(engine, statement)
   role = catalog.requirePrincipal(databaseHandle(engine), statement.roleName, "revokeRole")
   if not engine.trusted and not hasDatabaseAdmin(engine) and not catalog.hasRoleAdminOption(databaseHandle(engine), engine.principalId, role.principalId) then return permissionFailure("revokeRole", "ADMIN OPTION for role is required") end if
@@ -4069,9 +4486,11 @@ function executeRevokeRole(engine, statement)
   return commandResult("REVOKE ROLE", 0, statement.roleName + " FROM " + statement.memberName)
 end function
 
-// Executes grant privilege using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes grant privilege using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeGrantPrivilege(engine, statement)
   target = dclTarget(engine, statement.objectType, statement.objectName)
   codes = privilegeCodes(statement.privileges, target[0])
@@ -4082,9 +4501,11 @@ function executeGrantPrivilege(engine, statement)
   return commandResult("GRANT", len(codes), statement.granteeName)
 end function
 
-// Executes revoke privilege using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes revoke privilege using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeRevokePrivilege(engine, statement)
   target = dclTarget(engine, statement.objectType, statement.objectName)
   codes = privilegeCodes(statement.privileges, target[0])
@@ -4095,9 +4516,11 @@ function executeRevokePrivilege(engine, statement)
   return commandResult("REVOKE", len(codes), statement.granteeName)
 end function
 
-// Executes dcl using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes dcl using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDcl(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "executeDcl", "DCL is autocommit-only in M21") end if
   fenced = try(database_manager.validateWriteFence(engine.database))
@@ -4112,9 +4535,11 @@ function executeDcl(engine, statement)
   return fail(UNSUPPORTED_SQL, "executeDcl", "unsupported DCL statement")
 end function
 
-// Executes vacuum using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes vacuum using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeVacuum(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "vacuum", "VACUUM is autocommit-only") end if
   fenced = try(database_manager.validateWriteFence(engine.database))
@@ -4136,9 +4561,11 @@ function executeVacuum(engine, statement)
   return commandResult("VACUUM", affected, "storage rewritten, indexes rebuilt, and statistics refreshed")
 end function
 
-// Executes reindex using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes reindex using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeReindex(engine, statement)
   if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "reindex", "REINDEX is autocommit-only") end if
   fenced = try(database_manager.validateWriteFence(engine.database))
@@ -4147,9 +4574,10 @@ function executeReindex(engine, statement)
   return commandResult("REINDEX", rebuilt, "indexes rebuilt")
 end function
 
-// Implements type description for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements type description for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param column column value consumed by this operation.
 function typeDescription(column)
   name = types.kindName(column.typeCode)
   if column.typeCode == types.SqlTypeKind.Char or column.typeCode == types.SqlTypeKind.VarChar or column.typeCode == types.SqlTypeKind.Binary or column.typeCode == types.SqlTypeKind.VarBinary then return name + "(" + column.maxLength + ")" end if
@@ -4158,9 +4586,11 @@ function typeDescription(column)
   return name
 end function
 
-// Finds column rule using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Finds column rule using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param tableSchema tableSchema value consumed by this operation.
+/// @param columnName columnName value consumed by this operation.
 function findColumnRule(tableSchema, columnName)
   if tableSchema is void then return void end if
   for each rule in tableSchema.columnRules
@@ -4169,9 +4599,10 @@ function findColumnRule(tableSchema, columnName)
   return void
 end function
 
-// Implements constraint kind name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements constraint kind name for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param kind kind value consumed by this operation.
 function constraintKindName(kind)
   if kind == schema_history.CONSTRAINT_PRIMARY_KEY then return "PRIMARY KEY" end if
   if kind == schema_history.CONSTRAINT_UNIQUE then return "UNIQUE" end if
@@ -4181,9 +4612,10 @@ function constraintKindName(kind)
   return "UNKNOWN"
 end function
 
-// Implements join names for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements join names for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param names names value consumed by this operation.
 function joinNames(names)
   output = ""
   for each name in names
@@ -4193,7 +4625,8 @@ function joinNames(names)
   return output
 end function
 
-// Renders expression-index keys without their internal compatibility marker.
+/// Renders expression-index keys without their internal compatibility marker.
+/// @param keys keys value consumed by this operation.
 function joinIndexKeys(keys)
   output = ""
   for each keyValue in keys
@@ -4203,9 +4636,10 @@ function joinIndexKeys(keys)
   return output
 end function
 
-// Executes show tables using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes show tables using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function executeShowTables(engine)
   rows = []
   for each table in engine.database.catalogHandle.catalog.tables
@@ -4214,7 +4648,8 @@ function executeShowTables(engine)
   return rowResult(["table_name", "column_count", "schema_version"], rows)
 end function
 
-// Exposes bounded process-local counters and configured resource ceilings.
+/// Exposes bounded process-local counters and configured resource ceilings.
+/// @param engine engine value consumed by this operation.
 function executeShowStatus(engine)
   status = try(database_manager.operationalStatus(engine.database))
   names = ["uptime_ms", "active_sessions", "total_connections", "total_statements", "failed_statements", "rows_returned", "checkpoint_resets", "max_statement_bytes", "max_frame_bytes", "max_result_rows", "idle_timeout_ms", "query_memory_bytes", "query_timeout_ms", "max_result_bytes", "process_memory_bytes", "heap_used_bytes", "heap_committed_bytes", "temporary_storage_bytes", "temporary_reserved_bytes", "temporary_peak_bytes", "cancelled_statements", "timed_out_statements", "resource_rejected_statements", "total_execution_ms", "maximum_execution_ms", "slow_query_count", "slow_query_ms", "result_bytes_returned", "fencing_enabled", "fencing_epoch", "fencing_rejections"]
@@ -4225,7 +4660,8 @@ function executeShowStatus(engine)
   return rowResult(["variable_name", "value"], rows)
 end function
 
-// Materializes a lock-safe snapshot of active sessions for administrators.
+/// Materializes a lock-safe snapshot of active sessions for administrators.
+/// @param engine engine value consumed by this operation.
 function executeShowProcesslist(engine)
   sessions = try(database_manager.operationalSessions(engine.database))
   now = clock.monotonicMilliseconds()
@@ -4241,16 +4677,19 @@ function executeShowProcesslist(engine)
   return rowResult(["session_id", "principal", "peer", "tls", "state", "state_time_ms", "statement", "requests"], rows)
 end function
 
-// Publishes the stop request; the listener sends this response before draining.
+/// Publishes the stop request; the listener sends this response before draining.
+/// @param engine engine value consumed by this operation.
 function executeShutdown(engine)
   requested = try(database_manager.requestShutdown(engine.database))
   return commandResult("SHUTDOWN", 0, "cooperative server shutdown requested")
 end function
 
-// Executes describe table using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes describe table using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeDescribeTable(engine, statement)
   table = catalog.findTable(engine.database.catalogHandle, statement.tableName)
   if table is void then return fail(BINDING_ERROR, "describe", "unknown table " + statement.tableName) end if
@@ -4273,10 +4712,12 @@ function executeDescribeTable(engine, statement)
   return rowResult(["ordinal", "column_name", "data_type", "nullable", "default_sql", "identity"], rows)
 end function
 
-// Executes show indexes using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes show indexes using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeShowIndexes(engine, statement)
   table = catalog.findTable(engine.database.catalogHandle, statement.tableName)
   if table is void then return fail(BINDING_ERROR, "showIndexes", "unknown table " + statement.tableName) end if
@@ -4294,9 +4735,11 @@ function executeShowIndexes(engine, statement)
   return rowResult(["index_name", "index_kind", "unique", "columns", "included_columns", "predicate"], rows)
 end function
 
-// Executes statement inner using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes statement inner using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeStatementInner(engine, statement)
   if ast.isDclStatement(statement) then return executeDcl(engine, statement) end if
   if ast.isBeginStatement(statement) then return beginExplicit(engine, statement) end if
@@ -4332,9 +4775,10 @@ function executeStatementInner(engine, statement)
   return fail(UNSUPPORTED_SQL, "execute", "unsupported statement")
 end function
 
-// Recursively detects NEXTVAL in every expression container, including CASE,
-// window clauses, and subqueries. NEXTVAL mutates sequence/session state and is
-// therefore the key exception to classifying SELECT as a shared read.
+/// Recursively detects NEXTVAL in every expression container, including CASE,
+/// window clauses, and subqueries. NEXTVAL mutates sequence/session state and is
+/// therefore the key exception to classifying SELECT as a shared read.
+/// @param expression expression value consumed by this operation.
 function expressionUsesNextval(expression)
   if expression is void then return false end if
   if ast.isFunctionExpression(expression) then
@@ -4377,8 +4821,9 @@ function expressionUsesNextval(expression)
   return false
 end function
 
-// Walks all SELECT clauses, CTEs, joins, and set-operation branches for NEXTVAL.
-// Returns true as soon as any nested expression advances a sequence.
+/// Walks all SELECT clauses, CTEs, joins, and set-operation branches for NEXTVAL.
+/// Returns true as soon as any nested expression advances a sequence.
+/// @param statement statement value consumed by this operation.
 function selectUsesNextval(statement)
   for each item in statement.items
     if expressionUsesNextval(item.expression) then return true end if
@@ -4402,9 +4847,10 @@ function selectUsesNextval(statement)
   return false
 end function
 
-// Classifies statements that may share physical database execution.
-// Pure SELECT, pure EXPLAIN, and metadata inspection are reads; a SELECT tree
-// containing NEXTVAL is deliberately excluded because it changes sequence state.
+/// Classifies statements that may share physical database execution.
+/// Pure SELECT, pure EXPLAIN, and metadata inspection are reads; a SELECT tree
+/// containing NEXTVAL is deliberately excluded because it changes sequence state.
+/// @param statement statement value consumed by this operation.
 function statementUsesReadLock(statement)
   if ast.isSelectStatement(statement) then return not selectUsesNextval(statement) end if
   if ast.isExplainStatement(statement) then return not selectUsesNextval(statement.statement) end if
@@ -4412,9 +4858,10 @@ function statementUsesReadLock(statement)
   return false
 end function
 
-// Classifies statements that require exclusive physical database execution.
-// This includes DML, DDL, DCL, maintenance, and SELECT statements containing
-// NEXTVAL. Transaction-control/session-only statements are handled separately.
+/// Classifies statements that require exclusive physical database execution.
+/// This includes DML, DDL, DCL, maintenance, and SELECT statements containing
+/// NEXTVAL. Transaction-control/session-only statements are handled separately.
+/// @param statement statement value consumed by this operation.
 function statementUsesWriteLock(statement)
   if ast.isSelectStatement(statement) and selectUsesNextval(statement) then return true end if
   if ast.isCallStatement(statement) then return true end if
@@ -4424,10 +4871,11 @@ function statementUsesWriteLock(statement)
   return false
 end function
 
-// Implements statement isolation for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements statement isolation for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function statementIsolation(engine)
   if not engine.explicitTransaction then return transaction.ISOLATION_READ_COMMITTED end if
   if engine.transactionMode == MODE_DML and engine.pageTransaction is not void and typeof(engine.pageTransaction) != "array" then return engine.pageTransaction.isolationLevel end if
@@ -4435,9 +4883,10 @@ function statementIsolation(engine)
   return transaction.ISOLATION_SERIALIZABLE
 end function
 
-// Implements mark explicit failure for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Implements mark explicit failure for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function markExplicitFailure(engine)
   if not engine.explicitTransaction then return true end if
   engine.failed = true
@@ -4447,9 +4896,10 @@ function markExplicitFailure(engine)
   return true
 end function
 
-// Implements audit action for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements audit action for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
 function auditAction(statement)
   if ast.isSelectStatement(statement) then return "SELECT" end if
   if ast.isInsertStatement(statement) then return "INSERT" end if
@@ -4503,9 +4953,10 @@ function auditAction(statement)
   return "STATEMENT"
 end function
 
-// Implements audit event type for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements audit event type for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
 function auditEventType(statement)
   if ast.isDclStatement(statement) then return diagnostics.AUDIT_DCL end if
   if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) or ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) or ast.isTruncateStatement(statement) then return diagnostics.AUDIT_DDL end if
@@ -4513,10 +4964,14 @@ function auditEventType(statement)
   return 0
 end function
 
-// Appends audit outcome using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Appends audit outcome using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
+/// @param success success value consumed by this operation.
+/// @param detail detail value consumed by this operation.
 function appendAuditOutcome(engine, statement, success, detail)
   // Never record raw SQL or literal values: password-bearing DCL therefore cannot
   // leak secrets into the audit stream. Ordinary SELECT and DML statements stay
@@ -4530,9 +4985,11 @@ function appendAuditOutcome(engine, statement, success, detail)
   return typeof(written) != "error"
 end function
 
-// Authorizes and executes one statement while managing logical transaction locks.
-// Statement read leases end after execution; implicit write leases are released
-// on every outcome. Errors mark explicit transactions failed and are audited.
+/// Authorizes and executes one statement while managing logical transaction locks.
+/// Statement read leases end after execution; implicit write leases are released
+/// on every outcome. Errors mark explicit transactions failed and are audited.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeStatementCore(engine, statement)
   validateOpen(engine, "executeStatement")
   resetQueryMemory(engine)
@@ -4593,14 +5050,16 @@ function executeStatementCore(engine, statement)
   return result
 end function
 
-// All callers, including the embedded API, pass through the same physical
-// execution gate. Pure reads share the database; mutations and session-state
-// statements run exclusively. The logical transaction lock manager remains
-// responsible for conflicts that live longer than one statement.
-// Executes one AST under the database's physical readers/writer gate.
-// Prepared statements are classified from their stored AST. A dirty-index marker
-// triggers an atomic read-to-write escalation before repair, with every gate path
-// released before returning the result or a propagated error.
+/// All callers, including the embedded API, pass through the same physical
+/// execution gate. Pure reads share the database; mutations and session-state
+/// statements run exclusively. The logical transaction lock manager remains
+/// responsible for conflicts that live longer than one statement.
+/// Executes one AST under the database's physical readers/writer gate.
+/// Prepared statements are classified from their stored AST. A dirty-index marker
+/// triggers an atomic read-to-write escalation before repair, with every gate path
+/// released before returning the result or a propagated error.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeStatementControlled(engine, statement)
   validateOpen(engine, "executeStatement")
   polled = try(pollQueryControl(engine, "executeStatement"))
@@ -4663,9 +5122,11 @@ function executeStatementControlled(engine, statement)
   return result
 end function
 
-// Executes one AST with an implicit token for embedded callers. Network
-// sessions start the same token before parsing so parsing, execution, cursor
-// streaming and lock-wait retries share one absolute deadline.
+/// Executes one AST with an implicit token for embedded callers. Network
+/// sessions start the same token before parsing so parsing, execution, cursor
+/// streaming and lock-wait retries share one absolute deadline.
+/// @param engine engine value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeStatement(engine, statement)
   validateOpen(engine, "executeStatement")
   ownsControl = not engine.queryControl.active
@@ -4678,9 +5139,11 @@ function executeStatement(engine, statement)
   return result
 end function
 
-// Executes SQL using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Executes SQL using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function executeSql(engine, sqlText)
   validateOpen(engine, "executeSql")
   statements = parser.parseSql(sqlText)
@@ -4703,9 +5166,10 @@ function executeSql(engine, sqlText)
 end function
 
 
-// Implements abort for concurrency for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Implements abort for concurrency for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function abortForConcurrency(engine)
   validateOpen(engine, "abortForConcurrency")
   if engine.explicitTransaction then
@@ -4717,17 +5181,19 @@ function abortForConcurrency(engine)
   return true
 end function
 
-// Implements session identifier for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements session identifier for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
 function sessionIdentifier(engine)
   validateOpen(engine, "sessionIdentifier")
   return engine.sessionId
 end function
 
-// Closes close using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Closes close owned by the minisql executor executor module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param engine engine value consumed by this operation.
 function close(engine)
   validateOpen(engine, "close")
   if engine.explicitTransaction then
@@ -4742,23 +5208,23 @@ function close(engine)
   return true
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor executor module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.executor"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor executor module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M15"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor executor module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

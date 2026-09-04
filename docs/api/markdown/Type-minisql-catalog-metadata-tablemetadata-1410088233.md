@@ -12,7 +12,7 @@ struct TableMetadata
 Defines the table metadata record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L75)
 
 ## Members
 
@@ -26,7 +26,7 @@ columns
 Columns field of the table metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L83)
 
 <a id="field-field-minisql-catalog-metadata-tablemetadata-name-name-src-minisql-catalog-metadata-ml-588642832"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Name field of the table metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L79)
 
 <a id="field-field-minisql-catalog-metadata-tablemetadata-schemaversion-schemaversion-src-minisql-catalog-metadata-ml-724211946"></a>
 ### schemaVersion
@@ -50,7 +50,7 @@ schemaVersion
 Schema version field of the table metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L81)
 
 <a id="field-field-minisql-catalog-metadata-tablemetadata-tableid-tableid-src-minisql-catalog-metadata-ml-1044011598"></a>
 ### tableId
@@ -62,4 +62,4 @@ tableId
 Table id field of the table metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L77)

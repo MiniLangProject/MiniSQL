@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql security key provider facilities for this project.
+
 Package: [`minisql.security.key_provider`](Package-minisql-security-key-provider-68798141.md)
 
 Reachable from entry: **yes**
@@ -23,8 +25,10 @@ Reachable from entry: **yes**
 const AUTHENTICATION_FAILED = 9027
 ```
 
+Defines the authentication failed constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L23)
 
 <a id="function-function-minisql-security-key-provider-closedatabasekey-function-closedatabasekey-material-src-minisql-security-key-provider-ml-1970086051"></a>
 ### closeDatabaseKey
@@ -37,10 +41,10 @@ Wipes caller-owned database key material.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `material` | `dynamic` | — |  |
+| `material` | `dynamic` | — | material value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L264)
 
 <a id="function-function-minisql-security-key-provider-componentname-function-componentname-src-minisql-security-key-provider-ml-12534030"></a>
 ### componentName
@@ -52,7 +56,7 @@ function componentName()
 Returns the stable component name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L271)
 
 <a id="constant-constant-minisql-security-key-provider-corrupt-data-const-corrupt-data-9004-src-minisql-security-key-provider-ml-1207612374"></a>
 ### CORRUPT_DATA
@@ -61,8 +65,10 @@ Returns the stable component name.
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L19)
 
 <a id="function-function-minisql-security-key-provider-createenvelope-function-createenvelope-databaseroot-databaseid-provider-src-minisql-security-key-provider-ml-644730942"></a>
 ### createEnvelope
@@ -75,12 +81,12 @@ Creates and wraps a fresh random database encryption key.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
-| `provider` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `provider` | `dynamic` | — | provider value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L239)
 
 - [minisql.security.key_provider.DatabaseKey](Type-minisql-security-key-provider-databasekey-773503171.md) — struct
 <a id="function-function-minisql-security-key-provider-decodeenvelope-function-decodeenvelope-databaseroot-src-minisql-security-key-provider-ml-1453545695"></a>
@@ -94,10 +100,10 @@ Reads, validates and unwraps the database's current DEK envelope.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L197)
 
 <a id="function-function-minisql-security-key-provider-decodeenvelopedata-function-decodeenvelopedata-databaseroot-encoded-provideroverride-src-minisql-security-key-provider-ml-253098964"></a>
 ### decodeEnvelopeData
@@ -110,12 +116,12 @@ Validates and unwraps one serialized DEK envelope. A provider override lets port
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
-| `providerOverride` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
+| `providerOverride` | `dynamic` | — | providerOverride value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L166)
 
 <a id="function-function-minisql-security-key-provider-encodeenvelope-function-encodeenvelope-databaseid-provider-databasekey-src-minisql-security-key-provider-ml-584272431"></a>
 ### encodeEnvelope
@@ -128,12 +134,12 @@ Wraps a DEK and serializes authenticated crypto-agile metadata.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseId` | `dynamic` | — |  |
-| `provider` | `dynamic` | — |  |
-| `databaseKey` | `dynamic` | — |  |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `provider` | `dynamic` | — | provider value consumed by this operation. |
+| `databaseKey` | `dynamic` | — | databaseKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L129)
 
 <a id="function-function-minisql-security-key-provider-envelopeaad-function-envelopeaad-databaseid-providerkind-provideridentifier-src-minisql-security-key-provider-ml-1609495739"></a>
 ### envelopeAad
@@ -146,12 +152,12 @@ Creates domain-separated AAD for one DEK envelope.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseId` | `dynamic` | — |  |
-| `providerKind` | `dynamic` | — |  |
-| `providerIdentifier` | `dynamic` | — |  |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `providerKind` | `dynamic` | — | providerKind value consumed by this operation. |
+| `providerIdentifier` | `dynamic` | — | providerIdentifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L121)
 
 <a id="function-function-minisql-security-key-provider-fail-function-fail-code-operation-message-src-minisql-security-key-provider-ml-513296235"></a>
 ### fail
@@ -164,12 +170,12 @@ Creates a structured key-provider error.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L60)
 
 <a id="function-function-minisql-security-key-provider-fileprovider-function-fileprovider-path-src-minisql-security-key-provider-ml-897183909"></a>
 ### fileProvider
@@ -182,10 +188,10 @@ Creates the version-1 raw-file key provider descriptor.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L101)
 
 <a id="function-function-minisql-security-key-provider-finddatabaseroot-function-finddatabaseroot-path-src-minisql-security-key-provider-ml-1430569593"></a>
 ### findDatabaseRoot
@@ -198,10 +204,10 @@ Searches a small bounded ancestor chain so catalog, table, index, WAL and tempor
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L89)
 
 <a id="constant-constant-minisql-security-key-provider-invalid-argument-const-invalid-argument-9001-src-minisql-security-key-provider-ml-2135897153"></a>
 ### INVALID_ARGUMENT
@@ -210,7 +216,7 @@ Searches a small bounded ancestor chain so catalog, table, index, WAL and tempor
 const INVALID_ARGUMENT = 9001
 ```
 
-The envelope is deliberately provider- and algorithm-tagged. Adding an OS keystore or KMS only requires another provider implementation; paged files, WAL and backup code consume the same unwrapped DatabaseKey.
+The envelope is deliberately provider- and algorithm-tagged. Adding an OS
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L15)
@@ -222,8 +228,10 @@ The envelope is deliberately provider- and algorithm-tagged. Adding an OS keysto
 const IO_FAILURE = 9005
 ```
 
+Defines the io failure constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L21)
 
 <a id="function-function-minisql-security-key-provider-isimplemented-function-isimplemented-src-minisql-security-key-provider-ml-719277566"></a>
 ### isImplemented
@@ -232,10 +240,10 @@ const IO_FAILURE = 9005
 function isImplemented()
 ```
 
-Reports that the component is implemented.
+Returns whether implemented satisfies the condition required by the minisql security key provider module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L281)
 
 - [minisql.security.key_provider.KeyProvider](Type-minisql-security-key-provider-keyprovider-1507077469.md) — struct
 <a id="function-function-minisql-security-key-provider-loadforpath-function-loadforpath-path-expecteddatabaseid-src-minisql-security-key-provider-ml-2028851009"></a>
@@ -249,11 +257,11 @@ Resolves and loads the database key associated with an artifact path.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `expectedDatabaseId` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `expectedDatabaseId` | `dynamic` | — | Identifier of expected database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L177)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L206)
 
 <a id="function-function-minisql-security-key-provider-loadproviderkey-function-loadproviderkey-provider-src-minisql-security-key-provider-ml-225745395"></a>
 ### loadProviderKey
@@ -266,10 +274,10 @@ Loads one wipeable 256-bit KEK from the selected provider.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `provider` | `dynamic` | — |  |
+| `provider` | `dynamic` | — | provider value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L108)
 
 <a id="constant-constant-minisql-security-key-provider-meta-fixed-bytes-const-meta-fixed-bytes-112-src-minisql-security-key-provider-ml-683627179"></a>
 ### META_FIXED_BYTES
@@ -278,8 +286,10 @@ Loads one wipeable 256-bit KEK from the selected provider.
 const META_FIXED_BYTES = 112
 ```
 
+Defines the meta fixed bytes constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L32)
 
 <a id="constant-constant-minisql-security-key-provider-meta-max-bytes-const-meta-max-bytes-8192-src-minisql-security-key-provider-ml-1724343917"></a>
 ### META_MAX_BYTES
@@ -288,8 +298,10 @@ const META_FIXED_BYTES = 112
 const META_MAX_BYTES = 8192
 ```
 
+Defines the meta max bytes constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L34)
 
 <a id="constant-constant-minisql-security-key-provider-meta-version-const-meta-version-1-src-minisql-security-key-provider-ml-760014362"></a>
 ### META_VERSION
@@ -298,8 +310,10 @@ const META_MAX_BYTES = 8192
 const META_VERSION = 1
 ```
 
+Defines the meta version constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L30)
 
 <a id="function-function-minisql-security-key-provider-metadatapath-function-metadatapath-databaseroot-src-minisql-security-key-provider-ml-226782359"></a>
 ### metadataPath
@@ -312,10 +326,10 @@ Returns the fixed database envelope path.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L81)
 
 <a id="function-function-minisql-security-key-provider-parentpath-function-parentpath-path-src-minisql-security-key-provider-ml-1449840053"></a>
 ### parentPath
@@ -328,10 +342,10 @@ Returns the UTF-8 parent path without filesystem-dependent normalization.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L66)
 
 <a id="constant-constant-minisql-security-key-provider-provider-file-const-provider-file-1-src-minisql-security-key-provider-ml-85160500"></a>
 ### PROVIDER_FILE
@@ -340,8 +354,10 @@ Returns the UTF-8 parent path without filesystem-dependent normalization.
 const PROVIDER_FILE = 1
 ```
 
+Defines the provider file constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L26)
 
 <a id="function-function-minisql-security-key-provider-rotateenvelope-function-rotateenvelope-databaseroot-newprovider-src-minisql-security-key-provider-ml-1439446792"></a>
 ### rotateEnvelope
@@ -354,11 +370,11 @@ Rotation rewraps the DEK atomically; data pages never become half-keyed and no f
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
-| `newProvider` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
+| `newProvider` | `dynamic` | — | newProvider value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L254)
 
 <a id="function-function-minisql-security-key-provider-targetmilestone-function-targetmilestone-src-minisql-security-key-provider-ml-1159704256"></a>
 ### targetMilestone
@@ -370,7 +386,7 @@ function targetMilestone()
 Returns the milestone introducing this component.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L276)
 
 <a id="constant-constant-minisql-security-key-provider-unsupported-format-const-unsupported-format-9003-src-minisql-security-key-provider-ml-1885905179"></a>
 ### UNSUPPORTED_FORMAT
@@ -379,8 +395,10 @@ Returns the milestone introducing this component.
 const UNSUPPORTED_FORMAT = 9003
 ```
 
+Defines the unsupported format constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L17)
 
 <a id="constant-constant-minisql-security-key-provider-wrap-aes-256-gcm-const-wrap-aes-256-gcm-1-src-minisql-security-key-provider-ml-109791258"></a>
 ### WRAP_AES_256_GCM
@@ -389,8 +407,10 @@ const UNSUPPORTED_FORMAT = 9003
 const WRAP_AES_256_GCM = 1
 ```
 
+Defines the wrap aes 256 gcm constant used by the minisql security key provider module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L28)
 
 <a id="function-function-minisql-security-key-provider-writeenvelope-function-writeenvelope-databaseroot-databaseid-provider-databasekey-src-minisql-security-key-provider-ml-770187142"></a>
 ### writeEnvelope
@@ -403,10 +423,10 @@ Atomically publishes a durable wrapped-key envelope.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseRoot` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
-| `provider` | `dynamic` | — |  |
-| `databaseKey` | `dynamic` | — |  |
+| `databaseRoot` | `dynamic` | — | databaseRoot value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `provider` | `dynamic` | — | provider value consumed by this operation. |
+| `databaseKey` | `dynamic` | — | databaseKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/security/key_provider.ml#L220)

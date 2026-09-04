@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql platform file win32 facilities for this project.
+
 Package: [`minisql.platform.file_win32`](Package-minisql-platform-file-win32-1685320645.md)
 
 Reachable from entry: **yes**
@@ -24,10 +26,12 @@ Releases one Win32 kernel handle and reports whether closing succeeded.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L81)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L171)
 
 <a id="function-function-minisql-platform-file-win32-closenative-function-closenative-handle-src-minisql-platform-file-win32-ml-1185613454"></a>
 ### closeNative
@@ -40,10 +44,10 @@ Closes the native. Inputs: `handle`. Returns the operation result and propagates
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L303)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L456)
 
 <a id="function-function-minisql-platform-file-win32-closereadcontext-function-closereadcontext-context-src-minisql-platform-file-win32-ml-2066302367"></a>
 ### closeReadContext
@@ -56,10 +60,10 @@ Closes a query-local completion event after its final read has completed.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `context` | `dynamic` | — |  |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L180)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L312)
 
 <a id="function-function-minisql-platform-file-win32-componentname-function-componentname-src-minisql-platform-file-win32-ml-953484090"></a>
 ### componentName
@@ -68,10 +72,10 @@ Closes a query-local completion event after its final read has completed.
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql platform file win32 module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L404)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L570)
 
 <a id="constant-constant-minisql-platform-file-win32-create-always-const-create-always-2-src-minisql-platform-file-win32-ml-1978019479"></a>
 ### CREATE_ALWAYS
@@ -80,8 +84,10 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 const CREATE_ALWAYS = 2
 ```
 
+Defines the create always constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L32)
 
 <a id="constant-constant-minisql-platform-file-win32-create-new-const-create-new-1-src-minisql-platform-file-win32-ml-1109867044"></a>
 ### CREATE_NEW
@@ -90,8 +96,10 @@ const CREATE_ALWAYS = 2
 const CREATE_NEW = 1
 ```
 
+Defines the create new constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L30)
 
 <a id="function-function-minisql-platform-file-win32-createdirectory-synchronized-function-createdirectory-path-src-minisql-platform-file-win32-ml-1369380157"></a>
 ### createDirectory
@@ -104,10 +112,10 @@ Creates one directory while holding the wide-path native-call guard. Input `path
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L357)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L516)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-createdirectoryw-extern-function-createdirectoryw-path-as-wstr-security-as-ptr-from-kernel32-dll-symbol-createdirectoryw-returns-bool-src-minisql-platform-file-win32-ml-560404053"></a>
 ### CreateDirectoryW
@@ -120,11 +128,13 @@ Creates a directory at the UTF-16 path and reports Win32 success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `wstr` | — |  |
-| `security` | `ptr` | — |  |
+| `path` | `wstr` | — | Path of the file or directory used by the operation. |
+| `security` | `ptr` | — | security value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L87)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L184)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-createfilew-extern-function-createfilew-path-as-wstr-desiredaccess-as-u32-sharemode-as-u32-security-as-ptr-creationdisposition-as-u32-flagsandattributes-as-u32-templatefile-as-ptr-from-kernel32-dll-symbol-createfilew-returns-ptr-src-minisql-platform-file-win32-ml-104336383"></a>
 ### CreateFileW
@@ -137,16 +147,18 @@ Opens or creates a Win32 file and returns its native handle or INVALID_HANDLE_VA
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `wstr` | — |  |
-| `desiredAccess` | `u32` | — |  |
-| `shareMode` | `u32` | — |  |
-| `security` | `ptr` | — |  |
-| `creationDisposition` | `u32` | — |  |
-| `flagsAndAttributes` | `u32` | — |  |
-| `templateFile` | `ptr` | — |  |
+| `path` | `wstr` | — | Path of the file or directory used by the operation. |
+| `desiredAccess` | `u32` | — | desiredAccess value consumed by this operation. |
+| `shareMode` | `u32` | — | shareMode value consumed by this operation. |
+| `security` | `ptr` | — | security value consumed by this operation. |
+| `creationDisposition` | `u32` | — | creationDisposition value consumed by this operation. |
+| `flagsAndAttributes` | `u32` | — | flagsAndAttributes value consumed by this operation. |
+| `templateFile` | `ptr` | — | templateFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L59)
+**Returns:** Native ptr result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L99)
 
 <a id="function-function-minisql-platform-file-win32-createreadcontext-function-createreadcontext-src-minisql-platform-file-win32-ml-1941187988"></a>
 ### createReadContext
@@ -158,7 +170,7 @@ function createReadContext()
 Creates one reusable completion event for a query-local positioned-read lease.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L304)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-deletefilew-extern-function-deletefilew-path-as-wstr-from-kernel32-dll-symbol-deletefilew-returns-bool-src-minisql-platform-file-win32-ml-841600273"></a>
 ### DeleteFileW
@@ -171,10 +183,12 @@ Deletes the file identified by a UTF-16 path and reports Win32 success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `wstr` | — |  |
+| `path` | `wstr` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L83)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L175)
 
 <a id="function-function-minisql-platform-file-win32-deletepath-synchronized-function-deletepath-path-src-minisql-platform-file-win32-ml-132119661"></a>
 ### deletePath
@@ -187,10 +201,10 @@ Deletes the path while holding the compiler-required wide-path call guard. Input
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L465)
 
 <a id="function-function-minisql-platform-file-win32-directoryexists-function-directoryexists-path-src-minisql-platform-file-win32-ml-1616425587"></a>
 ### directoryExists
@@ -203,10 +217,10 @@ Performs the directory exists operation for this module. Inputs: `path`. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L498)
 
 <a id="constant-constant-minisql-platform-file-win32-error-access-denied-const-error-access-denied-5-src-minisql-platform-file-win32-ml-1255226504"></a>
 ### ERROR_ACCESS_DENIED
@@ -215,8 +229,10 @@ Performs the directory exists operation for this module. Inputs: `path`. Returns
 const ERROR_ACCESS_DENIED = 5
 ```
 
+Defines the error access denied constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L54)
 
 <a id="constant-constant-minisql-platform-file-win32-error-already-exists-const-error-already-exists-183-src-minisql-platform-file-win32-ml-1053248405"></a>
 ### ERROR_ALREADY_EXISTS
@@ -225,8 +241,10 @@ const ERROR_ACCESS_DENIED = 5
 const ERROR_ALREADY_EXISTS = 183
 ```
 
+Defines the error already exists constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L38)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L62)
 
 <a id="constant-constant-minisql-platform-file-win32-error-file-not-found-const-error-file-not-found-2-src-minisql-platform-file-win32-ml-1106853493"></a>
 ### ERROR_FILE_NOT_FOUND
@@ -235,8 +253,10 @@ const ERROR_ALREADY_EXISTS = 183
 const ERROR_FILE_NOT_FOUND = 2
 ```
 
+Defines the error file not found constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L36)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L58)
 
 <a id="constant-constant-minisql-platform-file-win32-error-handle-eof-const-error-handle-eof-38-src-minisql-platform-file-win32-ml-543301920"></a>
 ### ERROR_HANDLE_EOF
@@ -245,8 +265,10 @@ const ERROR_FILE_NOT_FOUND = 2
 const ERROR_HANDLE_EOF = 38
 ```
 
+Defines the error handle eof constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L39)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L64)
 
 <a id="constant-constant-minisql-platform-file-win32-error-io-pending-const-error-io-pending-997-src-minisql-platform-file-win32-ml-1750158740"></a>
 ### ERROR_IO_PENDING
@@ -255,8 +277,10 @@ const ERROR_HANDLE_EOF = 38
 const ERROR_IO_PENDING = 997
 ```
 
+Defines the error io pending constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L40)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L66)
 
 <a id="constant-constant-minisql-platform-file-win32-error-lock-violation-const-error-lock-violation-33-src-minisql-platform-file-win32-ml-1969026327"></a>
 ### ERROR_LOCK_VIOLATION
@@ -265,8 +289,10 @@ const ERROR_IO_PENDING = 997
 const ERROR_LOCK_VIOLATION = 33
 ```
 
+Defines the error lock violation constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L52)
 
 <a id="constant-constant-minisql-platform-file-win32-error-path-not-found-const-error-path-not-found-3-src-minisql-platform-file-win32-ml-1853446946"></a>
 ### ERROR_PATH_NOT_FOUND
@@ -275,8 +301,10 @@ const ERROR_LOCK_VIOLATION = 33
 const ERROR_PATH_NOT_FOUND = 3
 ```
 
+Defines the error path not found constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L37)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L60)
 
 <a id="constant-constant-minisql-platform-file-win32-error-sharing-violation-const-error-sharing-violation-32-src-minisql-platform-file-win32-ml-1535440932"></a>
 ### ERROR_SHARING_VIOLATION
@@ -285,8 +313,10 @@ const ERROR_PATH_NOT_FOUND = 3
 const ERROR_SHARING_VIOLATION = 32
 ```
 
+Defines the error sharing violation constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L56)
 
 <a id="function-function-minisql-platform-file-win32-fail-function-fail-code-operation-message-src-minisql-platform-file-win32-ml-1911791271"></a>
 ### fail
@@ -295,16 +325,16 @@ const ERROR_SHARING_VIOLATION = 32
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql platform file win32 module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L207)
 
 <a id="constant-constant-minisql-platform-file-win32-file-attribute-directory-const-file-attribute-directory-16-src-minisql-platform-file-win32-ml-109863190"></a>
 ### FILE_ATTRIBUTE_DIRECTORY
@@ -313,8 +343,10 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const FILE_ATTRIBUTE_DIRECTORY = 16
 ```
 
+Defines the file attribute directory constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L42)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L70)
 
 <a id="constant-constant-minisql-platform-file-win32-file-attribute-normal-const-file-attribute-normal-128-src-minisql-platform-file-win32-ml-1031072170"></a>
 ### FILE_ATTRIBUTE_NORMAL
@@ -323,8 +355,10 @@ const FILE_ATTRIBUTE_DIRECTORY = 16
 const FILE_ATTRIBUTE_NORMAL = 128
 ```
 
+Defines the file attribute normal constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L40)
 
 <a id="constant-constant-minisql-platform-file-win32-file-begin-const-file-begin-0-src-minisql-platform-file-win32-ml-912345639"></a>
 ### FILE_BEGIN
@@ -333,8 +367,10 @@ const FILE_ATTRIBUTE_NORMAL = 128
 const FILE_BEGIN = 0
 ```
 
+Defines the file begin constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L46)
 
 <a id="constant-constant-minisql-platform-file-win32-file-flag-overlapped-const-file-flag-overlapped-1073741824-src-minisql-platform-file-win32-ml-267400008"></a>
 ### FILE_FLAG_OVERLAPPED
@@ -343,8 +379,10 @@ const FILE_BEGIN = 0
 const FILE_FLAG_OVERLAPPED = 1073741824
 ```
 
+Defines the file flag overlapped constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L44)
 
 <a id="constant-constant-minisql-platform-file-win32-file-flag-write-through-const-file-flag-write-through-2147483648-src-minisql-platform-file-win32-ml-638820836"></a>
 ### FILE_FLAG_WRITE_THROUGH
@@ -353,8 +391,10 @@ const FILE_FLAG_OVERLAPPED = 1073741824
 const FILE_FLAG_WRITE_THROUGH = 2147483648
 ```
 
+Defines the file flag write through constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L42)
 
 <a id="constant-constant-minisql-platform-file-win32-file-share-delete-const-file-share-delete-4-src-minisql-platform-file-win32-ml-1057266813"></a>
 ### FILE_SHARE_DELETE
@@ -363,8 +403,10 @@ const FILE_FLAG_WRITE_THROUGH = 2147483648
 const FILE_SHARE_DELETE = 4
 ```
 
+Defines the file share delete constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L28)
 
 <a id="constant-constant-minisql-platform-file-win32-file-share-read-const-file-share-read-1-src-minisql-platform-file-win32-ml-97028588"></a>
 ### FILE_SHARE_READ
@@ -373,8 +415,10 @@ const FILE_SHARE_DELETE = 4
 const FILE_SHARE_READ = 1
 ```
 
+Defines the file share read constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L24)
 
 <a id="constant-constant-minisql-platform-file-win32-file-share-write-const-file-share-write-2-src-minisql-platform-file-win32-ml-1611920221"></a>
 ### FILE_SHARE_WRITE
@@ -383,8 +427,10 @@ const FILE_SHARE_READ = 1
 const FILE_SHARE_WRITE = 2
 ```
 
+Defines the file share write constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L26)
 
 <a id="function-function-minisql-platform-file-win32-fileexists-function-fileexists-path-src-minisql-platform-file-win32-ml-1323856213"></a>
 ### fileExists
@@ -397,10 +443,10 @@ Performs the file exists operation for this module. Inputs: `path`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L349)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L507)
 
 <a id="function-function-minisql-platform-file-win32-flush-function-flush-handle-src-minisql-platform-file-win32-ml-196365516"></a>
 ### flush
@@ -409,14 +455,14 @@ Performs the file exists operation for this module. Inputs: `path`. Returns the 
 function flush(handle)
 ```
 
-Flushes the requested value. Inputs: `handle`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the flush operation for the minisql platform file win32 module. Inputs: `handle`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L413)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-flushfilebuffers-extern-function-flushfilebuffers-handle-as-ptr-from-kernel32-dll-symbol-flushfilebuffers-returns-bool-src-minisql-platform-file-win32-ml-104467789"></a>
 ### FlushFileBuffers
@@ -429,10 +475,12 @@ Forces buffered data and metadata for `handle` to stable storage.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L75)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L150)
 
 <a id="constant-constant-minisql-platform-file-win32-generic-read-const-generic-read-2147483648-src-minisql-platform-file-win32-ml-813667182"></a>
 ### GENERIC_READ
@@ -441,8 +489,10 @@ Forces buffered data and metadata for `handle` to stable storage.
 const GENERIC_READ = 2147483648
 ```
 
+Defines the generic read constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L20)
 
 <a id="constant-constant-minisql-platform-file-win32-generic-write-const-generic-write-1073741824-src-minisql-platform-file-win32-ml-2083118598"></a>
 ### GENERIC_WRITE
@@ -451,8 +501,10 @@ const GENERIC_READ = 2147483648
 const GENERIC_WRITE = 1073741824
 ```
 
+Defines the generic write constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L22)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-getfileattributesw-extern-function-getfileattributesw-path-as-wstr-from-kernel32-dll-symbol-getfileattributesw-returns-u32-src-minisql-platform-file-win32-ml-1801081331"></a>
 ### GetFileAttributesW
@@ -465,10 +517,12 @@ Returns Win32 attributes for a UTF-16 path or INVALID_FILE_ATTRIBUTES.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `wstr` | — |  |
+| `path` | `wstr` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L85)
+**Returns:** Native u32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L179)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-getfilesizeex-extern-function-getfilesizeex-handle-as-ptr-sizeout-as-bytes-from-kernel32-dll-symbol-getfilesizeex-returns-bool-src-minisql-platform-file-win32-ml-620053496"></a>
 ### GetFileSizeEx
@@ -481,11 +535,13 @@ Writes the handle's current 64-bit byte length to `sizeOut`.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `sizeOut` | `bytes` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `sizeOut` | `bytes` | — | sizeOut value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L71)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L142)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-getlasterror-extern-function-getlasterror-from-kernel32-dll-symbol-getlasterror-returns-u32-src-minisql-platform-file-win32-ml-1858205198"></a>
 ### GetLastError
@@ -497,7 +553,9 @@ extern function GetLastError() from "kernel32.dll" symbol "GetLastError" returns
 Returns the calling thread's most recent Win32 error code.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L93)
+**Returns:** Native u32 result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L197)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-getoverlappedresult-extern-function-getoverlappedresult-handle-as-ptr-overlapped-as-bytes-bytestransferred-as-bytes-wait-as-bool-from-kernel32-dll-symbol-getoverlappedresult-returns-bool-src-minisql-platform-file-win32-ml-738058653"></a>
 ### GetOverlappedResult
@@ -510,13 +568,15 @@ Waits for one particular overlapped operation and returns its byte count.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `overlapped` | `bytes` | — |  |
-| `bytesTransferred` | `bytes` | — |  |
-| `wait` | `bool` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `overlapped` | `bytes` | — | overlapped value consumed by this operation. |
+| `bytesTransferred` | `bytes` | — | bytesTransferred value consumed by this operation. |
+| `wait` | `bool` | — | wait value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L67)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L130)
 
 <a id="constant-constant-minisql-platform-file-win32-invalid-argument-const-invalid-argument-9001-src-minisql-platform-file-win32-ml-1624181309"></a>
 ### INVALID_ARGUMENT
@@ -525,7 +585,7 @@ Waits for one particular overlapped operation and returns its byte count.
 const INVALID_ARGUMENT = 9001
 ```
 
-Thin Win32 handle layer. The public platform.file module owns validation and object lifetime. Read-only handles can opt into offset-based overlapped reads, while serialized writers retain synchronous cursor operations.
+Thin Win32 handle layer. The public platform.file module owns validation and
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L13)
@@ -537,8 +597,10 @@ Thin Win32 handle layer. The public platform.file module owns validation and obj
 const INVALID_FILE_ATTRIBUTES = 4294967295
 ```
 
+Defines the invalid file attributes constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L41)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L68)
 
 <a id="constant-constant-minisql-platform-file-win32-io-failure-const-io-failure-9005-src-minisql-platform-file-win32-ml-173812853"></a>
 ### IO_FAILURE
@@ -547,8 +609,10 @@ const INVALID_FILE_ATTRIBUTES = 4294967295
 const IO_FAILURE = 9005
 ```
 
+Defines the io failure constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L14)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L15)
 
 <a id="function-function-minisql-platform-file-win32-isimplemented-function-isimplemented-src-minisql-platform-file-win32-ml-1720360170"></a>
 ### isImplemented
@@ -557,10 +621,10 @@ const IO_FAILURE = 9005
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql platform file win32 module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L416)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L582)
 
 <a id="function-function-minisql-platform-file-win32-isinvalidhandle-function-isinvalidhandle-handle-src-minisql-platform-file-win32-ml-581647290"></a>
 ### isInvalidHandle
@@ -573,10 +637,10 @@ Evaluates whether the supplied input satisfies the invalid handle predicate. Inp
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L222)
 
 <a id="function-function-minisql-platform-file-win32-lasterror-function-lasterror-operation-src-minisql-platform-file-win32-ml-1834803369"></a>
 ### lastError
@@ -589,10 +653,10 @@ Performs the last error operation for this module. Inputs: `operation`. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L214)
 
 <a id="constant-constant-minisql-platform-file-win32-lock-conflict-const-lock-conflict-9007-src-minisql-platform-file-win32-ml-1561491483"></a>
 ### LOCK_CONFLICT
@@ -601,8 +665,10 @@ Performs the last error operation for this module. Inputs: `operation`. Returns 
 const LOCK_CONFLICT = 9007
 ```
 
+Defines the lock conflict constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L17)
 
 <a id="constant-constant-minisql-platform-file-win32-lockfile-exclusive-lock-const-lockfile-exclusive-lock-2-src-minisql-platform-file-win32-ml-1947814575"></a>
 ### LOCKFILE_EXCLUSIVE_LOCK
@@ -611,8 +677,10 @@ const LOCK_CONFLICT = 9007
 const LOCKFILE_EXCLUSIVE_LOCK = 2
 ```
 
+Defines the lockfile exclusive lock constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L50)
 
 <a id="constant-constant-minisql-platform-file-win32-lockfile-fail-immediately-const-lockfile-fail-immediately-1-src-minisql-platform-file-win32-ml-616668920"></a>
 ### LOCKFILE_FAIL_IMMEDIATELY
@@ -621,8 +689,10 @@ const LOCKFILE_EXCLUSIVE_LOCK = 2
 const LOCKFILE_FAIL_IMMEDIATELY = 1
 ```
 
+Defines the lockfile fail immediately constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L48)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-lockfileex-extern-function-lockfileex-handle-as-ptr-flags-as-u32-reserved-as-u32-byteslow-as-u32-byteshigh-as-u32-overlapped-as-bytes-from-kernel32-dll-symbol-lockfileex-returns-bool-src-minisql-platform-file-win32-ml-1900664822"></a>
 ### LockFileEx
@@ -635,15 +705,17 @@ Acquires the requested byte-range lock described by `overlapped` and length word
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `flags` | `u32` | — |  |
-| `reserved` | `u32` | — |  |
-| `bytesLow` | `u32` | — |  |
-| `bytesHigh` | `u32` | — |  |
-| `overlapped` | `bytes` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
+| `reserved` | `u32` | — | reserved value consumed by this operation. |
+| `bytesLow` | `u32` | — | bytesLow value consumed by this operation. |
+| `bytesHigh` | `u32` | — | bytesHigh value consumed by this operation. |
+| `overlapped` | `bytes` | — | overlapped value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L77)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L159)
 
 <a id="function-function-minisql-platform-file-win32-lockwhole-function-lockwhole-handle-exclusive-failimmediately-src-minisql-platform-file-win32-ml-284917206"></a>
 ### lockWhole
@@ -656,12 +728,12 @@ Locks the whole. Inputs: `handle`, `exclusive`, `failImmediately`. Returns the p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `exclusive` | `dynamic` | — |  |
-| `failImmediately` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `exclusive` | `dynamic` | — | exclusive value consumed by this operation. |
+| `failImmediately` | `dynamic` | — | failImmediately value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L273)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L424)
 
 <a id="constant-constant-minisql-platform-file-win32-move-retry-attempts-const-move-retry-attempts-40-src-minisql-platform-file-win32-ml-1575941867"></a>
 ### MOVE_RETRY_ATTEMPTS
@@ -670,8 +742,10 @@ Locks the whole. Inputs: `handle`, `exclusive`, `failImmediately`. Returns the p
 const MOVE_RETRY_ATTEMPTS = 40
 ```
 
+Defines the move retry attempts constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L45)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L76)
 
 <a id="constant-constant-minisql-platform-file-win32-move-retry-delay-ms-const-move-retry-delay-ms-25-src-minisql-platform-file-win32-ml-2135064928"></a>
 ### MOVE_RETRY_DELAY_MS
@@ -680,8 +754,10 @@ const MOVE_RETRY_ATTEMPTS = 40
 const MOVE_RETRY_DELAY_MS = 25
 ```
 
+Defines the move retry delay ms constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L46)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L78)
 
 <a id="constant-constant-minisql-platform-file-win32-movefile-replace-existing-const-movefile-replace-existing-1-src-minisql-platform-file-win32-ml-2095325724"></a>
 ### MOVEFILE_REPLACE_EXISTING
@@ -690,8 +766,10 @@ const MOVE_RETRY_DELAY_MS = 25
 const MOVEFILE_REPLACE_EXISTING = 1
 ```
 
+Defines the movefile replace existing constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L43)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L72)
 
 <a id="constant-constant-minisql-platform-file-win32-movefile-write-through-const-movefile-write-through-8-src-minisql-platform-file-win32-ml-701519877"></a>
 ### MOVEFILE_WRITE_THROUGH
@@ -700,8 +778,10 @@ const MOVEFILE_REPLACE_EXISTING = 1
 const MOVEFILE_WRITE_THROUGH = 8
 ```
 
+Defines the movefile write through constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L44)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L74)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-movefileexw-extern-function-movefileexw-source-as-wstr-destination-as-wstr-flags-as-u32-from-kernel32-dll-symbol-movefileexw-returns-bool-src-minisql-platform-file-win32-ml-935455373"></a>
 ### MoveFileExW
@@ -714,12 +794,14 @@ Renames or replaces a path according to `flags` and reports Win32 success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `wstr` | — |  |
-| `destination` | `wstr` | — |  |
-| `flags` | `u32` | — |  |
+| `source` | `wstr` | — | source value consumed by this operation. |
+| `destination` | `wstr` | — | destination value consumed by this operation. |
+| `flags` | `u32` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L91)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L194)
 
 <a id="function-function-minisql-platform-file-win32-movepath-function-movepath-source-destination-replaceexisting-src-minisql-platform-file-win32-ml-123301098"></a>
 ### movePath
@@ -732,12 +814,12 @@ Atomically renames a path and absorbs only short-lived Windows scanner locks. Ac
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `replaceExisting` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `replaceExisting` | `dynamic` | — | replaceExisting value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L551)
 
 <a id="function-function-minisql-platform-file-win32-movepathattempt-synchronized-function-movepathattempt-source-destination-flags-src-minisql-platform-file-win32-ml-361487840"></a>
 ### movePathAttempt
@@ -750,12 +832,12 @@ Performs one atomic rename attempt while protecting compiler-managed UTF-16 path
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `flags` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `flags` | `dynamic` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L376)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L539)
 
 <a id="constant-constant-minisql-platform-file-win32-open-always-const-open-always-4-src-minisql-platform-file-win32-ml-7513385"></a>
 ### OPEN_ALWAYS
@@ -764,8 +846,10 @@ Performs one atomic rename attempt while protecting compiler-managed UTF-16 path
 const OPEN_ALWAYS = 4
 ```
 
+Defines the open always constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L36)
 
 <a id="constant-constant-minisql-platform-file-win32-open-existing-const-open-existing-3-src-minisql-platform-file-win32-ml-930292170"></a>
 ### OPEN_EXISTING
@@ -774,8 +858,10 @@ const OPEN_ALWAYS = 4
 const OPEN_EXISTING = 3
 ```
 
+Defines the open existing constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L34)
 
 <a id="function-function-minisql-platform-file-win32-opennative-function-opennative-path-desiredaccess-sharemode-creationdisposition-writethrough-src-minisql-platform-file-win32-ml-788032449"></a>
 ### openNative
@@ -788,14 +874,14 @@ Opens a conventional synchronous handle used by serialized write paths.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `desiredAccess` | `dynamic` | — |  |
-| `shareMode` | `dynamic` | — |  |
-| `creationDisposition` | `dynamic` | — |  |
-| `writeThrough` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `desiredAccess` | `dynamic` | — | desiredAccess value consumed by this operation. |
+| `shareMode` | `dynamic` | — | shareMode value consumed by this operation. |
+| `creationDisposition` | `dynamic` | — | creationDisposition value consumed by this operation. |
+| `writeThrough` | `dynamic` | — | writeThrough value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L258)
 
 <a id="function-function-minisql-platform-file-win32-opennativepositionedread-function-opennativepositionedread-path-desiredaccess-sharemode-creationdisposition-writethrough-src-minisql-platform-file-win32-ml-1475852481"></a>
 ### openNativePositionedRead
@@ -808,14 +894,14 @@ Opens a read-only handle whose operations carry explicit byte offsets and can sa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `desiredAccess` | `dynamic` | — |  |
-| `shareMode` | `dynamic` | — |  |
-| `creationDisposition` | `dynamic` | — |  |
-| `writeThrough` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `desiredAccess` | `dynamic` | — | desiredAccess value consumed by this operation. |
+| `shareMode` | `dynamic` | — | shareMode value consumed by this operation. |
+| `creationDisposition` | `dynamic` | — | creationDisposition value consumed by this operation. |
+| `writeThrough` | `dynamic` | — | writeThrough value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L269)
 
 <a id="function-function-minisql-platform-file-win32-opennativewithflags-synchronized-function-opennativewithflags-path-desiredaccess-sharemode-creationdisposition-writethrough-extraflags-src-minisql-platform-file-win32-ml-1432077756"></a>
 ### openNativeWithFlags
@@ -828,15 +914,15 @@ MiniLang's extern wstr conversion currently uses process-wide UTF-16 scratch buf
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `desiredAccess` | `dynamic` | — |  |
-| `shareMode` | `dynamic` | — |  |
-| `creationDisposition` | `dynamic` | — |  |
-| `writeThrough` | `dynamic` | — |  |
-| `extraFlags` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `desiredAccess` | `dynamic` | — | desiredAccess value consumed by this operation. |
+| `shareMode` | `dynamic` | — | shareMode value consumed by this operation. |
+| `creationDisposition` | `dynamic` | — | creationDisposition value consumed by this operation. |
+| `writeThrough` | `dynamic` | — | writeThrough value consumed by this operation. |
+| `extraFlags` | `dynamic` | — | extraFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L236)
 
 <a id="function-function-minisql-platform-file-win32-pathattributes-synchronized-function-pathattributes-path-src-minisql-platform-file-win32-ml-1128890081"></a>
 ### pathAttributes
@@ -849,10 +935,10 @@ Reads Win32 attributes while serializing access to the compiler's path buffer. I
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L477)
 
 <a id="function-function-minisql-platform-file-win32-pathexists-function-pathexists-path-src-minisql-platform-file-win32-ml-1166825817"></a>
 ### pathExists
@@ -861,14 +947,14 @@ Reads Win32 attributes while serializing access to the compiler's path buffer. I
 function pathExists(path)
 ```
 
-Performs the path exists operation for this module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the pathExists operation for the minisql platform file win32 module. Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L335)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L491)
 
 - [minisql.platform.file_win32.PositionedReadContext](Type-minisql-platform-file-win32-positionedreadcontext-1624883970.md) — struct
 <a id="function-function-minisql-platform-file-win32-readat-function-readat-handle-fileoffset-destination-count-src-minisql-platform-file-win32-ml-439297218"></a>
@@ -882,13 +968,13 @@ Compatibility positioned read whose temporary context owns exactly one read.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L363)
 
 <a id="function-function-minisql-platform-file-win32-readatwithcontext-function-readatwithcontext-handle-fileoffset-destination-count-context-src-minisql-platform-file-win32-ml-1196300727"></a>
 ### readAtWithContext
@@ -901,14 +987,14 @@ Reads at an explicit byte offset with one caller-owned completion event. The OVE
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `fileOffset` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `fileOffset` | `dynamic` | — | fileOffset value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L328)
 
 <a id="function-function-minisql-platform-file-win32-readcurrent-function-readcurrent-handle-destination-count-src-minisql-platform-file-win32-ml-1605255773"></a>
 ### readCurrent
@@ -921,12 +1007,12 @@ Reads the current. Inputs: `handle`, `destination`, `count`. Returns the produce
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L291)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-readfile-extern-function-readfile-handle-as-ptr-buffer-as-bytes-count-as-u32-bytesread-as-bytes-overlapped-as-ptr-from-kernel32-dll-symbol-readfile-returns-bool-src-minisql-platform-file-win32-ml-1150378554"></a>
 ### ReadFile
@@ -939,14 +1025,16 @@ Reads synchronously into `buffer`, writing the transferred count to `bytesRead`.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `buffer` | `bytes` | — |  |
-| `count` | `u32` | — |  |
-| `bytesRead` | `bytes` | — |  |
-| `overlapped` | `ptr` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `buffer` | `bytes` | — | Buffer that receives or supplies the operation data. |
+| `count` | `u32` | — | Number of items or units to process. |
+| `bytesRead` | `bytes` | — | bytesRead value consumed by this operation. |
+| `overlapped` | `ptr` | — | overlapped value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L61)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L107)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-readfilepositioned-extern-function-readfilepositioned-handle-as-ptr-buffer-as-bytes-count-as-u32-bytesread-as-bytes-overlapped-as-bytes-from-kernel32-dll-symbol-readfile-returns-bool-src-minisql-platform-file-win32-ml-424283845"></a>
 ### ReadFilePositioned
@@ -959,14 +1047,16 @@ Starts one read at the offset stored in a unique OVERLAPPED structure.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `buffer` | `bytes` | — |  |
-| `count` | `u32` | — |  |
-| `bytesRead` | `bytes` | — |  |
-| `overlapped` | `bytes` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `buffer` | `bytes` | — | Buffer that receives or supplies the operation data. |
+| `count` | `u32` | — | Number of items or units to process. |
+| `bytesRead` | `bytes` | — | bytesRead value consumed by this operation. |
+| `overlapped` | `bytes` | — | overlapped value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L63)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L115)
 
 <a id="function-function-minisql-platform-file-win32-removedirectory-synchronized-function-removedirectory-path-src-minisql-platform-file-win32-ml-684082569"></a>
 ### removeDirectory
@@ -979,10 +1069,10 @@ Removes an empty directory while holding the wide-path native-call guard. Input 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L367)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L527)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-removedirectoryw-extern-function-removedirectoryw-path-as-wstr-from-kernel32-dll-symbol-removedirectoryw-returns-bool-src-minisql-platform-file-win32-ml-1644331531"></a>
 ### RemoveDirectoryW
@@ -995,10 +1085,12 @@ Removes an empty directory at the UTF-16 path and reports Win32 success.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `wstr` | — |  |
+| `path` | `wstr` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L89)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L188)
 
 <a id="function-function-minisql-platform-file-win32-seek-function-seek-handle-offset-src-minisql-platform-file-win32-ml-305643019"></a>
 ### seek
@@ -1011,11 +1103,11 @@ Performs the seek operation for this module. Inputs: `handle`, `offset`. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L277)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-setendoffile-extern-function-setendoffile-handle-as-ptr-from-kernel32-dll-symbol-setendoffile-returns-bool-src-minisql-platform-file-win32-ml-1026639720"></a>
 ### SetEndOfFile
@@ -1028,10 +1120,12 @@ Truncates or extends the file at its current cursor position.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L73)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L146)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-setfilepointerex-extern-function-setfilepointerex-handle-as-ptr-distance-as-i64-newposition-as-ptr-movemethod-as-u32-from-kernel32-dll-symbol-setfilepointerex-returns-bool-src-minisql-platform-file-win32-ml-342901687"></a>
 ### SetFilePointerEx
@@ -1044,13 +1138,15 @@ Repositions the file cursor by `distance` relative to `moveMethod`.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `distance` | `i64` | — |  |
-| `newPosition` | `ptr` | — |  |
-| `moveMethod` | `u32` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `distance` | `i64` | — | distance value consumed by this operation. |
+| `newPosition` | `ptr` | — | newPosition value consumed by this operation. |
+| `moveMethod` | `u32` | — | moveMethod value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L69)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L137)
 
 <a id="function-function-minisql-platform-file-win32-size-function-size-handle-src-minisql-platform-file-win32-ml-838488576"></a>
 ### size
@@ -1063,10 +1159,10 @@ Computes the size of the requested value. Inputs: `handle`. Returns the produced
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L248)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L393)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-sleep-extern-function-sleep-milliseconds-as-u32-from-kernel32-dll-symbol-sleep-returns-void-src-minisql-platform-file-win32-ml-1172765451"></a>
 ### Sleep
@@ -1079,10 +1175,10 @@ Suspends the calling thread for the requested number of milliseconds.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `milliseconds` | `u32` | — |  |
+| `milliseconds` | `u32` | — | milliseconds value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L200)
 
 <a id="function-function-minisql-platform-file-win32-targetmilestone-function-targetmilestone-src-minisql-platform-file-win32-ml-1902589668"></a>
 ### targetMilestone
@@ -1091,10 +1187,10 @@ Suspends the calling thread for the requested number of milliseconds.
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql platform file win32 module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L410)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L576)
 
 <a id="function-function-minisql-platform-file-win32-truncate-function-truncate-handle-newsize-src-minisql-platform-file-win32-ml-540867053"></a>
 ### truncate
@@ -1107,11 +1203,11 @@ Performs the truncate operation for this module. Inputs: `handle`, `newSize`. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `newSize` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `newSize` | `dynamic` | — | newSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L404)
 
 <a id="constant-constant-minisql-platform-file-win32-truncate-existing-const-truncate-existing-5-src-minisql-platform-file-win32-ml-1582766192"></a>
 ### TRUNCATE_EXISTING
@@ -1120,8 +1216,10 @@ Performs the truncate operation for this module. Inputs: `handle`, `newSize`. Re
 const TRUNCATE_EXISTING = 5
 ```
 
+Defines the truncate existing constant used by the minisql platform file win32 module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L38)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-unlockfileex-extern-function-unlockfileex-handle-as-ptr-reserved-as-u32-byteslow-as-u32-byteshigh-as-u32-overlapped-as-bytes-from-kernel32-dll-symbol-unlockfileex-returns-bool-src-minisql-platform-file-win32-ml-1098240638"></a>
 ### UnlockFileEx
@@ -1134,14 +1232,16 @@ Releases the byte-range lock described by `overlapped` and length words.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `reserved` | `u32` | — |  |
-| `bytesLow` | `u32` | — |  |
-| `bytesHigh` | `u32` | — |  |
-| `overlapped` | `bytes` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `reserved` | `u32` | — | reserved value consumed by this operation. |
+| `bytesLow` | `u32` | — | bytesLow value consumed by this operation. |
+| `bytesHigh` | `u32` | — | bytesHigh value consumed by this operation. |
+| `overlapped` | `bytes` | — | overlapped value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L79)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L167)
 
 <a id="function-function-minisql-platform-file-win32-unlockwhole-function-unlockwhole-handle-src-minisql-platform-file-win32-ml-857128918"></a>
 ### unlockWhole
@@ -1154,10 +1254,10 @@ Unlocks the whole. Inputs: `handle`. Returns the operation result and propagates
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L294)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L446)
 
 <a id="function-function-minisql-platform-file-win32-writecurrent-function-writecurrent-handle-source-count-src-minisql-platform-file-win32-ml-1443831950"></a>
 ### writeCurrent
@@ -1170,12 +1270,12 @@ Writes the current. Inputs: `handle`, `source`, `count`. Returns the operation r
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `handle` | `dynamic` | — | Native or runtime handle used by the operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L378)
 
 <a id="extern_function-extern-function-minisql-platform-file-win32-writefile-extern-function-writefile-handle-as-ptr-buffer-as-bytes-count-as-u32-byteswritten-as-bytes-overlapped-as-ptr-from-kernel32-dll-symbol-writefile-returns-bool-src-minisql-platform-file-win32-ml-609178060"></a>
 ### WriteFile
@@ -1188,11 +1288,13 @@ Writes synchronously from `buffer`, storing the transferred count in `bytesWritt
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `handle` | `ptr` | — |  |
-| `buffer` | `bytes` | — |  |
-| `count` | `u32` | — |  |
-| `bytesWritten` | `bytes` | — |  |
-| `overlapped` | `ptr` | — |  |
+| `handle` | `ptr` | — | Native or runtime handle used by the operation. |
+| `buffer` | `bytes` | — | Buffer that receives or supplies the operation data. |
+| `count` | `u32` | — | Number of items or units to process. |
+| `bytesWritten` | `bytes` | — | bytesWritten value consumed by this operation. |
+| `overlapped` | `ptr` | — | overlapped value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L65)
+**Returns:** Native bool result produced by the call.
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L123)

@@ -12,7 +12,7 @@ struct TruthTestExpression
 Groups the truth test expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L285)
 
 ## Members
 
@@ -26,7 +26,7 @@ expected
 Stores the expected associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L236)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L291)
 
 <a id="field-field-minisql-sql-ast-truthtestexpression-kind-kind-src-minisql-sql-ast-ml-1797874822"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L287)
 
 <a id="field-field-minisql-sql-ast-truthtestexpression-negated-negated-src-minisql-sql-ast-ml-672031490"></a>
 ### negated
@@ -50,7 +50,7 @@ negated
 Indicates whether the negated condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L238)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L293)
 
 <a id="field-field-minisql-sql-ast-truthtestexpression-operand-operand-src-minisql-sql-ast-ml-1336989622"></a>
 ### operand
@@ -62,4 +62,4 @@ operand
 Stores the operand associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L289)

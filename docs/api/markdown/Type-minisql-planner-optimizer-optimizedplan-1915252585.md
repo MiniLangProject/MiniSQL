@@ -12,7 +12,7 @@ struct OptimizedPlan
 Groups the optimized plan state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L47)
 
 ## Members
 
@@ -26,7 +26,7 @@ execution
 Stores the typed physical decisions consumed by the executor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L53)
 
 <a id="field-field-minisql-planner-optimizer-optimizedplan-root-root-src-minisql-planner-optimizer-ml-375436693"></a>
 ### root
@@ -38,7 +38,7 @@ root
 Stores the root associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L49)
 
 <a id="field-field-minisql-planner-optimizer-optimizedplan-usedstatistics-usedstatistics-src-minisql-planner-optimizer-ml-634305429"></a>
 ### usedStatistics
@@ -50,4 +50,4 @@ usedStatistics
 Stores the used statistics associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L51)

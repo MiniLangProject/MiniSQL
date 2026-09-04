@@ -12,7 +12,7 @@ struct AdminWindow
 Owns all native controls in one MiniSQL session workbench.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L256)
 
 ## Members
 
@@ -26,7 +26,7 @@ beginButton
 Stores the begin-transaction button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L306)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-bookmarklist-bookmarklist-src-minisql-admin-win32-client-ml-402844432"></a>
 ### bookmarkList
@@ -38,7 +38,7 @@ bookmarkList
 Stores reusable SQL bookmarks.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L266)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-clearbutton-clearbutton-src-minisql-admin-win32-client-ml-1499153324"></a>
 ### clearButton
@@ -50,7 +50,7 @@ clearButton
 Stores the clear-results button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L314)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-closebutton-closebutton-src-minisql-admin-win32-client-ml-2794328"></a>
 ### closeButton
@@ -62,7 +62,7 @@ closeButton
 Stores the close-session button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L316)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-closesqlbutton-closesqlbutton-src-minisql-admin-win32-client-ml-1909227080"></a>
 ### closeSqlButton
@@ -74,7 +74,7 @@ closeSqlButton
 Closes the active SQL worksheet while retaining at least one page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L322)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-commitbutton-commitbutton-src-minisql-admin-win32-client-ml-1494778014"></a>
 ### commitButton
@@ -86,7 +86,7 @@ commitButton
 Stores the commit button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L308)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-connectionlabel-connectionlabel-src-minisql-admin-win32-client-ml-1240902760"></a>
 ### connectionLabel
@@ -98,7 +98,7 @@ connectionLabel
 Stores the active endpoint heading.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L260)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-dataaddbutton-dataaddbutton-src-minisql-admin-win32-client-ml-1612056580"></a>
 ### dataAddButton
@@ -110,7 +110,7 @@ dataAddButton
 Starts a blank row editor on the Data page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L189)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L282)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-dataapplybutton-dataapplybutton-src-minisql-admin-win32-client-ml-140856148"></a>
 ### dataApplyButton
@@ -122,7 +122,7 @@ dataApplyButton
 Executes all previewed row changes through the background worker.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L344)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datacopybutton-datacopybutton-src-minisql-admin-win32-client-ml-1263238974"></a>
 ### dataCopyButton
@@ -134,7 +134,7 @@ dataCopyButton
 Starts an insert editor populated from the selected row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L284)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datacopyclipboardbutton-datacopyclipboardbutton-src-minisql-admin-win32-client-ml-241833400"></a>
 ### dataCopyClipboardButton
@@ -146,7 +146,7 @@ dataCopyClipboardButton
 Copies every selected data row to escaped TSV clipboard text.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L330)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datadeletebutton-datadeletebutton-src-minisql-admin-win32-client-ml-750287798"></a>
 ### dataDeleteButton
@@ -158,7 +158,7 @@ dataDeleteButton
 Deletes the selected keyed row after explicit confirmation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L288)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-dataeditbutton-dataeditbutton-src-minisql-admin-win32-client-ml-933476168"></a>
 ### dataEditButton
@@ -170,7 +170,7 @@ dataEditButton
 Starts an update editor for the selected keyed row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L286)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datafilterbutton-datafilterbutton-src-minisql-admin-win32-client-ml-252205128"></a>
 ### dataFilterButton
@@ -182,7 +182,7 @@ dataFilterButton
 Applies the current Data-page filter and resets pagination.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L243)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L336)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datafilteredit-datafilteredit-src-minisql-admin-win32-client-ml-1617603588"></a>
 ### dataFilterEdit
@@ -194,7 +194,7 @@ dataFilterEdit
 Stores the server-side WHERE predicate used by the Data page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L334)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datanextbutton-datanextbutton-src-minisql-admin-win32-client-ml-577432722"></a>
 ### dataNextButton
@@ -206,7 +206,7 @@ dataNextButton
 Loads the next bounded Data page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L340)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datapagelabel-datapagelabel-src-minisql-admin-win32-client-ml-2064775436"></a>
 ### dataPageLabel
@@ -218,7 +218,7 @@ dataPageLabel
 Shows current page, page size, and pending-change count.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L249)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L342)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datapastebutton-datapastebutton-src-minisql-admin-win32-client-ml-2147325252"></a>
 ### dataPasteButton
@@ -230,7 +230,7 @@ dataPasteButton
 Stages clipboard TSV rows as INSERT changes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L239)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L332)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datapreviewbutton-datapreviewbutton-src-minisql-admin-win32-client-ml-284632376"></a>
 ### dataPreviewButton
@@ -242,7 +242,7 @@ dataPreviewButton
 Shows the exact generated SQL for pending changes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L255)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L348)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datapreviousbutton-datapreviousbutton-src-minisql-admin-win32-client-ml-1780646082"></a>
 ### dataPreviousButton
@@ -254,7 +254,7 @@ dataPreviousButton
 Loads the preceding bounded Data page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L338)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datarefreshbutton-datarefreshbutton-src-minisql-admin-win32-client-ml-370399716"></a>
 ### dataRefreshButton
@@ -266,7 +266,7 @@ dataRefreshButton
 Reloads table metadata and preview rows.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L290)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-datarevertbutton-datarevertbutton-src-minisql-admin-win32-client-ml-1238959620"></a>
 ### dataRevertButton
@@ -278,7 +278,7 @@ dataRevertButton
 Discards every unapplied row change.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L346)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-detailedit-detailedit-src-minisql-admin-win32-client-ml-1964004502"></a>
 ### detailEdit
@@ -290,7 +290,7 @@ detailEdit
 Stores read-only table-detail text.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L278)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-detailgrid-detailgrid-src-minisql-admin-win32-client-ml-1443094850"></a>
 ### detailGrid
@@ -302,7 +302,7 @@ detailGrid
 Stores structured Columns, Indexes, Data, and Row Count detail pages.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L280)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-detailtabs-detailtabs-src-minisql-admin-win32-client-ml-93101122"></a>
 ### detailTabs
@@ -314,7 +314,7 @@ detailTabs
 Stores table-detail page tabs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L272)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-executebutton-executebutton-src-minisql-admin-win32-client-ml-909067192"></a>
 ### executeButton
@@ -326,7 +326,7 @@ executeButton
 Stores the execute button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L300)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-executescriptbutton-executescriptbutton-src-minisql-admin-win32-client-ml-1405027364"></a>
 ### executeScriptButton
@@ -338,7 +338,7 @@ executeScriptButton
 Stores the whole-script execution button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L302)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-explainbutton-explainbutton-src-minisql-admin-win32-client-ml-1622076900"></a>
 ### explainButton
@@ -350,7 +350,7 @@ explainButton
 Stores the explain button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L304)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-exportcsvbutton-exportcsvbutton-src-minisql-admin-win32-client-ml-277887752"></a>
 ### exportCsvButton
@@ -362,7 +362,7 @@ exportCsvButton
 Exports the active structured result page as UTF-8 CSV.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L324)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-historyfilteredit-historyfilteredit-src-minisql-admin-win32-client-ml-421068024"></a>
 ### historyFilterEdit
@@ -374,7 +374,7 @@ historyFilterEdit
 Filters the History sidebar without changing retained history.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L328)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-historylist-historylist-src-minisql-admin-win32-client-ml-718961728"></a>
 ### historyList
@@ -386,7 +386,7 @@ historyList
 Stores redacted SQL history.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L268)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-hwnd-hwnd-src-minisql-admin-win32-client-ml-528223770"></a>
 ### hwnd
@@ -398,7 +398,7 @@ hwnd
 Stores the top-level workbench handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L258)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-newsqlbutton-newsqlbutton-src-minisql-admin-win32-client-ml-1512089604"></a>
 ### newSqlButton
@@ -410,7 +410,7 @@ newSqlButton
 Stores the new-worksheet button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L298)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-objecttree-objecttree-src-minisql-admin-win32-client-ml-1489228978"></a>
 ### objectTree
@@ -422,7 +422,7 @@ objectTree
 Stores the hierarchical database object browser.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L264)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-openbutton-openbutton-src-minisql-admin-win32-client-ml-70539976"></a>
 ### openButton
@@ -434,7 +434,7 @@ openButton
 Stores the open-object button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L296)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-queryedit-queryedit-src-minisql-admin-win32-client-ml-1722670860"></a>
 ### queryEdit
@@ -446,7 +446,7 @@ queryEdit
 Stores the multiline SQL editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L276)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-refreshbutton-refreshbutton-src-minisql-admin-win32-client-ml-654920244"></a>
 ### refreshButton
@@ -458,7 +458,7 @@ refreshButton
 Stores the object-tree refresh button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L294)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-resultgrid-resultgrid-src-minisql-admin-win32-client-ml-917996850"></a>
 ### resultGrid
@@ -470,7 +470,7 @@ resultGrid
 Stores structured SQL result rows.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L292)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-resulttabs-resulttabs-src-minisql-admin-win32-client-ml-544747762"></a>
 ### resultTabs
@@ -482,7 +482,7 @@ resultTabs
 Stores SQL result tabs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L274)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-rollbackbutton-rollbackbutton-src-minisql-admin-win32-client-ml-798079112"></a>
 ### rollbackButton
@@ -494,7 +494,7 @@ rollbackButton
 Stores the rollback button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L310)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-schemabutton-schemabutton-src-minisql-admin-win32-client-ml-147475202"></a>
 ### schemaButton
@@ -506,7 +506,7 @@ schemaButton
 Opens the structured MiniSQL schema designer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L326)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-sidebartabs-sidebartabs-src-minisql-admin-win32-client-ml-1563702580"></a>
 ### sidebarTabs
@@ -518,7 +518,7 @@ sidebarTabs
 Stores the sidebar tab control.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L262)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-statuslabel-statuslabel-src-minisql-admin-win32-client-ml-2072791772"></a>
 ### statusLabel
@@ -530,7 +530,7 @@ statusLabel
 Stores the workbench status line.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L318)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-stopbutton-stopbutton-src-minisql-admin-win32-client-ml-1318326792"></a>
 ### stopButton
@@ -542,7 +542,7 @@ stopButton
 Stores the stop-worker button.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L312)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-worksheettabs-worksheettabs-src-minisql-admin-win32-client-ml-369462908"></a>
 ### worksheetTabs
@@ -554,7 +554,7 @@ worksheetTabs
 Stores independent SQL worksheet tabs above the active editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L320)
 
 <a id="field-field-minisql-admin-win32-client-adminwindow-workspacetabs-workspacetabs-src-minisql-admin-win32-client-ml-298292584"></a>
 ### workspaceTabs
@@ -566,4 +566,4 @@ workspaceTabs
 Stores the SQL/details workspace tab control.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L177)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L270)

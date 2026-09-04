@@ -12,7 +12,7 @@ struct CreateTriggerStatement
 Groups the create trigger statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L504)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L559)
 
 ## Members
 
@@ -26,7 +26,7 @@ body
 Stores the body associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L516)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L571)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-eventtype-eventtype-src-minisql-sql-ast-ml-665548300"></a>
 ### eventType
@@ -38,7 +38,7 @@ eventType
 Stores the event type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L510)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L565)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-ifnotexists-ifnotexists-src-minisql-sql-ast-ml-1159101704"></a>
 ### ifNotExists
@@ -50,7 +50,7 @@ ifNotExists
 Stores the if not exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L573)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-name-name-src-minisql-sql-ast-ml-1414978138"></a>
 ### name
@@ -62,7 +62,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L506)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L561)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-tablename-tablename-src-minisql-sql-ast-ml-2033206892"></a>
 ### tableName
@@ -74,7 +74,7 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L567)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-targetcolumn-targetcolumn-src-minisql-sql-ast-ml-639369454"></a>
 ### targetColumn
@@ -86,7 +86,7 @@ targetColumn
 Stores the target column associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L514)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L569)
 
 <a id="field-field-minisql-sql-ast-createtriggerstatement-timing-timing-src-minisql-sql-ast-ml-361657800"></a>
 ### timing
@@ -98,4 +98,4 @@ timing
 Stores the timing associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L508)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L563)

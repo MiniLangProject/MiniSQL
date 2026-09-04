@@ -12,7 +12,7 @@ struct PathsConfig
 Groups the paths config state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L8)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L10)
 
 ## Members
 
@@ -26,7 +26,7 @@ dataRoot
 Stores the data root associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L10)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L12)
 
 <a id="field-field-minisql-config-model-pathsconfig-logdirectory-logdirectory-src-minisql-config-model-ml-739958103"></a>
 ### logDirectory
@@ -38,7 +38,7 @@ logDirectory
 Stores the log directory associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L14)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L16)
 
 <a id="field-field-minisql-config-model-pathsconfig-temporaryroot-temporaryroot-src-minisql-config-model-ml-1634542613"></a>
 ### temporaryRoot
@@ -50,4 +50,4 @@ temporaryRoot
 Indicates whether the temporary root condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L12)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L14)

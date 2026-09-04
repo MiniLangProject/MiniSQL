@@ -12,7 +12,7 @@ struct AcceleratorBinding
 Associates one top-level workbench window with its native shortcut table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L442)
 
 ## Members
 
@@ -26,7 +26,7 @@ hwnd
 Identifies the top-level window receiving translated WM_COMMAND messages.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L444)
 
 <a id="field-field-minisql-platform-win32-gui-acceleratorbinding-table-table-src-minisql-platform-win32-gui-ml-902608929"></a>
 ### table
@@ -38,4 +38,4 @@ table
 Owns the native HACCEL handle until the window is destroyed.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L249)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/win32_gui.ml#L446)

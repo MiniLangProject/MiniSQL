@@ -12,7 +12,7 @@ struct WindowExpression
 Groups the window expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L335)
 
 ## Members
 
@@ -26,7 +26,7 @@ arguments
 Contains the ordered arguments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L286)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L341)
 
 <a id="field-field-minisql-sql-ast-windowexpression-kind-kind-src-minisql-sql-ast-ml-573145969"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L337)
 
 <a id="field-field-minisql-sql-ast-windowexpression-name-name-src-minisql-sql-ast-ml-1895367547"></a>
 ### name
@@ -50,7 +50,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L284)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L339)
 
 <a id="field-field-minisql-sql-ast-windowexpression-orderby-orderby-src-minisql-sql-ast-ml-1880857745"></a>
 ### orderBy
@@ -62,7 +62,7 @@ orderBy
 Contains the ordered order by collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L290)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L345)
 
 <a id="field-field-minisql-sql-ast-windowexpression-partitionby-partitionby-src-minisql-sql-ast-ml-1561914765"></a>
 ### partitionBy
@@ -74,4 +74,4 @@ partitionBy
 Stores the partition by associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L288)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L343)

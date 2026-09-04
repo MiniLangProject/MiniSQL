@@ -12,7 +12,7 @@ struct FileLock
 Defines the file lock record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L22)
 
 ## Members
 
@@ -26,7 +26,7 @@ exclusive
 Exclusive field of the file lock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L28)
 
 <a id="field-field-minisql-platform-lock-filelock-file-file-src-minisql-platform-lock-ml-1796047814"></a>
 ### file
@@ -38,7 +38,7 @@ file
 File field of the file lock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L24)
 
 <a id="field-field-minisql-platform-lock-filelock-held-held-src-minisql-platform-lock-ml-2053743480"></a>
 ### held
@@ -50,4 +50,4 @@ held
 Held field of the file lock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/lock.ml#L26)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql transaction lock manager facilities for this project.
+
 Package: [`minisql.transaction.lock_manager`](Package-minisql-transaction-lock-manager-541238173.md)
 
 Reachable from entry: **yes**
@@ -24,11 +26,11 @@ Acquires the read. Inputs: `manager`, `transactionId`. Returns the produced valu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L217)
 
 <a id="function-function-minisql-transaction-lock-manager-acquirereadunlocked-function-acquirereadunlocked-manager-transactionid-src-minisql-transaction-lock-manager-ml-1450459990"></a>
 ### acquireReadUnlocked
@@ -41,11 +43,11 @@ Acquires the read unlocked. Inputs: `manager`, `transactionId`. Returns the prod
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L174)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L205)
 
 <a id="function-function-minisql-transaction-lock-manager-acquirestatementread-function-acquirestatementread-manager-transactionid-isolationlevel-src-minisql-transaction-lock-manager-ml-204590674"></a>
 ### acquireStatementRead
@@ -58,12 +60,12 @@ Acquires the statement read. Inputs: `manager`, `transactionId`, `isolationLevel
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `isolationLevel` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `isolationLevel` | `dynamic` | — | isolationLevel value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L366)
 
 <a id="function-function-minisql-transaction-lock-manager-acquirewrite-function-acquirewrite-manager-transactionid-src-minisql-transaction-lock-manager-ml-1494741924"></a>
 ### acquireWrite
@@ -76,11 +78,11 @@ Acquires the write. Inputs: `manager`, `transactionId`. Returns the produced val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L242)
 
 <a id="function-function-minisql-transaction-lock-manager-acquirewriteunlocked-function-acquirewriteunlocked-manager-transactionid-src-minisql-transaction-lock-manager-ml-431754348"></a>
 ### acquireWriteUnlocked
@@ -93,11 +95,11 @@ Acquires the write unlocked. Inputs: `manager`, `transactionId`. Returns the pro
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L230)
 
 <a id="function-function-minisql-transaction-lock-manager-activewriter-function-activewriter-manager-src-minisql-transaction-lock-manager-ml-1977221495"></a>
 ### activeWriter
@@ -110,10 +112,10 @@ Performs the active writer operation for this module. Inputs: `manager`. Returns
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L347)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L406)
 
 <a id="function-function-minisql-transaction-lock-manager-cancelwait-function-cancelwait-manager-transactionid-src-minisql-transaction-lock-manager-ml-1776972756"></a>
 ### cancelWait
@@ -126,11 +128,11 @@ Removes the transaction's pending wait edges after cancellation or timeout. Inpu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L255)
 
 <a id="function-function-minisql-transaction-lock-manager-cleartransactionwaits-function-cleartransactionwaits-manager-transactionid-src-minisql-transaction-lock-manager-ml-1908216882"></a>
 ### clearTransactionWaits
@@ -143,11 +145,11 @@ Clears the transaction waits. Inputs: `manager`, `transactionId`. Returns the op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L124)
 
 <a id="function-function-minisql-transaction-lock-manager-clearwaiter-function-clearwaiter-manager-transactionid-src-minisql-transaction-lock-manager-ml-2107465634"></a>
 ### clearWaiter
@@ -160,11 +162,11 @@ Clears the waiter. Inputs: `manager`, `transactionId`. Returns the operation res
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L111)
 
 <a id="function-function-minisql-transaction-lock-manager-close-function-close-manager-src-minisql-transaction-lock-manager-ml-345488415"></a>
 ### close
@@ -173,14 +175,14 @@ Clears the waiter. Inputs: `manager`, `transactionId`. Returns the operation res
 function close(manager)
 ```
 
-Closes the requested value. Inputs: `manager`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql transaction lock manager module. Inputs: `manager`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L357)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L417)
 
 <a id="function-function-minisql-transaction-lock-manager-componentname-function-componentname-src-minisql-transaction-lock-manager-ml-41894428"></a>
 ### componentName
@@ -189,10 +191,10 @@ Closes the requested value. Inputs: `manager`. Returns the operation result and 
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql transaction lock manager module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L369)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L429)
 
 <a id="function-function-minisql-transaction-lock-manager-containsid-function-containsid-values-wanted-src-minisql-transaction-lock-manager-ml-1330442163"></a>
 ### containsId
@@ -205,11 +207,11 @@ Performs the contains id operation for this module. Inputs: `values`, `wanted`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `wanted` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `wanted` | `dynamic` | — | wanted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L92)
 
 <a id="function-function-minisql-transaction-lock-manager-containsreader-function-containsreader-manager-transactionid-src-minisql-transaction-lock-manager-ml-1839877356"></a>
 ### containsReader
@@ -222,11 +224,11 @@ Performs the contains reader operation for this module. Inputs: `manager`, `tran
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L103)
 
 <a id="function-function-minisql-transaction-lock-manager-create-function-create-src-minisql-transaction-lock-manager-ml-1032285464"></a>
 ### create
@@ -235,10 +237,10 @@ Performs the contains reader operation for this module. Inputs: `manager`, `tran
 function create()
 ```
 
-Creates the requested value. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql transaction lock manager module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L66)
 
 <a id="constant-constant-minisql-transaction-lock-manager-deadlock-detected-const-deadlock-detected-9031-src-minisql-transaction-lock-manager-ml-1601684258"></a>
 ### DEADLOCK_DETECTED
@@ -247,8 +249,10 @@ Creates the requested value. Takes no caller-supplied inputs. Returns the produc
 const DEADLOCK_DETECTED = 9031
 ```
 
+Defines the deadlock detected constant used by the minisql transaction lock manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L17)
 
 <a id="function-function-minisql-transaction-lock-manager-fail-function-fail-code-operation-message-src-minisql-transaction-lock-manager-ml-1389035727"></a>
 ### fail
@@ -257,16 +261,16 @@ const DEADLOCK_DETECTED = 9031
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql transaction lock manager module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L60)
 
 <a id="function-function-minisql-transaction-lock-manager-finishstatement-function-finishstatement-manager-lease-src-minisql-transaction-lock-manager-ml-860817441"></a>
 ### finishStatement
@@ -279,11 +283,11 @@ Performs the finish statement operation for this module. Inputs: `manager`, `lea
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `lease` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L329)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L385)
 
 <a id="function-function-minisql-transaction-lock-manager-finishtransaction-function-finishtransaction-manager-transactionid-src-minisql-transaction-lock-manager-ml-883466970"></a>
 ### finishTransaction
@@ -296,11 +300,11 @@ Performs the finish transaction operation for this module. Inputs: `manager`, `t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L399)
 
 <a id="constant-constant-minisql-transaction-lock-manager-invalid-argument-const-invalid-argument-9001-src-minisql-transaction-lock-manager-ml-1734488969"></a>
 ### INVALID_ARGUMENT
@@ -309,10 +313,10 @@ Performs the finish transaction operation for this module. Inputs: `manager`, `t
 const INVALID_ARGUMENT = 9001
 ```
 
-In-process writer-prioritized reader/writer gate shared by connections using one database. The manager serializes state transitions with a mutex, prevents new readers from starving queued writers, and exposes wait-for edges for deterministic timeout and deadlock diagnostics.
+In-process writer-prioritized reader/writer gate shared by connections using
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L14)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L13)
 
 <a id="function-function-minisql-transaction-lock-manager-isimplemented-function-isimplemented-src-minisql-transaction-lock-manager-ml-303922572"></a>
 ### isImplemented
@@ -321,10 +325,10 @@ In-process writer-prioritized reader/writer gate shared by connections using one
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql transaction lock manager module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L381)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L441)
 
 <a id="function-function-minisql-transaction-lock-manager-iswaiting-function-iswaiting-manager-transactionid-src-minisql-transaction-lock-manager-ml-433367886"></a>
 ### isWaiting
@@ -337,11 +341,11 @@ Evaluates whether the supplied input satisfies the waiting predicate. Inputs: `m
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L322)
 
 <a id="constant-constant-minisql-transaction-lock-manager-lock-conflict-const-lock-conflict-9007-src-minisql-transaction-lock-manager-ml-292177235"></a>
 ### LOCK_CONFLICT
@@ -349,6 +353,8 @@ Evaluates whether the supplied input satisfies the waiting predicate. Inputs: `m
 ```ml
 const LOCK_CONFLICT = 9007
 ```
+
+Defines the lock conflict constant used by the minisql transaction lock manager module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L15)
@@ -360,8 +366,10 @@ const LOCK_CONFLICT = 9007
 const LOCK_TIMEOUT = 9032
 ```
 
+Defines the lock timeout constant used by the minisql transaction lock manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L19)
 
 - [minisql.transaction.lock_manager.LockManager](Type-minisql-transaction-lock-manager-lockmanager-1949619269.md) — struct
 <a id="function-function-minisql-transaction-lock-manager-pathexists-function-pathexists-manager-current-target-visited-src-minisql-transaction-lock-manager-ml-389820057"></a>
@@ -371,17 +379,17 @@ const LOCK_TIMEOUT = 9032
 function pathExists(manager, current, target, visited)
 ```
 
-Performs the path exists operation for this module. Inputs: `manager`, `current`, `target`, `visited`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the pathExists operation for the minisql transaction lock manager module. Inputs: `manager`, `current`, `target`, `visited`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `current` | `dynamic` | — |  |
-| `target` | `dynamic` | — |  |
-| `visited` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `current` | `dynamic` | — | current value consumed by this operation. |
+| `target` | `dynamic` | — | target value consumed by this operation. |
+| `visited` | `dynamic` | — | visited value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L139)
 
 <a id="function-function-minisql-transaction-lock-manager-readblockers-function-readblockers-manager-transactionid-src-minisql-transaction-lock-manager-ml-448957980"></a>
 ### readBlockers
@@ -394,11 +402,11 @@ Reads the blockers. Inputs: `manager`, `transactionId`. Returns the produced val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L182)
 
 <a id="function-function-minisql-transaction-lock-manager-readercount-function-readercount-manager-src-minisql-transaction-lock-manager-ml-379700851"></a>
 ### readerCount
@@ -411,10 +419,10 @@ Reads the er count. Inputs: `manager`. Returns the produced value or propagates 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L295)
 
 - [minisql.transaction.lock_manager.ReadLease](Type-minisql-transaction-lock-manager-readlease-795074461.md) — struct
 <a id="function-function-minisql-transaction-lock-manager-registerwait-function-registerwait-manager-transactionid-blockers-operation-src-minisql-transaction-lock-manager-ml-327851830"></a>
@@ -428,13 +436,13 @@ Performs the register wait operation for this module. Inputs: `manager`, `transa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `blockers` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `blockers` | `dynamic` | — | blockers value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L132)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L157)
 
 <a id="function-function-minisql-transaction-lock-manager-release-function-release-manager-transactionid-src-minisql-transaction-lock-manager-ml-1719603838"></a>
 ### release
@@ -443,15 +451,15 @@ Performs the register wait operation for this module. Inputs: `manager`, `transa
 function release(manager, transactionId)
 ```
 
-Releases the requested value. Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Performs the release operation for the minisql transaction lock manager module. Inputs: `manager`, `transactionId`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L283)
 
 <a id="function-function-minisql-transaction-lock-manager-releaseread-function-releaseread-manager-transactionid-src-minisql-transaction-lock-manager-ml-733818918"></a>
 ### releaseRead
@@ -464,11 +472,11 @@ Releases the read. Inputs: `manager`, `transactionId`. Returns the operation res
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L301)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L352)
 
 <a id="function-function-minisql-transaction-lock-manager-releasereadunlocked-function-releasereadunlocked-manager-transactionid-src-minisql-transaction-lock-manager-ml-1445121404"></a>
 ### releaseReadUnlocked
@@ -481,11 +489,11 @@ Releases the read unlocked. Inputs: `manager`, `transactionId`. Returns the oper
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L338)
 
 <a id="function-function-minisql-transaction-lock-manager-releaseunlocked-function-releaseunlocked-manager-transactionid-src-minisql-transaction-lock-manager-ml-636235052"></a>
 ### releaseUnlocked
@@ -498,11 +506,11 @@ Releases the unlocked. Inputs: `manager`, `transactionId`. Returns the operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L268)
 
 <a id="function-function-minisql-transaction-lock-manager-targetmilestone-function-targetmilestone-src-minisql-transaction-lock-manager-ml-166893162"></a>
 ### targetMilestone
@@ -511,10 +519,10 @@ Releases the unlocked. Inputs: `manager`, `transactionId`. Returns the operation
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql transaction lock manager module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L435)
 
 <a id="function-function-minisql-transaction-lock-manager-validate-function-validate-manager-operation-src-minisql-transaction-lock-manager-ml-523810864"></a>
 ### validate
@@ -523,15 +531,15 @@ Returns the milestone in which this component became available. Takes no caller-
 function validate(manager, operation)
 ```
 
-Validates the requested value. Inputs: `manager`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates validate for the minisql transaction lock manager workflow. Inputs: `manager`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L74)
 
 <a id="function-function-minisql-transaction-lock-manager-validtransactionid-function-validtransactionid-transactionid-operation-src-minisql-transaction-lock-manager-ml-1160477250"></a>
 ### validTransactionId
@@ -544,11 +552,11 @@ Performs the valid transaction id operation for this module. Inputs: `transactio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `transactionId` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L83)
 
 - [minisql.transaction.lock_manager.WaitEdge](Type-minisql-transaction-lock-manager-waitedge-1759094537.md) — struct
 <a id="function-function-minisql-transaction-lock-manager-waitercount-function-waitercount-manager-src-minisql-transaction-lock-manager-ml-2119985337"></a>
@@ -562,10 +570,10 @@ Performs the waiter count operation for this module. Inputs: `manager`. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L261)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L306)
 
 <a id="function-function-minisql-transaction-lock-manager-writeblockers-function-writeblockers-manager-transactionid-src-minisql-transaction-lock-manager-ml-364480732"></a>
 ### writeBlockers
@@ -578,8 +586,8 @@ Writes the blockers. Inputs: `manager`, `transactionId`. Returns the operation r
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `manager` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `manager` | `dynamic` | — | manager value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L192)

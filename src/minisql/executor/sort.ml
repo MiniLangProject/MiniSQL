@@ -1,3 +1,5 @@
+//! Provides minisql executor sort facilities for this project.
+
 package minisql.executor.sort
 
 // Copyright 2026 MiniLangProject contributors
@@ -15,54 +17,60 @@ import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.row_codec as row_codec
 
-// Stable merge sorting for projected rows. M46 adds a correctness-first
-// external-run path: initial sorted chunks are encoded with row_codec into
-// durable temporary files and merged pairwise. The current pairwise merge reads
-// two complete runs and the QueryResult contract materializes the final array,
-// so this is not yet a hard total-memory bound or a fully streaming executor.
+/// Stable merge sorting for projected rows. M46 adds a correctness-first
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql executor sort module.
 const CORRUPT_DATA = 9004
+/// Defines the spill version constant used by the minisql executor sort module.
 const SPILL_VERSION = 1
+/// Defines the spill header size constant used by the minisql executor sort module.
 const SPILL_HEADER_SIZE = 16
+/// Defines the max spill file bytes constant used by the minisql executor sort module.
 const MAX_SPILL_FILE_BYTES = 268435456
 
+/// Stores module-wide spill nonce state for the minisql executor sort module.
 spillNonce = 0
 
-// Groups the spill run state and preserves the field relationships documented below.
+/// Groups the spill run state and preserves the field relationships documented below.
 struct SpillRun
-  // Stores the filesystem path.
+  /// Stores the filesystem path.
   path
-  // Contains the ordered row schema collection.
+  /// Contains the ordered row schema collection.
   rowSchema
-  // Stores the type kinds associated with this value.
+  /// Stores the type kinds associated with this value.
   typeKinds
-  // Tracks the value count numeric value.
+  /// Tracks the value count numeric value.
   valueCount
-  // Tracks the order count numeric value.
+  /// Tracks the order count numeric value.
   orderCount
-  // Tracks the row count numeric value.
+  /// Tracks the row count numeric value.
   rowCount
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql executor sort module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "executor.sort." + operation + ": " + message)
 end function
 
-// Implements spill magic for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements spill magic for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function spillMagic()
   return bytes("MSSPILL1")
 end function
 
-// Implements bytes equal for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the bytesEqual operation for the minisql executor sort module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -72,9 +80,14 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Compares nullable using the supplied inputs.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Compares nullable using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param descending descending value consumed by this operation.
+/// @param nullsFirst nullsFirst value consumed by this operation.
+/// @param nullsSpecified nullsSpecified value consumed by this operation.
 function compareNullable(left, right, descending, nullsFirst, nullsSpecified)
   if not values.isSqlValue(left) or not values.isSqlValue(right) then return fail(INVALID_ARGUMENT, "compareNullable", "values must be SqlValue") end if
   if left.isNull or right.isNull then
@@ -91,9 +104,12 @@ function compareNullable(left, right, descending, nullsFirst, nullsSpecified)
   return result
 end function
 
-// Compares rows using the supplied inputs.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Compares rows using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function compareRows(left, right, orderItems)
   if len(left.orderValues) != len(orderItems) or len(right.orderValues) != len(orderItems) then return fail(INVALID_ARGUMENT, "compareRows", "order value count mismatch") end if
   if len(orderItems) > 0 then
@@ -106,9 +122,12 @@ function compareRows(left, right, orderItems)
   return 0
 end function
 
-// Implements merge for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements merge for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function merge(left, right, orderItems)
   output = []
   leftIndex = 0
@@ -133,10 +152,12 @@ function merge(left, right, orderItems)
   return output
 end function
 
-// Sorts projected using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Sorts projected using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
 function sortProjected(rows, orderItems)
   if typeof(rows) != "array" or typeof(orderItems) != "array" then return fail(INVALID_ARGUMENT, "sortProjected", "rows/orderItems must be arrays") end if
   if len(rows) <= 1 or len(orderItems) == 0 then return rows end if
@@ -149,9 +170,12 @@ function sortProjected(rows, orderItems)
   return merge(sortProjected(left, orderItems), sortProjected(right, orderItems), orderItems)
 end function
 
-// Retains only the best `count` rows in stable ORDER BY order. The optimizer
-// limits this O(rows*count) implementation to small windows, avoiding external
-// runs and a complete result sort for interactive ORDER BY ... LIMIT queries.
+/// Retains only the best `count` rows in stable ORDER BY order. The optimizer
+/// limits this O(rows*count) implementation to small windows, avoiding external
+/// runs and a complete result sort for interactive ORDER BY ... LIMIT queries.
+/// @param rows rows value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
+/// @param count Number of items or units to process.
 function topNProjected(rows, orderItems, count)
   if typeof(rows) != "array" or typeof(orderItems) != "array" or typeof(count) != "int" or count < 0 then return fail(INVALID_ARGUMENT, "topNProjected", "invalid arguments") end if
   if count == 0 or len(rows) == 0 then return [] end if
@@ -188,18 +212,20 @@ function topNProjected(rows, orderItems, count)
   return selected
 end function
 
-// Implements spill type for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements spill type for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param kind kind value consumed by this operation.
 function spillType(kind)
   if kind == types.SqlTypeKind.Char or kind == types.SqlTypeKind.VarChar then return types.SqlTypeKind.Text end if
   if kind == types.SqlTypeKind.Binary or kind == types.SqlTypeKind.VarBinary then return types.SqlTypeKind.Blob end if
   return kind
 end function
 
-// Implements spill spec for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements spill spec for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param kind kind value consumed by this operation.
 function spillSpec(kind)
   stored = spillType(kind)
   precision = 0
@@ -207,17 +233,21 @@ function spillSpec(kind)
   return row_codec.column(stored, true, 0, precision, 0)
 end function
 
-// Implements combined values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements combined values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param row row value consumed by this operation.
 function combinedValues(row)
   if not projection.isProjectedRow(row) then return fail(INVALID_ARGUMENT, "combinedValues", "row must be ProjectedRow") end if
   return row.values + row.orderValues
 end function
 
-// Implements spill schema for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements spill schema for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param rows rows value consumed by this operation.
+/// @param valueCount Number of value to process.
+/// @param orderCount Number of order to process.
 function spillSchema(rows, valueCount, orderCount)
   if len(rows) == 0 then return fail(INVALID_ARGUMENT, "spillSchema", "run must contain rows") end if
   first = combinedValues(rows[0])
@@ -241,9 +271,10 @@ function spillSchema(rows, valueCount, orderCount)
   return [row_codec.schema(1, specs), kinds]
 end function
 
-// Implements raw values for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements raw values for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param input input value consumed by this operation.
 function rawValues(input)
   output = []
   for each value in input
@@ -252,9 +283,12 @@ function rawValues(input)
   return output
 end function
 
-// Encodes header using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Encodes header using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param valueCount Number of value to process.
+/// @param orderCount Number of order to process.
+/// @param encrypted encrypted value consumed by this operation.
 function encodeHeader(valueCount, orderCount, encrypted)
   output = bytes(SPILL_HEADER_SIZE, 0)
   copyBytes(output, 0, spillMagic(), 0, 8)
@@ -265,15 +299,20 @@ function encodeHeader(valueCount, orderCount, encrypted)
   return output
 end function
 
-// Creates domain-separated AAD for one ordered spill row.
+/// Creates domain-separated AAD for one ordered spill row.
+/// @param rowIndex Zero-based index of row.
 function spillAad(rowIndex)
   return bytes("MiniSQL-SPILL-1|" + rowIndex)
 end function
 
-// Writes run using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Writes run using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
+/// @param rows rows value consumed by this operation.
+/// @param valueCount Number of value to process.
+/// @param orderCount Number of order to process.
 function writeRun(path, rows, valueCount, orderCount)
   shaped = spillSchema(rows, valueCount, orderCount)
   schema = shaped[0]
@@ -324,18 +363,21 @@ function writeRun(path, rows, valueCount, orderCount)
   return SpillRun(path, schema, kinds, valueCount, orderCount, len(rows))
 end function
 
-// Decodes SQL value using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Decodes SQL value using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param kind kind value consumed by this operation.
+/// @param raw raw value consumed by this operation.
 function decodeSqlValue(kind, raw)
   if row_codec.isNull(raw) then return values.nullValue(kind) end if
   return values.of(kind, raw)
 end function
 
-// Reads run using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Reads run using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param run run value consumed by this operation.
 function readRun(run)
   if run is not SpillRun then return fail(INVALID_ARGUMENT, "readRun", "run must be SpillRun") end if
   handle = try(file_api.openRead(run.path))
@@ -407,9 +449,10 @@ function readRun(run)
   return output
 end function
 
-// Implements cleanup runs for this module.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Implements cleanup runs for this module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param runs runs value consumed by this operation.
 function cleanupRuns(runs)
   for each run in runs
     if run is SpillRun and file_api.fileExists(run.path) then ignored = try(file_api.deletePath(run.path)) end if
@@ -417,8 +460,8 @@ function cleanupRuns(runs)
   return true
 end function
 
-// Generates a process-unique spill namespace under an intrinsic function lock.
-// The synchronized modifier serializes nonce updates across parallel SELECT workers.
+/// Generates a process-unique spill namespace under an intrinsic function lock.
+/// The synchronized modifier serializes nonce updates across parallel SELECT workers.
 function synchronized nextSpillToken()
   global spillNonce
   spillNonce = spillNonce + 1
@@ -426,16 +469,23 @@ function synchronized nextSpillToken()
   return "" + clock.monotonicMilliseconds() + "-" + spillNonce
 end function
 
-// Runs path using the supplied inputs.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Runs path using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param root root value consumed by this operation.
+/// @param token token value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function runPath(root, token, index)
   return file_api.joinPath(root, "sort-" + token + "-" + index + ".run")
 end function
 
-// Performs stable external merge sorting when rows exceed `threshold`.
-// Sorted chunks are written as validated runs, then merged pairwise until one
-// remains. Every success and failure path removes owned temporary files.
+/// Performs stable external merge sorting when rows exceed `threshold`.
+/// Sorted chunks are written as validated runs, then merged pairwise until one
+/// remains. Every success and failure path removes owned temporary files.
+/// @param rows rows value consumed by this operation.
+/// @param orderItems orderItems value consumed by this operation.
+/// @param temporaryRoot temporaryRoot value consumed by this operation.
+/// @param threshold threshold value consumed by this operation.
 function sortProjectedWithSpill(rows, orderItems, temporaryRoot, threshold)
   if typeof(rows) != "array" or typeof(orderItems) != "array" or typeof(temporaryRoot) != "string" then return fail(INVALID_ARGUMENT, "sortProjectedWithSpill", "invalid arguments") end if
   if typeof(threshold) != "int" or threshold < 2 then return fail(INVALID_ARGUMENT, "sortProjectedWithSpill", "threshold must be at least two") end if
@@ -498,23 +548,23 @@ function sortProjectedWithSpill(rows, orderItems, temporaryRoot, threshold)
   return result
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql executor sort module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "executor.sort"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql executor sort module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M16"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql executor sort module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

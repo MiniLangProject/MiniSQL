@@ -1,3 +1,5 @@
+//! Provides minisql platform tls schannel facilities for this project.
+
 package minisql.platform.tls_schannel
 
 // Copyright 2026 MiniLangProject contributors
@@ -9,243 +11,487 @@ import minisql.platform.file as file_api
 import minisql.platform.network as network
 import minisql.platform.tls_policy as tls_policy
 
-// Native Schannel transport for MiniSQL. The module owns the SSPI handles,
-// certificate contexts and TLS record buffering used below protocol.connection.
+/// Native Schannel transport for MiniSQL. The module owns the SSPI handles,
 
 const INVALID_ARGUMENT = 9001
+/// Defines the tls error constant used by the minisql platform tls schannel module.
 const TLS_ERROR = 9034
 
+/// Defines the sec e ok constant used by the minisql platform tls schannel module.
 const SEC_E_OK = 0
+/// Defines the sec i continue needed constant used by the minisql platform tls schannel module.
 const SEC_I_CONTINUE_NEEDED = 590610
+/// Defines the sec i context expired constant used by the minisql platform tls schannel module.
 const SEC_I_CONTEXT_EXPIRED = 590615
+/// Defines the sec i renegotiate constant used by the minisql platform tls schannel module.
 const SEC_I_RENEGOTIATE = 590625
+/// Defines the sec e invalid token constant used by the minisql platform tls schannel module.
 const SEC_E_INVALID_TOKEN = -2146893048
+/// Defines the sec e incomplete message constant used by the minisql platform tls schannel module.
 const SEC_E_INCOMPLETE_MESSAGE = -2146893032
+/// Defines the sec e wrong principal constant used by the minisql platform tls schannel module.
 const SEC_E_WRONG_PRINCIPAL = -2146893022
+/// Defines the sec e untrusted root constant used by the minisql platform tls schannel module.
 const SEC_E_UNTRUSTED_ROOT = -2146893019
+/// Defines the sec e cert unknown constant used by the minisql platform tls schannel module.
 const SEC_E_CERT_UNKNOWN = -2146893017
+/// Defines the secpkg cred inbound constant used by the minisql platform tls schannel module.
 const SECPKG_CRED_INBOUND = 1
+/// Defines the secpkg cred outbound constant used by the minisql platform tls schannel module.
 const SECPKG_CRED_OUTBOUND = 2
+/// Defines the unisp package constant used by the minisql platform tls schannel module.
 const UNISP_PACKAGE = "Microsoft Unified Security Protocol Provider"
+/// Defines the security native drep constant used by the minisql platform tls schannel module.
 const SECURITY_NATIVE_DREP = 16
+/// Defines the isc req sequence detect constant used by the minisql platform tls schannel module.
 const ISC_REQ_SEQUENCE_DETECT = 8
+/// Defines the isc req replay detect constant used by the minisql platform tls schannel module.
 const ISC_REQ_REPLAY_DETECT = 4
+/// Defines the isc req confidentiality constant used by the minisql platform tls schannel module.
 const ISC_REQ_CONFIDENTIALITY = 16
+/// Defines the isc req extended error constant used by the minisql platform tls schannel module.
 const ISC_REQ_EXTENDED_ERROR = 16384
+/// Defines the isc req stream constant used by the minisql platform tls schannel module.
 const ISC_REQ_STREAM = 32768
+/// Defines the asc req replay detect constant used by the minisql platform tls schannel module.
 const ASC_REQ_REPLAY_DETECT = 4
+/// Defines the asc req sequence detect constant used by the minisql platform tls schannel module.
 const ASC_REQ_SEQUENCE_DETECT = 8
+/// Defines the asc req confidentiality constant used by the minisql platform tls schannel module.
 const ASC_REQ_CONFIDENTIALITY = 16
+/// Defines the asc req extended error constant used by the minisql platform tls schannel module.
 const ASC_REQ_EXTENDED_ERROR = 32768
+/// Defines the asc req stream constant used by the minisql platform tls schannel module.
 const ASC_REQ_STREAM = 65536
+/// Defines the secbuffer empty constant used by the minisql platform tls schannel module.
 const SECBUFFER_EMPTY = 0
+/// Defines the secbuffer data constant used by the minisql platform tls schannel module.
 const SECBUFFER_DATA = 1
+/// Defines the secbuffer token constant used by the minisql platform tls schannel module.
 const SECBUFFER_TOKEN = 2
+/// Defines the secbuffer missing constant used by the minisql platform tls schannel module.
 const SECBUFFER_MISSING = 4
+/// Defines the secbuffer extra constant used by the minisql platform tls schannel module.
 const SECBUFFER_EXTRA = 5
+/// Defines the secbuffer stream trailer constant used by the minisql platform tls schannel module.
 const SECBUFFER_STREAM_TRAILER = 6
+/// Defines the secbuffer stream header constant used by the minisql platform tls schannel module.
 const SECBUFFER_STREAM_HEADER = 7
+/// Defines the secbuffer version constant used by the minisql platform tls schannel module.
 const SECBUFFER_VERSION = 0
+/// Defines the sec buffer size constant used by the minisql platform tls schannel module.
 const SEC_BUFFER_SIZE = 16
+/// Defines the sec buffer desc size constant used by the minisql platform tls schannel module.
 const SEC_BUFFER_DESC_SIZE = 16
+/// Defines the cred handle size constant used by the minisql platform tls schannel module.
 const CRED_HANDLE_SIZE = 16
+/// Defines the timestamp size constant used by the minisql platform tls schannel module.
 const TIMESTAMP_SIZE = 8
+/// Defines the tls token bytes constant used by the minisql platform tls schannel module.
 const TLS_TOKEN_BYTES = 65536
+/// Defines the tls network receive bytes constant used by the minisql platform tls schannel module.
 const TLS_NETWORK_RECEIVE_BYTES = 65536
+/// Defines the tls max pfx bytes constant used by the minisql platform tls schannel module.
 const TLS_MAX_PFX_BYTES = 16777216
 
+/// Defines the sch credentials version constant used by the minisql platform tls schannel module.
 const SCH_CREDENTIALS_VERSION = 5
+/// Defines the sch credentials bytes constant used by the minisql platform tls schannel module.
 const SCH_CREDENTIALS_BYTES = 72
+/// Defines the tls parameters bytes constant used by the minisql platform tls schannel module.
 const TLS_PARAMETERS_BYTES = 40
+/// Defines the crypto settings bytes constant used by the minisql platform tls schannel module.
 const CRYPTO_SETTINGS_BYTES = 48
+/// Defines the tls key exchange usage constant used by the minisql platform tls schannel module.
 const TLS_KEY_EXCHANGE_USAGE = 0
+/// Defines the sch cred manual cred validation constant used by the minisql platform tls schannel module.
 const SCH_CRED_MANUAL_CRED_VALIDATION = 8
+/// Defines the sch cred no default creds constant used by the minisql platform tls schannel module.
 const SCH_CRED_NO_DEFAULT_CREDS = 16
+/// Defines the sch cred auto cred validation constant used by the minisql platform tls schannel module.
 const SCH_CRED_AUTO_CRED_VALIDATION = 32
+/// Defines the sch use strong crypto constant used by the minisql platform tls schannel module.
 const SCH_USE_STRONG_CRYPTO = 4194304
+/// Defines the sp prot tls1 3 server constant used by the minisql platform tls schannel module.
 const SP_PROT_TLS1_3_SERVER = 4096
+/// Defines the sp prot tls1 3 client constant used by the minisql platform tls schannel module.
 const SP_PROT_TLS1_3_CLIENT = 8192
+/// Defines the sp prot legacy server constant used by the minisql platform tls schannel module.
 const SP_PROT_LEGACY_SERVER = 1365
+/// Defines the sp prot legacy client constant used by the minisql platform tls schannel module.
 const SP_PROT_LEGACY_CLIENT = 2730
+/// Defines the secpkg attr stream sizes constant used by the minisql platform tls schannel module.
 const SECPKG_ATTR_STREAM_SIZES = 4
+/// Defines the secpkg attr remote cert context constant used by the minisql platform tls schannel module.
 const SECPKG_ATTR_REMOTE_CERT_CONTEXT = 83
+/// Defines the secpkg attr connection info constant used by the minisql platform tls schannel module.
 const SECPKG_ATTR_CONNECTION_INFO = 90
+/// Defines the secpkg attr cipher info constant used by the minisql platform tls schannel module.
 const SECPKG_ATTR_CIPHER_INFO = 100
+/// Defines the schannel shutdown constant used by the minisql platform tls schannel module.
 const SCHANNEL_SHUTDOWN = 1
+/// Defines the secpkg cipher info bytes constant used by the minisql platform tls schannel module.
 const SECPKG_CIPHER_INFO_BYTES = 680
 
+/// Defines the cert store prov system w constant used by the minisql platform tls schannel module.
 const CERT_STORE_PROV_SYSTEM_W = 10
+/// Defines the cert system store current user constant used by the minisql platform tls schannel module.
 const CERT_SYSTEM_STORE_CURRENT_USER = 65536
+/// Defines the cert system store local machine constant used by the minisql platform tls schannel module.
 const CERT_SYSTEM_STORE_LOCAL_MACHINE = 131072
+/// Defines the x509 asn encoding constant used by the minisql platform tls schannel module.
 const X509_ASN_ENCODING = 1
+/// Defines the pkcs 7 asn encoding constant used by the minisql platform tls schannel module.
 const PKCS_7_ASN_ENCODING = 65536
+/// Defines the cert encoding constant used by the minisql platform tls schannel module.
 const CERT_ENCODING = 65537
+/// Defines the cert find sha1 hash constant used by the minisql platform tls schannel module.
 const CERT_FIND_SHA1_HASH = 65536
+/// Defines the cert find has private key constant used by the minisql platform tls schannel module.
 const CERT_FIND_HAS_PRIVATE_KEY = 1376256
+/// Defines the cert close store force flag constant used by the minisql platform tls schannel module.
 const CERT_CLOSE_STORE_FORCE_FLAG = 1
+/// Defines the crypt user keyset constant used by the minisql platform tls schannel module.
 const CRYPT_USER_KEYSET = 4096
+/// Defines the cert sha256 hash prop id constant used by the minisql platform tls schannel module.
 const CERT_SHA256_HASH_PROP_ID = 107
+/// Defines the cert chain policy ssl constant used by the minisql platform tls schannel module.
 const CERT_CHAIN_POLICY_SSL = 4
+/// Defines the cert chain cache end cert constant used by the minisql platform tls schannel module.
 const CERT_CHAIN_CACHE_END_CERT = 1
+/// Defines the authtype server constant used by the minisql platform tls schannel module.
 const AUTHTYPE_SERVER = 2
+/// Defines the security flag ignore unknown ca constant used by the minisql platform tls schannel module.
 const SECURITY_FLAG_IGNORE_UNKNOWN_CA = 256
+/// Defines the cert chain para bytes constant used by the minisql platform tls schannel module.
 const CERT_CHAIN_PARA_BYTES = 96
+/// Defines the ssl policy extra bytes constant used by the minisql platform tls schannel module.
 const SSL_POLICY_EXTRA_BYTES = 24
+/// Defines the cert chain policy para bytes constant used by the minisql platform tls schannel module.
 const CERT_CHAIN_POLICY_PARA_BYTES = 16
+/// Defines the cert chain policy status bytes constant used by the minisql platform tls schannel module.
 const CERT_CHAIN_POLICY_STATUS_BYTES = 24
+/// Defines the server auth oid constant used by the minisql platform tls schannel module.
 const SERVER_AUTH_OID = "1.3.6.1.5.5.7.3.1"
 
-// Owns an acquired Schannel credential and every allocation whose lifetime it requires.
+/// Owns an acquired Schannel credential and every allocation whose lifetime it requires.
 struct SchannelCredential
-  // SSPI CredHandle encoded in native-layout bytes.
+  /// SSPI CredHandle encoded in native-layout bytes.
   handle
-  // Credential expiry timestamp returned by SSPI.
+  /// Credential expiry timestamp returned by SSPI.
   expiry
-  // Distinguishes a server credential from a client credential.
+  /// Distinguishes a server credential from a client credential.
   inbound
-  // Prevents duplicate native-handle release.
+  /// Prevents duplicate native-handle release.
   closed
-  // Server leaf certificate context, or void for a client credential.
+  /// Server leaf certificate context, or void for a client credential.
   certificateContext
-  // Certificate store kept open while the server credential is usable.
+  /// Certificate store kept open while the server credential is usable.
   certificateStore
-  // SCH_CREDENTIALS structure retained for the native credential lifetime.
+  /// SCH_CREDENTIALS structure retained for the native credential lifetime.
   credentialBytes
-  // Native pointer array that pins the configured server certificate.
+  /// Native pointer array that pins the configured server certificate.
   pinnedCertificatePointers
-  // Imported PFX payload retained and wiped when the credential closes.
+  /// Imported PFX payload retained and wiped when the credential closes.
   pfxBytes
-  // TLS_PARAMETERS structure that restricts negotiation to TLS 1.3.
+  /// TLS_PARAMETERS structure that restricts negotiation to TLS 1.3.
   tlsParameters
-  // CRYPTO_SETTINGS array that disables every key-exchange group except X25519.
+  /// CRYPTO_SETTINGS array that disables every key-exchange group except X25519.
   disabledCrypto
-  // Algorithm-name buffers referenced by the disabled crypto settings.
+  /// Algorithm-name buffers referenced by the disabled crypto settings.
   disabledCryptoStrings
-  // Selects explicit chain and pin validation for a client credential.
+  /// Selects explicit chain and pin validation for a client credential.
   manualValidation
 end struct
 
-// Holds one established TLS connection plus its encrypted and plaintext queues.
+/// Holds one established TLS connection plus its encrypted and plaintext queues.
 struct TlsContext
-  // Credential that authenticated and parameterized this connection.
+  /// Credential that authenticated and parameterized this connection.
   credential
-  // SSPI CtxtHandle encoded in native-layout bytes.
+  /// SSPI CtxtHandle encoded in native-layout bytes.
   handle
-  // Context expiry timestamp returned by SSPI.
+  /// Context expiry timestamp returned by SSPI.
   expiry
-  // Negotiated SSPI context attributes.
+  /// Negotiated SSPI context attributes.
   attributes
-  // Prevents use or release after closure.
+  /// Prevents use or release after closure.
   closed
-  // True for the accepted server side and false for the connecting client side.
+  /// True for the accepted server side and false for the connecting client side.
   server
-  // TLS records received but not yet consumed by Schannel.
+  /// TLS records received but not yet consumed by Schannel.
   encryptedInput
-  // Plaintext produced by Schannel but not yet consumed by MiniSQL framing.
+  /// Plaintext produced by Schannel but not yet consumed by MiniSQL framing.
   decryptedInput
-  // Provider-specific record header capacity.
+  /// Provider-specific record header capacity.
   streamHeaderBytes
-  // Provider-specific AEAD trailer capacity.
+  /// Provider-specific AEAD trailer capacity.
   streamTrailerBytes
-  // Maximum plaintext carried by one encrypted TLS record.
+  /// Maximum plaintext carried by one encrypted TLS record.
   maximumMessageBytes
-  // Immutable version, cipher, group, and certificate-validation policy.
+  /// Immutable version, cipher, group, and certificate-validation policy.
   policy
-  // Handshake records retained until the ServerHello profile is verified.
+  /// Handshake records retained until the ServerHello profile is verified.
   handshakeTranscript
-  // IANA identifier of the negotiated TLS cipher suite.
+  /// IANA identifier of the negotiated TLS cipher suite.
   negotiatedCipherSuite
-  // IANA identifier of the negotiated key-exchange group.
+  /// IANA identifier of the negotiated key-exchange group.
   negotiatedGroup
-  // SHA-256 digest of the peer leaf certificate in DER form.
+  /// SHA-256 digest of the peer leaf certificate in DER form.
   peerCertificateSha256
 end struct
 
-// Acquires a Schannel credential from the supplied SCH_CREDENTIALS byte structure.
+/// Acquires a Schannel credential from the supplied SCH_CREDENTIALS byte structure.
+/// @param principal principal value consumed by this operation.
+/// @param packageName packageName value consumed by this operation.
+/// @param credentialUse credentialUse value consumed by this operation.
+/// @param logonId Identifier of logon.
+/// @param authData authData value consumed by this operation.
+/// @param getKeyFn getKeyFn value consumed by this operation.
+/// @param getKeyArgument getKeyArgument value consumed by this operation.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function AcquireCredentialsHandleWWithAuth(principal as ptr, packageName as wstr, credentialUse as u32, logonId as ptr, authData as bytes, getKeyFn as ptr, getKeyArgument as ptr, credentialHandle as bytes, expiry as bytes) from "secur32.dll" symbol "AcquireCredentialsHandleW" returns i32
-// Releases an SSPI credential handle.
+/// Releases an SSPI credential handle.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function FreeCredentialsHandle(credentialHandle as bytes) from "secur32.dll" symbol "FreeCredentialsHandle" returns i32
-// Starts a client handshake without an existing context or inbound token.
+/// Starts a client handshake without an existing context or inbound token.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param targetName targetName value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param reserved1 reserved1 value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param reserved2 reserved2 value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function InitializeSecurityContextW(credentialHandle as bytes, contextHandle as ptr, targetName as wstr, contextReq as u32, reserved1 as u32, targetDataRep as u32, inputDesc as ptr, reserved2 as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "InitializeSecurityContextW" returns i32
-// Advances a client handshake using an existing context and peer input.
+/// Advances a client handshake using an existing context and peer input.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param targetName targetName value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param reserved1 reserved1 value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param reserved2 reserved2 value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function InitializeSecurityContextWContinue(credentialHandle as bytes, contextHandle as bytes, targetName as wstr, contextReq as u32, reserved1 as u32, targetDataRep as u32, inputDesc as bytes, reserved2 as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "InitializeSecurityContextW" returns i32
-// Produces the client-side close_notify token after applying SCHANNEL_SHUTDOWN.
+/// Produces the client-side close_notify token after applying SCHANNEL_SHUTDOWN.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param targetName targetName value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param reserved1 reserved1 value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param reserved2 reserved2 value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function InitializeSecurityContextWShutdown(credentialHandle as bytes, contextHandle as bytes, targetName as wstr, contextReq as u32, reserved1 as u32, targetDataRep as u32, inputDesc as ptr, reserved2 as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "InitializeSecurityContextW" returns i32
-// Starts a server handshake from the first client token.
+/// Starts a server handshake from the first client token.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function AcceptSecurityContextInitial(credentialHandle as bytes, contextHandle as ptr, inputDesc as bytes, contextReq as u32, targetDataRep as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "AcceptSecurityContext" returns i32
-// Advances a server handshake using an existing context and peer input.
+/// Advances a server handshake using an existing context and peer input.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function AcceptSecurityContextContinue(credentialHandle as bytes, contextHandle as bytes, inputDesc as bytes, contextReq as u32, targetDataRep as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "AcceptSecurityContext" returns i32
-// Produces the server-side close_notify token after applying SCHANNEL_SHUTDOWN.
+/// Produces the server-side close_notify token after applying SCHANNEL_SHUTDOWN.
+/// @param credentialHandle credentialHandle value consumed by this operation.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @param contextReq contextReq value consumed by this operation.
+/// @param targetDataRep targetDataRep value consumed by this operation.
+/// @param newContext newContext value consumed by this operation.
+/// @param outputDesc outputDesc value consumed by this operation.
+/// @param contextAttr contextAttr value consumed by this operation.
+/// @param expiry expiry value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function AcceptSecurityContextShutdown(credentialHandle as bytes, contextHandle as bytes, inputDesc as ptr, contextReq as u32, targetDataRep as u32, newContext as bytes, outputDesc as bytes, contextAttr as bytes, expiry as bytes) from "secur32.dll" symbol "AcceptSecurityContext" returns i32
-// Authenticates and encrypts one plaintext record with the negotiated AEAD keys.
+/// Authenticates and encrypts one plaintext record with the negotiated AEAD keys.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param qualityOfProtection qualityOfProtection value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
+/// @param sequenceNumber sequenceNumber value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function EncryptMessage(contextHandle as bytes, qualityOfProtection as u32, message as bytes, sequenceNumber as u32) from "secur32.dll" symbol "EncryptMessage" returns i32
-// Authenticates and decrypts one TLS record with the negotiated AEAD keys.
+/// Authenticates and decrypts one TLS record with the negotiated AEAD keys.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
+/// @param sequenceNumber sequenceNumber value consumed by this operation.
+/// @param qualityOfProtection qualityOfProtection value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function DecryptMessage(contextHandle as bytes, message as bytes, sequenceNumber as u32, qualityOfProtection as bytes) from "secur32.dll" symbol "DecryptMessage" returns i32
-// Reads an attribute from an established SSPI context.
+/// Reads an attribute from an established SSPI context.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param attribute attribute value consumed by this operation.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @returns Native i32 result produced by the call.
 extern function QueryContextAttributesW(contextHandle as bytes, attribute as u32, buffer as bytes) from "secur32.dll" symbol "QueryContextAttributesW" returns i32
-// Applies the SCHANNEL_SHUTDOWN control token to an established context.
+/// Applies the SCHANNEL_SHUTDOWN control token to an established context.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @param inputDesc inputDesc value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function ApplyControlToken(contextHandle as bytes, inputDesc as bytes) from "secur32.dll" symbol "ApplyControlToken" returns i32
-// Releases an SSPI security-context handle.
+/// Releases an SSPI security-context handle.
+/// @param contextHandle contextHandle value consumed by this operation.
+/// @returns Native i32 result produced by the call.
 extern function DeleteSecurityContext(contextHandle as bytes) from "secur32.dll" symbol "DeleteSecurityContext" returns i32
-// Opens a Windows certificate store by provider and location.
+/// Opens a Windows certificate store by provider and location.
+/// @param storeProvider storeProvider value consumed by this operation.
+/// @param encodingType encodingType value consumed by this operation.
+/// @param cryptProvider cryptProvider value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param parameter parameter value consumed by this operation.
+/// @returns Native ptr result produced by the call.
 extern function CertOpenStore(storeProvider as ptr, encodingType as u32, cryptProvider as ptr, flags as u32, parameter as wstr) from "crypt32.dll" symbol "CertOpenStore" returns ptr
-// Searches a certificate store using a pointer-valued search parameter.
+/// Searches a certificate store using a pointer-valued search parameter.
+/// @param store store value consumed by this operation.
+/// @param encodingType encodingType value consumed by this operation.
+/// @param findFlags findFlags value consumed by this operation.
+/// @param findType findType value consumed by this operation.
+/// @param findParameter findParameter value consumed by this operation.
+/// @param previousContext previousContext value consumed by this operation.
+/// @returns Native ptr result produced by the call.
 extern function CertFindCertificateInStore(store as ptr, encodingType as u32, findFlags as u32, findType as u32, findParameter as ptr, previousContext as ptr) from "crypt32.dll" symbol "CertFindCertificateInStore" returns ptr
-// Searches a certificate store using a byte-encoded search parameter.
+/// Searches a certificate store using a byte-encoded search parameter.
+/// @param store store value consumed by this operation.
+/// @param encodingType encodingType value consumed by this operation.
+/// @param findFlags findFlags value consumed by this operation.
+/// @param findType findType value consumed by this operation.
+/// @param findParameter findParameter value consumed by this operation.
+/// @param previousContext previousContext value consumed by this operation.
+/// @returns Native ptr result produced by the call.
 extern function CertFindCertificateInStoreBytes(store as ptr, encodingType as u32, findFlags as u32, findType as u32, findParameter as bytes, previousContext as ptr) from "crypt32.dll" symbol "CertFindCertificateInStore" returns ptr
-// Releases one Windows certificate context.
+/// Releases one Windows certificate context.
+/// @param context Context that carries state for the operation.
+/// @returns Native bool result produced by the call.
 extern function CertFreeCertificateContext(context as ptr) from "crypt32.dll" symbol "CertFreeCertificateContext" returns bool
-// Closes a Windows certificate store.
+/// Closes a Windows certificate store.
+/// @param store store value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @returns Native bool result produced by the call.
 extern function CertCloseStore(store as ptr, flags as u32) from "crypt32.dll" symbol "CertCloseStore" returns bool
-// Imports an encrypted PKCS#12 identity into a temporary certificate store.
+/// Imports an encrypted PKCS#12 identity into a temporary certificate store.
+/// @param pfxBlob pfxBlob value consumed by this operation.
+/// @param password password value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @returns Native ptr result produced by the call.
 extern function PFXImportCertStore(pfxBlob as bytes, password as wstr, flags as u32) from "crypt32.dll" symbol "PFXImportCertStore" returns ptr
-// Reads a property such as the SHA-256 digest from a certificate context.
+/// Reads a property such as the SHA-256 digest from a certificate context.
+/// @param context Context that carries state for the operation.
+/// @param propertyId Identifier of property.
+/// @param data Input data consumed by the operation.
+/// @param size Size in the units required by the operation.
+/// @returns Native bool result produced by the call.
 extern function CertGetCertificateContextProperty(context as ptr, propertyId as u32, data as bytes, size as bytes) from "crypt32.dll" symbol "CertGetCertificateContextProperty" returns bool
-// Builds and cryptographically verifies the peer certificate chain.
+/// Builds and cryptographically verifies the peer certificate chain.
+/// @param chainEngine chainEngine value consumed by this operation.
+/// @param certificateContext certificateContext value consumed by this operation.
+/// @param currentTime currentTime value consumed by this operation.
+/// @param additionalStore additionalStore value consumed by this operation.
+/// @param chainParameters chainParameters value consumed by this operation.
+/// @param flags Bit flags controlling the operation.
+/// @param reserved reserved value consumed by this operation.
+/// @param chainContext chainContext value consumed by this operation.
+/// @returns Native bool result produced by the call.
 extern function CertGetCertificateChain(chainEngine as ptr, certificateContext as ptr, currentTime as ptr, additionalStore as ptr, chainParameters as bytes, flags as u32, reserved as ptr, chainContext as bytes) from "crypt32.dll" symbol "CertGetCertificateChain" returns bool
-// Applies hostname, lifetime, EKU, and trust policy to a built certificate chain.
+/// Applies hostname, lifetime, EKU, and trust policy to a built certificate chain.
+/// @param policyOid Identifier of policy o.
+/// @param chainContext chainContext value consumed by this operation.
+/// @param policyParameters policyParameters value consumed by this operation.
+/// @param policyStatus policyStatus value consumed by this operation.
+/// @returns Native bool result produced by the call.
 extern function CertVerifyCertificateChainPolicy(policyOid as ptr, chainContext as ptr, policyParameters as bytes, policyStatus as bytes) from "crypt32.dll" symbol "CertVerifyCertificateChainPolicy" returns bool
-// Releases a certificate chain returned by CertGetCertificateChain.
+/// Releases a certificate chain returned by CertGetCertificateChain.
+/// @param chainContext chainContext value consumed by this operation.
 extern function CertFreeCertificateChain(chainContext as ptr) from "crypt32.dll" symbol "CertFreeCertificateChain" returns void
-// Reads a process environment variable into caller-owned memory.
+/// Reads a process environment variable into caller-owned memory.
+/// @param name Name of the affected item.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param size Size in the units required by the operation.
+/// @returns Native u32 result produced by the call.
 extern function GetEnvironmentVariableA(name as cstr, buffer as bytes, size as u32) from "kernel32.dll" symbol "GetEnvironmentVariableA" returns u32
-// Returns the calling thread's latest Win32 error code.
+/// Returns the calling thread's latest Win32 error code.
+/// @returns Native u32 result produced by the call.
 extern function GetLastError() from "kernel32.dll" symbol "GetLastError" returns u32
 
-// Creates a transport-scoped TLS error with consistent operation context.
+/// Creates a transport-scoped TLS error with consistent operation context.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(TLS_ERROR, "platform.tls_schannel." + operation + ": " + message)
 end function
 
-// Converts a native Schannel status code into a MiniSQL TLS error.
+/// Converts a native Schannel status code into a MiniSQL TLS error.
+/// @param operation operation value consumed by this operation.
+/// @param status status value consumed by this operation.
 function statusFailure(operation, status)
   return fail(operation, "Schannel status " + status)
 end function
 
-// Reports whether a value owns a Schannel credential handle.
+/// Reports whether a value owns a Schannel credential handle.
+/// @param value Value consumed or transformed by the operation.
 function isCredential(value)
   return value is SchannelCredential
 end function
 
-// Reports whether a value is an established native TLS context.
+/// Reports whether a value is an established native TLS context.
+/// @param value Value consumed or transformed by the operation.
 function isTlsContext(value)
   return value is TlsContext
 end function
 
-// Writes a native 64-bit pointer into an ABI structure.
+/// Writes a native 64-bit pointer into an ABI structure.
+/// @param target target value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param pointerValue pointerValue value consumed by this operation.
 function writePointer(target, offset, pointerValue)
   endian.writeU64LE(target, offset, endian.uint64FromInt(pointerValue))
   return true
 end function
 
-// Reads a checked native 64-bit pointer from an ABI structure.
+/// Reads a checked native 64-bit pointer from an ABI structure.
+/// @param source source value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
 function readPointer(source, offset)
   value = try(endian.uint64ToInt(endian.readU64LE(source, offset)))
   if typeof(value) == "error" then return value end if
   return value
 end function
 
-// Builds a single native SecBuffer over caller-owned bytes.
+/// Builds a single native SecBuffer over caller-owned bytes.
+/// @param bufferType bufferType value consumed by this operation.
+/// @param payload payload value consumed by this operation.
 function createSecBuffer(bufferType, payload)
   if typeof(bufferType) != "int" or typeof(payload) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_schannel.createSecBuffer: invalid buffer arguments") end if
   result = bytes(SEC_BUFFER_SIZE, 0)
@@ -255,7 +501,8 @@ function createSecBuffer(bufferType, payload)
   return result
 end function
 
-// Builds a one-element SecBufferDesc for an SSPI call.
+/// Builds a one-element SecBufferDesc for an SSPI call.
+/// @param buffer Buffer that receives or supplies the operation data.
 function createSecBufferDesc(buffer)
   if typeof(buffer) != "bytes" or len(buffer) != SEC_BUFFER_SIZE then return error(INVALID_ARGUMENT, "platform.tls_schannel.createSecBufferDesc: buffer must be SecBuffer bytes") end if
   result = bytes(SEC_BUFFER_DESC_SIZE, 0)
@@ -265,7 +512,12 @@ function createSecBufferDesc(buffer)
   return result
 end function
 
-// Populates one element of a contiguous native SecBuffer array.
+/// Populates one element of a contiguous native SecBuffer array.
+/// @param target target value consumed by this operation.
+/// @param index Zero-based index of the affected item.
+/// @param bufferType bufferType value consumed by this operation.
+/// @param pointerValue pointerValue value consumed by this operation.
+/// @param length length value consumed by this operation.
 function writeSecBuffer(target, index, bufferType, pointerValue, length)
   if typeof(target) != "bytes" or typeof(index) != "int" or typeof(bufferType) != "int" or typeof(pointerValue) != "int" or typeof(length) != "int" then return error(INVALID_ARGUMENT, "platform.tls_schannel.writeSecBuffer: invalid arguments") end if
   offset = index * SEC_BUFFER_SIZE
@@ -276,28 +528,37 @@ function writeSecBuffer(target, index, bufferType, pointerValue, length)
   return true
 end function
 
-// Reads the byte count stored in a SecBuffer array element.
+/// Reads the byte count stored in a SecBuffer array element.
+/// @param target target value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function secBufferLength(target, index)
   return endian.readU32LE(target, index * SEC_BUFFER_SIZE)
 end function
 
-// Reads the buffer type stored in a SecBuffer array element.
+/// Reads the buffer type stored in a SecBuffer array element.
+/// @param target target value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function secBufferType(target, index)
   return endian.readU32LE(target, index * SEC_BUFFER_SIZE + 4)
 end function
 
-// Reads the native data pointer stored in a SecBuffer array element.
+/// Reads the native data pointer stored in a SecBuffer array element.
+/// @param target target value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function secBufferPointer(target, index)
   return readPointer(target, index * SEC_BUFFER_SIZE + 8)
 end function
 
-// Allocates a bounded contiguous array of native SecBuffer structures.
+/// Allocates a bounded contiguous array of native SecBuffer structures.
+/// @param count Number of items or units to process.
 function createSecBufferArray(count)
   if typeof(count) != "int" or count < 1 or count > 8 then return error(INVALID_ARGUMENT, "platform.tls_schannel.createSecBufferArray: count is invalid") end if
   return bytes(count * SEC_BUFFER_SIZE, 0)
 end function
 
-// Builds a SecBufferDesc that references a validated buffer array.
+/// Builds a SecBufferDesc that references a validated buffer array.
+/// @param buffers buffers value consumed by this operation.
+/// @param count Number of items or units to process.
 function createSecBufferDescForArray(buffers, count)
   if typeof(buffers) != "bytes" or typeof(count) != "int" or count < 1 or count > 8 or len(buffers) != count * SEC_BUFFER_SIZE then return error(INVALID_ARGUMENT, "platform.tls_schannel.createSecBufferDescForArray: buffers are invalid") end if
   result = bytes(SEC_BUFFER_DESC_SIZE, 0)
@@ -307,14 +568,20 @@ function createSecBufferDescForArray(buffers, count)
   return result
 end function
 
-// Copies a checked byte range without exposing pointer arithmetic to callers.
+/// Copies a checked byte range without exposing pointer arithmetic to callers.
+/// @param source source value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
+/// @param operation operation value consumed by this operation.
 function copyRange(source, offset, count, operation)
   copied = try(network.copyByteRange(source, offset, count, operation))
   if typeof(copied) == "error" then return copied end if
   return copied
 end function
 
-// Concatenates two immutable byte sequences into fresh storage.
+/// Concatenates two immutable byte sequences into fresh storage.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function appendBytes(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_schannel.appendBytes: arguments must be bytes") end if
   output = bytes(len(left) + len(right), 0)
@@ -323,7 +590,9 @@ function appendBytes(left, right)
   return output
 end function
 
-// Compares a UTF-8 string prefix without locale-dependent conversions.
+/// Compares a UTF-8 string prefix without locale-dependent conversions.
+/// @param text Text consumed by the operation.
+/// @param prefix prefix value consumed by this operation.
 function startsWith(text, prefix)
   if typeof(text) != "string" or typeof(prefix) != "string" then return false end if
   raw = bytes(text)
@@ -335,7 +604,10 @@ function startsWith(text, prefix)
   return true
 end function
 
-// Extracts and validates a UTF-8 substring by byte offset.
+/// Extracts and validates a UTF-8 substring by byte offset.
+/// @param text Text consumed by the operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
 function substring(text, offset, count)
   raw = bytes(text)
   if offset < 0 or count < 0 or offset > len(raw) - count then return error(INVALID_ARGUMENT, "platform.tls_schannel.substring: range is invalid") end if
@@ -345,7 +617,8 @@ function substring(text, offset, count)
   return value
 end function
 
-// Maps one ASCII hexadecimal digit to its numeric value.
+/// Maps one ASCII hexadecimal digit to its numeric value.
+/// @param value Value consumed or transformed by the operation.
 function hexValue(value)
   if value >= 48 and value <= 57 then return value - 48 end if
   if value >= 65 and value <= 70 then return value - 55 end if
@@ -353,7 +626,8 @@ function hexValue(value)
   return -1
 end function
 
-// Normalizes a displayed SHA-1 certificate thumbprint into exactly 20 bytes.
+/// Normalizes a displayed SHA-1 certificate thumbprint into exactly 20 bytes.
+/// @param thumbprint thumbprint value consumed by this operation.
 function thumbprintBytes(thumbprint)
   if typeof(thumbprint) != "string" or len(thumbprint) == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.thumbprintBytes: thumbprint must be non-empty") end if
   raw = bytes(thumbprint)
@@ -381,7 +655,8 @@ function thumbprintBytes(thumbprint)
   return output
 end function
 
-// Builds the native CRYPT_DATA_BLOB view used for PKCS#12 import.
+/// Builds the native CRYPT_DATA_BLOB view used for PKCS#12 import.
+/// @param data Input data consumed by the operation.
 function cryptBlob(data)
   if typeof(data) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_schannel.cryptBlob: data must be bytes") end if
   blob = bytes(16, 0)
@@ -390,7 +665,10 @@ function cryptBlob(data)
   return blob
 end function
 
-// Materializes the crypto-agile SCH_CREDENTIALS ABI and restricts it to TLS 1.3.
+/// Materializes the crypto-agile SCH_CREDENTIALS ABI and restricts it to TLS 1.3.
+/// @param certificateContext certificateContext value consumed by this operation.
+/// @param inbound inbound value consumed by this operation.
+/// @param manualValidation manualValidation value consumed by this operation.
 function schannelCredentialBytes(certificateContext, inbound, manualValidation)
   cred = bytes(SCH_CREDENTIALS_BYTES, 0)
   endian.writeU32LE(cred, 0, SCH_CREDENTIALS_VERSION)
@@ -418,7 +696,8 @@ function schannelCredentialBytes(certificateContext, inbound, manualValidation)
   return [cred, bytes(0), tlsParameters, disabledCrypto[0], disabledCrypto[1]]
 end function
 
-// Reads an environment secret into wipeable bytes instead of a long-lived string.
+/// Reads an environment secret into wipeable bytes instead of a long-lived string.
+/// @param name Name of the affected item.
 function environmentSecret(name)
   if typeof(name) != "string" or len(name) == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.environmentSecret: name must be non-empty") end if
   buffer = bytes(4096, 0)
@@ -429,12 +708,13 @@ function environmentSecret(name)
   return slice(buffer, 0, count)
 end function
 
-// Loads the optional PKCS#12 password from the dedicated environment variable.
+/// Loads the optional PKCS#12 password from the dedicated environment variable.
 function pfxPasswordFromEnvironment()
   return environmentSecret("MINISQL_TLS_PFX_PASSWORD")
 end function
 
-// Decodes temporary password bytes for the Windows PKCS#12 API.
+/// Decodes temporary password bytes for the Windows PKCS#12 API.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function passwordText(passwordBytes)
   if passwordBytes is void then return "" end if
   if typeof(passwordBytes) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_schannel.passwordText: password must be bytes") end if
@@ -443,14 +723,17 @@ function passwordText(passwordBytes)
   return value
 end function
 
-// Opens the selected current-user or local-machine certificate store.
+/// Opens the selected current-user or local-machine certificate store.
+/// @param location location value consumed by this operation.
 function openSystemStore(location)
   store = CertOpenStore(CERT_STORE_PROV_SYSTEM_W, 0, void, location, "MY")
   if store == 0 then return fail("openSystemStore", "CertOpenStore failed (" + GetLastError() + ")") end if
   return store
 end function
 
-// Locates a certificate by its exact SHA-1 store thumbprint.
+/// Locates a certificate by its exact SHA-1 store thumbprint.
+/// @param store store value consumed by this operation.
+/// @param thumbprintHash thumbprintHash value consumed by this operation.
 function findCertificateInStore(store, thumbprintHash)
   blob = cryptBlob(thumbprintHash)
   context = CertFindCertificateInStoreBytes(store, CERT_ENCODING, 0, CERT_FIND_SHA1_HASH, blob, void)
@@ -458,7 +741,8 @@ function findCertificateInStore(store, thumbprintHash)
   return context
 end function
 
-// Resolves a store certificate reference and verifies that a private key is available.
+/// Resolves a store certificate reference and verifies that a private key is available.
+/// @param thumbprint thumbprint value consumed by this operation.
 function loadStoreCertificate(thumbprint)
   hash = try(thumbprintBytes(thumbprint))
   if typeof(hash) == "error" then return hash end if
@@ -481,7 +765,9 @@ function loadStoreCertificate(thumbprint)
   return [context, machineStore]
 end function
 
-// Imports a bounded PKCS#12 identity and selects its private-key certificate.
+/// Imports a bounded PKCS#12 identity and selects its private-key certificate.
+/// @param path Path of the file or directory used by the operation.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function loadPfxCertificate(path, passwordBytes)
   if typeof(path) != "string" or len(path) == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.loadPfxCertificate: PFX path must be non-empty") end if
   payload = try(file_api.readAllBytes(path, TLS_MAX_PFX_BYTES))
@@ -502,20 +788,23 @@ function loadPfxCertificate(path, passwordBytes)
   return [context, store, payload]
 end function
 
-// Returns the scheme portion of a server certificate reference.
+/// Returns the scheme portion of a server certificate reference.
+/// @param certificateReference certificateReference value consumed by this operation.
 function certificateReferenceKind(certificateReference)
   if startsWith(certificateReference, "pfx:") then return "pfx" end if
   return "store"
 end function
 
-// Returns the value portion of a server certificate reference.
+/// Returns the value portion of a server certificate reference.
+/// @param certificateReference certificateReference value consumed by this operation.
 function certificateReferenceValue(certificateReference)
   if startsWith(certificateReference, "store:") then return substring(certificateReference, 6, len(bytes(certificateReference)) - 6) end if
   if startsWith(certificateReference, "pfx:") then return substring(certificateReference, 4, len(bytes(certificateReference)) - 4) end if
   return certificateReference
 end function
 
-// Acquires an outbound Schannel credential with automatic or manual pin validation.
+/// Acquires an outbound Schannel credential with automatic or manual pin validation.
+/// @param policy policy value consumed by this operation.
 function acquireClientCredential(policy)
   checked = try(tls_policy.validate(policy))
   if typeof(checked) == "error" then return checked end if
@@ -529,12 +818,14 @@ function acquireClientCredential(policy)
   return SchannelCredential(handle, expiry, false, false, 0, 0, authData[0], authData[1], bytes(0), authData[2], authData[3], authData[4], manualValidation)
 end function
 
-// Creates the compatibility server credential without an explicit identity.
+/// Creates the compatibility server credential without an explicit identity.
 function acquireServerCredential()
   return acquireServerCredentialWithPassword("store:", void)
 end function
 
-// Loads the configured identity and acquires the restricted TLS 1.3 server credential.
+/// Loads the configured identity and acquires the restricted TLS 1.3 server credential.
+/// @param certificateReference certificateReference value consumed by this operation.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function acquireServerCredentialWithPassword(certificateReference, passwordBytes)
   if typeof(certificateReference) != "string" or len(certificateReference) == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.acquireServerCredentialWithPassword: certificate reference must be non-empty") end if
   value = try(certificateReferenceValue(certificateReference))
@@ -567,7 +858,8 @@ function acquireServerCredentialWithPassword(certificateReference, passwordBytes
   return SchannelCredential(handle, expiry, true, false, certContext, certStore, authData[0], authData[1], pfxPayload, authData[2], authData[3], authData[4], false)
 end function
 
-// Releases a credential and wipes or closes every retained native dependency.
+/// Releases a credential and wipes or closes every retained native dependency.
+/// @param credential credential value consumed by this operation.
 function closeCredential(credential)
   if credential is not SchannelCredential then return error(INVALID_ARGUMENT, "platform.tls_schannel.closeCredential: credential must be SchannelCredential") end if
   if credential.closed then return true end if
@@ -593,7 +885,10 @@ function closeCredential(credential)
   return true
 end function
 
-// Copies the exact SSPI output token from its bounded backing storage.
+/// Copies the exact SSPI output token from its bounded backing storage.
+/// @param outputBuffer outputBuffer value consumed by this operation.
+/// @param tokenBytes tokenBytes value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function handshakeOutputToken(outputBuffer, tokenBytes, operation)
   tokenLength = endian.readU32LE(outputBuffer, 0)
   if tokenLength < 0 or tokenLength > TLS_TOKEN_BYTES then return fail(operation, "Schannel returned invalid token length") end if
@@ -602,17 +897,19 @@ function handshakeOutputToken(outputBuffer, tokenBytes, operation)
   return token
 end function
 
-// Returns the client SSPI flags required for confidential ordered streams.
+/// Returns the client SSPI flags required for confidential ordered streams.
 function contextFlagsClient()
   return ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM
 end function
 
-// Returns the server SSPI flags required for confidential ordered streams.
+/// Returns the server SSPI flags required for confidential ordered streams.
 function contextFlagsServer()
   return ASC_REQ_SEQUENCE_DETECT | ASC_REQ_REPLAY_DETECT | ASC_REQ_CONFIDENTIALITY | ASC_REQ_EXTENDED_ERROR | ASC_REQ_STREAM
 end function
 
-// Compares fixed-size security values without data-dependent early returns.
+/// Compares fixed-size security values without data-dependent early returns.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function constantTimeEquals(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   difference = 0
@@ -622,7 +919,8 @@ function constantTimeEquals(left, right)
   return difference == 0
 end function
 
-// Encodes an ASCII DNS name as a null-terminated UTF-16LE buffer for CryptoAPI.
+/// Encodes an ASCII DNS name as a null-terminated UTF-16LE buffer for CryptoAPI.
+/// @param serverName serverName value consumed by this operation.
 function wideServerName(serverName)
   if typeof(serverName) != "string" or len(bytes(serverName)) == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.wideServerName: serverName must be non-empty") end if
   raw = bytes(serverName)
@@ -634,8 +932,8 @@ function wideServerName(serverName)
   return output
 end function
 
-// Builds Schannel blacklist entries for every NIST ECDHE group so X25519 is the
-// only remaining enabled TLS 1.3 key-share family in the MiniSQL profile.
+/// Builds Schannel blacklist entries for every NIST ECDHE group so X25519 is the
+/// only remaining enabled TLS 1.3 key-share family in the MiniSQL profile.
 function disabledNistKeyExchangeCrypto()
   names = ["ECDH_P256", "ECDH_P384", "ECDH_P521"]
   settings = bytes(len(names) * CRYPTO_SETTINGS_BYTES, 0)
@@ -653,7 +951,8 @@ function disabledNistKeyExchangeCrypto()
   return [settings, retainedNames]
 end function
 
-// Reads the SHA-256 digest of a certificate's complete DER encoding.
+/// Reads the SHA-256 digest of a certificate's complete DER encoding.
+/// @param certificateContext certificateContext value consumed by this operation.
 function certificateSha256(certificateContext)
   if typeof(certificateContext) != "int" or certificateContext == 0 then return error(INVALID_ARGUMENT, "platform.tls_schannel.certificateSha256: certificate context is invalid") end if
   digest = bytes(32, 0)
@@ -664,7 +963,8 @@ function certificateSha256(certificateContext)
   return digest
 end function
 
-// Queries the peer leaf certificate context owned by the completed Schannel context.
+/// Queries the peer leaf certificate context owned by the completed Schannel context.
+/// @param context Context that carries state for the operation.
 function remoteCertificateContext(context)
   pointerBytes = bytes(8, 0)
   status = QueryContextAttributesW(context.handle, SECPKG_ATTR_REMOTE_CERT_CONTEXT, pointerBytes)
@@ -675,9 +975,11 @@ function remoteCertificateContext(context)
   return certificateContext
 end function
 
-// Builds a Windows X.509 chain and checks time, EKU, signature, and DNS name.
-// Pin mode ignores only the unknown-root result so an exact self-signed leaf can
-// authenticate the server; every other SSL chain-policy failure remains fatal.
+/// Builds a Windows X.509 chain and checks time, EKU, signature, and DNS name.
+/// Pin mode ignores only the unknown-root result so an exact self-signed leaf can
+/// authenticate the server; every other SSL chain-policy failure remains fatal.
+/// @param certificateContext certificateContext value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
 function validatePinnedX509(certificateContext, serverName)
   oidText = bytes(SERVER_AUTH_OID)
   oid = bytes(len(oidText) + 1, 0)
@@ -717,7 +1019,8 @@ function validatePinnedX509(certificateContext, serverName)
   return true
 end function
 
-// Authenticates the peer leaf using either Schannel system trust or exact pinning.
+/// Authenticates the peer leaf using either Schannel system trust or exact pinning.
+/// @param context Context that carries state for the operation.
 function verifyPeerCertificate(context)
   certificateContext = try(remoteCertificateContext(context))
   if typeof(certificateContext) == "error" then return certificateContext end if
@@ -734,7 +1037,8 @@ function verifyPeerCertificate(context)
   return true
 end function
 
-// Queries and validates Schannel TLS record framing limits.
+/// Queries and validates Schannel TLS record framing limits.
+/// @param context Context that carries state for the operation.
 function queryStreamSizes(context)
   sizes = bytes(20, 0)
   status = QueryContextAttributesW(context.handle, SECPKG_ATTR_STREAM_SIZES, sizes)
@@ -746,7 +1050,8 @@ function queryStreamSizes(context)
   return true
 end function
 
-// Cross-checks the negotiated protocol and exact AEAD cipher against policy.
+/// Cross-checks the negotiated protocol and exact AEAD cipher against policy.
+/// @param context Context that carries state for the operation.
 function verifyTls13(context)
   info = bytes(28, 0)
   status = QueryContextAttributesW(context.handle, SECPKG_ATTR_CONNECTION_INFO, info)
@@ -758,7 +1063,8 @@ function verifyTls13(context)
   return true
 end function
 
-// Cross-checks Schannel's negotiated cipher-suite report against the wire policy.
+/// Cross-checks Schannel's negotiated cipher-suite report against the wire policy.
+/// @param context Context that carries state for the operation.
 function verifyCipherSuite(context)
   info = bytes(SECPKG_CIPHER_INFO_BYTES, 0)
   status = QueryContextAttributesW(context.handle, SECPKG_ATTR_CIPHER_INFO, info)
@@ -768,7 +1074,9 @@ function verifyCipherSuite(context)
   return cipherSuiteId
 end function
 
-// Records directional handshake bytes until policy verification completes.
+/// Records directional handshake bytes until policy verification completes.
+/// @param context Context that carries state for the operation.
+/// @param fragment fragment value consumed by this operation.
 function appendHandshakeTranscript(context, fragment)
   combined = try(tls_policy.appendHandshakeBytes(context.handshakeTranscript, fragment))
   if typeof(combined) == "error" then return combined end if
@@ -776,7 +1084,8 @@ function appendHandshakeTranscript(context, fragment)
   return true
 end function
 
-// Finishes a context only after protocol, cipher, group, and certificate checks pass.
+/// Finishes a context only after protocol, cipher, group, and certificate checks pass.
+/// @param context Context that carries state for the operation.
 function finishContext(context)
   sizes = try(queryStreamSizes(context))
   if typeof(sizes) == "error" then return sizes end if
@@ -798,7 +1107,10 @@ function finishContext(context)
   return context
 end function
 
-// Creates the initial ClientHello and initializes a full TLS context.
+/// Creates the initial ClientHello and initializes a full TLS context.
+/// @param credential credential value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function initialClientToken(credential, serverName, context)
   token = bytes(TLS_TOKEN_BYTES, 0)
   outputBuffer = createSecBuffer(SECBUFFER_TOKEN, token)
@@ -810,7 +1122,8 @@ function initialClientToken(credential, serverName, context)
   return [status, outputToken]
 end function
 
-// Wraps received handshake bytes in a two-buffer SSPI input descriptor.
+/// Wraps received handshake bytes in a two-buffer SSPI input descriptor.
+/// @param inputBytes inputBytes value consumed by this operation.
 function inputTokenDesc(inputBytes)
   buffers = createSecBufferArray(2)
   pointerValue = 0
@@ -820,7 +1133,9 @@ function inputTokenDesc(inputBytes)
   return [buffers, createSecBufferDescForArray(buffers, 2)]
 end function
 
-// Preserves unconsumed bytes reported through SECBUFFER_EXTRA.
+/// Preserves unconsumed bytes reported through SECBUFFER_EXTRA.
+/// @param inputBytes inputBytes value consumed by this operation.
+/// @param buffers buffers value consumed by this operation.
 function handshakeExtra(inputBytes, buffers)
   extraLength = 0
   extraPointer = 0
@@ -838,7 +1153,9 @@ function handshakeExtra(inputBytes, buffers)
   return copyRange(inputBytes, offset, extraLength, "handshakeExtra")
 end function
 
-// Completes a client handshake under an explicit, fail-closed TLS policy.
+/// Completes a client handshake under an explicit, fail-closed TLS policy.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param policy policy value consumed by this operation.
 function connectClientPolicy(socketHandle, policy)
   checked = try(tls_policy.validate(policy))
   if typeof(checked) == "error" then return checked end if
@@ -888,21 +1205,28 @@ function connectClientPolicy(socketHandle, policy)
   return finished
 end function
 
-// Connects with Windows root-store validation and mandatory hostname checking.
+/// Connects with Windows root-store validation and mandatory hostname checking.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
 function connectClient(socketHandle, serverName)
   policy = try(tls_policy.defaultClientPolicy(serverName))
   if typeof(policy) == "error" then return policy end if
   return connectClientPolicy(socketHandle, policy)
 end function
 
-// Connects with exact SHA-256 leaf pinning, including self-signed certificates.
+/// Connects with exact SHA-256 leaf pinning, including self-signed certificates.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
 function connectClientPinned(socketHandle, serverName, pinText)
   policy = try(tls_policy.pinnedClientPolicy(serverName, pinText))
   if typeof(policy) == "error" then return policy end if
   return connectClientPolicy(socketHandle, policy)
 end function
 
-// Completes a server handshake and enforces the current TLS algorithm profile.
+/// Completes a server handshake and enforces the current TLS algorithm profile.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param credential credential value consumed by this operation.
 function acceptServer(socketHandle, credential)
   if credential is not SchannelCredential then return error(INVALID_ARGUMENT, "platform.tls_schannel.acceptServer: credential must be SchannelCredential") end if
   if not credential.inbound or credential.closed then return error(INVALID_ARGUMENT, "platform.tls_schannel.acceptServer: inbound open credential required") end if
@@ -949,7 +1273,9 @@ function acceptServer(socketHandle, credential)
   return finished
 end function
 
-// Removes an exact plaintext prefix from the connection queue.
+/// Removes an exact plaintext prefix from the connection queue.
+/// @param context Context that carries state for the operation.
+/// @param count Number of items or units to process.
 function popPlaintext(context, count)
   available = len(context.decryptedInput)
   if available < count then return void end if
@@ -961,7 +1287,9 @@ function popPlaintext(context, count)
   return output
 end function
 
-// Removes up to a requested amount of queued plaintext.
+/// Removes up to a requested amount of queued plaintext.
+/// @param context Context that carries state for the operation.
+/// @param maximum maximum value consumed by this operation.
 function popAvailablePlaintext(context, maximum)
   available = len(context.decryptedInput)
   if available == 0 then return void end if
@@ -970,7 +1298,9 @@ function popAvailablePlaintext(context, maximum)
   return popPlaintext(context, count)
 end function
 
-// Returns encrypted bytes that Schannel did not consume from the current record.
+/// Returns encrypted bytes that Schannel did not consume from the current record.
+/// @param inputBytes inputBytes value consumed by this operation.
+/// @param buffers buffers value consumed by this operation.
 function decryptExtra(inputBytes, buffers)
   extraLength = 0
   extraPointer = 0
@@ -988,7 +1318,9 @@ function decryptExtra(inputBytes, buffers)
   return copyRange(inputBytes, offset, extraLength, "decryptExtra")
 end function
 
-// Copies every plaintext SECBUFFER_DATA segment produced by Schannel.
+/// Copies every plaintext SECBUFFER_DATA segment produced by Schannel.
+/// @param inputBytes inputBytes value consumed by this operation.
+/// @param buffers buffers value consumed by this operation.
 function decryptedData(inputBytes, buffers)
   basePointer = nativeBytesPtr(inputBytes)
   for index = 0 to 3
@@ -1004,11 +1336,15 @@ function decryptedData(inputBytes, buffers)
   return bytes(0)
 end function
 
-// Lets Schannel process a TLS 1.3 post-handshake ticket or KeyUpdate message.
-// Schannel reports these through SEC_I_RENEGOTIATE even though TLS 1.3 has no
-// legacy renegotiation. A single SSPI continuation updates traffic keys and may
-// emit an acknowledgement; any attempt to start a multi-flight renegotiation is
-// rejected because MiniSQL does not request post-handshake client authentication.
+/// Lets Schannel process a TLS 1.3 post-handshake ticket or KeyUpdate message.
+/// Schannel reports these through SEC_I_RENEGOTIATE even though TLS 1.3 has no
+/// legacy renegotiation. A single SSPI continuation updates traffic keys and may
+/// emit an acknowledgement; any attempt to start a multi-flight renegotiation is
+/// rejected because MiniSQL does not request post-handshake client authentication.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param inputBytes inputBytes value consumed by this operation.
+/// @param buffers buffers value consumed by this operation.
 function processPostHandshake(context, socketHandle, inputBytes, buffers)
   pending = try(decryptExtra(inputBytes, buffers))
   if typeof(pending) == "error" then return pending end if
@@ -1036,7 +1372,9 @@ function processPostHandshake(context, socketHandle, inputBytes, buffers)
   return true
 end function
 
-// Receives and authenticates records until plaintext or a clean close is available.
+/// Receives and authenticates records until plaintext or a clean close is available.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
 function decryptNext(context, socketHandle)
   while true
     if len(context.encryptedInput) == 0 then
@@ -1084,7 +1422,8 @@ function decryptNext(context, socketHandle)
   end while
 end function
 
-// Authenticates one already-buffered TLS record without reading the socket.
+/// Authenticates one already-buffered TLS record without reading the socket.
+/// @param context Context that carries state for the operation.
 function decryptBuffered(context)
   if len(context.encryptedInput) == 0 then return void end if
   inputBytes = context.encryptedInput
@@ -1112,7 +1451,10 @@ function decryptBuffered(context)
   return plain
 end function
 
-// Returns up to a bounded amount of authenticated plaintext.
+/// Returns up to a bounded amount of authenticated plaintext.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param maximum maximum value consumed by this operation.
 function receiveAvailable(context, socketHandle, maximum)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_schannel.receiveAvailable: context must be TlsContext") end if
   if typeof(maximum) != "int" or maximum < 1 or maximum > network.MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.tls_schannel.receiveAvailable: maximum is invalid") end if
@@ -1144,7 +1486,10 @@ function receiveAvailable(context, socketHandle, maximum)
   return void
 end function
 
-// Accumulates authenticated plaintext until the requested frame length is satisfied.
+/// Accumulates authenticated plaintext until the requested frame length is satisfied.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param count Number of items or units to process.
 function receiveExact(context, socketHandle, count)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_schannel.receiveExact: context must be TlsContext") end if
   if typeof(count) != "int" or count < 0 or count > network.MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.tls_schannel.receiveExact: count is invalid") end if
@@ -1166,7 +1511,9 @@ function receiveExact(context, socketHandle, count)
   return output
 end function
 
-// Selects a safe plaintext record size and supports deterministic fragmentation tests.
+/// Selects a safe plaintext record size and supports deterministic fragmentation tests.
+/// @param context Context that carries state for the operation.
+/// @param length length value consumed by this operation.
 function fragmentLimit(context, length)
   limit = context.maximumMessageBytes
   if typeof(length) == "int" and length > 0 and length < limit then limit = length end if
@@ -1183,7 +1530,9 @@ function fragmentLimit(context, length)
   return limit
 end function
 
-// Builds one Schannel stream record and applies negotiated AEAD protection.
+/// Builds one Schannel stream record and applies negotiated AEAD protection.
+/// @param context Context that carries state for the operation.
+/// @param plain plain value consumed by this operation.
 function encryptChunk(context, plain)
   if typeof(plain) != "bytes" then return error(INVALID_ARGUMENT, "platform.tls_schannel.encryptChunk: plain must be bytes") end if
   header = bytes(context.streamHeaderBytes, 0)
@@ -1212,7 +1561,10 @@ function encryptChunk(context, plain)
   return output
 end function
 
-// Encrypts and writes all plaintext using bounded TLS records.
+/// Encrypts and writes all plaintext using bounded TLS records.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param data Input data consumed by the operation.
 function sendAll(context, socketHandle, data)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_schannel.sendAll: context must be TlsContext") end if
   if typeof(data) == "string" then data = bytes(data) end if
@@ -1233,7 +1585,9 @@ function sendAll(context, socketHandle, data)
   return sentPlain
 end function
 
-// Sends an authenticated TLS close_notify alert before the TCP socket is closed.
+/// Sends an authenticated TLS close_notify alert before the TCP socket is closed.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
 function shutdown(context, socketHandle)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_schannel.shutdown: context must be TlsContext") end if
   if context.closed then return true end if
@@ -1263,7 +1617,8 @@ function shutdown(context, socketHandle)
   return true
 end function
 
-// Releases a full TLS context and wipes retained record and certificate data.
+/// Releases a full TLS context and wipes retained record and certificate data.
+/// @param context Context that carries state for the operation.
 function closeContext(context)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_schannel.closeContext: context must be TlsContext") end if
   if context.closed then return true end if
@@ -1283,22 +1638,22 @@ function closeContext(context)
   return true
 end function
 
-// Identifies the operating-system TLS provider used by this module.
+/// Identifies the operating-system TLS provider used by this module.
 function providerName()
   return "Windows Schannel"
 end function
 
-// Returns the stable module-catalog component identifier.
+/// Returns the stable module-catalog component identifier.
 function componentName()
   return "platform.tls_schannel"
 end function
 
-// Returns the milestone that introduced the native TLS provider.
+/// Returns the milestone that introduced the native TLS provider.
 function targetMilestone()
   return "M73"
 end function
 
-// Reports that the native TLS provider is implemented.
+/// Reports that the native TLS provider is implemented.
 function isImplemented()
   return true
 end function

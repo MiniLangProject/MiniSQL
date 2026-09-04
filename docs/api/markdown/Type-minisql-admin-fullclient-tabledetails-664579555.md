@@ -12,7 +12,7 @@ struct TableDetails
 Captures the metadata pages shown for a selected table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L105)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnsGrid
 Retains structured DESCRIBE metadata for the Columns grid and row editor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L121)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-columnstext-columnstext-src-minisql-admin-fullclient-ml-856768101"></a>
 ### columnsText
@@ -38,7 +38,7 @@ columnsText
 Stores the formatted DESCRIBE response.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L111)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-contentsgrid-contentsgrid-src-minisql-admin-fullclient-ml-482357245"></a>
 ### contentsGrid
@@ -50,7 +50,7 @@ contentsGrid
 Retains structured preview data for the editable Data grid.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L125)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-contentstext-contentstext-src-minisql-admin-fullclient-ml-1738654543"></a>
 ### contentsText
@@ -62,7 +62,7 @@ contentsText
 Stores the formatted preview query response.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L115)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-ddltext-ddltext-src-minisql-admin-fullclient-ml-2080151561"></a>
 ### ddlText
@@ -74,7 +74,7 @@ ddlText
 Stores reconstructed CREATE TABLE SQL.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L119)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-indexesgrid-indexesgrid-src-minisql-admin-fullclient-ml-2042202957"></a>
 ### indexesGrid
@@ -86,7 +86,7 @@ indexesGrid
 Retains structured SHOW INDEXES metadata for the Indexes grid.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L123)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-indexestext-indexestext-src-minisql-admin-fullclient-ml-1461401365"></a>
 ### indexesText
@@ -98,7 +98,7 @@ indexesText
 Stores the formatted SHOW INDEXES response.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L113)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-rowcountgrid-rowcountgrid-src-minisql-admin-fullclient-ml-1363265407"></a>
 ### rowCountGrid
@@ -110,7 +110,7 @@ rowCountGrid
 Retains the structured COUNT response for the Row Count page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L127)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-rowcounttext-rowcounttext-src-minisql-admin-fullclient-ml-1962993469"></a>
 ### rowCountText
@@ -122,7 +122,7 @@ rowCountText
 Stores the formatted row-count response.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L117)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-summarytext-summarytext-src-minisql-admin-fullclient-ml-1334034941"></a>
 ### summaryText
@@ -134,7 +134,7 @@ summaryText
 Stores the compact table summary.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L109)
 
 <a id="field-field-minisql-admin-fullclient-tabledetails-tablename-tablename-src-minisql-admin-fullclient-ml-1158346733"></a>
 ### tableName
@@ -146,4 +146,4 @@ tableName
 Stores the selected table name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L107)

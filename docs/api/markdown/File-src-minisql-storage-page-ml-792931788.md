@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql storage page facilities for this project.
+
 Package: [`minisql.storage.page`](Package-minisql-storage-page-1439504742.md)
 
 Reachable from entry: **yes**
@@ -21,15 +23,15 @@ Reachable from entry: **yes**
 function bytesEqual(left, right)
 ```
 
-Performs the bytes equal operation for this module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the bytesEqual operation for the minisql storage page module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L99)
 
 <a id="function-function-minisql-storage-page-comparelsn-function-comparelsn-left-right-src-minisql-storage-page-ml-1404447731"></a>
 ### compareLsn
@@ -42,11 +44,11 @@ Compares the lsn. Inputs: `left`, `right`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L393)
 
 <a id="function-function-minisql-storage-page-componentname-function-componentname-src-minisql-storage-page-ml-1611715800"></a>
 ### componentName
@@ -55,10 +57,10 @@ Compares the lsn. Inputs: `left`, `right`. Returns the produced value or propaga
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql storage page module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L364)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L418)
 
 <a id="function-function-minisql-storage-page-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-storage-page-ml-1146974041"></a>
 ### copyExact
@@ -67,18 +69,18 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
 ```
 
-Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the copyExact operation for the minisql storage page module. Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `destination` | `dynamic` | — |  |
-| `destinationOffset` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `sourceOffset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `destinationOffset` | `dynamic` | — | destinationOffset value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `sourceOffset` | `dynamic` | — | sourceOffset value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L116)
 
 <a id="constant-constant-minisql-storage-page-corrupt-data-const-corrupt-data-9004-src-minisql-storage-page-ml-1880155572"></a>
 ### CORRUPT_DATA
@@ -87,8 +89,10 @@ Copies the exact. Inputs: `destination`, `destinationOffset`, `source`, `sourceO
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L18)
 
 <a id="function-function-minisql-storage-page-create-function-create-pagesize-pagetype-fileid-pagenumber-src-minisql-storage-page-ml-172780160"></a>
 ### create
@@ -97,17 +101,17 @@ const CORRUPT_DATA = 9004
 function create(pageSize, pageType, fileId, pageNumber)
 ```
 
-Creates the requested value. Inputs: `pageSize`, `pageType`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Creates create for the minisql storage page module. Inputs: `pageSize`, `pageType`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
-| `pageType` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `pageType` | `dynamic` | — | pageType value consumed by this operation. |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L371)
 
 <a id="function-function-minisql-storage-page-createpageid-function-createpageid-fileid-pagenumber-src-minisql-storage-page-ml-829668231"></a>
 ### createPageId
@@ -120,11 +124,11 @@ Creates the page id. Inputs: `fileId`, `pageNumber`. Returns the produced value 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `fileId` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L190)
 
 <a id="function-function-minisql-storage-page-decodenativeid-function-decodenativeid-value-operation-name-src-minisql-storage-page-ml-944603091"></a>
 ### decodeNativeId
@@ -137,12 +141,12 @@ Decodes the native id. Inputs: `value`, `operation`, `name`. Returns the produce
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L141)
 
 <a id="function-function-minisql-storage-page-decodepageheader-function-decodepageheader-source-src-minisql-storage-page-ml-1523355231"></a>
 ### decodePageHeader
@@ -155,10 +159,10 @@ Decodes the page header. Inputs: `source`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L293)
 
 <a id="function-function-minisql-storage-page-encodepageheader-function-encodepageheader-header-destination-src-minisql-storage-page-ml-1620133033"></a>
 ### encodePageHeader
@@ -171,11 +175,11 @@ Encodes the page header. Inputs: `header`, `destination`. Returns the produced v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `header` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
+| `header` | `dynamic` | — | header value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L264)
 
 <a id="function-function-minisql-storage-page-fail-function-fail-code-operation-message-src-minisql-storage-page-ml-145257751"></a>
 ### fail
@@ -184,16 +188,16 @@ Encodes the page header. Inputs: `header`, `destination`. Returns the produced v
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql storage page module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L85)
 
 <a id="constant-constant-minisql-storage-page-format-version-const-format-version-1-src-minisql-storage-page-ml-1382878926"></a>
 ### FORMAT_VERSION
@@ -202,8 +206,10 @@ Creates the module's structured error with operation context. Inputs: `code`, `o
 const FORMAT_VERSION = 1
 ```
 
+Defines the format version constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L21)
 
 <a id="constant-constant-minisql-storage-page-header-checksum-offset-const-header-checksum-offset-60-src-minisql-storage-page-ml-1071638965"></a>
 ### HEADER_CHECKSUM_OFFSET
@@ -212,8 +218,10 @@ const FORMAT_VERSION = 1
 const HEADER_CHECKSUM_OFFSET = 60
 ```
 
+Defines the header checksum offset constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L29)
 
 <a id="constant-constant-minisql-storage-page-header-size-const-header-size-64-src-minisql-storage-page-ml-165044873"></a>
 ### HEADER_SIZE
@@ -222,8 +230,10 @@ const HEADER_CHECKSUM_OFFSET = 60
 const HEADER_SIZE = 64
 ```
 
+Defines the header size constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L23)
 
 <a id="constant-constant-minisql-storage-page-invalid-argument-const-invalid-argument-9001-src-minisql-storage-page-ml-247732101"></a>
 ### INVALID_ARGUMENT
@@ -234,15 +244,8 @@ const INVALID_ARGUMENT = 9001
 
 MiniSQL page format version 1.
 
-Every page is self-describing and protected by two CRC-32C values:
-- payloadChecksum covers bytes HEADER_SIZE..pageSize-1;
-- headerChecksum covers the 64-byte header with its checksum field zeroed.
 
-All persisted integers are little-endian. File and page identifiers currently
-use non-negative native MiniLang ints and are encoded as full-width U64 fields.
-
-
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L14)
 
 <a id="function-function-minisql-storage-page-isimplemented-function-isimplemented-src-minisql-storage-page-ml-1236222240"></a>
 ### isImplemented
@@ -251,10 +254,10 @@ use non-negative native MiniLang ints and are encoded as full-width U64 fields.
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql storage page module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L376)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L430)
 
 <a id="constant-constant-minisql-storage-page-magic-size-const-magic-size-4-src-minisql-storage-page-ml-757155631"></a>
 ### MAGIC_SIZE
@@ -262,6 +265,8 @@ Reports whether this component is implemented. Takes no caller-supplied inputs. 
 ```ml
 const MAGIC_SIZE = 4
 ```
+
+Defines the magic size constant used by the minisql storage page module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L25)
@@ -273,10 +278,10 @@ const MAGIC_SIZE = 4
 function magicBytes()
 ```
 
-Performs the magic bytes operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the magicBytes operation for the minisql storage page module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L91)
 
 <a id="function-function-minisql-storage-page-newheader-function-newheader-pagetype-pageid-pagesize-src-minisql-storage-page-ml-1402566195"></a>
 ### newHeader
@@ -289,12 +294,12 @@ Performs the new header operation for this module. Inputs: `pageType`, `pageId`,
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageType` | `dynamic` | — |  |
-| `pageId` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
+| `pageType` | `dynamic` | — | pageType value consumed by this operation. |
+| `pageId` | `dynamic` | — | Identifier of page. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L201)
 
 - [minisql.storage.page.PageHeader](Type-minisql-storage-page-pageheader-38785874.md) — struct
 - [minisql.storage.page.PageId](Type-minisql-storage-page-pageid-1131505422.md) — struct
@@ -305,8 +310,10 @@ Performs the new header operation for this module. Inputs: `pageType`, `pageId`,
 const PAYLOAD_CHECKSUM_OFFSET = 56
 ```
 
+Defines the payload checksum offset constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L27)
 
 <a id="function-function-minisql-storage-page-reseal-function-reseal-pagebytes-src-minisql-storage-page-ml-1377155554"></a>
 ### reseal
@@ -319,10 +326,10 @@ Performs the reseal operation for this module. Inputs: `pageBytes`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageBytes` | `dynamic` | — |  |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L382)
 
 <a id="function-function-minisql-storage-page-seal-function-seal-pagebytes-header-src-minisql-storage-page-ml-137564969"></a>
 ### seal
@@ -335,11 +342,11 @@ Performs the seal operation for this module. Inputs: `pageBytes`, `header`. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageBytes` | `dynamic` | — |  |
-| `header` | `dynamic` | — |  |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
+| `header` | `dynamic` | — | header value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L297)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L341)
 
 <a id="function-function-minisql-storage-page-setlsn-function-setlsn-pagebytes-lsn-src-minisql-storage-page-ml-1593770705"></a>
 ### setLsn
@@ -352,11 +359,11 @@ Updates the lsn. Inputs: `pageBytes`, `lsn`. Returns the operation result and pr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageBytes` | `dynamic` | — |  |
-| `lsn` | `dynamic` | — |  |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
+| `lsn` | `dynamic` | — | lsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L353)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L407)
 
 <a id="function-function-minisql-storage-page-targetmilestone-function-targetmilestone-src-minisql-storage-page-ml-1525109030"></a>
 ### targetMilestone
@@ -365,10 +372,10 @@ Updates the lsn. Inputs: `pageBytes`, `lsn`. Returns the operation result and pr
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql storage page module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L424)
 
 <a id="constant-constant-minisql-storage-page-type-btree-internal-const-type-btree-internal-3-src-minisql-storage-page-ml-1816321862"></a>
 ### TYPE_BTREE_INTERNAL
@@ -377,8 +384,10 @@ Returns the milestone in which this component became available. Takes no caller-
 const TYPE_BTREE_INTERNAL = 3
 ```
 
+Defines the type btree internal constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L38)
 
 <a id="constant-constant-minisql-storage-page-type-btree-leaf-const-type-btree-leaf-4-src-minisql-storage-page-ml-1149099115"></a>
 ### TYPE_BTREE_LEAF
@@ -387,8 +396,10 @@ const TYPE_BTREE_INTERNAL = 3
 const TYPE_BTREE_LEAF = 4
 ```
 
+Defines the type btree leaf constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L40)
 
 <a id="constant-constant-minisql-storage-page-type-catalog-const-type-catalog-5-src-minisql-storage-page-ml-1749695602"></a>
 ### TYPE_CATALOG
@@ -397,8 +408,10 @@ const TYPE_BTREE_LEAF = 4
 const TYPE_CATALOG = 5
 ```
 
+Defines the type catalog constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L42)
 
 <a id="constant-constant-minisql-storage-page-type-free-const-type-free-0-src-minisql-storage-page-ml-164652775"></a>
 ### TYPE_FREE
@@ -407,8 +420,10 @@ const TYPE_CATALOG = 5
 const TYPE_FREE = 0
 ```
 
+Defines the type free constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L32)
 
 <a id="constant-constant-minisql-storage-page-type-generic-const-type-generic-255-src-minisql-storage-page-ml-2000011725"></a>
 ### TYPE_GENERIC
@@ -417,8 +432,10 @@ const TYPE_FREE = 0
 const TYPE_GENERIC = 255
 ```
 
+Defines the type generic constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L44)
 
 <a id="constant-constant-minisql-storage-page-type-heap-const-type-heap-1-src-minisql-storage-page-ml-1734479264"></a>
 ### TYPE_HEAP
@@ -427,8 +444,10 @@ const TYPE_GENERIC = 255
 const TYPE_HEAP = 1
 ```
 
+Defines the type heap constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L34)
 
 <a id="constant-constant-minisql-storage-page-type-overflow-const-type-overflow-2-src-minisql-storage-page-ml-1788757645"></a>
 ### TYPE_OVERFLOW
@@ -437,8 +456,10 @@ const TYPE_HEAP = 1
 const TYPE_OVERFLOW = 2
 ```
 
+Defines the type overflow constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L36)
 
 <a id="constant-constant-minisql-storage-page-unsupported-format-const-unsupported-format-9003-src-minisql-storage-page-ml-1070137087"></a>
 ### UNSUPPORTED_FORMAT
@@ -447,8 +468,10 @@ const TYPE_OVERFLOW = 2
 const UNSUPPORTED_FORMAT = 9003
 ```
 
+Defines the unsupported format constant used by the minisql storage page module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L16)
 
 <a id="function-function-minisql-storage-page-validateheader-function-validateheader-header-pagesize-operation-src-minisql-storage-page-ml-1805710224"></a>
 ### validateHeader
@@ -461,12 +484,12 @@ Validates the header. Inputs: `header`, `pageSize`, `operation`. Returns success
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `header` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `header` | `dynamic` | — | header value consumed by this operation. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L227)
 
 <a id="function-function-minisql-storage-page-validatenativeid-function-validatenativeid-value-operation-name-src-minisql-storage-page-ml-1435170287"></a>
 ### validateNativeId
@@ -475,16 +498,16 @@ Validates the header. Inputs: `header`, `pageSize`, `operation`. Returns success
 function validateNativeId(value, operation, name)
 ```
 
-Validates the native id. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates native id for the minisql storage page workflow. Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L129)
 
 <a id="function-function-minisql-storage-page-validatepagebuffer-function-validatepagebuffer-pagebytes-operation-src-minisql-storage-page-ml-625609429"></a>
 ### validatePageBuffer
@@ -497,11 +520,11 @@ Validates the page buffer. Inputs: `pageBytes`, `operation`. Returns success aft
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageBytes` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L178)
 
 <a id="function-function-minisql-storage-page-validatepagesize-function-validatepagesize-pagesize-operation-src-minisql-storage-page-ml-956255381"></a>
 ### validatePageSize
@@ -514,11 +537,11 @@ Validates the page size. Inputs: `pageSize`, `operation`. Returns success after 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageSize` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L164)
 
 <a id="function-function-minisql-storage-page-validatepagetype-function-validatepagetype-value-operation-src-minisql-storage-page-ml-676555070"></a>
 ### validatePageType
@@ -531,11 +554,11 @@ Validates the page type. Inputs: `value`, `operation`. Returns success after all
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L153)
 
 <a id="function-function-minisql-storage-page-verify-function-verify-pagebytes-src-minisql-storage-page-ml-652437490"></a>
 ### verify
@@ -544,11 +567,11 @@ Validates the page type. Inputs: `value`, `operation`. Returns success after all
 function verify(pageBytes)
 ```
 
-Verifies the requested value. Inputs: `pageBytes`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Performs the verify operation for the minisql storage page module. Inputs: `pageBytes`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pageBytes` | `dynamic` | — |  |
+| `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L310)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/page.ml#L355)

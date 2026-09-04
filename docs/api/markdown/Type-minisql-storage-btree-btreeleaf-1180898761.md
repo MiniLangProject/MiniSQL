@@ -12,7 +12,7 @@ struct BTreeLeaf
 Defines the btree leaf record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L82)
 
 ## Members
 
@@ -26,7 +26,7 @@ entries
 Entries field of the btree leaf.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L90)
 
 <a id="field-field-minisql-storage-btree-btreeleaf-nextpage-nextpage-src-minisql-storage-btree-ml-1543320761"></a>
 ### nextPage
@@ -38,7 +38,7 @@ nextPage
 Next page field of the btree leaf.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L88)
 
 <a id="field-field-minisql-storage-btree-btreeleaf-pagenumber-pagenumber-src-minisql-storage-btree-ml-1316588649"></a>
 ### pageNumber
@@ -50,7 +50,7 @@ pageNumber
 Page number field of the btree leaf.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L84)
 
 <a id="field-field-minisql-storage-btree-btreeleaf-previouspage-previouspage-src-minisql-storage-btree-ml-1148236573"></a>
 ### previousPage
@@ -62,4 +62,4 @@ previousPage
 Previous page field of the btree leaf.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L86)

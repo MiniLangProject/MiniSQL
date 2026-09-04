@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides apps minisql admin main facilities for this project.
+
 Package: [`(global)`](Package-global-1952375359.md)
 
 Reachable from entry: **no**
@@ -28,10 +30,10 @@ Dispatches GUI launch, smoke diagnostics, and explicit connection command lines.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `args` | `dynamic` | — |  |
+| `args` | `dynamic` | — | Command-line or caller-supplied arguments. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L53)
 
 <a id="function-function-printapperror-function-printapperror-value-src-apps-minisql-admin-main-ml-850792063"></a>
 ### printAppError
@@ -44,10 +46,10 @@ Prints one structured application error and returns a failing exit code.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L29)
 
 <a id="function-function-printusage-function-printusage-src-apps-minisql-admin-main-ml-1188410192"></a>
 ### printUsage
@@ -59,7 +61,7 @@ function printUsage()
 Prints command-line entry points for the native MiniSQL Workbench.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L13)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L15)
 
 <a id="function-function-recoverconnectionfailure-function-recoverconnectionfailure-value-src-apps-minisql-admin-main-ml-1601801615"></a>
 ### recoverConnectionFailure
@@ -72,10 +74,10 @@ Converts a direct-connect failure into a GUI error followed by a retryable manag
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L46)
 
 <a id="function-function-runprofile-function-runprofile-profile-password-src-apps-minisql-admin-main-ml-1490807802"></a>
 ### runProfile
@@ -88,8 +90,8 @@ Opens a profile in the native workbench and wipes the supplied password bytes.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `profile` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `profile` | `dynamic` | — | profile value consumed by this operation. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/apps/minisql_admin/main.ml#L37)

@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql planner rewrites facilities for this project.
+
 Package: [`minisql.planner.rewrites`](Package-minisql-planner-rewrites-1685585919.md)
 
 Reachable from entry: **yes**
@@ -27,10 +29,10 @@ Implements clamp rows for this module. Requires arguments that satisfy the valid
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L59)
 
 <a id="function-function-minisql-planner-rewrites-collectcolumnindexes-function-collectcolumnindexes-expression-indexes-src-minisql-planner-rewrites-ml-121446924"></a>
 ### collectColumnIndexes
@@ -43,11 +45,11 @@ Collects every bound column index referenced by an expression. Returning false f
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `indexes` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `indexes` | `dynamic` | — | indexes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L179)
 
 <a id="function-function-minisql-planner-rewrites-collectequalitylinks-function-collectequalitylinks-expression-links-columntypes-src-minisql-planner-rewrites-ml-970187818"></a>
 ### collectEqualityLinks
@@ -60,12 +62,12 @@ Adds undirected column-equality edges from top-level AND conjuncts. Bound column
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `links` | `dynamic` | — |  |
-| `columnTypes` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `links` | `dynamic` | — | links value consumed by this operation. |
+| `columnTypes` | `dynamic` | — | columnTypes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L376)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L410)
 
 <a id="function-function-minisql-planner-rewrites-combineconjuncts-function-combineconjuncts-items-src-minisql-planner-rewrites-ml-1736632870"></a>
 ### combineConjuncts
@@ -78,10 +80,10 @@ Reassembles predicates with SQL boolean semantics intact.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L393)
 
 <a id="function-function-minisql-planner-rewrites-comparisonconstraint-function-comparisonconstraint-expression-src-minisql-planner-rewrites-ml-540308798"></a>
 ### comparisonConstraint
@@ -94,10 +96,10 @@ Normalizes a column/literal comparison so the column is always on the left.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L288)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L312)
 
 <a id="function-function-minisql-planner-rewrites-comparisonforcolumn-function-comparisonforcolumn-expression-columnindex-src-minisql-planner-rewrites-ml-395864058"></a>
 ### comparisonForColumn
@@ -110,11 +112,11 @@ Finds a column/literal comparison inside a conjunction. The returned tuple is [f
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `columnIndex` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L531)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L581)
 
 <a id="function-function-minisql-planner-rewrites-comparisonforexpression-function-comparisonforexpression-expression-keyexpression-src-minisql-planner-rewrites-ml-2103306959"></a>
 ### comparisonForExpression
@@ -127,11 +129,11 @@ Finds a literal comparison whose other side matches one bound key expression.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `keyExpression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `keyExpression` | `dynamic` | — | keyExpression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L549)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L601)
 
 <a id="function-function-minisql-planner-rewrites-comparisonimplies-function-comparisonimplies-candidate-required-src-minisql-planner-rewrites-ml-1534288998"></a>
 ### comparisonImplies
@@ -144,11 +146,11 @@ Proves implication between two normalized single-column literal bounds.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `candidate` | `dynamic` | — |  |
-| `required` | `dynamic` | — |  |
+| `candidate` | `dynamic` | — | candidate value consumed by this operation. |
+| `required` | `dynamic` | — | required value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L330)
 
 <a id="function-function-minisql-planner-rewrites-componentname-function-componentname-src-minisql-planner-rewrites-ml-2077108724"></a>
 ### componentName
@@ -157,10 +159,10 @@ Proves implication between two normalized single-column literal bounds.
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql planner rewrites module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L569)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L621)
 
 <a id="function-function-minisql-planner-rewrites-conjunctimplies-function-conjunctimplies-candidate-required-src-minisql-planner-rewrites-ml-1011735312"></a>
 ### conjunctImplies
@@ -173,11 +175,11 @@ Proves one required conjunct from one query conjunct without widening either.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `candidate` | `dynamic` | — |  |
-| `required` | `dynamic` | — |  |
+| `candidate` | `dynamic` | — | candidate value consumed by this operation. |
+| `required` | `dynamic` | — | required value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L333)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L361)
 
 <a id="function-function-minisql-planner-rewrites-conjuncts-function-conjuncts-expression-src-minisql-planner-rewrites-ml-351260916"></a>
 ### conjuncts
@@ -190,10 +192,10 @@ Flattens an AND tree without changing the relative order of predicates.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L296)
 
 <a id="function-function-minisql-planner-rewrites-constantwhereempty-function-constantwhereempty-expression-src-minisql-planner-rewrites-ml-1192668918"></a>
 ### constantWhereEmpty
@@ -206,10 +208,10 @@ Recognizes a literal WHERE that can never pass SQL's three-valued predicate test
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L524)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L572)
 
 <a id="function-function-minisql-planner-rewrites-disjuncts-function-disjuncts-expression-src-minisql-planner-rewrites-ml-41439360"></a>
 ### disjuncts
@@ -222,10 +224,10 @@ Flattens an OR tree without changing predicate order.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L304)
 
 <a id="function-function-minisql-planner-rewrites-estimatefilteredrows-function-estimatefilteredrows-inputrows-predicate-src-minisql-planner-rewrites-ml-738482154"></a>
 ### estimateFilteredRows
@@ -238,11 +240,11 @@ Estimates filtered rows using the supplied inputs. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `inputRows` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `inputRows` | `dynamic` | — | inputRows value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L120)
 
 <a id="function-function-minisql-planner-rewrites-fail-function-fail-code-operation-message-src-minisql-planner-rewrites-ml-1069889835"></a>
 ### fail
@@ -251,16 +253,16 @@ Estimates filtered rows using the supplied inputs. Returns the computed value or
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql planner rewrites module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L26)
 
 <a id="function-function-minisql-planner-rewrites-intcontains-function-intcontains-items-value-src-minisql-planner-rewrites-ml-947223371"></a>
 ### intContains
@@ -273,11 +275,11 @@ Reports whether an integer array contains the requested value.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `value` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L265)
 
 <a id="function-function-minisql-planner-rewrites-integerdivide-function-integerdivide-numerator-denominator-src-minisql-planner-rewrites-ml-117240041"></a>
 ### integerDivide
@@ -290,11 +292,11 @@ Implements integer divide for this module. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `numerator` | `dynamic` | — |  |
-| `denominator` | `dynamic` | — |  |
+| `numerator` | `dynamic` | — | numerator value consumed by this operation. |
+| `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L36)
 
 <a id="constant-constant-minisql-planner-rewrites-invalid-argument-const-invalid-argument-9001-src-minisql-planner-rewrites-ml-3106677"></a>
 ### INVALID_ARGUMENT
@@ -303,7 +305,7 @@ Implements integer divide for this module. Requires arguments that satisfy the v
 const INVALID_ARGUMENT = 9001
 ```
 
-Safe, semantics-preserving planner rewrites and selectivity helpers. Literal folding follows evaluator short-circuit order, while predicate pushdown is restricted to deterministic source-local expressions and safe join shapes.
+Safe, semantics-preserving planner rewrites and selectivity helpers. Literal
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L18)
@@ -319,10 +321,10 @@ Returns whether the supplied value satisfies the column equality condition. Retu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L69)
 
 <a id="function-function-minisql-planner-rewrites-isconstantboolean-function-isconstantboolean-expression-expected-src-minisql-planner-rewrites-ml-547535222"></a>
 ### isConstantBoolean
@@ -335,11 +337,11 @@ Returns whether the supplied value satisfies the constant boolean condition. Req
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L82)
 
 <a id="function-function-minisql-planner-rewrites-isimplemented-function-isimplemented-src-minisql-planner-rewrites-ml-1736727980"></a>
 ### isImplemented
@@ -348,10 +350,10 @@ Returns whether the supplied value satisfies the constant boolean condition. Req
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql planner rewrites module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L583)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L635)
 
 <a id="function-function-minisql-planner-rewrites-predicatebucketcontains-function-predicatebucketcontains-bucket-predicate-src-minisql-planner-rewrites-ml-597515155"></a>
 ### predicateBucketContains
@@ -364,11 +366,11 @@ Reports whether one predicate bucket already contains the same typed binding.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bucket` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `bucket` | `dynamic` | — | bucket value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L428)
 
 <a id="function-function-minisql-planner-rewrites-predicateimplies-function-predicateimplies-querypredicate-requiredpredicate-src-minisql-planner-rewrites-ml-1041132329"></a>
 ### predicateImplies
@@ -381,11 +383,11 @@ Proves the deliberately bounded partial-index implication contract. Every requir
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `queryPredicate` | `dynamic` | — |  |
-| `requiredPredicate` | `dynamic` | — |  |
+| `queryPredicate` | `dynamic` | — | queryPredicate value consumed by this operation. |
+| `requiredPredicate` | `dynamic` | — | requiredPredicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L347)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L377)
 
 <a id="function-function-minisql-planner-rewrites-propagatejoinconstants-function-propagatejoinconstants-whereexpression-sources-joins-buckets-src-minisql-planner-rewrites-ml-1172367303"></a>
 ### propagateJoinConstants
@@ -398,13 +400,13 @@ Propagates non-NULL equality constants through INNER/CROSS join equality classes
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `whereExpression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `joins` | `dynamic` | — |  |
-| `buckets` | `dynamic` | — |  |
+| `whereExpression` | `dynamic` | — | whereExpression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `joins` | `dynamic` | — | joins value consumed by this operation. |
+| `buckets` | `dynamic` | — | buckets value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L403)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L443)
 
 <a id="function-function-minisql-planner-rewrites-pushdownsafe-function-pushdownsafe-expression-src-minisql-planner-rewrites-ml-1057999826"></a>
 ### pushdownSafe
@@ -417,10 +419,10 @@ Predicate pushdown must not duplicate observable evaluation of volatile nested q
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L461)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L502)
 
 <a id="function-function-minisql-planner-rewrites-referencedsources-function-referencedsources-expression-sources-src-minisql-planner-rewrites-ml-2074529508"></a>
 ### referencedSources
@@ -433,11 +435,11 @@ Returns the unique source indexes referenced by an expression, or void when a ne
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L255)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L276)
 
 <a id="function-function-minisql-planner-rewrites-residualpredicate-function-residualpredicate-whereexpression-sources-joins-src-minisql-planner-rewrites-ml-434186448"></a>
 ### residualPredicate
@@ -450,12 +452,12 @@ Returns the WHERE conjuncts that could not be assigned to a safe source pushdown
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `whereExpression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `joins` | `dynamic` | — |  |
+| `whereExpression` | `dynamic` | — | whereExpression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `joins` | `dynamic` | — | joins value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L509)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L556)
 
 <a id="function-function-minisql-planner-rewrites-selectivitypermille-function-selectivitypermille-expression-src-minisql-planner-rewrites-ml-1293299572"></a>
 ### selectivityPermille
@@ -468,10 +470,10 @@ Implements selectivity permille for this module. Returns the computed value or o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L92)
 
 <a id="function-function-minisql-planner-rewrites-simplify-function-simplify-expression-src-minisql-planner-rewrites-ml-588072394"></a>
 ### simplify
@@ -484,10 +486,10 @@ Folds deterministic literal-only base expressions and left-hand boolean identiti
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L132)
 
 <a id="function-function-minisql-planner-rewrites-singlesource-function-singlesource-expression-sources-src-minisql-planner-rewrites-ml-1592355262"></a>
 ### singleSource
@@ -500,11 +502,11 @@ Maps an expression to its sole source, -1 for a constant, or -2 when the express
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L226)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L243)
 
 <a id="function-function-minisql-planner-rewrites-sourcepredicates-function-sourcepredicates-whereexpression-sources-joins-src-minisql-planner-rewrites-ml-1176130900"></a>
 ### sourcePredicates
@@ -517,12 +519,12 @@ Returns one safe per-source predicate. Pushdown is initially limited to inner/cr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `whereExpression` | `dynamic` | — |  |
-| `sources` | `dynamic` | — |  |
-| `joins` | `dynamic` | — |  |
+| `whereExpression` | `dynamic` | — | whereExpression value consumed by this operation. |
+| `sources` | `dynamic` | — | sources value consumed by this operation. |
+| `joins` | `dynamic` | — | joins value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L482)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L526)
 
 <a id="function-function-minisql-planner-rewrites-targetmilestone-function-targetmilestone-src-minisql-planner-rewrites-ml-1260548874"></a>
 ### targetMilestone
@@ -531,7 +533,7 @@ Returns one safe per-source predicate. Pushdown is initially limited to inner/cr
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql planner rewrites module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L576)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/rewrites.ml#L628)

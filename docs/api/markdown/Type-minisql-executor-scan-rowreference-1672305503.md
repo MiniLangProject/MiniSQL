@@ -12,7 +12,7 @@ struct RowReference
 Groups the row reference state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L39)
 
 ## Members
 
@@ -26,7 +26,7 @@ generation
 Stores the generation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L45)
 
 <a id="field-field-minisql-executor-scan-rowreference-pagenumber-pagenumber-src-minisql-executor-scan-ml-1719178406"></a>
 ### pageNumber
@@ -38,7 +38,7 @@ pageNumber
 Stores the page number associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L41)
 
 <a id="field-field-minisql-executor-scan-rowreference-slotid-slotid-src-minisql-executor-scan-ml-1543889444"></a>
 ### slotId
@@ -50,4 +50,4 @@ slotId
 Identifies the slot identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L43)

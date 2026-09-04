@@ -12,7 +12,7 @@ struct BoundRecursiveQuery
 Represents the two executable halves of a recursive CTE fixpoint.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L55)
 
 ## Members
 
@@ -26,7 +26,7 @@ anchor
 Stores the non-recursive seed SELECT.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L59)
 
 <a id="field-field-minisql-sql-binder-boundrecursivequery-name-name-src-minisql-sql-binder-ml-1547022505"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stores the CTE name used to identify its working-table frame.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L57)
 
 <a id="field-field-minisql-sql-binder-boundrecursivequery-recursiveterm-recursiveterm-src-minisql-sql-binder-ml-156931899"></a>
 ### recursiveTerm
@@ -50,7 +50,7 @@ recursiveTerm
 Stores the recursive SELECT evaluated for each delta.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L61)
 
 <a id="field-field-minisql-sql-binder-boundrecursivequery-unionall-unionall-src-minisql-sql-binder-ml-252875947"></a>
 ### unionAll
@@ -62,4 +62,4 @@ unionAll
 Indicates UNION ALL bag semantics rather than UNION deduplication.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L63)

@@ -12,7 +12,7 @@ struct Worksheet
 Retains one independent SQL worksheet tab.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L97)
 
 ## Members
 
@@ -26,7 +26,7 @@ sqlText
 Stores the complete SQL editor contents for this worksheet.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L101)
 
 <a id="field-field-minisql-admin-fullclient-worksheet-title-title-src-minisql-admin-fullclient-ml-1847220825"></a>
 ### title
@@ -38,4 +38,4 @@ title
 Stores the short user-visible tab title.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L99)

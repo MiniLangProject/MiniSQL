@@ -12,7 +12,7 @@ struct FullClientState
 Owns the state shared by the MiniSQL object browser and SQL worksheet.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L189)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L201)
 
 ## Members
 
@@ -26,7 +26,7 @@ bookmarks
 Contains built-in reusable SQL templates.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L225)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-history-history-src-minisql-admin-fullclient-ml-745114798"></a>
 ### history
@@ -38,7 +38,7 @@ history
 Retains bounded, redacted SQL history.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L223)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-profile-profile-src-minisql-admin-fullclient-ml-582247478"></a>
 ### profile
@@ -50,7 +50,7 @@ profile
 Stores the immutable connection profile.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L203)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-querytext-querytext-src-minisql-admin-fullclient-ml-1484656906"></a>
 ### queryText
@@ -62,7 +62,7 @@ queryText
 Stores the latest editor text.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L213)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-queryview-queryview-src-minisql-admin-fullclient-ml-1394902630"></a>
 ### queryView
@@ -74,7 +74,7 @@ queryView
 Stores the latest execution summary.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L215)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-remoteclient-remoteclient-src-minisql-admin-fullclient-ml-945687220"></a>
 ### remoteClient
@@ -86,7 +86,7 @@ remoteClient
 Owns the active protocol client.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L205)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-resulttabs-resulttabs-src-minisql-admin-fullclient-ml-15386148"></a>
 ### resultTabs
@@ -98,7 +98,7 @@ resultTabs
 Retains bounded structured result tabs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L219)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-selectedresultindex-selectedresultindex-src-minisql-admin-fullclient-ml-1607999758"></a>
 ### selectedResultIndex
@@ -110,7 +110,7 @@ selectedResultIndex
 Selects the result tab rendered in the grid.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L221)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-selectedtable-selectedtable-src-minisql-admin-fullclient-ml-1255945358"></a>
 ### selectedTable
@@ -122,7 +122,7 @@ selectedTable
 Stores the object-browser selection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L209)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-statustext-statustext-src-minisql-admin-fullclient-ml-655625684"></a>
 ### statusText
@@ -134,7 +134,7 @@ statusText
 Stores a concise user-facing state message.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L217)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-tabledetails-tabledetails-src-minisql-admin-fullclient-ml-1331496522"></a>
 ### tableDetails
@@ -146,7 +146,7 @@ tableDetails
 Stores details for the selected table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L211)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-tables-tables-src-minisql-admin-fullclient-ml-2054046468"></a>
 ### tables
@@ -158,7 +158,7 @@ tables
 Contains table names reported by SHOW TABLES.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L207)
 
 <a id="field-field-minisql-admin-fullclient-fullclientstate-transactionactive-transactionactive-src-minisql-admin-fullclient-ml-1376552698"></a>
 ### transactionActive
@@ -170,4 +170,4 @@ transactionActive
 Tracks an explicit transaction started by the workbench.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L227)

@@ -12,7 +12,7 @@ struct DataBrowseOptions
 Describes one stable server-side page of a table data browser.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L71)
 
 ## Members
 
@@ -26,7 +26,7 @@ ascending
 Selects ascending ordering when a sort column is present.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L77)
 
 <a id="field-field-minisql-admin-fullclient-databrowseoptions-filtertext-filtertext-src-minisql-admin-fullclient-ml-1766416379"></a>
 ### filterText
@@ -38,7 +38,7 @@ filterText
 Stores an optional SQL predicate entered in the WHERE filter box.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L73)
 
 <a id="field-field-minisql-admin-fullclient-databrowseoptions-page-page-src-minisql-admin-fullclient-ml-955718619"></a>
 ### page
@@ -50,7 +50,7 @@ page
 Stores the zero-based page number.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L79)
 
 <a id="field-field-minisql-admin-fullclient-databrowseoptions-pagesize-pagesize-src-minisql-admin-fullclient-ml-4982401"></a>
 ### pageSize
@@ -62,7 +62,7 @@ pageSize
 Stores the bounded number of rows requested per page.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L81)
 
 <a id="field-field-minisql-admin-fullclient-databrowseoptions-sortcolumn-sortcolumn-src-minisql-admin-fullclient-ml-1631357597"></a>
 ### sortColumn
@@ -74,4 +74,4 @@ sortColumn
 Stores an optional exact result-column name used for ORDER BY.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L75)

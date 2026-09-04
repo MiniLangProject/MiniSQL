@@ -12,7 +12,7 @@ struct BufferPoolStats
 Defines the buffer pool stats record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L75)
 
 ## Members
 
@@ -26,7 +26,7 @@ dirtyFlushes
 Dirty flushes field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L83)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpoolstats-evictions-evictions-src-minisql-storage-buffer-pool-ml-390836958"></a>
 ### evictions
@@ -38,7 +38,7 @@ evictions
 Evictions field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L81)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpoolstats-hits-hits-src-minisql-storage-buffer-pool-ml-1555845686"></a>
 ### hits
@@ -50,7 +50,7 @@ hits
 Hits field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L77)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpoolstats-misses-misses-src-minisql-storage-buffer-pool-ml-29985806"></a>
 ### misses
@@ -62,7 +62,7 @@ misses
 Misses field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L79)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpoolstats-pinnedpages-pinnedpages-src-minisql-storage-buffer-pool-ml-1368592926"></a>
 ### pinnedPages
@@ -74,7 +74,7 @@ pinnedPages
 Pinned pages field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L87)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpoolstats-residentpages-residentpages-src-minisql-storage-buffer-pool-ml-1252914834"></a>
 ### residentPages
@@ -86,4 +86,4 @@ residentPages
 Resident pages field of the buffer pool stats.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L85)

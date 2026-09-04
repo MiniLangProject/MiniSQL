@@ -1,3 +1,5 @@
+//! Provides minisql storage page facilities for this project.
+
 package minisql.storage.page
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -7,81 +9,93 @@ import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
 import minisql.common.limits as limits
 
-// MiniSQL page format version 1.
-//
-// Every page is self-describing and protected by two CRC-32C values:
-// - payloadChecksum covers bytes HEADER_SIZE..pageSize-1;
-// - headerChecksum covers the 64-byte header with its checksum field zeroed.
-//
-// All persisted integers are little-endian. File and page identifiers currently
-// use non-negative native MiniLang ints and are encoded as full-width U64 fields.
+/// MiniSQL page format version 1.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql storage page module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql storage page module.
 const CORRUPT_DATA = 9004
 
+/// Defines the format version constant used by the minisql storage page module.
 const FORMAT_VERSION = 1
+/// Defines the header size constant used by the minisql storage page module.
 const HEADER_SIZE = 64
+/// Defines the magic size constant used by the minisql storage page module.
 const MAGIC_SIZE = 4
+/// Defines the payload checksum offset constant used by the minisql storage page module.
 const PAYLOAD_CHECKSUM_OFFSET = 56
+/// Defines the header checksum offset constant used by the minisql storage page module.
 const HEADER_CHECKSUM_OFFSET = 60
 
+/// Defines the type free constant used by the minisql storage page module.
 const TYPE_FREE = 0
+/// Defines the type heap constant used by the minisql storage page module.
 const TYPE_HEAP = 1
+/// Defines the type overflow constant used by the minisql storage page module.
 const TYPE_OVERFLOW = 2
+/// Defines the type btree internal constant used by the minisql storage page module.
 const TYPE_BTREE_INTERNAL = 3
+/// Defines the type btree leaf constant used by the minisql storage page module.
 const TYPE_BTREE_LEAF = 4
+/// Defines the type catalog constant used by the minisql storage page module.
 const TYPE_CATALOG = 5
+/// Defines the type generic constant used by the minisql storage page module.
 const TYPE_GENERIC = 255
 
-// Defines the page id record used by this module.
+/// Defines the page id record used by this module.
 struct PageId
-  // File id field of the page id.
+  /// File id field of the page id.
   fileId
-  // Page number field of the page id.
+  /// Page number field of the page id.
   pageNumber
 end struct
 
-// Defines the page header record used by this module.
+/// Defines the page header record used by this module.
 struct PageHeader
-  // Version field of the page header.
+  /// Version field of the page header.
   version
-  // Page type field of the page header.
+  /// Page type field of the page header.
   pageType
-  // Flags field of the page header.
+  /// Flags field of the page header.
   flags
-  // Page id field of the page header.
+  /// Page id field of the page header.
   pageId
-  // Page lsn field of the page header.
+  /// Page lsn field of the page header.
   pageLsn
-  // Generation field of the page header.
+  /// Generation field of the page header.
   generation
-  // Item count field of the page header.
+  /// Item count field of the page header.
   itemCount
-  // Free start field of the page header.
+  /// Free start field of the page header.
   freeStart
-  // Free end field of the page header.
+  /// Free end field of the page header.
   freeEnd
-  // Payload checksum field of the page header.
+  /// Payload checksum field of the page header.
   payloadChecksum
-  // Header checksum field of the page header.
+  /// Header checksum field of the page header.
   headerChecksum
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage page module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.page." + operation + ": " + message)
 end function
 
-// Performs the magic bytes operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the magicBytes operation for the minisql storage page module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function magicBytes()
   return bytes("MSPG")
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql storage page module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return false end if
   if len(left) != len(right) then return false end if
@@ -92,8 +106,13 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Copies the exact.
-// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the copyExact operation for the minisql storage page module.
+/// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   if count == 0 then return true end if
   for index = 0 to count - 1
@@ -102,8 +121,11 @@ function copyExact(destination, destinationOffset, source, sourceOffset, count)
   return true
 end function
 
-// Validates the native id.
-// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates native id for the minisql storage page workflow.
+/// Inputs: `value`, `operation`, `name`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function validateNativeId(value, operation, name)
   if typeof(value) != "int" or value < 0 or value > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, name + " must be a non-negative native MiniLang int")
@@ -111,8 +133,11 @@ function validateNativeId(value, operation, name)
   return true
 end function
 
-// Decodes the native id.
-// Inputs: `value`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the native id.
+/// Inputs: `value`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNativeId(value, operation, name)
   endian.validateUInt64Words(value, "storage.page." + operation + "." + name)
   if value.high > endian.MAX_SCALAR_HIGH then
@@ -121,8 +146,10 @@ function decodeNativeId(value, operation, name)
   return endian.uint64ToInt(value)
 end function
 
-// Validates the page type.
-// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the page type.
+/// Inputs: `value`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param value Value consumed or transformed by the operation.
+/// @param operation operation value consumed by this operation.
 function validatePageType(value, operation)
   if typeof(value) != "int" or value < 0 or value > 65535 then
     return fail(INVALID_ARGUMENT, operation, "pageType must fit U16")
@@ -130,8 +157,10 @@ function validatePageType(value, operation)
   return true
 end function
 
-// Validates the page size.
-// Inputs: `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the page size.
+/// Inputs: `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validatePageSize(pageSize, operation)
   if typeof(pageSize) != "int" or not limits.isSupportedPageSize(pageSize) then
     return fail(INVALID_ARGUMENT, operation, "unsupported page size")
@@ -142,8 +171,10 @@ function validatePageSize(pageSize, operation)
   return true
 end function
 
-// Validates the page buffer.
-// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the page buffer.
+/// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validatePageBuffer(pageBytes, operation)
   if typeof(pageBytes) != "bytes" then
     return fail(INVALID_ARGUMENT, operation, "page must be bytes")
@@ -152,16 +183,21 @@ function validatePageBuffer(pageBytes, operation)
   return true
 end function
 
-// Creates the page id.
-// Inputs: `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the page id.
+/// Inputs: `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
 function createPageId(fileId, pageNumber)
   validateNativeId(fileId, "createPageId", "fileId")
   validateNativeId(pageNumber, "createPageId", "pageNumber")
   return PageId(fileId, pageNumber)
 end function
 
-// Performs the new header operation for this module.
-// Inputs: `pageType`, `pageId`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the new header operation for this module.
+/// Inputs: `pageType`, `pageId`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageType pageType value consumed by this operation.
+/// @param pageId Identifier of page.
+/// @param pageSize pageSize value consumed by this operation.
 function newHeader(pageType, pageId, pageSize)
   validatePageType(pageType, "newHeader")
   if pageId is not PageId then return fail(INVALID_ARGUMENT, "newHeader", "pageId must be PageId") end if
@@ -183,8 +219,11 @@ function newHeader(pageType, pageId, pageSize)
   )
 end function
 
-// Validates the header.
-// Inputs: `header`, `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the header.
+/// Inputs: `header`, `pageSize`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param header header value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateHeader(header, pageSize, operation)
   if header is not PageHeader then return fail(INVALID_ARGUMENT, operation, "header must be PageHeader") end if
   validatePageSize(pageSize, operation)
@@ -218,8 +257,10 @@ function validateHeader(header, pageSize, operation)
   return true
 end function
 
-// Encodes the page header.
-// Inputs: `header`, `destination`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the page header.
+/// Inputs: `header`, `destination`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param header header value consumed by this operation.
+/// @param destination destination value consumed by this operation.
 function encodePageHeader(header, destination)
   if typeof(destination) != "bytes" or len(destination) < HEADER_SIZE then
     return fail(INVALID_ARGUMENT, "encodePageHeader", "destination must contain at least 64 bytes")
@@ -246,8 +287,9 @@ function encodePageHeader(header, destination)
   return HEADER_SIZE
 end function
 
-// Decodes the page header.
-// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the page header.
+/// Inputs: `source`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
 function decodePageHeader(source)
   validatePageBuffer(source, "decodePageHeader")
   if not bytesEqual(slice(source, 0, MAGIC_SIZE), magicBytes()) then
@@ -292,8 +334,10 @@ function decodePageHeader(source)
   return header
 end function
 
-// Performs the seal operation for this module.
-// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the seal operation for this module.
+/// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param header header value consumed by this operation.
 function seal(pageBytes, header)
   validatePageBuffer(pageBytes, "seal")
   validateHeader(header, len(pageBytes), "seal")
@@ -305,8 +349,9 @@ function seal(pageBytes, header)
   return header
 end function
 
-// Verifies the requested value.
-// Inputs: `pageBytes`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Performs the verify operation for the minisql storage page module.
+/// Inputs: `pageBytes`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param pageBytes pageBytes value consumed by this operation.
 function verify(pageBytes)
   validatePageBuffer(pageBytes, "verify")
   header = decodePageHeader(pageBytes)
@@ -317,8 +362,12 @@ function verify(pageBytes)
   return header
 end function
 
-// Creates the requested value.
-// Inputs: `pageSize`, `pageType`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage page module.
+/// Inputs: `pageSize`, `pageType`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param pageType pageType value consumed by this operation.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
 function create(pageSize, pageType, fileId, pageNumber)
   pageId = createPageId(fileId, pageNumber)
   header = newHeader(pageType, pageId, pageSize)
@@ -327,8 +376,9 @@ function create(pageSize, pageType, fileId, pageNumber)
   return pageBytes
 end function
 
-// Performs the reseal operation for this module.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the reseal operation for this module.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function reseal(pageBytes)
   validatePageBuffer(pageBytes, "reseal")
   header = decodePageHeader(pageBytes)
@@ -336,8 +386,10 @@ function reseal(pageBytes)
   return header
 end function
 
-// Compares the lsn.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Compares the lsn.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function compareLsn(left, right)
   endian.validateUInt64Words(left, "storage.page.compareLsn.left")
   endian.validateUInt64Words(right, "storage.page.compareLsn.right")
@@ -348,8 +400,10 @@ function compareLsn(left, right)
   return 0
 end function
 
-// Updates the lsn.
-// Inputs: `pageBytes`, `lsn`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Updates the lsn.
+/// Inputs: `pageBytes`, `lsn`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param lsn lsn value consumed by this operation.
 function setLsn(pageBytes, lsn)
   validatePageBuffer(pageBytes, "setLsn")
   endian.validateUInt64Words(lsn, "storage.page.setLsn.lsn")
@@ -359,20 +413,20 @@ function setLsn(pageBytes, lsn)
   return header
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage page module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.page"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage page module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M4"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage page module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

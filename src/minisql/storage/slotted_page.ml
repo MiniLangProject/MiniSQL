@@ -1,3 +1,5 @@
+//! Provides minisql storage slotted page facilities for this project.
+
 package minisql.storage.slotted_page
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -6,62 +8,78 @@ package minisql.storage.slotted_page
 import minisql.common.endian as endian
 import minisql.storage.page as page
 
-// Slotted-page format v1. The slot directory grows from the beginning of the
-// payload while record bodies grow backwards from the end of the page. Slot
-// indices remain stable across compaction. A 16-bit generation protects RowId
-// values against delete/reuse aliasing.
+/// Slotted-page format v1. The slot directory grows from the beginning of the
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql storage slotted page module.
 const CORRUPT_DATA = 9004
+/// Defines the page full constant used by the minisql storage slotted page module.
 const PAGE_FULL = 9015
+/// Defines the row not found constant used by the minisql storage slotted page module.
 const ROW_NOT_FOUND = 9016
+/// Defines the stale reference constant used by the minisql storage slotted page module.
 const STALE_REFERENCE = 9018
 
+/// Defines the slot size constant used by the minisql storage slotted page module.
 const SLOT_SIZE = 8
+/// Defines the slot flag live constant used by the minisql storage slotted page module.
 const SLOT_FLAG_LIVE = 0
+/// Defines the slot flag deleted constant used by the minisql storage slotted page module.
 const SLOT_FLAG_DELETED = 1
+/// Defines the slot flag forward root constant used by the minisql storage slotted page module.
 const SLOT_FLAG_FORWARD_ROOT = 2
+/// Defines the slot flag forward internal constant used by the minisql storage slotted page module.
 const SLOT_FLAG_FORWARD_INTERNAL = 3
+/// Defines the slot flag moved constant used by the minisql storage slotted page module.
 const SLOT_FLAG_MOVED = 4
 
-// Defines the slot entry record used by this module.
+/// Defines the slot entry record used by this module.
 struct SlotEntry
-  // Data offset field of the slot entry.
+  /// Data offset field of the slot entry.
   dataOffset
-  // Data length field of the slot entry.
+  /// Data length field of the slot entry.
   dataLength
-  // Flags field of the slot entry.
+  /// Flags field of the slot entry.
   flags
-  // Generation field of the slot entry.
+  /// Generation field of the slot entry.
   generation
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage slotted page module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.slotted_page." + operation + ": " + message)
 end function
 
-// Creates the requested value.
-// Inputs: `pageSize`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage slotted page module.
+/// Inputs: `pageSize`, `fileId`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param fileId Identifier of file.
+/// @param pageNumber pageNumber value consumed by this operation.
 function create(pageSize, fileId, pageNumber)
   return page.create(pageSize, page.TYPE_HEAP, fileId, pageNumber)
 end function
 
-// Performs the slot offset operation for this module.
-// Inputs: `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the slotOffset operation for the minisql storage slotted page module.
+/// Inputs: `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param slotId Identifier of slot.
 function slotOffset(slotId)
   return page.HEADER_SIZE + slotId * SLOT_SIZE
 end function
 
-// Performs the valid flags operation for this module.
-// Inputs: `flags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the valid flags operation for this module.
+/// Inputs: `flags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param flags Bit flags controlling the operation.
 function validFlags(flags)
   return flags == SLOT_FLAG_LIVE or flags == SLOT_FLAG_DELETED or flags == SLOT_FLAG_FORWARD_ROOT or flags == SLOT_FLAG_FORWARD_INTERNAL or flags == SLOT_FLAG_MOVED
 end function
 
-// Performs the next generation operation for this module.
-// Inputs: `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the next generation operation for this module.
+/// Inputs: `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param generation generation value consumed by this operation.
 function nextGeneration(generation)
   if typeof(generation) != "int" or generation < 0 or generation > 65535 then return fail(CORRUPT_DATA, "nextGeneration", "generation is outside U16") end if
   // Generation values never wrap. A slot deleted at generation 65535 is
@@ -71,8 +89,10 @@ function nextGeneration(generation)
   return generation + 1
 end function
 
-// Performs the raw entry operation for this module.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the raw entry operation for this module.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function rawEntry(pageBytes, slotId)
   offset = slotOffset(slotId)
   return SlotEntry(
@@ -83,8 +103,11 @@ function rawEntry(pageBytes, slotId)
   )
 end function
 
-// Writes the entry.
-// Inputs: `pageBytes`, `slotId`, `entry`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the entry.
+/// Inputs: `pageBytes`, `slotId`, `entry`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param entry entry value consumed by this operation.
 function writeEntry(pageBytes, slotId, entry)
   if entry is not SlotEntry then return fail(INVALID_ARGUMENT, "writeEntry", "entry must be SlotEntry") end if
   offset = slotOffset(slotId)
@@ -95,8 +118,11 @@ function writeEntry(pageBytes, slotId, entry)
   return true
 end function
 
-// Validates the slot.
-// Inputs: `header`, `slotId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the slot.
+/// Inputs: `header`, `slotId`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param header header value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param operation operation value consumed by this operation.
 function validateSlot(header, slotId, operation)
   if typeof(slotId) != "int" or slotId < 0 or slotId >= header.itemCount then
     return fail(ROW_NOT_FOUND, operation, "slot does not exist")
@@ -104,8 +130,10 @@ function validateSlot(header, slotId, operation)
   return true
 end function
 
-// Validates the requested value.
-// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates validate for the minisql storage slotted page workflow.
+/// Inputs: `pageBytes`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validate(pageBytes, operation)
   header = page.verify(pageBytes)
   if header.pageType != page.TYPE_HEAP and header.pageType != page.TYPE_CATALOG then
@@ -141,14 +169,16 @@ function validate(pageBytes, operation)
   return header
 end function
 
-// Performs the slot count operation for this module.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the slot count operation for this module.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function slotCount(pageBytes)
   return validate(pageBytes, "slotCount").itemCount
 end function
 
-// Performs the live slot count operation for this module.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the live slot count operation for this module.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function liveSlotCount(pageBytes)
   header = validate(pageBytes, "liveSlotCount")
   count = 0
@@ -160,42 +190,55 @@ function liveSlotCount(pageBytes)
   return count
 end function
 
-// Performs the entry operation for this module.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the entry operation for this module.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function entry(pageBytes, slotId)
   header = validate(pageBytes, "entry")
   validateSlot(header, slotId, "entry")
   return rawEntry(pageBytes, slotId)
 end function
 
-// Performs the entry flags operation for this module.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the entry flags operation for this module.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function entryFlags(pageBytes, slotId)
   return entry(pageBytes, slotId).flags
 end function
 
-// Performs the entry generation operation for this module.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the entry generation operation for this module.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function entryGeneration(pageBytes, slotId)
   return entry(pageBytes, slotId).generation
 end function
 
-// Evaluates whether the supplied input satisfies the deleted predicate.
-// Inputs: `pageBytes`, `slotId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the deleted predicate.
+/// Inputs: `pageBytes`, `slotId`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function isDeleted(pageBytes, slotId)
   return entryFlags(pageBytes, slotId) == SLOT_FLAG_DELETED
 end function
 
-// Reads the requested value.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads read for the minisql storage slotted page workflow.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function read(pageBytes, slotId)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "read", "slot is deleted") end if
   return slice(pageBytes, current.dataOffset, current.dataLength)
 end function
 
-// Reads the generation.
-// Inputs: `pageBytes`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the generation.
+/// Inputs: `pageBytes`, `slotId`, `generation`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param generation generation value consumed by this operation.
 function readGeneration(pageBytes, slotId, generation)
   if typeof(generation) != "int" or generation <= 0 or generation > 65535 then return fail(INVALID_ARGUMENT, "readGeneration", "generation must be a positive U16") end if
   current = entry(pageBytes, slotId)
@@ -204,15 +247,18 @@ function readGeneration(pageBytes, slotId, generation)
   return slice(pageBytes, current.dataOffset, current.dataLength)
 end function
 
-// Releases the bytes.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Releases the bytes.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function freeBytes(pageBytes)
   header = validate(pageBytes, "freeBytes")
   return header.freeEnd - header.freeStart
 end function
 
-// Finds the deleted.
-// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the deleted.
+/// Inputs: `pageBytes`, `header`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param header header value consumed by this operation.
 function findDeleted(pageBytes, header)
   if header.itemCount == 0 then return -1 end if
   for slotId = 0 to header.itemCount - 1
@@ -224,10 +270,15 @@ function findDeleted(pageBytes, header)
   return -1
 end function
 
-// Rebuilds a compact copy. replacementSlot=-1 means pure compaction. Mutation
-// of pageBytes happens only after the complete replacement page was validated.
-// Performs the rebuild operation for this module.
-// Inputs: `pageBytes`, `replacementSlot`, `replacement`, `replacementFlags`, `deleteReplacement`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Rebuilds a compact copy. replacementSlot=-1 means pure compaction. Mutation
+/// of pageBytes happens only after the complete replacement page was validated.
+/// Performs the rebuild operation for this module.
+/// Inputs: `pageBytes`, `replacementSlot`, `replacement`, `replacementFlags`, `deleteReplacement`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param replacementSlot replacementSlot value consumed by this operation.
+/// @param replacement replacement value consumed by this operation.
+/// @param replacementFlags replacementFlags value consumed by this operation.
+/// @param deleteReplacement deleteReplacement value consumed by this operation.
 function rebuild(pageBytes, replacementSlot, replacement, replacementFlags, deleteReplacement)
   header = validate(pageBytes, "rebuild")
   if typeof(replacementSlot) != "int" or replacementSlot < -1 or replacementSlot >= header.itemCount then return fail(INVALID_ARGUMENT, "rebuild", "invalid replacement slot") end if
@@ -283,14 +334,18 @@ function rebuild(pageBytes, replacementSlot, replacement, replacementFlags, dele
   return outputHeader
 end function
 
-// Performs the compact operation for this module.
-// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the compact operation for this module.
+/// Inputs: `pageBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
 function compact(pageBytes)
   return rebuild(pageBytes, -1, bytes(), SLOT_FLAG_LIVE, false)
 end function
 
-// Inserts the with flags.
-// Inputs: `pageBytes`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Inserts the with flags.
+/// Inputs: `pageBytes`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param recordBytes recordBytes value consumed by this operation.
+/// @param slotFlags slotFlags value consumed by this operation.
 function insertWithFlags(pageBytes, recordBytes, slotFlags)
   validate(pageBytes, "insertWithFlags")
   if typeof(recordBytes) != "bytes" or len(recordBytes) == 0 or len(recordBytes) > 65535 then return fail(INVALID_ARGUMENT, "insertWithFlags", "record must contain 1..65535 bytes") end if
@@ -323,14 +378,20 @@ function insertWithFlags(pageBytes, recordBytes, slotFlags)
   return slotId
 end function
 
-// Inserts the requested value.
-// Inputs: `pageBytes`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the insert operation for the minisql storage slotted page module.
+/// Inputs: `pageBytes`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param recordBytes recordBytes value consumed by this operation.
 function insert(pageBytes, recordBytes)
   return insertWithFlags(pageBytes, recordBytes, SLOT_FLAG_LIVE)
 end function
 
-// Updates the with flags.
-// Inputs: `pageBytes`, `slotId`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Updates the with flags.
+/// Inputs: `pageBytes`, `slotId`, `recordBytes`, `slotFlags`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param recordBytes recordBytes value consumed by this operation.
+/// @param slotFlags slotFlags value consumed by this operation.
 function updateWithFlags(pageBytes, slotId, recordBytes, slotFlags)
   header = validate(pageBytes, "updateWithFlags")
   validateSlot(header, slotId, "updateWithFlags")
@@ -344,24 +405,32 @@ function updateWithFlags(pageBytes, slotId, recordBytes, slotFlags)
   return true
 end function
 
-// Updates the requested value.
-// Inputs: `pageBytes`, `slotId`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Updates the requested value.
+/// Inputs: `pageBytes`, `slotId`, `recordBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param recordBytes recordBytes value consumed by this operation.
 function update(pageBytes, slotId, recordBytes)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "update", "slot is deleted") end if
   return updateWithFlags(pageBytes, slotId, recordBytes, current.flags)
 end function
 
-// Updates the flags.
-// Inputs: `pageBytes`, `slotId`, `slotFlags`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Updates the flags.
+/// Inputs: `pageBytes`, `slotId`, `slotFlags`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
+/// @param slotFlags slotFlags value consumed by this operation.
 function setFlags(pageBytes, slotId, slotFlags)
   current = entry(pageBytes, slotId)
   if current.flags == SLOT_FLAG_DELETED then return fail(ROW_NOT_FOUND, "setFlags", "slot is deleted") end if
   return updateWithFlags(pageBytes, slotId, read(pageBytes, slotId), slotFlags)
 end function
 
-// Removes the requested value.
-// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Removes remove from the state managed by the minisql storage slotted page module.
+/// Inputs: `pageBytes`, `slotId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param pageBytes pageBytes value consumed by this operation.
+/// @param slotId Identifier of slot.
 function remove(pageBytes, slotId)
   header = validate(pageBytes, "remove")
   validateSlot(header, slotId, "remove")
@@ -373,20 +442,20 @@ function remove(pageBytes, slotId)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage slotted page module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.slotted_page"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage slotted page module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M9"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage slotted page module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

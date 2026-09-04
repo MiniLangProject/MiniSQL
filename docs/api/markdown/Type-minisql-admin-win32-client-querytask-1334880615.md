@@ -12,7 +12,7 @@ struct QueryTask
 Bundles immutable input for any protocol operation executed off the UI thread.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L337)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L430)
 
 ## Members
 
@@ -26,7 +26,7 @@ browseOptions
 Stores the immutable page/filter/sort request for table description refreshes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L347)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L440)
 
 <a id="field-field-minisql-admin-win32-client-querytask-operation-operation-src-minisql-admin-win32-client-ml-1576748994"></a>
 ### operation
@@ -38,7 +38,7 @@ operation
 Selects execute, transaction, refresh, or table-description behavior.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L434)
 
 <a id="field-field-minisql-admin-win32-client-querytask-sqltext-sqltext-src-minisql-admin-win32-client-ml-139836534"></a>
 ### sqlText
@@ -50,7 +50,7 @@ sqlText
 Stores SQL submitted to execute or explain operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L343)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L436)
 
 <a id="field-field-minisql-admin-win32-client-querytask-state-state-src-minisql-admin-win32-client-ml-1778449206"></a>
 ### state
@@ -62,7 +62,7 @@ state
 Stores the fullclient state owned by the session.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L339)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L432)
 
 <a id="field-field-minisql-admin-win32-client-querytask-tablename-tablename-src-minisql-admin-win32-client-ml-1198965770"></a>
 ### tableName
@@ -74,4 +74,4 @@ tableName
 Stores the table selected for an asynchronous description operation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L438)

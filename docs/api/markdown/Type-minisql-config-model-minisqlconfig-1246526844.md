@@ -12,7 +12,7 @@ struct MiniSqlConfig
 Groups the mini SQL config state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L131)
 
 ## Members
 
@@ -26,7 +26,7 @@ binlog
 Stores SQL binlog settings.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L141)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L143)
 
 <a id="field-field-minisql-config-model-minisqlconfig-configversion-configversion-src-minisql-config-model-ml-1849967768"></a>
 ### configVersion
@@ -38,7 +38,7 @@ configVersion
 Tracks the config version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L133)
 
 <a id="field-field-minisql-config-model-minisqlconfig-databasedefaults-databasedefaults-src-minisql-config-model-ml-434385674"></a>
 ### databaseDefaults
@@ -50,7 +50,7 @@ databaseDefaults
 Stores the database defaults associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L147)
 
 <a id="field-field-minisql-config-model-minisqlconfig-logging-logging-src-minisql-config-model-ml-63988200"></a>
 ### logging
@@ -62,7 +62,7 @@ logging
 Stores ordinary logger destination and rotation settings.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L139)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L141)
 
 <a id="field-field-minisql-config-model-minisqlconfig-paths-paths-src-minisql-config-model-ml-812887140"></a>
 ### paths
@@ -74,7 +74,7 @@ paths
 Stores the filesystem paths.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L135)
 
 <a id="field-field-minisql-config-model-minisqlconfig-runtime-runtime-src-minisql-config-model-ml-1330692096"></a>
 ### runtime
@@ -86,7 +86,7 @@ runtime
 Stores the runtime associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L139)
 
 <a id="field-field-minisql-config-model-minisqlconfig-safety-safety-src-minisql-config-model-ml-1853799232"></a>
 ### safety
@@ -98,7 +98,7 @@ safety
 Stores the safety associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L149)
 
 <a id="field-field-minisql-config-model-minisqlconfig-server-server-src-minisql-config-model-ml-58718622"></a>
 ### server
@@ -110,7 +110,7 @@ server
 Stores the server associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L137)
 
 <a id="field-field-minisql-config-model-minisqlconfig-tls-tls-src-minisql-config-model-ml-773991252"></a>
 ### tls
@@ -122,4 +122,4 @@ tls
 Stores native TLS listener and algorithm policy settings.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L145)

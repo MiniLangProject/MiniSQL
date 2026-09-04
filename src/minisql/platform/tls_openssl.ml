@@ -1,3 +1,5 @@
+//! Provides minisql platform tls openssl facilities for this project.
+
 package minisql.platform.tls_openssl
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -7,65 +9,71 @@ import std.tls._openssl as openssl
 import minisql.platform.tls_policy as tls_policy
 import minisql.platform.network as network
 
-// OpenSSL-backed compatibility adapter for MiniSQL's established Schannel
-// call surface. Linux certificate references use `pem:CERT_PATH|KEY_PATH`.
+/// OpenSSL-backed compatibility adapter for MiniSQL's established Schannel
 const INVALID_ARGUMENT = 9001
+/// Defines the tls error constant used by the minisql platform tls openssl module.
 const TLS_ERROR = 9034
 
-// Owns immutable OpenSSL server options until listener shutdown.
+/// Owns immutable OpenSSL server options until listener shutdown.
 struct ServerCredential
-  // Certificate, private-key, client-auth, and protocol settings.
+  /// Certificate, private-key, client-auth, and protocol settings.
   options
-  // True after the listener has released this credential.
+  /// True after the listener has released this credential.
   closed
 end struct
 
-// Owns one established OpenSSL TLS stream.
+/// Owns one established OpenSSL TLS stream.
 struct TlsContext
-  // Native `std.tls._openssl` stream wrapper.
+  /// Native `std.tls._openssl` stream wrapper.
   stream
-  // True after the stream has been closed.
+  /// True after the stream has been closed.
   closed
 end struct
 
-// These option records mirror the backend-neutral std.tls contract without
-// importing its conditional facade into a Linux-only adapter.
+/// These option records mirror the backend-neutral std.tls contract without
+/// importing its conditional facade into a Linux-only adapter.
 struct ClientOptions
-  // DNS name required for SNI and hostname validation.
+  /// DNS name required for SNI and hostname validation.
   serverName
-  // Whether the server certificate chain must be verified.
+  /// Whether the server certificate chain must be verified.
   verifyPeer
-  // Optional exact SHA-256 leaf pin bytes.
+  /// Optional exact SHA-256 leaf pin bytes.
   sha256Pin
-  // Minimum TLS protocol version.
+  /// Minimum TLS protocol version.
   minimumVersion
-  // Optional explicit CA bundle path.
+  /// Optional explicit CA bundle path.
   caFile
 end struct
 
-// Describes the server certificate and protocol settings passed to OpenSSL.
+/// Describes the server certificate and protocol settings passed to OpenSSL.
 struct ServerOptions
-  // PEM certificate-chain path.
+  /// PEM certificate-chain path.
   certificateReference
-  // PEM private-key path.
+  /// PEM private-key path.
   privateKeyReference
-  // Whether the server requires a client certificate.
+  /// Whether the server requires a client certificate.
   requireClientCertificate
-  // Minimum encoded TLS protocol version.
+  /// Minimum encoded TLS protocol version.
   minimumVersion
 end struct
 
-// Creates a stable MiniSQL TLS error with provider context.
+/// Creates a stable MiniSQL TLS error with provider context.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(TLS_ERROR, "platform.tls_openssl." + operation + ": " + message)
 end function
 
-// Reports whether a value is an OpenSSL server credential.
+/// Reports whether a value is an OpenSSL server credential.
+/// @param value Value consumed or transformed by the operation.
 function isCredential(value) return value is ServerCredential end function
-// Reports whether a value is an open OpenSSL TLS context.
+/// Reports whether a value is an open OpenSSL TLS context.
+/// @param value Value consumed or transformed by the operation.
 function isTlsContext(value) return value is TlsContext and not value.closed end function
 
-// Performs a verified TLS client handshake using system trust and hostname checks.
+/// Performs a verified TLS client handshake using system trust and hostname checks.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
 function connectClient(socketHandle, serverName)
   options = ClientOptions(serverName, true, void, "1.3", void)
   stream = try(openssl.openClient(socketHandle, options))
@@ -73,7 +81,10 @@ function connectClient(socketHandle, serverName)
   return TlsContext(stream, false)
 end function
 
-// Performs a verified TLS client handshake with an additional exact leaf pin.
+/// Performs a verified TLS client handshake with an additional exact leaf pin.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param serverName serverName value consumed by this operation.
+/// @param pinText pinText value consumed by this operation.
 function connectClientPinned(socketHandle, serverName, pinText)
   pin = try(tls_policy.parseSha256Pin(pinText))
   if typeof(pin) == "error" then return pin end if
@@ -83,7 +94,8 @@ function connectClientPinned(socketHandle, serverName, pinText)
   return TlsContext(stream, false)
 end function
 
-// Parses the Linux `pem:certificate|private-key` server reference.
+/// Parses the Linux `pem:certificate|private-key` server reference.
+/// @param certificateReference certificateReference value consumed by this operation.
 function splitPemReference(certificateReference)
   if typeof(certificateReference) != "string" or len(certificateReference) == 0 then return fail("splitPemReference", "certificate reference must be non-empty") end if
   raw = bytes(certificateReference)
@@ -102,12 +114,14 @@ function splitPemReference(certificateReference)
   return [certificatePath, privateKeyPath]
 end function
 
-// Rejects credential acquisition without an explicit Linux PEM reference.
+/// Rejects credential acquisition without an explicit Linux PEM reference.
 function acquireServerCredential()
   return fail("acquireServerCredential", "a PEM certificate and private key are required on Linux")
 end function
 
-// Creates server options from an unencrypted PEM certificate and key reference.
+/// Creates server options from an unencrypted PEM certificate and key reference.
+/// @param certificateReference certificateReference value consumed by this operation.
+/// @param passwordBytes passwordBytes value consumed by this operation.
 function acquireServerCredentialWithPassword(certificateReference, passwordBytes)
   if passwordBytes is not void and (typeof(passwordBytes) != "bytes" or len(passwordBytes) != 0) then
     return fail("acquireServerCredentialWithPassword", "encrypted PEM private keys are not supported")
@@ -118,14 +132,17 @@ function acquireServerCredentialWithPassword(certificateReference, passwordBytes
   return ServerCredential(options, false)
 end function
 
-// Marks a server credential closed after listener shutdown.
+/// Marks a server credential closed after listener shutdown.
+/// @param credential credential value consumed by this operation.
 function closeCredential(credential)
   if credential is not ServerCredential then return error(INVALID_ARGUMENT, "platform.tls_openssl.closeCredential: invalid credential") end if
   credential.closed = true
   return true
 end function
 
-// Accepts one TLS server stream on an already connected socket.
+/// Accepts one TLS server stream on an already connected socket.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param credential credential value consumed by this operation.
 function acceptServer(socketHandle, credential)
   if credential is not ServerCredential or credential.closed then return error(INVALID_ARGUMENT, "platform.tls_openssl.acceptServer: open server credential required") end if
   stream = try(openssl.openServer(socketHandle, credential.options))
@@ -133,7 +150,10 @@ function acceptServer(socketHandle, credential)
   return TlsContext(stream, false)
 end function
 
-// Sends the complete byte buffer over an established TLS stream.
+/// Sends the complete byte buffer over an established TLS stream.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param data Input data consumed by the operation.
 function sendAll(context, socketHandle, data)
   if not isTlsContext(context) then return error(INVALID_ARGUMENT, "platform.tls_openssl.sendAll: invalid TLS context") end if
   result = try(openssl.sendBytes(context.stream, data))
@@ -141,7 +161,10 @@ function sendAll(context, socketHandle, data)
   return result
 end function
 
-// Receives up to the requested bounded count from a TLS stream.
+/// Receives up to the requested bounded count from a TLS stream.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param maximum maximum value consumed by this operation.
 function receiveAvailable(context, socketHandle, maximum)
   if not isTlsContext(context) then return error(INVALID_ARGUMENT, "platform.tls_openssl.receiveAvailable: invalid TLS context") end if
   if typeof(maximum) != "int" or maximum < 1 or maximum > network.MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.tls_openssl.receiveAvailable: maximum is invalid") end if
@@ -150,7 +173,10 @@ function receiveAvailable(context, socketHandle, maximum)
   return result
 end function
 
-// Receives exactly the requested count or reports premature connection closure.
+/// Receives exactly the requested count or reports premature connection closure.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
+/// @param count Number of items or units to process.
 function receiveExact(context, socketHandle, count)
   if not isTlsContext(context) then return error(INVALID_ARGUMENT, "platform.tls_openssl.receiveExact: invalid TLS context") end if
   if typeof(count) != "int" or count < 0 or count > network.MAX_RECEIVE_BYTES then return error(INVALID_ARGUMENT, "platform.tls_openssl.receiveExact: count is invalid") end if
@@ -166,7 +192,9 @@ function receiveExact(context, socketHandle, count)
   return output
 end function
 
-// Sends and receives the provider's authenticated TLS shutdown notification.
+/// Sends and receives the provider's authenticated TLS shutdown notification.
+/// @param context Context that carries state for the operation.
+/// @param socketHandle socketHandle value consumed by this operation.
 function shutdown(context, socketHandle)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_openssl.shutdown: invalid TLS context") end if
   if context.closed then return true end if
@@ -175,7 +203,8 @@ function shutdown(context, socketHandle)
   return true
 end function
 
-// Releases one TLS stream and marks the wrapper closed.
+/// Releases one TLS stream and marks the wrapper closed.
+/// @param context Context that carries state for the operation.
 function closeContext(context)
   if context is not TlsContext then return error(INVALID_ARGUMENT, "platform.tls_openssl.closeContext: invalid TLS context") end if
   if context.closed then return true end if
@@ -185,20 +214,20 @@ function closeContext(context)
   return true
 end function
 
-// Returns the diagnostic provider name.
+/// Returns the diagnostic provider name.
 function providerName() return "OpenSSL 3" end function
 
-// Returns the stable diagnostic name used by the module catalog.
+/// Returns the stable diagnostic name used by the module catalog.
 function componentName()
   return "platform.tls_openssl"
 end function
 
-// Returns the milestone whose TLS contract this provider implements.
+/// Returns the milestone whose TLS contract this provider implements.
 function targetMilestone()
   return "M73"
 end function
 
-// Reports that the OpenSSL backend is complete.
+/// Reports that the OpenSSL backend is complete.
 function isImplemented()
   return true
 end function

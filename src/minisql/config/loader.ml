@@ -1,3 +1,5 @@
+//! Provides minisql config loader facilities for this project.
+
 package minisql.config.loader
 
 // Copyright 2026 MiniLangProject contributors
@@ -8,52 +10,63 @@ import minisql.config.model as model
 import minisql.config.validation as validation
 import minisql.platform.file as file_api
 
+/// Defines the invalid configuration constant used by the minisql config loader module.
 const INVALID_CONFIGURATION = 9002
+/// Defines the max config bytes constant used by the minisql config loader module.
 const MAX_CONFIG_BYTES = 1048576
 
+/// Defines the json null constant used by the minisql config loader module.
 const JSON_NULL = 0
+/// Defines the json bool constant used by the minisql config loader module.
 const JSON_BOOL = 1
+/// Defines the json int constant used by the minisql config loader module.
 const JSON_INT = 2
+/// Defines the json string constant used by the minisql config loader module.
 const JSON_STRING = 3
+/// Defines the json object constant used by the minisql config loader module.
 const JSON_OBJECT = 4
+/// Defines the json array constant used by the minisql config loader module.
 const JSON_ARRAY = 5
 
-// Groups the JSON value state and preserves the field relationships documented below.
+/// Groups the JSON value state and preserves the field relationships documented below.
 struct JsonValue
-  // Stores the kind associated with this value.
+  /// Stores the kind associated with this value.
   kind
-  // Stores the scalar associated with this value.
+  /// Stores the scalar associated with this value.
   scalar
-  // Tracks the items numeric value.
+  /// Tracks the items numeric value.
   items
 end struct
 
-// Groups the JSON pair state and preserves the field relationships documented below.
+/// Groups the JSON pair state and preserves the field relationships documented below.
 struct JsonPair
-  // Stores the key associated with this value.
+  /// Stores the key associated with this value.
   key
-  // Stores the value associated with this value.
+  /// Stores the value associated with this value.
   value
 end struct
 
-// Groups the parser state and preserves the field relationships documented below.
+/// Groups the parser state and preserves the field relationships documented below.
 struct Parser
-  // Stores the data associated with this value.
+  /// Stores the data associated with this value.
   data
-  // Tracks the position numeric value.
+  /// Tracks the position numeric value.
   position
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql config loader module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(INVALID_CONFIGURATION, "config.loader." + operation + ": " + message)
 end function
 
-// Implements skip whitespace for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements skip whitespace for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
 function skipWhitespace(parser)
   while parser.position < len(parser.data)
     value = parser.data[parser.position]
@@ -66,18 +79,22 @@ function skipWhitespace(parser)
   return true
 end function
 
-// Implements peek for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements peek for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param parser parser value consumed by this operation.
 function peek(parser)
   skipWhitespace(parser)
   if parser.position >= len(parser.data) then return -1 end if
   return parser.data[parser.position]
 end function
 
-// Implements expect for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements expect for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
+/// @param expected expected value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function expect(parser, expected, operation)
   skipWhitespace(parser)
   if parser.position >= len(parser.data) or parser.data[parser.position] != expected then
@@ -87,9 +104,10 @@ function expect(parser, expected, operation)
   return true
 end function
 
-// Parses string using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses string using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
 function parseString(parser)
   expect(parser, 34, "parseString")
   values = []
@@ -124,17 +142,19 @@ function parseString(parser)
   return fail("parseString", "unterminated string")
 end function
 
-// Returns whether the supplied value satisfies the digit condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the digit condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isDigit(value)
   return value >= 48 and value <= 57
 end function
 
-// Parses integer using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses integer using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
 function parseInteger(parser)
   skipWhitespace(parser)
   start = parser.position
@@ -157,9 +177,11 @@ function parseInteger(parser)
   return value
 end function
 
-// Implements match literal for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements match literal for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
+/// @param text Text consumed by the operation.
 function matchLiteral(parser, text)
   encoded = bytes(text)
   if parser.position > len(parser.data) - len(encoded) then return false end if
@@ -172,9 +194,10 @@ function matchLiteral(parser, text)
   return true
 end function
 
-// Parses array using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses array using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
 function parseArray(parser)
   expect(parser, 91, "parseArray")
   values = []
@@ -194,9 +217,10 @@ function parseArray(parser)
   return JsonValue(JSON_ARRAY, void, values)
 end function
 
-// Parses object using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses object using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param parser parser value consumed by this operation.
 function parseObject(parser)
   expect(parser, 123, "parseObject")
   pairs = []
@@ -223,9 +247,10 @@ function parseObject(parser)
   return JsonValue(JSON_OBJECT, void, pairs)
 end function
 
-// Parses value using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses value using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param parser parser value consumed by this operation.
 function parseValue(parser)
   token = peek(parser)
   if token == 34 then return JsonValue(JSON_STRING, parseString(parser), []) end if
@@ -238,10 +263,11 @@ function parseValue(parser)
   return fail("parseValue", "unexpected JSON value at byte " + parser.position)
 end function
 
-// Parses parse using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses parse using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param text Text consumed by the operation.
 function parse(text)
   if typeof(text) != "string" then return fail("parse", "text must be string") end if
   parser = Parser(bytes(text), 0)
@@ -251,10 +277,12 @@ function parse(text)
   return value
 end function
 
-// Implements member for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements member for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function member(object, key)
   if object is not JsonValue or object.kind != JSON_OBJECT then return fail("member", "value must be JSON object") end if
   for each pair in object.items
@@ -263,8 +291,10 @@ function member(object, key)
   return fail("member", "missing configuration key " + key)
 end function
 
-// Looks up an optional object member without weakening strict unknown-key validation.
-// Inputs: `object`, `key`. Returns the JSON value or void when the key is absent.
+/// Looks up an optional object member without weakening strict unknown-key validation.
+/// Inputs: `object`, `key`. Returns the JSON value or void when the key is absent.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function optionalMember(object, key)
   if object is not JsonValue or object.kind != JSON_OBJECT then return fail("optionalMember", "value must be JSON object") end if
   for each pair in object.items
@@ -273,43 +303,54 @@ function optionalMember(object, key)
   return void
 end function
 
-// Implements object member for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements object member for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function objectMember(object, key)
   value = member(object, key)
   if value.kind != JSON_OBJECT then return fail("objectMember", key + " must be object") end if
   return value
 end function
 
-// Implements string member for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements string member for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function stringMember(object, key)
   value = member(object, key)
   if value.kind != JSON_STRING then return fail("stringMember", key + " must be string") end if
   return value.scalar
 end function
 
-// Implements int member for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements int member for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function intMember(object, key)
   value = member(object, key)
   if value.kind != JSON_INT then return fail("intMember", key + " must be integer") end if
   return value.scalar
 end function
 
-// Implements bool member for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements bool member for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
 function boolMember(object, key)
   value = member(object, key)
   if value.kind != JSON_BOOL then return fail("boolMember", key + " must be boolean") end if
   return value.scalar
 end function
 
-// Reads an optional integer while preserving backwards-compatible defaults.
+/// Reads an optional integer while preserving backwards-compatible defaults.
+/// @param object object value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param defaultValue defaultValue value consumed by this operation.
 function optionalIntMember(object, key, defaultValue)
   value = optionalMember(object, key)
   if value is void then return defaultValue end if
@@ -318,10 +359,13 @@ function optionalIntMember(object, key, defaultValue)
 end function
 
 
-// Ensures only keys using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Ensures only keys using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param object object value consumed by this operation.
+/// @param allowedKeys allowedKeys value consumed by this operation.
+/// @param context Context that carries state for the operation.
 function ensureOnlyKeys(object, allowedKeys, context)
   if object is not JsonValue or object.kind != JSON_OBJECT then return fail("ensureOnlyKeys", context + " must be object") end if
   for each pair in object.items
@@ -334,9 +378,10 @@ function ensureOnlyKeys(object, allowedKeys, context)
   return true
 end function
 
-// Implements to config for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements to config for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param root root value consumed by this operation.
 function toConfig(root)
   if root.kind != JSON_OBJECT then return fail("toConfig", "root must be object") end if
   paths = objectMember(root, "paths")
@@ -421,10 +466,11 @@ function toConfig(root)
   return result
 end function
 
-// Loads load using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Performs I/O through its file, transport, or storage dependencies.
+/// Loads load using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Performs I/O through its file, transport, or storage dependencies.
+/// @param path Path of the file or directory used by the operation.
 function load(path)
   if typeof(path) != "string" or len(path) == 0 then return fail("load", "path must be non-empty") end if
   handle = file_api.openRead(path)
@@ -441,23 +487,23 @@ function load(path)
   return toConfig(parse(text))
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql config loader module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "config.loader"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql config loader module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M8"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql config loader module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct StatisticsCatalog
 Defines the statistics catalog record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L121)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Database id field of the statistics catalog.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L123)
 
 <a id="field-field-minisql-catalog-statistics-statisticscatalog-generation-generation-src-minisql-catalog-statistics-ml-452949725"></a>
 ### generation
@@ -38,7 +38,7 @@ generation
 Generation field of the statistics catalog.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L125)
 
 <a id="field-field-minisql-catalog-statistics-statisticscatalog-tables-tables-src-minisql-catalog-statistics-ml-1371869611"></a>
 ### tables
@@ -50,4 +50,4 @@ tables
 Tables field of the statistics catalog.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L127)

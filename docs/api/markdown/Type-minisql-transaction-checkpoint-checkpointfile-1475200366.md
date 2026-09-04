@@ -12,7 +12,7 @@ struct CheckpointFile
 Defines the checkpoint file record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L57)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeSlot
 Active slot field of the checkpoint file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L65)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointfile-closed-closed-src-minisql-transaction-checkpoint-ml-254267431"></a>
 ### closed
@@ -38,7 +38,7 @@ closed
 Closed field of the checkpoint file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L67)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointfile-file-file-src-minisql-transaction-checkpoint-ml-896605655"></a>
 ### file
@@ -50,7 +50,7 @@ file
 File field of the checkpoint file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L61)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointfile-metadata-metadata-src-minisql-transaction-checkpoint-ml-1670343441"></a>
 ### metadata
@@ -62,7 +62,7 @@ metadata
 Metadata field of the checkpoint file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L63)
 
 <a id="field-field-minisql-transaction-checkpoint-checkpointfile-path-path-src-minisql-transaction-checkpoint-ml-965481969"></a>
 ### path
@@ -74,4 +74,4 @@ path
 Path field of the checkpoint file.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/checkpoint.ml#L59)

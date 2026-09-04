@@ -12,7 +12,7 @@ struct VisitState
 Defines the visit state record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L128)
 
 ## Members
 
@@ -23,7 +23,7 @@ Defines the visit state record used by this module.
 pages
 ```
 
-One byte per physical page marks nodes already reached from the root. The bitmap is bounded by index-file size and never retains index entries.
+One byte per physical page marks nodes already reached from the root.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L130)

@@ -12,7 +12,7 @@ struct Engine
 Groups the engine state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L153)
 
 ## Members
 
@@ -23,10 +23,10 @@ Groups the engine state and preserves the field relationships documented below.
 activePlanKey
 ```
 
-Exact caller SQL consumed by the first/top-level physical-plan lookup. Nested SELECTs fall back to canonical AST keys after this value is cleared.
+Exact caller SQL consumed by the first/top-level physical-plan lookup.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L189)
 
 <a id="field-field-minisql-executor-executor-engine-closed-closed-src-minisql-executor-executor-ml-236730215"></a>
 ### closed
@@ -38,7 +38,7 @@ closed
 Indicates whether the closed condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L150)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L169)
 
 <a id="field-field-minisql-executor-executor-engine-database-database-src-minisql-executor-executor-ml-1703798385"></a>
 ### database
@@ -50,7 +50,7 @@ database
 Stores the database associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L155)
 
 <a id="field-field-minisql-executor-executor-engine-ddltransaction-ddltransaction-src-minisql-executor-executor-ml-561933819"></a>
 ### ddlTransaction
@@ -62,7 +62,7 @@ ddlTransaction
 Stores the DDL transaction associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L165)
 
 <a id="field-field-minisql-executor-executor-engine-explicittransaction-explicittransaction-src-minisql-executor-executor-ml-2028438947"></a>
 ### explicitTransaction
@@ -74,7 +74,7 @@ explicitTransaction
 Stores the explicit transaction associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L140)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L159)
 
 <a id="field-field-minisql-executor-executor-engine-failed-failed-src-minisql-executor-executor-ml-1689825413"></a>
 ### failed
@@ -86,7 +86,7 @@ failed
 Stores the failed associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L167)
 
 <a id="field-field-minisql-executor-executor-engine-ownsdatabase-ownsdatabase-src-minisql-executor-executor-ml-1838365587"></a>
 ### ownsDatabase
@@ -98,7 +98,7 @@ ownsDatabase
 Stores the owns database associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L157)
 
 <a id="field-field-minisql-executor-executor-engine-pagetransaction-pagetransaction-src-minisql-executor-executor-ml-1429869887"></a>
 ### pageTransaction
@@ -110,7 +110,7 @@ pageTransaction
 Stores the page transaction associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L163)
 
 <a id="field-field-minisql-executor-executor-engine-plancache-plancache-src-minisql-executor-executor-ml-1512273863"></a>
 ### planCache
@@ -122,7 +122,7 @@ planCache
 Contains bounded reusable physical plans for normalized SELECT text.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L187)
 
 <a id="field-field-minisql-executor-executor-engine-planningcontext-planningcontext-src-minisql-executor-executor-ml-1781863915"></a>
 ### planningContext
@@ -134,7 +134,7 @@ planningContext
 Caches advisory statistics and index metadata for physical planning.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L166)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L185)
 
 <a id="field-field-minisql-executor-executor-engine-preparedstatements-preparedstatements-src-minisql-executor-executor-ml-2085321081"></a>
 ### preparedStatements
@@ -146,7 +146,7 @@ preparedStatements
 Stores the prepared statements associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L156)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L175)
 
 <a id="field-field-minisql-executor-executor-engine-principalid-principalid-src-minisql-executor-executor-ml-842499779"></a>
 ### principalId
@@ -158,7 +158,7 @@ principalId
 Identifies the principal identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L173)
 
 <a id="field-field-minisql-executor-executor-engine-querycontrol-querycontrol-src-minisql-executor-executor-ml-295591241"></a>
 ### queryControl
@@ -170,7 +170,7 @@ queryControl
 Cooperative cancellation/deadline state for the active top-level statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L193)
 
 <a id="field-field-minisql-executor-executor-engine-querymemory-querymemory-src-minisql-executor-executor-ml-1231164003"></a>
 ### queryMemory
@@ -182,7 +182,7 @@ queryMemory
 Soft-limit policy and diagnostics for the current or most recent statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L191)
 
 <a id="field-field-minisql-executor-executor-engine-recursivecteframes-recursivecteframes-src-minisql-executor-executor-ml-1705407119"></a>
 ### recursiveCteFrames
@@ -194,7 +194,7 @@ recursiveCteFrames
 Contains nested recursive-CTE working tables for this isolated session.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L183)
 
 <a id="field-field-minisql-executor-executor-engine-sequencevalues-sequencevalues-src-minisql-executor-executor-ml-2079191929"></a>
 ### sequenceValues
@@ -206,7 +206,7 @@ sequenceValues
 Stores the sequence values associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L179)
 
 <a id="field-field-minisql-executor-executor-engine-sessionid-sessionid-src-minisql-executor-executor-ml-1681942923"></a>
 ### sessionId
@@ -218,7 +218,7 @@ sessionId
 Identifies the session identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L177)
 
 <a id="field-field-minisql-executor-executor-engine-transactionmode-transactionmode-src-minisql-executor-executor-ml-1870542671"></a>
 ### transactionMode
@@ -230,7 +230,7 @@ transactionMode
 Stores the transaction mode associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L161)
 
 <a id="field-field-minisql-executor-executor-engine-triggerdepth-triggerdepth-src-minisql-executor-executor-ml-751431753"></a>
 ### triggerDepth
@@ -242,7 +242,7 @@ triggerDepth
 Tracks the trigger depth numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L162)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L181)
 
 <a id="field-field-minisql-executor-executor-engine-trusted-trusted-src-minisql-executor-executor-ml-1803999907"></a>
 ### trusted
@@ -254,4 +254,4 @@ trusted
 Stores the trusted associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L152)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L171)

@@ -12,7 +12,7 @@ struct HashJoinEntry
 Stores one build-side row in a hash-bucket collision chain.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L32)
 
 ## Members
 
@@ -26,7 +26,7 @@ key
 Non-NULL equality key retained for collision verification.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L34)
 
 <a id="field-field-minisql-executor-join-hashjoinentry-row-row-src-minisql-executor-join-ml-1293308001"></a>
 ### row
@@ -38,4 +38,4 @@ row
 Right/build-side row associated with the key.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L36)

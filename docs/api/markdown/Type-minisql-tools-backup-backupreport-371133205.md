@@ -12,7 +12,7 @@ struct BackupReport
 Groups the backup report state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L97)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L99)
 
 <a id="field-field-minisql-tools-backup-backupreport-filecount-filecount-src-minisql-tools-backup-ml-115602579"></a>
 ### fileCount
@@ -38,7 +38,7 @@ fileCount
 Tracks the file count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L103)
 
 <a id="field-field-minisql-tools-backup-backupreport-pagesize-pagesize-src-minisql-tools-backup-ml-348133467"></a>
 ### pageSize
@@ -50,7 +50,7 @@ pageSize
 Tracks the page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L101)
 
 <a id="field-field-minisql-tools-backup-backupreport-path-path-src-minisql-tools-backup-ml-187513793"></a>
 ### path
@@ -62,7 +62,7 @@ path
 Stores the filesystem path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L107)
 
 <a id="field-field-minisql-tools-backup-backupreport-totalbytes-totalbytes-src-minisql-tools-backup-ml-1006085909"></a>
 ### totalBytes
@@ -74,4 +74,4 @@ totalBytes
 Tracks the total bytes numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L105)

@@ -12,7 +12,7 @@ struct PhysicalPlan
 Groups the physical plan state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L16)
 
 ## Members
 
@@ -26,7 +26,7 @@ children
 Stores the children associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L26)
 
 <a id="field-field-minisql-planner-physical-plan-physicalplan-details-details-src-minisql-planner-physical-plan-ml-1906571363"></a>
 ### details
@@ -38,7 +38,7 @@ details
 Stores the details associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L20)
 
 <a id="field-field-minisql-planner-physical-plan-physicalplan-estimatedcost-estimatedcost-src-minisql-planner-physical-plan-ml-1970304235"></a>
 ### estimatedCost
@@ -50,7 +50,7 @@ estimatedCost
 Stores the estimated cost associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L24)
 
 <a id="field-field-minisql-planner-physical-plan-physicalplan-estimatedrows-estimatedrows-src-minisql-planner-physical-plan-ml-1525135987"></a>
 ### estimatedRows
@@ -62,7 +62,7 @@ estimatedRows
 Stores the estimated rows associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L22)
 
 <a id="field-field-minisql-planner-physical-plan-physicalplan-operator-operator-src-minisql-planner-physical-plan-ml-659188035"></a>
 ### operator
@@ -74,4 +74,4 @@ operator
 Stores the operator associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L18)

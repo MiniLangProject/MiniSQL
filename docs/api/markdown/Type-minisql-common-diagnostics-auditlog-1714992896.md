@@ -12,7 +12,7 @@ struct AuditLog
 Defines the audit log record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L85)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 Closed field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L97)
 
 <a id="field-field-minisql-common-diagnostics-auditlog-file-file-src-minisql-common-diagnostics-ml-647332218"></a>
 ### file
@@ -38,7 +38,7 @@ file
 File field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L89)
 
 <a id="field-field-minisql-common-diagnostics-auditlog-key-key-src-minisql-common-diagnostics-ml-1932974694"></a>
 ### key
@@ -50,7 +50,7 @@ key
 Key field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L91)
 
 <a id="field-field-minisql-common-diagnostics-auditlog-lasthash-lasthash-src-minisql-common-diagnostics-ml-1187342310"></a>
 ### lastHash
@@ -62,7 +62,7 @@ lastHash
 Last hash field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L95)
 
 <a id="field-field-minisql-common-diagnostics-auditlog-nextsequence-nextsequence-src-minisql-common-diagnostics-ml-1475967622"></a>
 ### nextSequence
@@ -74,7 +74,7 @@ nextSequence
 Next sequence field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L93)
 
 <a id="field-field-minisql-common-diagnostics-auditlog-path-path-src-minisql-common-diagnostics-ml-254599704"></a>
 ### path
@@ -86,4 +86,4 @@ path
 Path field of the audit log.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/diagnostics.ml#L87)

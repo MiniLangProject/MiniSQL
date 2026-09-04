@@ -1,3 +1,5 @@
+//! Provides minisql server session facilities for this project.
+
 package minisql.server.session
 
 // Copyright 2026 MiniLangProject contributors
@@ -18,79 +20,89 @@ import minisql.protocol.messages as messages
 import minisql.server.database_manager as database_manager
 import minisql.sql.parser as parser
 
+/// Defines the invalid argument constant used by the minisql server session module.
 const INVALID_ARGUMENT = 9001
+/// Defines the closed handle constant used by the minisql server session module.
 const CLOSED_HANDLE = 9008
+/// Defines the unsupported sql constant used by the minisql server session module.
 const UNSUPPORTED_SQL = 9025
+/// Defines the authentication failed constant used by the minisql server session module.
 const AUTHENTICATION_FAILED = 9027
+/// Defines the io failure constant used by the minisql server session module.
 const IO_FAILURE = 9005
+/// Defines the authentication required constant used by the minisql server session module.
 const AUTHENTICATION_REQUIRED = 9028
+/// Defines the auth handshake timeout ms constant used by the minisql server session module.
 const AUTH_HANDSHAKE_TIMEOUT_MS = 30000
-// Legacy public default retained for embedded callers and compatibility tests.
+/// Legacy public default retained for embedded callers and compatibility tests.
 const SESSION_IDLE_TIMEOUT_MS = 300000
-// A server cursor retains at most this many arbitrarily wide SQL rows before
-// formatting. Payload-size framing may split the batch further.
-// Coalesce several bounded executor source batches into one protocol response.
-// Sixty-four rows amortize framing without the latency and decoder pressure of
-// very large continuation frames.
+/// A server cursor retains at most this many arbitrarily wide SQL rows before
 const STREAM_RESULT_ROWS = 64
 
-// Groups the session state and preserves the field relationships documented below.
+/// Groups the session state and preserves the field relationships documented below.
 struct Session
-  // Stores the engine associated with this value.
+  /// Stores the engine associated with this value.
   engine
-  // Indicates whether the closed condition is active.
+  /// Indicates whether the closed condition is active.
   closed
-  // Stores the close requested associated with this value.
+  /// Stores the close requested associated with this value.
   closeRequested
-  // Indicates whether the secure condition is active.
+  /// Indicates whether the secure condition is active.
   secure
-  // Indicates whether the authenticated condition is active.
+  /// Indicates whether the authenticated condition is active.
   authenticated
-  // Indicates whether the pending username condition is active.
+  /// Indicates whether the pending username condition is active.
   pendingUsername
-  // Indicates whether the pending principal identifier condition is active.
+  /// Indicates whether the pending principal identifier condition is active.
   pendingPrincipalId
-  // Indicates whether the pending nonce condition is active.
+  /// Indicates whether the pending nonce condition is active.
   pendingNonce
-  // Indicates whether the pending verifier condition is active.
+  /// Indicates whether the pending verifier condition is active.
   pendingVerifier
-  // Stores the attempts associated with this value.
+  /// Stores the attempts associated with this value.
   attempts
-  // Stores the transport send key associated with this value.
+  /// Stores the transport send key associated with this value.
   transportSendKey
-  // Stores the transport receive key associated with this value.
+  /// Stores the transport receive key associated with this value.
   transportReceiveKey
-  // Stores the transport pending associated with this value.
+  /// Stores the transport pending associated with this value.
   transportPending
-  // Stores the created at associated with this value.
+  /// Stores the created at associated with this value.
   createdAt
-  // Stores the last activity associated with this value.
+  /// Stores the last activity associated with this value.
   lastActivity
-  // Prevents lock-wait retries from double-counting one logical statement.
+  /// Prevents lock-wait retries from double-counting one logical statement.
   statementTracked
-  // Monotonic timestamp at which the tracked statement began.
+  /// Monotonic timestamp at which the tracked statement began.
   statementStartedAt
-  // Complete encoded response bytes accumulated by the tracked statement.
+  /// Complete encoded response bytes accumulated by the tracked statement.
   statementResultBytes
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql server session module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "server.session." + operation + ": " + message)
 end function
 
-// Returns whether the supplied value satisfies the session condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the session condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isSession(value)
   return value is Session
 end function
 
-// Creates session using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Creates session using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param engine engine value consumed by this operation.
+/// @param secure secure value consumed by this operation.
+/// @param authenticated authenticated value consumed by this operation.
 function createSession(engine, secure, authenticated)
   configured = try(executor.setQueryMemoryLimit(engine, database_manager.queryMemoryLimit(engine.database)))
   if typeof(configured) == "error" then return configured end if
@@ -100,58 +112,65 @@ function createSession(engine, secure, authenticated)
   return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now, false, 0, 0)
 end function
 
-// Opens open using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens open for the minisql server session module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
 function open(databasePath)
   return createSession(executor.open(databasePath), false, true)
 end function
 
-// Opens secure using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens secure using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param databasePath Path associated with database.
 function openSecure(databasePath)
   return createSession(executor.open(databasePath), true, false)
 end function
 
-// Opens attached using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens attached using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function openAttached(database)
   engine = try(executor.attach(database))
   if typeof(engine) == "error" then return engine end if
   return createSession(engine, false, true)
 end function
 
-// Completes process-local database preparation before the listener advertises
-// readiness, so the first client's HELLO does not pay the full index audit cost.
+/// Completes process-local database preparation before the listener advertises
+/// readiness, so the first client's HELLO does not pay the full index audit cost.
+/// @param database database value consumed by this operation.
 function prepareAttachedDatabase(database)
   return executor.prepareDatabase(database)
 end function
 
-// Opens secure attached using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Opens secure attached using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param database database value consumed by this operation.
 function openSecureAttached(database)
   engine = try(executor.attach(database))
   if typeof(engine) == "error" then return engine end if
   return createSession(engine, true, false)
 end function
 
-// Implements touch for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements touch for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
 function touch(session)
   validateOpen(session, "touch")
   session.lastActivity = clock.monotonicMilliseconds()
   return true
 end function
 
-// Returns whether the supplied value satisfies the expired condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the expired condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param session session value consumed by this operation.
 function isExpired(session)
   validateOpen(session, "isExpired")
   now = clock.monotonicMilliseconds()
@@ -159,14 +178,16 @@ function isExpired(session)
   return now - session.lastActivity >= database_manager.idleTimeoutMs(session.engine.database)
 end function
 
-// Implements idle timeout milliseconds for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements idle timeout milliseconds for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function idleTimeoutMilliseconds()
   return SESSION_IDLE_TIMEOUT_MS
 end function
 
-// Begins metrics tracking exactly once across cooperative lock-wait retries.
+/// Begins metrics tracking exactly once across cooperative lock-wait retries.
+/// @param session session value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function beginTrackedStatement(session, sqlText)
   if session.statementTracked then return true end if
   admitted = try(executor.beginQueryControl(session.engine))
@@ -179,7 +200,11 @@ function beginTrackedStatement(session, sqlText)
   return true
 end function
 
-// Completes metrics, latency, budget and slow-query tracking.
+/// Completes metrics, latency, budget and slow-query tracking.
+/// @param session session value consumed by this operation.
+/// @param success success value consumed by this operation.
+/// @param rowCount Number of row to process.
+/// @param errorCode errorCode value consumed by this operation.
 function finishTrackedStatementWithCode(session, success, rowCount, errorCode)
   if not session.statementTracked then return true end if
   elapsed = clock.monotonicMilliseconds() - session.statementStartedAt
@@ -193,24 +218,31 @@ function finishTrackedStatementWithCode(session, success, rowCount, errorCode)
   return finished
 end function
 
-// Compatibility helper for ordinary outcomes without a production-control code.
+/// Compatibility helper for ordinary outcomes without a production-control code.
+/// @param session session value consumed by this operation.
+/// @param success success value consumed by this operation.
+/// @param rowCount Number of row to process.
 function finishTrackedStatement(session, success, rowCount)
   return finishTrackedStatementWithCode(session, success, rowCount, 0)
 end function
 
-// Validates open using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Validates open for the minisql server session workflow.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(session, operation)
   if session is not Session then return fail(INVALID_ARGUMENT, operation, "session must be Session") end if
   if session.closed then return fail(CLOSED_HANDLE, operation, "session is closed") end if
   return true
 end function
 
-// Implements response message for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements response message for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param request request value consumed by this operation.
+/// @param response response value consumed by this operation.
 function responseMessage(request, response)
   payload = messages.encodeResponse(response)
   kind = constants.TYPE_RESPONSE
@@ -218,7 +250,9 @@ function responseMessage(request, response)
   return messages.create(kind, 0, request.requestId, payload)
 end function
 
-// Encodes bounded result batches and marks every non-final frame for the client.
+/// Encodes bounded result batches and marks every non-final frame for the client.
+/// @param request request value consumed by this operation.
+/// @param responses responses value consumed by this operation.
 function responseMessages(request, responses)
   if typeof(responses) != "array" or len(responses) == 0 then return fail(INVALID_ARGUMENT, "responseMessages", "responses must be non-empty") end if
   output = []
@@ -233,17 +267,19 @@ function responseMessages(request, responses)
   return output
 end function
 
-// Implements authentication error for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authentication error for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param request request value consumed by this operation.
 function authenticationError(request)
   return responseMessage(request, messages.errorResponse(AUTHENTICATION_FAILED, "authentication failed"))
 end function
 
-// Implements clear pending for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Implements clear pending for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
 function clearPending(session)
   if typeof(session.pendingVerifier) == "bytes" then fillBytes(session.pendingVerifier, 0, len(session.pendingVerifier), 0) end if
   if typeof(session.pendingNonce) == "bytes" then fillBytes(session.pendingNonce, 0, len(session.pendingNonce), 0) end if
@@ -254,9 +290,11 @@ function clearPending(session)
   return true
 end function
 
-// Implements fake authentication material for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements fake authentication material for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
+/// @param username username value consumed by this operation.
 function fakeAuthenticationMaterial(session, username)
   seed = session.engine.database.catalogHandle.metadata.databaseId
   salt = uuid.deriveKey(seed, bytes("MiniSQL-FAKE-SALT-1|" + username), 1, uuid.PASSWORD_SALT_BYTES)
@@ -266,9 +304,10 @@ function fakeAuthenticationMaterial(session, username)
   return [uuid.DEFAULT_PBKDF2_ITERATIONS, salt, verifier]
 end function
 
-// Implements authentication backoff for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements authentication backoff for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
 function authenticationBackoff(session)
   delay = 50 * (session.attempts + 1)
   if delay > 250 then delay = 250 end if
@@ -276,10 +315,12 @@ function authenticationBackoff(session)
   return true
 end function
 
-// Handles auth begin using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Handles auth begin using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
 function handleAuthBegin(session, request)
   if not session.secure or session.authenticated then return authenticationError(request) end if
   clearPending(session)
@@ -316,10 +357,12 @@ function handleAuthBegin(session, request)
   return response
 end function
 
-// Handles auth proof using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Handles auth proof using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
 function handleAuthProof(session, request)
   if not session.secure or session.authenticated or session.pendingUsername is void then return authenticationError(request) end if
   if typeof(request.payload) != "bytes" or len(request.payload) != uuid.PASSWORD_VERIFIER_BYTES then clearPending(session); return authenticationError(request) end if
@@ -380,25 +423,29 @@ function handleAuthProof(session, request)
   return authenticationError(request)
 end function
 
-// Implements transport ready for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements transport ready for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
 function transportReady(session)
   validateOpen(session, "transportReady")
   return session.transportPending
 end function
 
-// Implements session identifier for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements session identifier for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
 function sessionIdentifier(session)
   validateOpen(session, "sessionIdentifier")
   return executor.sessionIdentifier(session.engine)
 end function
 
-// Implements abort for concurrency unlocked for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements abort for concurrency unlocked for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
+/// @param errorCode errorCode value consumed by this operation.
 function abortForConcurrencyUnlockedWithCode(session, errorCode)
   validateOpen(session, "abortForConcurrency")
   result = try(executor.abortForConcurrency(session.engine))
@@ -406,15 +453,17 @@ function abortForConcurrencyUnlockedWithCode(session, errorCode)
   return result
 end function
 
-// Aborts an ordinary lock conflict without assigning a terminal control code.
+/// Aborts an ordinary lock conflict without assigning a terminal control code.
+/// @param session session value consumed by this operation.
 function abortForConcurrencyUnlocked(session)
   return abortForConcurrencyUnlockedWithCode(session, 0)
 end function
 
-// Implements abort for concurrency for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements abort for concurrency for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
 function abortForConcurrency(session)
   validateOpen(session, "abortForConcurrency")
   if session.engine.ownsDatabase then return abortForConcurrencyUnlocked(session) end if
@@ -425,8 +474,9 @@ function abortForConcurrency(session)
   return result
 end function
 
-// Aborts a logical lock wait at the absolute statement deadline while keeping
-// the wire-compatible lock-timeout response code in the listener.
+/// Aborts a logical lock wait at the absolute statement deadline while keeping
+/// the wire-compatible lock-timeout response code in the listener.
+/// @param session session value consumed by this operation.
 function abortForConcurrencyTimeout(session)
   validateOpen(session, "abortForConcurrencyTimeout")
   if session.engine.ownsDatabase then return abortForConcurrencyUnlockedWithCode(session, 9036) end if
@@ -437,9 +487,11 @@ function abortForConcurrencyTimeout(session)
   return result
 end function
 
-// Implements activate transport for this module.
-// Returns the computed value or operation status.
-// May mutate supplied state and perform I/O through its dependencies.
+/// Implements activate transport for this module.
+/// Returns the computed value or operation status.
+/// May mutate supplied state and perform I/O through its dependencies.
+/// @param session session value consumed by this operation.
+/// @param connection connection value consumed by this operation.
 function activateTransport(session, connection)
   validateOpen(session, "activateTransport")
   if not session.transportPending then return true end if
@@ -452,18 +504,21 @@ function activateTransport(session, connection)
   return true
 end function
 
-// Returns whether this session still has a logical lock blocker. The check is
-// side-effect free and lets the listener suspend a request without executing it
-// repeatedly while another explicit transaction owns the writer lock.
+/// Returns whether this session still has a logical lock blocker. The check is
+/// side-effect free and lets the listener suspend a request without executing it
+/// repeatedly while another explicit transaction owns the writer lock.
+/// @param session session value consumed by this operation.
 function waitingForConcurrency(session)
   validateOpen(session, "waitingForConcurrency")
   return database_manager.isLockWaiting(session.engine.database, executor.sessionIdentifier(session.engine))
 end function
 
-// Handles query using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Handles query using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
 function handleQuery(session, request)
   if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
   if len(request.payload) > database_manager.maxStatementBytes(session.engine.database) then return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "query exceeds configured maxStatementBytes")) end if
@@ -484,9 +539,12 @@ function handleQuery(session, request)
   return executeParsedQuery(session, request, parsed[0])
 end function
 
-// Executes an already parsed statement through the ordinary materializing API.
-// Keeping this tail separate lets the network streaming path reuse parsing,
-// authorization errors, and the exact fallback response contract.
+/// Executes an already parsed statement through the ordinary materializing API.
+/// Keeping this tail separate lets the network streaming path reuse parsing,
+/// authorization errors, and the exact fallback response contract.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
+/// @param statement statement value consumed by this operation.
 function executeParsedQuery(session, request, statement)
   sessionId = executor.sessionIdentifier(session.engine)
   // The executor centrally selects the shared-reader or exclusive-writer path.
@@ -518,9 +576,12 @@ function executeParsedQuery(session, request, statement)
   return framed
 end function
 
-// Streams an eligible non-blocking SELECT directly to one connection. One
-// protocol frame plus one look-ahead frame are retained, so both server and
-// cursor-aware client memory remain bounded while FLAG_MORE stays exact.
+/// Streams an eligible non-blocking SELECT directly to one connection. One
+/// protocol frame plus one look-ahead frame are retained, so both server and
+/// cursor-aware client memory remain bounded while FLAG_MORE stays exact.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
+/// @param connection connection value consumed by this operation.
 function handleQueryStreaming(session, request, connection)
   if session.secure and not session.authenticated then return responseMessage(request, messages.errorResponse(AUTHENTICATION_REQUIRED, "authentication is required")) end if
   if len(request.payload) > database_manager.maxStatementBytes(session.engine.database) then return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "query exceeds configured maxStatementBytes")) end if
@@ -587,17 +648,22 @@ function handleQueryStreaming(session, request, connection)
   return []
 end function
 
-// Handles a request and, for eligible SELECTs, writes response batches directly
-// to the supplied protocol connection. An empty array means delivery completed.
+/// Handles a request and, for eligible SELECTs, writes response batches directly
+/// to the supplied protocol connection. An empty array means delivery completed.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
+/// @param connection connection value consumed by this operation.
 function handleToConnection(session, request, connection)
   validateOpen(session, "handleToConnection")
   if messages.isMessage(request) and request.messageType == constants.TYPE_QUERY then return handleQueryStreaming(session, request, connection) end if
   return handle(session, request)
 end function
 
-// Handles unlocked using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Handles unlocked using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
 function handleUnlocked(session, request)
   validateOpen(session, "handle")
   if isExpired(session) then session.closeRequested = true; return responseMessage(request, messages.errorResponse(AUTHENTICATION_FAILED, "session expired")) end if
@@ -633,10 +699,12 @@ function handleUnlocked(session, request)
   return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "unsupported request type"))
 end function
 
-// Handles handle using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Handles handle using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
+/// @param request request value consumed by this operation.
 function handle(session, request)
   validateOpen(session, "handle")
   if session.engine.ownsDatabase then return handleUnlocked(session, request) end if
@@ -664,10 +732,11 @@ function handle(session, request)
   return result
 end function
 
-// Closes unlocked using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// May mutate supplied state as documented by the operation name.
+/// Closes unlocked using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// May mutate supplied state as documented by the operation name.
+/// @param session session value consumed by this operation.
 function closeUnlocked(session)
   validateOpen(session, "close")
   clearPending(session)
@@ -684,10 +753,11 @@ function closeUnlocked(session)
   return true
 end function
 
-// Closes close using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Closes close owned by the minisql server session module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param session session value consumed by this operation.
 function close(session)
   validateOpen(session, "close")
   // A standalone session owns and closes its database, including the lock.
@@ -699,23 +769,23 @@ function close(session)
   return result
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql server session module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "server.session"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql server session module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql server session module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

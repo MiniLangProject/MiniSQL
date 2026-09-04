@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql server database manager facilities for this project.
+
 Package: [`minisql.server.database_manager`](Package-minisql-server-database-manager-4763150.md)
 
 Reachable from entry: **yes**
@@ -43,11 +45,11 @@ Acquires or lazily opens one persistent read-only index tree. The registry guard
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `path` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L529)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L582)
 
 <a id="function-function-minisql-server-database-manager-acquirestatementread-function-acquirestatementread-database-transactionid-isolationlevel-src-minisql-server-database-manager-ml-1770792312"></a>
 ### acquireStatementRead
@@ -60,12 +62,12 @@ Acquires statement read using the supplied inputs. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
-| `isolationLevel` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
+| `isolationLevel` | `dynamic` | — | isolationLevel value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1525)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1700)
 
 <a id="function-function-minisql-server-database-manager-acquiretablereadhandle-function-acquiretablereadhandle-database-path-src-minisql-server-database-manager-ml-1197905130"></a>
 ### acquireTableReadHandle
@@ -78,11 +80,11 @@ Acquires or lazily opens one persistent read-only table PagedFile.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `path` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L551)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L606)
 
 <a id="function-function-minisql-server-database-manager-acquirewrite-function-acquirewrite-database-transactionid-src-minisql-server-database-manager-ml-354799822"></a>
 ### acquireWrite
@@ -95,11 +97,11 @@ Acquires write using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1541)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1720)
 
 <a id="function-function-minisql-server-database-manager-activeconcurrentreaders-function-activeconcurrentreaders-database-src-minisql-server-database-manager-ml-1058579915"></a>
 ### activeConcurrentReaders
@@ -112,10 +114,10 @@ Returns the number of readers currently admitted through the physical execution 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L751)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L820)
 
 <a id="function-function-minisql-server-database-manager-activewriter-function-activewriter-database-src-minisql-server-database-manager-ml-1433518617"></a>
 ### activeWriter
@@ -128,10 +130,10 @@ Implements active writer for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1580)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1767)
 
 <a id="function-function-minisql-server-database-manager-admitstatement-function-admitstatement-database-src-minisql-server-database-manager-ml-746818001"></a>
 ### admitStatement
@@ -144,10 +146,10 @@ Rejects new statements before they can amplify an already exhausted heap. `heap_
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1370)
 
 <a id="function-function-minisql-server-database-manager-advanceplanninggeneration-function-advanceplanninggeneration-database-src-minisql-server-database-manager-ml-1358904795"></a>
 ### advancePlanningGeneration
@@ -160,10 +162,10 @@ Advances the shared generation after committed DDL or statistics maintenance.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1684)
 
 <a id="function-function-minisql-server-database-manager-allocatesessionid-function-allocatesessionid-database-src-minisql-server-database-manager-ml-460304021"></a>
 ### allocateSessionId
@@ -176,10 +178,10 @@ Implements allocate session identifier for this module. Returns the computed val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1270)
 
 <a id="function-function-minisql-server-database-manager-audit-function-audit-database-eventtype-outcome-sessionid-principalid-detail-src-minisql-server-database-manager-ml-103372822"></a>
 ### audit
@@ -192,15 +194,15 @@ Implements audit for this module. Returns the computed value or operation status
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `eventType` | `dynamic` | — |  |
-| `outcome` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
-| `detail` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `eventType` | `dynamic` | — | eventType value consumed by this operation. |
+| `outcome` | `dynamic` | — | outcome value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
+| `detail` | `dynamic` | — | detail value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1596)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1790)
 
 <a id="function-function-minisql-server-database-manager-begin-function-begin-database-isolationlevel-readonly-src-minisql-server-database-manager-ml-982779975"></a>
 ### begin
@@ -213,12 +215,12 @@ Implements begin for this module. Returns the computed value or operation status
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `isolationLevel` | `dynamic` | — |  |
-| `readOnly` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `isolationLevel` | `dynamic` | — | isolationLevel value consumed by this operation. |
+| `readOnly` | `dynamic` | — | readOnly value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1259)
 
 <a id="function-function-minisql-server-database-manager-beginoperationalstatement-function-beginoperationalstatement-database-sessionid-principalid-sqltext-src-minisql-server-database-manager-ml-1918730044"></a>
 ### beginOperationalStatement
@@ -231,13 +233,13 @@ Marks a session as executing and stores only a bounded SQL summary.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1458)
 
 <a id="function-function-minisql-server-database-manager-bytesequal-function-bytesequal-left-right-src-minisql-server-database-manager-ml-1960047517"></a>
 ### bytesEqual
@@ -246,15 +248,15 @@ Marks a session as executing and stores only a bounded SQL summary.
 function bytesEqual(left, right)
 ```
 
-Implements bytes equal for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the bytesEqual operation for the minisql server database manager module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L302)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L327)
 
 - [minisql.server.database_manager.CachedReadHandle](Type-minisql-server-database-manager-cachedreadhandle-2118149404.md) — struct
 <a id="function-function-minisql-server-database-manager-cancellockwait-function-cancellockwait-database-transactionid-src-minisql-server-database-manager-ml-1877412974"></a>
@@ -268,11 +270,11 @@ Implements cancel lock wait for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1557)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1740)
 
 <a id="constant-constant-minisql-server-database-manager-checkpoint-marker-bytes-const-checkpoint-marker-bytes-24-src-minisql-server-database-manager-ml-1686015107"></a>
 ### CHECKPOINT_MARKER_BYTES
@@ -281,10 +283,10 @@ Implements cancel lock wait for this module. Returns the computed value or opera
 const CHECKPOINT_MARKER_BYTES = 24
 ```
 
-Durable marker formats used to make physical WAL reset crash-safe. The epoch marker remains for the lifetime of a database after its first reset and tells recovery to replay the bounded current WAL without comparing pre-reset page LSNs. The pending marker is removed after WAL and checkpoint metadata agree.
+Durable marker formats used to make physical WAL reset crash-safe. The epoch
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L103)
 
 <a id="function-function-minisql-server-database-manager-checkpointafterstatement-function-checkpointafterstatement-database-src-minisql-server-database-manager-ml-1516369273"></a>
 ### checkpointAfterStatement
@@ -297,10 +299,10 @@ Runs post-commit checkpoint maintenance without changing an already durable SQL 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1696)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1902)
 
 <a id="function-function-minisql-server-database-manager-checkpointifneeded-function-checkpointifneeded-database-src-minisql-server-database-manager-ml-555174705"></a>
 ### checkpointIfNeeded
@@ -313,10 +315,10 @@ Resets the current WAL at a fully published statement boundary once it reaches t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1640)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1842)
 
 <a id="function-function-minisql-server-database-manager-checkpointmarkerbytes-function-checkpointmarkerbytes-magic-databaseid-src-minisql-server-database-manager-ml-1050544329"></a>
 ### checkpointMarkerBytes
@@ -329,11 +331,11 @@ Encodes an eight-byte marker magic and the database identity into one small, sel
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `magic` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `magic` | `dynamic` | — | magic value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L384)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L423)
 
 <a id="function-function-minisql-server-database-manager-checkpointresetcount-function-checkpointresetcount-database-src-minisql-server-database-manager-ml-1168345789"></a>
 ### checkpointResetCount
@@ -346,10 +348,10 @@ Returns the number of successful process-local automatic WAL resets.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1671)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1874)
 
 <a id="function-function-minisql-server-database-manager-close-function-close-database-src-minisql-server-database-manager-ml-2115470381"></a>
 ### close
@@ -358,14 +360,14 @@ Returns the number of successful process-local automatic WAL resets.
 function close(database)
 ```
 
-Closes close using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state and perform I/O through its dependencies.
+Closes close owned by the minisql server database manager module. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state and perform I/O through its dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1927)
 
 <a id="constant-constant-minisql-server-database-manager-closed-handle-const-closed-handle-9008-src-minisql-server-database-manager-ml-951772886"></a>
 ### CLOSED_HANDLE
@@ -374,8 +376,10 @@ Closes close using the supplied inputs. Requires arguments that satisfy the vali
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L36)
 
 <a id="function-function-minisql-server-database-manager-closereadhandlecache-function-closereadhandlecache-database-src-minisql-server-database-manager-ml-1728057825"></a>
 ### closeReadHandleCache
@@ -388,10 +392,10 @@ Permanently closes the database-owned registry during database shutdown.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L672)
 
 <a id="function-function-minisql-server-database-manager-closereadhandlemap-function-closereadhandlemap-values-src-minisql-server-database-manager-ml-1506922758"></a>
 ### closeReadHandleMap
@@ -404,10 +408,10 @@ Closes every entry in one raw HashMap while the registry and writer gates are he
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L574)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L630)
 
 <a id="function-function-minisql-server-database-manager-closerecoveryfiles-function-closerecoveryfiles-files-src-minisql-server-database-manager-ml-1438142183"></a>
 ### closeRecoveryFiles
@@ -420,10 +424,10 @@ Closes recovery files using the supplied inputs. Returns its result or propagate
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `files` | `dynamic` | — |  |
+| `files` | `dynamic` | — | files value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L433)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L477)
 
 <a id="function-function-minisql-server-database-manager-componentname-function-componentname-src-minisql-server-database-manager-ml-646902112"></a>
 ### componentName
@@ -432,10 +436,10 @@ Closes recovery files using the supplied inputs. Returns its result or propagate
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql server database manager module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1754)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1964)
 
 <a id="function-function-minisql-server-database-manager-configureoperationallimits-function-configureoperationallimits-database-maxstatementbytes-maxframebytes-maxresultrows-idletimeoutms-src-minisql-server-database-manager-ml-1533075502"></a>
 ### configureOperationalLimits
@@ -448,14 +452,14 @@ Applies validated protocol and result limits before the listener accepts clients
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `maxStatementBytes` | `dynamic` | — |  |
-| `maxFrameBytes` | `dynamic` | — |  |
-| `maxResultRows` | `dynamic` | — |  |
-| `idleTimeoutMs` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `maxStatementBytes` | `dynamic` | — | maxStatementBytes value consumed by this operation. |
+| `maxFrameBytes` | `dynamic` | — | maxFrameBytes value consumed by this operation. |
+| `maxResultRows` | `dynamic` | — | maxResultRows value consumed by this operation. |
+| `idleTimeoutMs` | `dynamic` | — | idleTimeoutMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1289)
 
 <a id="function-function-minisql-server-database-manager-configureproductioncontrols-function-configureproductioncontrols-database-querytimeoutms-maxresultbytes-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-database-manager-ml-1117987113"></a>
 ### configureProductionControls
@@ -468,15 +472,15 @@ Applies process-wide admission, response, spill, timeout, and slow-query policy.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `queryTimeoutMs` | `dynamic` | — |  |
-| `maxResultBytes` | `dynamic` | — |  |
-| `processMemoryBytes` | `dynamic` | — |  |
-| `temporaryStorageBytes` | `dynamic` | — |  |
-| `slowQueryMs` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `queryTimeoutMs` | `dynamic` | — | queryTimeoutMs value consumed by this operation. |
+| `maxResultBytes` | `dynamic` | — | maxResultBytes value consumed by this operation. |
+| `processMemoryBytes` | `dynamic` | — | processMemoryBytes value consumed by this operation. |
+| `temporaryStorageBytes` | `dynamic` | — | temporaryStorageBytes value consumed by this operation. |
+| `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1309)
 
 <a id="function-function-minisql-server-database-manager-configurewritefencing-function-configurewritefencing-database-leasepath-epoch-nodeid-clockskewms-src-minisql-server-database-manager-ml-1659031164"></a>
 ### configureWriteFencing
@@ -489,14 +493,14 @@ Enables controller-backed write fencing for this process. Startup fails closed u
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `leasePath` | `dynamic` | — |  |
-| `epoch` | `dynamic` | — |  |
-| `nodeId` | `dynamic` | — |  |
-| `clockSkewMs` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `leasePath` | `dynamic` | — | Path associated with lease. |
+| `epoch` | `dynamic` | — | epoch value consumed by this operation. |
+| `nodeId` | `dynamic` | — | Identifier of node. |
+| `clockSkewMs` | `dynamic` | — | clockSkewMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1094)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1197)
 
 <a id="constant-constant-minisql-server-database-manager-corrupt-data-const-corrupt-data-9004-src-minisql-server-database-manager-ml-1267010572"></a>
 ### CORRUPT_DATA
@@ -505,8 +509,10 @@ Enables controller-backed write fencing for this process. Startup fails closed u
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L34)
 
 <a id="function-function-minisql-server-database-manager-create-function-create-dataroot-name-defaults-src-minisql-server-database-manager-ml-294799589"></a>
 ### create
@@ -515,16 +521,16 @@ const CORRUPT_DATA = 9004
 function create(dataRoot, name, defaults)
 ```
 
-Creates create using the supplied inputs. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Creates create for the minisql server database manager module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `dataRoot` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `defaults` | `dynamic` | — |  |
+| `dataRoot` | `dynamic` | — | dataRoot value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `defaults` | `dynamic` | — | defaults value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1245)
 
 <a id="function-function-minisql-server-database-manager-createexecutiongate-function-createexecutiongate-src-minisql-server-database-manager-ml-1842104750"></a>
 ### createExecutionGate
@@ -536,7 +542,7 @@ function createExecutionGate()
 Creates a writer-prioritized gate in the empty state. Returns the gate or a threading error after closing any partially created primitive.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L452)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L498)
 
 <a id="function-function-minisql-server-database-manager-createreadhandlecache-function-createreadhandlecache-src-minisql-server-database-manager-ml-575842536"></a>
 ### createReadHandleCache
@@ -548,7 +554,7 @@ function createReadHandleCache()
 Creates an empty persistent read-handle registry. Handles are opened lazily so databases with many cold tables consume no native handle resources.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L463)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L509)
 
 <a id="function-function-minisql-server-database-manager-createtable-function-createtable-database-name-definitions-src-minisql-server-database-manager-ml-1828741756"></a>
 ### createTable
@@ -561,12 +567,12 @@ Creates table using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `definitions` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `definitions` | `dynamic` | — | definitions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1708)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1917)
 
 <a id="constant-constant-minisql-server-database-manager-default-buffer-pool-bytes-const-default-buffer-pool-bytes-268435456-src-minisql-server-database-manager-ml-546526936"></a>
 ### DEFAULT_BUFFER_POOL_BYTES
@@ -575,8 +581,10 @@ Creates table using the supplied inputs. Returns the computed value or operation
 const DEFAULT_BUFFER_POOL_BYTES = 268435456
 ```
 
+Defines the default buffer pool bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L42)
 
 <a id="constant-constant-minisql-server-database-manager-default-checkpoint-wal-bytes-const-default-checkpoint-wal-bytes-67108864-src-minisql-server-database-manager-ml-1300344905"></a>
 ### DEFAULT_CHECKPOINT_WAL_BYTES
@@ -585,8 +593,10 @@ const DEFAULT_BUFFER_POOL_BYTES = 268435456
 const DEFAULT_CHECKPOINT_WAL_BYTES = 67108864
 ```
 
+Defines the default checkpoint wal bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L40)
 
 <a id="constant-constant-minisql-server-database-manager-default-idle-timeout-ms-const-default-idle-timeout-ms-300000-src-minisql-server-database-manager-ml-1963309740"></a>
 ### DEFAULT_IDLE_TIMEOUT_MS
@@ -595,8 +605,10 @@ const DEFAULT_CHECKPOINT_WAL_BYTES = 67108864
 const DEFAULT_IDLE_TIMEOUT_MS = 300000
 ```
 
+Defines the default idle timeout ms constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L39)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L52)
 
 <a id="constant-constant-minisql-server-database-manager-default-max-frame-bytes-const-default-max-frame-bytes-8388608-src-minisql-server-database-manager-ml-1292238002"></a>
 ### DEFAULT_MAX_FRAME_BYTES
@@ -605,8 +617,10 @@ const DEFAULT_IDLE_TIMEOUT_MS = 300000
 const DEFAULT_MAX_FRAME_BYTES = 8388608
 ```
 
+Defines the default max frame bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L37)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L48)
 
 <a id="constant-constant-minisql-server-database-manager-default-max-result-bytes-const-default-max-result-bytes-268435456-src-minisql-server-database-manager-ml-87944274"></a>
 ### DEFAULT_MAX_RESULT_BYTES
@@ -615,8 +629,10 @@ const DEFAULT_MAX_FRAME_BYTES = 8388608
 const DEFAULT_MAX_RESULT_BYTES = 268435456
 ```
 
+Defines the default max result bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L41)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L56)
 
 <a id="constant-constant-minisql-server-database-manager-default-max-result-rows-const-default-max-result-rows-1000000-src-minisql-server-database-manager-ml-2040934280"></a>
 ### DEFAULT_MAX_RESULT_ROWS
@@ -625,8 +641,10 @@ const DEFAULT_MAX_RESULT_BYTES = 268435456
 const DEFAULT_MAX_RESULT_ROWS = 1000000
 ```
 
+Defines the default max result rows constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L38)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L50)
 
 <a id="constant-constant-minisql-server-database-manager-default-max-statement-bytes-const-default-max-statement-bytes-1048576-src-minisql-server-database-manager-ml-719685438"></a>
 ### DEFAULT_MAX_STATEMENT_BYTES
@@ -635,8 +653,10 @@ const DEFAULT_MAX_RESULT_ROWS = 1000000
 const DEFAULT_MAX_STATEMENT_BYTES = 1048576
 ```
 
+Defines the default max statement bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L36)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L46)
 
 <a id="constant-constant-minisql-server-database-manager-default-process-memory-bytes-const-default-process-memory-bytes-2147483648-src-minisql-server-database-manager-ml-325976282"></a>
 ### DEFAULT_PROCESS_MEMORY_BYTES
@@ -645,8 +665,10 @@ const DEFAULT_MAX_STATEMENT_BYTES = 1048576
 const DEFAULT_PROCESS_MEMORY_BYTES = 2147483648
 ```
 
+Defines the default process memory bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L42)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L58)
 
 <a id="constant-constant-minisql-server-database-manager-default-query-memory-bytes-const-default-query-memory-bytes-67108864-src-minisql-server-database-manager-ml-1766523231"></a>
 ### DEFAULT_QUERY_MEMORY_BYTES
@@ -655,8 +677,10 @@ const DEFAULT_PROCESS_MEMORY_BYTES = 2147483648
 const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 ```
 
+Defines the default query memory bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L44)
 
 <a id="constant-constant-minisql-server-database-manager-default-query-timeout-ms-const-default-query-timeout-ms-30000-src-minisql-server-database-manager-ml-1995372186"></a>
 ### DEFAULT_QUERY_TIMEOUT_MS
@@ -665,8 +689,10 @@ const DEFAULT_QUERY_MEMORY_BYTES = 67108864
 const DEFAULT_QUERY_TIMEOUT_MS = 30000
 ```
 
+Defines the default query timeout ms constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L40)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L54)
 
 <a id="constant-constant-minisql-server-database-manager-default-slow-query-ms-const-default-slow-query-ms-1000-src-minisql-server-database-manager-ml-830951850"></a>
 ### DEFAULT_SLOW_QUERY_MS
@@ -675,8 +701,10 @@ const DEFAULT_QUERY_TIMEOUT_MS = 30000
 const DEFAULT_SLOW_QUERY_MS = 1000
 ```
 
+Defines the default slow query ms constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L44)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L62)
 
 <a id="constant-constant-minisql-server-database-manager-default-temporary-storage-bytes-const-default-temporary-storage-bytes-1073741824-src-minisql-server-database-manager-ml-1081239336"></a>
 ### DEFAULT_TEMPORARY_STORAGE_BYTES
@@ -685,8 +713,10 @@ const DEFAULT_SLOW_QUERY_MS = 1000
 const DEFAULT_TEMPORARY_STORAGE_BYTES = 1073741824
 ```
 
+Defines the default temporary storage bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L43)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L60)
 
 <a id="function-function-minisql-server-database-manager-enforceprocessmemory-function-enforceprocessmemory-database-src-minisql-server-database-manager-ml-71376621"></a>
 ### enforceProcessMemory
@@ -699,10 +729,10 @@ Enforces the managed-heap ceiling for already admitted work at cooperative execu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1383)
 
 <a id="function-function-minisql-server-database-manager-ensurecheckpointmarker-function-ensurecheckpointmarker-path-expected-src-minisql-server-database-manager-ml-1489144155"></a>
 ### ensureCheckpointMarker
@@ -715,11 +745,11 @@ Creates a marker durably or validates an already durable retry instance.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L456)
 
 <a id="function-function-minisql-server-database-manager-enterexecution-function-enterexecution-database-src-minisql-server-database-manager-ml-646115193"></a>
 ### enterExecution
@@ -732,10 +762,10 @@ Backward-compatible names denote exclusive engine execution. Authentication, ses
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L699)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L763)
 
 <a id="function-function-minisql-server-database-manager-enterexecutioncontrolled-function-enterexecutioncontrolled-database-sessionid-src-minisql-server-database-manager-ml-594284070"></a>
 ### enterExecutionControlled
@@ -748,11 +778,11 @@ Cancellation-aware exclusive admission. The writer retains turnstile while waiti
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L712)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L778)
 
 <a id="function-function-minisql-server-database-manager-enterreadexecution-function-enterreadexecution-database-src-minisql-server-database-manager-ml-1522272589"></a>
 ### enterReadExecution
@@ -765,10 +795,10 @@ Admits one shared reader through the writer-priority turnstile. The first reader
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L631)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L691)
 
 <a id="function-function-minisql-server-database-manager-enterreadexecutioncontrolled-function-enterreadexecutioncontrolled-database-sessionid-src-minisql-server-database-manager-ml-1895639478"></a>
 ### enterReadExecutionControlled
@@ -781,11 +811,11 @@ Cancellation-aware shared-gate admission for SQL statements. Short timed waits k
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L651)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L713)
 
 - [minisql.server.database_manager.ExecutionGate](Type-minisql-server-database-manager-executiongate-385130889.md) — struct
 <a id="function-function-minisql-server-database-manager-fail-function-fail-code-operation-message-src-minisql-server-database-manager-ml-135974469"></a>
@@ -795,16 +825,16 @@ Cancellation-aware shared-gate admission for SQL statements. Short timed waits k
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql server database manager module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L294)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L317)
 
 <a id="function-function-minisql-server-database-manager-findtable-function-findtable-database-name-src-minisql-server-database-manager-ml-1903622680"></a>
 ### findTable
@@ -817,11 +847,11 @@ Finds table using the supplied inputs. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1629)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1830)
 
 <a id="function-function-minisql-server-database-manager-finishoperationalstatement-function-finishoperationalstatement-database-sessionid-success-rowcount-src-minisql-server-database-manager-ml-1392504750"></a>
 ### finishOperationalStatement
@@ -834,13 +864,13 @@ Completes one operational statement and advances cumulative counters.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `success` | `dynamic` | — |  |
-| `rowCount` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `success` | `dynamic` | — | success value consumed by this operation. |
+| `rowCount` | `dynamic` | — | Number of row to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1326)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1476)
 
 <a id="function-function-minisql-server-database-manager-finishstatement-function-finishstatement-database-lease-src-minisql-server-database-manager-ml-1274153445"></a>
 ### finishStatement
@@ -853,11 +883,11 @@ Implements finish statement for this module. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `lease` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1533)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1710)
 
 <a id="function-function-minisql-server-database-manager-idletimeoutms-function-idletimeoutms-database-src-minisql-server-database-manager-ml-426767567"></a>
 ### idleTimeoutMs
@@ -870,10 +900,10 @@ Returns the configured idle-connection timeout.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1347)
 
 <a id="function-function-minisql-server-database-manager-indexesready-function-indexesready-database-src-minisql-server-database-manager-ml-1712937393"></a>
 ### indexesReady
@@ -886,10 +916,10 @@ Returns whether the one-time process-local index readiness pass completed. The e
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1460)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1627)
 
 <a id="constant-constant-minisql-server-database-manager-invalid-argument-const-invalid-argument-9001-src-minisql-server-database-manager-ml-1730538539"></a>
 ### INVALID_ARGUMENT
@@ -898,8 +928,10 @@ Returns whether the one-time process-local index readiness pass completed. The e
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L29)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L32)
 
 <a id="function-function-minisql-server-database-manager-invalidatereadcache-function-invalidatereadcache-database-src-minisql-server-database-manager-ml-918297051"></a>
 ### invalidateReadCache
@@ -912,10 +944,10 @@ Invalidates committed page images after a successful mutation. The caller holds 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1678)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1882)
 
 <a id="function-function-minisql-server-database-manager-invalidatereadhandles-function-invalidatereadhandles-database-src-minisql-server-database-manager-ml-1609019581"></a>
 ### invalidateReadHandles
@@ -928,10 +960,10 @@ Invalidates persistent file and metadata handles after any successful writer. Th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L591)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L648)
 
 <a id="function-function-minisql-server-database-manager-isimplemented-function-isimplemented-src-minisql-server-database-manager-ml-2067905176"></a>
 ### isImplemented
@@ -940,10 +972,10 @@ Invalidates persistent file and metadata handles after any successful writer. Th
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql server database manager module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1768)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1978)
 
 <a id="function-function-minisql-server-database-manager-islockwaiting-function-islockwaiting-database-transactionid-src-minisql-server-database-manager-ml-1859443638"></a>
 ### isLockWaiting
@@ -956,11 +988,11 @@ Returns whether a transaction is still blocked in the logical lock graph. Listen
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1564)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1749)
 
 <a id="function-function-minisql-server-database-manager-ismanageddatabase-function-ismanageddatabase-value-src-minisql-server-database-manager-ml-186633161"></a>
 ### isManagedDatabase
@@ -973,10 +1005,10 @@ Returns whether the supplied value satisfies the managed database condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L307)
 
 <a id="function-function-minisql-server-database-manager-issessioncancellationrequested-function-issessioncancellationrequested-database-sessionid-src-minisql-server-database-manager-ml-729790150"></a>
 ### isSessionCancellationRequested
@@ -989,11 +1021,11 @@ Returns the synchronized cancellation flag polled by executor operators.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1406)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1568)
 
 <a id="function-function-minisql-server-database-manager-isshutdownrequested-function-isshutdownrequested-database-src-minisql-server-database-manager-ml-1265970265"></a>
 ### isShutdownRequested
@@ -1006,10 +1038,10 @@ Returns whether an administrator requested cooperative listener shutdown.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1449)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1615)
 
 <a id="function-function-minisql-server-database-manager-isstandby-function-isstandby-database-src-minisql-server-database-manager-ml-325508019"></a>
 ### isStandby
@@ -1022,10 +1054,10 @@ Returns whether the supplied value satisfies the standby condition. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1621)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1820)
 
 <a id="constant-constant-minisql-server-database-manager-leader-epoch-bytes-const-leader-epoch-bytes-32-src-minisql-server-database-manager-ml-1346413530"></a>
 ### LEADER_EPOCH_BYTES
@@ -1034,8 +1066,10 @@ Returns whether the supplied value satisfies the standby condition. Returns the 
 const LEADER_EPOCH_BYTES = 32
 ```
 
+Defines the leader epoch bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L49)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L72)
 
 <a id="constant-constant-minisql-server-database-manager-leader-lease-bytes-const-leader-lease-bytes-64-src-minisql-server-database-manager-ml-1845112381"></a>
 ### LEADER_LEASE_BYTES
@@ -1044,8 +1078,10 @@ const LEADER_EPOCH_BYTES = 32
 const LEADER_LEASE_BYTES = 64
 ```
 
+Defines the leader lease bytes constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L50)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L74)
 
 <a id="function-function-minisql-server-database-manager-leaderepochpath-function-leaderepochpath-path-src-minisql-server-database-manager-ml-609038073"></a>
 ### leaderEpochPath
@@ -1058,10 +1094,10 @@ Returns the durable per-database leadership-term record path. The HA controller 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L314)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L340)
 
 <a id="function-function-minisql-server-database-manager-leaveexecution-function-leaveexecution-database-src-minisql-server-database-manager-ml-930930397"></a>
 ### leaveExecution
@@ -1074,10 +1110,10 @@ Releases exclusive database execution, opening the room before the turnstile. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L728)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L795)
 
 <a id="function-function-minisql-server-database-manager-leavereadexecution-function-leavereadexecution-database-src-minisql-server-database-manager-ml-615932341"></a>
 ### leaveReadExecution
@@ -1090,10 +1126,10 @@ Removes one shared reader and releases `roomEmpty` when the last reader exits. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L679)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L742)
 
 - [minisql.server.database_manager.ManagedDatabase](Type-minisql-server-database-manager-manageddatabase-1773265508.md) — struct
 <a id="function-function-minisql-server-database-manager-markindexesready-function-markindexesready-database-src-minisql-server-database-manager-ml-6030617"></a>
@@ -1107,10 +1143,10 @@ Publishes completion of process-local index readiness to later sessions.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1469)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1637)
 
 <a id="function-function-minisql-server-database-manager-maxframebytes-function-maxframebytes-database-src-minisql-server-database-manager-ml-648575145"></a>
 ### maxFrameBytes
@@ -1123,10 +1159,10 @@ Returns the configured hard response-frame limit.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1333)
 
 <a id="function-function-minisql-server-database-manager-maxresultbytes-function-maxresultbytes-database-src-minisql-server-database-manager-ml-1979174281"></a>
 ### maxResultBytes
@@ -1139,10 +1175,10 @@ Returns the aggregate encoded result byte ceiling.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1361)
 
 <a id="function-function-minisql-server-database-manager-maxresultrows-function-maxresultrows-database-src-minisql-server-database-manager-ml-25154889"></a>
 ### maxResultRows
@@ -1155,10 +1191,10 @@ Returns the configured hard result-row limit.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1340)
 
 <a id="function-function-minisql-server-database-manager-maxstatementbytes-function-maxstatementbytes-database-src-minisql-server-database-manager-ml-1165713673"></a>
 ### maxStatementBytes
@@ -1171,10 +1207,10 @@ Returns the configured hard statement-size limit.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1326)
 
 <a id="function-function-minisql-server-database-manager-open-function-open-path-src-minisql-server-database-manager-ml-737630767"></a>
 ### open
@@ -1183,14 +1219,14 @@ Returns the configured hard statement-size limit.
 function open(path)
 ```
 
-Opens open using the supplied inputs. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Opens open for the minisql server database manager module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1035)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1111)
 
 <a id="function-function-minisql-server-database-manager-openinternal-function-openinternal-path-allowstandby-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-database-manager-ml-342255397"></a>
 ### openInternal
@@ -1203,14 +1239,14 @@ Opens internal using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `allowStandby` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
-| `bufferPoolBytes` | `dynamic` | — |  |
-| `queryMemoryBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `allowStandby` | `dynamic` | — | allowStandby value consumed by this operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
+| `bufferPoolBytes` | `dynamic` | — | bufferPoolBytes value consumed by this operation. |
+| `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L780)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L855)
 
 <a id="function-function-minisql-server-database-manager-openstandby-function-openstandby-path-src-minisql-server-database-manager-ml-1858909533"></a>
 ### openStandby
@@ -1223,10 +1259,10 @@ Opens standby using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1057)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1143)
 
 <a id="function-function-minisql-server-database-manager-openstandbywithbudgets-function-openstandbywithbudgets-path-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-database-manager-ml-1280297299"></a>
 ### openStandbyWithBudgets
@@ -1239,13 +1275,13 @@ Opens a standby database with explicit WAL, cache, and per-query budgets.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
-| `bufferPoolBytes` | `dynamic` | — |  |
-| `queryMemoryBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
+| `bufferPoolBytes` | `dynamic` | — | bufferPoolBytes value consumed by this operation. |
+| `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1073)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1168)
 
 <a id="function-function-minisql-server-database-manager-openstandbywithcheckpoint-function-openstandbywithcheckpoint-path-checkpointwalbytes-src-minisql-server-database-manager-ml-864524504"></a>
 ### openStandbyWithCheckpoint
@@ -1258,11 +1294,11 @@ Opens a standby with the configured checkpoint threshold. Standbys never initiat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1063)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1151)
 
 <a id="function-function-minisql-server-database-manager-openstandbywithruntime-function-openstandbywithruntime-path-checkpointwalbytes-bufferpoolbytes-src-minisql-server-database-manager-ml-609454305"></a>
 ### openStandbyWithRuntime
@@ -1275,12 +1311,12 @@ Opens a standby with configured WAL and buffer-pool budgets.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
-| `bufferPoolBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
+| `bufferPoolBytes` | `dynamic` | — | bufferPoolBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1068)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1159)
 
 <a id="function-function-minisql-server-database-manager-openwithbudgets-function-openwithbudgets-path-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-database-manager-ml-179142775"></a>
 ### openWithBudgets
@@ -1293,13 +1329,13 @@ Opens a writable database with explicit WAL, cache, and per-query budgets.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
-| `bufferPoolBytes` | `dynamic` | — |  |
-| `queryMemoryBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
+| `bufferPoolBytes` | `dynamic` | — | bufferPoolBytes value consumed by this operation. |
+| `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1050)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1135)
 
 <a id="function-function-minisql-server-database-manager-openwithcheckpoint-function-openwithcheckpoint-path-checkpointwalbytes-src-minisql-server-database-manager-ml-73357826"></a>
 ### openWithCheckpoint
@@ -1312,11 +1348,11 @@ Opens a primary database with a configured maximum current-WAL size.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1040)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1118)
 
 <a id="function-function-minisql-server-database-manager-openwithruntime-function-openwithruntime-path-checkpointwalbytes-bufferpoolbytes-src-minisql-server-database-manager-ml-1223594185"></a>
 ### openWithRuntime
@@ -1329,12 +1365,12 @@ Opens a primary database with configured WAL and buffer-pool budgets.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `checkpointWalBytes` | `dynamic` | — |  |
-| `bufferPoolBytes` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
+| `bufferPoolBytes` | `dynamic` | — | bufferPoolBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1045)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1126)
 
 - [minisql.server.database_manager.OperationalSession](Type-minisql-server-database-manager-operationalsession-1915062952.md) — struct
 <a id="function-function-minisql-server-database-manager-operationalsessions-function-operationalsessions-database-src-minisql-server-database-manager-ml-1443595955"></a>
@@ -1348,10 +1384,10 @@ Returns immutable copies of all active process-list entries.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1354)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1507)
 
 <a id="function-function-minisql-server-database-manager-operationalstatus-function-operationalstatus-database-src-minisql-server-database-manager-ml-1623327153"></a>
 ### operationalStatus
@@ -1364,10 +1400,10 @@ Returns a compact numeric snapshot used by SHOW STATUS.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1366)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1520)
 
 <a id="function-function-minisql-server-database-manager-peakconcurrentreaders-function-peakconcurrentreaders-database-src-minisql-server-database-manager-ml-1304322137"></a>
 ### peakConcurrentReaders
@@ -1380,10 +1416,10 @@ Implements peak concurrent readers for this module. Returns the computed value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L740)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L808)
 
 <a id="function-function-minisql-server-database-manager-planninggeneration-function-planninggeneration-database-src-minisql-server-database-manager-ml-2123825853"></a>
 ### planningGeneration
@@ -1396,10 +1432,10 @@ Returns the process-local optimizer invalidation generation shared by every sess
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1479)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1648)
 
 <a id="function-function-minisql-server-database-manager-pollsessioncontrol-function-pollsessioncontrol-database-sessionid-src-minisql-server-database-manager-ml-939367718"></a>
 ### pollSessionControl
@@ -1412,11 +1448,11 @@ Polls the registry without depending on executor-owned state. Storage batch loop
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1583)
 
 <a id="function-function-minisql-server-database-manager-publishreadhandlelease-function-publishreadhandlelease-cache-entry-src-minisql-server-database-manager-ml-1264777182"></a>
 ### publishReadHandleLease
@@ -1429,11 +1465,11 @@ Records one lease while the registry guard is held and returns its token.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cache` | `dynamic` | — |  |
-| `entry` | `dynamic` | — |  |
+| `cache` | `dynamic` | — | cache value consumed by this operation. |
+| `entry` | `dynamic` | — | entry value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L520)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L571)
 
 <a id="constant-constant-minisql-server-database-manager-query-cancelled-const-query-cancelled-9035-src-minisql-server-database-manager-ml-1471689558"></a>
 ### QUERY_CANCELLED
@@ -1442,8 +1478,10 @@ Records one lease while the registry guard is held and returns its token.
 const QUERY_CANCELLED = 9035
 ```
 
+Defines the query cancelled constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L45)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L64)
 
 <a id="constant-constant-minisql-server-database-manager-query-timeout-const-query-timeout-9036-src-minisql-server-database-manager-ml-2096549633"></a>
 ### QUERY_TIMEOUT
@@ -1452,8 +1490,10 @@ const QUERY_CANCELLED = 9035
 const QUERY_TIMEOUT = 9036
 ```
 
+Defines the query timeout constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L46)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L66)
 
 <a id="function-function-minisql-server-database-manager-querymemorylimit-function-querymemorylimit-database-src-minisql-server-database-manager-ml-754382457"></a>
 ### queryMemoryLimit
@@ -1466,10 +1506,10 @@ Returns the soft blocking-operator budget inherited by a new session.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1078)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1174)
 
 <a id="function-function-minisql-server-database-manager-querytimeoutms-function-querytimeoutms-database-src-minisql-server-database-manager-ml-1603275293"></a>
 ### queryTimeoutMs
@@ -1482,10 +1522,10 @@ Returns the cooperative execution deadline interval.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1354)
 
 <a id="function-function-minisql-server-database-manager-readcachestats-function-readcachestats-database-src-minisql-server-database-manager-ml-578516013"></a>
 ### readCacheStats
@@ -1498,10 +1538,10 @@ Returns synchronized buffer-cache diagnostics.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1688)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1893)
 
 <a id="function-function-minisql-server-database-manager-readercount-function-readercount-database-src-minisql-server-database-manager-ml-1282915241"></a>
 ### readerCount
@@ -1514,10 +1554,10 @@ Implements reader count for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1588)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1776)
 
 <a id="function-function-minisql-server-database-manager-readfencebytes-function-readfencebytes-path-expectedsize-operation-src-minisql-server-database-manager-ml-1148460563"></a>
 ### readFenceBytes
@@ -1530,12 +1570,12 @@ Reads one exact fencing record without accepting a prefix, trailing bytes, or a 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `expectedSize` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `expectedSize` | `dynamic` | — | expectedSize value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L320)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L349)
 
 - [minisql.server.database_manager.ReadHandleCache](Type-minisql-server-database-manager-readhandlecache-2045555224.md) — struct
 - [minisql.server.database_manager.ReadHandleCacheStats](Type-minisql-server-database-manager-readhandlecachestats-905434043.md) — struct
@@ -1550,10 +1590,10 @@ Returns one context reused by every page read in this handle lease. Table scans 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lease` | `dynamic` | — |  |
+| `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L525)
 
 - [minisql.server.database_manager.ReadHandleLease](Type-minisql-server-database-manager-readhandlelease-1175511288.md) — struct
 <a id="function-function-minisql-server-database-manager-readhandlestats-function-readhandlestats-database-src-minisql-server-database-manager-ml-1889147495"></a>
@@ -1567,10 +1607,10 @@ Returns synchronized persistent-handle cache counters.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L660)
 
 <a id="function-function-minisql-server-database-manager-readhandlevalue-function-readhandlevalue-lease-src-minisql-server-database-manager-ml-1438398172"></a>
 ### readHandleValue
@@ -1583,10 +1623,10 @@ Validates a caller lease and returns its storage value.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lease` | `dynamic` | — |  |
+| `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L470)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L517)
 
 <a id="function-function-minisql-server-database-manager-readleaderepoch-function-readleaderepoch-path-src-minisql-server-database-manager-ml-272366675"></a>
 ### readLeaderEpoch
@@ -1599,10 +1639,10 @@ Decodes the persistent database term and node identity.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L348)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L382)
 
 <a id="function-function-minisql-server-database-manager-readleaderlease-function-readleaderlease-path-src-minisql-server-database-manager-ml-1186030409"></a>
 ### readLeaderLease
@@ -1615,10 +1655,10 @@ Decodes the shared leader lease used as the online write-authority token.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L360)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L395)
 
 <a id="function-function-minisql-server-database-manager-recordstatementdiagnostics-function-recordstatementdiagnostics-database-elapsedms-resultbytes-errorcode-src-minisql-server-database-manager-ml-2139957964"></a>
 ### recordStatementDiagnostics
@@ -1631,13 +1671,13 @@ Records latency, encoded output, and terminal production-control outcomes.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `elapsedMs` | `dynamic` | — |  |
-| `resultBytes` | `dynamic` | — |  |
-| `errorCode` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `elapsedMs` | `dynamic` | — | elapsedMs value consumed by this operation. |
+| `resultBytes` | `dynamic` | — | resultBytes value consumed by this operation. |
+| `errorCode` | `dynamic` | — | errorCode value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1377)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1535)
 
 <a id="function-function-minisql-server-database-manager-refreshschemasnapshot-function-refreshschemasnapshot-database-src-minisql-server-database-manager-ml-1990122817"></a>
 ### refreshSchemaSnapshot
@@ -1650,10 +1690,10 @@ Reloads and atomically publishes durable schema metadata after successful DDL. T
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1501)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1672)
 
 <a id="function-function-minisql-server-database-manager-registersessionpeer-function-registersessionpeer-database-sessionid-peerendpoint-secure-authenticated-src-minisql-server-database-manager-ml-846329239"></a>
 ### registerSessionPeer
@@ -1666,14 +1706,14 @@ Updates connection metadata after the listener resolves the remote endpoint.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `peerEndpoint` | `dynamic` | — |  |
-| `secure` | `dynamic` | — |  |
-| `authenticated` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `peerEndpoint` | `dynamic` | — | peerEndpoint value consumed by this operation. |
+| `secure` | `dynamic` | — | secure value consumed by this operation. |
+| `authenticated` | `dynamic` | — | authenticated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1286)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1425)
 
 <a id="function-function-minisql-server-database-manager-releaselocks-function-releaselocks-database-transactionid-src-minisql-server-database-manager-ml-1667334502"></a>
 ### releaseLocks
@@ -1686,11 +1726,11 @@ Releases locks using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1549)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1730)
 
 <a id="function-function-minisql-server-database-manager-releasereadhandle-function-releasereadhandle-lease-src-minisql-server-database-manager-ml-1605521988"></a>
 ### releaseReadHandle
@@ -1703,10 +1743,10 @@ Releases one table or index lease after the complete storage operation. The owni
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `lease` | `dynamic` | — |  |
+| `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L505)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L554)
 
 <a id="function-function-minisql-server-database-manager-releasetemporarystorage-function-releasetemporarystorage-database-bytecount-src-minisql-server-database-manager-ml-43073184"></a>
 ### releaseTemporaryStorage
@@ -1719,11 +1759,11 @@ Releases a prior spill reservation; cleanup is idempotent at zero.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `byteCount` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `byteCount` | `dynamic` | — | Number of byte to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1409)
 
 <a id="function-function-minisql-server-database-manager-requestsessioncancellation-function-requestsessioncancellation-database-sessionid-src-minisql-server-database-manager-ml-1396021146"></a>
 ### requestSessionCancellation
@@ -1736,11 +1776,11 @@ Requests cancellation of one currently executing session.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1552)
 
 <a id="function-function-minisql-server-database-manager-requestshutdown-function-requestshutdown-database-src-minisql-server-database-manager-ml-961217527"></a>
 ### requestShutdown
@@ -1753,10 +1793,10 @@ Requests a cooperative listener stop after the current statement response.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1440)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1605)
 
 <a id="function-function-minisql-server-database-manager-reservetemporarystorage-function-reservetemporarystorage-database-bytecount-src-minisql-server-database-manager-ml-1873353186"></a>
 ### reserveTemporaryStorage
@@ -1769,11 +1809,11 @@ Reserves spill capacity atomically across all concurrent statements.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `byteCount` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `byteCount` | `dynamic` | — | Number of byte to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1260)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1392)
 
 <a id="function-function-minisql-server-database-manager-resetpeakconcurrentreaders-function-resetpeakconcurrentreaders-database-src-minisql-server-database-manager-ml-156920753"></a>
 ### resetPeakConcurrentReaders
@@ -1786,10 +1826,10 @@ Resets peak concurrent readers using the supplied inputs. Returns the computed v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L763)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L833)
 
 <a id="constant-constant-minisql-server-database-manager-resource-limit-const-resource-limit-9037-src-minisql-server-database-manager-ml-1816069710"></a>
 ### RESOURCE_LIMIT
@@ -1798,8 +1838,10 @@ Resets peak concurrent readers using the supplied inputs. Returns the computed v
 const RESOURCE_LIMIT = 9037
 ```
 
+Defines the resource limit constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L47)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L68)
 
 <a id="function-function-minisql-server-database-manager-rotateaudit-function-rotateaudit-database-sessionid-principalid-src-minisql-server-database-manager-ml-890621"></a>
 ### rotateAudit
@@ -1812,12 +1854,12 @@ Implements rotate audit for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1604)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1801)
 
 <a id="function-function-minisql-server-database-manager-schemasnapshot-function-schemasnapshot-database-src-minisql-server-database-manager-ml-1469614845"></a>
 ### schemaSnapshot
@@ -1830,10 +1872,10 @@ Returns the immutable schema snapshot published for this database. Schema states
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1660)
 
 <a id="function-function-minisql-server-database-manager-setoperationalprincipal-function-setoperationalprincipal-database-sessionid-principalid-src-minisql-server-database-manager-ml-1754907365"></a>
 ### setOperationalPrincipal
@@ -1846,12 +1888,12 @@ Publishes the principal selected by a successful authentication exchange.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1301)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1443)
 
 <a id="function-function-minisql-server-database-manager-setquerymemorylimit-function-setquerymemorylimit-database-querymemorybytes-src-minisql-server-database-manager-ml-417629779"></a>
 ### setQueryMemoryLimit
@@ -1864,11 +1906,11 @@ Configures the per-session query budget before a listener accepts clients.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `queryMemoryBytes` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1084)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1182)
 
 <a id="constant-constant-minisql-server-database-manager-standby-not-promoted-const-standby-not-promoted-9033-src-minisql-server-database-manager-ml-1725338562"></a>
 ### STANDBY_NOT_PROMOTED
@@ -1877,8 +1919,10 @@ Configures the per-session query budget before a listener accepts clients.
 const STANDBY_NOT_PROMOTED = 9033
 ```
 
+Defines the standby not promoted constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L38)
 
 <a id="function-function-minisql-server-database-manager-targetmilestone-function-targetmilestone-src-minisql-server-database-manager-ml-1590397494"></a>
 ### targetMilestone
@@ -1887,10 +1931,10 @@ const STANDBY_NOT_PROMOTED = 9033
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql server database manager module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1761)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1971)
 
 <a id="function-function-minisql-server-database-manager-unregistersession-function-unregistersession-database-sessionid-src-minisql-server-database-manager-ml-1279373646"></a>
 ### unregisterSession
@@ -1903,11 +1947,11 @@ Removes a closed session from the process list without changing cumulative total
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1493)
 
 <a id="function-function-minisql-server-database-manager-validatecheckpointmarker-function-validatecheckpointmarker-path-expected-src-minisql-server-database-manager-ml-481301675"></a>
 ### validateCheckpointMarker
@@ -1920,11 +1964,11 @@ Reads and validates a checkpoint marker before its state can affect recovery.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L398)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L439)
 
 <a id="function-function-minisql-server-database-manager-validatefenceheader-function-validatefenceheader-payload-magic-expectedsize-operation-src-minisql-server-database-manager-ml-1668528269"></a>
 ### validateFenceHeader
@@ -1937,13 +1981,13 @@ Validates a fixed-size CRC-32C protected record header shared with the Python HA
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `payload` | `dynamic` | — |  |
-| `magic` | `dynamic` | — |  |
-| `expectedSize` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `payload` | `dynamic` | — | payload value consumed by this operation. |
+| `magic` | `dynamic` | — | magic value consumed by this operation. |
+| `expectedSize` | `dynamic` | — | expectedSize value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L336)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L369)
 
 <a id="function-function-minisql-server-database-manager-validateopen-function-validateopen-database-operation-src-minisql-server-database-manager-ml-694200926"></a>
 ### validateOpen
@@ -1952,15 +1996,15 @@ Validates a fixed-size CRC-32C protected record header shared with the Python HA
 function validateOpen(database, operation)
 ```
 
-Validates open using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Validates open for the minisql server database manager workflow. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L444)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L490)
 
 <a id="function-function-minisql-server-database-manager-validatewritefence-function-validatewritefence-database-src-minisql-server-database-manager-ml-1387252521"></a>
 ### validateWriteFence
@@ -1973,10 +2017,10 @@ Validates persistent and live leadership immediately before a mutation or durabl
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1222)
 
 <a id="function-function-minisql-server-database-manager-verifyaudit-function-verifyaudit-database-src-minisql-server-database-manager-ml-1008732981"></a>
 ### verifyAudit
@@ -1989,10 +2033,10 @@ Verifies audit using the supplied inputs. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1811)
 
 <a id="function-function-minisql-server-database-manager-waitercount-function-waitercount-database-src-minisql-server-database-manager-ml-968716011"></a>
 ### waiterCount
@@ -2005,10 +2049,10 @@ Implements waiter count for this module. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1572)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L1758)
 
 <a id="function-function-minisql-server-database-manager-walepochpath-function-walepochpath-path-src-minisql-server-database-manager-ml-1572688611"></a>
 ### walEpochPath
@@ -2021,10 +2065,10 @@ Returns the persistent marker path that selects bounded-WAL epoch recovery.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L373)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L409)
 
 <a id="function-function-minisql-server-database-manager-walresetpendingpath-function-walresetpendingpath-path-src-minisql-server-database-manager-ml-2014514181"></a>
 ### walResetPendingPath
@@ -2037,10 +2081,10 @@ Returns the transient crash-recovery journal for an in-progress WAL reset.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L378)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L415)
 
 <a id="constant-constant-minisql-server-database-manager-write-fenced-const-write-fenced-9038-src-minisql-server-database-manager-ml-126149299"></a>
 ### WRITE_FENCED
@@ -2049,5 +2093,7 @@ Returns the transient crash-recovery journal for an in-progress WAL reset.
 const WRITE_FENCED = 9038
 ```
 
+Defines the write fenced constant used by the minisql server database manager module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L48)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L70)

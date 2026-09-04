@@ -1,3 +1,5 @@
+//! Provides minisql storage btree facilities for this project.
+
 package minisql.storage.btree
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -9,155 +11,168 @@ import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import std.ds.list as list
 
-// Persistent B+ tree v1.
-//
-// Updates use append-only copy-on-write generations: a complete new tree is
-// appended first and one of two fixed metadata pages is published only after
-// every node is durable. The previous metadata generation remains a valid
-// fallback if publication is interrupted. Reclamation of unreachable historic
-// generations is intentionally deferred to a later VACUUM/rebuild operation.
+/// Persistent B+ tree v1.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the unsupported format constant used by the minisql storage btree module.
 const UNSUPPORTED_FORMAT = 9003
+/// Defines the corrupt data constant used by the minisql storage btree module.
 const CORRUPT_DATA = 9004
+/// Defines the closed handle constant used by the minisql storage btree module.
 const CLOSED_HANDLE = 9008
+/// Defines the object exists constant used by the minisql storage btree module.
 const OBJECT_EXISTS = 9013
+/// Defines the object not found constant used by the minisql storage btree module.
 const OBJECT_NOT_FOUND = 9014
 
+/// Defines the format version constant used by the minisql storage btree module.
 const FORMAT_VERSION = 1
+/// Defines the meta page a constant used by the minisql storage btree module.
 const META_PAGE_A = 0
+/// Defines the meta page b constant used by the minisql storage btree module.
 const META_PAGE_B = 1
+/// Defines the meta data offset constant used by the minisql storage btree module.
 const META_DATA_OFFSET = 64
+/// Defines the meta data size constant used by the minisql storage btree module.
 const META_DATA_SIZE = 64
+/// Defines the leaf data offset constant used by the minisql storage btree module.
 const LEAF_DATA_OFFSET = 96
+/// Defines the internal data offset constant used by the minisql storage btree module.
 const INTERNAL_DATA_OFFSET = 88
+/// Defines the max key bytes constant used by the minisql storage btree module.
 const MAX_KEY_BYTES = 256
-// A leaf value may use the space remaining on the minimum supported 4 KiB
-// page after the largest key and fixed page/entry headers. This supports
-// covering-index payloads while guaranteeing that every accepted entry fits.
+/// A leaf value may use the space remaining on the minimum supported 4 KiB
 const MAX_VALUE_BYTES = 3584
+/// Defines the max leaf entries constant used by the minisql storage btree module.
 const MAX_LEAF_ENTRIES = 10
+/// Defines the max internal children constant used by the minisql storage btree module.
 const MAX_INTERNAL_CHILDREN = 12
+/// Defines the flag unique constant used by the minisql storage btree module.
 const FLAG_UNIQUE = 1
+/// Defines the flag meta constant used by the minisql storage btree module.
 const FLAG_META = 32768
 
-// Defines the btree entry record used by this module.
+/// Defines the btree entry record used by this module.
 struct BTreeEntry
-  // Key field of the btree entry.
+  /// Key field of the btree entry.
   key
-  // Value field of the btree entry.
+  /// Value field of the btree entry.
   value
 end struct
 
-// Defines the btree meta record used by this module.
+/// Defines the btree meta record used by this module.
 struct BTreeMeta
-  // Generation field of the btree meta.
+  /// Generation field of the btree meta.
   generation
-  // Unique field of the btree meta.
+  /// Unique field of the btree meta.
   unique
-  // Root page field of the btree meta.
+  /// Root page field of the btree meta.
   rootPage
-  // First leaf field of the btree meta.
+  /// First leaf field of the btree meta.
   firstLeaf
-  // Last leaf field of the btree meta.
+  /// Last leaf field of the btree meta.
   lastLeaf
-  // Height field of the btree meta.
+  /// Height field of the btree meta.
   height
-  // Entry count field of the btree meta.
+  /// Entry count field of the btree meta.
   entryCount
 end struct
 
-// Defines the btree leaf record used by this module.
+/// Defines the btree leaf record used by this module.
 struct BTreeLeaf
-  // Page number field of the btree leaf.
+  /// Page number field of the btree leaf.
   pageNumber
-  // Previous page field of the btree leaf.
+  /// Previous page field of the btree leaf.
   previousPage
-  // Next page field of the btree leaf.
+  /// Next page field of the btree leaf.
   nextPage
-  // Entries field of the btree leaf.
+  /// Entries field of the btree leaf.
   entries
 end struct
 
-// Defines the btree internal record used by this module.
+/// Defines the btree internal record used by this module.
 struct BTreeInternal
-  // Page number field of the btree internal.
+  /// Page number field of the btree internal.
   pageNumber
-  // Level field of the btree internal.
+  /// Level field of the btree internal.
   level
-  // Children field of the btree internal.
+  /// Children field of the btree internal.
   children
-  // Separators field of the btree internal.
+  /// Separators field of the btree internal.
   separators
 end struct
 
-// Defines the node descriptor record used by this module.
+/// Defines the node descriptor record used by this module.
 struct NodeDescriptor
-  // Page number field of the node descriptor.
+  /// Page number field of the node descriptor.
   pageNumber
-  // First key field of the node descriptor.
+  /// First key field of the node descriptor.
   firstKey
-  // Level field of the node descriptor.
+  /// Level field of the node descriptor.
   level
 end struct
 
-// Defines the btree audit record used by this module.
+/// Defines the btree audit record used by this module.
 struct BTreeAudit
-  // First key field of the btree audit.
+  /// First key field of the btree audit.
   firstKey
-  // Last key field of the btree audit.
+  /// Last key field of the btree audit.
   lastKey
-  // Entry count field of the btree audit.
+  /// Entry count field of the btree audit.
   entryCount
-  // Leaf count field of the btree audit.
+  /// Leaf count field of the btree audit.
   leafCount
 end struct
 
-// Defines the visit state record used by this module.
+/// Defines the visit state record used by this module.
 struct VisitState
-  // One byte per physical page marks nodes already reached from the root.
-  // The bitmap is bounded by index-file size and never retains index entries.
+  /// One byte per physical page marks nodes already reached from the root.
   pages
 end struct
 
-// Defines the btree record used by this module.
+/// Defines the btree record used by this module.
 struct BTree
-  // Paged file field of the btree.
+  /// Paged file field of the btree.
   pagedFile
-  // Meta field of the btree.
+  /// Meta field of the btree.
   meta
-  // Active meta page field of the btree.
+  /// Active meta page field of the btree.
   activeMetaPage
-  // Closed field of the btree.
+  /// Closed field of the btree.
   closed
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql storage btree module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "storage.btree." + operation + ": " + message)
 end function
 
-// Performs the meta magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the meta magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function metaMagic()
   return bytes("MSBM")
 end function
 
-// Performs the leaf magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the leaf magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function leafMagic()
   return bytes("MSBL")
 end function
 
-// Performs the internal magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the internal magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function internalMagic()
   return bytes("MSBI")
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql storage btree module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   if len(left) == 0 then return true end if
@@ -167,8 +182,10 @@ function bytesEqual(left, right)
   return true
 end function
 
-// Compares the keys.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Compares the keys.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function compareKeys(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return fail(INVALID_ARGUMENT, "compareKeys", "keys must be bytes") end if
   shared = len(left)
@@ -184,8 +201,10 @@ function compareKeys(left, right)
   return 0
 end function
 
-// Compares the entries.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Compares the entries.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function compareEntries(left, right)
   if left is not BTreeEntry or right is not BTreeEntry then return fail(INVALID_ARGUMENT, "compareEntries", "values must be BTreeEntry") end if
   keyResult = compareKeys(left.key, right.key)
@@ -193,23 +212,28 @@ function compareEntries(left, right)
   return compareKeys(left.value, right.value)
 end function
 
-// Performs the entry operation for this module.
-// Inputs: `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the entry operation for this module.
+/// Inputs: `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param key key value consumed by this operation.
+/// @param value Value consumed or transformed by the operation.
 function entry(key, value)
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "entry", "key must contain 1..256 bytes") end if
   if typeof(value) != "bytes" or len(value) == 0 or len(value) > MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "entry", "value must contain 1..3584 bytes") end if
   return BTreeEntry(bytes(key), bytes(value))
 end function
 
-// Copies the entry.
-// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Copies the entry.
+/// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param value Value consumed or transformed by the operation.
 function copyEntry(value)
   if value is not BTreeEntry then return fail(INVALID_ARGUMENT, "copyEntry", "value must be BTreeEntry") end if
   return entry(value.key, value.value)
 end function
 
-// Merges the sorted.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Merges the sorted.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function mergeSorted(left, right)
   result = array(len(left) + len(right))
   resultIndex = 0
@@ -238,8 +262,9 @@ function mergeSorted(left, right)
   return result
 end function
 
-// Orders the entries.
-// Inputs: `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Orders the entries.
+/// Inputs: `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
 function sortEntries(values)
   if typeof(values) != "array" then return fail(INVALID_ARGUMENT, "sortEntries", "values must be array") end if
   if len(values) <= 1 then
@@ -256,8 +281,11 @@ function sortEntries(values)
   return mergeSorted(sortEntries(left), sortEntries(right))
 end function
 
-// Validates the sorted.
-// Inputs: `values`, `unique`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the sorted.
+/// Inputs: `values`, `unique`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param values values value consumed by this operation.
+/// @param unique unique value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateSorted(values, unique, operation)
   if typeof(values) != "array" then return fail(INVALID_ARGUMENT, operation, "entries must be array") end if
   if typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, operation, "unique must be bool") end if
@@ -274,8 +302,17 @@ function validateSorted(values, unique, operation)
   return true
 end function
 
-// Encodes the meta page.
-// Inputs: `treeFile`, `pageNumber`, `generation`, `unique`, `rootPage`, `firstLeaf`, `lastLeaf`, `height`, `entryCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the meta page.
+/// Inputs: `treeFile`, `pageNumber`, `generation`, `unique`, `rootPage`, `firstLeaf`, `lastLeaf`, `height`, `entryCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param treeFile treeFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param generation generation value consumed by this operation.
+/// @param unique unique value consumed by this operation.
+/// @param rootPage rootPage value consumed by this operation.
+/// @param firstLeaf firstLeaf value consumed by this operation.
+/// @param lastLeaf lastLeaf value consumed by this operation.
+/// @param height Height in the coordinate or storage units used by the caller.
+/// @param entryCount Number of entry to process.
 function encodeMetaPage(treeFile, pageNumber, generation, unique, rootPage, firstLeaf, lastLeaf, height, entryCount)
   if typeof(generation) != "int" or generation < 0 then return fail(INVALID_ARGUMENT, "encodeMetaPage", "generation must be non-negative") end if
   if typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "encodeMetaPage", "unique must be bool") end if
@@ -308,16 +345,21 @@ function encodeMetaPage(treeFile, pageNumber, generation, unique, rootPage, firs
   return output
 end function
 
-// Decodes the native.
-// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes native for the minisql storage btree workflow.
+/// Inputs: `words`, `operation`, `name`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param words words value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param name Name of the affected item.
 function decodeNative(words, operation, name)
   endian.validateUInt64Words(words, "storage.btree." + operation + "." + name)
   if words.high > endian.MAX_SCALAR_HIGH then return fail(UNSUPPORTED_FORMAT, operation, name + " exceeds native range") end if
   return endian.uint64ToInt(words)
 end function
 
-// Decodes the meta page.
-// Inputs: `treeFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the meta page.
+/// Inputs: `treeFile`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param treeFile treeFile value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function decodeMetaPage(treeFile, pageNumber)
   encoded = paged_file.readPage(treeFile, pageNumber)
   header = page.verify(encoded)
@@ -343,8 +385,10 @@ function decodeMetaPage(treeFile, pageNumber)
   return BTreeMeta(generation, flags == FLAG_UNIQUE, rootPage, firstLeaf, lastLeaf, height, entryCount)
 end function
 
-// Performs the choose meta operation for this module.
-// Inputs: `first`, `second`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the choose meta operation for this module.
+/// Inputs: `first`, `second`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param first first value consumed by this operation.
+/// @param second second value consumed by this operation.
 function chooseMeta(first, second)
   firstValid = typeof(first) != "error"
   secondValid = typeof(second) != "error"
@@ -362,8 +406,13 @@ function chooseMeta(first, second)
   return [second, META_PAGE_B]
 end function
 
-// Creates the requested value.
-// Inputs: `path`, `pageSize`, `fileId`, `databaseId`, `unique`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql storage btree module.
+/// Inputs: `path`, `pageSize`, `fileId`, `databaseId`, `unique`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param pageSize pageSize value consumed by this operation.
+/// @param fileId Identifier of file.
+/// @param databaseId Identifier of database.
+/// @param unique unique value consumed by this operation.
 function create(path, pageSize, fileId, databaseId, unique)
   if typeof(unique) != "bool" then return fail(INVALID_ARGUMENT, "create", "unique must be bool") end if
   treeFile = paged_file.create(path, pageSize, superblock.FILE_TYPE_INDEX, fileId, databaseId)
@@ -374,8 +423,9 @@ function create(path, pageSize, fileId, databaseId, unique)
   return BTree(treeFile, BTreeMeta(1, unique, 0, 0, 0, 0, 0), META_PAGE_A, false)
 end function
 
-// Opens the tree file.
-// Inputs: `treeFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the tree file.
+/// Inputs: `treeFile`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param treeFile treeFile value consumed by this operation.
 function openTreeFile(treeFile)
   if treeFile.fileType != superblock.FILE_TYPE_INDEX then paged_file.close(treeFile); return fail(CORRUPT_DATA, "open", "file is not an index") end if
   if treeFile.pageCount < 2 then paged_file.close(treeFile); return fail(CORRUPT_DATA, "open", "index is shorter than metadata pair") end if
@@ -404,24 +454,27 @@ function openTreeFile(treeFile)
   return verified
 end function
 
-// Opens the requested value.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens open for the minisql storage btree module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function open(path)
   return openTreeFile(paged_file.open(path))
 end function
 
-// Opens the read only.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the read only.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function openReadOnly(path)
   return openTreeFile(paged_file.openReadOnly(path))
 end function
 
-// Opens a read-only tree for an ordinary lookup without auditing unrelated
-// branches. The paged-file superblock and both redundant tree metadata pages
-// are still decoded and checksum validated here; find/range subsequently
-// verify every internal and leaf page they actually traverse. Full graph and
-// leaf-chain audits remain available through openReadOnly plus verify and are
-// used by explicit consistency checks.
+/// Opens a read-only tree for an ordinary lookup without auditing unrelated
+/// branches. The paged-file superblock and both redundant tree metadata pages
+/// are still decoded and checksum validated here; find/range subsequently
+/// verify every internal and leaf page they actually traverse. Full graph and
+/// leaf-chain audits remain available through openReadOnly plus verify and are
+/// used by explicit consistency checks.
+/// @param path Path of the file or directory used by the operation.
 function openReadOnlyForLookup(path)
   treeFile = try(paged_file.openReadOnly(path))
   if treeFile.fileType != superblock.FILE_TYPE_INDEX then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForLookup", "file is not an index") end if
@@ -433,8 +486,9 @@ function openReadOnlyForLookup(path)
   return BTree(treeFile, selected[0], selected[1], false)
 end function
 
-// ManagedDatabase cache variant of openReadOnlyForLookup. The owning database
-// lock and execution gate replace a long-lived per-index byte-range lock.
+/// ManagedDatabase cache variant of openReadOnlyForLookup. The owning database
+/// lock and execution gate replace a long-lived per-index byte-range lock.
+/// @param path Path of the file or directory used by the operation.
 function openReadOnlyForManagedLookup(path)
   treeFile = try(paged_file.openReadOnlyManaged(path))
   if treeFile.fileType != superblock.FILE_TYPE_INDEX then paged_file.close(treeFile); return fail(CORRUPT_DATA, "openReadOnlyForManagedLookup", "file is not an index") end if
@@ -446,8 +500,10 @@ function openReadOnlyForManagedLookup(path)
   return BTree(treeFile, selected[0], selected[1], false)
 end function
 
-// Validates the open.
-// Inputs: `tree`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql storage btree workflow.
+/// Inputs: `tree`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param tree tree value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(tree, operation)
   if tree is not BTree then return fail(INVALID_ARGUMENT, operation, "tree must be BTree") end if
   if tree.closed then return fail(CLOSED_HANDLE, operation, "tree is closed") end if
@@ -455,8 +511,13 @@ function validateOpen(tree, operation)
   return true
 end function
 
-// Encodes the leaf.
-// Inputs: `tree`, `pageNumber`, `previousPage`, `nextPage`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the leaf.
+/// Inputs: `tree`, `pageNumber`, `previousPage`, `nextPage`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param previousPage previousPage value consumed by this operation.
+/// @param nextPage nextPage value consumed by this operation.
+/// @param values values value consumed by this operation.
 function encodeLeaf(tree, pageNumber, previousPage, nextPage, values)
   if typeof(values) != "array" or len(values) == 0 or len(values) > MAX_LEAF_ENTRIES then return fail(INVALID_ARGUMENT, "encodeLeaf", "leaf must contain 1..10 entries") end if
   output = page.create(tree.pagedFile.pageSize, page.TYPE_BTREE_LEAF, tree.pagedFile.fileId, pageNumber)
@@ -491,8 +552,11 @@ function encodeLeaf(tree, pageNumber, previousPage, nextPage, values)
   return output
 end function
 
-// Decodes the leaf.
-// Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the leaf.
+/// Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param readContext readContext value consumed by this operation.
 function decodeLeafWithContext(tree, pageNumber, readContext)
   encoded = paged_file.readPageWithContext(tree.pagedFile, pageNumber, readContext)
   header = page.verify(encoded)
@@ -523,13 +587,19 @@ function decodeLeafWithContext(tree, pageNumber, readContext)
   return BTreeLeaf(pageNumber, previousPage, nextPage, values)
 end function
 
-// Decodes one leaf without retaining positioned-read setup across calls.
+/// Decodes one leaf without retaining positioned-read setup across calls.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function decodeLeaf(tree, pageNumber)
   return decodeLeafWithContext(tree, pageNumber, void)
 end function
 
-// Encodes the internal.
-// Inputs: `tree`, `pageNumber`, `level`, `descriptors`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the internal.
+/// Inputs: `tree`, `pageNumber`, `level`, `descriptors`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param level level value consumed by this operation.
+/// @param descriptors descriptors value consumed by this operation.
 function encodeInternal(tree, pageNumber, level, descriptors)
   if typeof(level) != "int" or level <= 0 or level > 65535 then return fail(INVALID_ARGUMENT, "encodeInternal", "level must be positive U16") end if
   if typeof(descriptors) != "array" or len(descriptors) < 2 or len(descriptors) > MAX_INTERNAL_CHILDREN then return fail(INVALID_ARGUMENT, "encodeInternal", "internal node must contain 2..12 children") end if
@@ -562,8 +632,11 @@ function encodeInternal(tree, pageNumber, level, descriptors)
   return output
 end function
 
-// Decodes the internal.
-// Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Decodes the internal.
+/// Inputs: `tree`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param readContext readContext value consumed by this operation.
 function decodeInternalWithContext(tree, pageNumber, readContext)
   encoded = paged_file.readPageWithContext(tree.pagedFile, pageNumber, readContext)
   header = page.verify(encoded)
@@ -599,13 +672,17 @@ function decodeInternalWithContext(tree, pageNumber, readContext)
   return BTreeInternal(pageNumber, level, children, separators)
 end function
 
-// Decodes one internal node without retaining positioned-read setup.
+/// Decodes one internal node without retaining positioned-read setup.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function decodeInternal(tree, pageNumber)
   return decodeInternalWithContext(tree, pageNumber, void)
 end function
 
-// Performs the chunk entries operation for this module.
-// Inputs: `values`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the chunk entries operation for this module.
+/// Inputs: `values`, `pageSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param pageSize pageSize value consumed by this operation.
 function chunkEntries(values, pageSize)
   chunks = list.List.new()
   current = []
@@ -624,8 +701,11 @@ function chunkEntries(values, pageSize)
   return chunks.toArray()
 end function
 
-// Performs the slice array operation for this module.
-// Inputs: `values`, `offset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the slice array operation for this module.
+/// Inputs: `values`, `offset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param values values value consumed by this operation.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
 function sliceArray(values, offset, count)
   result = []
   if count <= 0 then return result end if
@@ -635,8 +715,14 @@ function sliceArray(values, offset, count)
   return result
 end function
 
-// Performs the publish operation for this module.
-// Inputs: `tree`, `rootPage`, `firstLeaf`, `lastLeaf`, `height`, `entryCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the publish operation for this module.
+/// Inputs: `tree`, `rootPage`, `firstLeaf`, `lastLeaf`, `height`, `entryCount`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param rootPage rootPage value consumed by this operation.
+/// @param firstLeaf firstLeaf value consumed by this operation.
+/// @param lastLeaf lastLeaf value consumed by this operation.
+/// @param height Height in the coordinate or storage units used by the caller.
+/// @param entryCount Number of entry to process.
 function publish(tree, rootPage, firstLeaf, lastLeaf, height, entryCount)
   newGeneration = tree.meta.generation + 1
   target = META_PAGE_A
@@ -649,8 +735,10 @@ function publish(tree, rootPage, firstLeaf, lastLeaf, height, entryCount)
   return true
 end function
 
-// Commits the sorted.
-// Inputs: `tree`, `values`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Commits the sorted.
+/// Inputs: `tree`, `values`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param tree tree value consumed by this operation.
+/// @param values values value consumed by this operation.
 function commitSorted(tree, values)
   validateOpen(tree, "commitSorted")
   validateSorted(values, tree.meta.unique, "commitSorted")
@@ -702,8 +790,10 @@ function commitSorted(tree, values)
   return true
 end function
 
-// Performs the bulk load operation for this module.
-// Inputs: `tree`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bulk load operation for this module.
+/// Inputs: `tree`, `values`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param values values value consumed by this operation.
 function bulkLoad(tree, values)
   validateOpen(tree, "bulkLoad")
   sorted = sortEntries(values)
@@ -711,8 +801,9 @@ function bulkLoad(tree, values)
   return len(sorted)
 end function
 
-// Performs the all entries operation for this module.
-// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the all entries operation for this module.
+/// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
 function allEntries(tree)
   validateOpen(tree, "allEntries")
   if tree.meta.entryCount == 0 then return [] end if
@@ -738,10 +829,11 @@ function allEntries(tree)
   return result.toArray()
 end function
 
-// Walks the active leaf generation one page at a time. Only the previous entry
-// remains live between pages, so structural validation does not materialize the
-// complete index. The page-count guard turns a corrupt forward-link cycle into
-// a deterministic error without a second visited-page collection.
+/// Walks the active leaf generation one page at a time. Only the previous entry
+/// remains live between pages, so structural validation does not materialize the
+/// complete index. The page-count guard turns a corrupt forward-link cycle into
+/// a deterministic error without a second visited-page collection.
+/// @param tree tree value consumed by this operation.
 function auditLeafChain(tree)
   validateOpen(tree, "auditLeafChain")
   if tree.meta.entryCount == 0 then return BTreeAudit(void, void, 0, 0) end if
@@ -770,10 +862,13 @@ function auditLeafChain(tree)
   return BTreeAudit(firstKey, bytes(lastEntry.key), entryCount, visitedLeaves)
 end function
 
-// Descends through separator keys to the leaf that owns the rightmost range
-// beginning at or before key. Non-unique indexes deliberately allow equal
-// separators when a duplicate run spans leaves, so containsEntry subsequently
-// walks backward over equal-key predecessors.
+/// Descends through separator keys to the leaf that owns the rightmost range
+/// beginning at or before key. Non-unique indexes deliberately allow equal
+/// separators when a duplicate run spans leaves, so containsEntry subsequently
+/// walks backward over equal-key predecessors.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param readContext readContext value consumed by this operation.
 function locateLeafWithContext(tree, key, readContext)
   validateOpen(tree, "locateLeaf")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "locateLeaf", "key must contain 1..256 bytes") end if
@@ -794,15 +889,19 @@ function locateLeafWithContext(tree, key, readContext)
   return decodeLeafWithContext(tree, pageNumber, readContext)
 end function
 
-// Locates one leaf without a reusable positioned-read context.
+/// Locates one leaf without a reusable positioned-read context.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
 function locateLeaf(tree, key)
   return locateLeafWithContext(tree, key, void)
 end function
 
-// Tests one complete key/value entry without building allEntries(). At most one
-// leaf page and its small decoded entry array are retained at a time. Equal-key
-// predecessor leaves are included so non-unique indexes remain exact even when
-// a duplicate run crosses a leaf boundary.
+/// Tests one complete key/value entry without building allEntries(). At most one
+/// leaf page and its small decoded entry array are retained at a time. Equal-key
+/// predecessor leaves are included so non-unique indexes remain exact even when
+/// a duplicate run crosses a leaf boundary.
+/// @param tree tree value consumed by this operation.
+/// @param expected expected value consumed by this operation.
 function containsEntry(tree, expected)
   validateOpen(tree, "containsEntry")
   checked = copyEntry(expected)
@@ -837,8 +936,11 @@ function containsEntry(tree, expected)
   return false
 end function
 
-// Inserts the requested value.
-// Inputs: `tree`, `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the insert operation for the minisql storage btree module.
+/// Inputs: `tree`, `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param value Value consumed or transformed by the operation.
 function insert(tree, key, value)
   validateOpen(tree, "insert")
   candidate = entry(key, value)
@@ -859,8 +961,11 @@ function insert(tree, key, value)
   return true
 end function
 
-// Removes the requested value.
-// Inputs: `tree`, `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Removes remove from the state managed by the minisql storage btree module.
+/// Inputs: `tree`, `key`, `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param value Value consumed or transformed by the operation.
 function remove(tree, key, value)
   validateOpen(tree, "remove")
   candidate = entry(key, value)
@@ -879,8 +984,11 @@ function remove(tree, key, value)
   return true
 end function
 
-// Finds the requested value.
-// Inputs: `tree`, `key`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Finds the requested value.
+/// Inputs: `tree`, `key`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param readContext readContext value consumed by this operation.
 function findWithContext(tree, key, readContext)
   if typeof(readContext) == "error" then return readContext end if
   validateOpen(tree, "find")
@@ -920,13 +1028,22 @@ function findWithContext(tree, key, readContext)
   return result
 end function
 
-// Finds values without retaining positioned-read setup across page reads.
+/// Finds values without retaining positioned-read setup across page reads.
+/// @param tree tree value consumed by this operation.
+/// @param key key value consumed by this operation.
 function find(tree, key)
   return findWithContext(tree, key, void)
 end function
 
-// Performs the range operation for this module.
-// Inputs: `tree`, `lower`, `lowerInclusive`, `upper`, `upperInclusive`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the range operation for this module.
+/// Inputs: `tree`, `lower`, `lowerInclusive`, `upper`, `upperInclusive`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param lower lower value consumed by this operation.
+/// @param lowerInclusive lowerInclusive value consumed by this operation.
+/// @param upper upper value consumed by this operation.
+/// @param upperInclusive upperInclusive value consumed by this operation.
+/// @param maximum maximum value consumed by this operation.
+/// @param readContext readContext value consumed by this operation.
 function rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, maximum, readContext)
   if typeof(readContext) == "error" then return readContext end if
   validateOpen(tree, "range")
@@ -984,19 +1101,31 @@ function rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, ma
   return result
 end function
 
-// Scans a range without retaining positioned-read setup across page reads.
+/// Scans a range without retaining positioned-read setup across page reads.
+/// @param tree tree value consumed by this operation.
+/// @param lower lower value consumed by this operation.
+/// @param lowerInclusive lowerInclusive value consumed by this operation.
+/// @param upper upper value consumed by this operation.
+/// @param upperInclusive upperInclusive value consumed by this operation.
+/// @param maximum maximum value consumed by this operation.
 function range(tree, lower, lowerInclusive, upper, upperInclusive, maximum)
   return rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, maximum, void)
 end function
 
-// Performs the visit contains operation for this module.
-// Inputs: `state`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the visit contains operation for this module.
+/// Inputs: `state`, `pageNumber`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param pageNumber pageNumber value consumed by this operation.
 function visitContains(state, pageNumber)
   return state.pages[pageNumber] != 0
 end function
 
-// Performs the audit node operation for this module.
-// Inputs: `tree`, `pageNumber`, `expectedLevel`, `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit node operation for this module.
+/// Inputs: `tree`, `pageNumber`, `expectedLevel`, `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
+/// @param pageNumber pageNumber value consumed by this operation.
+/// @param expectedLevel expectedLevel value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function auditNode(tree, pageNumber, expectedLevel, state)
   if visitContains(state, pageNumber) then return fail(CORRUPT_DATA, "auditNode", "node graph contains a cycle or duplicate child") end if
   state.pages[pageNumber] = 1
@@ -1027,8 +1156,9 @@ function auditNode(tree, pageNumber, expectedLevel, state)
   return BTreeAudit(firstKey, lastKey, totalEntries, totalLeaves)
 end function
 
-// Verifies the requested value.
-// Inputs: `tree`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Performs the verify operation for the minisql storage btree module.
+/// Inputs: `tree`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param tree tree value consumed by this operation.
 function verify(tree)
   validateOpen(tree, "verify")
   leafAudit = auditLeafChain(tree)
@@ -1041,29 +1171,33 @@ function verify(tree)
   return true
 end function
 
-// Counts the requested value.
-// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Counts the requested value.
+/// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
 function count(tree)
   validateOpen(tree, "count")
   return tree.meta.entryCount
 end function
 
-// Performs the height operation for this module.
-// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the height operation for this module.
+/// Inputs: `tree`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param tree tree value consumed by this operation.
 function height(tree)
   validateOpen(tree, "height")
   return tree.meta.height
 end function
 
-// Evaluates whether the supplied input satisfies the unique predicate.
-// Inputs: `tree`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Evaluates whether the supplied input satisfies the unique predicate.
+/// Inputs: `tree`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param tree tree value consumed by this operation.
 function isUnique(tree)
   validateOpen(tree, "isUnique")
   return tree.meta.unique
 end function
 
-// Closes the requested value.
-// Inputs: `tree`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql storage btree module.
+/// Inputs: `tree`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param tree tree value consumed by this operation.
 function close(tree)
   validateOpen(tree, "close")
   paged_file.close(tree.pagedFile)
@@ -1071,20 +1205,20 @@ function close(tree)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql storage btree module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "storage.btree"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql storage btree module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M11"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql storage btree module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct SequenceDefinition
 Defines the sequence definition record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L173)
 
 ## Members
 
@@ -26,7 +26,7 @@ cycle
 Cycle field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L191)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-hasvalue-hasvalue-src-minisql-catalog-schema-history-ml-1465869501"></a>
 ### hasValue
@@ -38,7 +38,7 @@ hasValue
 Has value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L189)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-incrementvalue-incrementvalue-src-minisql-catalog-schema-history-ml-377781791"></a>
 ### incrementValue
@@ -50,7 +50,7 @@ incrementValue
 Increment value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L181)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-lastvalue-lastvalue-src-minisql-catalog-schema-history-ml-943011567"></a>
 ### lastValue
@@ -62,7 +62,7 @@ lastValue
 Last value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L187)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-maximumvalue-maximumvalue-src-minisql-catalog-schema-history-ml-988169609"></a>
 ### maximumValue
@@ -74,7 +74,7 @@ maximumValue
 Maximum value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L185)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-minimumvalue-minimumvalue-src-minisql-catalog-schema-history-ml-1419375301"></a>
 ### minimumValue
@@ -86,7 +86,7 @@ minimumValue
 Minimum value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L183)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-name-name-src-minisql-catalog-schema-history-ml-1615884349"></a>
 ### name
@@ -98,7 +98,7 @@ name
 Name field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L141)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L177)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-ownedcolumnname-ownedcolumnname-src-minisql-catalog-schema-history-ml-2109337547"></a>
 ### ownedColumnName
@@ -110,7 +110,7 @@ ownedColumnName
 Owned column name field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L195)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-ownedtableid-ownedtableid-src-minisql-catalog-schema-history-ml-1721155987"></a>
 ### ownedTableId
@@ -122,7 +122,7 @@ ownedTableId
 Owned table id field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L193)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-sequenceid-sequenceid-src-minisql-catalog-schema-history-ml-1301380975"></a>
 ### sequenceId
@@ -134,7 +134,7 @@ sequenceId
 Sequence id field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L139)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L175)
 
 <a id="field-field-minisql-catalog-schema-history-sequencedefinition-startvalue-startvalue-src-minisql-catalog-schema-history-ml-101056441"></a>
 ### startValue
@@ -146,4 +146,4 @@ startValue
 Start value field of the sequence definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L179)

@@ -12,7 +12,7 @@ struct StandbyState
 Groups the standby state state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L737)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L815)
 
 ## Members
 
@@ -26,7 +26,7 @@ appliedLsn
 Stores the applied LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L743)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L821)
 
 <a id="field-field-minisql-tools-backup-standbystate-archivegeneration-archivegeneration-src-minisql-tools-backup-ml-1230804333"></a>
 ### archiveGeneration
@@ -38,7 +38,7 @@ archiveGeneration
 Stores the archive generation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L741)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L819)
 
 <a id="field-field-minisql-tools-backup-standbystate-databaseid-databaseid-src-minisql-tools-backup-ml-1380275469"></a>
 ### databaseId
@@ -50,4 +50,4 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L739)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L817)

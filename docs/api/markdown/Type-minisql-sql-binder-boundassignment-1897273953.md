@@ -12,7 +12,7 @@ struct BoundAssignment
 Groups the bound assignment state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L174)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnIndex
 Tracks the column index numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L162)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L176)
 
 <a id="field-field-minisql-sql-binder-boundassignment-expression-expression-src-minisql-sql-binder-ml-848910478"></a>
 ### expression
@@ -38,4 +38,4 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L178)

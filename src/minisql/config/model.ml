@@ -1,242 +1,255 @@
+//! Provides minisql config model facilities for this project.
+
 package minisql.config.model
 
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
-// Groups the paths config state and preserves the field relationships documented below.
+/// Groups the paths config state and preserves the field relationships documented below.
 struct PathsConfig
-  // Stores the data root associated with this value.
+  /// Stores the data root associated with this value.
   dataRoot
-  // Indicates whether the temporary root condition is active.
+  /// Indicates whether the temporary root condition is active.
   temporaryRoot
-  // Stores the log directory associated with this value.
+  /// Stores the log directory associated with this value.
   logDirectory
 end struct
 
-// Groups the server config state and preserves the field relationships documented below.
+/// Groups the server config state and preserves the field relationships documented below.
 struct ServerConfig
-  // Stores the bind address associated with this value.
+  /// Stores the bind address associated with this value.
   bindAddress
-  // Tracks the port numeric value.
+  /// Tracks the port numeric value.
   port
-  // Stores the max connections associated with this value.
+  /// Stores the max connections associated with this value.
   maxConnections
-  // Tracks the max statement bytes numeric value.
+  /// Tracks the max statement bytes numeric value.
   maxStatementBytes
-  // Tracks the max frame bytes numeric value.
+  /// Tracks the max frame bytes numeric value.
   maxFrameBytes
-  // Caps rows returned by one statement before the server rejects the result.
+  /// Caps rows returned by one statement before the server rejects the result.
   maxResultRows
-  // Caps the aggregate encoded response bytes returned by one statement.
+  /// Caps the aggregate encoded response bytes returned by one statement.
   maxResultBytes
-  // Disconnects inactive clients after this many milliseconds.
+  /// Disconnects inactive clients after this many milliseconds.
   idleTimeoutMs
 end struct
 
-// Groups the runtime config state and preserves the field relationships documented below.
+/// Groups the runtime config state and preserves the field relationships documented below.
 struct RuntimeConfig
-  // Tracks the buffer pool bytes numeric value.
+  /// Tracks the buffer pool bytes numeric value.
   bufferPoolBytes
-  // Tracks the query timeout ms numeric value.
+  /// Tracks the query timeout ms numeric value.
   queryTimeoutMs
-  // Tracks the checkpoint WAL bytes numeric value.
+  /// Tracks the checkpoint WAL bytes numeric value.
   checkpointWalBytes
-  // Indicates whether the temporary memory bytes condition is active.
+  /// Indicates whether the temporary memory bytes condition is active.
   temporaryMemoryBytes
-  // Rejects or cooperatively aborts work when managed heap reaches this budget.
+  /// Rejects or cooperatively aborts work when managed heap reaches this budget.
   processMemoryBytes
-  // Caps spill reservations shared by all concurrent queries.
+  /// Caps spill reservations shared by all concurrent queries.
   temporaryStorageBytes
-  // Emits a warning for statements whose execution reaches this duration.
+  /// Emits a warning for statements whose execution reaches this duration.
   slowQueryMs
-  // Stores the log level associated with this value.
+  /// Stores the log level associated with this value.
   logLevel
 end struct
 
-// Defines ordinary server-log destinations and time-based file rotation.
+/// Defines ordinary server-log destinations and time-based file rotation.
 struct LoggingConfig
-  // Enables writing each accepted log record to standard output.
+  /// Enables writing each accepted log record to standard output.
   stdoutEnabled
-  // Enables writing the same accepted record to the active log file.
+  /// Enables writing the same accepted record to the active log file.
   fileEnabled
-  // Names the active log file inside `paths.logDirectory`.
+  /// Names the active log file inside `paths.logDirectory`.
   fileName
-  // Selects the number of elapsed hours after which the active file is rolled.
+  /// Selects the number of elapsed hours after which the active file is rolled.
   rotationHours
 end struct
 
-// Defines the independent SQL statement log. Binlog records bypass the
-// ordinary severity threshold so enabling it always captures every statement.
+/// Defines the independent SQL statement log. Binlog records bypass the
+/// ordinary severity threshold so enabling it always captures every statement.
 struct BinlogConfig
-  // Enables durable SQL statement recording.
+  /// Enables durable SQL statement recording.
   enabled
-  // Names the active binlog file inside `paths.logDirectory`.
+  /// Names the active binlog file inside `paths.logDirectory`.
   fileName
 end struct
 
-// Defines the native TLS server profile independently of ordinary authentication.
+/// Defines the native TLS server profile independently of ordinary authentication.
 struct TlsConfig
-  // Enables native TLS 1.3 for the configured listener.
+  /// Enables native TLS 1.3 for the configured listener.
   enabled
-  // Locates the server certificate as store:/pfx: on Windows or pem:cert|key on Linux.
+  /// Locates the server certificate as store:/pfx: on Windows or pem:cert|key on Linux.
   certificateReference
-  // Names the environment variable that supplies an optional PFX password.
+  /// Names the environment variable that supplies an optional PFX password.
   pfxPasswordEnvironment
-  // Declares the only cipher suite accepted by the current fail-closed policy.
+  /// Declares the only cipher suite accepted by the current fail-closed policy.
   cipherSuite
-  // Declares the only key-exchange group accepted by the current policy.
+  /// Declares the only key-exchange group accepted by the current policy.
   namedGroup
-  // Declares the exact protocol version accepted by the current policy.
+  /// Declares the exact protocol version accepted by the current policy.
   protocolVersion
 end struct
 
-// Groups the database defaults state and preserves the field relationships documented below.
+/// Groups the database defaults state and preserves the field relationships documented below.
 struct DatabaseDefaults
-  // Tracks the page size numeric value.
+  /// Tracks the page size numeric value.
   pageSize
-  // Stores the checksum algorithm associated with this value.
+  /// Stores the checksum algorithm associated with this value.
   checksumAlgorithm
-  // Tracks the WAL segment bytes numeric value.
+  /// Tracks the WAL segment bytes numeric value.
   walSegmentBytes
-  // Stores the text encoding associated with this value.
+  /// Stores the text encoding associated with this value.
   textEncoding
-  // Stores the default collation associated with this value.
+  /// Stores the default collation associated with this value.
   defaultCollation
-  // Tracks the database format version numeric value.
+  /// Tracks the database format version numeric value.
   databaseFormatVersion
-  // Tracks the table file format version numeric value.
+  /// Tracks the table file format version numeric value.
   tableFileFormatVersion
-  // Tracks the index file format version numeric value.
+  /// Tracks the index file format version numeric value.
   indexFileFormatVersion
-  // Tracks the WAL format version numeric value.
+  /// Tracks the WAL format version numeric value.
   walFormatVersion
-  // Tracks the row format version numeric value.
+  /// Tracks the row format version numeric value.
   rowFormatVersion
 end struct
 
-// Groups the safety config state and preserves the field relationships documented below.
+/// Groups the safety config state and preserves the field relationships documented below.
 struct SafetyConfig
-  // Indicates whether the allow remote without authentication condition is active.
+  /// Indicates whether the allow remote without authentication condition is active.
   allowRemoteWithoutAuthentication
-  // Stores the durability associated with this value.
+  /// Stores the durability associated with this value.
   durability
-  // Indicates whether the allow unknown format features condition is active.
+  /// Indicates whether the allow unknown format features condition is active.
   allowUnknownFormatFeatures
 end struct
 
-// Groups the mini SQL config state and preserves the field relationships documented below.
+/// Groups the mini SQL config state and preserves the field relationships documented below.
 struct MiniSqlConfig
-  // Tracks the config version numeric value.
+  /// Tracks the config version numeric value.
   configVersion
-  // Stores the filesystem paths.
+  /// Stores the filesystem paths.
   paths
-  // Stores the server associated with this value.
+  /// Stores the server associated with this value.
   server
-  // Stores the runtime associated with this value.
+  /// Stores the runtime associated with this value.
   runtime
-  // Stores ordinary logger destination and rotation settings.
+  /// Stores ordinary logger destination and rotation settings.
   logging
-  // Stores SQL binlog settings.
+  /// Stores SQL binlog settings.
   binlog
-  // Stores native TLS listener and algorithm policy settings.
+  /// Stores native TLS listener and algorithm policy settings.
   tls
-  // Stores the database defaults associated with this value.
+  /// Stores the database defaults associated with this value.
   databaseDefaults
-  // Stores the safety associated with this value.
+  /// Stores the safety associated with this value.
   safety
 end struct
 
-// Returns whether the supplied value satisfies the paths config condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the paths config condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isPathsConfig(value)
   return value is PathsConfig
 end function
 
-// Returns whether the supplied value satisfies the server config condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the server config condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isServerConfig(value)
   return value is ServerConfig
 end function
 
-// Returns whether the supplied value satisfies the runtime config condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the runtime config condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isRuntimeConfig(value)
   return value is RuntimeConfig
 end function
 
-// Returns whether the supplied value is a logger configuration.
-// Inputs: `value`. Returns true only for `LoggingConfig` values.
+/// Returns whether the supplied value is a logger configuration.
+/// Inputs: `value`. Returns true only for `LoggingConfig` values.
+/// @param value Value consumed or transformed by the operation.
 function isLoggingConfig(value)
   return value is LoggingConfig
 end function
 
-// Returns whether the supplied value is a binlog configuration.
-// Inputs: `value`. Returns true only for `BinlogConfig` values.
+/// Returns whether the supplied value is a binlog configuration.
+/// Inputs: `value`. Returns true only for `BinlogConfig` values.
+/// @param value Value consumed or transformed by the operation.
 function isBinlogConfig(value)
   return value is BinlogConfig
 end function
 
-// Returns whether the supplied value is a native TLS configuration.
+/// Returns whether the supplied value is a native TLS configuration.
+/// @param value Value consumed or transformed by the operation.
 function isTlsConfig(value)
   return value is TlsConfig
 end function
 
-// Returns whether the supplied value satisfies the database defaults condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the database defaults condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isDatabaseDefaults(value)
   return value is DatabaseDefaults
 end function
 
-// Returns whether the supplied value satisfies the safety config condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the safety config condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isSafetyConfig(value)
   return value is SafetyConfig
 end function
 
-// Returns whether the supplied value satisfies the mini SQL config condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the mini SQL config condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isMiniSqlConfig(value)
   return value is MiniSqlConfig
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql config model module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "config.model"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql config model module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M0"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql config model module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function
 
-// Implements default database settings for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements default database settings for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param pageSize pageSize value consumed by this operation.
 function defaultDatabaseSettings(pageSize)
   return DatabaseDefaults(pageSize, "crc32c", 16777216, "utf-8", "binary", 1, 1, 1, 1, 1)
 end function
 
-// Implements default config for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements default config for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param dataRoot dataRoot value consumed by this operation.
 function defaultConfig(dataRoot)
   return MiniSqlConfig(
     1,

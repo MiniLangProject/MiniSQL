@@ -12,7 +12,7 @@ struct SelectCursor
 Holds the resources of a simple forward-only SELECT. The physical read gate and logical statement lease remain owned until exhaustion or explicit close, preventing writers from changing pages while protocol batches are emitted.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L199)
 
 ## Members
 
@@ -26,7 +26,7 @@ bound
 Bound SELECT expressions and LIMIT/OFFSET metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L203)
 
 <a id="field-field-minisql-executor-executor-selectcursor-closed-closed-src-minisql-executor-executor-ml-987380015"></a>
 ### closed
@@ -38,7 +38,7 @@ closed
 True after resources have been released.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L217)
 
 <a id="field-field-minisql-executor-executor-selectcursor-emitted-emitted-src-minisql-executor-executor-ml-44381567"></a>
 ### emitted
@@ -50,7 +50,7 @@ emitted
 Number of projected rows returned to the caller.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L215)
 
 <a id="field-field-minisql-executor-executor-selectcursor-engine-engine-src-minisql-executor-executor-ml-2011611983"></a>
 ### engine
@@ -62,7 +62,7 @@ engine
 Session engine that owns permissions, locks, and database handles.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L201)
 
 <a id="field-field-minisql-executor-executor-selectcursor-reader-reader-src-minisql-executor-executor-ml-395250037"></a>
 ### reader
@@ -74,7 +74,7 @@ reader
 Open table reader retained for the cursor lifetime.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L189)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L207)
 
 <a id="field-field-minisql-executor-executor-selectcursor-readlease-readlease-src-minisql-executor-executor-ml-563175119"></a>
 ### readLease
@@ -86,7 +86,7 @@ readLease
 Logical statement read lease released at cursor completion.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L211)
 
 <a id="field-field-minisql-executor-executor-selectcursor-scancursor-scancursor-src-minisql-executor-executor-ml-1430287641"></a>
 ### scanCursor
@@ -98,7 +98,7 @@ scanCursor
 Bounded storage cursor over the selected source columns.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L209)
 
 <a id="field-field-minisql-executor-executor-selectcursor-skipped-skipped-src-minisql-executor-executor-ml-1956876831"></a>
 ### skipped
@@ -110,7 +110,7 @@ skipped
 Number of qualifying rows discarded for OFFSET.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L213)
 
 <a id="field-field-minisql-executor-executor-selectcursor-wherepredicate-wherepredicate-src-minisql-executor-executor-ml-1746095963"></a>
 ### wherePredicate
@@ -122,4 +122,4 @@ wherePredicate
 Optimizer-normalized predicate evaluated for every source row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L205)

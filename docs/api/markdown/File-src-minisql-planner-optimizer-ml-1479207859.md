@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql planner optimizer facilities for this project.
+
 Package: [`minisql.planner.optimizer`](Package-minisql-planner-optimizer-19815101.md)
 
 Reachable from entry: **yes**
@@ -32,12 +34,12 @@ Builds the scan/join spine and its cumulative deterministic cost estimate. Equal
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `sourcePredicates` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `sourcePredicates` | `dynamic` | — | sourcePredicates value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L853)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L952)
 
 <a id="function-function-minisql-planner-optimizer-choosejoinsequence-function-choosejoinsequence-bound-sourcescans-state-src-minisql-planner-optimizer-ml-1303616112"></a>
 ### chooseJoinSequence
@@ -50,12 +52,12 @@ Enumerates the cheapest connected left-deep order for up to eight sources. This 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `sourceScans` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `sourceScans` | `dynamic` | — | sourceScans value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L793)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L889)
 
 <a id="function-function-minisql-planner-optimizer-choosejoinsequencegreedy-function-choosejoinsequencegreedy-bound-sourcescans-src-minisql-planner-optimizer-ml-1387968005"></a>
 ### chooseJoinSequenceGreedy
@@ -68,11 +70,11 @@ Reorders a pure INNER equijoin graph with a deterministic cost-guided greedy sea
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `sourceScans` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `sourceScans` | `dynamic` | — | sourceScans value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L700)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L789)
 
 <a id="function-function-minisql-planner-optimizer-columngroupstats-function-columngroupstats-found-columnindexes-src-minisql-planner-optimizer-ml-96333986"></a>
 ### columnGroupStats
@@ -85,11 +87,11 @@ Finds exact ordered joint-column statistics, normally produced for a composite i
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `found` | `dynamic` | — |  |
-| `columnIndexes` | `dynamic` | — |  |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `columnIndexes` | `dynamic` | — | columnIndexes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L150)
 
 <a id="function-function-minisql-planner-optimizer-columnstats-function-columnstats-found-columnindex-src-minisql-planner-optimizer-ml-973773712"></a>
 ### columnStats
@@ -102,11 +104,11 @@ Finds persisted column statistics by local table-column index.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `found` | `dynamic` | — |  |
-| `columnIndex` | `dynamic` | — |  |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L138)
 
 <a id="function-function-minisql-planner-optimizer-combinedindexcandidate-function-combinedindexcandidate-bound-source-predicate-state-found-rows-src-minisql-planner-optimizer-ml-1013611664"></a>
 ### combinedIndexCandidate
@@ -119,15 +121,15 @@ Chooses a bounded multi-index path for a single base table. AND may use every in
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `found` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L464)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L523)
 
 <a id="function-function-minisql-planner-optimizer-componentname-function-componentname-src-minisql-planner-optimizer-ml-838324764"></a>
 ### componentName
@@ -136,10 +138,10 @@ Chooses a bounded multi-index path for a single base table. AND may use every in
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql planner optimizer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1036)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1139)
 
 <a id="function-function-minisql-planner-optimizer-connectingjoin-function-connectingjoin-bound-state-sourceindex-src-minisql-planner-optimizer-ml-1871492222"></a>
 ### connectingJoin
@@ -152,12 +154,12 @@ Finds a join edge that connects one candidate source to the current subset. Pure
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L771)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L864)
 
 <a id="function-function-minisql-planner-optimizer-countslotseligible-function-countslotseligible-bound-wherepredicate-src-minisql-planner-optimizer-ml-1085682114"></a>
 ### countSlotsEligible
@@ -170,11 +172,11 @@ Recognizes the exact COUNT(*) form implemented by the checksum-verified heap slo
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `wherePredicate` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `wherePredicate` | `dynamic` | — | wherePredicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L607)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L683)
 
 <a id="function-function-minisql-planner-optimizer-distinctforboundcolumn-function-distinctforboundcolumn-bound-state-columnindex-src-minisql-planner-optimizer-ml-91559879"></a>
 ### distinctForBoundColumn
@@ -187,12 +189,12 @@ Implements join rows for this module. Returns the computed value or operation st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `columnIndex` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L563)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L630)
 
 <a id="function-function-minisql-planner-optimizer-equalitycolumngroup-function-equalitycolumngroup-source-found-predicate-src-minisql-planner-optimizer-ml-902858078"></a>
 ### equalityColumnGroup
@@ -205,12 +207,12 @@ Selects the widest complete equality group available for a predicate.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `found` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L315)
 
 <a id="function-function-minisql-planner-optimizer-equalityrows-function-equalityrows-inputrows-tablerows-current-literal-src-minisql-planner-optimizer-ml-300856598"></a>
 ### equalityRows
@@ -223,13 +225,13 @@ Estimates equality from the MCV list and distributes the remaining population un
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `inputRows` | `dynamic` | — |  |
-| `tableRows` | `dynamic` | — |  |
-| `current` | `dynamic` | — |  |
-| `literal` | `dynamic` | — |  |
+| `inputRows` | `dynamic` | — | inputRows value consumed by this operation. |
+| `tableRows` | `dynamic` | — | tableRows value consumed by this operation. |
+| `current` | `dynamic` | — | current value consumed by this operation. |
+| `literal` | `dynamic` | — | literal value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L216)
 
 <a id="function-function-minisql-planner-optimizer-explain-function-explain-bound-state-src-minisql-planner-optimizer-ml-1399099675"></a>
 ### explain
@@ -242,11 +244,11 @@ Implements explain for this module. Returns the computed value or operation stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1025)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1128)
 
 <a id="function-function-minisql-planner-optimizer-expressioncoveredbyindex-function-expressioncoveredbyindex-expression-source-index-src-minisql-planner-optimizer-ml-1671287147"></a>
 ### expressionCoveredByIndex
@@ -259,12 +261,12 @@ Returns whether every column referenced by one expression belongs to an index ke
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `expression` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `index` | `dynamic` | — |  |
+| `expression` | `dynamic` | — | expression value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L383)
 
 <a id="function-function-minisql-planner-optimizer-fail-function-fail-code-operation-message-src-minisql-planner-optimizer-ml-483996185"></a>
 ### fail
@@ -273,16 +275,16 @@ Returns whether every column referenced by one expression belongs to an index ke
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql planner optimizer module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L77)
 
 <a id="function-function-minisql-planner-optimizer-histogramlessorequal-function-histogramlessorequal-current-candidate-src-minisql-planner-optimizer-ml-2126737070"></a>
 ### histogramLessOrEqual
@@ -295,11 +297,11 @@ Interpolates an inclusive integral boundary within the persisted cumulative hist
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `current` | `dynamic` | — |  |
-| `candidate` | `dynamic` | — |  |
+| `current` | `dynamic` | — | current value consumed by this operation. |
+| `candidate` | `dynamic` | — | candidate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L189)
 
 <a id="function-function-minisql-planner-optimizer-indexcandidate-function-indexcandidate-bound-source-predicate-state-found-rows-outputrows-src-minisql-planner-optimizer-ml-696337736"></a>
 ### indexCandidate
@@ -312,16 +314,16 @@ Chooses the longest usable B+-tree prefix for a source predicate. Equality may c
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `found` | `dynamic` | — |  |
-| `rows` | `dynamic` | — |  |
-| `outputRows` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `rows` | `dynamic` | — | rows value consumed by this operation. |
+| `outputRows` | `dynamic` | — | outputRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L382)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L435)
 
 <a id="function-function-minisql-planner-optimizer-indexcoversbound-function-indexcoversbound-bound-source-index-predicate-src-minisql-planner-optimizer-ml-654161322"></a>
 ### indexCoversBound
@@ -334,13 +336,13 @@ Recognizes a query fully answerable from B+-tree key and INCLUDE payloads.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `index` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `index` | `dynamic` | — | Zero-based index of the affected item. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L358)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L404)
 
 <a id="function-function-minisql-planner-optimizer-indexnamecontains-function-indexnamecontains-items-name-src-minisql-planner-optimizer-ml-945262785"></a>
 ### indexNameContains
@@ -353,11 +355,11 @@ Reports whether a stable index-name list contains one name.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L28)
 
 <a id="function-function-minisql-planner-optimizer-indexnamelisttext-function-indexnamelisttext-items-src-minisql-planner-optimizer-ml-1078447614"></a>
 ### indexNameListText
@@ -370,10 +372,10 @@ Renders a deterministic comma-separated index-name list for EXPLAIN.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L37)
 
 <a id="function-function-minisql-planner-optimizer-integerdivide-function-integerdivide-numerator-denominator-src-minisql-planner-optimizer-ml-355225887"></a>
 ### integerDivide
@@ -386,11 +388,11 @@ Implements integer divide for this module. Requires arguments that satisfy the v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `numerator` | `dynamic` | — |  |
-| `denominator` | `dynamic` | — |  |
+| `numerator` | `dynamic` | — | numerator value consumed by this operation. |
+| `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L87)
 
 <a id="function-function-minisql-planner-optimizer-integralrangerows-function-integralrangerows-inputrows-tablerows-current-operator-literal-src-minisql-planner-optimizer-ml-2069824678"></a>
 ### integralRangeRows
@@ -403,14 +405,14 @@ Estimates an integral inequality from a cumulative histogram, with a uniform int
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `inputRows` | `dynamic` | — |  |
-| `tableRows` | `dynamic` | — |  |
-| `current` | `dynamic` | — |  |
-| `operator` | `dynamic` | — |  |
-| `literal` | `dynamic` | — |  |
+| `inputRows` | `dynamic` | — | inputRows value consumed by this operation. |
+| `tableRows` | `dynamic` | — | tableRows value consumed by this operation. |
+| `current` | `dynamic` | — | current value consumed by this operation. |
+| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `literal` | `dynamic` | — | literal value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L263)
 
 <a id="constant-constant-minisql-planner-optimizer-invalid-argument-const-invalid-argument-9001-src-minisql-planner-optimizer-ml-161393955"></a>
 ### INVALID_ARGUMENT
@@ -419,7 +421,7 @@ Estimates an integral inequality from a cumulative histogram, with a uniform int
 const INVALID_ARGUMENT = 9001
 ```
 
-Costed physical-plan builder. It produces both the stable descriptive EXPLAIN tree and a typed execution contract consumed by the executor, so access paths and operator algorithms cannot silently diverge at runtime.
+Costed physical-plan builder. It produces both the stable descriptive
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L23)
@@ -431,10 +433,10 @@ Costed physical-plan builder. It produces both the stable descriptive EXPLAIN tr
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql planner optimizer module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1050)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1153)
 
 <a id="function-function-minisql-planner-optimizer-isoptimizedplan-function-isoptimizedplan-value-src-minisql-planner-optimizer-ml-1744473327"></a>
 ### isOptimizedPlan
@@ -447,10 +449,10 @@ Returns whether the supplied value satisfies the optimized plan condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L109)
 
 <a id="function-function-minisql-planner-optimizer-joinindexcandidate-function-joinindexcandidate-joined-state-src-minisql-planner-optimizer-ml-897481648"></a>
 ### joinIndexCandidate
@@ -463,11 +465,11 @@ Finds the single-column right-side index usable by a parameterized equality join
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `joined` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `joined` | `dynamic` | — | joined value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L651)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L734)
 
 <a id="function-function-minisql-planner-optimizer-joinoperator-function-joinoperator-jointype-src-minisql-planner-optimizer-ml-249465496"></a>
 ### joinOperator
@@ -480,10 +482,10 @@ Implements join operator for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `joinType` | `dynamic` | — |  |
+| `joinType` | `dynamic` | — | joinType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L596)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L670)
 
 - [minisql.planner.optimizer.JoinOrderState](Type-minisql-planner-optimizer-joinorderstate-1862784944.md) — struct
 <a id="function-function-minisql-planner-optimizer-joinrows-function-joinrows-bound-state-leftrows-rightrows-jointype-condition-src-minisql-planner-optimizer-ml-1552550485"></a>
@@ -497,15 +499,15 @@ Estimates output cardinality for one join using NDV statistics when the predicat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `leftRows` | `dynamic` | — |  |
-| `rightRows` | `dynamic` | — |  |
-| `joinType` | `dynamic` | — |  |
-| `condition` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
+| `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
+| `joinType` | `dynamic` | — | joinType value consumed by this operation. |
+| `condition` | `dynamic` | — | condition value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L577)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L650)
 
 <a id="function-function-minisql-planner-optimizer-optimize-function-optimize-bound-state-src-minisql-planner-optimizer-ml-644607809"></a>
 ### optimize
@@ -518,11 +520,11 @@ Lowers a bound SELECT into a costed physical operator tree. Operators are added 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L936)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1037)
 
 - [minisql.planner.optimizer.OptimizedPlan](Type-minisql-planner-optimizer-optimizedplan-1915252585.md) — struct
 <a id="function-function-minisql-planner-optimizer-originaljoinsequence-function-originaljoinsequence-bound-src-minisql-planner-optimizer-ml-704726834"></a>
@@ -536,10 +538,10 @@ Returns join indexes in their bound SQL order.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L664)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L748)
 
 <a id="function-function-minisql-planner-optimizer-originaljoinsources-function-originaljoinsources-bound-src-minisql-planner-optimizer-ml-681575948"></a>
 ### originalJoinSources
@@ -552,10 +554,10 @@ Returns the syntactic source introduced by each original join.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L675)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L760)
 
 <a id="function-function-minisql-planner-optimizer-predicaterows-function-predicaterows-source-found-predicate-fallbackrows-src-minisql-planner-optimizer-ml-2046176487"></a>
 ### predicateRows
@@ -568,13 +570,13 @@ Estimates a pushed predicate with available NDV statistics, retaining the conser
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `found` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
-| `fallbackRows` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `found` | `dynamic` | — | found value consumed by this operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
+| `fallbackRows` | `dynamic` | — | fallbackRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L296)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L335)
 
 <a id="function-function-minisql-planner-optimizer-removeintegerat-function-removeintegerat-items-removedindex-src-minisql-planner-optimizer-ml-1998590852"></a>
 ### removeIntegerAt
@@ -587,11 +589,11 @@ Copies an integer array while omitting one position.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `items` | `dynamic` | — |  |
-| `removedIndex` | `dynamic` | — |  |
+| `items` | `dynamic` | — | Items consumed or updated by the operation. |
+| `removedIndex` | `dynamic` | — | Zero-based index of removed. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L686)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L773)
 
 <a id="function-function-minisql-planner-optimizer-scalefraction-function-scalefraction-value-numerator-denominator-src-minisql-planner-optimizer-ml-1937239010"></a>
 ### scaleFraction
@@ -604,12 +606,12 @@ Multiplies a cardinality by a bounded fraction without overflowing the native in
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `numerator` | `dynamic` | — |  |
-| `denominator` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `numerator` | `dynamic` | — | numerator value consumed by this operation. |
+| `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L150)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L170)
 
 <a id="function-function-minisql-planner-optimizer-scanplan-function-scanplan-bound-source-state-predicate-sourceindex-src-minisql-planner-optimizer-ml-1794583322"></a>
 ### scanPlan
@@ -622,14 +624,14 @@ Scans plan using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `source` | `dynamic` | — |  |
-| `state` | `dynamic` | — |  |
-| `predicate` | `dynamic` | — |  |
-| `sourceIndex` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `predicate` | `dynamic` | — | predicate value consumed by this operation. |
+| `sourceIndex` | `dynamic` | — | Zero-based index of source. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L510)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L574)
 
 <a id="function-function-minisql-planner-optimizer-sourcemaskcount-function-sourcemaskcount-mask-src-minisql-planner-optimizer-ml-1982441320"></a>
 ### sourceMaskCount
@@ -642,10 +644,10 @@ Counts set source bits in a small join-enumeration mask.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `mask` | `dynamic` | — |  |
+| `mask` | `dynamic` | — | mask value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L758)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L848)
 
 <a id="function-function-minisql-planner-optimizer-streamaggregateeligible-function-streamaggregateeligible-bound-wherepredicate-src-minisql-planner-optimizer-ml-759054978"></a>
 ### streamAggregateEligible
@@ -658,11 +660,11 @@ Recognizes direct, non-DISTINCT scalar aggregates that can update fixed-size acc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `wherePredicate` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `wherePredicate` | `dynamic` | — | wherePredicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L620)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L698)
 
 <a id="function-function-minisql-planner-optimizer-streamingjoincounteligible-function-streamingjoincounteligible-bound-wherepredicate-reordered-src-minisql-planner-optimizer-ml-1081424670"></a>
 ### streamingJoinCountEligible
@@ -675,12 +677,12 @@ Recognizes a reordered INNER-equijoin COUNT(*) whose final join can count matche
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `bound` | `dynamic` | — |  |
-| `wherePredicate` | `dynamic` | — |  |
-| `reordered` | `dynamic` | — |  |
+| `bound` | `dynamic` | — | bound value consumed by this operation. |
+| `wherePredicate` | `dynamic` | — | wherePredicate value consumed by this operation. |
+| `reordered` | `dynamic` | — | reordered value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L634)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L715)
 
 <a id="function-function-minisql-planner-optimizer-tableindexes-function-tableindexes-state-tableid-src-minisql-planner-optimizer-ml-716805978"></a>
 ### tableIndexes
@@ -693,11 +695,11 @@ Returns index metadata from a rich planning context. Legacy callers that pass on
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L130)
 
 <a id="function-function-minisql-planner-optimizer-tablestats-function-tablestats-state-tableid-src-minisql-planner-optimizer-ml-1794827490"></a>
 ### tableStats
@@ -710,11 +712,11 @@ Implements table stats for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L118)
 
 <a id="function-function-minisql-planner-optimizer-targetmilestone-function-targetmilestone-src-minisql-planner-optimizer-ml-1078047754"></a>
 ### targetMilestone
@@ -723,10 +725,10 @@ Implements table stats for this module. Returns the computed value or operation 
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql planner optimizer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1043)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L1146)
 
 <a id="function-function-minisql-planner-optimizer-tuplehashforliterals-function-tuplehashforliterals-literals-src-minisql-planner-optimizer-ml-893299664"></a>
 ### tupleHashForLiterals
@@ -739,7 +741,7 @@ Computes the persisted tuple hash used by multi-column MCV statistics.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `literals` | `dynamic` | — |  |
+| `literals` | `dynamic` | — | literals value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L220)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L247)

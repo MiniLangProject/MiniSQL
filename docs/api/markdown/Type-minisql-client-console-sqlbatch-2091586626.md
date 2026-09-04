@@ -12,7 +12,7 @@ struct SqlBatch
 Splits complete SQL statements from an unfinished interactive input suffix.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L39)
 
 ## Members
 
@@ -26,7 +26,7 @@ remainder
 Trailing text that does not yet form a complete statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L43)
 
 <a id="field-field-minisql-client-console-sqlbatch-statements-statements-src-minisql-client-console-ml-359112645"></a>
 ### statements
@@ -38,4 +38,4 @@ statements
 Complete statements, in source order and without their delimiters.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L41)

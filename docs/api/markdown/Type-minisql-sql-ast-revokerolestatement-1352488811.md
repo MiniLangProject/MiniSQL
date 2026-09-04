@@ -12,7 +12,7 @@ struct RevokeRoleStatement
 Groups the revoke role statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L786)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L841)
 
 ## Members
 
@@ -26,7 +26,7 @@ cascade
 Stores the cascade associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L792)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L847)
 
 <a id="field-field-minisql-sql-ast-revokerolestatement-membername-membername-src-minisql-sql-ast-ml-182438648"></a>
 ### memberName
@@ -38,7 +38,7 @@ memberName
 Stores the member name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L790)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L845)
 
 <a id="field-field-minisql-sql-ast-revokerolestatement-rolename-rolename-src-minisql-sql-ast-ml-835622416"></a>
 ### roleName
@@ -50,4 +50,4 @@ roleName
 Stores the role name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L788)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L843)

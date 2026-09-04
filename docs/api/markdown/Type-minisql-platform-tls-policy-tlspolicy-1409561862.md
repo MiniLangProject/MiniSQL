@@ -12,7 +12,7 @@ struct TlsPolicy
 Collects all independently extensible TLS policy dimensions.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L80)
 
 ## Members
 
@@ -26,7 +26,7 @@ certificatePolicy
 Peer certificate authentication policy used by a client.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L90)
 
 <a id="field-field-minisql-platform-tls-policy-tlspolicy-ciphersuites-ciphersuites-src-minisql-platform-tls-policy-ml-1435004992"></a>
 ### cipherSuites
@@ -38,7 +38,7 @@ cipherSuites
 Explicit allow-list of accepted TLS 1.3 cipher suites.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L86)
 
 <a id="field-field-minisql-platform-tls-policy-tlspolicy-groups-groups-src-minisql-platform-tls-policy-ml-1388638444"></a>
 ### groups
@@ -50,7 +50,7 @@ groups
 Explicit allow-list of accepted key-exchange groups.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L88)
 
 <a id="field-field-minisql-platform-tls-policy-tlspolicy-maximumversion-maximumversion-src-minisql-platform-tls-policy-ml-1517324864"></a>
 ### maximumVersion
@@ -62,7 +62,7 @@ maximumVersion
 Maximum accepted TLS protocol version.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L84)
 
 <a id="field-field-minisql-platform-tls-policy-tlspolicy-minimumversion-minimumversion-src-minisql-platform-tls-policy-ml-1652080964"></a>
 ### minimumVersion
@@ -74,4 +74,4 @@ minimumVersion
 Minimum accepted TLS protocol version.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_policy.ml#L82)

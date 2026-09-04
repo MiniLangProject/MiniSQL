@@ -12,7 +12,7 @@ struct Parser
 Groups the parser state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L50)
 
 ## Members
 
@@ -26,7 +26,7 @@ data
 Stores the data associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L52)
 
 <a id="field-field-minisql-config-loader-parser-position-position-src-minisql-config-loader-ml-1241191084"></a>
 ### position
@@ -38,4 +38,4 @@ position
 Tracks the position numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L54)

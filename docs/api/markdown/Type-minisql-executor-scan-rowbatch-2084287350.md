@@ -12,7 +12,7 @@ struct RowBatch
 Bounded group of rows transferred between streaming physical operators. The batch itself owns no storage handles; rows remain ordinary ScannedRow values and may safely outlive the cursor.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L109)
 
 ## Members
 
@@ -26,4 +26,4 @@ rows
 Ordered rows contained in this bounded transfer unit.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L111)

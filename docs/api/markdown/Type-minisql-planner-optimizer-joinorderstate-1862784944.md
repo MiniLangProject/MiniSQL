@@ -12,7 +12,7 @@ struct JoinOrderState
 Best known left-deep join prefix for one source subset. The bounded dynamic program stores one state per bit mask and therefore avoids factorial search.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L58)
 
 ## Members
 
@@ -26,7 +26,7 @@ estimate
 Cumulative cost and cardinality of this prefix.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L68)
 
 <a id="field-field-minisql-planner-optimizer-joinorderstate-joinindexes-joinindexes-src-minisql-planner-optimizer-ml-1512840742"></a>
 ### joinIndexes
@@ -38,7 +38,7 @@ joinIndexes
 Bound join predicates in physical attachment order.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L64)
 
 <a id="field-field-minisql-planner-optimizer-joinorderstate-sourceindexes-sourceindexes-src-minisql-planner-optimizer-ml-548977154"></a>
 ### sourceIndexes
@@ -50,7 +50,7 @@ sourceIndexes
 Source attached by each corresponding join predicate.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L66)
 
 <a id="field-field-minisql-planner-optimizer-joinorderstate-sourcemask-sourcemask-src-minisql-planner-optimizer-ml-549869608"></a>
 ### sourceMask
@@ -62,7 +62,7 @@ sourceMask
 Bit set for every source already present in the prefix.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L60)
 
 <a id="field-field-minisql-planner-optimizer-joinorderstate-startsource-startsource-src-minisql-planner-optimizer-ml-160238390"></a>
 ### startSource
@@ -74,4 +74,4 @@ startSource
 Source that seeds the executable left-deep plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L62)

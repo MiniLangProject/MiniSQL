@@ -1,3 +1,5 @@
+//! Provides minisql sql parser facilities for this project.
+
 package minisql.sql.parser
 
 // Copyright 2026 MiniLangProject contributors
@@ -9,157 +11,187 @@ import minisql.sql.dialect as dialect
 import minisql.sql.lexer as lexer
 import minisql.sql.token as token
 
+/// Defines the invalid argument constant used by the minisql sql parser module.
 const INVALID_ARGUMENT = 9001
+/// Defines the sql syntax constant used by the minisql sql parser module.
 const SQL_SYNTAX = 9019
 
-// Cursor state for the recursive-descent statement parser and precedence-climbing
-// expression parser. `tokens` always ends with EndOfInput, keeping `index` valid.
+/// Cursor state for the recursive-descent statement parser and precedence-climbing
+/// expression parser. `tokens` always ends with EndOfInput, keeping `index` valid.
 struct ParserState
-  // Immutable token stream produced by the lexer.
+  /// Immutable token stream produced by the lexer.
   tokens
-  // Index of the next token to inspect or consume.
+  /// Index of the next token to inspect or consume.
   index
-  // Number assigned to the next positional parameter encountered.
+  /// Number assigned to the next positional parameter encountered.
   parameterCount
-  // Monotonic suffix used to give inline derived tables collision-resistant internal CTE names.
+  /// Monotonic suffix used to give inline derived tables collision-resistant internal CTE names.
   derivedTableCount
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql sql parser module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param message Human-readable message associated with the operation.
 function fail(state, message)
   currentToken = state.tokens[state.index]
   return error(SQL_SYNTAX, "sql.parser at line " + currentToken.line + ", column " + currentToken.column + ": " + message + "; found " + token.describe(currentToken))
 end function
 
-// Implements current for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements current for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function current(state)
   return state.tokens[state.index]
 end function
 
-// Implements previous for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements previous for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function previous(state)
   if state.index <= 0 then return state.tokens[0] end if
   return state.tokens[state.index - 1]
 end function
 
-// Implements at end for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements at end for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function atEnd(state)
   return current(state).kind == token.TokenKind.EndOfInput
 end function
 
-// Advances advance using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Advances advance using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function advance(state)
   value = current(state)
   if not atEnd(state) then state.index = state.index + 1 end if
   return value
 end function
 
-// Checks kind using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Checks kind using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param kind kind value consumed by this operation.
 function checkKind(state, kind)
   return current(state).kind == kind
 end function
 
-// Checks keyword using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Checks keyword using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param keyword keyword value consumed by this operation.
 function checkKeyword(state, keyword)
   return token.isKeyword(current(state), keyword)
 end function
 
-// Implements next is kind for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements next is kind for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param kind kind value consumed by this operation.
 function nextIsKind(state, kind)
   position = state.index + 1
   if position >= len(state.tokens) then return false end if
   return state.tokens[position].kind == kind
 end function
 
-// Implements next is keyword for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements next is keyword for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param keyword keyword value consumed by this operation.
 function nextIsKeyword(state, keyword)
   position = state.index + 1
   if position >= len(state.tokens) then return false end if
   return token.isKeyword(state.tokens[position], keyword)
 end function
 
-// Returns whether the supplied value satisfies the identifier token condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the identifier token condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isIdentifierToken(value)
   if token.isKind(value, token.TokenKind.Identifier) then return true end if
   if not token.isKind(value, token.TokenKind.Keyword) then return false end if
   return dialect.isNonReservedIdentifierKeyword(value.text)
 end function
 
-// Returns whether the supplied value satisfies the function name token condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the function name token condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isFunctionNameToken(value)
   return isIdentifierToken(value) or token.isKeyword(value, "COALESCE") or token.isKeyword(value, "NULLIF") or token.isKeyword(value, "ROW_NUMBER") or token.isKeyword(value, "RANK") or token.isKeyword(value, "DENSE_RANK") or token.isKeyword(value, "PERCENT_RANK") or token.isKeyword(value, "CUME_DIST") or token.isKeyword(value, "NTILE") or token.isKeyword(value, "LAG") or token.isKeyword(value, "LEAD") or token.isKeyword(value, "FIRST_VALUE") or token.isKeyword(value, "LAST_VALUE") or token.isKeyword(value, "NTH_VALUE") or token.isKeyword(value, "NEXTVAL") or token.isKeyword(value, "CURRVAL")
 end function
 
-// OLD and NEW are reserved pseudo-row qualifiers, not general identifiers.
-// The parser accepts them only in the qualified form OLD.column / NEW.column.
-// Trigger execution replaces those qualified column expressions with typed row
-// literals before the body is bound and executed.
-// Returns whether the supplied value satisfies the trigger row qualifier token condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// OLD and NEW are reserved pseudo-row qualifiers, not general identifiers.
+/// The parser accepts them only in the qualified form OLD.column / NEW.column.
+/// Trigger execution replaces those qualified column expressions with typed row
+/// literals before the body is bound and executed.
+/// Returns whether the supplied value satisfies the trigger row qualifier token condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isTriggerRowQualifierToken(value)
   return token.isKeyword(value, "OLD") or token.isKeyword(value, "NEW")
 end function
 
-// Implements match kind for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements match kind for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param kind kind value consumed by this operation.
 function matchKind(state, kind)
   if not checkKind(state, kind) then return false end if
   advance(state)
   return true
 end function
 
-// Implements match keyword for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements match keyword for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param keyword keyword value consumed by this operation.
 function matchKeyword(state, keyword)
   if not checkKeyword(state, keyword) then return false end if
   advance(state)
   return true
 end function
 
-// Implements expect kind for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements expect kind for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param kind kind value consumed by this operation.
+/// @param description description value consumed by this operation.
 function expectKind(state, kind, description)
   if not checkKind(state, kind) then return fail(state, "expected " + description) end if
   return advance(state)
 end function
 
-// Implements expect keyword for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements expect keyword for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param keyword keyword value consumed by this operation.
 function expectKeyword(state, keyword)
   if not checkKeyword(state, keyword) then return fail(state, "expected keyword " + keyword) end if
   return advance(state)
 end function
 
-// Parses identifier using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses identifier using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parseIdentifier(state, description)
   value = current(state)
   if not isIdentifierToken(value) then return fail(state, "expected " + description) end if
@@ -171,14 +203,18 @@ function parseIdentifier(state, description)
   return ast.identifier(name, value.quoted)
 end function
 
-// Parses identifier name using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses identifier name using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parseIdentifierName(state, description)
   return parseIdentifier(state, description).name
 end function
 
-// Parses an optionally schema-qualified SQL object name into its canonical dotted form.
+/// Parses an optionally schema-qualified SQL object name into its canonical dotted form.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parseObjectName(state, description)
   first = "public"
   if not matchKeyword(state, "PUBLIC") then first = parseIdentifierName(state, description) end if
@@ -188,25 +224,29 @@ function parseObjectName(state, description)
   return first + "." + second
 end function
 
-// Parses principal name using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses principal name using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parsePrincipalName(state, description)
   if matchKeyword(state, "PUBLIC") then return "public" end if
   return parseIdentifierName(state, description)
 end function
 
-// Parses password literal using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses password literal using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parsePasswordLiteral(state)
   value = expectKind(state, token.TokenKind.StringLiteral, "password string literal")
   return value.value
 end function
 
-// Parses identifier list using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses identifier list using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseIdentifierList(state)
   expectKind(state, token.TokenKind.LeftParen, "'('")
   result = [parseIdentifierName(state, "column name")]
@@ -217,10 +257,12 @@ function parseIdentifierList(state)
   return result
 end function
 
-// Parses integer value using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses integer value using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parseIntegerValue(state, description)
   sign = ""
   if matchKind(state, token.TokenKind.Plus) then sign = "+" else if matchKind(state, token.TokenKind.Minus) then sign = "-" end if
@@ -230,9 +272,10 @@ function parseIntegerValue(state, description)
   return parsed
 end function
 
-// Parses type name using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses type name using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseTypeName(state)
   currentToken = current(state)
   if currentToken.kind != token.TokenKind.Keyword and currentToken.kind != token.TokenKind.Identifier then return fail(state, "expected SQL data type") end if
@@ -257,9 +300,10 @@ function parseTypeName(state)
   return ast.typeName(name, length, precision, scale)
 end function
 
-// Parses referential action using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses referential action using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseReferentialAction(state)
   if matchKeyword(state, "RESTRICT") then return "RESTRICT" end if
   if matchKeyword(state, "CASCADE") then return "CASCADE" end if
@@ -268,9 +312,10 @@ function parseReferentialAction(state)
   return fail(state, "expected referential action")
 end function
 
-// Parses column definition using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses column definition using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseColumnDefinition(state)
   name = parseIdentifierName(state, "column name")
   dataType = parseTypeName(state)
@@ -349,9 +394,10 @@ function parseColumnDefinition(state)
   return ast.ColumnDefinition(name, dataType, nullable, nullableSpecified, primaryKey, unique, defaultExpression, checkExpression, referencesTable, referencesColumns, onDelete, onUpdate, identity, generatedExpression, generatedStored)
 end function
 
-// Parses table constraint using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses table constraint using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseTableConstraint(state)
   name = void
   if matchKeyword(state, "CONSTRAINT") then name = parseIdentifierName(state, "constraint name") end if
@@ -390,16 +436,19 @@ function parseTableConstraint(state)
   return fail(state, "expected PRIMARY KEY, UNIQUE, CHECK or FOREIGN KEY constraint")
 end function
 
-// Implements starts table constraint for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements starts table constraint for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function startsTableConstraint(state)
   return checkKeyword(state, "CONSTRAINT") or checkKeyword(state, "PRIMARY") or checkKeyword(state, "UNIQUE") or checkKeyword(state, "CHECK") or checkKeyword(state, "FOREIGN")
 end function
 
-// Parses create principal using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create principal using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param principalKind principalKind value consumed by this operation.
 function parseCreatePrincipal(state, principalKind)
   name = parsePrincipalName(state, "principal name")
   password = void
@@ -411,9 +460,10 @@ function parseCreatePrincipal(state, principalKind)
   return ast.CreatePrincipalStatement(principalKind, name, password)
 end function
 
-// Parses alter table using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses alter table using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseAlterTable(state)
   tableName = parseObjectName(state, "table name")
   if matchKeyword(state, "ADD") then
@@ -461,9 +511,10 @@ function parseAlterTable(state)
   return fail(state, "expected ADD, RENAME, DROP or ALTER after ALTER TABLE")
 end function
 
-// Parses alter using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses alter using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseAlter(state)
   if matchKeyword(state, "TABLE") then return parseAlterTable(state) end if
   if matchKeyword(state, "TRIGGER") then
@@ -483,9 +534,10 @@ function parseAlter(state)
   return fail(state, "expected WITH PASSWORD, ENABLE or DISABLE after ALTER USER")
 end function
 
-// Implements privilege name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements privilege name for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function privilegeName(state)
   value = current(state)
   if value.kind != token.TokenKind.Keyword then return fail(state, "expected privilege name") end if
@@ -495,9 +547,10 @@ function privilegeName(state)
   return value.text
 end function
 
-// Parses privilege list using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses privilege list using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parsePrivilegeList(state)
   if matchKeyword(state, "ALL") then
     ignored = matchKeyword(state, "PRIVILEGES")
@@ -510,9 +563,10 @@ function parsePrivilegeList(state)
   return privileges
 end function
 
-// Parses grant using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses grant using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseGrant(state)
   // An identifier in the first position denotes a role grant. Privileges are
   // reserved keywords in the M21 dialect and therefore unambiguous.
@@ -541,9 +595,10 @@ function parseGrant(state)
   return ast.GrantPrivilegeStatement(privileges, objectType, objectName, granteeName, grantOption)
 end function
 
-// Parses revoke behavior using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses revoke behavior using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseRevokeBehavior(state)
   cascade = false
   if matchKeyword(state, "CASCADE") then return true end if
@@ -551,9 +606,10 @@ function parseRevokeBehavior(state)
   return cascade
 end function
 
-// Parses revoke using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses revoke using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseRevoke(state)
   if checkKind(state, token.TokenKind.Identifier) then
     roleName = parsePrincipalName(state, "role name")
@@ -578,9 +634,10 @@ function parseRevoke(state)
   return ast.RevokePrivilegeStatement(privileges, objectType, objectName, granteeName, cascade)
 end function
 
-// Parses create table using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create table using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCreateTable(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
@@ -603,14 +660,16 @@ function parseCreateTable(state)
   return ast.CreateTableStatement(name, columns, constraints, ifNotExists)
 end function
 
-// Parses CREATE SCHEMA with optional idempotent creation semantics.
+/// Parses CREATE SCHEMA with optional idempotent creation semantics.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCreateSchema(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
   return ast.CreateSchemaStatement(parseIdentifierName(state, "schema name"), ifNotExists)
 end function
 
-// Parses the parenthesized expression list used by CREATE INDEX keys.
+/// Parses the parenthesized expression list used by CREATE INDEX keys.
+/// @param state Mutable state inspected or updated by the operation.
 function parseIndexKeyList(state)
   expectKind(state, token.TokenKind.LeftParen, "'('")
   keys = [parseExpression(state, 0)]
@@ -621,9 +680,11 @@ function parseIndexKeyList(state)
   return keys
 end function
 
-// Parses create index using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create index using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param unique unique value consumed by this operation.
 function parseCreateIndex(state, unique)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
@@ -638,9 +699,11 @@ function parseCreateIndex(state, unique)
   return ast.CreateIndexStatement(name, tableName, columns, includeColumns, whereExpression, unique, ifNotExists)
 end function
 
-// Parses create view using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create view using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param replace replace value consumed by this operation.
 function parseCreateView(state, replace)
   name = parseObjectName(state, "view name")
   expectKeyword(state, "AS")
@@ -654,7 +717,9 @@ function parseCreateView(state, replace)
   return ast.CreateViewStatement(name, query, replace)
 end function
 
-// Parses a stored procedure with typed positional inputs and one DML body statement.
+/// Parses a stored procedure with typed positional inputs and one DML body statement.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param replace replace value consumed by this operation.
 function parseCreateProcedure(state, replace)
   name = parseObjectName(state, "procedure name")
   expectKind(state, token.TokenKind.LeftParen, "'('")
@@ -674,9 +739,10 @@ function parseCreateProcedure(state, replace)
   return ast.CreateProcedureStatement(name, parameters, body, replace)
 end function
 
-// Parses create sequence using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create sequence using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCreateSequence(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
@@ -712,9 +778,10 @@ function parseCreateSequence(state)
   return ast.CreateSequenceStatement(name, startValue, incrementValue, minimumValue, maximumValue, cycle, ifNotExists)
 end function
 
-// Parses create trigger using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create trigger using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCreateTrigger(state)
   ifNotExists = false
   if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
@@ -738,9 +805,10 @@ function parseCreateTrigger(state)
   return ast.CreateTriggerStatement(name, timing, eventType, tableName, targetColumn, body, ifNotExists)
 end function
 
-// Parses create using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses create using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCreate(state)
   if matchKeyword(state, "USER") then return parseCreatePrincipal(state, ast.PRINCIPAL_USER) end if
   if matchKeyword(state, "ROLE") then return parseCreatePrincipal(state, ast.PRINCIPAL_ROLE) end if
@@ -761,9 +829,10 @@ function parseCreate(state)
   return fail(state, "expected USER, ROLE, SCHEMA, TABLE, VIEW, SEQUENCE, TRIGGER or INDEX after CREATE")
 end function
 
-// Parses drop using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses drop using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseDrop(state)
   principalKind = 0
   if matchKeyword(state, "USER") then principalKind = ast.PRINCIPAL_USER end if
@@ -801,9 +870,10 @@ function parseDrop(state)
   return ast.DropTableStatement(name, ifExists)
 end function
 
-// Parses returning using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses returning using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseReturning(state)
   items = []
   if not matchKeyword(state, "RETURNING") then return items end if
@@ -814,9 +884,10 @@ function parseReturning(state)
   return items
 end function
 
-// Parses assignments using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses assignments using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseAssignments(state)
   assignments = []
   parsingAssignments = true
@@ -829,9 +900,10 @@ function parseAssignments(state)
   return assignments
 end function
 
-// Parses insert using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses insert using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseInsert(state)
   expectKeyword(state, "INTO")
   tableName = parseObjectName(state, "table name")
@@ -877,9 +949,10 @@ function parseInsert(state)
   return ast.InsertStatement(tableName, columns, rows, sourceQuery, conflictTarget, conflictAction, conflictAssignments, conflictWhere, parseReturning(state))
 end function
 
-// Parses update using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses update using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseUpdate(state)
   tableName = parseObjectName(state, "table name")
   expectKeyword(state, "SET")
@@ -889,9 +962,10 @@ function parseUpdate(state)
   return ast.UpdateStatement(tableName, assignments, whereExpression, parseReturning(state))
 end function
 
-// Parses delete using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses delete using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseDelete(state)
   expectKeyword(state, "FROM")
   tableName = parseObjectName(state, "table name")
@@ -900,9 +974,10 @@ function parseDelete(state)
   return ast.DeleteStatement(tableName, whereExpression, parseReturning(state))
 end function
 
-// Parses truncate using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses truncate using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseTruncate(state)
   ignoredTable = matchKeyword(state, "TABLE")
   tableName = parseObjectName(state, "table name")
@@ -917,9 +992,10 @@ function parseTruncate(state)
   return ast.TruncateStatement(tableName, restartIdentity)
 end function
 
-// Parses show using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses show using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseShow(state)
   if matchKeyword(state, "TABLES") then return ast.ShowTablesStatement(1) end if
   if matchKeyword(state, "STATUS") then return ast.ShowStatusStatement(1) end if
@@ -931,16 +1007,18 @@ function parseShow(state)
   return fail(state, "expected TABLES, STATUS, PROCESSLIST, or INDEXES after SHOW")
 end function
 
-// Parses describe using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses describe using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseDescribe(state)
   return ast.DescribeTableStatement(parseObjectName(state, "table name"))
 end function
 
-// Parses select item using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses select item using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseSelectItem(state)
   expression = parseExpression(state, 0)
   alias = void
@@ -952,9 +1030,10 @@ function parseSelectItem(state)
   return ast.SelectItem(expression, alias)
 end function
 
-// Parses order item using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses order item using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseOrderItem(state)
   expression = parseExpression(state, 0)
   descending = false
@@ -972,9 +1051,10 @@ function parseOrderItem(state)
   return ast.OrderItem(expression, descending, nullsFirst, nullsSpecified)
 end function
 
-// Parses table alias using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses table alias using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseTableAlias(state)
   alias = void
   if matchKeyword(state, "AS") then
@@ -985,9 +1065,11 @@ function parseTableAlias(state)
   return alias
 end function
 
-// Parses either a catalog/CTE name or a parenthesized SELECT source.
-// Derived tables are represented as private CTEs so the existing named-query
-// binder and executor retain one source abstraction; only the user alias is visible.
+/// Parses either a catalog/CTE name or a parenthesized SELECT source.
+/// Derived tables are represented as private CTEs so the existing named-query
+/// binder and executor retain one source abstraction; only the user alias is visible.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param description description value consumed by this operation.
 function parseTableSource(state, description)
   if matchKind(state, token.TokenKind.LeftParen) then
     query = void
@@ -1008,9 +1090,10 @@ function parseTableSource(state, description)
   return [tableName, parseTableAlias(state), void]
 end function
 
-// Parses join clause using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses join clause using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseJoinClause(state)
   joinType = ast.JOIN_INNER
   if matchKeyword(state, "INNER") then
@@ -1045,16 +1128,18 @@ function parseJoinClause(state)
   return [ast.JoinClause(joinType, tableName, tableAlias, condition), source[2]]
 end function
 
-// Implements starts join for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements starts join for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function startsJoin(state)
   return checkKeyword(state, "JOIN") or checkKeyword(state, "INNER") or checkKeyword(state, "LEFT") or checkKeyword(state, "RIGHT") or checkKeyword(state, "FULL") or checkKeyword(state, "CROSS")
 end function
 
-// Parses select core using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses select core using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseSelectCore(state)
   distinct = matchKeyword(state, "DISTINCT")
   items = [parseSelectItem(state)]
@@ -1102,9 +1187,10 @@ function parseSelectCore(state)
   return ast.SelectStatement(distinct, items, tableName, tableAlias, joins, whereExpression, groupBy, havingExpression, [], [], -1, 0, derivedTables)
 end function
 
-// Parses select using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses select using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function parseSelect(state)
   statement = parseSelectCore(state)
   while checkKeyword(state, "UNION") or checkKeyword(state, "INTERSECT") or checkKeyword(state, "EXCEPT")
@@ -1150,9 +1236,10 @@ function parseSelect(state)
   return statement
 end function
 
-// Parses with select using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses with select using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function parseWithSelect(state)
   recursive = matchKeyword(state, "RECURSIVE")
   ctes = []
@@ -1180,9 +1267,10 @@ function parseWithSelect(state)
   return statement
 end function
 
-// Parses begin using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses begin using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseBegin(state)
   ignoredTransaction = matchKeyword(state, "TRANSACTION")
   readOnly = false
@@ -1208,7 +1296,8 @@ function parseBegin(state)
   return ast.BeginStatement(readOnly, isolationLevel)
 end function
 
-// Parses the core SQL MERGE form with table source, matched update/delete, and insert.
+/// Parses the core SQL MERGE form with table source, matched update/delete, and insert.
+/// @param state Mutable state inspected or updated by the operation.
 function parseMerge(state)
   expectKeyword(state, "INTO")
   targetTable = parseObjectName(state, "MERGE target table")
@@ -1257,16 +1346,18 @@ function parseMerge(state)
   return ast.MergeStatement(targetTable, targetAlias, sourceTable, sourceAlias, condition, matchedAssignments, matchedDelete, insertColumns, insertValues)
 end function
 
-// Implements preparable statement for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements preparable statement for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param statement statement value consumed by this operation.
 function preparableStatement(statement)
   return ast.isSelectStatement(statement) or ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement)
 end function
 
-// Parses prepare using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses prepare using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function parsePrepare(state)
   name = parseIdentifierName(state, "prepared statement name")
   expectKeyword(state, "AS")
@@ -1281,9 +1372,10 @@ function parsePrepare(state)
   return ast.PrepareStatement(name, statement, parameterCount)
 end function
 
-// Parses execute prepared using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses execute prepared using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseExecutePrepared(state)
   name = parseIdentifierName(state, "prepared statement name")
   arguments = []
@@ -1296,7 +1388,8 @@ function parseExecutePrepared(state)
   return ast.ExecutePreparedStatement(name, arguments)
 end function
 
-// Parses CALL with positional constant argument expressions.
+/// Parses CALL with positional constant argument expressions.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCall(state)
   name = parseObjectName(state, "procedure name")
   expectKind(state, token.TokenKind.LeftParen, "'('")
@@ -1311,17 +1404,19 @@ function parseCall(state)
   return ast.CallStatement(name, arguments)
 end function
 
-// Parses deallocate using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses deallocate using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseDeallocate(state)
   ignoredPrepare = matchKeyword(state, "PREPARE")
   return ast.DeallocateStatement(parseIdentifierName(state, "prepared statement name"))
 end function
 
-// Parses statement using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses statement using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseStatement(state)
   if matchKeyword(state, "SHUTDOWN") then return ast.ShutdownStatement(1) end if
   if matchKeyword(state, "CALL") then return parseCall(state) end if
@@ -1379,8 +1474,9 @@ function parseStatement(state)
   return fail(state, "unsupported or missing SQL statement")
 end function
 
-// Maps binary operators to increasing binding strength; zero means non-operator.
-// The table makes OR weakest and multiplicative operators strongest.
+/// Maps binary operators to increasing binding strength; zero means non-operator.
+/// The table makes OR weakest and multiplicative operators strongest.
+/// @param value Value consumed or transformed by the operation.
 function operatorPrecedence(value)
   if token.isKeyword(value, "OR") then return 1 end if
   if token.isKeyword(value, "AND") then return 2 end if
@@ -1391,18 +1487,20 @@ function operatorPrecedence(value)
   return 0
 end function
 
-// Implements operator text for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements operator text for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
 function operatorText(value)
   if value.kind == token.TokenKind.Keyword then return value.text end if
   return value.text
 end function
 
-// Parses case expression using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses case expression using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCaseExpression(state)
   expectKeyword(state, "CASE")
   operand = void
@@ -1422,9 +1520,10 @@ function parseCaseExpression(state)
   return ast.caseExpression(branches, elseExpression)
 end function
 
-// Parses cast expression using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses cast expression using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseCastExpression(state)
   expectKeyword(state, "CAST")
   expectKind(state, token.TokenKind.LeftParen, "'('")
@@ -1435,9 +1534,10 @@ function parseCastExpression(state)
   return ast.castExpression(operand, targetType)
 end function
 
-// Parses primary using the supplied inputs.
-// Returns the computed value or operation status.
-// May mutate supplied state as documented by the operation name.
+/// Parses primary using the supplied inputs.
+/// Returns the computed value or operation status.
+/// May mutate supplied state as documented by the operation name.
+/// @param state Mutable state inspected or updated by the operation.
 function parsePrimary(state)
   value = current(state)
   if matchKeyword(state, "EXISTS") then
@@ -1535,9 +1635,11 @@ function parsePrimary(state)
   return fail(state, "expected expression")
 end function
 
-// Parses predicate tail using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses predicate tail using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param expression expression value consumed by this operation.
 function parsePredicateTail(state, expression)
   parsing = true
   while parsing
@@ -1596,9 +1698,10 @@ function parsePredicateTail(state, expression)
   return expression
 end function
 
-// Parses unary using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses unary using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
 function parseUnary(state)
   if matchKeyword(state, "NOT") then return ast.unaryExpression("NOT", parseUnary(state)) end if
   if matchKind(state, token.TokenKind.Plus) then return ast.unaryExpression("+", parseUnary(state)) end if
@@ -1606,9 +1709,11 @@ function parseUnary(state)
   return parsePredicateTail(state, parsePrimary(state))
 end function
 
-// Parses a binary expression with precedence climbing and left associativity.
-// Unary/predicate parsing supplies the left operand; recursive calls consume only
-// operators stronger than `minimumPrecedence`. Advances `state` or returns syntax errors.
+/// Parses a binary expression with precedence climbing and left associativity.
+/// Unary/predicate parsing supplies the left operand; recursive calls consume only
+/// operators stronger than `minimumPrecedence`. Advances `state` or returns syntax errors.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param minimumPrecedence minimumPrecedence value consumed by this operation.
 function parseExpression(state, minimumPrecedence)
   left = parseUnary(state)
   precedence = operatorPrecedence(current(state))
@@ -1621,9 +1726,10 @@ function parseExpression(state, minimumPrecedence)
   return left
 end function
 
-// Parses a complete token stream into ordered statement AST nodes.
-// Empty statements between semicolons are ignored; any other trailing token is a
-// syntax error. The input must be a non-empty array ending in EndOfInput.
+/// Parses a complete token stream into ordered statement AST nodes.
+/// Empty statements between semicolons are ignored; any other trailing token is a
+/// syntax error. The input must be a non-empty array ending in EndOfInput.
+/// @param tokens tokens value consumed by this operation.
 function parseTokens(tokens)
   if typeof(tokens) != "array" or len(tokens) == 0 then return error(INVALID_ARGUMENT, "sql.parser.parseTokens: tokens must be a non-empty array") end if
   state = ParserState(tokens, 0, 0, 0)
@@ -1641,16 +1747,18 @@ function parseTokens(tokens)
   return statements
 end function
 
-// Parses SQL using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses SQL using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
 function parseSql(source)
   return parseTokens(lexer.tokenizeSql(source))
 end function
 
-// Parses expression text using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Parses expression text using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param source source value consumed by this operation.
 function parseExpressionText(source)
   tokens = lexer.tokenizeSql(source)
   state = ParserState(tokens, 0, 0, 0)
@@ -1661,23 +1769,23 @@ function parseExpressionText(source)
   return expression
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql sql parser module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "sql.parser"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql sql parser module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M12"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql sql parser module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

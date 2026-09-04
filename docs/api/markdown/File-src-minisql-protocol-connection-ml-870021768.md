@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql protocol connection facilities for this project.
+
 Package: [`minisql.protocol.connection`](Package-minisql-protocol-connection-498153730.md)
 
 Reachable from entry: **yes**
@@ -29,10 +31,10 @@ Aborts a potentially desynchronized transport without sending TLS or protocol sh
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L446)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L505)
 
 <a id="function-function-minisql-protocol-connection-appendreceivebytes-function-appendreceivebytes-connection-incoming-src-minisql-protocol-connection-ml-409761652"></a>
 ### appendReceiveBytes
@@ -45,11 +47,11 @@ Appends plaintext obtained from Schannel while preserving the frame memory bound
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `incoming` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `incoming` | `dynamic` | — | incoming value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L210)
 
 <a id="function-function-minisql-protocol-connection-appendreceivescratch-function-appendreceivescratch-connection-count-src-minisql-protocol-connection-ml-22295363"></a>
 ### appendReceiveScratch
@@ -62,11 +64,11 @@ Appends receive scratch using the supplied inputs. Requires arguments that satis
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L192)
 
 <a id="function-function-minisql-protocol-connection-close-function-close-connection-src-minisql-protocol-connection-ml-371202104"></a>
 ### close
@@ -75,14 +77,14 @@ Appends receive scratch using the supplied inputs. Requires arguments that satis
 function close(connection)
 ```
 
-Closes close using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. May mutate supplied state and perform I/O through its dependencies.
+Closes close owned by the minisql protocol connection module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. May mutate supplied state and perform I/O through its dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L420)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L478)
 
 <a id="constant-constant-minisql-protocol-connection-closed-handle-const-closed-handle-9008-src-minisql-protocol-connection-ml-463517886"></a>
 ### CLOSED_HANDLE
@@ -91,8 +93,10 @@ Closes close using the supplied inputs. Requires arguments that satisfy the vali
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql protocol connection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L20)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L24)
 
 <a id="function-function-minisql-protocol-connection-componentname-function-componentname-src-minisql-protocol-connection-ml-233166304"></a>
 ### componentName
@@ -101,10 +105,10 @@ const CLOSED_HANDLE = 9008
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql protocol connection module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L470)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L529)
 
 <a id="function-function-minisql-protocol-connection-connectaddress-function-connectaddress-address-port-src-minisql-protocol-connection-ml-430820979"></a>
 ### connectAddress
@@ -117,11 +121,11 @@ Connects address using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L106)
 
 - [minisql.protocol.connection.Connection](Type-minisql-protocol-connection-connection-344312244.md) — struct
 <a id="function-function-minisql-protocol-connection-connectloopback-function-connectloopback-port-src-minisql-protocol-connection-ml-473957737"></a>
@@ -135,10 +139,10 @@ Connects loopback using the supplied inputs. Returns the computed value or opera
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `port` | `dynamic` | — |  |
+| `port` | `dynamic` | — | port value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L145)
 
 <a id="function-function-minisql-protocol-connection-connecttlsaddress-function-connecttlsaddress-address-port-servername-src-minisql-protocol-connection-ml-362774277"></a>
 ### connectTlsAddress
@@ -151,12 +155,12 @@ Connects a TCP socket and completes native TLS with Windows root-store trust.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L114)
 
 <a id="function-function-minisql-protocol-connection-connecttlspinnedaddress-function-connecttlspinnedaddress-address-port-servername-pintext-src-minisql-protocol-connection-ml-1005533091"></a>
 ### connectTlsPinnedAddress
@@ -169,13 +173,13 @@ Connects native TLS using an exact SHA-256 leaf pin for private certificates.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
-| `pinText` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
+| `pinText` | `dynamic` | — | pinText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L130)
 
 <a id="function-function-minisql-protocol-connection-copyrange-function-copyrange-source-offset-count-operation-src-minisql-protocol-connection-ml-1748581154"></a>
 ### copyRange
@@ -188,13 +192,13 @@ Implements copy range for this module. Requires arguments that satisfy the valid
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `count` | `dynamic` | — | Number of items or units to process. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L148)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L179)
 
 <a id="constant-constant-minisql-protocol-connection-corrupt-data-const-corrupt-data-9004-src-minisql-protocol-connection-ml-879765828"></a>
 ### CORRUPT_DATA
@@ -203,8 +207,10 @@ Implements copy range for this module. Requires arguments that satisfy the valid
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql protocol connection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L21)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L26)
 
 <a id="function-function-minisql-protocol-connection-create-function-create-sockethandle-src-minisql-protocol-connection-ml-1434457539"></a>
 ### create
@@ -213,14 +219,14 @@ const CORRUPT_DATA = 9004
 function create(socketHandle)
 ```
 
-Creates create using the supplied inputs. Returns the computed value or operation status. Performs I/O through its file, transport, or storage dependencies.
+Creates create for the minisql protocol connection module. Returns the computed value or operation status. Performs I/O through its file, transport, or storage dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `socketHandle` | `dynamic` | — |  |
+| `socketHandle` | `dynamic` | — | socketHandle value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L96)
 
 <a id="function-function-minisql-protocol-connection-decodeinbound-function-decodeinbound-connection-frame-src-minisql-protocol-connection-ml-633926463"></a>
 ### decodeInbound
@@ -233,11 +239,11 @@ Decodes inbound using the supplied inputs. Returns the computed value or operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `frame` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `frame` | `dynamic` | — | frame value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L309)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L358)
 
 <a id="function-function-minisql-protocol-connection-enablesecure-function-enablesecure-connection-sendkey-receivekey-src-minisql-protocol-connection-ml-395214409"></a>
 ### enableSecure
@@ -250,12 +256,12 @@ Implements enable secure for this module. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `sendKey` | `dynamic` | — |  |
-| `receiveKey` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `sendKey` | `dynamic` | — | sendKey value consumed by this operation. |
+| `receiveKey` | `dynamic` | — | receiveKey value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L258)
 
 <a id="function-function-minisql-protocol-connection-enabletls-function-enabletls-connection-tlscontext-src-minisql-protocol-connection-ml-532141020"></a>
 ### enableTls
@@ -268,11 +274,11 @@ Attaches a completed Schannel context below the MiniSQL framed protocol.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `tlsContext` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `tlsContext` | `dynamic` | — | tlsContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L273)
 
 <a id="function-function-minisql-protocol-connection-extractbufferedmessage-function-extractbufferedmessage-connection-src-minisql-protocol-connection-ml-1657465084"></a>
 ### extractBufferedMessage
@@ -285,10 +291,10 @@ Implements extract buffered message for this module. Requires arguments that sat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L227)
 
 <a id="function-function-minisql-protocol-connection-fail-function-fail-code-operation-message-src-minisql-protocol-connection-ml-250590469"></a>
 ### fail
@@ -297,16 +303,16 @@ Implements extract buffered message for this module. Requires arguments that sat
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Performs I/O through its file, transport, or storage dependencies.
+Performs the fail operation for the minisql protocol connection module. Returns its result or propagates a structured error from validation or a dependency. Performs I/O through its file, transport, or storage dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L80)
 
 <a id="constant-constant-minisql-protocol-connection-invalid-argument-const-invalid-argument-9001-src-minisql-protocol-connection-ml-55962339"></a>
 ### INVALID_ARGUMENT
@@ -315,8 +321,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql protocol connection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L22)
 
 <a id="function-function-minisql-protocol-connection-isconnection-function-isconnection-value-src-minisql-protocol-connection-ml-398223009"></a>
 ### isConnection
@@ -329,10 +337,10 @@ Returns whether the supplied value satisfies the connection condition. Returns t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L88)
 
 <a id="function-function-minisql-protocol-connection-isimplemented-function-isimplemented-src-minisql-protocol-connection-ml-743716744"></a>
 ### isImplemented
@@ -341,10 +349,10 @@ Returns whether the supplied value satisfies the connection condition. Returns t
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql protocol connection module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L484)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L543)
 
 <a id="function-function-minisql-protocol-connection-ispollresult-function-ispollresult-value-src-minisql-protocol-connection-ml-962966921"></a>
 ### isPollResult
@@ -357,10 +365,10 @@ Returns whether the supplied value satisfies the poll result condition. Returns 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L316)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L366)
 
 <a id="function-function-minisql-protocol-connection-makenonblocking-function-makenonblocking-connection-src-minisql-protocol-connection-ml-122501172"></a>
 ### makeNonBlocking
@@ -373,10 +381,10 @@ Creates non blocking using the supplied inputs. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L323)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L374)
 
 <a id="constant-constant-minisql-protocol-connection-poll-receive-bytes-const-poll-receive-bytes-65536-src-minisql-protocol-connection-ml-1375018834"></a>
 ### POLL_RECEIVE_BYTES
@@ -385,8 +393,10 @@ Creates non blocking using the supplied inputs. Returns the computed value or op
 const POLL_RECEIVE_BYTES = 65536
 ```
 
+Defines the poll receive bytes constant used by the minisql protocol connection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L23)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L30)
 
 <a id="function-function-minisql-protocol-connection-pollmessage-function-pollmessage-connection-src-minisql-protocol-connection-ml-562205644"></a>
 ### pollMessage
@@ -399,10 +409,10 @@ Attempts one nonblocking framed receive. Returns PollResult when a complete fram
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L384)
 
 - [minisql.protocol.connection.PollResult](Type-minisql-protocol-connection-pollresult-314322152.md) — struct
 <a id="function-function-minisql-protocol-connection-protectmessage-function-protectmessage-connection-message-src-minisql-protocol-connection-ml-950709283"></a>
@@ -416,11 +426,11 @@ Implements protect message for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L303)
 
 <a id="function-function-minisql-protocol-connection-protocolbytesreceived-function-protocolbytesreceived-connection-src-minisql-protocol-connection-ml-1019780388"></a>
 ### protocolBytesReceived
@@ -433,10 +443,10 @@ Returns framed protocol bytes read by this connection.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L411)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L468)
 
 <a id="function-function-minisql-protocol-connection-protocolbytessent-function-protocolbytessent-connection-src-minisql-protocol-connection-ml-1201636758"></a>
 ### protocolBytesSent
@@ -449,10 +459,10 @@ Returns framed protocol bytes written by this connection. TLS record overhead is
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L405)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L461)
 
 <a id="function-function-minisql-protocol-connection-receivemessage-function-receivemessage-connection-src-minisql-protocol-connection-ml-211292584"></a>
 ### receiveMessage
@@ -465,10 +475,10 @@ Receives message using the supplied inputs. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L387)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L442)
 
 <a id="constant-constant-minisql-protocol-connection-secure-transport-const-secure-transport-9030-src-minisql-protocol-connection-ml-2120036559"></a>
 ### SECURE_TRANSPORT
@@ -477,8 +487,10 @@ Receives message using the supplied inputs. Returns the computed value or operat
 const SECURE_TRANSPORT = 9030
 ```
 
+Defines the secure transport constant used by the minisql protocol connection module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L22)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L28)
 
 <a id="function-function-minisql-protocol-connection-secureactive-function-secureactive-connection-src-minisql-protocol-connection-ml-246226912"></a>
 ### secureActive
@@ -491,10 +503,10 @@ Implements secure active for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L286)
 
 <a id="function-function-minisql-protocol-connection-sendmessage-function-sendmessage-connection-message-src-minisql-protocol-connection-ml-978925877"></a>
 ### sendMessage
@@ -507,11 +519,11 @@ Sends message using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L371)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L425)
 
 <a id="function-function-minisql-protocol-connection-settimeouts-function-settimeouts-connection-receivems-sendms-src-minisql-protocol-connection-ml-50564487"></a>
 ### setTimeouts
@@ -524,12 +536,12 @@ Applies bounded socket I/O while a caller performs a protocol phase such as the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `receiveMs` | `dynamic` | — |  |
-| `sendMs` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `receiveMs` | `dynamic` | — | receiveMs value consumed by this operation. |
+| `sendMs` | `dynamic` | — | sendMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L154)
 
 <a id="function-function-minisql-protocol-connection-targetmilestone-function-targetmilestone-src-minisql-protocol-connection-ml-652479078"></a>
 ### targetMilestone
@@ -538,10 +550,10 @@ Applies bounded socket I/O while a caller performs a protocol phase such as the 
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql protocol connection module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L536)
 
 <a id="function-function-minisql-protocol-connection-tlsactive-function-tlsactive-connection-src-minisql-protocol-connection-ml-117327562"></a>
 ### tlsActive
@@ -554,10 +566,10 @@ Reports whether native TLS record protection is active.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L250)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L293)
 
 <a id="function-function-minisql-protocol-connection-unprotectmessage-function-unprotectmessage-connection-message-src-minisql-protocol-connection-ml-2084867119"></a>
 ### unprotectMessage
@@ -570,11 +582,11 @@ Implements unprotect message for this module. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L329)
 
 <a id="function-function-minisql-protocol-connection-validateopen-function-validateopen-connection-operation-src-minisql-protocol-connection-ml-518685321"></a>
 ### validateOpen
@@ -583,12 +595,12 @@ Implements unprotect message for this module. Requires arguments that satisfy th
 function validateOpen(connection, operation)
 ```
 
-Validates open using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Performs I/O through its file, transport, or storage dependencies.
+Validates open for the minisql protocol connection workflow. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Performs I/O through its file, transport, or storage dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connection` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `connection` | `dynamic` | — | connection value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/connection.ml#L165)

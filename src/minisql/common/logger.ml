@@ -1,3 +1,5 @@
+//! Provides minisql common logger facilities for this project.
+
 package minisql.common.logger
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -8,43 +10,66 @@ import std.time as time_api
 import minisql.platform.clock as clock
 import minisql.platform.file as file_api
 
-// Process-wide, thread-safe operational logger. Synchronized entry points form
-// the singleton boundary: all server threads share one threshold, one stdout
-// destination, and one active file handle per ordinary log and SQL binlog.
+/// Process-wide, thread-safe operational logger. Synchronized entry points form
 
 const INVALID_ARGUMENT = 9001
+/// Defines the io failure constant used by the minisql common logger module.
 const IO_FAILURE = 9005
 
+/// Defines the level debug constant used by the minisql common logger module.
 const LEVEL_DEBUG = 10
+/// Defines the level info constant used by the minisql common logger module.
 const LEVEL_INFO = 20
+/// Defines the level warning constant used by the minisql common logger module.
 const LEVEL_WARNING = 30
+/// Defines the level error constant used by the minisql common logger module.
 const LEVEL_ERROR = 40
 
+/// Stores module-wide logger configured state for the minisql common logger module.
 synchronized loggerConfigured = false
+/// Stores module-wide logger minimum level state for the minisql common logger module.
 synchronized loggerMinimumLevel = LEVEL_INFO
+/// Stores module-wide logger stdout enabled state for the minisql common logger module.
 synchronized loggerStdoutEnabled = true
+/// Stores module-wide logger file enabled state for the minisql common logger module.
 synchronized loggerFileEnabled = false
+/// Stores module-wide logger binlog enabled state for the minisql common logger module.
 synchronized loggerBinlogEnabled = false
+/// Stores module-wide logger directory state for the minisql common logger module.
 synchronized loggerDirectory = "./logs"
+/// Stores module-wide logger file name state for the minisql common logger module.
 synchronized loggerFileName = "minisql.log"
+/// Stores module-wide logger binlog file name state for the minisql common logger module.
 synchronized loggerBinlogFileName = "minisql-bin.log"
+/// Stores module-wide logger rotation milliseconds state for the minisql common logger module.
 synchronized loggerRotationMilliseconds = 86400000
+/// Stores module-wide logger file state for the minisql common logger module.
 synchronized loggerFile = void
+/// Stores module-wide logger binlog file state for the minisql common logger module.
 synchronized loggerBinlogFile = void
+/// Stores module-wide logger opened at state for the minisql common logger module.
 synchronized loggerOpenedAt = 0
+/// Stores module-wide logger binlog opened at state for the minisql common logger module.
 synchronized loggerBinlogOpenedAt = 0
+/// Stores module-wide logger rotation sequence state for the minisql common logger module.
 synchronized loggerRotationSequence = 0
+/// Stores module-wide logger last log archive state for the minisql common logger module.
 synchronized loggerLastLogArchive = ""
+/// Stores module-wide logger last binlog archive state for the minisql common logger module.
 synchronized loggerLastBinlogArchive = ""
 
-// Creates a structured logger error.
-// Inputs: `code`, `operation`, `message`. Returns an error with stable component context.
+/// Creates a structured logger error.
+/// Inputs: `code`, `operation`, `message`. Returns an error with stable component context.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "common.logger." + operation + ": " + message)
 end function
 
-// Converts a configured textual level to its ordered numeric severity.
-// Inputs: `value`. Returns a level constant or an invalid-argument error.
+/// Converts a configured textual level to its ordered numeric severity.
+/// Inputs: `value`. Returns a level constant or an invalid-argument error.
+/// @param value Value consumed or transformed by the operation.
 function parseLevel(value)
   if value == "debug" or value == "DEBUG" then return LEVEL_DEBUG end if
   if value == "info" or value == "INFO" then return LEVEL_INFO end if
@@ -53,8 +78,9 @@ function parseLevel(value)
   return fail(INVALID_ARGUMENT, "parseLevel", "level must be debug, info, warning or error")
 end function
 
-// Returns the canonical uppercase label for a numeric severity.
-// Inputs: `level`. Returns DEBUG, INFO, WARNING, or ERROR.
+/// Returns the canonical uppercase label for a numeric severity.
+/// Inputs: `level`. Returns DEBUG, INFO, WARNING, or ERROR.
+/// @param level level value consumed by this operation.
 function levelName(level)
   if level == LEVEL_DEBUG then return "DEBUG" end if
   if level == LEVEL_INFO then return "INFO" end if
@@ -63,15 +89,17 @@ function levelName(level)
   return "UNKNOWN"
 end function
 
-// Formats an integer with at least two decimal digits.
-// Inputs: `value`. Returns a zero-padded string.
+/// Formats an integer with at least two decimal digits.
+/// Inputs: `value`. Returns a zero-padded string.
+/// @param value Value consumed or transformed by the operation.
 function pad2(value)
   if value < 10 then return "0" + value end if
   return "" + value
 end function
 
-// Formats a year with at least four decimal digits.
-// Inputs: `value`. Returns a zero-padded string.
+/// Formats a year with at least four decimal digits.
+/// Inputs: `value`. Returns a zero-padded string.
+/// @param value Value consumed or transformed by the operation.
 function pad4(value)
   if value < 10 then return "000" + value end if
   if value < 100 then return "00" + value end if
@@ -79,9 +107,9 @@ function pad4(value)
   return "" + value
 end function
 
-// Captures local wall-clock text for record display and collision-resistant
-// rolled-file suffixes from the same SYSTEMTIME snapshot.
-// Takes no caller inputs. Returns `[displayTimestamp, fileTimestamp]`.
+/// Captures local wall-clock text for record display and collision-resistant
+/// rolled-file suffixes from the same SYSTEMTIME snapshot.
+/// Takes no caller inputs. Returns `[displayTimestamp, fileTimestamp]`.
 function timestampParts()
   current = time_api.datetime.nowLocal()
   if current is void then return ["0000-00-00 00:00:00", "00000000-000000"] end if
@@ -96,9 +124,11 @@ function timestampParts()
   return [display, suffix]
 end function
 
-// Rejects path separators so configured file names cannot escape the selected
-// log directory.
-// Inputs: `value`, `name`. Returns true or an invalid-argument error.
+/// Rejects path separators so configured file names cannot escape the selected
+/// log directory.
+/// Inputs: `value`, `name`. Returns true or an invalid-argument error.
+/// @param value Value consumed or transformed by the operation.
+/// @param name Name of the affected item.
 function validateFileName(value, name)
   if typeof(value) != "string" or len(value) == 0 then return fail(INVALID_ARGUMENT, "configure", name + " must be non-empty") end if
   raw = bytes(value)
@@ -108,24 +138,34 @@ function validateFileName(value, name)
   return true
 end function
 
-// Closes an optional file handle and preserves logger shutdown idempotence.
-// Inputs: `handle`. Returns true when no open handle remains.
+/// Closes an optional file handle and preserves logger shutdown idempotence.
+/// Inputs: `handle`. Returns true when no open handle remains.
+/// @param handle Native or runtime handle used by the operation.
 function closeHandle(handle)
   if handle is void then return true end if
   if handle.closed then return true end if
   return file_api.close(handle)
 end function
 
-// Opens an append-capable log file inside the configured directory.
-// Inputs: `name`. Returns an open writable handle.
+/// Opens an append-capable log file inside the configured directory.
+/// Inputs: `name`. Returns an open writable handle.
+/// @param name Name of the affected item.
 function openLogFile(name)
   global loggerDirectory
   return file_api.openReadWrite(file_api.joinPath(loggerDirectory, name), true)
 end function
 
-// Configures the singleton and opens enabled file destinations eagerly so a
-// bad path fails server startup rather than silently losing later records.
-// Inputs: level/destination/rotation/binlog settings. Returns true when ready.
+/// Configures the singleton and opens enabled file destinations eagerly so a
+/// bad path fails server startup rather than silently losing later records.
+/// Inputs: level/destination/rotation/binlog settings. Returns true when ready.
+/// @param level level value consumed by this operation.
+/// @param directory directory value consumed by this operation.
+/// @param stdoutEnabled stdoutEnabled value consumed by this operation.
+/// @param fileEnabled fileEnabled value consumed by this operation.
+/// @param fileName fileName value consumed by this operation.
+/// @param rotationHours rotationHours value consumed by this operation.
+/// @param binlogEnabled binlogEnabled value consumed by this operation.
+/// @param binlogFileName binlogFileName value consumed by this operation.
 function synchronized configure(level, directory, stdoutEnabled, fileEnabled, fileName, rotationHours, binlogEnabled, binlogFileName)
   global loggerConfigured, loggerMinimumLevel, loggerStdoutEnabled, loggerFileEnabled, loggerBinlogEnabled, loggerDirectory, loggerFileName, loggerBinlogFileName, loggerRotationMilliseconds, loggerFile, loggerBinlogFile, loggerOpenedAt, loggerBinlogOpenedAt, loggerLastLogArchive, loggerLastBinlogArchive
   parsedLevel = parseLevel(level)
@@ -161,17 +201,22 @@ function synchronized configure(level, directory, stdoutEnabled, fileEnabled, fi
   return true
 end function
 
-// Produces a unique archive path for one active file.
-// Inputs: `activeName`, `timestamp`. Returns a path inside the log directory.
+/// Produces a unique archive path for one active file.
+/// Inputs: `activeName`, `timestamp`. Returns a path inside the log directory.
+/// @param activeName activeName value consumed by this operation.
+/// @param timestamp timestamp value consumed by this operation.
 function nextArchivePath(activeName, timestamp)
   global loggerDirectory, loggerRotationSequence
   loggerRotationSequence = loggerRotationSequence + 1
   return file_api.joinPath(loggerDirectory, activeName + "." + timestamp + "." + loggerRotationSequence)
 end function
 
-// Rolls one destination by closing, renaming a non-empty active file, and
-// opening a fresh active name. The caller holds the singleton monitor.
-// Inputs: `handle`, `activeName`, `timestamp`. Returns the new handle.
+/// Rolls one destination by closing, renaming a non-empty active file, and
+/// opening a fresh active name. The caller holds the singleton monitor.
+/// Inputs: `handle`, `activeName`, `timestamp`. Returns the new handle.
+/// @param handle Native or runtime handle used by the operation.
+/// @param activeName activeName value consumed by this operation.
+/// @param timestamp timestamp value consumed by this operation.
 function rollHandle(handle, activeName, timestamp)
   global loggerDirectory, loggerFileName, loggerBinlogFileName, loggerLastLogArchive, loggerLastBinlogArchive
   activePath = file_api.joinPath(loggerDirectory, activeName)
@@ -186,8 +231,10 @@ function rollHandle(handle, activeName, timestamp)
   return openLogFile(activeName)
 end function
 
-// Rolls elapsed file destinations before the next record is appended.
-// Inputs: `now`, `timestamp`. Returns true after both destinations are current.
+/// Rolls elapsed file destinations before the next record is appended.
+/// Inputs: `now`, `timestamp`. Returns true after both destinations are current.
+/// @param now now value consumed by this operation.
+/// @param timestamp timestamp value consumed by this operation.
 function rotateIfDue(now, timestamp)
   global loggerFileEnabled, loggerBinlogEnabled, loggerRotationMilliseconds, loggerFile, loggerBinlogFile, loggerOpenedAt, loggerBinlogOpenedAt
   if loggerFileEnabled and now - loggerOpenedAt >= loggerRotationMilliseconds then
@@ -201,8 +248,10 @@ function rotateIfDue(now, timestamp)
   return true
 end function
 
-// Appends and flushes one line so a successful call makes the record durable.
-// Inputs: `handle`, `line`. Returns true after the newline reaches the file.
+/// Appends and flushes one line so a successful call makes the record durable.
+/// Inputs: `handle`, `line`. Returns true after the newline reaches the file.
+/// @param handle Native or runtime handle used by the operation.
+/// @param line line value consumed by this operation.
 function appendLine(handle, line)
   encoded = bytes(line + "\r\n")
   file_api.append(handle, encoded, 0, len(encoded))
@@ -210,8 +259,11 @@ function appendLine(handle, line)
   return true
 end function
 
-// Writes one severity-filtered operational record to every enabled destination.
-// Inputs: `level`, `component`, `message`. Returns false only if a destination fails.
+/// Writes one severity-filtered operational record to every enabled destination.
+/// Inputs: `level`, `component`, `message`. Returns false only if a destination fails.
+/// @param level level value consumed by this operation.
+/// @param component component value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function synchronized write(level, component, message)
   global loggerConfigured, loggerMinimumLevel, loggerStdoutEnabled, loggerFileEnabled, loggerFile
   if not loggerConfigured then return false end if
@@ -232,33 +284,42 @@ function synchronized write(level, component, message)
   return true
 end function
 
-// Writes a DEBUG record.
-// Inputs: `component`, `message`. Returns the singleton write status.
+/// Writes a DEBUG record.
+/// Inputs: `component`, `message`. Returns the singleton write status.
+/// @param component component value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function debug(component, message)
   return write(LEVEL_DEBUG, component, message)
 end function
 
-// Writes an INFO record.
-// Inputs: `component`, `message`. Returns the singleton write status.
+/// Writes an INFO record.
+/// Inputs: `component`, `message`. Returns the singleton write status.
+/// @param component component value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function info(component, message)
   return write(LEVEL_INFO, component, message)
 end function
 
-// Writes a WARNING record.
-// Inputs: `component`, `message`. Returns the singleton write status.
+/// Writes a WARNING record.
+/// Inputs: `component`, `message`. Returns the singleton write status.
+/// @param component component value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function warning(component, message)
   return write(LEVEL_WARNING, component, message)
 end function
 
-// Writes an ERROR record.
-// Inputs: `component`, `message`. Returns the singleton write status.
+/// Writes an ERROR record.
+/// Inputs: `component`, `message`. Returns the singleton write status.
+/// @param component component value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function errorLog(component, message)
   return write(LEVEL_ERROR, component, message)
 end function
 
-// Escapes control characters so each SQL command occupies exactly one binlog
-// record while retaining its complete text reversibly.
-// Inputs: `sqlText`. Returns escaped SQL text.
+/// Escapes control characters so each SQL command occupies exactly one binlog
+/// record while retaining its complete text reversibly.
+/// Inputs: `sqlText`. Returns escaped SQL text.
+/// @param sqlText sqlText value consumed by this operation.
 function escapeSql(sqlText)
   if typeof(sqlText) != "string" then return "" end if
   builder = string_builder.StringBuilder.withCapacity(len(bytes(sqlText)) + 16)
@@ -279,8 +340,10 @@ function escapeSql(sqlText)
   return builder.toString()
 end function
 
-// Durably records one SQL command independently of the ordinary log threshold.
-// Inputs: `component`, `sqlText`. Returns true when disabled or successfully appended.
+/// Durably records one SQL command independently of the ordinary log threshold.
+/// Inputs: `component`, `sqlText`. Returns true when disabled or successfully appended.
+/// @param component component value consumed by this operation.
+/// @param sqlText sqlText value consumed by this operation.
 function synchronized binlog(component, sqlText)
   global loggerConfigured, loggerBinlogEnabled, loggerBinlogFile, loggerStdoutEnabled
   if not loggerConfigured or not loggerBinlogEnabled then return true end if
@@ -294,9 +357,9 @@ function synchronized binlog(component, sqlText)
   return true
 end function
 
-// Forces both enabled destinations to roll immediately. This is useful for
-// administrative rotation and deterministic tests without waiting for hours.
-// Takes no caller inputs. Returns true after fresh active files are open.
+/// Forces both enabled destinations to roll immediately. This is useful for
+/// administrative rotation and deterministic tests without waiting for hours.
+/// Takes no caller inputs. Returns true after fresh active files are open.
 function synchronized rotateNow()
   global loggerConfigured, loggerFileEnabled, loggerBinlogEnabled, loggerFile, loggerBinlogFile, loggerOpenedAt, loggerBinlogOpenedAt
   if not loggerConfigured then return false end if
@@ -307,22 +370,22 @@ function synchronized rotateNow()
   return true
 end function
 
-// Returns the most recently created ordinary-log archive path, or an empty string before the first non-empty roll.
-// Takes no caller inputs. Returns a stable snapshot under the singleton monitor.
+/// Returns the most recently created ordinary-log archive path, or an empty string before the first non-empty roll.
+/// Takes no caller inputs. Returns a stable snapshot under the singleton monitor.
 function synchronized lastLogArchivePath()
   global loggerLastLogArchive
   return loggerLastLogArchive
 end function
 
-// Returns the most recently created binlog archive path, or an empty string before the first non-empty roll.
-// Takes no caller inputs. Returns a stable snapshot under the singleton monitor.
+/// Returns the most recently created binlog archive path, or an empty string before the first non-empty roll.
+/// Takes no caller inputs. Returns a stable snapshot under the singleton monitor.
 function synchronized lastBinlogArchivePath()
   global loggerLastBinlogArchive
   return loggerLastBinlogArchive
 end function
 
-// Flushes, closes, and disables the singleton destinations.
-// Takes no caller inputs. Returns true after logger shutdown.
+/// Flushes, closes, and disables the singleton destinations.
+/// Takes no caller inputs. Returns true after logger shutdown.
 function synchronized close()
   global loggerConfigured, loggerFile, loggerBinlogFile
   if not loggerConfigured then return true end if
@@ -336,20 +399,20 @@ function synchronized close()
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller inputs. Returns `common.logger`.
+/// Performs the componentName operation for the minisql common logger module.
+/// Takes no caller inputs. Returns `common.logger`.
 function componentName()
   return "common.logger"
 end function
 
-// Returns the milestone introducing the singleton operational logger.
-// Takes no caller inputs. Returns `M51`.
+/// Returns the milestone introducing the singleton operational logger.
+/// Takes no caller inputs. Returns `M51`.
 function targetMilestone()
   return "M51"
 end function
 
-// Reports that the component is implemented.
-// Takes no caller inputs. Returns true.
+/// Returns whether implemented satisfies the condition required by the minisql common logger module.
+/// Takes no caller inputs. Returns true.
 function isImplemented()
   return true
 end function

@@ -12,7 +12,7 @@ struct AggregateGroup
 Owns one SQL grouping key and all input rows assigned to that key.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L48)
 
 ## Members
 
@@ -26,7 +26,7 @@ keyValues
 Evaluated GROUP BY values; NULL values compare equal for grouping.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L50)
 
 <a id="field-field-minisql-executor-aggregate-aggregategroup-rows-rows-src-minisql-executor-aggregate-ml-1616904457"></a>
 ### rows
@@ -38,4 +38,4 @@ rows
 Input rows in stable scan order for aggregate evaluation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L52)

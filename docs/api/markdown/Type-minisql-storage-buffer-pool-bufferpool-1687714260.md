@@ -12,7 +12,7 @@ struct BufferPool
 Defines the buffer pool record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L45)
 
 ## Members
 
@@ -26,7 +26,7 @@ capacity
 Capacity field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L47)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-clockhand-clockhand-src-minisql-storage-buffer-pool-ml-643287439"></a>
 ### clockHand
@@ -38,7 +38,7 @@ clockHand
 Clock hand field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L51)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-closed-closed-src-minisql-storage-buffer-pool-ml-1937109675"></a>
 ### closed
@@ -50,7 +50,7 @@ closed
 Closed field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L61)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-dirtyflushes-dirtyflushes-src-minisql-storage-buffer-pool-ml-1993130139"></a>
 ### dirtyFlushes
@@ -62,7 +62,7 @@ dirtyFlushes
 Dirty flushes field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L59)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-evictions-evictions-src-minisql-storage-buffer-pool-ml-1572889851"></a>
 ### evictions
@@ -74,7 +74,7 @@ evictions
 Evictions field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L57)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-frames-frames-src-minisql-storage-buffer-pool-ml-1526071563"></a>
 ### frames
@@ -86,7 +86,7 @@ frames
 Frames field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L49)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-hits-hits-src-minisql-storage-buffer-pool-ml-1184077659"></a>
 ### hits
@@ -98,7 +98,7 @@ hits
 Hits field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L53)
 
 <a id="field-field-minisql-storage-buffer-pool-bufferpool-misses-misses-src-minisql-storage-buffer-pool-ml-812853691"></a>
 ### misses
@@ -110,4 +110,4 @@ misses
 Misses field of the buffer pool.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L55)

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+//! Provides apps minisql admin main facilities for this project.
+
 import minisql.admin.fullclient as fullclient
 import minisql.admin.win32_client as win32_client
 import minisql.client.console as console
@@ -9,7 +11,7 @@ import minisql.common.uuid as uuid
 import minisql.common.version as version
 import minisql.platform.win32_gui as gui
 
-// Prints command-line entry points for the native MiniSQL Workbench.
+/// Prints command-line entry points for the native MiniSQL Workbench.
 function printUsage()
   print "MiniSQL Workbench"
   print ""
@@ -22,13 +24,16 @@ function printUsage()
   print "  minisql-admin.exe --connect-tls <address> <port> <server-name> <user> [database-label] [sha256-pin]"
 end function
 
-// Prints one structured application error and returns a failing exit code.
+/// Prints one structured application error and returns a failing exit code.
+/// @param value Value consumed or transformed by the operation.
 function printAppError(value)
   print "ERROR " + value.code + ": " + value.message
   return 1
 end function
 
-// Opens a profile in the native workbench and wipes the supplied password bytes.
+/// Opens a profile in the native workbench and wipes the supplied password bytes.
+/// @param profile profile value consumed by this operation.
+/// @param password password value consumed by this operation.
 function runProfile(profile, password)
   session = try(win32_client.openProfile(profile, password, true))
   uuid.wipeSecret(password)
@@ -36,13 +41,15 @@ function runProfile(profile, password)
   return win32_client.runSession(session)
 end function
 
-// Converts a direct-connect failure into a GUI error followed by a retryable manager.
+/// Converts a direct-connect failure into a GUI error followed by a retryable manager.
+/// @param value Value consumed or transformed by the operation.
 function recoverConnectionFailure(value)
   gui.showError(0, "MiniSQL connection failed", win32_client.connectionFailureText(value))
   return win32_client.launchConnectionManager()
 end function
 
-// Dispatches GUI launch, smoke diagnostics, and explicit connection command lines.
+/// Dispatches GUI launch, smoke diagnostics, and explicit connection command lines.
+/// @param args Command-line or caller-supplied arguments.
 function main(args)
   if len(args) == 0 then
     result = try(win32_client.launchConnectionManager())

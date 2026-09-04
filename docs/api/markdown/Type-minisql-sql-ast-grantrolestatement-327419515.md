@@ -12,7 +12,7 @@ struct GrantRoleStatement
 Groups the grant role statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L776)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L831)
 
 ## Members
 
@@ -26,7 +26,7 @@ adminOption
 Stores the admin option associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L782)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L837)
 
 <a id="field-field-minisql-sql-ast-grantrolestatement-membername-membername-src-minisql-sql-ast-ml-1868307480"></a>
 ### memberName
@@ -38,7 +38,7 @@ memberName
 Stores the member name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L780)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L835)
 
 <a id="field-field-minisql-sql-ast-grantrolestatement-rolename-rolename-src-minisql-sql-ast-ml-1574617520"></a>
 ### roleName
@@ -50,4 +50,4 @@ roleName
 Stores the role name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L778)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L833)

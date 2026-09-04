@@ -1,3 +1,5 @@
+//! Provides minisql platform file facilities for this project.
+
 package minisql.platform.file
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -11,58 +13,60 @@ import minisql.platform.file_win32 as native
 import minisql.platform.file_linux as native
 #endif
 
-// Validated, lifetime-safe file API layered over the raw Win32 bindings.
-// Positioned operations preserve the caller's logical cursor and reject use of
-// closed handles before crossing the native boundary.
+/// Validated, lifetime-safe file API layered over the raw Win32 bindings.
 
 const INVALID_ARGUMENT = 9001
+/// Defines the io failure constant used by the minisql platform file module.
 const IO_FAILURE = 9005
+/// Defines the closed handle constant used by the minisql platform file module.
 const CLOSED_HANDLE = 9008
 
-// Process-local deterministic write-failure state used exclusively by native
-// fault-injection tests. Production code never enables it, and no environment
-// variable or server configuration can activate it accidentally.
+/// Process-local deterministic write-failure state used exclusively by native
 writeFaultRemainingBytes = -1
 
-// Defines the file handle record used by this module.
+/// Defines the file handle record used by this module.
 struct FileHandle
-  // Path field of the file handle.
+  /// Path field of the file handle.
   path
-  // Native handle field of the file handle.
+  /// Native handle field of the file handle.
   nativeHandle
-  // Readable field of the file handle.
+  /// Readable field of the file handle.
   readable
-  // Writable field of the file handle.
+  /// Writable field of the file handle.
   writable
-  // Closed field of the file handle.
+  /// Closed field of the file handle.
   closed
-  // Lock held field of the file handle.
+  /// Lock held field of the file handle.
   lockHeld
-  // Write through field of the file handle.
+  /// Write through field of the file handle.
   writeThrough
-  // True when readAt uses a native explicit-offset operation.
+  /// True when readAt uses a native explicit-offset operation.
   positionedRead
 end struct
 
-// Cross-platform query-local state for amortizing positioned-read setup.
+/// Cross-platform query-local state for amortizing positioned-read setup.
 struct PositionedReadContext
-  // Platform-owned state; a Win32 completion event and void on Linux.
+  /// Platform-owned state; a Win32 completion event and void on Linux.
   nativeContext
-  // Successful explicit-offset operations performed through this context.
+  /// Successful explicit-offset operations performed through this context.
   operations
-  // Prevents reuse after the native resources have been released.
+  /// Prevents reuse after the native resources have been released.
   closed
 end struct
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql platform file module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "platform.file." + operation + ": " + message)
 end function
 
-// Arms a deterministic storage-exhaustion boundary. Complete writes whose
-// payload fits inside the remaining budget are allowed; the first later write
-// fails before reaching the operating system, avoiding artificial torn writes.
+/// Arms a deterministic storage-exhaustion boundary. Complete writes whose
+/// payload fits inside the remaining budget are allowed; the first later write
+/// fails before reaching the operating system, avoiding artificial torn writes.
+/// @param remainingBytes remainingBytes value consumed by this operation.
 function configureWriteFault(remainingBytes)
   global writeFaultRemainingBytes
   if typeof(remainingBytes) != "int" or remainingBytes < 0 or remainingBytes > endian.MAX_MINILANG_INT then
@@ -72,15 +76,17 @@ function configureWriteFault(remainingBytes)
   return true
 end function
 
-// Disarms deterministic storage exhaustion. Tests call this before cleanup so
-// close/recovery operations use the real file system again.
+/// Disarms deterministic storage exhaustion. Tests call this before cleanup so
+/// close/recovery operations use the real file system again.
 function clearWriteFault()
   global writeFaultRemainingBytes
   writeFaultRemainingBytes = -1
   return true
 end function
 
-// Applies the all-or-nothing injected write budget before native I/O.
+/// Applies the all-or-nothing injected write budget before native I/O.
+/// @param count Number of items or units to process.
+/// @param operation operation value consumed by this operation.
 function admitInjectedWrite(count, operation)
   global writeFaultRemainingBytes
   if writeFaultRemainingBytes < 0 then return true end if
@@ -91,16 +97,22 @@ function admitInjectedWrite(count, operation)
   return true
 end function
 
-// Validates the open.
-// Inputs: `file`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates open for the minisql platform file workflow.
+/// Inputs: `file`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param file file value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateOpen(file, operation)
   if file is not FileHandle then return fail(INVALID_ARGUMENT, operation, "file must be FileHandle") end if
   if file.closed then return fail(CLOSED_HANDLE, operation, "file handle is closed") end if
   return true
 end function
 
-// Validates the slice.
-// Inputs: `buffer`, `offset`, `count`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the slice.
+/// Inputs: `buffer`, `offset`, `count`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param buffer Buffer that receives or supplies the operation data.
+/// @param offset Zero-based offset at which processing starts.
+/// @param count Number of items or units to process.
+/// @param operation operation value consumed by this operation.
 function validateSlice(buffer, offset, count, operation)
   if typeof(buffer) != "bytes" then return fail(INVALID_ARGUMENT, operation, "buffer must be bytes") end if
   if typeof(offset) != "int" or typeof(count) != "int" or offset < 0 or count < 0 then
@@ -112,20 +124,21 @@ function validateSlice(buffer, offset, count, operation)
   return true
 end function
 
-// Performs the share all operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the share all operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function shareAll()
   return native.FILE_SHARE_READ | native.FILE_SHARE_WRITE | native.FILE_SHARE_DELETE
 end function
 
-// Opens the read.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the read.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function openRead(path)
   handle = native.openNativePositionedRead(path, native.GENERIC_READ, shareAll(), native.OPEN_EXISTING, false)
   return FileHandle(path, handle, true, false, false, false, false, true)
 end function
 
-// Creates a context reusable by sequential reads in one query or cursor lease.
+/// Creates a context reusable by sequential reads in one query or cursor lease.
 function createReadContext()
 #if TARGET_OS == "windows"
   nativeContext = try(native.createReadContext())
@@ -136,7 +149,8 @@ function createReadContext()
 #endif
 end function
 
-// Closes a reusable read context after every dependent I/O has completed.
+/// Closes a reusable read context after every dependent I/O has completed.
+/// @param context Context that carries state for the operation.
 function closeReadContext(context)
   if context is not PositionedReadContext or context.closed then return fail(INVALID_ARGUMENT, "closeReadContext", "context must be open") end if
 #if TARGET_OS == "windows"
@@ -147,14 +161,17 @@ function closeReadContext(context)
   return true
 end function
 
-// Reports successful positioned operations performed through this context.
+/// Reports successful positioned operations performed through this context.
+/// @param context Context that carries state for the operation.
 function readContextOperations(context)
   if context is not PositionedReadContext or context.closed then return fail(INVALID_ARGUMENT, "readContextOperations", "context must be open") end if
   return context.operations
 end function
 
-// Opens the read write.
-// Inputs: `path`, `createIfMissing`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the read write.
+/// Inputs: `path`, `createIfMissing`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param createIfMissing createIfMissing value consumed by this operation.
 function openReadWrite(path, createIfMissing)
   if typeof(createIfMissing) != "bool" then return fail(INVALID_ARGUMENT, "openReadWrite", "createIfMissing must be bool") end if
   disposition = native.OPEN_EXISTING
@@ -164,40 +181,47 @@ function openReadWrite(path, createIfMissing)
   return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
-// Creates the requested value.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates create for the minisql platform file module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function create(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_ALWAYS, false)
   return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
-// Creates the new.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the new.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function createNew(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_NEW, false)
   return FileHandle(path, handle, true, true, false, false, false, false)
 end function
 
-// Creates the durable.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the durable.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function createDurable(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_ALWAYS, true)
   return FileHandle(path, handle, true, true, false, false, true, false)
 end function
 
-// Creates the new durable.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the new durable.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function createNewDurable(path)
   access = native.GENERIC_READ | native.GENERIC_WRITE
   handle = native.openNative(path, access, shareAll(), native.CREATE_NEW, true)
   return FileHandle(path, handle, true, true, false, false, true, false)
 end function
 
-// Validates the file range.
-// Inputs: `fileOffset`, `count`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the file range.
+/// Inputs: `fileOffset`, `count`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param count Number of items or units to process.
+/// @param operation operation value consumed by this operation.
 function validateFileRange(fileOffset, count, operation)
   if typeof(fileOffset) != "int" or fileOffset < 0 or fileOffset > endian.MAX_MINILANG_INT then
     return fail(INVALID_ARGUMENT, operation, "fileOffset must be a non-negative native MiniLang int")
@@ -211,8 +235,14 @@ function validateFileRange(fileOffset, count, operation)
   return true
 end function
 
-// Reads the at.
-// Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the at.
+/// Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param count Number of items or units to process.
+/// @param context Context that carries state for the operation.
 function readAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
   validateOpen(file, "readAt")
   if not file.readable then return fail(INVALID_ARGUMENT, "readAt", "file is not readable") end if
@@ -253,28 +283,49 @@ function readAtWithContext(file, fileOffset, destination, destinationOffset, cou
   return actual
 end function
 
-// Reads without retaining setup across calls.
+/// Reads without retaining setup across calls.
+/// @param file file value consumed by this operation.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function readAt(file, fileOffset, destination, destinationOffset, count)
   return readAtWithContext(file, fileOffset, destination, destinationOffset, count, void)
 end function
 
-// Reads the exact at.
-// Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the exact at.
+/// Inputs: `file`, `fileOffset`, `destination`, `destinationOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function readExactAt(file, fileOffset, destination, destinationOffset, count)
   actual = readAt(file, fileOffset, destination, destinationOffset, count)
   if actual != count then return fail(IO_FAILURE, "readExactAt", "short read: expected=" + count + " actual=" + actual) end if
   return actual
 end function
 
-// Reads one exact range through a caller-owned query-local context.
+/// Reads one exact range through a caller-owned query-local context.
+/// @param file file value consumed by this operation.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param count Number of items or units to process.
+/// @param context Context that carries state for the operation.
 function readExactAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
   actual = readAtWithContext(file, fileOffset, destination, destinationOffset, count, context)
   if actual != count then return fail(IO_FAILURE, "readExactAtWithContext", "short read: expected=" + count + " actual=" + actual) end if
   return actual
 end function
 
-// Writes the at.
-// Inputs: `file`, `fileOffset`, `source`, `sourceOffset`, `count`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the at.
+/// Inputs: `file`, `fileOffset`, `source`, `sourceOffset`, `count`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param file file value consumed by this operation.
+/// @param fileOffset fileOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function writeAt(file, fileOffset, source, sourceOffset, count)
   validateOpen(file, "writeAt")
   if not file.writable then return fail(INVALID_ARGUMENT, "writeAt", "file is not writable") end if
@@ -302,23 +353,30 @@ function writeAt(file, fileOffset, source, sourceOffset, count)
 #endif
 end function
 
-// Appends the requested value.
-// Inputs: `file`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the requested value.
+/// Inputs: `file`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function append(file, source, sourceOffset, count)
   offset = size(file)
   writeAt(file, offset, source, sourceOffset, count)
   return offset
 end function
 
-// Computes the size of the requested value.
-// Inputs: `file`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Computes the size of the requested value.
+/// Inputs: `file`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
 function size(file)
   validateOpen(file, "size")
   return native.size(file.nativeHandle)
 end function
 
-// Performs the truncate operation for this module.
-// Inputs: `file`, `newSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the truncate operation for this module.
+/// Inputs: `file`, `newSize`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param file file value consumed by this operation.
+/// @param newSize newSize value consumed by this operation.
 function truncate(file, newSize)
   validateOpen(file, "truncate")
   if not file.writable then return fail(INVALID_ARGUMENT, "truncate", "file is not writable") end if
@@ -328,16 +386,18 @@ function truncate(file, newSize)
   return native.truncate(file.nativeHandle, newSize)
 end function
 
-// Flushes the requested value.
-// Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Performs the flush operation for the minisql platform file module.
+/// Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param file file value consumed by this operation.
 function flush(file)
   validateOpen(file, "flush")
   if not file.writable then return true end if
   return native.flush(file.nativeHandle)
 end function
 
-// Closes the requested value.
-// Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes close owned by the minisql platform file module.
+/// Inputs: `file`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param file file value consumed by this operation.
 function close(file)
   validateOpen(file, "close")
   if file.lockHeld then
@@ -350,51 +410,62 @@ function close(file)
   return true
 end function
 
-// Deletes the path.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Deletes the path.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function deletePath(path)
   return native.deletePath(path)
 end function
 
 
-// Performs the path exists operation for this module.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the pathExists operation for the minisql platform file module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function pathExists(path)
   return native.pathExists(path)
 end function
 
-// Performs the file exists operation for this module.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the file exists operation for this module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function fileExists(path)
   return native.fileExists(path)
 end function
 
-// Performs the directory exists operation for this module.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the directory exists operation for this module.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function directoryExists(path)
   return native.directoryExists(path)
 end function
 
-// Creates the directory.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Creates the directory.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function createDirectory(path)
   return native.createDirectory(path)
 end function
 
-// Removes the directory.
-// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Removes the directory.
+/// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
 function removeDirectory(path)
   return native.removeDirectory(path)
 end function
 
-// Performs the move path operation for this module.
-// Inputs: `source`, `destination`, `replaceExisting`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the move path operation for this module.
+/// Inputs: `source`, `destination`, `replaceExisting`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
+/// @param destination destination value consumed by this operation.
+/// @param replaceExisting replaceExisting value consumed by this operation.
 function movePath(source, destination, replaceExisting)
   return native.movePath(source, destination, replaceExisting)
 end function
 
-// Reads the all bytes.
-// Inputs: `path`, `maximumBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the all bytes.
+/// Inputs: `path`, `maximumBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param maximumBytes maximumBytes value consumed by this operation.
 function readAllBytes(path, maximumBytes)
   if typeof(path) != "string" or len(path) == 0 then return fail(INVALID_ARGUMENT, "readAllBytes", "path must be non-empty") end if
   if typeof(maximumBytes) != "int" or maximumBytes < 0 or maximumBytes > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "readAllBytes", "maximumBytes must be a non-negative native MiniLang int") end if
@@ -413,8 +484,10 @@ function readAllBytes(path, maximumBytes)
   return output
 end function
 
-// Reads the all text.
-// Inputs: `path`, `maximumBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the all text.
+/// Inputs: `path`, `maximumBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param maximumBytes maximumBytes value consumed by this operation.
 function readAllText(path, maximumBytes)
   encoded = try(readAllBytes(path, maximumBytes))
   if typeof(encoded) == "error" then return encoded end if
@@ -423,8 +496,10 @@ function readAllText(path, maximumBytes)
   return decoded
 end function
 
-// Performs the join path operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the join path operation for this module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function joinPath(left, right)
   if typeof(left) != "string" or len(left) == 0 or typeof(right) != "string" or len(right) == 0 then
     return fail(INVALID_ARGUMENT, "joinPath", "path parts must be non-empty strings")
@@ -445,20 +520,20 @@ function joinPath(left, right)
 #endif
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql platform file module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "platform.file"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql platform file module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M3"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql platform file module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

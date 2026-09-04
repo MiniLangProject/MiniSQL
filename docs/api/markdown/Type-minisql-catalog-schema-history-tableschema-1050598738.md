@@ -12,7 +12,7 @@ struct TableSchema
 Defines the table schema record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L149)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnRules
 Column rules field of the table schema.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L155)
 
 <a id="field-field-minisql-catalog-schema-history-tableschema-constraints-constraints-src-minisql-catalog-schema-history-ml-1075582578"></a>
 ### constraints
@@ -38,7 +38,7 @@ constraints
 Constraints field of the table schema.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L157)
 
 <a id="field-field-minisql-catalog-schema-history-tableschema-schemaversion-schemaversion-src-minisql-catalog-schema-history-ml-1281265902"></a>
 ### schemaVersion
@@ -50,7 +50,7 @@ schemaVersion
 Schema version field of the table schema.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L153)
 
 <a id="field-field-minisql-catalog-schema-history-tableschema-tableid-tableid-src-minisql-catalog-schema-history-ml-491725842"></a>
 ### tableId
@@ -62,4 +62,4 @@ tableId
 Table id field of the table schema.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L151)

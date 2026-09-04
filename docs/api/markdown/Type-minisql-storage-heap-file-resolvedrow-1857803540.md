@@ -12,7 +12,7 @@ struct ResolvedRow
 Defines the resolved row record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L60)
 
 ## Members
 
@@ -26,7 +26,7 @@ chain
 Chain field of the resolved row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L68)
 
 <a id="field-field-minisql-storage-heap-file-resolvedrow-flags-flags-src-minisql-storage-heap-file-ml-1479439175"></a>
 ### flags
@@ -38,7 +38,7 @@ flags
 Flags field of the resolved row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L66)
 
 <a id="field-field-minisql-storage-heap-file-resolvedrow-leaf-leaf-src-minisql-storage-heap-file-ml-1963364127"></a>
 ### leaf
@@ -50,7 +50,7 @@ leaf
 Leaf field of the resolved row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L62)
 
 <a id="field-field-minisql-storage-heap-file-resolvedrow-value-value-src-minisql-storage-heap-file-ml-421940379"></a>
 ### value
@@ -62,4 +62,4 @@ value
 Value field of the resolved row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L64)

@@ -1,3 +1,5 @@
+//! Provides minisql common diagnostics facilities for this project.
+
 package minisql.common.diagnostics
 // Copyright 2026 MiniLangProject contributors
 // SPDX-License-Identifier: Apache-2.0
@@ -8,102 +10,127 @@ import minisql.common.uuid as uuid
 import minisql.platform.file as file_api
 import std.time as time_api
 
-// Tamper-evident diagnostics and audit-log storage. Each record incorporates
-// the previous record's digest, so verification detects mutation, truncation,
-// and reordering while preserving append-only operation.
+/// Tamper-evident diagnostics and audit-log storage. Each record incorporates
 
 const INVALID_ARGUMENT = 9001
+/// Defines the corrupt data constant used by the minisql common diagnostics module.
 const CORRUPT_DATA = 9004
+/// Defines the io failure constant used by the minisql common diagnostics module.
 const IO_FAILURE = 9005
+/// Defines the closed handle constant used by the minisql common diagnostics module.
 const CLOSED_HANDLE = 9008
 
+/// Defines the audit version constant used by the minisql common diagnostics module.
 const AUDIT_VERSION = 1
+/// Defines the audit header bytes constant used by the minisql common diagnostics module.
 const AUDIT_HEADER_BYTES = 120
+/// Defines the audit hash bytes constant used by the minisql common diagnostics module.
 const AUDIT_HASH_BYTES = 32
+/// Defines the audit key bytes constant used by the minisql common diagnostics module.
 const AUDIT_KEY_BYTES = 32
+/// Defines the max audit detail bytes constant used by the minisql common diagnostics module.
 const MAX_AUDIT_DETAIL_BYTES = 4096
-// Audit v1 snapshots are processed through one U32-sized byte buffer. Keep the
-// format/API bound, but do not impose the former arbitrary 64 MiB file ceiling.
+/// Audit v1 snapshots are processed through one U32-sized byte buffer. Keep the
 const MAX_AUDIT_FILE_BYTES = 4294967295
 
+/// Defines the audit login constant used by the minisql common diagnostics module.
 const AUDIT_LOGIN = 1
+/// Defines the audit logout constant used by the minisql common diagnostics module.
 const AUDIT_LOGOUT = 2
+/// Defines the audit ddl constant used by the minisql common diagnostics module.
 const AUDIT_DDL = 3
+/// Defines the audit dcl constant used by the minisql common diagnostics module.
 const AUDIT_DCL = 4
+/// Defines the audit maintenance constant used by the minisql common diagnostics module.
 const AUDIT_MAINTENANCE = 5
+/// Defines the audit backup constant used by the minisql common diagnostics module.
 const AUDIT_BACKUP = 6
+/// Defines the audit restore constant used by the minisql common diagnostics module.
 const AUDIT_RESTORE = 7
+/// Defines the audit replication constant used by the minisql common diagnostics module.
 const AUDIT_REPLICATION = 8
+/// Defines the audit server constant used by the minisql common diagnostics module.
 const AUDIT_SERVER = 9
+/// Defines the audit rotation constant used by the minisql common diagnostics module.
 const AUDIT_ROTATION = 10
 
+/// Defines the audit failure constant used by the minisql common diagnostics module.
 const AUDIT_FAILURE = 0
+/// Defines the audit success constant used by the minisql common diagnostics module.
 const AUDIT_SUCCESS = 1
 
-// Defines the diagnostic record used by this module.
+/// Defines the diagnostic record used by this module.
 struct Diagnostic
-  // Code field of the diagnostic.
+  /// Code field of the diagnostic.
   code
-  // Severity field of the diagnostic.
+  /// Severity field of the diagnostic.
   severity
-  // Message field of the diagnostic.
+  /// Message field of the diagnostic.
   message
 end struct
 
-// Defines the audit scan record used by this module.
+/// Defines the audit scan record used by this module.
 struct AuditScan
-  // Record count field of the audit scan.
+  /// Record count field of the audit scan.
   recordCount
-  // Last sequence field of the audit scan.
+  /// Last sequence field of the audit scan.
   lastSequence
-  // Last hash field of the audit scan.
+  /// Last hash field of the audit scan.
   lastHash
-  // Valid bytes field of the audit scan.
+  /// Valid bytes field of the audit scan.
   validBytes
 end struct
 
-// Defines the audit log record used by this module.
+/// Defines the audit log record used by this module.
 struct AuditLog
-  // Path field of the audit log.
+  /// Path field of the audit log.
   path
-  // File field of the audit log.
+  /// File field of the audit log.
   file
-  // Key field of the audit log.
+  /// Key field of the audit log.
   key
-  // Next sequence field of the audit log.
+  /// Next sequence field of the audit log.
   nextSequence
-  // Last hash field of the audit log.
+  /// Last hash field of the audit log.
   lastHash
-  // Closed field of the audit log.
+  /// Closed field of the audit log.
   closed
 end struct
 
-// Constructs the requested value.
-// Inputs: `code`, `severity`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Constructs the requested value.
+/// Inputs: `code`, `severity`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param severity severity value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function make(code, severity, message)
   return Diagnostic(code, severity, message)
 end function
 
-// Creates the module's structured error with operation context.
-// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the fail operation for the minisql common diagnostics module.
+/// Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "common.diagnostics." + operation + ": " + message)
 end function
 
-// Performs the audit magic operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit magic operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function auditMagic()
   return bytes("MSAUD001")
 end function
 
-// Performs the zero hash operation for this module.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the zero hash operation for this module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function zeroHash()
   return bytes(AUDIT_HASH_BYTES, 0)
 end function
 
-// Performs the bytes equal operation for this module.
-// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the bytesEqual operation for the minisql common diagnostics module.
+/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param left left value consumed by this operation.
+/// @param right right value consumed by this operation.
 function bytesEqual(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" or len(left) != len(right) then return false end if
   difference = 0
@@ -115,15 +142,22 @@ function bytesEqual(left, right)
   return difference == 0
 end function
 
-// Copies the exact.
-// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the copyExact operation for the minisql common diagnostics module.
+/// Inputs: `destination`, `destinationOffset`, `source`, `sourceOffset`, `count`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param destination destination value consumed by this operation.
+/// @param destinationOffset destinationOffset value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param sourceOffset sourceOffset value consumed by this operation.
+/// @param count Number of items or units to process.
 function copyExact(destination, destinationOffset, source, sourceOffset, count)
   copyBytes(destination, destinationOffset, source, sourceOffset, count)
   return destinationOffset + count
 end function
 
-// Reads the whole.
-// Inputs: `path`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads whole for the minisql common diagnostics workflow.
+/// Inputs: `path`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param path Path of the file or directory used by the operation.
+/// @param maximum maximum value consumed by this operation.
 function readWhole(path, maximum)
   if not file_api.fileExists(path) then return bytes(0) end if
   file = file_api.openRead(path)
@@ -135,8 +169,10 @@ function readWhole(path, maximum)
   return output
 end function
 
-// Writes the whole durable.
-// Inputs: `path`, `data`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Writes the whole durable.
+/// Inputs: `path`, `data`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param path Path of the file or directory used by the operation.
+/// @param data Input data consumed by the operation.
 function writeWholeDurable(path, data)
   file = file_api.createDurable(path)
   if len(data) > 0 then file_api.writeAt(file, 0, data, 0, len(data)) end if
@@ -145,8 +181,10 @@ function writeWholeDurable(path, data)
   return true
 end function
 
-// Validates the detail.
-// Inputs: `detail`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the detail.
+/// Inputs: `detail`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param detail detail value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateDetail(detail, operation)
   if typeof(detail) != "string" then return fail(INVALID_ARGUMENT, operation, "detail must be string") end if
   raw = bytes(detail)
@@ -157,8 +195,11 @@ function validateDetail(detail, operation)
   return raw
 end function
 
-// Performs the record digest operation for this module.
-// Inputs: `key`, `header`, `detailBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the record digest operation for this module.
+/// Inputs: `key`, `header`, `detailBytes`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param key key value consumed by this operation.
+/// @param header header value consumed by this operation.
+/// @param detailBytes detailBytes value consumed by this operation.
 function recordDigest(key, header, detailBytes)
   if typeof(key) != "bytes" or len(key) != AUDIT_KEY_BYTES then return fail(INVALID_ARGUMENT, "recordDigest", "audit key is invalid") end if
   material = bytes(88 + len(detailBytes), 0)
@@ -169,8 +210,17 @@ function recordDigest(key, header, detailBytes)
   return digest
 end function
 
-// Encodes the audit record.
-// Inputs: `key`, `sequence`, `timestamp`, `eventType`, `outcome`, `sessionId`, `principalId`, `previousHash`, `detail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Encodes the audit record.
+/// Inputs: `key`, `sequence`, `timestamp`, `eventType`, `outcome`, `sessionId`, `principalId`, `previousHash`, `detail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param key key value consumed by this operation.
+/// @param sequence sequence value consumed by this operation.
+/// @param timestamp timestamp value consumed by this operation.
+/// @param eventType eventType value consumed by this operation.
+/// @param outcome outcome value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param principalId Identifier of principal.
+/// @param previousHash previousHash value consumed by this operation.
+/// @param detail detail value consumed by this operation.
 function encodeAuditRecord(key, sequence, timestamp, eventType, outcome, sessionId, principalId, previousHash, detail)
   if typeof(key) != "bytes" or len(key) != AUDIT_KEY_BYTES then return fail(INVALID_ARGUMENT, "encodeAuditRecord", "audit key is invalid") end if
   if typeof(sequence) != "int" or sequence < 1 then return fail(INVALID_ARGUMENT, "encodeAuditRecord", "sequence must be positive") end if
@@ -200,8 +250,13 @@ function encodeAuditRecord(key, sequence, timestamp, eventType, outcome, session
   return output
 end function
 
-// Scans the audit bytes from sequence.
-// Inputs: `source`, `key`, `expectedPreviousHash`, `expectedPreviousSequence`, `allowTornTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the audit bytes from sequence.
+/// Inputs: `source`, `key`, `expectedPreviousHash`, `expectedPreviousSequence`, `allowTornTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param expectedPreviousHash expectedPreviousHash value consumed by this operation.
+/// @param expectedPreviousSequence expectedPreviousSequence value consumed by this operation.
+/// @param allowTornTail allowTornTail value consumed by this operation.
 function scanAuditBytesFromSequence(source, key, expectedPreviousHash, expectedPreviousSequence, allowTornTail)
   if typeof(source) != "bytes" then return fail(INVALID_ARGUMENT, "scanAuditBytesFromSequence", "source must be bytes") end if
   if typeof(key) != "bytes" or len(key) != AUDIT_KEY_BYTES then return fail(INVALID_ARGUMENT, "scanAuditBytesFromSequence", "audit key is invalid") end if
@@ -250,45 +305,55 @@ function scanAuditBytesFromSequence(source, key, expectedPreviousHash, expectedP
   return AuditScan(count, sequence, previous, cursor)
 end function
 
-// Scans the audit bytes.
-// Inputs: `source`, `key`, `expectedPreviousHash`, `allowTornTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Scans the audit bytes.
+/// Inputs: `source`, `key`, `expectedPreviousHash`, `allowTornTail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param source source value consumed by this operation.
+/// @param key key value consumed by this operation.
+/// @param expectedPreviousHash expectedPreviousHash value consumed by this operation.
+/// @param allowTornTail allowTornTail value consumed by this operation.
 function scanAuditBytes(source, key, expectedPreviousHash, allowTornTail)
   return scanAuditBytesFromSequence(source, key, expectedPreviousHash, 0, allowTornTail)
 end function
 
-// Ensures the directory.
-// Inputs: `path`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Ensures the directory.
+/// Inputs: `path`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param path Path of the file or directory used by the operation.
 function ensureDirectory(path)
   if file_api.directoryExists(path) then return true end if
   return file_api.createDirectory(path)
 end function
 
-// Performs the audit key path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit key path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function auditKeyPath(databasePath)
   return file_api.joinPath(file_api.joinPath(databasePath, "audit"), "audit.key")
 end function
 
-// Performs the audit anchor path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit anchor path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function auditAnchorPath(databasePath)
   return file_api.joinPath(file_api.joinPath(databasePath, "audit"), "audit.anchor")
 end function
 
-// Performs the audit previous path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit previous path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function auditPreviousPath(databasePath)
   return file_api.joinPath(file_api.joinPath(databasePath, "audit"), "audit.previous")
 end function
 
-// Performs the audit previous anchor path operation for this module.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the audit previous anchor path operation for this module.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function auditPreviousAnchorPath(databasePath)
   return file_api.joinPath(file_api.joinPath(databasePath, "audit"), "audit.previous.anchor")
 end function
 
-// Reads the audit key.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Reads the audit key.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function readAuditKey(databasePath)
   path = auditKeyPath(databasePath)
   if not file_api.fileExists(path) then return fail(CORRUPT_DATA, "readAuditKey", "audit key is missing") end if
@@ -297,8 +362,9 @@ function readAuditKey(databasePath)
   return key
 end function
 
-// Ensures the audit key.
-// Inputs: `databasePath`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Ensures the audit key.
+/// Inputs: `databasePath`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param databasePath Path associated with database.
 function ensureAuditKey(databasePath)
   path = auditKeyPath(databasePath)
   if file_api.fileExists(path) then return readAuditKey(databasePath) end if
@@ -314,8 +380,9 @@ function ensureAuditKey(databasePath)
   return key
 end function
 
-// Opens the audit.
-// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Opens the audit.
+/// Inputs: `databasePath`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param databasePath Path associated with database.
 function openAudit(databasePath)
   if typeof(databasePath) != "string" or len(databasePath) == 0 then return fail(INVALID_ARGUMENT, "openAudit", "databasePath must be non-empty") end if
   auditDirectory = file_api.joinPath(databasePath, "audit")
@@ -341,16 +408,24 @@ function openAudit(databasePath)
   return AuditLog(logPath, file, key, scanned.lastSequence + 1, bytes(scanned.lastHash), false)
 end function
 
-// Validates the audit open.
-// Inputs: `log`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// Validates the audit open.
+/// Inputs: `log`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+/// @param log log value consumed by this operation.
+/// @param operation operation value consumed by this operation.
 function validateAuditOpen(log, operation)
   if log is not AuditLog then return fail(INVALID_ARGUMENT, operation, "log must be AuditLog") end if
   if log.closed then return fail(CLOSED_HANDLE, operation, "audit log is closed") end if
   return true
 end function
 
-// Appends the audit.
-// Inputs: `log`, `eventType`, `outcome`, `sessionId`, `principalId`, `detail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Appends the audit.
+/// Inputs: `log`, `eventType`, `outcome`, `sessionId`, `principalId`, `detail`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param eventType eventType value consumed by this operation.
+/// @param outcome outcome value consumed by this operation.
+/// @param sessionId Identifier of session.
+/// @param principalId Identifier of principal.
+/// @param detail detail value consumed by this operation.
 function appendAudit(log, eventType, outcome, sessionId, principalId, detail)
   validateAuditOpen(log, "appendAudit")
   unixMilliseconds = time_api.datetime.nowUnixMillisUtc()
@@ -371,8 +446,9 @@ function appendAudit(log, eventType, outcome, sessionId, principalId, detail)
   return offset
 end function
 
-// Verifies the audit.
-// Inputs: `databasePath`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Verifies the audit.
+/// Inputs: `databasePath`. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// @param databasePath Path associated with database.
 function verifyAudit(databasePath)
   auditDirectory = file_api.joinPath(databasePath, "audit")
   anchorPath = auditAnchorPath(databasePath)
@@ -401,8 +477,12 @@ function verifyAudit(databasePath)
   return result
 end function
 
-// Performs the rotate audit operation for this module.
-// Inputs: `log`, `databasePath`, `sessionId`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the rotate audit operation for this module.
+/// Inputs: `log`, `databasePath`, `sessionId`, `principalId`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param databasePath Path associated with database.
+/// @param sessionId Identifier of session.
+/// @param principalId Identifier of principal.
 function rotateAudit(log, databasePath, sessionId, principalId)
   validateAuditOpen(log, "rotateAudit")
   // Preserve the starting hash of the segment being rotated. After the second
@@ -425,8 +505,10 @@ function rotateAudit(log, databasePath, sessionId, principalId)
   return openAudit(databasePath)
 end function
 
-// Performs the snapshot audit bytes operation for this module.
-// Inputs: `log`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the snapshot audit bytes operation for this module.
+/// Inputs: `log`, `maximum`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
+/// @param maximum maximum value consumed by this operation.
 function snapshotAuditBytes(log, maximum)
   validateAuditOpen(log, "snapshotAuditBytes")
   if typeof(maximum) != "int" or maximum < 0 or maximum > MAX_AUDIT_FILE_BYTES then return fail(INVALID_ARGUMENT, "snapshotAuditBytes", "maximum is invalid") end if
@@ -438,15 +520,17 @@ function snapshotAuditBytes(log, maximum)
   return output
 end function
 
-// Performs the snapshot audit key operation for this module.
-// Inputs: `log`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the snapshot audit key operation for this module.
+/// Inputs: `log`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// @param log log value consumed by this operation.
 function snapshotAuditKey(log)
   validateAuditOpen(log, "snapshotAuditKey")
   return bytes(log.key)
 end function
 
-// Closes the audit.
-// Inputs: `log`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// Closes the audit.
+/// Inputs: `log`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+/// @param log log value consumed by this operation.
 function closeAudit(log)
   validateAuditOpen(log, "closeAudit")
   file_api.flush(log.file)
@@ -458,20 +542,20 @@ function closeAudit(log)
   return true
 end function
 
-// Returns the stable diagnostic name of this component.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the componentName operation for the minisql common diagnostics module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function componentName()
   return "common.diagnostics"
 end function
 
-// Returns the milestone in which this component became available.
-// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Performs the targetMilestone operation for the minisql common diagnostics module.
+/// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 function targetMilestone()
   return "M0"
 end function
 
-// Reports whether this component is implemented.
-// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+/// Returns whether implemented satisfies the condition required by the minisql common diagnostics module.
+/// Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 function isImplemented()
   return true
 end function

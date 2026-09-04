@@ -12,7 +12,7 @@ struct BoundRecursiveReference
 Marks a recursive self-reference that scans the current iteration's delta rows.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L67)
 
 ## Members
 
@@ -26,4 +26,4 @@ name
 Stores the recursive CTE name associated with the working table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L69)

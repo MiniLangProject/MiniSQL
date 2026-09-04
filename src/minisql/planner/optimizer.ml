@@ -1,3 +1,5 @@
+//! Provides minisql planner optimizer facilities for this project.
+
 package minisql.planner.optimizer
 
 // Copyright 2026 MiniLangProject contributors
@@ -16,13 +18,13 @@ import minisql.sql.binder as binder
 import minisql.sql.expressions as expressions
 import minisql.sql.types as types
 
-// Costed physical-plan builder. It produces both the stable descriptive
-// EXPLAIN tree and a typed execution contract consumed by the executor, so
-// access paths and operator algorithms cannot silently diverge at runtime.
+/// Costed physical-plan builder. It produces both the stable descriptive
 
 const INVALID_ARGUMENT = 9001
 
-// Reports whether a stable index-name list contains one name.
+/// Reports whether a stable index-name list contains one name.
+/// @param items Items consumed or updated by the operation.
+/// @param name Name of the affected item.
 function indexNameContains(items, name)
   for each item in items
     if item == name then return true end if
@@ -30,7 +32,8 @@ function indexNameContains(items, name)
   return false
 end function
 
-// Renders a deterministic comma-separated index-name list for EXPLAIN.
+/// Renders a deterministic comma-separated index-name list for EXPLAIN.
+/// @param items Items consumed or updated by the operation.
 function indexNameListText(items)
   output = ""
   for each item in items
@@ -40,42 +43,47 @@ function indexNameListText(items)
   return output
 end function
 
-// Groups the optimized plan state and preserves the field relationships documented below.
+/// Groups the optimized plan state and preserves the field relationships documented below.
 struct OptimizedPlan
-  // Stores the root associated with this value.
+  /// Stores the root associated with this value.
   root
-  // Stores the used statistics associated with this value.
+  /// Stores the used statistics associated with this value.
   usedStatistics
-  // Stores the typed physical decisions consumed by the executor.
+  /// Stores the typed physical decisions consumed by the executor.
   execution
 end struct
 
-// Best known left-deep join prefix for one source subset. The bounded dynamic
-// program stores one state per bit mask and therefore avoids factorial search.
+/// Best known left-deep join prefix for one source subset. The bounded dynamic
+/// program stores one state per bit mask and therefore avoids factorial search.
 struct JoinOrderState
-  // Bit set for every source already present in the prefix.
+  /// Bit set for every source already present in the prefix.
   sourceMask
-  // Source that seeds the executable left-deep plan.
+  /// Source that seeds the executable left-deep plan.
   startSource
-  // Bound join predicates in physical attachment order.
+  /// Bound join predicates in physical attachment order.
   joinIndexes
-  // Source attached by each corresponding join predicate.
+  /// Source attached by each corresponding join predicate.
   sourceIndexes
-  // Cumulative cost and cardinality of this prefix.
+  /// Cumulative cost and cardinality of this prefix.
   estimate
 end struct
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql planner optimizer module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param code code value consumed by this operation.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(code, operation, message)
   return error(code, "planner.optimizer." + operation + ": " + message)
 end function
 
-// Implements integer divide for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements integer divide for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function integerDivide(numerator, denominator)
   if typeof(numerator) != "int" or typeof(denominator) != "int" or numerator < 0 or denominator <= 0 then return fail(INVALID_ARGUMENT, "integerDivide", "invalid arguments") end if
   quotient = 0
@@ -94,16 +102,19 @@ function integerDivide(numerator, denominator)
   return quotient
 end function
 
-// Returns whether the supplied value satisfies the optimized plan condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether the supplied value satisfies the optimized plan condition.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
+/// @param value Value consumed or transformed by the operation.
 function isOptimizedPlan(value)
   return value is OptimizedPlan
 end function
 
-// Implements table stats for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements table stats for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param tableId Identifier of table.
 function tableStats(state, tableId)
   if state is void then return void end if
   if execution_plan.isPlanningContext(state) then state = state.statistics end if
@@ -112,14 +123,18 @@ function tableStats(state, tableId)
   return statistics.findTable(state, tableId)
 end function
 
-// Returns index metadata from a rich planning context. Legacy callers that pass
-// only StatisticsCatalog retain sequential scans and remain source-compatible.
+/// Returns index metadata from a rich planning context. Legacy callers that pass
+/// only StatisticsCatalog retain sequential scans and remain source-compatible.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param tableId Identifier of table.
 function tableIndexes(state, tableId)
   if not execution_plan.isPlanningContext(state) then return [] end if
   return execution_plan.indexesForTable(state, tableId)
 end function
 
-// Finds persisted column statistics by local table-column index.
+/// Finds persisted column statistics by local table-column index.
+/// @param found found value consumed by this operation.
+/// @param columnIndex Zero-based index of column.
 function columnStats(found, columnIndex)
   if found is void then return void end if
   for each column in found.columns
@@ -128,8 +143,10 @@ function columnStats(found, columnIndex)
   return void
 end function
 
-// Finds exact ordered joint-column statistics, normally produced for a
-// composite index key by ANALYZE.
+/// Finds exact ordered joint-column statistics, normally produced for a
+/// composite index key by ANALYZE.
+/// @param found found value consumed by this operation.
+/// @param columnIndexes columnIndexes value consumed by this operation.
 function columnGroupStats(found, columnIndexes)
   if found is void or typeof(found.columnGroups) != "array" then return void end if
   for each group in found.columnGroups
@@ -144,9 +161,12 @@ function columnGroupStats(found, columnIndexes)
   return void
 end function
 
-// Multiplies a cardinality by a bounded fraction without overflowing the
-// native integer. Dividing the remainder and denominator together only occurs
-// in the exceptional near-limit case and preserves a close conservative ratio.
+/// Multiplies a cardinality by a bounded fraction without overflowing the
+/// native integer. Dividing the remainder and denominator together only occurs
+/// in the exceptional near-limit case and preserves a close conservative ratio.
+/// @param value Value consumed or transformed by the operation.
+/// @param numerator numerator value consumed by this operation.
+/// @param denominator denominator value consumed by this operation.
 function scaleFraction(value, numerator, denominator)
   if value == 0 or numerator == 0 then return 0 end if
   if numerator >= denominator then return value end if
@@ -162,8 +182,10 @@ function scaleFraction(value, numerator, denominator)
   return result
 end function
 
-// Interpolates an inclusive integral boundary within the persisted cumulative
-// histogram and returns a whole-table population estimate.
+/// Interpolates an inclusive integral boundary within the persisted cumulative
+/// histogram and returns a whole-table population estimate.
+/// @param current current value consumed by this operation.
+/// @param candidate candidate value consumed by this operation.
 function histogramLessOrEqual(current, candidate)
   if typeof(current.histogramBounds) != "array" or len(current.histogramBounds) == 0 then return void end if
   if candidate < current.minimumIntegral then return 0 end if
@@ -185,8 +207,12 @@ function histogramLessOrEqual(current, candidate)
   return previousCount
 end function
 
-// Estimates equality from the MCV list and distributes the remaining
-// population uniformly across non-MCV distinct values.
+/// Estimates equality from the MCV list and distributes the remaining
+/// population uniformly across non-MCV distinct values.
+/// @param inputRows inputRows value consumed by this operation.
+/// @param tableRows tableRows value consumed by this operation.
+/// @param current current value consumed by this operation.
+/// @param literal literal value consumed by this operation.
 function equalityRows(inputRows, tableRows, current, literal)
   if current is void or literal is void or literal.isNull or tableRows <= 0 then return void end if
   lookupValue = literal.value
@@ -216,7 +242,8 @@ function equalityRows(inputRows, tableRows, current, literal)
   return estimate
 end function
 
-// Computes the persisted tuple hash used by multi-column MCV statistics.
+/// Computes the persisted tuple hash used by multi-column MCV statistics.
+/// @param literals literals value consumed by this operation.
 function tupleHashForLiterals(literals)
   result = 2166136261 & 2147483647
   for each literal in literals
@@ -226,8 +253,13 @@ function tupleHashForLiterals(literals)
   return result
 end function
 
-// Estimates an integral inequality from a cumulative histogram, with a uniform
-// interpolation inside each bucket and a bounds-only fallback for v1-v3 data.
+/// Estimates an integral inequality from a cumulative histogram, with a uniform
+/// interpolation inside each bucket and a bounds-only fallback for v1-v3 data.
+/// @param inputRows inputRows value consumed by this operation.
+/// @param tableRows tableRows value consumed by this operation.
+/// @param current current value consumed by this operation.
+/// @param operator operator value consumed by this operation.
+/// @param literal literal value consumed by this operation.
 function integralRangeRows(inputRows, tableRows, current, operator, literal)
   if current is void or not current.hasIntegralBounds or literal is void or literal.isNull or typeof(literal.value) != "int" then return void end if
   if tableRows <= 0 then return 0 end if
@@ -276,7 +308,10 @@ function integralRangeRows(inputRows, tableRows, current, operator, literal)
   return estimated
 end function
 
-// Selects the widest complete equality group available for a predicate.
+/// Selects the widest complete equality group available for a predicate.
+/// @param source source value consumed by this operation.
+/// @param found found value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
 function equalityColumnGroup(source, found, predicate)
   if found is void or typeof(found.columnGroups) != "array" then return void end if
   selected = void
@@ -291,8 +326,12 @@ function equalityColumnGroup(source, found, predicate)
   return selected
 end function
 
-// Estimates a pushed predicate with available NDV statistics, retaining the
-// conservative M17 heuristic for unsupported expression shapes.
+/// Estimates a pushed predicate with available NDV statistics, retaining the
+/// conservative M17 heuristic for unsupported expression shapes.
+/// @param source source value consumed by this operation.
+/// @param found found value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param fallbackRows fallbackRows value consumed by this operation.
 function predicateRows(source, found, predicate, fallbackRows)
   if predicate is void then return fallbackRows end if
   if found is void then return rewrites.estimateFilteredRows(fallbackRows, predicate) end if
@@ -336,8 +375,11 @@ function predicateRows(source, found, predicate, fallbackRows)
   return output
 end function
 
-// Returns whether every column referenced by one expression belongs to an
-// index key. Global bound indexes are translated into the source-local domain.
+/// Returns whether every column referenced by one expression belongs to an
+/// index key. Global bound indexes are translated into the source-local domain.
+/// @param expression expression value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param index Zero-based index of the affected item.
 function expressionCoveredByIndex(expression, source, index)
   if expression is void then return true end if
   referenced = rewrites.collectColumnIndexes(expression, [])
@@ -354,7 +396,11 @@ function expressionCoveredByIndex(expression, source, index)
   return true
 end function
 
-// Recognizes a query fully answerable from B+-tree key and INCLUDE payloads.
+/// Recognizes a query fully answerable from B+-tree key and INCLUDE payloads.
+/// @param bound bound value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param index Zero-based index of the affected item.
+/// @param predicate predicate value consumed by this operation.
 function indexCoversBound(bound, source, index, predicate)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or source.query is not void or len(bound.setOperations) != 0 or bound.windowQuery then return false end if
   for each columnIndex in index.columnIndexes + index.includedColumnIndexes
@@ -376,9 +422,16 @@ function indexCoversBound(bound, source, index, predicate)
   return true
 end function
 
-// Chooses the longest usable B+-tree prefix for a source predicate. Equality
-// may consume every index column; a range may consume only the leading column
-// because the current storage integration does not yet expose prefix ranges.
+/// Chooses the longest usable B+-tree prefix for a source predicate. Equality
+/// may consume every index column; a range may consume only the leading column
+/// because the current storage integration does not yet expose prefix ranges.
+/// @param bound bound value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param found found value consumed by this operation.
+/// @param rows rows value consumed by this operation.
+/// @param outputRows outputRows value consumed by this operation.
 function indexCandidate(bound, source, predicate, state, found, rows, outputRows)
   selected = void
   selectedPrefix = 0
@@ -458,9 +511,15 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
   return [selected, selectedPrefix, selectedUniqueLookup, selectedRows, selectedCovering]
 end function
 
-// Chooses a bounded multi-index path for a single base table. AND may use every
-// independently indexable conjunct and intersect row identities; OR is eligible
-// only when every disjunct has an index so no qualifying branch can be lost.
+/// Chooses a bounded multi-index path for a single base table. AND may use every
+/// independently indexable conjunct and intersect row identities; OR is eligible
+/// only when every disjunct has an index so no qualifying branch can be lost.
+/// @param bound bound value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param found found value consumed by this operation.
+/// @param rows rows value consumed by this operation.
 function combinedIndexCandidate(bound, source, predicate, state, found, rows)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or predicate is void or not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
   accessKind = execution_plan.ACCESS_SEQUENTIAL
@@ -503,10 +562,15 @@ function combinedIndexCandidate(bound, source, predicate, state, found, rows)
   return [accessKind, names, estimatedRows, totalCost + estimatedRows * 5]
 end function
 
-// Scans plan using the supplied inputs.
-// Requires arguments that satisfy the validation performed below.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Scans plan using the supplied inputs.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param source source value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param predicate predicate value consumed by this operation.
+/// @param sourceIndex Zero-based index of source.
 function scanPlan(bound, source, state, predicate, sourceIndex)
   found = tableStats(state, source.table.tableId)
   rows = 1000
@@ -557,9 +621,12 @@ function scanPlan(bound, source, state, predicate, sourceIndex)
   return [physical_plan.PhysicalPlan(selected.algorithm, detail, outputRows, selected.total, []), selected, used, sourcePlan]
 end function
 
-// Implements join rows for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements join rows for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param columnIndex Zero-based index of column.
 function distinctForBoundColumn(bound, state, columnIndex)
   for each source in bound.sources
     if columnIndex >= source.offset and columnIndex < source.offset + len(source.table.columns) then
@@ -572,8 +639,14 @@ function distinctForBoundColumn(bound, state, columnIndex)
   return 0
 end function
 
-// Estimates output cardinality for one join using NDV statistics when the
-// predicate is a supported equality.
+/// Estimates output cardinality for one join using NDV statistics when the
+/// predicate is a supported equality.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param leftRows leftRows value consumed by this operation.
+/// @param rightRows rightRows value consumed by this operation.
+/// @param joinType joinType value consumed by this operation.
+/// @param condition condition value consumed by this operation.
 function joinRows(bound, state, leftRows, rightRows, joinType, condition)
   if joinType == ast.JOIN_CROSS then return leftRows * rightRows end if
   estimate = integerDivide(leftRows * rightRows, 10)
@@ -590,9 +663,10 @@ function joinRows(bound, state, leftRows, rightRows, joinType, condition)
   return estimate
 end function
 
-// Implements join operator for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements join operator for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param joinType joinType value consumed by this operation.
 function joinOperator(joinType)
   if joinType == ast.JOIN_LEFT then return "Left Outer Join" end if
   if joinType == ast.JOIN_RIGHT then return "Right Outer Join" end if
@@ -601,9 +675,11 @@ function joinOperator(joinType)
   return "Inner Join"
 end function
 
-// Recognizes the exact COUNT(*) form implemented by the checksum-verified heap
-// slot counter. Keeping this choice in the optimizer makes EXPLAIN and normal
-// execution agree about the fast path.
+/// Recognizes the exact COUNT(*) form implemented by the checksum-verified heap
+/// slot counter. Keeping this choice in the optimizer makes EXPLAIN and normal
+/// execution agree about the fast path.
+/// @param bound bound value consumed by this operation.
+/// @param wherePredicate wherePredicate value consumed by this operation.
 function countSlotsEligible(bound, wherePredicate)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
   if len(bound.items) != 1 or not expressions.isBoundAggregate(bound.items[0]) then return false end if
@@ -615,8 +691,10 @@ function countSlotsEligible(bound, wherePredicate)
   return true
 end function
 
-// Recognizes direct, non-DISTINCT scalar aggregates that can update fixed-size
-// accumulators while scanning instead of retaining every input row.
+/// Recognizes direct, non-DISTINCT scalar aggregates that can update fixed-size
+/// accumulators while scanning instead of retaining every input row.
+/// @param bound bound value consumed by this operation.
+/// @param wherePredicate wherePredicate value consumed by this operation.
 function streamAggregateEligible(bound, wherePredicate)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or bound.sources[0].query is not void then return false end if
   if not bound.aggregateQuery or len(bound.groupExpressions) != 0 or bound.havingExpression is not void then return false end if
@@ -629,8 +707,11 @@ function streamAggregateEligible(bound, wherePredicate)
   return len(bound.items) > 0
 end function
 
-// Recognizes a reordered INNER-equijoin COUNT(*) whose final join can count
-// matches instead of materializing the potentially much larger joined rowset.
+/// Recognizes a reordered INNER-equijoin COUNT(*) whose final join can count
+/// matches instead of materializing the potentially much larger joined rowset.
+/// @param bound bound value consumed by this operation.
+/// @param wherePredicate wherePredicate value consumed by this operation.
+/// @param reordered reordered value consumed by this operation.
 function streamingJoinCountEligible(bound, wherePredicate, reordered)
   if not reordered or len(bound.sources) < 2 or len(bound.joins) != len(bound.sources) - 1 then return false end if
   if len(bound.items) != 1 or not expressions.isBoundAggregate(bound.items[0]) then return false end if
@@ -645,9 +726,11 @@ function streamingJoinCountEligible(bound, wherePredicate, reordered)
   return true
 end function
 
-// Finds the single-column right-side index usable by a parameterized equality
-// join. Composite join probes are deferred until the executor accepts multiple
-// lookup keys.
+/// Finds the single-column right-side index usable by a parameterized equality
+/// join. Composite join probes are deferred until the executor accepts multiple
+/// lookup keys.
+/// @param joined joined value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function joinIndexCandidate(joined, state)
   if joined.condition is void or not rewrites.isColumnEquality(joined.condition) then return void end if
   rightColumn = -1
@@ -660,7 +743,8 @@ function joinIndexCandidate(joined, state)
   return void
 end function
 
-// Returns join indexes in their bound SQL order.
+/// Returns join indexes in their bound SQL order.
+/// @param bound bound value consumed by this operation.
 function originalJoinSequence(bound)
   output = []
   if len(bound.joins) > 0 then
@@ -671,7 +755,8 @@ function originalJoinSequence(bound)
   return output
 end function
 
-// Returns the syntactic source introduced by each original join.
+/// Returns the syntactic source introduced by each original join.
+/// @param bound bound value consumed by this operation.
 function originalJoinSources(bound)
   output = []
   if len(bound.sources) > 1 then
@@ -682,7 +767,9 @@ function originalJoinSources(bound)
   return output
 end function
 
-// Copies an integer array while omitting one position.
+/// Copies an integer array while omitting one position.
+/// @param items Items consumed or updated by the operation.
+/// @param removedIndex Zero-based index of removed.
 function removeIntegerAt(items, removedIndex)
   output = []
   if len(items) > 0 then
@@ -693,10 +780,12 @@ function removeIntegerAt(items, removedIndex)
   return output
 end function
 
-// Reorders a pure INNER equijoin graph with a deterministic cost-guided greedy
-// search. The smallest estimated source seeds the tree; each step attaches the
-// smallest unjoined source connected by one eligible equality edge. Outer,
-// cross, cyclic and non-binary predicates retain SQL order.
+/// Reorders a pure INNER equijoin graph with a deterministic cost-guided greedy
+/// search. The smallest estimated source seeds the tree; each step attaches the
+/// smallest unjoined source connected by one eligible equality edge. Outer,
+/// cross, cyclic and non-binary predicates retain SQL order.
+/// @param bound bound value consumed by this operation.
+/// @param sourceScans sourceScans value consumed by this operation.
 function chooseJoinSequenceGreedy(bound, sourceScans)
   original = originalJoinSequence(bound)
   originalSources = originalJoinSources(bound)
@@ -754,7 +843,8 @@ function chooseJoinSequenceGreedy(bound, sourceScans)
   return [output, outputSources, startSource, reordered]
 end function
 
-// Counts set source bits in a small join-enumeration mask.
+/// Counts set source bits in a small join-enumeration mask.
+/// @param mask mask value consumed by this operation.
 function sourceMaskCount(mask)
   count = 0
   remaining = mask
@@ -765,9 +855,12 @@ function sourceMaskCount(mask)
   return count
 end function
 
-// Finds a join edge that connects one candidate source to the current subset.
-// Pure tree-shaped INNER equijoin graphs have one such edge; when more than one
-// exists the lowest estimated output cardinality wins deterministically.
+/// Finds a join edge that connects one candidate source to the current subset.
+/// Pure tree-shaped INNER equijoin graphs have one such edge; when more than one
+/// exists the lowest estimated output cardinality wins deterministically.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param sourceIndex Zero-based index of source.
 function connectingJoin(bound, state, sourceIndex)
   selected = -1
   selectedRows = endian.MAX_MINILANG_INT
@@ -786,10 +879,13 @@ function connectingJoin(bound, state, sourceIndex)
   return selected
 end function
 
-// Enumerates the cheapest connected left-deep order for up to eight sources.
-// This is the classic Selinger subset dynamic program adapted to MiniSQL's
-// executor contract, which attaches one source per JoinPlan. Unsupported or
-// larger graphs retain the deterministic greedy implementation above.
+/// Enumerates the cheapest connected left-deep order for up to eight sources.
+/// This is the classic Selinger subset dynamic program adapted to MiniSQL's
+/// executor contract, which attaches one source per JoinPlan. Unsupported or
+/// larger graphs retain the deterministic greedy implementation above.
+/// @param bound bound value consumed by this operation.
+/// @param sourceScans sourceScans value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function chooseJoinSequence(bound, sourceScans, state)
   original = originalJoinSequence(bound)
   originalSources = originalJoinSources(bound)
@@ -847,9 +943,12 @@ function chooseJoinSequence(bound, sourceScans, state)
   return [selected.joinIndexes, selected.sourceIndexes, selected.startSource, reordered, true]
 end function
 
-// Builds the scan/join spine and its cumulative deterministic cost estimate.
-// Equality INNER/LEFT joins compare hash and nested-loop costs; unsupported join
-// shapes retain the semantic nested-loop fallback. Returns plan, cost, and stats-use flag.
+/// Builds the scan/join spine and its cumulative deterministic cost estimate.
+/// Equality INNER/LEFT joins compare hash and nested-loop costs; unsupported join
+/// shapes retain the semantic nested-loop fallback. Returns plan, cost, and stats-use flag.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
+/// @param sourcePredicates sourcePredicates value consumed by this operation.
 function buildBase(bound, state, sourcePredicates)
   if len(bound.sources) == 0 then
     estimate = cost.estimate(0, 1, 1, "Values")
@@ -929,10 +1028,12 @@ function buildBase(bound, state, sourcePredicates)
   return [root, currentCost, used, sourcePlans, joinPlans, sequence[3], sequence[2]]
 end function
 
-// Lowers a bound SELECT into a costed physical operator tree.
-// Operators are added in relational order; analyzed statistics replace defaults,
-// large sorts select external merge sort, and set-operation branches recurse.
-// Returns OptimizedPlan or a structured validation/dependency error.
+/// Lowers a bound SELECT into a costed physical operator tree.
+/// Operators are added in relational order; analyzed statistics replace defaults,
+/// large sorts select external merge sort, and set-operation branches recurse.
+/// Returns OptimizedPlan or a structured validation/dependency error.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function optimize(bound, state)
   if not binder.isBoundSelect(bound) then return fail(INVALID_ARGUMENT, "optimize", "bound must be BoundSelect") end if
   normalizedWhere = rewrites.simplify(bound.whereExpression)
@@ -1019,9 +1120,11 @@ function optimize(bound, state)
   return OptimizedPlan(root, used, executable)
 end function
 
-// Implements explain for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements explain for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param bound bound value consumed by this operation.
+/// @param state Mutable state inspected or updated by the operation.
 function explain(bound, state)
   optimized = optimize(bound, state)
   lines = physical_plan.render(optimized.root)
@@ -1030,23 +1133,23 @@ function explain(bound, state)
   return [prefix] + lines
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql planner optimizer module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "planner.optimizer"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql planner optimizer module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M17"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql planner optimizer module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

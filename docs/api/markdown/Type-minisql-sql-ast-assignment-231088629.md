@@ -12,7 +12,7 @@ struct Assignment
 Groups the assignment state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L390)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L445)
 
 ## Members
 
@@ -26,7 +26,7 @@ column
 Stores the column associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L447)
 
 <a id="field-field-minisql-sql-ast-assignment-expression-expression-src-minisql-sql-ast-ml-1459934636"></a>
 ### expression
@@ -38,4 +38,4 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L394)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L449)

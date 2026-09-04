@@ -12,7 +12,7 @@ struct UInt64Words
 Defines the uint64 words record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L63)
 
 ## Members
 
@@ -26,7 +26,7 @@ high
 High field of the uint64 words.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L65)
 
 <a id="field-field-minisql-common-endian-uint64words-low-low-src-minisql-common-endian-ml-1565074332"></a>
 ### low
@@ -38,4 +38,4 @@ low
 Low field of the uint64 words.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/endian.ml#L67)

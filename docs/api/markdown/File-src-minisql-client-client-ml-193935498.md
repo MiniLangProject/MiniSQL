@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql client client facilities for this project.
+
 Package: [`minisql.client.client`](Package-minisql-client-client-1899571164.md)
 
 Reachable from entry: **yes**
@@ -27,10 +29,10 @@ Aborts a client whose request/response framing may have been interrupted.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L439)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L516)
 
 <a id="constant-constant-minisql-client-client-authentication-failed-const-authentication-failed-9027-src-minisql-client-client-ml-1531040535"></a>
 ### AUTHENTICATION_FAILED
@@ -39,8 +41,10 @@ Aborts a client whose request/response framing may have been interrupted.
 const AUTHENTICATION_FAILED = 9027
 ```
 
+Defines the authentication failed constant used by the minisql client client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L20)
 
 <a id="function-function-minisql-client-client-authenticationfailure-function-authenticationfailure-operation-src-minisql-client-client-ml-1506524669"></a>
 ### authenticationFailure
@@ -53,10 +57,10 @@ Implements authentication failure for this module. Returns the computed value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L82)
 
 <a id="function-function-minisql-client-client-beginquery-function-beginquery-client-sqltext-src-minisql-client-client-ml-1192851786"></a>
 ### beginQuery
@@ -69,11 +73,11 @@ Sends one SQL request and transfers ownership of its response stream to a cursor
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L409)
 
 <a id="function-function-minisql-client-client-cancelsession-function-cancelsession-client-sessionid-src-minisql-client-client-ml-172062904"></a>
 ### cancelSession
@@ -86,11 +90,11 @@ Requests cooperative cancellation through a separate administrative client. The 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `sessionId` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L403)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L477)
 
 <a id="function-function-minisql-client-client-clearauthchallenge-function-clearauthchallenge-challenge-src-minisql-client-client-ml-1612296957"></a>
 ### clearAuthChallenge
@@ -103,10 +107,10 @@ Implements clear auth challenge for this module. Requires arguments that satisfy
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `challenge` | `dynamic` | — |  |
+| `challenge` | `dynamic` | — | challenge value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L166)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L190)
 
 - [minisql.client.client.Client](Type-minisql-client-client-client-823929285.md) — struct
 <a id="function-function-minisql-client-client-close-function-close-client-src-minisql-client-client-ml-668924311"></a>
@@ -116,14 +120,14 @@ Implements clear auth challenge for this module. Requires arguments that satisfy
 function close(client)
 ```
 
-Closes close using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state and perform I/O through its dependencies.
+Closes close owned by the minisql client client module. Requires arguments that satisfy the validation performed below. Returns its result or propagates a structured error from validation or a dependency. May mutate supplied state and perform I/O through its dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L422)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L498)
 
 <a id="constant-constant-minisql-client-client-closed-handle-const-closed-handle-9008-src-minisql-client-client-ml-2144123018"></a>
 ### CLOSED_HANDLE
@@ -132,8 +136,10 @@ Closes close using the supplied inputs. Requires arguments that satisfy the vali
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql client client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L14)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L18)
 
 <a id="function-function-minisql-client-client-closefailedopen-function-closefailedopen-client-result-src-minisql-client-client-ml-1944491628"></a>
 ### closeFailedOpen
@@ -146,11 +152,11 @@ Closes failed open using the supplied inputs. Returns its result or propagates a
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `result` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L166)
 
 <a id="function-function-minisql-client-client-componentname-function-componentname-src-minisql-client-client-ml-1317600272"></a>
 ### componentName
@@ -159,10 +165,10 @@ Closes failed open using the supplied inputs. Returns its result or propagates a
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql client client module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L459)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L536)
 
 <a id="function-function-minisql-client-client-fail-function-fail-code-operation-message-src-minisql-client-client-ml-989672033"></a>
 ### fail
@@ -171,16 +177,16 @@ Implements component name for this module. Returns the computed value or operati
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql client client module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L74)
 
 <a id="function-function-minisql-client-client-failquerycursor-function-failquerycursor-cursor-failure-src-minisql-client-client-ml-1587789780"></a>
 ### failQueryCursor
@@ -193,11 +199,11 @@ Invalidates a connection after a response-stream failure. Once a frame has been 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cursor` | `dynamic` | — |  |
-| `failure` | `dynamic` | — |  |
+| `cursor` | `dynamic` | — | cursor value consumed by this operation. |
+| `failure` | `dynamic` | — | failure value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L356)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L426)
 
 <a id="constant-constant-minisql-client-client-handshake-timeout-ms-const-handshake-timeout-ms-5000-src-minisql-client-client-ml-1224901564"></a>
 ### HANDSHAKE_TIMEOUT_MS
@@ -206,8 +212,10 @@ Invalidates a connection after a response-stream failure. Once a frame has been 
 const HANDSHAKE_TIMEOUT_MS = 5000
 ```
 
+Defines the handshake timeout ms constant used by the minisql client client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L22)
 
 <a id="function-function-minisql-client-client-hellohandshake-function-hellohandshake-client-operation-src-minisql-client-client-ml-485860268"></a>
 ### helloHandshake
@@ -220,11 +228,11 @@ Implements hello handshake for this module. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L147)
 
 <a id="constant-constant-minisql-client-client-invalid-argument-const-invalid-argument-9001-src-minisql-client-client-ml-259307175"></a>
 ### INVALID_ARGUMENT
@@ -233,8 +241,10 @@ Implements hello handshake for this module. Requires arguments that satisfy the 
 const INVALID_ARGUMENT = 9001
 ```
 
+Defines the invalid argument constant used by the minisql client client module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L13)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L16)
 
 <a id="function-function-minisql-client-client-isclient-function-isclient-value-src-minisql-client-client-ml-1198377377"></a>
 ### isClient
@@ -247,10 +257,10 @@ Returns whether the supplied value satisfies the client condition. Returns the c
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L90)
 
 <a id="function-function-minisql-client-client-isimplemented-function-isimplemented-src-minisql-client-client-ml-1419889272"></a>
 ### isImplemented
@@ -259,10 +269,10 @@ Returns whether the supplied value satisfies the client condition. Returns the c
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql client client module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L473)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L550)
 
 <a id="function-function-minisql-client-client-isquerycursor-function-isquerycursor-value-src-minisql-client-client-ml-1805107421"></a>
 ### isQueryCursor
@@ -275,10 +285,10 @@ Reports whether a value is a forward-only client query cursor.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L96)
 
 <a id="function-function-minisql-client-client-m0selftestline-function-m0selftestline-src-minisql-client-client-ml-723425184"></a>
 ### m0SelfTestLine
@@ -287,10 +297,10 @@ Reports whether a value is a forward-only client query cursor.
 function m0SelfTestLine()
 ```
 
-Implements m0 self test line for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the m0SelfTestLine operation for the minisql client client module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L57)
 
 <a id="function-function-minisql-client-client-nextquerybatch-function-nextquerybatch-cursor-src-minisql-client-client-ml-248124294"></a>
 ### nextQueryBatch
@@ -303,10 +313,10 @@ Receives and decodes one bounded continuation frame. Returning void denotes end-
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `cursor` | `dynamic` | — |  |
+| `cursor` | `dynamic` | — | cursor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L367)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L438)
 
 <a id="function-function-minisql-client-client-openauthenticatedaddress-function-openauthenticatedaddress-address-port-username-password-src-minisql-client-client-ml-980594830"></a>
 ### openAuthenticatedAddress
@@ -319,13 +329,13 @@ Opens authenticated address using the supplied inputs. Requires arguments that s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L329)
 
 <a id="function-function-minisql-client-client-openauthenticatedaddressbytes-function-openauthenticatedaddressbytes-address-port-username-passwordbytes-src-minisql-client-client-ml-591594365"></a>
 ### openAuthenticatedAddressBytes
@@ -338,13 +348,13 @@ Opens authenticated address bytes using the supplied inputs. Requires arguments 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L247)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L279)
 
 <a id="function-function-minisql-client-client-openauthenticatedconnection-function-openauthenticatedconnection-connectionvalue-username-passwordbytes-operation-src-minisql-client-client-ml-412718330"></a>
 ### openAuthenticatedConnection
@@ -357,13 +367,13 @@ Opens authenticated connection using the supplied inputs. Requires arguments tha
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `connectionValue` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `connectionValue` | `dynamic` | — | connectionValue value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L177)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L205)
 
 <a id="function-function-minisql-client-client-openauthenticatedloopback-function-openauthenticatedloopback-port-username-password-src-minisql-client-client-ml-58507610"></a>
 ### openAuthenticatedLoopback
@@ -376,12 +386,12 @@ Opens authenticated loopback using the supplied inputs. Returns the computed val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `port` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L375)
 
 <a id="function-function-minisql-client-client-openauthenticatedloopbackbytes-function-openauthenticatedloopbackbytes-port-username-passwordbytes-src-minisql-client-client-ml-1968197861"></a>
 ### openAuthenticatedLoopbackBytes
@@ -394,12 +404,12 @@ Opens authenticated loopback bytes using the supplied inputs. Returns the comput
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `port` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L317)
 
 <a id="function-function-minisql-client-client-openloopback-function-openloopback-port-src-minisql-client-client-ml-1824962151"></a>
 ### openLoopback
@@ -412,10 +422,10 @@ Opens loopback using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `port` | `dynamic` | — |  |
+| `port` | `dynamic` | — | port value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L177)
 
 <a id="function-function-minisql-client-client-opentlsauthenticatedaddress-function-opentlsauthenticatedaddress-address-port-servername-username-password-src-minisql-client-client-ml-1615902426"></a>
 ### openTlsAuthenticatedAddress
@@ -428,14 +438,14 @@ Opens native TLS with Windows trust while wiping the temporary password bytes.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L344)
 
 <a id="function-function-minisql-client-client-opentlsauthenticatedaddressbytes-function-opentlsauthenticatedaddressbytes-address-port-servername-username-passwordbytes-src-minisql-client-client-ml-397211281"></a>
 ### openTlsAuthenticatedAddressBytes
@@ -448,14 +458,14 @@ Opens authenticated MiniSQL over native TLS with Windows X.509 trust.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L290)
 
 <a id="function-function-minisql-client-client-opentlspinnedauthenticatedaddress-function-opentlspinnedauthenticatedaddress-address-port-servername-pintext-username-password-src-minisql-client-client-ml-823596012"></a>
 ### openTlsPinnedAuthenticatedAddress
@@ -468,15 +478,15 @@ Opens pinned native TLS while wiping the temporary password bytes.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
-| `pinText` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
+| `pinText` | `dynamic` | — | pinText value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L299)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L360)
 
 <a id="function-function-minisql-client-client-opentlspinnedauthenticatedaddressbytes-function-opentlspinnedauthenticatedaddressbytes-address-port-servername-pintext-username-passwordbytes-src-minisql-client-client-ml-203989315"></a>
 ### openTlsPinnedAuthenticatedAddressBytes
@@ -489,15 +499,15 @@ Opens authenticated MiniSQL over native TLS with exact SHA-256 leaf pinning.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `address` | `dynamic` | — |  |
-| `port` | `dynamic` | — |  |
-| `serverName` | `dynamic` | — |  |
-| `pinText` | `dynamic` | — |  |
-| `username` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
+| `address` | `dynamic` | — | address value consumed by this operation. |
+| `port` | `dynamic` | — | port value consumed by this operation. |
+| `serverName` | `dynamic` | — | serverName value consumed by this operation. |
+| `pinText` | `dynamic` | — | pinText value consumed by this operation. |
+| `username` | `dynamic` | — | username value consumed by this operation. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L261)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L304)
 
 <a id="function-function-minisql-client-client-ping-function-ping-client-src-minisql-client-client-ml-110245255"></a>
 ### ping
@@ -510,10 +520,10 @@ Implements ping for this module. Returns the computed value or operation status.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L395)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L467)
 
 <a id="function-function-minisql-client-client-protocolbytecounts-function-protocolbytecounts-client-src-minisql-client-client-ml-101902387"></a>
 ### protocolByteCounts
@@ -526,10 +536,10 @@ Returns sent and received framed-protocol byte counters for diagnostics and repr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L488)
 
 <a id="function-function-minisql-client-client-query-function-query-client-sqltext-src-minisql-client-client-ml-1364786922"></a>
 ### query
@@ -542,11 +552,11 @@ Implements query for this module. Returns the computed value or operation status
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `sqlText` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L318)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L384)
 
 - [minisql.client.client.QueryCursor](Type-minisql-client-client-querycursor-914568424.md) — struct
 <a id="function-function-minisql-client-client-request-function-request-client-message-src-minisql-client-client-ml-193922988"></a>
@@ -560,11 +570,11 @@ Implements request for this module. Returns the computed value or operation stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L117)
 
 <a id="function-function-minisql-client-client-runinteractive-function-runinteractive-src-minisql-client-client-ml-1017933156"></a>
 ### runInteractive
@@ -576,7 +586,7 @@ function runInteractive()
 Runs interactive using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L452)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L529)
 
 <a id="function-function-minisql-client-client-samecolumns-function-samecolumns-left-right-src-minisql-client-client-ml-254800823"></a>
 ### sameColumns
@@ -589,11 +599,11 @@ Compares response schemas across continuation frames without relying on aggregat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L131)
 
 <a id="function-function-minisql-client-client-targetmilestone-function-targetmilestone-src-minisql-client-client-ml-1718323014"></a>
 ### targetMilestone
@@ -602,10 +612,10 @@ Compares response schemas across continuation frames without relying on aggregat
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql client client module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L466)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L543)
 
 <a id="function-function-minisql-client-client-validateopen-function-validateopen-client-operation-src-minisql-client-client-ml-2002670152"></a>
 ### validateOpen
@@ -614,15 +624,15 @@ Implements target milestone for this module. Returns the computed value or opera
 function validateOpen(client, operation)
 ```
 
-Validates open using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Validates open for the minisql client client workflow. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `client` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `client` | `dynamic` | — | client value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L106)
 
 <a id="function-function-minisql-client-client-versionline-function-versionline-src-minisql-client-client-ml-537341400"></a>
 ### versionLine
@@ -631,7 +641,7 @@ Validates open using the supplied inputs. Requires arguments that satisfy the va
 function versionLine()
 ```
 
-Implements version line for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the versionLine operation for the minisql client client module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L64)

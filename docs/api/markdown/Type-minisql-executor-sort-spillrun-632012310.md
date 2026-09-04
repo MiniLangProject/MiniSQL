@@ -12,7 +12,7 @@ struct SpillRun
 Groups the spill run state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L36)
 
 ## Members
 
@@ -26,7 +26,7 @@ orderCount
 Tracks the order count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L46)
 
 <a id="field-field-minisql-executor-sort-spillrun-path-path-src-minisql-executor-sort-ml-1185878960"></a>
 ### path
@@ -38,7 +38,7 @@ path
 Stores the filesystem path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L38)
 
 <a id="field-field-minisql-executor-sort-spillrun-rowcount-rowcount-src-minisql-executor-sort-ml-497254288"></a>
 ### rowCount
@@ -50,7 +50,7 @@ rowCount
 Tracks the row count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L48)
 
 <a id="field-field-minisql-executor-sort-spillrun-rowschema-rowschema-src-minisql-executor-sort-ml-1220776890"></a>
 ### rowSchema
@@ -62,7 +62,7 @@ rowSchema
 Contains the ordered row schema collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L40)
 
 <a id="field-field-minisql-executor-sort-spillrun-typekinds-typekinds-src-minisql-executor-sort-ml-2030878354"></a>
 ### typeKinds
@@ -74,7 +74,7 @@ typeKinds
 Stores the type kinds associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L42)
 
 <a id="field-field-minisql-executor-sort-spillrun-valuecount-valuecount-src-minisql-executor-sort-ml-1549647130"></a>
 ### valueCount
@@ -86,4 +86,4 @@ valueCount
 Tracks the value count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/sort.ml#L44)

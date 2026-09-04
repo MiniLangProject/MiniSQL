@@ -12,7 +12,7 @@ struct PositionedReadContext
 One manual-reset completion event reused by a sequential query or cursor. ResetEvent is required before reuse because overlapped operations may finish synchronously without consuming the event through a wait.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L83)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 Prevents an event handle from being reused after close.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L87)
 
 <a id="field-field-minisql-platform-file-win32-positionedreadcontext-completion-completion-src-minisql-platform-file-win32-ml-1566031562"></a>
 ### completion
@@ -38,4 +38,4 @@ completion
 Manual-reset event stored in each operation's OVERLAPPED record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/file_win32.ml#L85)

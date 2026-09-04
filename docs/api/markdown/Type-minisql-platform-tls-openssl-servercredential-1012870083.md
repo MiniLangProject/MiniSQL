@@ -12,7 +12,7 @@ struct ServerCredential
 Owns immutable OpenSSL server options until listener shutdown.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L16)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L18)
 
 ## Members
 
@@ -26,7 +26,7 @@ closed
 True after the listener has released this credential.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L22)
 
 <a id="field-field-minisql-platform-tls-openssl-servercredential-options-options-src-minisql-platform-tls-openssl-ml-1548177471"></a>
 ### options
@@ -38,4 +38,4 @@ options
 Certificate, private-key, client-auth, and protocol settings.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/tls_openssl.ml#L20)

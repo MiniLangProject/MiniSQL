@@ -22,6 +22,11 @@ Regenerate both formats from sibling MiniSQL and MiniDoc checkouts with:
 ..\MiniDoc\build\minidoc.exe --config .\minidoc.toml
 ```
 
+MiniSQL's `//!` file comments and `///` declaration comments provide structured
+parameter and native-return contracts throughout the production source tree.
+The strict MiniDoc configuration rejects missing documentation; use `--check`
+to validate it without rewriting the committed reference.
+
 The frozen M0-M50 plan is complete. The accepted 1.0 baseline revision is
 `M48-M50R3`; MiniSQL 1.1.0 retains database and wire format version 1. The
 current tree was revalidated on 2026-09-02: Windows passed all

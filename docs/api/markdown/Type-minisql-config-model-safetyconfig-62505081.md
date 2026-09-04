@@ -12,7 +12,7 @@ struct SafetyConfig
 Groups the safety config state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L121)
 
 ## Members
 
@@ -26,7 +26,7 @@ allowRemoteWithoutAuthentication
 Indicates whether the allow remote without authentication condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L123)
 
 <a id="field-field-minisql-config-model-safetyconfig-allowunknownformatfeatures-allowunknownformatfeatures-src-minisql-config-model-ml-1124499491"></a>
 ### allowUnknownFormatFeatures
@@ -38,7 +38,7 @@ allowUnknownFormatFeatures
 Indicates whether the allow unknown format features condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L127)
 
 <a id="field-field-minisql-config-model-safetyconfig-durability-durability-src-minisql-config-model-ml-1677584695"></a>
 ### durability
@@ -50,4 +50,4 @@ durability
 Stores the durability associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L123)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L125)

@@ -12,7 +12,7 @@ struct ArchiveManifest
 Groups the archive manifest state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L693)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L771)
 
 ## Members
 
@@ -26,7 +26,7 @@ baseEndLsn
 Stores the base end LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L701)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L779)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-databaseid-databaseid-src-minisql-tools-backup-ml-877620162"></a>
 ### databaseId
@@ -38,7 +38,7 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L695)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L773)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-generation-generation-src-minisql-tools-backup-ml-1625358174"></a>
 ### generation
@@ -50,7 +50,7 @@ generation
 Stores the generation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L699)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L777)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-latestendlsn-latestendlsn-src-minisql-tools-backup-ml-964081468"></a>
 ### latestEndLsn
@@ -62,7 +62,7 @@ latestEndLsn
 Stores the latest end LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L703)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L781)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-pagesize-pagesize-src-minisql-tools-backup-ml-1920297222"></a>
 ### pageSize
@@ -74,7 +74,7 @@ pageSize
 Tracks the page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L697)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L775)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-walchecksum-walchecksum-src-minisql-tools-backup-ml-20335946"></a>
 ### walChecksum
@@ -86,7 +86,7 @@ walChecksum
 Stores the WAL checksum associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L709)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L787)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-walfilename-walfilename-src-minisql-tools-backup-ml-625476506"></a>
 ### walFileName
@@ -98,7 +98,7 @@ walFileName
 Stores the WAL file name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L705)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L783)
 
 <a id="field-field-minisql-tools-backup-archivemanifest-wallength-wallength-src-minisql-tools-backup-ml-660791746"></a>
 ### walLength
@@ -110,4 +110,4 @@ walLength
 Tracks the WAL length numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L707)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L785)

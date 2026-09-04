@@ -12,7 +12,7 @@ struct OrderItem
 Groups the order item state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L356)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L411)
 
 ## Members
 
@@ -26,7 +26,7 @@ descending
 Stores the descending associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L360)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L415)
 
 <a id="field-field-minisql-sql-ast-orderitem-expression-expression-src-minisql-sql-ast-ml-84268666"></a>
 ### expression
@@ -38,7 +38,7 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L358)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L413)
 
 <a id="field-field-minisql-sql-ast-orderitem-nullsfirst-nullsfirst-src-minisql-sql-ast-ml-736682754"></a>
 ### nullsFirst
@@ -50,7 +50,7 @@ nullsFirst
 Stores the nulls first associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L417)
 
 <a id="field-field-minisql-sql-ast-orderitem-nullsspecified-nullsspecified-src-minisql-sql-ast-ml-511815266"></a>
 ### nullsSpecified
@@ -62,4 +62,4 @@ nullsSpecified
 Stores the nulls specified associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L364)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L419)

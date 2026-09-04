@@ -12,7 +12,7 @@ struct ScannedRow
 Groups the scanned row state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L49)
 
 ## Members
 
@@ -26,7 +26,7 @@ reference
 Stores the reference associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L51)
 
 <a id="field-field-minisql-executor-scan-scannedrow-values-values-src-minisql-executor-scan-ml-1886192793"></a>
 ### values
@@ -38,4 +38,4 @@ values
 Contains the ordered values collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L53)

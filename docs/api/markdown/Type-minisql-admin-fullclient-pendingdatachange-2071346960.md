@@ -12,7 +12,7 @@ struct PendingDataChange
 Retains one unapplied row change so the grid can preview and later commit it.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L85)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores INSERT, UPDATE, or DELETE for presentation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L87)
 
 <a id="field-field-minisql-admin-fullclient-pendingdatachange-rowindex-rowindex-src-minisql-admin-fullclient-ml-1159130798"></a>
 ### rowIndex
@@ -38,7 +38,7 @@ rowIndex
 Stores -1 for inserts or the original page-row index for updates/deletes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L91)
 
 <a id="field-field-minisql-admin-fullclient-pendingdatachange-sqltext-sqltext-src-minisql-admin-fullclient-ml-1185529678"></a>
 ### sqlText
@@ -50,7 +50,7 @@ sqlText
 Stores the generated, key-constrained SQL statement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L89)
 
 <a id="field-field-minisql-admin-fullclient-pendingdatachange-values-values-src-minisql-admin-fullclient-ml-1666606722"></a>
 ### values
@@ -62,4 +62,4 @@ values
 Stores editor values aligned with DESCRIBE metadata when available.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L93)

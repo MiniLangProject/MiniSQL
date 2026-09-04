@@ -12,7 +12,7 @@ struct DdlTransaction
 Defines the ddl transaction record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L257)
 
 ## Members
 
@@ -26,7 +26,7 @@ actions
 Actions field of the ddl transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L263)
 
 <a id="field-field-minisql-catalog-schema-history-ddltransaction-active-active-src-minisql-catalog-schema-history-ml-1082341231"></a>
 ### active
@@ -38,7 +38,7 @@ active
 Active field of the ddl transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L265)
 
 <a id="field-field-minisql-catalog-schema-history-ddltransaction-database-database-src-minisql-catalog-schema-history-ml-778477029"></a>
 ### database
@@ -50,7 +50,7 @@ database
 Database field of the ddl transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L259)
 
 <a id="field-field-minisql-catalog-schema-history-ddltransaction-state-state-src-minisql-catalog-schema-history-ml-690764695"></a>
 ### state
@@ -62,4 +62,4 @@ state
 State field of the ddl transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L261)

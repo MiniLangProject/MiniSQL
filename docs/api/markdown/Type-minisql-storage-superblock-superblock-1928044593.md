@@ -12,7 +12,7 @@ struct Superblock
 Defines the superblock record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L43)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Database id field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L57)
 
 <a id="field-field-minisql-storage-superblock-superblock-featureflags-featureflags-src-minisql-storage-superblock-ml-1148456133"></a>
 ### featureFlags
@@ -38,7 +38,7 @@ featureFlags
 Feature flags field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L59)
 
 <a id="field-field-minisql-storage-superblock-superblock-fileid-fileid-src-minisql-storage-superblock-ml-1539349165"></a>
 ### fileId
@@ -50,7 +50,7 @@ fileId
 File id field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L53)
 
 <a id="field-field-minisql-storage-superblock-superblock-filetype-filetype-src-minisql-storage-superblock-ml-1139859139"></a>
 ### fileType
@@ -62,7 +62,7 @@ fileType
 File type field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L51)
 
 <a id="field-field-minisql-storage-superblock-superblock-formatversion-formatversion-src-minisql-storage-superblock-ml-1760114871"></a>
 ### formatVersion
@@ -74,7 +74,7 @@ formatVersion
 Format version field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L45)
 
 <a id="field-field-minisql-storage-superblock-superblock-generation-generation-src-minisql-storage-superblock-ml-380628443"></a>
 ### generation
@@ -86,7 +86,7 @@ generation
 Generation field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L47)
 
 <a id="field-field-minisql-storage-superblock-superblock-pagecount-pagecount-src-minisql-storage-superblock-ml-1576122531"></a>
 ### pageCount
@@ -98,7 +98,7 @@ pageCount
 Page count field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L55)
 
 <a id="field-field-minisql-storage-superblock-superblock-pagesize-pagesize-src-minisql-storage-superblock-ml-1596793011"></a>
 ### pageSize
@@ -110,4 +110,4 @@ pageSize
 Page size field of the superblock.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/superblock.ml#L49)

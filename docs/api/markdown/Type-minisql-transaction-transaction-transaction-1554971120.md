@@ -12,7 +12,7 @@ struct Transaction
 Defines the transaction record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L46)
 
 ## Members
 
@@ -26,7 +26,7 @@ beginLogged
 Begin logged field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L62)
 
 <a id="field-field-minisql-transaction-transaction-transaction-beginlsn-beginlsn-src-minisql-transaction-transaction-ml-842112043"></a>
 ### beginLsn
@@ -38,7 +38,7 @@ beginLsn
 Begin lsn field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L56)
 
 <a id="field-field-minisql-transaction-transaction-transaction-changeindexes-changeindexes-src-minisql-transaction-transaction-ml-30764775"></a>
 ### changeIndexes
@@ -50,7 +50,7 @@ changeIndexes
 Maps a stable file/page key to its position in the growable change list.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L66)
 
 <a id="field-field-minisql-transaction-transaction-transaction-changes-changes-src-minisql-transaction-transaction-ml-1303050535"></a>
 ### changes
@@ -62,7 +62,7 @@ changes
 Changes field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L64)
 
 <a id="field-field-minisql-transaction-transaction-transaction-commitlsn-commitlsn-src-minisql-transaction-transaction-ml-1274427451"></a>
 ### commitLsn
@@ -74,7 +74,7 @@ commitLsn
 Commit lsn field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L58)
 
 <a id="field-field-minisql-transaction-transaction-transaction-committedchanges-committedchanges-src-minisql-transaction-transaction-ml-1901149677"></a>
 ### committedChanges
@@ -86,7 +86,7 @@ committedChanges
 Committed changes field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L68)
 
 <a id="field-field-minisql-transaction-transaction-transaction-isolationlevel-isolationlevel-src-minisql-transaction-transaction-ml-817478331"></a>
 ### isolationLevel
@@ -98,7 +98,7 @@ isolationLevel
 Isolation level field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L52)
 
 <a id="field-field-minisql-transaction-transaction-transaction-readonly-readonly-src-minisql-transaction-transaction-ml-1014254483"></a>
 ### readOnly
@@ -110,7 +110,7 @@ readOnly
 Read only field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L54)
 
 <a id="field-field-minisql-transaction-transaction-transaction-savepoints-savepoints-src-minisql-transaction-transaction-ml-1608136307"></a>
 ### savepoints
@@ -122,7 +122,7 @@ savepoints
 Savepoints field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L70)
 
 <a id="field-field-minisql-transaction-transaction-transaction-state-state-src-minisql-transaction-transaction-ml-238013711"></a>
 ### state
@@ -134,7 +134,7 @@ state
 State field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L50)
 
 <a id="field-field-minisql-transaction-transaction-transaction-transactionid-transactionid-src-minisql-transaction-transaction-ml-1323728247"></a>
 ### transactionId
@@ -146,7 +146,7 @@ transactionId
 Transaction id field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L48)
 
 <a id="field-field-minisql-transaction-transaction-transaction-walwriter-walwriter-src-minisql-transaction-transaction-ml-400493571"></a>
 ### walWriter
@@ -158,4 +158,4 @@ walWriter
 Wal writer field of the transaction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/transaction.ml#L60)

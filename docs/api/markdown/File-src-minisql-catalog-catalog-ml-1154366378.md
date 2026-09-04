@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql catalog catalog facilities for this project.
+
 Package: [`minisql.catalog.catalog`](Package-minisql-catalog-catalog-89200582.md)
 
 Reachable from entry: **yes**
@@ -34,10 +36,10 @@ Allocates the principal id in state. Inputs: `state`. Returns the produced value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L905)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1023)
 
 <a id="function-function-minisql-catalog-catalog-allocatetransactionid-function-allocatetransactionid-database-src-minisql-catalog-catalog-ml-268903699"></a>
 ### allocateTransactionId
@@ -50,10 +52,10 @@ Allocates the transaction id. Inputs: `database`. Returns the produced value or 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L589)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L671)
 
 <a id="function-function-minisql-catalog-catalog-authenticatepassword-function-authenticatepassword-database-name-password-src-minisql-catalog-catalog-ml-1492471785"></a>
 ### authenticatePassword
@@ -66,12 +68,12 @@ Performs the authenticate password operation for this module. Inputs: `database`
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1324)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1538)
 
 <a id="function-function-minisql-catalog-catalog-authenticationmaterial-function-authenticationmaterial-database-name-src-minisql-catalog-catalog-ml-1028851272"></a>
 ### authenticationMaterial
@@ -84,11 +86,11 @@ Performs the authentication material operation for this module. Inputs: `databas
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1315)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1526)
 
 <a id="constant-constant-minisql-catalog-catalog-blob-data-offset-const-blob-data-offset-68-src-minisql-catalog-catalog-ml-1405052427"></a>
 ### BLOB_DATA_OFFSET
@@ -97,8 +99,10 @@ Performs the authentication material operation for this module. Inputs: `databas
 const BLOB_DATA_OFFSET = 68
 ```
 
+Defines the blob data offset constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L35)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L46)
 
 <a id="constant-constant-minisql-catalog-catalog-blob-length-offset-const-blob-length-offset-64-src-minisql-catalog-catalog-ml-276672675"></a>
 ### BLOB_LENGTH_OFFSET
@@ -107,8 +111,10 @@ const BLOB_DATA_OFFSET = 68
 const BLOB_LENGTH_OFFSET = 64
 ```
 
+Defines the blob length offset constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L34)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L44)
 
 <a id="function-function-minisql-catalog-catalog-bytesequal-function-bytesequal-left-right-src-minisql-catalog-catalog-ml-1818125623"></a>
 ### bytesEqual
@@ -117,15 +123,15 @@ const BLOB_LENGTH_OFFSET = 64
 function bytesEqual(left, right)
 ```
 
-Performs the bytes equal operation for this module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the bytesEqual operation for the minisql catalog catalog module. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L192)
 
 <a id="constant-constant-minisql-catalog-catalog-catalog-file-id-const-catalog-file-id-2-src-minisql-catalog-catalog-ml-1652712017"></a>
 ### CATALOG_FILE_ID
@@ -134,8 +140,10 @@ Performs the bytes equal operation for this module. Inputs: `left`, `right`. Ret
 const CATALOG_FILE_ID = 2
 ```
 
+Defines the catalog file id constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L31)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L38)
 
 <a id="function-function-minisql-catalog-catalog-clonemembership-function-clonemembership-membership-src-minisql-catalog-catalog-ml-1786313516"></a>
 ### cloneMembership
@@ -148,10 +156,10 @@ Clones the membership. Inputs: `membership`. Returns the produced value or propa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `membership` | `dynamic` | — |  |
+| `membership` | `dynamic` | — | membership value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L834)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L944)
 
 <a id="function-function-minisql-catalog-catalog-cloneprincipal-function-cloneprincipal-principal-src-minisql-catalog-catalog-ml-797884452"></a>
 ### clonePrincipal
@@ -164,10 +172,10 @@ Clones the principal. Inputs: `principal`. Returns the produced value or propaga
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `principal` | `dynamic` | — |  |
+| `principal` | `dynamic` | — | principal value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L828)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L937)
 
 <a id="function-function-minisql-catalog-catalog-cloneprivilegegrant-function-cloneprivilegegrant-grant-src-minisql-catalog-catalog-ml-1781501516"></a>
 ### clonePrivilegeGrant
@@ -180,10 +188,10 @@ Clones the privilege grant. Inputs: `grant`. Returns the produced value or propa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `grant` | `dynamic` | — |  |
+| `grant` | `dynamic` | — | grant value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L840)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L951)
 
 <a id="function-function-minisql-catalog-catalog-clonesecuritystate-function-clonesecuritystate-state-src-minisql-catalog-catalog-ml-674542219"></a>
 ### cloneSecurityState
@@ -196,10 +204,10 @@ Clones the security state. Inputs: `state`. Returns the produced value or propag
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L846)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L958)
 
 <a id="function-function-minisql-catalog-catalog-close-function-close-database-src-minisql-catalog-catalog-ml-1440119815"></a>
 ### close
@@ -208,14 +216,14 @@ Clones the security state. Inputs: `state`. Returns the produced value or propag
 function close(database)
 ```
 
-Closes the requested value. Inputs: `database`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
+Closes close owned by the minisql catalog catalog module. Inputs: `database`. Returns the operation result and propagates validation, storage, or platform errors unchanged.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L600)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L683)
 
 <a id="constant-constant-minisql-catalog-catalog-closed-handle-const-closed-handle-9008-src-minisql-catalog-catalog-ml-1470377644"></a>
 ### CLOSED_HANDLE
@@ -224,8 +232,10 @@ Closes the requested value. Inputs: `database`. Returns the operation result and
 const CLOSED_HANDLE = 9008
 ```
 
+Defines the closed handle constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L25)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L27)
 
 <a id="function-function-minisql-catalog-catalog-commitsecuritystate-function-commitsecuritystate-database-candidate-src-minisql-catalog-catalog-ml-638512560"></a>
 ### commitSecurityState
@@ -238,11 +248,11 @@ Commits the security state. Inputs: `database`, `candidate`. Returns the operati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `candidate` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `candidate` | `dynamic` | — | candidate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L873)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L989)
 
 <a id="function-function-minisql-catalog-catalog-componentname-function-componentname-src-minisql-catalog-catalog-ml-1922269542"></a>
 ### componentName
@@ -251,10 +261,10 @@ Commits the security state. Inputs: `database`, `candidate`. Returns the operati
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql catalog catalog module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1546)
 
 <a id="function-function-minisql-catalog-catalog-containsid-function-containsid-values-wanted-src-minisql-catalog-catalog-ml-1817231719"></a>
 ### containsId
@@ -267,11 +277,11 @@ Performs the contains id operation for this module. Inputs: `values`, `wanted`. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `wanted` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `wanted` | `dynamic` | — | wanted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L762)
 
 <a id="function-function-minisql-catalog-catalog-containsprivilegecode-function-containsprivilegecode-values-wanted-src-minisql-catalog-catalog-ml-1485162013"></a>
 ### containsPrivilegeCode
@@ -284,11 +294,11 @@ Performs the contains privilege code operation for this module. Inputs: `values`
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `wanted` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `wanted` | `dynamic` | — | wanted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1348)
 
 <a id="constant-constant-minisql-catalog-catalog-corrupt-data-const-corrupt-data-9004-src-minisql-catalog-catalog-ml-1130671570"></a>
 ### CORRUPT_DATA
@@ -297,8 +307,10 @@ Performs the contains privilege code operation for this module. Inputs: `values`
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L24)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L25)
 
 <a id="function-function-minisql-catalog-catalog-createdatabase-function-createdatabase-dataroot-name-defaults-src-minisql-catalog-catalog-ml-1827667035"></a>
 ### createDatabase
@@ -311,12 +323,12 @@ Creates the database. Inputs: `dataRoot`, `name`, `defaults`. Returns the produc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `dataRoot` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `defaults` | `dynamic` | — |  |
+| `dataRoot` | `dynamic` | — | dataRoot value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `defaults` | `dynamic` | — | defaults value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L313)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L372)
 
 <a id="function-function-minisql-catalog-catalog-createpagedblobpage-function-createpagedblobpage-pagedfile-pagenumber-encoded-pagecount-src-minisql-catalog-catalog-ml-1034663317"></a>
 ### createPagedBlobPage
@@ -329,13 +341,13 @@ Builds one independently checksummed page of the scalable catalog blob. Each pag
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
-| `pageCount` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
+| `pageCount` | `dynamic` | — | Number of page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L218)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L270)
 
 <a id="function-function-minisql-catalog-catalog-createrole-function-createrole-database-name-src-minisql-catalog-catalog-ml-832594304"></a>
 ### createRole
@@ -348,11 +360,11 @@ Creates the role. Inputs: `database`, `name`. Returns the produced value or prop
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L937)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1060)
 
 <a id="function-function-minisql-catalog-catalog-createsecuritygeneration-function-createsecuritygeneration-databasepath-slot-pagesize-databaseid-encoded-src-minisql-catalog-catalog-ml-870743968"></a>
 ### createSecurityGeneration
@@ -365,14 +377,14 @@ Creates one complete scalable security generation under its final path. Inputs: 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L151)
 
 <a id="function-function-minisql-catalog-catalog-createtable-function-createtable-database-name-definitions-src-minisql-catalog-catalog-ml-676023834"></a>
 ### createTable
@@ -385,12 +397,12 @@ Creates the table. Inputs: `database`, `name`, `definitions`. Returns the produc
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `definitions` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `definitions` | `dynamic` | — | definitions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L539)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L620)
 
 <a id="function-function-minisql-catalog-catalog-createuser-function-createuser-database-name-password-src-minisql-catalog-catalog-ml-2069260361"></a>
 ### createUser
@@ -403,12 +415,12 @@ Creates the user. Inputs: `database`, `name`, `password`. Returns the produced v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L914)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1035)
 
 <a id="constant-constant-minisql-catalog-catalog-database-meta-file-id-const-database-meta-file-id-1-src-minisql-catalog-catalog-ml-1927861942"></a>
 ### DATABASE_META_FILE_ID
@@ -417,8 +429,10 @@ Creates the user. Inputs: `database`, `name`, `password`. Returns the produced v
 const DATABASE_META_FILE_ID = 1
 ```
 
+Defines the database meta file id constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L30)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L36)
 
 - [minisql.catalog.catalog.DatabaseHandle](Type-minisql-catalog-catalog-databasehandle-705083507.md) — struct
 <a id="function-function-minisql-catalog-catalog-decodeblobnative-function-decodeblobnative-words-operation-name-src-minisql-catalog-catalog-ml-20339179"></a>
@@ -432,12 +446,12 @@ Converts a persisted unsigned 64-bit blob field to the native MiniLang range. In
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `words` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `words` | `dynamic` | — | words value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L240)
 
 <a id="function-function-minisql-catalog-catalog-definecolumn-function-definecolumn-name-typecode-nullable-maxlength-precision-scale-src-minisql-catalog-catalog-ml-1202201127"></a>
 ### defineColumn
@@ -450,15 +464,15 @@ Performs the define column operation for this module. Inputs: `name`, `typeCode`
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `typeCode` | `dynamic` | — |  |
-| `nullable` | `dynamic` | — |  |
-| `maxLength` | `dynamic` | — |  |
-| `precision` | `dynamic` | — |  |
-| `scale` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `typeCode` | `dynamic` | — | typeCode value consumed by this operation. |
+| `nullable` | `dynamic` | — | nullable value consumed by this operation. |
+| `maxLength` | `dynamic` | — | maxLength value consumed by this operation. |
+| `precision` | `dynamic` | — | precision value consumed by this operation. |
+| `scale` | `dynamic` | — | scale value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L533)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L611)
 
 <a id="function-function-minisql-catalog-catalog-dropprincipal-function-dropprincipal-database-name-expectedkind-ifexists-src-minisql-catalog-catalog-ml-1612898319"></a>
 ### dropPrincipal
@@ -471,13 +485,13 @@ Drops the principal. Inputs: `database`, `name`, `expectedKind`, `ifExists`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `expectedKind` | `dynamic` | — |  |
-| `ifExists` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `expectedKind` | `dynamic` | — | expectedKind value consumed by this operation. |
+| `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1012)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1148)
 
 <a id="function-function-minisql-catalog-catalog-effectiveprincipalids-function-effectiveprincipalids-database-principalid-src-minisql-catalog-catalog-ml-1294831144"></a>
 ### effectivePrincipalIds
@@ -490,11 +504,11 @@ Performs the effective principal ids operation for this module. Inputs: `databas
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1293)
 
 <a id="function-function-minisql-catalog-catalog-effectiveprincipalidsinstate-function-effectiveprincipalidsinstate-state-principalid-src-minisql-catalog-catalog-ml-1263850698"></a>
 ### effectivePrincipalIdsInState
@@ -507,11 +521,11 @@ Performs the effective principal ids in state operation for this module. Inputs:
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L674)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L773)
 
 <a id="function-function-minisql-catalog-catalog-ensurelayout-function-ensurelayout-root-src-minisql-catalog-catalog-ml-1078060774"></a>
 ### ensureLayout
@@ -524,10 +538,10 @@ Ensures the layout. Inputs: `root`. Returns success after all invariants hold; v
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `root` | `dynamic` | — |  |
+| `root` | `dynamic` | — | root value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L301)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L357)
 
 <a id="function-function-minisql-catalog-catalog-fail-function-fail-code-operation-message-src-minisql-catalog-catalog-ml-25063503"></a>
 ### fail
@@ -536,16 +550,16 @@ Ensures the layout. Inputs: `root`. Returns success after all invariants hold; v
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql catalog catalog module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L92)
 
 <a id="function-function-minisql-catalog-catalog-findprincipal-function-findprincipal-database-name-src-minisql-catalog-catalog-ml-571440230"></a>
 ### findPrincipal
@@ -558,11 +572,11 @@ Finds the principal. Inputs: `database`, `name`. Returns the produced value or p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L637)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L726)
 
 <a id="function-function-minisql-catalog-catalog-findprincipalbyidinstate-function-findprincipalbyidinstate-state-principalid-src-minisql-catalog-catalog-ml-1010707874"></a>
 ### findPrincipalByIdInState
@@ -575,11 +589,11 @@ Finds the principal by id in state. Inputs: `state`, `principalId`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L617)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L702)
 
 <a id="function-function-minisql-catalog-catalog-findprincipalbynameinstate-function-findprincipalbynameinstate-state-name-src-minisql-catalog-catalog-ml-1172597600"></a>
 ### findPrincipalByNameInState
@@ -592,11 +606,11 @@ Finds the principal by name in state. Inputs: `state`, `name`. Returns the produ
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L627)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L714)
 
 <a id="function-function-minisql-catalog-catalog-findtable-function-findtable-database-name-src-minisql-catalog-catalog-ml-523071566"></a>
 ### findTable
@@ -609,11 +623,11 @@ Finds the table. Inputs: `database`, `name`. Returns the produced value or propa
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L582)
 
 <a id="function-function-minisql-catalog-catalog-findtablebyid-function-findtablebyid-database-tableid-src-minisql-catalog-catalog-ml-1373544926"></a>
 ### findTableById
@@ -626,11 +640,11 @@ Finds the table by id. Inputs: `database`, `tableId`. Returns the produced value
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L522)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L594)
 
 <a id="function-function-minisql-catalog-catalog-grantprivilege-function-grantprivilege-database-granteename-grantorid-objecttype-objectid-privilege-grantoption-src-minisql-catalog-catalog-ml-396670595"></a>
 ### grantPrivilege
@@ -643,16 +657,16 @@ Performs the grant privilege operation for this module. Inputs: `database`, `gra
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `granteeName` | `dynamic` | — |  |
-| `grantorId` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
-| `grantOption` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `granteeName` | `dynamic` | — | granteeName value consumed by this operation. |
+| `grantorId` | `dynamic` | — | Identifier of grantor. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
+| `grantOption` | `dynamic` | — | grantOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1212)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1395)
 
 <a id="function-function-minisql-catalog-catalog-grantprivileges-function-grantprivileges-database-granteename-grantorid-objecttype-objectid-privileges-grantoption-src-minisql-catalog-catalog-ml-717144436"></a>
 ### grantPrivileges
@@ -665,16 +679,16 @@ Performs the grant privileges operation for this module. Inputs: `database`, `gr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `granteeName` | `dynamic` | — |  |
-| `grantorId` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privileges` | `dynamic` | — |  |
-| `grantOption` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `granteeName` | `dynamic` | — | granteeName value consumed by this operation. |
+| `grantorId` | `dynamic` | — | Identifier of grantor. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privileges` | `dynamic` | — | privileges value consumed by this operation. |
+| `grantOption` | `dynamic` | — | grantOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1364)
 
 <a id="function-function-minisql-catalog-catalog-grantrole-function-grantrole-database-rolename-membername-grantorid-adminoption-src-minisql-catalog-catalog-ml-1732729593"></a>
 ### grantRole
@@ -687,14 +701,14 @@ Performs the grant role operation for this module. Inputs: `database`, `roleName
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `roleName` | `dynamic` | — |  |
-| `memberName` | `dynamic` | — |  |
-| `grantorId` | `dynamic` | — |  |
-| `adminOption` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `roleName` | `dynamic` | — | roleName value consumed by this operation. |
+| `memberName` | `dynamic` | — | memberName value consumed by this operation. |
+| `grantorId` | `dynamic` | — | Identifier of grantor. |
+| `adminOption` | `dynamic` | — | adminOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1055)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1199)
 
 <a id="function-function-minisql-catalog-catalog-granttableowner-function-granttableowner-database-tableid-principalid-src-minisql-catalog-catalog-ml-1216259925"></a>
 ### grantTableOwner
@@ -707,12 +721,12 @@ Performs the grant table owner operation for this module. Inputs: `database`, `t
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `tableId` | `dynamic` | — | Identifier of table. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1496)
 
 <a id="function-function-minisql-catalog-catalog-hasprivilege-function-hasprivilege-database-principalid-objecttype-objectid-privilege-requiregrantoption-src-minisql-catalog-catalog-ml-65049684"></a>
 ### hasPrivilege
@@ -725,15 +739,15 @@ Evaluates whether the supplied input satisfies the privilege predicate. Inputs: 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
-| `requireGrantOption` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
+| `requireGrantOption` | `dynamic` | — | requireGrantOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1330)
 
 <a id="function-function-minisql-catalog-catalog-hasroleadminoption-function-hasroleadminoption-database-principalid-roleid-src-minisql-catalog-catalog-ml-102860479"></a>
 ### hasRoleAdminOption
@@ -746,12 +760,12 @@ Evaluates whether the supplied input satisfies the role admin option predicate. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
-| `roleId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
+| `roleId` | `dynamic` | — | Identifier of role. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1152)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1313)
 
 <a id="constant-constant-minisql-catalog-catalog-invalid-argument-const-invalid-argument-9001-src-minisql-catalog-catalog-ml-2114565549"></a>
 ### INVALID_ARGUMENT
@@ -760,7 +774,7 @@ Evaluates whether the supplied input satisfies the role admin option predicate. 
 const INVALID_ARGUMENT = 9001
 ```
 
-Database catalog lifecycle and durable bootstrap layout. Opening a database validates all format identities before exposing handles; creation publishes fully initialized metadata, WAL, and checkpoint state as one logical unit.
+Database catalog lifecycle and durable bootstrap layout. Opening a database
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L23)
@@ -776,10 +790,10 @@ Evaluates whether the supplied input satisfies the database handle predicate. In
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L83)
 
 <a id="function-function-minisql-catalog-catalog-isimplemented-function-isimplemented-src-minisql-catalog-catalog-ml-1361844558"></a>
 ### isImplemented
@@ -788,10 +802,10 @@ Evaluates whether the supplied input satisfies the database handle predicate. In
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql catalog catalog module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1344)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1558)
 
 <a id="function-function-minisql-catalog-catalog-issuperuser-function-issuperuser-database-principalid-src-minisql-catalog-catalog-ml-329736306"></a>
 ### isSuperuser
@@ -804,11 +818,11 @@ Evaluates whether the supplied input satisfies the superuser predicate. Inputs: 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `principalId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `principalId` | `dynamic` | — | Identifier of principal. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1302)
 
 <a id="function-function-minisql-catalog-catalog-joinpath-function-joinpath-left-right-src-minisql-catalog-catalog-ml-298339947"></a>
 ### joinPath
@@ -821,11 +835,11 @@ Performs the join path operation for this module. Inputs: `left`, `right`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — |  |
-| `right` | `dynamic` | — |  |
+| `left` | `dynamic` | — | left value consumed by this operation. |
+| `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L100)
 
 <a id="function-function-minisql-catalog-catalog-loadsecuritystate-function-loadsecuritystate-securityfiles-databaseid-src-minisql-catalog-catalog-ml-1373162197"></a>
 ### loadSecurityState
@@ -838,11 +852,11 @@ Loads the newest valid scalable security generation and retains the older snapsh
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `securityFiles` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `securityFiles` | `dynamic` | — | securityFiles value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L809)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L917)
 
 <a id="constant-constant-minisql-catalog-catalog-object-exists-const-object-exists-9013-src-minisql-catalog-catalog-ml-448333668"></a>
 ### OBJECT_EXISTS
@@ -851,8 +865,10 @@ Loads the newest valid scalable security generation and retains the older snapsh
 const OBJECT_EXISTS = 9013
 ```
 
+Defines the object exists constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L26)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L29)
 
 <a id="constant-constant-minisql-catalog-catalog-object-not-found-const-object-not-found-9014-src-minisql-catalog-catalog-ml-787398161"></a>
 ### OBJECT_NOT_FOUND
@@ -861,8 +877,10 @@ const OBJECT_EXISTS = 9013
 const OBJECT_NOT_FOUND = 9014
 ```
 
+Defines the object not found constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L27)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L31)
 
 <a id="function-function-minisql-catalog-catalog-opendatabase-function-opendatabase-path-src-minisql-catalog-catalog-ml-650288485"></a>
 ### openDatabase
@@ -875,10 +893,10 @@ Opens the database. Inputs: `path`. Returns the produced value or propagates a s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L415)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L480)
 
 <a id="function-function-minisql-catalog-catalog-opensecuritygenerationfiles-function-opensecuritygenerationfiles-databasepath-legacyfile-pagesize-databaseid-src-minisql-catalog-catalog-ml-402780269"></a>
 ### openSecurityGenerationFiles
@@ -891,13 +909,13 @@ Opens or migrates the two independently durable scalable security snapshots. The
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `legacyFile` | `dynamic` | — |  |
-| `pageSize` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `legacyFile` | `dynamic` | — | legacyFile value consumed by this operation. |
+| `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L779)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L885)
 
 <a id="constant-constant-minisql-catalog-catalog-paged-blob-data-offset-const-paged-blob-data-offset-104-src-minisql-catalog-catalog-ml-471463972"></a>
 ### PAGED_BLOB_DATA_OFFSET
@@ -906,8 +924,10 @@ Opens or migrates the two independently durable scalable security snapshots. The
 const PAGED_BLOB_DATA_OFFSET = 104
 ```
 
+Defines the paged blob data offset constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L39)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L54)
 
 <a id="constant-constant-minisql-catalog-catalog-paged-blob-header-offset-const-paged-blob-header-offset-64-src-minisql-catalog-catalog-ml-1973308325"></a>
 ### PAGED_BLOB_HEADER_OFFSET
@@ -916,8 +936,10 @@ const PAGED_BLOB_DATA_OFFSET = 104
 const PAGED_BLOB_HEADER_OFFSET = 64
 ```
 
+Defines the paged blob header offset constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L38)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L52)
 
 <a id="constant-constant-minisql-catalog-catalog-paged-blob-magic-const-paged-blob-magic-843205698-src-minisql-catalog-catalog-ml-148564608"></a>
 ### PAGED_BLOB_MAGIC
@@ -926,8 +948,10 @@ const PAGED_BLOB_HEADER_OFFSET = 64
 const PAGED_BLOB_MAGIC = 843205698
 ```
 
+Defines the paged blob magic constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L36)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L48)
 
 <a id="constant-constant-minisql-catalog-catalog-paged-blob-version-const-paged-blob-version-1-src-minisql-catalog-catalog-ml-1430381340"></a>
 ### PAGED_BLOB_VERSION
@@ -936,8 +960,10 @@ const PAGED_BLOB_MAGIC = 843205698
 const PAGED_BLOB_VERSION = 1
 ```
 
+Defines the paged blob version constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L37)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L50)
 
 <a id="function-function-minisql-catalog-catalog-pagedblobpagecount-function-pagedblobpagecount-length-capacity-src-minisql-catalog-catalog-ml-390177782"></a>
 ### pagedBlobPageCount
@@ -950,11 +976,11 @@ Computes the number of catalog pages required by a byte payload without a fixed 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `length` | `dynamic` | — |  |
-| `capacity` | `dynamic` | — |  |
+| `length` | `dynamic` | — | length value consumed by this operation. |
+| `capacity` | `dynamic` | — | capacity value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L251)
 
 <a id="function-function-minisql-catalog-catalog-persistmetadata-function-persistmetadata-database-src-minisql-catalog-catalog-ml-1867807009"></a>
 ### persistMetadata
@@ -967,10 +993,10 @@ Performs the persist metadata operation for this module. Inputs: `database`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L502)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L570)
 
 <a id="function-function-minisql-catalog-catalog-persistsecurity-function-persistsecurity-database-src-minisql-catalog-catalog-ml-304872899"></a>
 ### persistSecurity
@@ -983,10 +1009,10 @@ Performs the persist security operation for this module. Inputs: `database`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L899)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1016)
 
 <a id="function-function-minisql-catalog-catalog-privilegecascadegrantees-function-privilegecascadegrantees-state-rootgranteeid-objecttype-objectid-privilege-src-minisql-catalog-catalog-ml-620050812"></a>
 ### privilegeCascadeGrantees
@@ -999,14 +1025,14 @@ Performs the privilege cascade grantees operation for this module. Inputs: `stat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `rootGranteeId` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `rootGranteeId` | `dynamic` | — | Identifier of root grantee. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1411)
 
 <a id="function-function-minisql-catalog-catalog-publishsecuritygenerationmarker-function-publishsecuritygenerationmarker-databasepath-src-minisql-catalog-catalog-ml-1862248942"></a>
 ### publishSecurityGenerationMarker
@@ -1019,10 +1045,10 @@ Publishes the marker only after both scalable security generations are durable. 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L165)
 
 <a id="function-function-minisql-catalog-catalog-readblobpage-function-readblobpage-pagedfile-pagenumber-src-minisql-catalog-catalog-ml-1398574303"></a>
 ### readBlobPage
@@ -1035,11 +1061,11 @@ Reads the blob page. Inputs: `pagedFile`, `pageNumber`. Returns the produced val
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L226)
 
 <a id="function-function-minisql-catalog-catalog-readpagedblob-function-readpagedblob-pagedfile-src-minisql-catalog-catalog-ml-1947852557"></a>
 ### readPagedBlob
@@ -1052,10 +1078,10 @@ Reads the scalable catalog snapshot and transparently accepts the original one-p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L267)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L322)
 
 <a id="function-function-minisql-catalog-catalog-removetableprivileges-function-removetableprivileges-database-tableid-src-minisql-catalog-catalog-ml-1827605700"></a>
 ### removeTablePrivileges
@@ -1068,11 +1094,11 @@ Removes the table privileges. Inputs: `database`, `tableId`. Returns the produce
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1507)
 
 <a id="function-function-minisql-catalog-catalog-requireprincipal-function-requireprincipal-database-name-operation-src-minisql-catalog-catalog-ml-1585408905"></a>
 ### requirePrincipal
@@ -1085,12 +1111,12 @@ Performs the require principal operation for this module. Inputs: `database`, `n
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L644)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L736)
 
 <a id="function-function-minisql-catalog-catalog-revokeprivilege-function-revokeprivilege-database-granteename-objecttype-objectid-privilege-src-minisql-catalog-catalog-ml-558655616"></a>
 ### revokePrivilege
@@ -1103,14 +1129,14 @@ Performs the revoke privilege operation for this module. Inputs: `database`, `gr
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `granteeName` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privilege` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `granteeName` | `dynamic` | — | granteeName value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privilege` | `dynamic` | — | privilege value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1487)
 
 <a id="function-function-minisql-catalog-catalog-revokeprivileges-function-revokeprivileges-database-granteename-objecttype-objectid-privileges-src-minisql-catalog-catalog-ml-669725303"></a>
 ### revokePrivileges
@@ -1123,14 +1149,14 @@ M21 compatibility entry point: RESTRICT is the safe default. Performs the revoke
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `granteeName` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privileges` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `granteeName` | `dynamic` | — | granteeName value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privileges` | `dynamic` | — | privileges value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1476)
 
 <a id="function-function-minisql-catalog-catalog-revokeprivilegeswithbehavior-function-revokeprivilegeswithbehavior-database-granteename-objecttype-objectid-privileges-cascade-src-minisql-catalog-catalog-ml-2123037275"></a>
 ### revokePrivilegesWithBehavior
@@ -1143,15 +1169,15 @@ Performs the revoke privileges with behavior operation for this module. Inputs: 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `granteeName` | `dynamic` | — |  |
-| `objectType` | `dynamic` | — |  |
-| `objectId` | `dynamic` | — |  |
-| `privileges` | `dynamic` | — |  |
-| `cascade` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `granteeName` | `dynamic` | — | granteeName value consumed by this operation. |
+| `objectType` | `dynamic` | — | objectType value consumed by this operation. |
+| `objectId` | `dynamic` | — | Identifier of object. |
+| `privileges` | `dynamic` | — | privileges value consumed by this operation. |
+| `cascade` | `dynamic` | — | cascade value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1436)
 
 <a id="function-function-minisql-catalog-catalog-revokerole-function-revokerole-database-rolename-membername-src-minisql-catalog-catalog-ml-941939029"></a>
 ### revokeRole
@@ -1164,12 +1190,12 @@ M21 compatibility entry point: RESTRICT is the safe default. Performs the revoke
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `roleName` | `dynamic` | — |  |
-| `memberName` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `roleName` | `dynamic` | — | roleName value consumed by this operation. |
+| `memberName` | `dynamic` | — | memberName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1285)
 
 <a id="function-function-minisql-catalog-catalog-revokerolewithbehavior-function-revokerolewithbehavior-database-rolename-membername-cascade-src-minisql-catalog-catalog-ml-545483361"></a>
 ### revokeRoleWithBehavior
@@ -1182,13 +1208,13 @@ Performs the revoke role with behavior operation for this module. Inputs: `datab
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `roleName` | `dynamic` | — |  |
-| `memberName` | `dynamic` | — |  |
-| `cascade` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `roleName` | `dynamic` | — | roleName value consumed by this operation. |
+| `memberName` | `dynamic` | — | memberName value consumed by this operation. |
+| `cascade` | `dynamic` | — | cascade value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1255)
 
 <a id="function-function-minisql-catalog-catalog-rolecascademembers-function-rolecascademembers-state-roleid-rootmemberid-src-minisql-catalog-catalog-ml-790293405"></a>
 ### roleCascadeMembers
@@ -1201,12 +1227,12 @@ Performs the role cascade members operation for this module. Inputs: `state`, `r
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `roleId` | `dynamic` | — |  |
-| `rootMemberId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `roleId` | `dynamic` | — | Identifier of role. |
+| `rootMemberId` | `dynamic` | — | Identifier of root member. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1081)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1228)
 
 <a id="function-function-minisql-catalog-catalog-rolewouldcycle-function-rolewouldcycle-state-roleid-memberid-src-minisql-catalog-catalog-ml-470033301"></a>
 ### roleWouldCycle
@@ -1219,12 +1245,12 @@ Performs the role would cycle operation for this module. Inputs: `state`, `roleI
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `roleId` | `dynamic` | — |  |
-| `memberId` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `roleId` | `dynamic` | — | Identifier of role. |
+| `memberId` | `dynamic` | — | Identifier of member. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1046)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1185)
 
 <a id="constant-constant-minisql-catalog-catalog-security-file-id-const-security-file-id-0-src-minisql-catalog-catalog-ml-1695136583"></a>
 ### SECURITY_FILE_ID
@@ -1233,8 +1259,10 @@ Performs the role would cycle operation for this module. Inputs: `state`, `roleI
 const SECURITY_FILE_ID = 0
 ```
 
+Defines the security file id constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L32)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L40)
 
 <a id="constant-constant-minisql-catalog-catalog-security-generation-file-id-const-security-generation-file-id-0-src-minisql-catalog-catalog-ml-1441131395"></a>
 ### SECURITY_GENERATION_FILE_ID
@@ -1243,8 +1271,10 @@ const SECURITY_FILE_ID = 0
 const SECURITY_GENERATION_FILE_ID = 0
 ```
 
+Defines the security generation file id constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L33)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L42)
 
 <a id="constant-constant-minisql-catalog-catalog-security-state-const-security-state-9030-src-minisql-catalog-catalog-ml-1881915543"></a>
 ### SECURITY_STATE
@@ -1253,8 +1283,10 @@ const SECURITY_GENERATION_FILE_ID = 0
 const SECURITY_STATE = 9030
 ```
 
+Defines the security state constant used by the minisql catalog catalog module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L28)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L33)
 
 <a id="function-function-minisql-catalog-catalog-securityarrayslice-function-securityarrayslice-values-offset-count-src-minisql-catalog-catalog-ml-1040969070"></a>
 ### securityArraySlice
@@ -1267,12 +1299,12 @@ Performs the security array slice operation for this module. Inputs: `values`, `
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `values` | `dynamic` | — |  |
-| `offset` | `dynamic` | — |  |
-| `count` | `dynamic` | — |  |
+| `values` | `dynamic` | — | values value consumed by this operation. |
+| `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
+| `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L652)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L747)
 
 <a id="function-function-minisql-catalog-catalog-securityfilepath-function-securityfilepath-databasepath-src-minisql-catalog-catalog-ml-357173640"></a>
 ### securityFilePath
@@ -1285,10 +1317,10 @@ Performs the security file path operation for this module. Inputs: `databasePath
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L124)
 
 <a id="function-function-minisql-catalog-catalog-securitygenerationfilepath-function-securitygenerationfilepath-databasepath-slot-src-minisql-catalog-catalog-ml-214824500"></a>
 ### securityGenerationFilePath
@@ -1301,11 +1333,11 @@ Returns the scalable security generation path for slot zero or one. Inputs: `dat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `slot` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L132)
 
 <a id="function-function-minisql-catalog-catalog-securitygenerationmarkerpath-function-securitygenerationmarkerpath-databasepath-src-minisql-catalog-catalog-ml-795124716"></a>
 ### securityGenerationMarkerPath
@@ -1318,10 +1350,10 @@ Returns the durable marker proving that scalable security generations were publi
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L140)
 
 <a id="function-function-minisql-catalog-catalog-setuserenabled-function-setuserenabled-database-name-enabled-src-minisql-catalog-catalog-ml-138587169"></a>
 ### setUserEnabled
@@ -1334,12 +1366,12 @@ Updates the user enabled. Inputs: `database`, `name`, `enabled`. Returns the ope
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `enabled` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `enabled` | `dynamic` | — | enabled value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L997)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1129)
 
 <a id="function-function-minisql-catalog-catalog-setuserpassword-function-setuserpassword-database-name-password-src-minisql-catalog-catalog-ml-5123377"></a>
 ### setUserPassword
@@ -1352,12 +1384,12 @@ Updates the user password. Inputs: `database`, `name`, `password`. Returns the o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `password` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `password` | `dynamic` | — | password value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L951)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1077)
 
 <a id="function-function-minisql-catalog-catalog-setuserpasswordbytes-function-setuserpasswordbytes-database-name-passwordbytes-src-minisql-catalog-catalog-ml-999074184"></a>
 ### setUserPasswordBytes
@@ -1370,12 +1402,12 @@ Updates the user password bytes. Inputs: `database`, `name`, `passwordBytes`. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
-| `passwordBytes` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L974)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1103)
 
 <a id="function-function-minisql-catalog-catalog-tablefilename-function-tablefilename-tableid-src-minisql-catalog-catalog-ml-336406005"></a>
 ### tableFileName
@@ -1388,10 +1420,10 @@ Performs the table file name operation for this module. Inputs: `tableId`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tableId` | `dynamic` | — |  |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L108)
 
 <a id="function-function-minisql-catalog-catalog-tablefilepath-function-tablefilepath-databasepath-tableid-src-minisql-catalog-catalog-ml-689721395"></a>
 ### tableFilePath
@@ -1404,11 +1436,11 @@ Performs the table file path operation for this module. Inputs: `databasePath`, 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `tableId` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L117)
 
 <a id="function-function-minisql-catalog-catalog-targetmilestone-function-targetmilestone-src-minisql-catalog-catalog-ml-1997716340"></a>
 ### targetMilestone
@@ -1417,10 +1449,10 @@ Performs the table file path operation for this module. Inputs: `databasePath`, 
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql catalog catalog module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1338)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L1552)
 
 <a id="function-function-minisql-catalog-catalog-validatecatalogsemantics-function-validatecatalogsemantics-databasemetadata-catalogstate-src-minisql-catalog-catalog-ml-1155572186"></a>
 ### validateCatalogSemantics
@@ -1433,11 +1465,11 @@ Validates the catalog semantics. Inputs: `databaseMetadata`, `catalogState`. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databaseMetadata` | `dynamic` | — |  |
-| `catalogState` | `dynamic` | — |  |
+| `databaseMetadata` | `dynamic` | — | databaseMetadata value consumed by this operation. |
+| `catalogState` | `dynamic` | — | catalogState value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L377)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L438)
 
 <a id="function-function-minisql-catalog-catalog-validatename-function-validatename-name-operation-src-minisql-catalog-catalog-ml-366392894"></a>
 ### validateName
@@ -1450,11 +1482,11 @@ Validates the name. Inputs: `name`, `operation`. Returns success after all invar
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `name` | `dynamic` | — | Name of the affected item. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L178)
 
 <a id="function-function-minisql-catalog-catalog-validateopen-function-validateopen-database-operation-src-minisql-catalog-catalog-ml-1145009964"></a>
 ### validateOpen
@@ -1463,15 +1495,15 @@ Validates the name. Inputs: `name`, `operation`. Returns success after all invar
 function validateOpen(database, operation)
 ```
 
-Validates the open. Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
+Validates open for the minisql catalog catalog workflow. Inputs: `database`, `operation`. Returns success after all invariants hold; violations are reported as structured errors.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L494)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L561)
 
 <a id="function-function-minisql-catalog-catalog-validatesecuritysemantics-function-validatesecuritysemantics-state-databaseid-tables-src-minisql-catalog-catalog-ml-681811532"></a>
 ### validateSecuritySemantics
@@ -1484,12 +1516,12 @@ Validates the security semantics. Inputs: `state`, `databaseId`, `tables`. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — |  |
-| `databaseId` | `dynamic` | — |  |
-| `tables` | `dynamic` | — |  |
+| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
+| `databaseId` | `dynamic` | — | Identifier of database. |
+| `tables` | `dynamic` | — | tables value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L693)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L795)
 
 <a id="function-function-minisql-catalog-catalog-validatesecuritywritable-function-validatesecuritywritable-database-operation-src-minisql-catalog-catalog-ml-1621227660"></a>
 ### validateSecurityWritable
@@ -1502,11 +1534,11 @@ Validates the security writable. Inputs: `database`, `operation`. Returns succes
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `database` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `database` | `dynamic` | — | database value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L865)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L979)
 
 <a id="function-function-minisql-catalog-catalog-validatetablefiles-function-validatetablefiles-path-databasemetadata-catalogstate-src-minisql-catalog-catalog-ml-464650505"></a>
 ### validateTableFiles
@@ -1519,12 +1551,12 @@ Validates the table files. Inputs: `path`, `databaseMetadata`, `catalogState`. R
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `databaseMetadata` | `dynamic` | — |  |
-| `catalogState` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `databaseMetadata` | `dynamic` | — | databaseMetadata value consumed by this operation. |
+| `catalogState` | `dynamic` | — | catalogState value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L465)
 
 <a id="function-function-minisql-catalog-catalog-writeblobpage-function-writeblobpage-pagedfile-pagenumber-encoded-src-minisql-catalog-catalog-ml-1542913733"></a>
 ### writeBlobPage
@@ -1537,12 +1569,12 @@ Writes the blob page. Inputs: `pagedFile`, `pageNumber`, `encoded`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `pageNumber` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L165)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L206)
 
 <a id="function-function-minisql-catalog-catalog-writepagedblob-function-writepagedblob-pagedfile-encoded-src-minisql-catalog-catalog-ml-543264341"></a>
 ### writePagedBlob
@@ -1555,8 +1587,8 @@ Persists an arbitrarily large catalog snapshot across as many pages as it needs.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pagedFile` | `dynamic` | — |  |
-| `encoded` | `dynamic` | — |  |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
+| `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/catalog.ml#L296)

@@ -12,7 +12,7 @@ struct DropPrincipalStatement
 Groups the drop principal statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L766)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L821)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Stores the if exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L772)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L827)
 
 <a id="field-field-minisql-sql-ast-dropprincipalstatement-name-name-src-minisql-sql-ast-ml-417520303"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L770)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L825)
 
 <a id="field-field-minisql-sql-ast-dropprincipalstatement-principalkind-principalkind-src-minisql-sql-ast-ml-1538993353"></a>
 ### principalKind
@@ -50,4 +50,4 @@ principalKind
 Stores the principal kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L768)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L823)

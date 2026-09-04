@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql transaction recovery facilities for this project.
+
 Package: [`minisql.transaction.recovery`](Package-minisql-transaction-recovery-1517014565.md)
 
 Reachable from entry: **yes**
@@ -28,12 +30,12 @@ Applies the page. Inputs: `record`, `destination`. Returns the produced value or
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `record` | `dynamic` | — |  |
-| `destination` | `dynamic` | — |  |
-| `forceRedo` | `dynamic` | — |  |
+| `record` | `dynamic` | — | record value consumed by this operation. |
+| `destination` | `dynamic` | — | destination value consumed by this operation. |
+| `forceRedo` | `dynamic` | — | forceRedo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L161)
 
 <a id="function-function-minisql-transaction-recovery-buildstatuses-function-buildstatuses-records-startlsn-src-minisql-transaction-recovery-ml-1495084111"></a>
 ### buildStatuses
@@ -46,11 +48,11 @@ Builds the statuses. Inputs: `records`, `startLsn`. Returns the produced value o
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `records` | `dynamic` | — |  |
-| `startLsn` | `dynamic` | — |  |
+| `records` | `dynamic` | — | records value consumed by this operation. |
+| `startLsn` | `dynamic` | — | startLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L118)
 
 <a id="function-function-minisql-transaction-recovery-componentname-function-componentname-src-minisql-transaction-recovery-ml-1452025212"></a>
 ### componentName
@@ -59,10 +61,10 @@ Builds the statuses. Inputs: `records`, `startLsn`. Returns the produced value o
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql transaction recovery module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L290)
 
 <a id="constant-constant-minisql-transaction-recovery-corrupt-data-const-corrupt-data-9004-src-minisql-transaction-recovery-ml-891917980"></a>
 ### CORRUPT_DATA
@@ -71,8 +73,10 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 const CORRUPT_DATA = 9004
 ```
 
+Defines the corrupt data constant used by the minisql transaction recovery module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L19)
 
 <a id="function-function-minisql-transaction-recovery-fail-function-fail-code-operation-message-src-minisql-transaction-recovery-ml-1982310551"></a>
 ### fail
@@ -81,16 +85,16 @@ const CORRUPT_DATA = 9004
 function fail(code, operation, message)
 ```
 
-Creates the module's structured error with operation context. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the fail operation for the minisql transaction recovery module. Inputs: `code`, `operation`, `message`. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L64)
 
 <a id="function-function-minisql-transaction-recovery-findstatus-function-findstatus-statuses-transactionid-src-minisql-transaction-recovery-ml-442597899"></a>
 ### findStatus
@@ -103,11 +107,11 @@ Finds the status. Inputs: `statuses`, `transactionId`. Returns the produced valu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statuses` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `statuses` | `dynamic` | — | statuses value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L106)
 
 <a id="function-function-minisql-transaction-recovery-findtarget-function-findtarget-targets-fileid-src-minisql-transaction-recovery-ml-605586401"></a>
 ### findTarget
@@ -120,11 +124,11 @@ Finds the target. Inputs: `targets`, `fileId`. Returns the produced value or pro
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `targets` | `dynamic` | — |  |
-| `fileId` | `dynamic` | — |  |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
+| `fileId` | `dynamic` | — | Identifier of file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L94)
 
 <a id="constant-constant-minisql-transaction-recovery-invalid-argument-const-invalid-argument-9001-src-minisql-transaction-recovery-ml-1271194969"></a>
 ### INVALID_ARGUMENT
@@ -133,7 +137,7 @@ Finds the target. Inputs: `targets`, `fileId`. Returns the produced value or pro
 const INVALID_ARGUMENT = 9001
 ```
 
-Crash recovery reconstructs transaction status from the WAL, redoes committed page images in log order, and restores before-images for incomplete work in reverse order. Page LSN checks make repeated recovery idempotent.
+Crash recovery reconstructs transaction status from the WAL, redoes committed
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L17)
@@ -149,11 +153,11 @@ Evaluates whether the supplied input satisfies the committed predicate. Inputs: 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `statuses` | `dynamic` | — |  |
-| `transactionId` | `dynamic` | — |  |
+| `statuses` | `dynamic` | — | statuses value consumed by this operation. |
+| `transactionId` | `dynamic` | — | Identifier of transaction. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L150)
 
 <a id="function-function-minisql-transaction-recovery-isimplemented-function-isimplemented-src-minisql-transaction-recovery-ml-1303940012"></a>
 ### isImplemented
@@ -162,10 +166,10 @@ Evaluates whether the supplied input satisfies the committed predicate. Inputs: 
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql transaction recovery module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L268)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L302)
 
 <a id="function-function-minisql-transaction-recovery-recover-function-recover-log-targets-startlsn-src-minisql-transaction-recovery-ml-334849867"></a>
 ### recover
@@ -178,12 +182,12 @@ Recovers the requested value. Inputs: `log`, `targets`, `startLsn`. Returns the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `log` | `dynamic` | — |  |
-| `targets` | `dynamic` | — |  |
-| `startLsn` | `dynamic` | — |  |
+| `log` | `dynamic` | — | log value consumed by this operation. |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
+| `startLsn` | `dynamic` | — | startLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L238)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L268)
 
 <a id="function-function-minisql-transaction-recovery-recoverpath-function-recoverpath-path-segmentbytes-targets-startlsn-src-minisql-transaction-recovery-ml-1900136110"></a>
 ### recoverPath
@@ -196,13 +200,13 @@ Recovers the path. Inputs: `path`, `segmentBytes`, `targets`, `startLsn`. Return
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
-| `segmentBytes` | `dynamic` | — |  |
-| `targets` | `dynamic` | — |  |
-| `startLsn` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
+| `segmentBytes` | `dynamic` | — | segmentBytes value consumed by this operation. |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
+| `startLsn` | `dynamic` | — | startLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L280)
 
 <a id="function-function-minisql-transaction-recovery-recoverscan-function-recoverscan-scanresult-targets-startlsn-src-minisql-transaction-recovery-ml-2043594785"></a>
 ### recoverScan
@@ -215,12 +219,12 @@ Recovers a conventional monotonically increasing WAL using page-LSN skips.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `scanResult` | `dynamic` | — |  |
-| `targets` | `dynamic` | — |  |
-| `startLsn` | `dynamic` | — |  |
+| `scanResult` | `dynamic` | — | scanResult value consumed by this operation. |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
+| `startLsn` | `dynamic` | — | startLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L250)
 
 <a id="function-function-minisql-transaction-recovery-recoverscanforced-function-recoverscanforced-scanresult-targets-src-minisql-transaction-recovery-ml-1135472736"></a>
 ### recoverScanForced
@@ -233,11 +237,11 @@ Replays every committed image in the bounded post-reset WAL. Page LSNs from an e
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `scanResult` | `dynamic` | — |  |
-| `targets` | `dynamic` | — |  |
+| `scanResult` | `dynamic` | — | scanResult value consumed by this operation. |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L259)
 
 <a id="function-function-minisql-transaction-recovery-recoverscanmode-function-recoverscanmode-scanresult-targets-startlsn-forceredo-src-minisql-transaction-recovery-ml-1688749078"></a>
 ### recoverScanMode
@@ -250,13 +254,13 @@ Recovers the scan. Inputs: `scanResult`, `targets`, `startLsn`. Returns the prod
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `scanResult` | `dynamic` | — |  |
-| `targets` | `dynamic` | — |  |
-| `startLsn` | `dynamic` | — |  |
-| `forceRedo` | `dynamic` | — |  |
+| `scanResult` | `dynamic` | — | scanResult value consumed by this operation. |
+| `targets` | `dynamic` | — | targets value consumed by this operation. |
+| `startLsn` | `dynamic` | — | startLsn value consumed by this operation. |
+| `forceRedo` | `dynamic` | — | forceRedo value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L186)
 
 - [minisql.transaction.recovery.RecoveryResult](Type-minisql-transaction-recovery-recoveryresult-147029803.md) — struct
 - [minisql.transaction.recovery.RecoveryTarget](Type-minisql-transaction-recovery-recoverytarget-1578539379.md) — struct
@@ -271,10 +275,10 @@ Marks one durable object ID as intentionally retired so historical committed WAL
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `fileId` | `dynamic` | — |  |
+| `fileId` | `dynamic` | — | Identifier of file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L85)
 
 <a id="function-function-minisql-transaction-recovery-target-function-target-fileid-pagedfile-src-minisql-transaction-recovery-ml-1544692000"></a>
 ### target
@@ -287,11 +291,11 @@ Performs the target operation for this module. Inputs: `fileId`, `pagedFile`. Re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `fileId` | `dynamic` | — |  |
-| `pagedFile` | `dynamic` | — |  |
+| `fileId` | `dynamic` | — | Identifier of file. |
+| `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L72)
 
 <a id="function-function-minisql-transaction-recovery-targetmilestone-function-targetmilestone-src-minisql-transaction-recovery-ml-969420042"></a>
 ### targetMilestone
@@ -300,9 +304,9 @@ Performs the target operation for this module. Inputs: `fileId`, `pagedFile`. Re
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql transaction recovery module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L262)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L296)
 
 - [minisql.transaction.recovery.TransactionStatus](Type-minisql-transaction-recovery-transactionstatus-2076451289.md) — struct

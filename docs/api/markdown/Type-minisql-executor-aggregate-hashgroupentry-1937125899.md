@@ -12,7 +12,7 @@ struct HashGroupEntry
 Maps a collision-chain key to an index in the stable `groups` array.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L56)
 
 ## Members
 
@@ -26,7 +26,7 @@ groupIndex
 Index of the corresponding AggregateGroup.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L60)
 
 <a id="field-field-minisql-executor-aggregate-hashgroupentry-keyvalues-keyvalues-src-minisql-executor-aggregate-ml-944320880"></a>
 ### keyValues
@@ -38,4 +38,4 @@ keyValues
 Full key retained to resolve hash collisions using SQL grouping equality.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L58)

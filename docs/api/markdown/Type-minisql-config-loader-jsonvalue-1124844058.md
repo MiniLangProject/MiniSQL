@@ -12,7 +12,7 @@ struct JsonValue
 Groups the JSON value state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L32)
 
 ## Members
 
@@ -26,7 +26,7 @@ items
 Tracks the items numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L38)
 
 <a id="field-field-minisql-config-loader-jsonvalue-kind-kind-src-minisql-config-loader-ml-77012932"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L34)
 
 <a id="field-field-minisql-config-loader-jsonvalue-scalar-scalar-src-minisql-config-loader-ml-1700739308"></a>
 ### scalar
@@ -50,4 +50,4 @@ scalar
 Stores the scalar associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L36)

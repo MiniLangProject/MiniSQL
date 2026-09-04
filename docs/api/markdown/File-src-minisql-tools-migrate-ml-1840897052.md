@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql tools migrate facilities for this project.
+
 Package: [`minisql.tools.migrate`](Package-minisql-tools-migrate-1071527428.md)
 
 Reachable from entry: **no**
@@ -29,10 +31,10 @@ Reachable from entry: **no**
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql tools migrate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L264)
 
 <a id="function-function-minisql-tools-migrate-copydatabasestate-function-copydatabasestate-source-target-targetname-targetpagesize-src-minisql-tools-migrate-ml-650216265"></a>
 ### copyDatabaseState
@@ -45,13 +47,13 @@ Implements copy database state for this module. Returns the computed value or op
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `source` | `dynamic` | — |  |
-| `target` | `dynamic` | — |  |
-| `targetName` | `dynamic` | — |  |
-| `targetPageSize` | `dynamic` | — |  |
+| `source` | `dynamic` | — | source value consumed by this operation. |
+| `target` | `dynamic` | — | target value consumed by this operation. |
+| `targetName` | `dynamic` | — | targetName value consumed by this operation. |
+| `targetPageSize` | `dynamic` | — | targetPageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L150)
 
 <a id="function-function-minisql-tools-migrate-fail-function-fail-code-operation-message-src-minisql-tools-migrate-ml-814689475"></a>
 ### fail
@@ -60,16 +62,16 @@ Implements copy database state for this module. Returns the computed value or op
 function fail(code, operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql tools migrate module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `code` | `dynamic` | — | code value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L57)
 
 <a id="constant-constant-minisql-tools-migrate-invalid-argument-const-invalid-argument-9001-src-minisql-tools-migrate-ml-1725040445"></a>
 ### INVALID_ARGUMENT
@@ -78,10 +80,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_ARGUMENT = 9001
 ```
 
-M20 migration planner. Format-affecting changes are never performed in place. This milestone validates and reports the required rewrite, and refuses a page- size change before touching source files. The full row/index rewrite engine is intentionally a later, separately crash-tested migration milestone.
+M20 migration planner. Format-affecting changes are never performed in place.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L23)
 
 <a id="function-function-minisql-tools-migrate-isimplemented-function-isimplemented-src-minisql-tools-migrate-ml-888021686"></a>
 ### isImplemented
@@ -90,10 +92,10 @@ M20 migration planner. Format-affecting changes are never performed in place. Th
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql tools migrate module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L278)
 
 <a id="function-function-minisql-tools-migrate-ismigrationplan-function-ismigrationplan-value-src-minisql-tools-migrate-ml-182064137"></a>
 ### isMigrationPlan
@@ -106,10 +108,10 @@ Returns whether the supplied value satisfies the migration plan condition. Retur
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L65)
 
 <a id="function-function-minisql-tools-migrate-ismigrationreport-function-ismigrationreport-value-src-minisql-tools-migrate-ml-217277183"></a>
 ### isMigrationReport
@@ -122,10 +124,10 @@ Returns whether the supplied value satisfies the migration report condition. Ret
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L73)
 
 <a id="function-function-minisql-tools-migrate-isrewritemigrationreport-function-isrewritemigrationreport-value-src-minisql-tools-migrate-ml-237193215"></a>
 ### isRewriteMigrationReport
@@ -138,10 +140,10 @@ Returns whether the supplied value satisfies the rewrite migration report condit
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L139)
 
 <a id="function-function-minisql-tools-migrate-m0selftestline-function-m0selftestline-src-minisql-tools-migrate-ml-1875327406"></a>
 ### m0SelfTestLine
@@ -150,10 +152,10 @@ Returns whether the supplied value satisfies the rewrite migration report condit
 function m0SelfTestLine()
 ```
 
-Implements m0 self test line for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the m0SelfTestLine operation for the minisql tools migrate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L250)
 
 - [minisql.tools.migrate.MigrationPlan](Type-minisql-tools-migrate-migrationplan-986573829.md) — struct
 - [minisql.tools.migrate.MigrationReport](Type-minisql-tools-migrate-migrationreport-394208396.md) — struct
@@ -168,11 +170,11 @@ Plans plan using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `targetPageSize` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `targetPageSize` | `dynamic` | — | targetPageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L91)
 
 <a id="function-function-minisql-tools-migrate-rewrite-function-rewrite-sourcepath-targetroot-targetname-targetpagesize-src-minisql-tools-migrate-ml-896233668"></a>
 ### rewrite
@@ -185,13 +187,13 @@ Rewrites rewrite using the supplied inputs. Requires arguments that satisfy the 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `sourcePath` | `dynamic` | — |  |
-| `targetRoot` | `dynamic` | — |  |
-| `targetName` | `dynamic` | — |  |
-| `targetPageSize` | `dynamic` | — |  |
+| `sourcePath` | `dynamic` | — | Path associated with source. |
+| `targetRoot` | `dynamic` | — | targetRoot value consumed by this operation. |
+| `targetName` | `dynamic` | — | targetName value consumed by this operation. |
+| `targetPageSize` | `dynamic` | — | targetPageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L187)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L206)
 
 - [minisql.tools.migrate.RewriteMigrationReport](Type-minisql-tools-migrate-rewritemigrationreport-1719234532.md) — struct
 <a id="function-function-minisql-tools-migrate-run-function-run-databasepath-targetpagesize-src-minisql-tools-migrate-ml-1712100661"></a>
@@ -201,15 +203,15 @@ Rewrites rewrite using the supplied inputs. Requires arguments that satisfy the 
 function run(databasePath, targetPageSize)
 ```
 
-Runs run using the supplied inputs. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Runs run for the minisql tools migrate workflow. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `databasePath` | `dynamic` | — |  |
-| `targetPageSize` | `dynamic` | — |  |
+| `databasePath` | `dynamic` | — | Path associated with database. |
+| `targetPageSize` | `dynamic` | — | targetPageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L98)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L108)
 
 <a id="function-function-minisql-tools-migrate-targetmilestone-function-targetmilestone-src-minisql-tools-migrate-ml-1502003504"></a>
 ### targetMilestone
@@ -218,10 +220,10 @@ Runs run using the supplied inputs. Returns the computed value or operation stat
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql tools migrate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L252)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L271)
 
 <a id="constant-constant-minisql-tools-migrate-unsupported-format-const-unsupported-format-9003-src-minisql-tools-migrate-ml-1240145311"></a>
 ### UNSUPPORTED_FORMAT
@@ -229,6 +231,8 @@ Implements target milestone for this module. Returns the computed value or opera
 ```ml
 const UNSUPPORTED_FORMAT = 9003
 ```
+
+Defines the unsupported format constant used by the minisql tools migrate module.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L25)
@@ -244,10 +248,10 @@ Implements valid page size for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L81)
 
 <a id="function-function-minisql-tools-migrate-versionline-function-versionline-src-minisql-tools-migrate-ml-795340182"></a>
 ### versionLine
@@ -256,7 +260,7 @@ Implements valid page size for this module. Returns the computed value or operat
 function versionLine()
 ```
 
-Implements version line for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the versionLine operation for the minisql tools migrate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L238)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/migrate.ml#L257)

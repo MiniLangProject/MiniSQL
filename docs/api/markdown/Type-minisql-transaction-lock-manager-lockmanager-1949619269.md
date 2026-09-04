@@ -12,7 +12,7 @@ struct LockManager
 Defines the lock manager record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L32)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeWriter
 Active writer field of the lock manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L36)
 
 <a id="field-field-minisql-transaction-lock-manager-lockmanager-guard-guard-src-minisql-transaction-lock-manager-ml-1828618559"></a>
 ### guard
@@ -38,7 +38,7 @@ guard
 Guard field of the lock manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L34)
 
 <a id="field-field-minisql-transaction-lock-manager-lockmanager-readers-readers-src-minisql-transaction-lock-manager-ml-269409831"></a>
 ### readers
@@ -50,7 +50,7 @@ readers
 Readers field of the lock manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L38)
 
 <a id="field-field-minisql-transaction-lock-manager-lockmanager-waits-waits-src-minisql-transaction-lock-manager-ml-1402971995"></a>
 ### waits
@@ -62,4 +62,4 @@ waits
 Waits field of the lock manager.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/lock_manager.ml#L40)

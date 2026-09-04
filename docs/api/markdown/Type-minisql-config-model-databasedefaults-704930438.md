@@ -12,7 +12,7 @@ struct DatabaseDefaults
 Groups the database defaults state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L97)
 
 ## Members
 
@@ -26,7 +26,7 @@ checksumAlgorithm
 Stores the checksum algorithm associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L101)
 
 <a id="field-field-minisql-config-model-databasedefaults-databaseformatversion-databaseformatversion-src-minisql-config-model-ml-23694234"></a>
 ### databaseFormatVersion
@@ -38,7 +38,7 @@ databaseFormatVersion
 Tracks the database format version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L109)
 
 <a id="field-field-minisql-config-model-databasedefaults-defaultcollation-defaultcollation-src-minisql-config-model-ml-606190322"></a>
 ### defaultCollation
@@ -50,7 +50,7 @@ defaultCollation
 Stores the default collation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L107)
 
 <a id="field-field-minisql-config-model-databasedefaults-indexfileformatversion-indexfileformatversion-src-minisql-config-model-ml-1921979644"></a>
 ### indexFileFormatVersion
@@ -62,7 +62,7 @@ indexFileFormatVersion
 Tracks the index file format version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L113)
 
 <a id="field-field-minisql-config-model-databasedefaults-pagesize-pagesize-src-minisql-config-model-ml-1379610850"></a>
 ### pageSize
@@ -74,7 +74,7 @@ pageSize
 Tracks the page size numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L99)
 
 <a id="field-field-minisql-config-model-databasedefaults-rowformatversion-rowformatversion-src-minisql-config-model-ml-1974131652"></a>
 ### rowFormatVersion
@@ -86,7 +86,7 @@ rowFormatVersion
 Tracks the row format version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L117)
 
 <a id="field-field-minisql-config-model-databasedefaults-tablefileformatversion-tablefileformatversion-src-minisql-config-model-ml-553047440"></a>
 ### tableFileFormatVersion
@@ -98,7 +98,7 @@ tableFileFormatVersion
 Tracks the table file format version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L111)
 
 <a id="field-field-minisql-config-model-databasedefaults-textencoding-textencoding-src-minisql-config-model-ml-1422286410"></a>
 ### textEncoding
@@ -110,7 +110,7 @@ textEncoding
 Stores the text encoding associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L105)
 
 <a id="field-field-minisql-config-model-databasedefaults-walformatversion-walformatversion-src-minisql-config-model-ml-1541137808"></a>
 ### walFormatVersion
@@ -122,7 +122,7 @@ walFormatVersion
 Tracks the WAL format version numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L115)
 
 <a id="field-field-minisql-config-model-databasedefaults-walsegmentbytes-walsegmentbytes-src-minisql-config-model-ml-358621122"></a>
 ### walSegmentBytes
@@ -134,4 +134,4 @@ walSegmentBytes
 Tracks the WAL segment bytes numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L103)

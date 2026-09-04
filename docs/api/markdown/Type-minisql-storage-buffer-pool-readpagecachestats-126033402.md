@@ -12,7 +12,7 @@ struct ReadPageCacheStats
 Snapshot of read-cache counters used by diagnostics and regression tests.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L129)
 
 ## Members
 
@@ -26,7 +26,7 @@ evictions
 Snapshot of CLOCK replacements.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L132)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L135)
 
 <a id="field-field-minisql-storage-buffer-pool-readpagecachestats-hits-hits-src-minisql-storage-buffer-pool-ml-1705749945"></a>
 ### hits
@@ -38,7 +38,7 @@ hits
 Snapshot of successful resident lookups.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L131)
 
 <a id="field-field-minisql-storage-buffer-pool-readpagecachestats-maxpages-maxpages-src-minisql-storage-buffer-pool-ml-277065153"></a>
 ### maxPages
@@ -50,7 +50,7 @@ maxPages
 Configured maximum number of frames.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L139)
 
 <a id="field-field-minisql-storage-buffer-pool-readpagecachestats-misses-misses-src-minisql-storage-buffer-pool-ml-1385009921"></a>
 ### misses
@@ -62,7 +62,7 @@ misses
 Snapshot of physical-read lookups.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L133)
 
 <a id="field-field-minisql-storage-buffer-pool-readpagecachestats-residentpages-residentpages-src-minisql-storage-buffer-pool-ml-1619195541"></a>
 ### residentPages
@@ -74,4 +74,4 @@ residentPages
 Number of populated frames at snapshot time.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/buffer_pool.ml#L137)

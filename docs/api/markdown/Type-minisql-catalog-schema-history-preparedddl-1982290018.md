@@ -12,7 +12,7 @@ struct PreparedDdl
 Defines the prepared ddl record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L255)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L291)
 
 ## Members
 
@@ -26,7 +26,7 @@ backups
 Backups field of the prepared ddl.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L301)
 
 <a id="field-field-minisql-catalog-schema-history-preparedddl-createfiles-createfiles-src-minisql-catalog-schema-history-ml-222139202"></a>
 ### createFiles
@@ -38,7 +38,7 @@ createFiles
 Create files field of the prepared ddl.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L299)
 
 <a id="field-field-minisql-catalog-schema-history-preparedddl-newcatalog-newcatalog-src-minisql-catalog-schema-history-ml-773515832"></a>
 ### newCatalog
@@ -50,7 +50,7 @@ newCatalog
 New catalog field of the prepared ddl.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L295)
 
 <a id="field-field-minisql-catalog-schema-history-preparedddl-newmetadata-newmetadata-src-minisql-catalog-schema-history-ml-16092830"></a>
 ### newMetadata
@@ -62,7 +62,7 @@ newMetadata
 New metadata field of the prepared ddl.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L293)
 
 <a id="field-field-minisql-catalog-schema-history-preparedddl-newstate-newstate-src-minisql-catalog-schema-history-ml-947015984"></a>
 ### newState
@@ -74,4 +74,4 @@ newState
 New state field of the prepared ddl.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L261)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L297)

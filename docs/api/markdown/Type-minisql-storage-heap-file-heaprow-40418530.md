@@ -12,7 +12,7 @@ struct HeapRow
 Defines the heap row record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L52)
 
 ## Members
 
@@ -26,7 +26,7 @@ identifier
 Identifier field of the heap row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L54)
 
 <a id="field-field-minisql-storage-heap-file-heaprow-value-value-src-minisql-storage-heap-file-ml-1354337109"></a>
 ### value
@@ -38,4 +38,4 @@ value
 Value field of the heap row.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L56)

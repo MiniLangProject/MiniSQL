@@ -12,7 +12,7 @@ struct ColumnDefinition
 Groups the column definition state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L294)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L349)
 
 ## Members
 
@@ -26,7 +26,7 @@ checkExpression
 Stores the check expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L310)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L365)
 
 <a id="field-field-minisql-sql-ast-columndefinition-defaultexpression-defaultexpression-src-minisql-sql-ast-ml-1311032150"></a>
 ### defaultExpression
@@ -38,7 +38,7 @@ defaultExpression
 Stores the default expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L308)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L363)
 
 <a id="field-field-minisql-sql-ast-columndefinition-generatedexpression-generatedexpression-src-minisql-sql-ast-ml-555956918"></a>
 ### generatedExpression
@@ -50,7 +50,7 @@ generatedExpression
 Stores the generated expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L377)
 
 <a id="field-field-minisql-sql-ast-columndefinition-generatedstored-generatedstored-src-minisql-sql-ast-ml-737892962"></a>
 ### generatedStored
@@ -62,7 +62,7 @@ generatedStored
 Stores the generated stored associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L324)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L379)
 
 <a id="field-field-minisql-sql-ast-columndefinition-identity-identity-src-minisql-sql-ast-ml-356714402"></a>
 ### identity
@@ -74,7 +74,7 @@ identity
 Stores the identity associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L320)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L375)
 
 <a id="field-field-minisql-sql-ast-columndefinition-name-name-src-minisql-sql-ast-ml-71156608"></a>
 ### name
@@ -86,7 +86,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L296)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L351)
 
 <a id="field-field-minisql-sql-ast-columndefinition-nullable-nullable-src-minisql-sql-ast-ml-1449895712"></a>
 ### nullable
@@ -98,7 +98,7 @@ nullable
 Indicates whether the nullable condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L300)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L355)
 
 <a id="field-field-minisql-sql-ast-columndefinition-nullablespecified-nullablespecified-src-minisql-sql-ast-ml-1143191586"></a>
 ### nullableSpecified
@@ -110,7 +110,7 @@ nullableSpecified
 Indicates whether the nullable specified condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L302)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L357)
 
 <a id="field-field-minisql-sql-ast-columndefinition-ondelete-ondelete-src-minisql-sql-ast-ml-1752450782"></a>
 ### onDelete
@@ -122,7 +122,7 @@ onDelete
 Stores the on delete associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L316)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L371)
 
 <a id="field-field-minisql-sql-ast-columndefinition-onupdate-onupdate-src-minisql-sql-ast-ml-1616574498"></a>
 ### onUpdate
@@ -134,7 +134,7 @@ onUpdate
 Stores the on update associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L318)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L373)
 
 <a id="field-field-minisql-sql-ast-columndefinition-primarykey-primarykey-src-minisql-sql-ast-ml-1022968320"></a>
 ### primaryKey
@@ -146,7 +146,7 @@ primaryKey
 Indicates whether the primary key condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L359)
 
 <a id="field-field-minisql-sql-ast-columndefinition-referencescolumns-referencescolumns-src-minisql-sql-ast-ml-89636634"></a>
 ### referencesColumns
@@ -158,7 +158,7 @@ referencesColumns
 Stores the references columns associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L314)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L369)
 
 <a id="field-field-minisql-sql-ast-columndefinition-referencestable-referencestable-src-minisql-sql-ast-ml-1438326018"></a>
 ### referencesTable
@@ -170,7 +170,7 @@ referencesTable
 Stores the references table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L367)
 
 <a id="field-field-minisql-sql-ast-columndefinition-typename-typename-src-minisql-sql-ast-ml-1294956640"></a>
 ### typeName
@@ -182,7 +182,7 @@ typeName
 Stores the type name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L353)
 
 <a id="field-field-minisql-sql-ast-columndefinition-unique-unique-src-minisql-sql-ast-ml-1903033052"></a>
 ### unique
@@ -194,4 +194,4 @@ unique
 Indicates whether the unique condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L306)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L361)

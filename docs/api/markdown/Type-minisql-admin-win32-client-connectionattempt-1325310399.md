@@ -12,7 +12,7 @@ struct ConnectionAttempt
 Tracks a connection worker and guarantees eventual credential destruction.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L371)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L464)
 
 ## Members
 
@@ -26,7 +26,7 @@ busy
 Indicates whether a handshake is currently in flight.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L377)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L470)
 
 <a id="field-field-minisql-admin-win32-client-connectionattempt-password-password-src-minisql-admin-win32-client-ml-2010157608"></a>
 ### password
@@ -38,7 +38,7 @@ password
 Stores the caller-owned password bytes until the worker has terminated.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L468)
 
 <a id="field-field-minisql-admin-win32-client-connectionattempt-worker-worker-src-minisql-admin-win32-client-ml-894303498"></a>
 ### worker
@@ -50,4 +50,4 @@ worker
 Stores the active native handshake worker or void.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L373)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/win32_client.ml#L466)

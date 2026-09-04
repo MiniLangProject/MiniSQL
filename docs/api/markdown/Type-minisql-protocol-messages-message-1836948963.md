@@ -12,7 +12,7 @@ struct Message
 Groups the message state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L14)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L18)
 
 ## Members
 
@@ -26,7 +26,7 @@ flags
 Stores the flags associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L22)
 
 <a id="field-field-minisql-protocol-messages-message-messagetype-messagetype-src-minisql-protocol-messages-ml-1586723676"></a>
 ### messageType
@@ -38,7 +38,7 @@ messageType
 Stores the message type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L16)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L20)
 
 <a id="field-field-minisql-protocol-messages-message-payload-payload-src-minisql-protocol-messages-ml-253999264"></a>
 ### payload
@@ -50,7 +50,7 @@ payload
 Stores the payload associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L26)
 
 <a id="field-field-minisql-protocol-messages-message-requestid-requestid-src-minisql-protocol-messages-ml-1940472304"></a>
 ### requestId
@@ -62,4 +62,4 @@ requestId
 Identifies the request identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L24)

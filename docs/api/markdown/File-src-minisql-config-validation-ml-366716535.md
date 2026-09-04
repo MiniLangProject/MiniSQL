@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql config validation facilities for this project.
+
 Package: [`minisql.config.validation`](Package-minisql-config-validation-1886845739.md)
 
 Reachable from entry: **yes**
@@ -20,10 +22,10 @@ Reachable from entry: **yes**
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql config validation module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L113)
 
 <a id="function-function-minisql-config-validation-fail-function-fail-message-src-minisql-config-validation-ml-1762653239"></a>
 ### fail
@@ -32,14 +34,14 @@ Implements component name for this module. Returns the computed value or operati
 function fail(message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql config validation module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `message` | `dynamic` | — |  |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L19)
 
 <a id="constant-constant-minisql-config-validation-invalid-configuration-const-invalid-configuration-9002-src-minisql-config-validation-ml-75620910"></a>
 ### INVALID_CONFIGURATION
@@ -48,8 +50,10 @@ Creates a structured error for fail using the supplied inputs. Returns its resul
 const INVALID_CONFIGURATION = 9002
 ```
 
+Defines the invalid configuration constant used by the minisql config validation module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L10)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L13)
 
 <a id="function-function-minisql-config-validation-isimplemented-function-isimplemented-src-minisql-config-validation-ml-1861970326"></a>
 ### isImplemented
@@ -58,10 +62,10 @@ const INVALID_CONFIGURATION = 9002
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql config validation module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L127)
 
 <a id="function-function-minisql-config-validation-nonempty-function-nonempty-value-name-src-minisql-config-validation-ml-1246623130"></a>
 ### nonEmpty
@@ -74,11 +78,11 @@ Implements non empty for this module. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L40)
 
 <a id="function-function-minisql-config-validation-positive-function-positive-value-name-src-minisql-config-validation-ml-468436278"></a>
 ### positive
@@ -91,11 +95,11 @@ Implements positive for this module. Requires arguments that satisfy the validat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
-| `name` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L29)
 
 <a id="function-function-minisql-config-validation-targetmilestone-function-targetmilestone-src-minisql-config-validation-ml-536604996"></a>
 ### targetMilestone
@@ -104,10 +108,10 @@ Implements positive for this module. Requires arguments that satisfy the validat
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql config validation module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L120)
 
 <a id="function-function-minisql-config-validation-validate-function-validate-config-src-minisql-config-validation-ml-298327412"></a>
 ### validate
@@ -120,7 +124,7 @@ Validates validate using the supplied inputs. Requires arguments that satisfy th
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `config` | `dynamic` | — |  |
+| `config` | `dynamic` | — | Configuration used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/validation.ml#L50)

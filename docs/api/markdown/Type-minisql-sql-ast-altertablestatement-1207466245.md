@@ -12,7 +12,7 @@ struct AlterTableStatement
 Groups the alter table statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L574)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L629)
 
 ## Members
 
@@ -26,7 +26,7 @@ action
 Stores the action associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L578)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L633)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-columndefinition-columndefinition-src-minisql-sql-ast-ml-1803101622"></a>
 ### columnDefinition
@@ -38,7 +38,7 @@ columnDefinition
 Stores the column definition associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L580)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L635)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-constraint-constraint-src-minisql-sql-ast-ml-1409317434"></a>
 ### constraint
@@ -50,7 +50,7 @@ constraint
 Stores the constraint associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L586)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L641)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-constraintname-constraintname-src-minisql-sql-ast-ml-1803450252"></a>
 ### constraintName
@@ -62,7 +62,7 @@ constraintName
 Stores the constraint name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L588)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L643)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-newname-newname-src-minisql-sql-ast-ml-35162436"></a>
 ### newName
@@ -74,7 +74,7 @@ newName
 Stores the new name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L584)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L639)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-oldname-oldname-src-minisql-sql-ast-ml-339169012"></a>
 ### oldName
@@ -86,7 +86,7 @@ oldName
 Stores the old name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L582)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L637)
 
 <a id="field-field-minisql-sql-ast-altertablestatement-tablename-tablename-src-minisql-sql-ast-ml-2095417340"></a>
 ### tableName
@@ -98,4 +98,4 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L576)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L631)

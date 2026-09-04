@@ -12,7 +12,7 @@ struct ReadHandleLease
 Caller ownership token for one acquired persistent read handle.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L246)
 
 ## Members
 
@@ -26,7 +26,7 @@ cache
 Owning registry whose concurrency counters track this lease.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L248)
 
 <a id="field-field-minisql-server-database-manager-readhandlelease-entry-entry-src-minisql-server-database-manager-ml-1071247265"></a>
 ### entry
@@ -38,7 +38,7 @@ entry
 Immutable registry entry kept alive by the database execution gate.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L250)
 
 <a id="field-field-minisql-server-database-manager-readhandlelease-readcontext-readcontext-src-minisql-server-database-manager-ml-1456656481"></a>
 ### readContext
@@ -50,7 +50,7 @@ readContext
 Lazily allocated query-local positioned-read completion state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L252)
 
 <a id="field-field-minisql-server-database-manager-readhandlelease-released-released-src-minisql-server-database-manager-ml-398917607"></a>
 ### released
@@ -62,4 +62,4 @@ released
 Prevents double release and use after release.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/database_manager.ml#L254)

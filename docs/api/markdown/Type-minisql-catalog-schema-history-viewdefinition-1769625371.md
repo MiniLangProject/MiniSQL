@@ -12,7 +12,7 @@ struct ViewDefinition
 Defines the view definition record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L161)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnNames
 Column names field of the view definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L169)
 
 <a id="field-field-minisql-catalog-schema-history-viewdefinition-name-name-src-minisql-catalog-schema-history-ml-522084333"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Name field of the view definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L165)
 
 <a id="field-field-minisql-catalog-schema-history-viewdefinition-sqltext-sqltext-src-minisql-catalog-schema-history-ml-1261961899"></a>
 ### sqlText
@@ -50,7 +50,7 @@ sqlText
 Sql text field of the view definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L167)
 
 <a id="field-field-minisql-catalog-schema-history-viewdefinition-viewid-viewid-src-minisql-catalog-schema-history-ml-1344095615"></a>
 ### viewId
@@ -62,4 +62,4 @@ viewId
 View id field of the view definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L163)

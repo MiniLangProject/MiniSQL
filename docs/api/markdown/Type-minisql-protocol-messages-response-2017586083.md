@@ -12,7 +12,7 @@ struct Response
 Groups the response state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L30)
 
 ## Members
 
@@ -26,7 +26,7 @@ affectedRows
 Stores the affected rows associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L40)
 
 <a id="field-field-minisql-protocol-messages-response-columns-columns-src-minisql-protocol-messages-ml-1224008536"></a>
 ### columns
@@ -38,7 +38,7 @@ columns
 Contains the ordered columns collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L36)
 
 <a id="field-field-minisql-protocol-messages-response-command-command-src-minisql-protocol-messages-ml-1465813600"></a>
 ### command
@@ -50,7 +50,7 @@ command
 Stores the command associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L34)
 
 <a id="field-field-minisql-protocol-messages-response-errorcode-errorcode-src-minisql-protocol-messages-ml-2051580156"></a>
 ### errorCode
@@ -62,7 +62,7 @@ errorCode
 Stores the error code associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L44)
 
 <a id="field-field-minisql-protocol-messages-response-message-message-src-minisql-protocol-messages-ml-294664752"></a>
 ### message
@@ -74,7 +74,7 @@ message
 Stores the message associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L42)
 
 <a id="field-field-minisql-protocol-messages-response-rows-rows-src-minisql-protocol-messages-ml-1427345386"></a>
 ### rows
@@ -86,7 +86,7 @@ rows
 Contains the ordered rows collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L38)
 
 <a id="field-field-minisql-protocol-messages-response-status-status-src-minisql-protocol-messages-ml-1948842184"></a>
 ### status
@@ -98,4 +98,4 @@ status
 Stores the status associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L32)

@@ -12,7 +12,7 @@ struct TransactionStatus
 Defines the transaction status record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L32)
 
 ## Members
 
@@ -26,7 +26,7 @@ aborted
 Aborted field of the transaction status.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L40)
 
 <a id="field-field-minisql-transaction-recovery-transactionstatus-begun-begun-src-minisql-transaction-recovery-ml-24654651"></a>
 ### begun
@@ -38,7 +38,7 @@ begun
 Begun field of the transaction status.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L36)
 
 <a id="field-field-minisql-transaction-recovery-transactionstatus-committed-committed-src-minisql-transaction-recovery-ml-463160903"></a>
 ### committed
@@ -50,7 +50,7 @@ committed
 Committed field of the transaction status.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L38)
 
 <a id="field-field-minisql-transaction-recovery-transactionstatus-transactionid-transactionid-src-minisql-transaction-recovery-ml-1056393971"></a>
 ### transactionId
@@ -62,4 +62,4 @@ transactionId
 Transaction id field of the transaction status.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/recovery.ml#L34)

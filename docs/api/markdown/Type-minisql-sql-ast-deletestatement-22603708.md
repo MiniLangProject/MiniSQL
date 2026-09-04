@@ -12,7 +12,7 @@ struct DeleteStatement
 Groups the delete statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L626)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L681)
 
 ## Members
 
@@ -26,7 +26,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L632)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L687)
 
 <a id="field-field-minisql-sql-ast-deletestatement-tablename-tablename-src-minisql-sql-ast-ml-372773207"></a>
 ### tableName
@@ -38,7 +38,7 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L628)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L683)
 
 <a id="field-field-minisql-sql-ast-deletestatement-whereexpression-whereexpression-src-minisql-sql-ast-ml-826504055"></a>
 ### whereExpression
@@ -50,4 +50,4 @@ whereExpression
 Stores the where expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L630)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L685)

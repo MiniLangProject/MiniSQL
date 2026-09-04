@@ -1,3 +1,5 @@
+//! Provides minisql client formatter facilities for this project.
+
 package minisql.client.formatter
 
 // Copyright 2026 MiniLangProject contributors
@@ -12,19 +14,23 @@ import minisql.protocol.constants as constants
 import minisql.protocol.messages as messages
 import minisql.sql.values as values
 
+/// Defines the invalid argument constant used by the minisql client formatter module.
 const INVALID_ARGUMENT = 9001
 
-// Creates a structured error for fail using the supplied inputs.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the fail operation for the minisql client formatter module.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param operation operation value consumed by this operation.
+/// @param message Human-readable message associated with the operation.
 function fail(operation, message)
   return error(INVALID_ARGUMENT, "client.formatter." + operation + ": " + message)
 end function
 
-// Implements value text for this module.
-// Requires arguments that satisfy the validation performed below.
-// Returns its result or propagates a structured error from validation or a dependency.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements value text for this module.
+/// Requires arguments that satisfy the validation performed below.
+/// Returns its result or propagates a structured error from validation or a dependency.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param value Value consumed or transformed by the operation.
 function valueText(value)
   if not values.isSqlValue(value) then return fail("valueText", "value must be SqlValue") end if
   if value.isNull then return "NULL" end if
@@ -43,9 +49,10 @@ function valueText(value)
   return fail("valueText", "unsupported SQL value representation")
 end function
 
-// Implements response from result for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Implements response from result for this module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param result Result object populated or inspected by the operation.
 function responseFromResult(result)
   if not executor.isQueryResult(result) then return fail("responseFromResult", "result must be QueryResult") end if
   if result.kind == executor.RESULT_COMMAND then return messages.commandResponse(result.command, result.affectedRows, result.message) end if
@@ -65,9 +72,10 @@ function responseFromResult(result)
   return messages.rowResponse(result.columns, rows)
 end function
 
-// Converts a query result into bounded protocol responses. Row conversion and
-// payload construction are limited to one transport batch at a time, avoiding
-// the former second full-result string representation on the server heap.
+/// Converts a query result into bounded protocol responses. Row conversion and
+/// payload construction are limited to one transport batch at a time, avoiding
+/// the former second full-result string representation on the server heap.
+/// @param result Result object populated or inspected by the operation.
 function responsesFromResult(result)
   if not executor.isQueryResult(result) then return fail("responsesFromResult", "result must be QueryResult") end if
   if result.kind == executor.RESULT_COMMAND then return [messages.commandResponse(result.command, result.affectedRows, result.message)] end if
@@ -97,9 +105,10 @@ function responsesFromResult(result)
   return responses.toArray()
 end function
 
-// Formats response using the supplied inputs.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Formats response using the supplied inputs.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
+/// @param response response value consumed by this operation.
 function formatResponse(response)
   if not messages.isResponse(response) then return fail("formatResponse", "response must be Response") end if
   if response.status == constants.STATUS_ERROR then return "ERROR " + response.errorCode + ": " + response.message end if
@@ -125,23 +134,23 @@ function formatResponse(response)
   return builder.toString()
 end function
 
-// Implements component name for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the componentName operation for the minisql client formatter module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function componentName()
   return "client.formatter"
 end function
 
-// Implements target milestone for this module.
-// Returns the computed value or operation status.
-// Any side effects are limited to the explicitly invoked dependencies.
+/// Performs the targetMilestone operation for the minisql client formatter module.
+/// Returns the computed value or operation status.
+/// Any side effects are limited to the explicitly invoked dependencies.
 function targetMilestone()
   return "M18"
 end function
 
-// Returns whether the supplied value satisfies the implemented condition.
-// Returns the computed value or operation status.
-// Does not modify its inputs.
+/// Returns whether implemented satisfies the condition required by the minisql client formatter module.
+/// Returns the computed value or operation status.
+/// Does not modify its inputs.
 function isImplemented()
   return true
 end function

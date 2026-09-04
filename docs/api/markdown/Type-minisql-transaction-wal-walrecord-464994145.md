@@ -12,7 +12,7 @@ struct WalRecord
 Defines the wal record record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L69)
 
 ## Members
 
@@ -23,10 +23,10 @@ Defines the wal record record used by this module.
 encryptedPayload
 ```
 
-True only while the encoded payload contains nonce, ciphertext and tag. Decoders clear this implementation field before returning a logical record.
+True only while the encoded payload contains nonce, ciphertext and tag.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L75)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L89)
 
 <a id="field-field-minisql-transaction-wal-walrecord-fileid-fileid-src-minisql-transaction-wal-ml-828830874"></a>
 ### fileId
@@ -38,7 +38,7 @@ fileId
 File id field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L81)
 
 <a id="field-field-minisql-transaction-wal-walrecord-flags-flags-src-minisql-transaction-wal-ml-849208704"></a>
 ### flags
@@ -50,7 +50,7 @@ flags
 Flags field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L73)
 
 <a id="field-field-minisql-transaction-wal-walrecord-lsn-lsn-src-minisql-transaction-wal-ml-1480479828"></a>
 ### lsn
@@ -62,7 +62,7 @@ lsn
 Lsn field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L75)
 
 <a id="field-field-minisql-transaction-wal-walrecord-pagelsn-pagelsn-src-minisql-transaction-wal-ml-1362367932"></a>
 ### pageLsn
@@ -74,7 +74,7 @@ pageLsn
 Page lsn field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L85)
 
 <a id="field-field-minisql-transaction-wal-walrecord-pagenumber-pagenumber-src-minisql-transaction-wal-ml-1995091036"></a>
 ### pageNumber
@@ -86,7 +86,7 @@ pageNumber
 Page number field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L83)
 
 <a id="field-field-minisql-transaction-wal-walrecord-payload-payload-src-minisql-transaction-wal-ml-2001445416"></a>
 ### payload
@@ -98,7 +98,7 @@ payload
 Payload field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L87)
 
 <a id="field-field-minisql-transaction-wal-walrecord-recordtype-recordtype-src-minisql-transaction-wal-ml-1300630610"></a>
 ### recordType
@@ -110,7 +110,7 @@ recordType
 Record type field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L71)
 
 <a id="field-field-minisql-transaction-wal-walrecord-totallength-totallength-src-minisql-transaction-wal-ml-2132037592"></a>
 ### totalLength
@@ -122,7 +122,7 @@ totalLength
 Total length field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L77)
 
 <a id="field-field-minisql-transaction-wal-walrecord-transactionid-transactionid-src-minisql-transaction-wal-ml-1690138988"></a>
 ### transactionId
@@ -134,4 +134,4 @@ transactionId
 Transaction id field of the wal record.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L79)

@@ -12,7 +12,7 @@ struct AlterTriggerStatement
 Represents persistent activation changes for an existing trigger.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L530)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L585)
 
 ## Members
 
@@ -26,7 +26,7 @@ enabled
 Indicates whether the trigger becomes enabled.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L534)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L589)
 
 <a id="field-field-minisql-sql-ast-altertriggerstatement-name-name-src-minisql-sql-ast-ml-37339118"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the trigger name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L532)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L587)

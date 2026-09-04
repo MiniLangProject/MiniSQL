@@ -12,7 +12,7 @@ struct PlanningContext
 Immutable planning inputs loaded by the executor from one catalog snapshot.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L77)
 
 ## Members
 
@@ -26,7 +26,7 @@ indexes
 Immutable index metadata snapshot.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L81)
 
 <a id="field-field-minisql-planner-execution-plan-planningcontext-schemageneration-schemageneration-src-minisql-planner-execution-plan-ml-949086025"></a>
 ### schemaGeneration
@@ -38,7 +38,7 @@ schemaGeneration
 Process-local DDL and maintenance generation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L83)
 
 <a id="field-field-minisql-planner-execution-plan-planningcontext-statistics-statistics-src-minisql-planner-execution-plan-ml-329442493"></a>
 ### statistics
@@ -50,4 +50,4 @@ statistics
 Immutable statistics catalog snapshot.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/execution_plan.ml#L79)

@@ -12,7 +12,7 @@ struct WalScan
 Defines the wal scan record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L93)
 
 ## Members
 
@@ -26,7 +26,7 @@ records
 Records field of the wal scan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L95)
 
 <a id="field-field-minisql-transaction-wal-walscan-truncatedtail-truncatedtail-src-minisql-transaction-wal-ml-2042879828"></a>
 ### truncatedTail
@@ -38,7 +38,7 @@ truncatedTail
 Truncated tail field of the wal scan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L99)
 
 <a id="field-field-minisql-transaction-wal-walscan-validbytes-validbytes-src-minisql-transaction-wal-ml-853140582"></a>
 ### validBytes
@@ -50,4 +50,4 @@ validBytes
 Valid bytes field of the wal scan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/transaction/wal.ml#L97)

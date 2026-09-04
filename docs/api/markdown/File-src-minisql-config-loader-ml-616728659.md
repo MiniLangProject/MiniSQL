@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql config loader facilities for this project.
+
 Package: [`minisql.config.loader`](Package-minisql-config-loader-1473622867.md)
 
 Reachable from entry: **yes**
@@ -25,11 +27,11 @@ Implements bool member for this module. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L306)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L344)
 
 <a id="function-function-minisql-config-loader-componentname-function-componentname-src-minisql-config-loader-ml-712734766"></a>
 ### componentName
@@ -38,10 +40,10 @@ Implements bool member for this module. Returns the computed value or operation 
 function componentName()
 ```
 
-Implements component name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the componentName operation for the minisql config loader module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L447)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L493)
 
 <a id="function-function-minisql-config-loader-ensureonlykeys-function-ensureonlykeys-object-allowedkeys-context-src-minisql-config-loader-ml-1275464266"></a>
 ### ensureOnlyKeys
@@ -54,12 +56,12 @@ Ensures only keys using the supplied inputs. Requires arguments that satisfy the
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `allowedKeys` | `dynamic` | — |  |
-| `context` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `allowedKeys` | `dynamic` | — | allowedKeys value consumed by this operation. |
+| `context` | `dynamic` | — | Context that carries state for the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L325)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L369)
 
 <a id="function-function-minisql-config-loader-expect-function-expect-parser-expected-operation-src-minisql-config-loader-ml-794451616"></a>
 ### expect
@@ -72,12 +74,12 @@ Implements expect for this module. Returns the computed value or operation statu
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
-| `expected` | `dynamic` | — |  |
-| `operation` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
+| `expected` | `dynamic` | — | expected value consumed by this operation. |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L98)
 
 <a id="function-function-minisql-config-loader-fail-function-fail-operation-message-src-minisql-config-loader-ml-712538310"></a>
 ### fail
@@ -86,15 +88,15 @@ Implements expect for this module. Returns the computed value or operation statu
 function fail(operation, message)
 ```
 
-Creates a structured error for fail using the supplied inputs. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
+Performs the fail operation for the minisql config loader module. Returns its result or propagates a structured error from validation or a dependency. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operation` | `dynamic` | — |  |
-| `message` | `dynamic` | — |  |
+| `operation` | `dynamic` | — | operation value consumed by this operation. |
+| `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L62)
 
 <a id="function-function-minisql-config-loader-intmember-function-intmember-object-key-src-minisql-config-loader-ml-428072116"></a>
 ### intMember
@@ -107,11 +109,11 @@ Implements int member for this module. Returns the computed value or operation s
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L297)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L333)
 
 <a id="constant-constant-minisql-config-loader-invalid-configuration-const-invalid-configuration-9002-src-minisql-config-loader-ml-251303806"></a>
 ### INVALID_CONFIGURATION
@@ -120,8 +122,10 @@ Implements int member for this module. Returns the computed value or operation s
 const INVALID_CONFIGURATION = 9002
 ```
 
+Defines the invalid configuration constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L11)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L14)
 
 <a id="function-function-minisql-config-loader-isdigit-function-isdigit-value-src-minisql-config-loader-ml-2023040735"></a>
 ### isDigit
@@ -134,10 +138,10 @@ Returns whether the supplied value satisfies the digit condition. Returns the co
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — |  |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L149)
 
 <a id="function-function-minisql-config-loader-isimplemented-function-isimplemented-src-minisql-config-loader-ml-127252518"></a>
 ### isImplemented
@@ -146,10 +150,10 @@ Returns whether the supplied value satisfies the digit condition. Returns the co
 function isImplemented()
 ```
 
-Returns whether the supplied value satisfies the implemented condition. Returns the computed value or operation status. Does not modify its inputs.
+Returns whether implemented satisfies the condition required by the minisql config loader module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L461)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L507)
 
 <a id="constant-constant-minisql-config-loader-json-array-const-json-array-5-src-minisql-config-loader-ml-1340486098"></a>
 ### JSON_ARRAY
@@ -158,8 +162,10 @@ Returns whether the supplied value satisfies the implemented condition. Returns 
 const JSON_ARRAY = 5
 ```
 
+Defines the json array constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L19)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L29)
 
 <a id="constant-constant-minisql-config-loader-json-bool-const-json-bool-1-src-minisql-config-loader-ml-1105568016"></a>
 ### JSON_BOOL
@@ -168,8 +174,10 @@ const JSON_ARRAY = 5
 const JSON_BOOL = 1
 ```
 
+Defines the json bool constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L15)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L21)
 
 <a id="constant-constant-minisql-config-loader-json-int-const-json-int-2-src-minisql-config-loader-ml-1782414173"></a>
 ### JSON_INT
@@ -178,8 +186,10 @@ const JSON_BOOL = 1
 const JSON_INT = 2
 ```
 
+Defines the json int constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L16)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L23)
 
 <a id="constant-constant-minisql-config-loader-json-null-const-json-null-0-src-minisql-config-loader-ml-1981711809"></a>
 ### JSON_NULL
@@ -188,8 +198,10 @@ const JSON_INT = 2
 const JSON_NULL = 0
 ```
 
+Defines the json null constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L14)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L19)
 
 <a id="constant-constant-minisql-config-loader-json-object-const-json-object-4-src-minisql-config-loader-ml-488124273"></a>
 ### JSON_OBJECT
@@ -198,8 +210,10 @@ const JSON_NULL = 0
 const JSON_OBJECT = 4
 ```
 
+Defines the json object constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L18)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L27)
 
 <a id="constant-constant-minisql-config-loader-json-string-const-json-string-3-src-minisql-config-loader-ml-1920791998"></a>
 ### JSON_STRING
@@ -208,8 +222,10 @@ const JSON_OBJECT = 4
 const JSON_STRING = 3
 ```
 
+Defines the json string constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L17)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L25)
 
 - [minisql.config.loader.JsonPair](Type-minisql-config-loader-jsonpair-455794721.md) — struct
 - [minisql.config.loader.JsonValue](Type-minisql-config-loader-jsonvalue-1124844058.md) — struct
@@ -224,10 +240,10 @@ Loads load using the supplied inputs. Requires arguments that satisfy the valida
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `path` | `dynamic` | — |  |
+| `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L474)
 
 <a id="function-function-minisql-config-loader-matchliteral-function-matchliteral-parser-text-src-minisql-config-loader-ml-1877433798"></a>
 ### matchLiteral
@@ -240,11 +256,11 @@ Implements match literal for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
-| `text` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
+| `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L185)
 
 <a id="constant-constant-minisql-config-loader-max-config-bytes-const-max-config-bytes-1048576-src-minisql-config-loader-ml-881264294"></a>
 ### MAX_CONFIG_BYTES
@@ -253,8 +269,10 @@ Implements match literal for this module. Returns the computed value or operatio
 const MAX_CONFIG_BYTES = 1048576
 ```
 
+Defines the max config bytes constant used by the minisql config loader module.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L12)
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L16)
 
 <a id="function-function-minisql-config-loader-member-function-member-object-key-src-minisql-config-loader-ml-2121791062"></a>
 ### member
@@ -267,11 +285,11 @@ Implements member for this module. Requires arguments that satisfy the validatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L286)
 
 <a id="function-function-minisql-config-loader-objectmember-function-objectmember-object-key-src-minisql-config-loader-ml-1193882294"></a>
 ### objectMember
@@ -284,11 +302,11 @@ Implements object member for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L311)
 
 <a id="function-function-minisql-config-loader-optionalintmember-function-optionalintmember-object-key-defaultvalue-src-minisql-config-loader-ml-1123232018"></a>
 ### optionalIntMember
@@ -301,12 +319,12 @@ Reads an optional integer while preserving backwards-compatible defaults.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
-| `defaultValue` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
+| `defaultValue` | `dynamic` | — | defaultValue value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L313)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L354)
 
 <a id="function-function-minisql-config-loader-optionalmember-function-optionalmember-object-key-src-minisql-config-loader-ml-158572846"></a>
 ### optionalMember
@@ -319,11 +337,11 @@ Looks up an optional object member without weakening strict unknown-key validati
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L268)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L298)
 
 <a id="function-function-minisql-config-loader-parse-function-parse-text-src-minisql-config-loader-ml-426969023"></a>
 ### parse
@@ -336,10 +354,10 @@ Parses parse using the supplied inputs. Requires arguments that satisfy the vali
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `dynamic` | — |  |
+| `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L271)
 
 <a id="function-function-minisql-config-loader-parsearray-function-parsearray-parser-src-minisql-config-loader-ml-624907013"></a>
 ### parseArray
@@ -352,10 +370,10 @@ Parses array using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L201)
 
 <a id="function-function-minisql-config-loader-parseinteger-function-parseinteger-parser-src-minisql-config-loader-ml-1518684517"></a>
 ### parseInteger
@@ -368,10 +386,10 @@ Parses integer using the supplied inputs. Requires arguments that satisfy the va
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L158)
 
 <a id="function-function-minisql-config-loader-parseobject-function-parseobject-parser-src-minisql-config-loader-ml-2091080121"></a>
 ### parseObject
@@ -384,10 +402,10 @@ Parses object using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L200)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L224)
 
 - [minisql.config.loader.Parser](Type-minisql-config-loader-parser-1540139416.md) — struct
 <a id="function-function-minisql-config-loader-parsestring-function-parsestring-parser-src-minisql-config-loader-ml-516787009"></a>
@@ -401,10 +419,10 @@ Parses string using the supplied inputs. Returns the computed value or operation
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L111)
 
 <a id="function-function-minisql-config-loader-parsevalue-function-parsevalue-parser-src-minisql-config-loader-ml-1322716713"></a>
 ### parseValue
@@ -417,10 +435,10 @@ Parses value using the supplied inputs. Returns the computed value or operation 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L254)
 
 <a id="function-function-minisql-config-loader-peek-function-peek-parser-src-minisql-config-loader-ml-1072463429"></a>
 ### peek
@@ -433,10 +451,10 @@ Implements peek for this module. Returns the computed value or operation status.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L86)
 
 <a id="function-function-minisql-config-loader-skipwhitespace-function-skipwhitespace-parser-src-minisql-config-loader-ml-2124164697"></a>
 ### skipWhitespace
@@ -449,10 +467,10 @@ Implements skip whitespace for this module. Returns the computed value or operat
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `parser` | `dynamic` | — |  |
+| `parser` | `dynamic` | — | parser value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L70)
 
 <a id="function-function-minisql-config-loader-stringmember-function-stringmember-object-key-src-minisql-config-loader-ml-2062495582"></a>
 ### stringMember
@@ -465,11 +483,11 @@ Implements string member for this module. Returns the computed value or operatio
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `object` | `dynamic` | — |  |
-| `key` | `dynamic` | — |  |
+| `object` | `dynamic` | — | object value consumed by this operation. |
+| `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L288)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L322)
 
 <a id="function-function-minisql-config-loader-targetmilestone-function-targetmilestone-src-minisql-config-loader-ml-1492583176"></a>
 ### targetMilestone
@@ -478,10 +496,10 @@ Implements string member for this module. Returns the computed value or operatio
 function targetMilestone()
 ```
 
-Implements target milestone for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Performs the targetMilestone operation for the minisql config loader module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L454)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L500)
 
 <a id="function-function-minisql-config-loader-toconfig-function-toconfig-root-src-minisql-config-loader-ml-887748334"></a>
 ### toConfig
@@ -494,7 +512,7 @@ Implements to config for this module. Returns the computed value or operation st
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `root` | `dynamic` | — |  |
+| `root` | `dynamic` | — | root value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L340)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/loader.ml#L385)

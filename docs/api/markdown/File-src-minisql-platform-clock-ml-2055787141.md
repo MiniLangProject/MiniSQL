@@ -2,6 +2,8 @@
 
 [Home](README.md) · [Files](Files.md)
 
+Provides minisql platform clock facilities for this project.
+
 Package: [`minisql.platform.clock`](Package-minisql-platform-clock-10633347.md)
 
 Reachable from entry: **yes**
@@ -19,10 +21,10 @@ Reachable from entry: **yes**
 function componentName()
 ```
 
-Returns the stable diagnostic name of this component. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the componentName operation for the minisql platform clock module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L33)
 
 <a id="constant-constant-minisql-platform-clock-invalid-argument-const-invalid-argument-9001-src-minisql-platform-clock-ml-1775662459"></a>
 ### INVALID_ARGUMENT
@@ -31,7 +33,7 @@ Returns the stable diagnostic name of this component. Takes no caller-supplied i
 const INVALID_ARGUMENT = 9001
 ```
 
-Monotonic timing and bounded sleeping used by lock waits and server polling. Durations are expressed in milliseconds and wall-clock adjustments cannot move the monotonic counter backwards.
+Monotonic timing and bounded sleeping used by lock waits and server polling.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L12)
@@ -43,10 +45,10 @@ Monotonic timing and bounded sleeping used by lock waits and server polling. Dur
 function isImplemented()
 ```
 
-Reports whether this component is implemented. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
+Returns whether implemented satisfies the condition required by the minisql platform clock module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L45)
 
 <a id="function-function-minisql-platform-clock-monotonicmilliseconds-function-monotonicmilliseconds-src-minisql-platform-clock-ml-327030482"></a>
 ### monotonicMilliseconds
@@ -71,10 +73,10 @@ Performs the sleep milliseconds operation for this module. Inputs: `milliseconds
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `milliseconds` | `dynamic` | — |  |
+| `milliseconds` | `dynamic` | — | milliseconds value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L23)
 
 <a id="function-function-minisql-platform-clock-targetmilestone-function-targetmilestone-src-minisql-platform-clock-ml-1040525756"></a>
 ### targetMilestone
@@ -83,7 +85,7 @@ Performs the sleep milliseconds operation for this module. Inputs: `milliseconds
 function targetMilestone()
 ```
 
-Returns the milestone in which this component became available. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
+Performs the targetMilestone operation for the minisql platform clock module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/platform/clock.ml#L39)

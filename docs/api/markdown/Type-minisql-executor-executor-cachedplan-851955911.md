@@ -12,7 +12,7 @@ struct CachedPlan
 Session-local reusable physical plan. Entries are generation-bound and the cache is invalidated atomically with local DDL or statistics maintenance.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L139)
 
 ## Members
 
@@ -26,7 +26,7 @@ hits
 Number of successful reuses since insertion.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L149)
 
 <a id="field-field-minisql-executor-executor-cachedplan-key-key-src-minisql-executor-executor-ml-472106278"></a>
 ### key
@@ -38,7 +38,7 @@ key
 Canonical formatted SELECT text used for lookup.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L141)
 
 <a id="field-field-minisql-executor-executor-cachedplan-optimized-optimized-src-minisql-executor-executor-ml-1687486074"></a>
 ### optimized
@@ -50,7 +50,7 @@ optimized
 Costed physical and executable plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L147)
 
 <a id="field-field-minisql-executor-executor-cachedplan-schemageneration-schemageneration-src-minisql-executor-executor-ml-409237916"></a>
 ### schemaGeneration
@@ -62,7 +62,7 @@ schemaGeneration
 Shared catalog/maintenance generation at planning time.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L143)
 
 <a id="field-field-minisql-executor-executor-cachedplan-statisticsgeneration-statisticsgeneration-src-minisql-executor-executor-ml-1931388848"></a>
 ### statisticsGeneration
@@ -74,4 +74,4 @@ statisticsGeneration
 Persistent statistics generation at planning time.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L145)
