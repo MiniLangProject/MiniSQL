@@ -6,6 +6,7 @@ package minisql.executor.aggregate
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+import minisql.common.byte_ops as byte_ops
 import minisql.common.endian as endian
 import std.concurrent.thread_pool as thread_pool
 import minisql.executor.projection as projection
@@ -129,13 +130,7 @@ end function
 /// @param input input value consumed by this operation.
 /// @param seed seed value consumed by this operation.
 function hashBytes(input, seed)
-  result = seed & HASH_MASK
-  if len(input) > 0 then
-    for index = 0 to len(input) - 1
-      result = ((result ^ input[index]) * 16777619) & HASH_MASK
-    end for
-  end if
-  return result
+  return byte_ops.fnv1a31Adaptive(input, seed)
 end function
 
 /// Implements hash value for this module.

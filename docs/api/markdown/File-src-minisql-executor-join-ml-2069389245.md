@@ -10,6 +10,7 @@ Reachable from entry: **yes**
 
 ## Imports
 
+- `minisql/common/byte_ops.ml` as `byte_ops` → [src/minisql/common/byte_ops.ml](File-src-minisql-common-byte-ops-ml-400961654.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/executor/projection.ml` as `projection` → [src/minisql/executor/projection.ml](File-src-minisql-executor-projection-ml-1842888238.md)
 - `minisql/executor/scan.ml` as `scan` → [src/minisql/executor/scan.ml](File-src-minisql-executor-scan-ml-657274302.md)
@@ -40,7 +41,7 @@ Executes the semantic nested-loop fallback for every supported join type. Tracks
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L589)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L584)
 
 <a id="function-function-minisql-executor-join-applyhash-function-applyhash-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1039039119"></a>
 ### applyHash
@@ -58,7 +59,7 @@ Backward-compatible entry point used by direct executor tests.
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L579)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L574)
 
 <a id="function-function-minisql-executor-join-applyhashbuild-function-applyhashbuild-leftrows-rightrows-boundjoin-buildright-src-minisql-executor-join-ml-90075153"></a>
 ### applyHashBuild
@@ -77,7 +78,7 @@ Selects a direct hash-build orientation without a server query token.
 | `buildRight` | `dynamic` | — | buildRight value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L384)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L379)
 
 <a id="function-function-minisql-executor-join-applyhashbuildcore-function-applyhashbuildcore-leftrows-rightrows-boundjoin-buildright-database-sessionid-src-minisql-executor-join-ml-61323851"></a>
 ### applyHashBuildCore
@@ -98,7 +99,7 @@ Executes the optimizer-selected hash build orientation. LEFT joins keep the righ
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L357)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L352)
 
 <a id="function-function-minisql-executor-join-applyhashbuildwithspill-function-applyhashbuildwithspill-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-src-minisql-executor-join-ml-2143391679"></a>
 ### applyHashBuildWithSpill
@@ -119,7 +120,7 @@ Historical direct API retains behavior without a cooperative server token.
 | `threshold` | `dynamic` | — | threshold value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L558)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L553)
 
 <a id="function-function-minisql-executor-join-applyhashbuildwithspillcontrolled-function-applyhashbuildwithspillcontrolled-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-583842025"></a>
 ### applyHashBuildWithSpillControlled
@@ -142,7 +143,7 @@ Server execution path propagates cancellation/deadline state into spill workers.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L571)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L566)
 
 <a id="function-function-minisql-executor-join-applyhashbuildwithspillcore-function-applyhashbuildwithspillcore-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-1207558427"></a>
 ### applyHashBuildWithSpillCore
@@ -165,7 +166,7 @@ Executes a grace-style partitioned hash join when the selected build input excee
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L453)
 
 <a id="function-function-minisql-executor-join-applyhashleft-function-applyhashleft-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-294180477"></a>
 ### applyHashLeft
@@ -183,7 +184,7 @@ Preserves left-build hash joins for callers without a server query token.
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L370)
 
 <a id="function-function-minisql-executor-join-applyhashleftcore-function-applyhashleftcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-2082804693"></a>
 ### applyHashLeftCore
@@ -203,7 +204,7 @@ Executes an INNER equi-join with the left input as the hash-build side. The emit
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L293)
 
 <a id="function-function-minisql-executor-join-applyhashright-function-applyhashright-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1106965383"></a>
 ### applyHashRight
@@ -221,7 +222,7 @@ Preserves right-build hash joins for callers without a server query token.
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L367)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L362)
 
 <a id="function-function-minisql-executor-join-applyhashrightcore-function-applyhashrightcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-848546437"></a>
 ### applyHashRightCore
@@ -241,7 +242,7 @@ Executes an INNER or LEFT equi-join with a right-side hash table. NULL keys neve
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L229)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L224)
 
 <a id="function-function-minisql-executor-join-applyspilledpartition-function-applyspilledpartition-task-src-minisql-executor-join-ml-257639769"></a>
 ### applySpilledPartition
@@ -257,7 +258,7 @@ Reads and joins one pair of hash partitions on a native worker. Runs are deleted
 | `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L424)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L419)
 
 <a id="function-function-minisql-executor-join-canhash-function-canhash-boundjoin-src-minisql-executor-join-ml-717831136"></a>
 ### canHash
@@ -273,7 +274,7 @@ Returns whether the supplied value satisfies the hash condition. Requires argume
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L205)
 
 <a id="function-function-minisql-executor-join-cleanuppartitiontasks-function-cleanuppartitiontasks-tasks-src-minisql-executor-join-ml-1028962006"></a>
 ### cleanupPartitionTasks
@@ -289,7 +290,7 @@ Removes every spill run already owned by not-yet-submitted partition tasks.
 | `tasks` | `dynamic` | — | tasks value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L411)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L406)
 
 <a id="function-function-minisql-executor-join-combine-function-combine-left-right-src-minisql-executor-join-ml-875615771"></a>
 ### combine
@@ -306,7 +307,7 @@ Implements combine for this module. Returns the computed value or operation stat
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L90)
 
 <a id="function-function-minisql-executor-join-componentname-function-componentname-src-minisql-executor-join-ml-182550798"></a>
 ### componentName
@@ -318,7 +319,7 @@ function componentName()
 Performs the componentName operation for the minisql executor join module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L630)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L625)
 
 <a id="function-function-minisql-executor-join-conditionpasses-function-conditionpasses-condition-row-src-minisql-executor-join-ml-1218160165"></a>
 ### conditionPasses
@@ -335,7 +336,7 @@ Implements condition passes for this module. Returns the computed value or opera
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L127)
 
 <a id="function-function-minisql-executor-join-equalitycolumns-function-equalitycolumns-boundjoin-src-minisql-executor-join-ml-1971825006"></a>
 ### equalityColumns
@@ -351,7 +352,7 @@ Implements equality columns for this module. Requires arguments that satisfy the
 | `boundJoin` | `dynamic` | — | boundJoin value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L186)
 
 <a id="function-function-minisql-executor-join-fail-function-fail-code-operation-message-src-minisql-executor-join-ml-1186142595"></a>
 ### fail
@@ -369,7 +370,7 @@ Performs the fail operation for the minisql executor join module. Returns its re
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L73)
 
 <a id="constant-constant-minisql-executor-join-hash-bucket-count-const-hash-bucket-count-257-src-minisql-executor-join-ml-687203375"></a>
 ### HASH_BUCKET_COUNT
@@ -381,7 +382,7 @@ const HASH_BUCKET_COUNT = 257
 Defines the hash bucket count constant used by the minisql executor join module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L26)
 
 <a id="constant-constant-minisql-executor-join-hash-mask-const-hash-mask-2147483647-src-minisql-executor-join-ml-1849200055"></a>
 ### HASH_MASK
@@ -393,7 +394,7 @@ const HASH_MASK = 2147483647
 Defines the hash mask constant used by the minisql executor join module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L28)
 
 <a id="function-function-minisql-executor-join-hashbytes-function-hashbytes-input-seed-src-minisql-executor-join-ml-1202831771"></a>
 ### hashBytes
@@ -410,7 +411,7 @@ Implements hash bytes for this module. Requires arguments that satisfy the valid
 | `seed` | `dynamic` | — | seed value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L138)
 
 - [minisql.executor.join.HashJoinEntry](Type-minisql-executor-join-hashjoinentry-1527281743.md) — struct
 <a id="function-function-minisql-executor-join-hashvalue-function-hashvalue-value-src-minisql-executor-join-ml-1134870723"></a>
@@ -427,7 +428,7 @@ Implements hash value for this module. Requires arguments that satisfy the valid
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L148)
 
 <a id="function-function-minisql-executor-join-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-join-ml-2085825425"></a>
 ### integerDivide
@@ -444,7 +445,7 @@ Computes non-negative truncating integer division without losing precision.
 | `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L80)
 
 <a id="constant-constant-minisql-executor-join-intra-query-workers-const-intra-query-workers-4-src-minisql-executor-join-ml-1610784937"></a>
 ### INTRA_QUERY_WORKERS
@@ -456,7 +457,7 @@ const INTRA_QUERY_WORKERS = 4
 Defines the intra query workers constant used by the minisql executor join module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L30)
 
 <a id="constant-constant-minisql-executor-join-invalid-argument-const-invalid-argument-9001-src-minisql-executor-join-ml-2026853893"></a>
 ### INVALID_ARGUMENT
@@ -468,7 +469,7 @@ const INVALID_ARGUMENT = 9001
 Join executor. M16 provides the correctness-first nested-loop implementation.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L24)
 
 <a id="function-function-minisql-executor-join-isimplemented-function-isimplemented-src-minisql-executor-join-ml-1916872414"></a>
 ### isImplemented
@@ -480,7 +481,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql executor join module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L644)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L639)
 
 - [minisql.executor.join.JoinPartitionTask](Type-minisql-executor-join-joinpartitiontask-547162216.md) — struct
 <a id="function-function-minisql-executor-join-nullvalues-function-nullvalues-table-src-minisql-executor-join-ml-995927156"></a>
@@ -497,7 +498,7 @@ Implements null values for this module. Returns the computed value or operation 
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L98)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L99)
 
 <a id="function-function-minisql-executor-join-nullvaluesfortypes-function-nullvaluesfortypes-typeinfos-src-minisql-executor-join-ml-294311717"></a>
 ### nullValuesForTypes
@@ -513,7 +514,7 @@ Implements null values for types for this module. Requires arguments that satisf
 | `typeInfos` | `dynamic` | — | typeInfos value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L112)
 
 <a id="function-function-minisql-executor-join-polljoincontrol-function-polljoincontrol-database-sessionid-counter-operation-src-minisql-executor-join-ml-588140083"></a>
 ### pollJoinControl
@@ -532,7 +533,7 @@ Polls a server-owned query at bounded hash-operator intervals. Direct module tes
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L62)
 
 <a id="function-function-minisql-executor-join-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-join-ml-1439279559"></a>
 ### projectedSpillRows
@@ -548,7 +549,7 @@ Converts scanned rows to the generic validated spill-run representation.
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L390)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L385)
 
 <a id="function-function-minisql-executor-join-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-join-ml-1413995643"></a>
 ### scannedSpillRows
@@ -564,7 +565,7 @@ Restores value-only scanned rows after a validated spill-run read.
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L396)
 
 <a id="function-function-minisql-executor-join-targetmilestone-function-targetmilestone-src-minisql-executor-join-ml-1165845932"></a>
 ### targetMilestone
@@ -576,4 +577,4 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql executor join module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L637)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/join.ml#L632)

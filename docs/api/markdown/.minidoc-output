@@ -18,6 +18,7 @@ File-src-minisql-catalog-statistics-ml-1707584758.md
 File-src-minisql-client-client-ml-193935498.md
 File-src-minisql-client-console-ml-931665780.md
 File-src-minisql-client-formatter-ml-1949327393.md
+File-src-minisql-common-byte-ops-ml-400961654.md
 File-src-minisql-common-crc32c-ml-2102127649.md
 File-src-minisql-common-diagnostics-ml-1805539733.md
 File-src-minisql-common-endian-ml-71280848.md
@@ -106,6 +107,7 @@ Package-minisql-catalog-statistics-1606211552.md
 Package-minisql-client-client-1899571164.md
 Package-minisql-client-console-935104928.md
 Package-minisql-client-formatter-1915397479.md
+Package-minisql-common-byte-ops-655610004.md
 Package-minisql-common-crc32c-843614877.md
 Package-minisql-common-diagnostics-1140477375.md
 Package-minisql-common-endian-441442362.md

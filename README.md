@@ -1,4 +1,4 @@
-# MiniSQL 1.1.0
+# MiniSQL 1.1.1
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Language: MiniLang](https://img.shields.io/badge/written%20in-MiniLang-5b5bd6.svg)](.)
@@ -28,7 +28,7 @@ The strict MiniDoc configuration rejects missing documentation; use `--check`
 to validate it without rewriting the committed reference.
 
 The frozen M0-M50 plan is complete. The accepted 1.0 baseline revision is
-`M48-M50R3`; MiniSQL 1.1.0 retains database and wire format version 1. The
+`M48-M50R3`; MiniSQL 1.1.1 retains database and wire format version 1. The
 current tree was revalidated on 2026-09-02: Windows passed all
 **106/106 cumulative phases**, including crash recovery, genuinely parallel
 same-database reads, concurrent clients, TLS integration, replication, fuzzing,
@@ -172,7 +172,7 @@ advisory and CRC-32C protected; the version-5 reader accepts versions 1–4.
 
 ## Requirements
 
-- MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or newer;
+- MiniLangCompilerPy or MiniLangCompilerML 1.3.0 or newer;
 - Windows x64 with Schannel TLS 1.3 support, or Linux x64 with glibc and
   OpenSSL 3 (`libssl.so.3`, `libcrypto.so.3`);
 - Python 3.11 or newer when using the Python compiler, cumulative Windows test
@@ -278,7 +278,7 @@ try (Connection connection = DriverManager.getConnection(
 }
 ```
 
-The JAR is written to `build/jdbc/minisql-jdbc-1.1.0.jar`. See the
+The JAR is written to `build/jdbc/minisql-jdbc-1.1.1.jar`. See the
 [`JDBC driver guide`](docs/release/JDBC.md) for authenticated/TLS URLs,
 certificate pinning, supported interfaces, and protocol-v1 limitations.
 
@@ -348,7 +348,7 @@ release matrix.
 Successful runs end with the platform-specific `SUCCESS` gate.
 
 ```text
-MiniSQL 1.1.0 test suite: SUCCESS
+MiniSQL 1.1.1 test suite: SUCCESS
 ```
 
 A source-only static validation is available with:
@@ -483,6 +483,28 @@ multi-host deployments require an external consensus/witness service and a
 storage-level fencing policy. DDL still requires a new replication base.
 
 ## Performance evaluation
+
+### 2026-10-31 MiniLang 1.3 and inline assembly
+
+Compiling unchanged MiniSQL with the updated MiniLang 1.3 compiler and standard
+library left the tested integer sort/group/join requests within roughly 2-5%
+host variance and did not change the sustained 165.04-165.05 MiB private-memory
+peak. The standard-library update still provides large isolated wins in paths
+such as Base64, compression, bulk copies, quoting, TLS-pin comparison, and
+native math; those operations did not dominate this SQL fixture.
+
+MiniSQL now retains two measured byte primitives: a hybrid 31-bit FNV-1a hash
+that crosses from MiniLang to inline ASM at 16 bytes, and an unsigned bounded
+B+ tree key comparison. At 16-4,096 bytes the hash microbenchmark was
+**1.56x-3.31x faster**; at 8-3,584 bytes key comparison was
+**2.11x-11.37x faster**. A four-byte integer ASM hash was removed because it
+was almost twice as slow. On complete 3,000-row long-text SQL requests, grouping
+improved from a 345.103 ms pooled median to **293.542 ms (-14.9%)**; an exact
+final-source confirmation measured **295.240 ms (-14.4%)**. Text-join direction
+changed between measurement windows and is therefore not claimed as a stable
+gain. Peak memory did not increase. Full old/new tables, trimmed means,
+methodology, rejected candidates, and Windows/Linux parity evidence are in the
+[`inline-assembly evaluation`](tests/performance/INLINE_ASM_2026-10-31.md).
 
 The current MiniLang feature evaluation found one safe runtime-level win:
 `List.fromArray`, growth, `addAll`, and `toArray` now use native `copyArray`.
@@ -720,8 +742,8 @@ verified fix, and additional WSL2 limitations.
 Output:
 
 ```text
-build\release\MiniSQL-1.1.0-windows-x64.zip
-build\release\MiniSQL-1.1.0-windows-x64.zip.sha256
+build\release\MiniSQL-1.1.1-windows-x64.zip
+build\release\MiniSQL-1.1.1-windows-x64.zip.sha256
 ```
 
 ## Repository layout

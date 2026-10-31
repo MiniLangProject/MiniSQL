@@ -11,6 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/catalog/catalog.ml` as `catalog` → [src/minisql/catalog/catalog.ml](File-src-minisql-catalog-catalog-ml-1154366378.md)
+- `minisql/common/byte_ops.ml` as `byte_ops` → [src/minisql/common/byte_ops.ml](File-src-minisql-common-byte-ops-ml-400961654.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/sql/types.ml` as `types` → [src/minisql/sql/types.ml](File-src-minisql-sql-types-ml-1842329761.md)
@@ -36,7 +37,7 @@ Retains the public single-column ANALYZE API used by older callers.
 | `pageCount` | `dynamic` | — | Number of page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L718)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L713)
 
 <a id="function-function-minisql-catalog-statistics-analyzesamplewithgroups-function-analyzesamplewithgroups-table-populationrows-rows-pagecount-columngroups-src-minisql-catalog-statistics-ml-2109569963"></a>
 ### analyzeSampleWithGroups
@@ -56,7 +57,7 @@ Builds bounded-memory statistics from a uniformly spaced sample. Small tables, w
 | `columnGroups` | `dynamic` | — | columnGroups value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L661)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L656)
 
 <a id="function-function-minisql-catalog-statistics-analyzetable-function-analyzetable-table-rows-pagecount-src-minisql-catalog-statistics-ml-23324639"></a>
 ### analyzeTable
@@ -74,7 +75,7 @@ Performs the analyze table operation for this module. Inputs: `table`, `rows`, `
 | `pageCount` | `dynamic` | — | Number of page to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L727)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L722)
 
 <a id="constant-constant-minisql-catalog-statistics-bounds-format-version-const-bounds-format-version-3-src-minisql-catalog-statistics-ml-167461614"></a>
 ### BOUNDS_FORMAT_VERSION
@@ -86,7 +87,7 @@ const BOUNDS_FORMAT_VERSION = 3
 Defines the bounds format version constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L31)
 
 <a id="function-function-minisql-catalog-statistics-bytesequal-function-bytesequal-left-right-src-minisql-catalog-statistics-ml-515183063"></a>
 ### bytesEqual
@@ -103,7 +104,7 @@ Performs the bytesEqual operation for the minisql catalog statistics module. Inp
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L204)
 
 <a id="constant-constant-minisql-catalog-statistics-column-bytes-const-column-bytes-232-src-minisql-catalog-statistics-ml-1112926118"></a>
 ### COLUMN_BYTES
@@ -115,7 +116,7 @@ const COLUMN_BYTES = 232
 Defines the column bytes constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L43)
 
 <a id="constant-constant-minisql-catalog-statistics-column-flag-hashed-mcv-const-column-flag-hashed-mcv-2-src-minisql-catalog-statistics-ml-248219107"></a>
 ### COLUMN_FLAG_HASHED_MCV
@@ -127,7 +128,7 @@ const COLUMN_FLAG_HASHED_MCV = 2
 Defines the column flag hashed mcv constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L55)
 
 <a id="constant-constant-minisql-catalog-statistics-column-flag-integral-bounds-const-column-flag-integral-bounds-1-src-minisql-catalog-statistics-ml-388289452"></a>
 ### COLUMN_FLAG_INTEGRAL_BOUNDS
@@ -139,7 +140,7 @@ const COLUMN_FLAG_INTEGRAL_BOUNDS = 1
 Defines the column flag integral bounds constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L53)
 
 <a id="constant-constant-minisql-catalog-statistics-column-group-bytes-const-column-group-bytes-128-src-minisql-catalog-statistics-ml-4266284"></a>
 ### COLUMN_GROUP_BYTES
@@ -151,7 +152,7 @@ const COLUMN_GROUP_BYTES = 128
 Defines the column group bytes constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L47)
 
 - [minisql.catalog.statistics.ColumnGroupStatistics](Type-minisql-catalog-statistics-columngroupstatistics-647698160.md) — struct
 - [minisql.catalog.statistics.ColumnStatistics](Type-minisql-catalog-statistics-columnstatistics-1679950787.md) — struct
@@ -169,7 +170,7 @@ Converts one ordered SQL value to the compact histogram scalar when possible.
 | `candidate` | `dynamic` | — | candidate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L361)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L356)
 
 <a id="function-function-minisql-catalog-statistics-componentname-function-componentname-src-minisql-catalog-statistics-ml-1208793912"></a>
 ### componentName
@@ -181,7 +182,7 @@ function componentName()
 Performs the componentName operation for the minisql catalog statistics module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1160)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1155)
 
 <a id="constant-constant-minisql-catalog-statistics-corrupt-data-const-corrupt-data-9004-src-minisql-catalog-statistics-ml-989850832"></a>
 ### CORRUPT_DATA
@@ -193,7 +194,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L22)
 
 <a id="function-function-minisql-catalog-statistics-create-function-create-databaseid-src-minisql-catalog-statistics-ml-253783548"></a>
 ### create
@@ -209,7 +210,7 @@ Creates create for the minisql catalog statistics module. Inputs: `databaseId`. 
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L216)
 
 <a id="function-function-minisql-catalog-statistics-decode-function-decode-encoded-src-minisql-catalog-statistics-ml-2018924002"></a>
 ### decode
@@ -225,7 +226,7 @@ Keep the qualified public API statistics.decode(...), while every internal call 
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1095)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1090)
 
 <a id="function-function-minisql-catalog-statistics-decodecatalog-function-decodecatalog-encoded-src-minisql-catalog-statistics-ml-1779189864"></a>
 ### decodeCatalog
@@ -241,7 +242,7 @@ Decodes the catalog. Inputs: `encoded`. Returns the produced value or propagates
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1034)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1029)
 
 <a id="function-function-minisql-catalog-statistics-decodecolumngrouprecord-function-decodecolumngrouprecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-1574939893"></a>
 ### decodeColumnGroupRecord
@@ -262,7 +263,7 @@ Decodes one column-group record directly into its preallocated destination.
 | `destinationIndex` | `dynamic` | — | Slot receiving the decoded record. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L998)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L993)
 
 <a id="function-function-minisql-catalog-statistics-decodecolumnrecord-function-decodecolumnrecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-676435385"></a>
 ### decodeColumnRecord
@@ -283,7 +284,7 @@ Decodes one column record directly into its preallocated destination slot.
 | `destinationIndex` | `dynamic` | — | Slot receiving the decoded record. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L924)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L919)
 
 <a id="function-function-minisql-catalog-statistics-decodenative-function-decodenative-words-operation-name-src-minisql-catalog-statistics-ml-5258399"></a>
 ### decodeNative
@@ -301,7 +302,7 @@ Decodes native for the minisql catalog statistics workflow. Inputs: `words`, `op
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L912)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L907)
 
 <a id="constant-constant-minisql-catalog-statistics-distinct-bucket-count-const-distinct-bucket-count-257-src-minisql-catalog-statistics-ml-1541929093"></a>
 ### DISTINCT_BUCKET_COUNT
@@ -313,7 +314,7 @@ const DISTINCT_BUCKET_COUNT = 257
 Defines the distinct bucket count constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L49)
 
 <a id="function-function-minisql-catalog-statistics-distinctcount-function-distinctcount-columnindex-rows-src-minisql-catalog-statistics-ml-1038299231"></a>
 ### distinctCount
@@ -330,7 +331,7 @@ Performs the distinct count operation for this module. Inputs: `columnIndex`, `r
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L329)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L324)
 
 <a id="constant-constant-minisql-catalog-statistics-distribution-format-version-const-distribution-format-version-4-src-minisql-catalog-statistics-ml-1619589675"></a>
 ### DISTRIBUTION_FORMAT_VERSION
@@ -342,7 +343,7 @@ const DISTRIBUTION_FORMAT_VERSION = 4
 Defines the distribution format version constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L29)
 
 <a id="function-function-minisql-catalog-statistics-encode-function-encode-state-src-minisql-catalog-statistics-ml-456684267"></a>
 ### encode
@@ -358,7 +359,7 @@ Encodes encode for the minisql catalog statistics workflow. Inputs: `state`. Ret
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L890)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L885)
 
 <a id="function-function-minisql-catalog-statistics-encodecolumngrouprecord-function-encodecolumngrouprecord-payload-cursor-group-rowcount-src-minisql-catalog-statistics-ml-1984135064"></a>
 ### encodeColumnGroupRecord
@@ -377,7 +378,7 @@ Validates and encodes one fixed-width multi-column statistics record.
 | `rowCount` | `dynamic` | — | Owning table population used for range checks. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L826)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L821)
 
 <a id="function-function-minisql-catalog-statistics-encodecolumnrecord-function-encodecolumnrecord-payload-cursor-column-rowcount-src-minisql-catalog-statistics-ml-1484728195"></a>
 ### encodeColumnRecord
@@ -396,7 +397,7 @@ Validates and encodes one fixed-width column-statistics record.
 | `rowCount` | `dynamic` | — | Owning table population used for range checks. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L757)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L752)
 
 <a id="function-function-minisql-catalog-statistics-encodedsize-function-encodedsize-state-src-minisql-catalog-statistics-ml-530085929"></a>
 ### encodedSize
@@ -412,7 +413,7 @@ Encodes the d size. Inputs: `state`. Returns the produced value or propagates a 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L734)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L729)
 
 <a id="function-function-minisql-catalog-statistics-encodetablerecord-function-encodetablerecord-payload-cursor-table-src-minisql-catalog-statistics-ml-1611084810"></a>
 ### encodeTableRecord
@@ -430,7 +431,7 @@ Encodes one table header followed by all of its column and group records.
 | `table` | `dynamic` | — | Table statistics and nested records to encode. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L861)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L856)
 
 <a id="function-function-minisql-catalog-statistics-fail-function-fail-code-operation-message-src-minisql-catalog-statistics-ml-1919516987"></a>
 ### fail
@@ -448,7 +449,7 @@ Performs the fail operation for the minisql catalog statistics module. Inputs: `
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L136)
 
 <a id="function-function-minisql-catalog-statistics-findtable-function-findtable-state-tableid-src-minisql-catalog-statistics-ml-1133388196"></a>
 ### findTable
@@ -465,7 +466,7 @@ Finds the table. Inputs: `state`, `tableId`. Returns the produced value or propa
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L232)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L233)
 
 <a id="constant-constant-minisql-catalog-statistics-format-version-const-format-version-5-src-minisql-catalog-statistics-ml-994207778"></a>
 ### FORMAT_VERSION
@@ -477,7 +478,7 @@ const FORMAT_VERSION = 5
 Defines the format version constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L27)
 
 <a id="function-function-minisql-catalog-statistics-groupdistinctcount-function-groupdistinctcount-columnindexes-rows-src-minisql-catalog-statistics-ml-1624896485"></a>
 ### groupDistinctCount
@@ -494,7 +495,7 @@ Counts distinct non-NULL tuples for one bounded-width column group. A hash bucke
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L608)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L603)
 
 <a id="function-function-minisql-catalog-statistics-groupdistribution-function-groupdistribution-columnindexes-rows-populationrows-src-minisql-catalog-statistics-ml-1286578933"></a>
 ### groupDistribution
@@ -512,7 +513,7 @@ Builds a bounded most-common tuple list for one analyzed column group.
 | `populationRows` | `dynamic` | — | populationRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L594)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L589)
 
 <a id="constant-constant-minisql-catalog-statistics-hash-mask-const-hash-mask-2147483647-src-minisql-catalog-statistics-ml-1780823231"></a>
 ### HASH_MASK
@@ -524,7 +525,7 @@ const HASH_MASK = 2147483647
 Defines the hash mask constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L51)
 
 <a id="function-function-minisql-catalog-statistics-hashbytes-function-hashbytes-input-seed-src-minisql-catalog-statistics-ml-2135418485"></a>
 ### hashBytes
@@ -541,7 +542,7 @@ Hashes SQL values into deterministic collision buckets. Full SQL comparison belo
 | `seed` | `dynamic` | — | seed value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L284)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L285)
 
 <a id="function-function-minisql-catalog-statistics-hasheddistribution-function-hasheddistribution-columnindex-rows-populationrows-src-minisql-catalog-statistics-ml-1329821327"></a>
 ### hashedDistribution
@@ -559,7 +560,7 @@ Builds hash-based equality MCVs for text, binary, and wide decimal values.
 | `populationRows` | `dynamic` | — | populationRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L568)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L563)
 
 <a id="function-function-minisql-catalog-statistics-hashvalue-function-hashvalue-value-src-minisql-catalog-statistics-ml-1301438765"></a>
 ### hashValue
@@ -575,7 +576,7 @@ Hashes one non-NULL SQL payload consistently with sameValue comparison.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L296)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L291)
 
 <a id="constant-constant-minisql-catalog-statistics-histogram-bucket-count-const-histogram-bucket-count-8-src-minisql-catalog-statistics-ml-1381093835"></a>
 ### HISTOGRAM_BUCKET_COUNT
@@ -587,7 +588,7 @@ const HISTOGRAM_BUCKET_COUNT = 8
 Defines the histogram bucket count constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L57)
 
 <a id="function-function-minisql-catalog-statistics-integerdivide-function-integerdivide-numerator-denominator-src-minisql-catalog-statistics-ml-659929245"></a>
 ### integerDivide
@@ -604,7 +605,7 @@ Performs the integer divide operation for this module. Inputs: `numerator`, `den
 | `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L144)
 
 <a id="function-function-minisql-catalog-statistics-integralbounds-function-integralbounds-columnindex-rows-src-minisql-catalog-statistics-ml-1037697349"></a>
 ### integralBounds
@@ -621,7 +622,7 @@ Finds sampled minimum and maximum values for a compact integral column. The bool
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L375)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L370)
 
 <a id="function-function-minisql-catalog-statistics-integraldistribution-function-integraldistribution-columnindex-rows-populationrows-bounds-src-minisql-catalog-statistics-ml-1300685232"></a>
 ### integralDistribution
@@ -640,7 +641,7 @@ Builds an equi-depth cumulative histogram and an exact top-frequency list from t
 | `bounds` | `dynamic` | — | bounds value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L423)
 
 <a id="constant-constant-minisql-catalog-statistics-invalid-argument-const-invalid-argument-9001-src-minisql-catalog-statistics-ml-155436553"></a>
 ### INVALID_ARGUMENT
@@ -652,7 +653,7 @@ const INVALID_ARGUMENT = 9001
 Persistent table/column statistics used by the M17 cost model. Statistics are
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L18)
 
 <a id="constant-constant-minisql-catalog-statistics-io-failure-const-io-failure-9005-src-minisql-catalog-statistics-ml-1597456377"></a>
 ### IO_FAILURE
@@ -664,7 +665,7 @@ const IO_FAILURE = 9005
 Defines the io failure constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L24)
 
 <a id="function-function-minisql-catalog-statistics-iscolumngroupstatistics-function-iscolumngroupstatistics-value-src-minisql-catalog-statistics-ml-45673359"></a>
 ### isColumnGroupStatistics
@@ -680,7 +681,7 @@ Reports whether a value is a persisted joint-column statistic.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L182)
 
 <a id="function-function-minisql-catalog-statistics-iscolumnstatistics-function-iscolumnstatistics-value-src-minisql-catalog-statistics-ml-154364607"></a>
 ### isColumnStatistics
@@ -696,7 +697,7 @@ Evaluates whether the supplied input satisfies the column statistics predicate. 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L176)
 
 <a id="function-function-minisql-catalog-statistics-isimplemented-function-isimplemented-src-minisql-catalog-statistics-ml-1678053104"></a>
 ### isImplemented
@@ -708,7 +709,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql catalog statistics module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1172)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1167)
 
 <a id="function-function-minisql-catalog-statistics-isstatisticscatalog-function-isstatisticscatalog-value-src-minisql-catalog-statistics-ml-1364981647"></a>
 ### isStatisticsCatalog
@@ -724,7 +725,7 @@ Evaluates whether the supplied input satisfies the statistics catalog predicate.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L196)
 
 <a id="function-function-minisql-catalog-statistics-istablestatistics-function-istablestatistics-value-src-minisql-catalog-statistics-ml-1770237373"></a>
 ### isTableStatistics
@@ -740,7 +741,7 @@ Evaluates whether the supplied input satisfies the table statistics predicate. I
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L189)
 
 <a id="constant-constant-minisql-catalog-statistics-legacy-column-bytes-const-legacy-column-bytes-32-src-minisql-catalog-statistics-ml-1512100258"></a>
 ### LEGACY_COLUMN_BYTES
@@ -752,7 +753,7 @@ const LEGACY_COLUMN_BYTES = 32
 Defines the legacy column bytes constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L41)
 
 <a id="constant-constant-minisql-catalog-statistics-legacy-column-group-bytes-const-legacy-column-group-bytes-32-src-minisql-catalog-statistics-ml-971305506"></a>
 ### LEGACY_COLUMN_GROUP_BYTES
@@ -764,7 +765,7 @@ const LEGACY_COLUMN_GROUP_BYTES = 32
 Defines the legacy column group bytes constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L45)
 
 <a id="constant-constant-minisql-catalog-statistics-legacy-format-version-const-legacy-format-version-1-src-minisql-catalog-statistics-ml-1369650900"></a>
 ### LEGACY_FORMAT_VERSION
@@ -776,7 +777,7 @@ const LEGACY_FORMAT_VERSION = 1
 Defines the legacy format version constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L35)
 
 <a id="function-function-minisql-catalog-statistics-loadorcreate-function-loadorcreate-databasepath-databaseid-src-minisql-catalog-statistics-ml-2031492762"></a>
 ### loadOrCreate
@@ -793,7 +794,7 @@ Loads the or create. Inputs: `databasePath`, `databaseId`. Returns the produced 
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1144)
 
 <a id="function-function-minisql-catalog-statistics-magic-function-magic-src-minisql-catalog-statistics-ml-1140359386"></a>
 ### magic
@@ -805,7 +806,7 @@ function magic()
 Returns a fresh copy of the on-disk format magic bytes. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L169)
 
 <a id="constant-constant-minisql-catalog-statistics-max-column-group-width-const-max-column-group-width-8-src-minisql-catalog-statistics-ml-893680397"></a>
 ### MAX_COLUMN_GROUP_WIDTH
@@ -817,7 +818,7 @@ const MAX_COLUMN_GROUP_WIDTH = 8
 Defines the max column group width constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L61)
 
 <a id="constant-constant-minisql-catalog-statistics-most-common-value-count-const-most-common-value-count-8-src-minisql-catalog-statistics-ml-121898199"></a>
 ### MOST_COMMON_VALUE_COUNT
@@ -829,7 +830,7 @@ const MOST_COMMON_VALUE_COUNT = 8
 Defines the most common value count constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L59)
 
 <a id="function-function-minisql-catalog-statistics-path-function-path-databasepath-src-minisql-catalog-statistics-ml-1117104922"></a>
 ### path
@@ -845,7 +846,7 @@ Performs the path operation for this module. Inputs: `databasePath`. Returns the
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L224)
 
 <a id="function-function-minisql-catalog-statistics-readwhole-function-readwhole-filepath-src-minisql-catalog-statistics-ml-1245405581"></a>
 ### readWhole
@@ -861,7 +862,7 @@ Reads whole for the minisql catalog statistics workflow. Inputs: `filePath`. Ret
 | `filePath` | `dynamic` | — | Path associated with file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1097)
 
 <a id="constant-constant-minisql-catalog-statistics-record-kind-const-record-kind-50-src-minisql-catalog-statistics-ml-535287378"></a>
 ### RECORD_KIND
@@ -873,7 +874,7 @@ const RECORD_KIND = 50
 Defines the record kind constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L37)
 
 <a id="function-function-minisql-catalog-statistics-replacetable-function-replacetable-state-value-src-minisql-catalog-statistics-ml-690541326"></a>
 ### replaceTable
@@ -890,7 +891,7 @@ Replaces the table. Inputs: `state`, `value`. Returns the produced value or prop
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L245)
 
 <a id="function-function-minisql-catalog-statistics-samevalue-function-samevalue-left-right-src-minisql-catalog-statistics-ml-1885782181"></a>
 ### sameValue
@@ -907,7 +908,7 @@ Compares the value. Inputs: `left`, `right`. Returns a boolean result; invalid i
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L276)
 
 <a id="constant-constant-minisql-catalog-statistics-sampled-format-version-const-sampled-format-version-2-src-minisql-catalog-statistics-ml-272766541"></a>
 ### SAMPLED_FORMAT_VERSION
@@ -919,7 +920,7 @@ const SAMPLED_FORMAT_VERSION = 2
 Defines the sampled format version constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L33)
 
 <a id="function-function-minisql-catalog-statistics-save-function-save-databasepath-state-src-minisql-catalog-statistics-ml-1453989001"></a>
 ### save
@@ -936,7 +937,7 @@ Persists the requested value. Inputs: `databasePath`, `state`. Returns the opera
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1129)
 
 <a id="function-function-minisql-catalog-statistics-scalesamplecount-function-scalesamplecount-samplevalue-populationrows-samplerows-src-minisql-catalog-statistics-ml-64739958"></a>
 ### scaleSampleCount
@@ -954,7 +955,7 @@ Scales a sample count without overflowing MiniLang's native integer range.
 | `sampleRows` | `dynamic` | — | sampleRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L645)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L640)
 
 <a id="function-function-minisql-catalog-statistics-sortstatisticscalars-function-sortstatisticscalars-items-left-right-src-minisql-catalog-statistics-ml-1338897343"></a>
 ### sortStatisticScalars
@@ -972,7 +973,7 @@ In-place quicksort for the bounded ANALYZE scalar sample.
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L396)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L391)
 
 - [minisql.catalog.statistics.StatisticsCatalog](Type-minisql-catalog-statistics-statisticscatalog-932870512.md) — struct
 <a id="function-function-minisql-catalog-statistics-supportsintegralbounds-function-supportsintegralbounds-column-src-minisql-catalog-statistics-ml-1888245874"></a>
@@ -989,7 +990,7 @@ Reports whether a catalog column has an ordered numeric representation that can 
 | `column` | `dynamic` | — | column value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L355)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L350)
 
 <a id="constant-constant-minisql-catalog-statistics-table-header-bytes-const-table-header-bytes-32-src-minisql-catalog-statistics-ml-1483600988"></a>
 ### TABLE_HEADER_BYTES
@@ -1001,7 +1002,7 @@ const TABLE_HEADER_BYTES = 32
 Defines the table header bytes constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L39)
 
 - [minisql.catalog.statistics.TableStatistics](Type-minisql-catalog-statistics-tablestatistics-790274793.md) — struct
 <a id="function-function-minisql-catalog-statistics-targetmilestone-function-targetmilestone-src-minisql-catalog-statistics-ml-417217334"></a>
@@ -1014,7 +1015,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql catalog statistics module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1166)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1161)
 
 <a id="function-function-minisql-catalog-statistics-tophashfrequencies-function-tophashfrequencies-hashes-populationrows-samplerows-src-minisql-catalog-statistics-ml-917157235"></a>
 ### topHashFrequencies
@@ -1032,7 +1033,7 @@ Selects the eight most frequent stable hashes from a bounded sample.
 | `sampleRows` | `dynamic` | — | sampleRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L513)
 
 <a id="function-function-minisql-catalog-statistics-tuplehash-function-tuplehash-columnindexes-sqlvalues-src-minisql-catalog-statistics-ml-1370251396"></a>
 ### tupleHash
@@ -1049,7 +1050,7 @@ Computes the stable hash shared by group ANALYZE and optimizer probes.
 | `sqlValues` | `dynamic` | — | sqlValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L580)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L575)
 
 <a id="constant-constant-minisql-catalog-statistics-unsupported-format-const-unsupported-format-9003-src-minisql-catalog-statistics-ml-1307091991"></a>
 ### UNSUPPORTED_FORMAT
@@ -1061,7 +1062,7 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql catalog statistics module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L20)
 
 <a id="function-function-minisql-catalog-statistics-validatenative-function-validatenative-value-operation-name-src-minisql-catalog-statistics-ml-252233627"></a>
 ### validateNative
@@ -1079,7 +1080,7 @@ Validates native for the minisql catalog statistics workflow. Inputs: `value`, `
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L747)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L742)
 
 <a id="function-function-minisql-catalog-statistics-valuewidth-function-valuewidth-value-src-minisql-catalog-statistics-ml-1311092519"></a>
 ### valueWidth
@@ -1095,7 +1096,7 @@ Performs the value width operation for this module. Inputs: `value`. Returns the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L264)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L265)
 
 <a id="function-function-minisql-catalog-statistics-writeatomic-function-writeatomic-filepath-encoded-src-minisql-catalog-statistics-ml-1472445963"></a>
 ### writeAtomic
@@ -1112,4 +1113,4 @@ Writes the atomic. Inputs: `filePath`, `encoded`. Returns the operation result a
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L1110)

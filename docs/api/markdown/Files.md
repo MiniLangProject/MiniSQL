@@ -20,6 +20,7 @@
 | [src/minisql/client/client.ml](File-src-minisql-client-client-ml-193935498.md) | `minisql.client.client` | yes | 51 |
 | [src/minisql/client/console.ml](File-src-minisql-client-console-ml-931665780.md) | `minisql.client.console` | yes | 54 |
 | [src/minisql/client/formatter.ml](File-src-minisql-client-formatter-ml-1949327393.md) | `minisql.client.formatter` | yes | 9 |
+| [src/minisql/common/byte_ops.ml](File-src-minisql-common-byte-ops-ml-400961654.md) | `minisql.common.byte_ops` | yes | 7 |
 | [src/minisql/common/crc32c.ml](File-src-minisql-common-crc32c-ml-2102127649.md) | `minisql.common.crc32c` | yes | 11 |
 | [src/minisql/common/diagnostics.ml](File-src-minisql-common-diagnostics-ml-1805539733.md) | `minisql.common.diagnostics` | yes | 69 |
 | [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md) | `minisql.common.endian` | yes | 84 |

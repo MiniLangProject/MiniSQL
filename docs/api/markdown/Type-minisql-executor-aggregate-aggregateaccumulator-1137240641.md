@@ -12,7 +12,7 @@ struct AggregateAccumulator
 Fixed-size state for one direct scalar aggregate in the streaming fast path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L79)
 
 ## Members
 
@@ -26,7 +26,7 @@ booleanValue
 Current boolean fold used by BOOL_AND and BOOL_OR.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L89)
 
 <a id="field-field-minisql-executor-aggregate-aggregateaccumulator-count-count-src-minisql-executor-aggregate-ml-2031354894"></a>
 ### count
@@ -38,7 +38,7 @@ count
 Number of contributing non-NULL values, or input rows for COUNT(*).
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L83)
 
 <a id="field-field-minisql-executor-aggregate-aggregateaccumulator-expression-expression-src-minisql-executor-aggregate-ml-1072287386"></a>
 ### expression
@@ -50,7 +50,7 @@ expression
 Bound aggregate whose semantics this state implements.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L81)
 
 <a id="field-field-minisql-executor-aggregate-aggregateaccumulator-hasvalue-hasvalue-src-minisql-executor-aggregate-ml-1165737720"></a>
 ### hasValue
@@ -62,7 +62,7 @@ hasValue
 Indicates whether any non-NULL input contributed.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L91)
 
 <a id="field-field-minisql-executor-aggregate-aggregateaccumulator-selected-selected-src-minisql-executor-aggregate-ml-439725596"></a>
 ### selected
@@ -74,7 +74,7 @@ selected
 Current extremum used by MIN and MAX.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L87)
 
 <a id="field-field-minisql-executor-aggregate-aggregateaccumulator-total-total-src-minisql-executor-aggregate-ml-1072807778"></a>
 ### total
@@ -86,4 +86,4 @@ total
 Running numeric SUM used by SUM and AVG.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L85)

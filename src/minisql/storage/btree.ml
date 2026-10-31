@@ -5,6 +5,7 @@ package minisql.storage.btree
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
+import minisql.common.byte_ops as byte_ops
 import minisql.common.endian as endian
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
@@ -188,17 +189,7 @@ end function
 /// @param right right value consumed by this operation.
 function compareKeys(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return fail(INVALID_ARGUMENT, "compareKeys", "keys must be bytes") end if
-  shared = len(left)
-  if len(right) < shared then shared = len(right) end if
-  if shared > 0 then
-    for index = 0 to shared - 1
-      if left[index] < right[index] then return -1 end if
-      if left[index] > right[index] then return 1 end if
-    end for
-  end if
-  if len(left) < len(right) then return -1 end if
-  if len(left) > len(right) then return 1 end if
-  return 0
+  return byte_ops.compareLexicographic(left, right)
 end function
 
 /// Compares the entries.

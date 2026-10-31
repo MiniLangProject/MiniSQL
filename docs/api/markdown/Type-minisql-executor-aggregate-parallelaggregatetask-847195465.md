@@ -12,7 +12,7 @@ struct ParallelAggregateTask
 Immutable input for one page-range partial aggregate. Workers open private read handles while sharing only the database's thread-safe read cache.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L96)
 
 ## Members
 
@@ -26,7 +26,7 @@ database
 Optional managed database used by controlled server scans.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L112)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-databasepath-databasepath-src-minisql-executor-aggregate-ml-665063998"></a>
 ### databasePath
@@ -38,7 +38,7 @@ databasePath
 Filesystem root containing the table file and schema history.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L98)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-endpageindex-endpageindex-src-minisql-executor-aggregate-ml-2108540546"></a>
 ### endPageIndex
@@ -50,7 +50,7 @@ endPageIndex
 Exclusive index into the persistent heap-page directory.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L110)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-firstpageindex-firstpageindex-src-minisql-executor-aggregate-ml-1161454904"></a>
 ### firstPageIndex
@@ -62,7 +62,7 @@ firstPageIndex
 Inclusive index into the persistent heap-page directory.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L108)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-readcache-readcache-src-minisql-executor-aggregate-ml-761247882"></a>
 ### readCache
@@ -74,7 +74,7 @@ readCache
 Database-owned concurrent read cache shared by worker readers.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L102)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-requiredcolumns-requiredcolumns-src-minisql-executor-aggregate-ml-637917858"></a>
 ### requiredColumns
@@ -86,7 +86,7 @@ requiredColumns
 Column mask that prevents unrelated overflow-value reads.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L106)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-selectexpressions-selectexpressions-src-minisql-executor-aggregate-ml-704191938"></a>
 ### selectExpressions
@@ -98,7 +98,7 @@ selectExpressions
 Direct scalar aggregates updated by this worker.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L104)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-sessionid-sessionid-src-minisql-executor-aggregate-ml-485332774"></a>
 ### sessionId
@@ -110,7 +110,7 @@ sessionId
 Owning query session when database is present.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L114)
 
 <a id="field-field-minisql-executor-aggregate-parallelaggregatetask-table-table-src-minisql-executor-aggregate-ml-1038314902"></a>
 ### table
@@ -122,4 +122,4 @@ table
 Immutable catalog metadata for the scanned table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L100)

@@ -3,6 +3,13 @@
 Repeatable storage and query benchmarks live here. Correctness tests remain mandatory;
 performance measurements may never replace durability or semantic validation.
 
+The MiniLang 1.3 compiler/standard-library comparison and MiniSQL inline-ASM
+evaluation are documented in
+[`INLINE_ASM_2026-10-31.md`](INLINE_ASM_2026-10-31.md). The report records the
+measured 16-byte FNV crossover, B+ tree byte-comparison gains, rejected integer
+hash candidate, end-to-end SQL/memory results, and Windows/Linux compiler
+parity checks.
+
 The 2026-09-02 security-at-rest report is
 [`TDE_SECURITY_2026-09-02.md`](TDE_SECURITY_2026-09-02.md). It records the
 three-trial plaintext/TDE write and indexed-read comparison, page/WAL space

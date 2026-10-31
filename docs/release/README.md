@@ -1,4 +1,4 @@
-# MiniSQL 1.1.0
+# MiniSQL 1.1.1
 
 MiniSQL is a native Windows x64 and Linux x64 relational database management
 system written in MiniLang. The Windows distribution contains:
@@ -31,7 +31,7 @@ Python applications should read the [Python connector guide](PYTHON.md).
 Python 3.11 or newer is recommended when replication or the development tooling
 is used.
 
-Source builds require MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or newer.
+Source builds require MiniLangCompilerPy or MiniLangCompilerML 1.3.0 or newer.
 Both compilers provide the CPU-dispatched native CRC-32C primitive, SIMD
 string/byte built-ins, conditional target compilation, and portable native
 services used by the current MiniSQL sources.

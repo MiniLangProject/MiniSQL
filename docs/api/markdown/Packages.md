@@ -13,6 +13,7 @@
 - [minisql.client.client](Package-minisql-client-client-1899571164.md)
 - [minisql.client.console](Package-minisql-client-console-935104928.md)
 - [minisql.client.formatter](Package-minisql-client-formatter-1915397479.md)
+- [minisql.common.byte_ops](Package-minisql-common-byte-ops-655610004.md)
 - [minisql.common.crc32c](Package-minisql-common-crc32c-843614877.md)
 - [minisql.common.diagnostics](Package-minisql-common-diagnostics-1140477375.md)
 - [minisql.common.endian](Package-minisql-common-endian-441442362.md)

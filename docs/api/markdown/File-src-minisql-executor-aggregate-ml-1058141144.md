@@ -10,6 +10,7 @@ Reachable from entry: **yes**
 
 ## Imports
 
+- `minisql/common/byte_ops.ml` as `byte_ops` → [src/minisql/common/byte_ops.ml](File-src-minisql-common-byte-ops-ml-400961654.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/executor/projection.ml` as `projection` → [src/minisql/executor/projection.ml](File-src-minisql-executor-projection-ml-1842888238.md)
 - `minisql/executor/scan.ml` as `scan` → [src/minisql/executor/scan.ml](File-src-minisql-executor-scan-ml-657274302.md)
@@ -39,7 +40,7 @@ Updates one accumulator from one row without retaining the row.
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L342)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L337)
 
 <a id="function-function-minisql-executor-aggregate-accumulatebatch-function-accumulatebatch-states-rows-src-minisql-executor-aggregate-ml-1452920695"></a>
 ### accumulateBatch
@@ -56,7 +57,7 @@ Updates all aggregate lanes from one bounded row batch. Keeping accumulator disp
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L379)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L374)
 
 - [minisql.executor.aggregate.AggregateAccumulator](Type-minisql-executor-aggregate-aggregateaccumulator-1137240641.md) — struct
 - [minisql.executor.aggregate.AggregateGroup](Type-minisql-executor-aggregate-aggregategroup-461824564.md) — struct
@@ -74,7 +75,7 @@ Scans one disjoint heap-page range and returns mergeable partial states.
 | `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L417)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L412)
 
 - [minisql.executor.aggregate.AggregatePartitionTask](Type-minisql-executor-aggregate-aggregatepartitiontask-2048101232.md) — struct
 <a id="function-function-minisql-executor-aggregate-aggregatevalue-function-aggregatevalue-expression-rows-src-minisql-executor-aggregate-ml-1815246775"></a>
@@ -92,7 +93,7 @@ Implements aggregate value for this module. Requires arguments that satisfy the 
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L241)
 
 <a id="constant-constant-minisql-executor-aggregate-binding-error-const-binding-error-9020-src-minisql-executor-aggregate-ml-1200471654"></a>
 ### BINDING_ERROR
@@ -104,7 +105,7 @@ const BINDING_ERROR = 9020
 Defines the binding error constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L28)
 
 <a id="function-function-minisql-executor-aggregate-componentname-function-componentname-src-minisql-executor-aggregate-ml-1565929558"></a>
 ### componentName
@@ -116,7 +117,7 @@ function componentName()
 Performs the componentName operation for the minisql executor aggregate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1110)
 
 <a id="function-function-minisql-executor-aggregate-createaccumulator-function-createaccumulator-expression-src-minisql-executor-aggregate-ml-136780032"></a>
 ### createAccumulator
@@ -132,7 +133,7 @@ Creates an accumulator whose neutral state matches SQL empty-input rules.
 | `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L333)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L328)
 
 <a id="function-function-minisql-executor-aggregate-distinctvalues-function-distinctvalues-input-src-minisql-executor-aggregate-ml-777826826"></a>
 ### distinctValues
@@ -148,7 +149,7 @@ Implements distinct values for this module. Returns the computed value or operat
 | `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L214)
 
 <a id="function-function-minisql-executor-aggregate-evaluateargument-function-evaluateargument-expression-row-src-minisql-executor-aggregate-ml-1558258396"></a>
 ### evaluateArgument
@@ -165,7 +166,7 @@ Evaluates argument using the supplied inputs. Returns the computed value or oper
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L236)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L231)
 
 <a id="function-function-minisql-executor-aggregate-evaluategroup-function-evaluategroup-expression-rows-representative-src-minisql-executor-aggregate-ml-2049059416"></a>
 ### evaluateGroup
@@ -183,7 +184,7 @@ Evaluates group using the supplied inputs. Returns the computed value or operati
 | `representative` | `dynamic` | — | representative value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L750)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L745)
 
 <a id="function-function-minisql-executor-aggregate-evaluatelist-function-evaluatelist-boundexpressions-rows-representative-src-minisql-executor-aggregate-ml-1168022623"></a>
 ### evaluateList
@@ -201,7 +202,7 @@ Evaluates list using the supplied inputs. Returns the computed value or operatio
 | `representative` | `dynamic` | — | representative value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L868)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L863)
 
 <a id="function-function-minisql-executor-aggregate-fail-function-fail-code-operation-message-src-minisql-executor-aggregate-ml-1897074913"></a>
 ### fail
@@ -219,7 +220,7 @@ Performs the fail operation for the minisql executor aggregate module. Returns i
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L123)
 
 <a id="function-function-minisql-executor-aggregate-findmatching-function-findmatching-rows-candidate-used-src-minisql-executor-aggregate-ml-45937607"></a>
 ### findMatching
@@ -237,7 +238,7 @@ Finds matching using the supplied inputs. Returns the computed value or operatio
 | `used` | `dynamic` | — | used value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1061)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1056)
 
 <a id="function-function-minisql-executor-aggregate-finishaccumulator-function-finishaccumulator-state-src-minisql-executor-aggregate-ml-574208863"></a>
 ### finishAccumulator
@@ -253,7 +254,7 @@ Converts an accumulator into the same SqlValue produced by aggregateValue.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L443)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L438)
 
 <a id="function-function-minisql-executor-aggregate-finishstreaming-function-finishstreaming-states-src-minisql-executor-aggregate-ml-1737727722"></a>
 ### finishStreaming
@@ -269,7 +270,7 @@ Finalizes fixed-size accumulators into the ordinary one-row projection shape.
 | `states` | `dynamic` | — | states value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L485)
 
 <a id="function-function-minisql-executor-aggregate-grouprows-function-grouprows-rows-groupexpressions-aggregatequery-src-minisql-executor-aggregate-ml-167787480"></a>
 ### groupRows
@@ -287,7 +288,7 @@ Partitions rows with a fixed-bucket hash table and explicit collision chains. Fu
 | `aggregateQuery` | `dynamic` | — | aggregateQuery value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L882)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L877)
 
 <a id="constant-constant-minisql-executor-aggregate-hash-bucket-count-const-hash-bucket-count-257-src-minisql-executor-aggregate-ml-470152643"></a>
 ### HASH_BUCKET_COUNT
@@ -299,7 +300,7 @@ const HASH_BUCKET_COUNT = 257
 Defines the hash bucket count constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L30)
 
 <a id="constant-constant-minisql-executor-aggregate-hash-mask-const-hash-mask-2147483647-src-minisql-executor-aggregate-ml-1770557061"></a>
 ### HASH_MASK
@@ -311,7 +312,7 @@ const HASH_MASK = 2147483647
 Defines the hash mask constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L32)
 
 <a id="function-function-minisql-executor-aggregate-hashbytes-function-hashbytes-input-seed-src-minisql-executor-aggregate-ml-350454739"></a>
 ### hashBytes
@@ -328,7 +329,7 @@ Implements hash bytes for this module. Returns the computed value or operation s
 | `seed` | `dynamic` | — | seed value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L132)
 
 - [minisql.executor.aggregate.HashGroupEntry](Type-minisql-executor-aggregate-hashgroupentry-1937125899.md) — struct
 <a id="function-function-minisql-executor-aggregate-hashvalue-function-hashvalue-value-src-minisql-executor-aggregate-ml-1006498035"></a>
@@ -345,7 +346,7 @@ Implements hash value for this module. Requires arguments that satisfy the valid
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L141)
 
 <a id="function-function-minisql-executor-aggregate-hashvalues-function-hashvalues-input-src-minisql-executor-aggregate-ml-621631530"></a>
 ### hashValues
@@ -361,7 +362,7 @@ Implements hash values for this module. Returns the computed value or operation 
 | `input` | `dynamic` | — | input value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L177)
 
 <a id="function-function-minisql-executor-aggregate-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-aggregate-ml-155382195"></a>
 ### integerDivide
@@ -378,7 +379,7 @@ Computes non-negative truncating integer division for spill partition sizing.
 | `denominator` | `dynamic` | — | denominator value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L43)
 
 <a id="constant-constant-minisql-executor-aggregate-intra-query-workers-const-intra-query-workers-4-src-minisql-executor-aggregate-ml-1946482825"></a>
 ### INTRA_QUERY_WORKERS
@@ -390,7 +391,7 @@ const INTRA_QUERY_WORKERS = 4
 Defines the intra query workers constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L34)
 
 <a id="constant-constant-minisql-executor-aggregate-invalid-argument-const-invalid-argument-9001-src-minisql-executor-aggregate-ml-2003255351"></a>
 ### INVALID_ARGUMENT
@@ -402,7 +403,7 @@ const INVALID_ARGUMENT = 9001
 Grouping, SQL aggregates and set operations. The first implementation uses
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L24)
 
 <a id="function-function-minisql-executor-aggregate-isimplemented-function-isimplemented-src-minisql-executor-aggregate-ml-902752878"></a>
 ### isImplemented
@@ -414,7 +415,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql executor aggregate module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1124)
 
 <a id="function-function-minisql-executor-aggregate-mergeaccumulator-function-mergeaccumulator-target-partial-src-minisql-executor-aggregate-ml-260712376"></a>
 ### mergeAccumulator
@@ -431,7 +432,7 @@ Merges one worker's fixed-size partial aggregate into the coordinator state. AVG
 | `partial` | `dynamic` | — | partial value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L394)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L389)
 
 <a id="constant-constant-minisql-executor-aggregate-parallel-scan-minimum-pages-const-parallel-scan-minimum-pages-128-src-minisql-executor-aggregate-ml-1190551092"></a>
 ### PARALLEL_SCAN_MINIMUM_PAGES
@@ -443,7 +444,7 @@ const PARALLEL_SCAN_MINIMUM_PAGES = 128
 Defines the parallel scan minimum pages constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L38)
 
 - [minisql.executor.aggregate.ParallelAggregateTask](Type-minisql-executor-aggregate-parallelaggregatetask-847195465.md) — struct
 <a id="function-function-minisql-executor-aggregate-project-function-project-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-src-minisql-executor-aggregate-ml-1675282638"></a>
@@ -464,7 +465,7 @@ Implements project for this module. Requires arguments that satisfy the validati
 | `orderExpressions` | `dynamic` | — | orderExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L922)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L917)
 
 <a id="function-function-minisql-executor-aggregate-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-aggregate-ml-1026336065"></a>
 ### projectedSpillRows
@@ -480,7 +481,7 @@ Converts scanned rows to the shared validated spill representation.
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L944)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L939)
 
 <a id="function-function-minisql-executor-aggregate-projectspilledpartition-function-projectspilledpartition-task-src-minisql-executor-aggregate-ml-1701208801"></a>
 ### projectSpilledPartition
@@ -496,7 +497,7 @@ Reads, aggregates, and removes one partition. Different tasks own disjoint files
 | `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L965)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L960)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingrows-function-projectstreamingrows-rows-selectexpressions-predicate-src-minisql-executor-aggregate-ml-446170085"></a>
 ### projectStreamingRows
@@ -514,7 +515,7 @@ Preserves the direct aggregate API for callers without server session state.
 | `predicate` | `dynamic` | — | predicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L531)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L526)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingrowscontrolled-function-projectstreamingrowscontrolled-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-107233609"></a>
 ### projectStreamingRowsControlled
@@ -534,7 +535,7 @@ Streams selected rows while honoring one server query control token.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L541)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L536)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingrowscore-function-projectstreamingrowscore-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-1185759817"></a>
 ### projectStreamingRowsCore
@@ -554,7 +555,7 @@ Streams already selected rows through a predicate and fixed-size scalar aggregat
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L506)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L501)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtable-function-projectstreamingtable-databasepath-table-pagetransaction-readcache-selectexpressions-src-minisql-executor-aggregate-ml-1700060926"></a>
 ### projectStreamingTable
@@ -574,7 +575,7 @@ Preserves unfiltered streaming aggregation for non-server callers.
 | `selectExpressions` | `dynamic` | — | selectExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L653)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L648)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtablecontrolled-function-projectstreamingtablecontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-459496904"></a>
 ### projectStreamingTableControlled
@@ -596,7 +597,7 @@ Aggregates an unfiltered table under cooperative server control.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L660)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtablecore-function-projectstreamingtablecore-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-1145734150"></a>
 ### projectStreamingTableCore
@@ -618,7 +619,7 @@ Keeps the unfiltered hot path branch-free inside the row loop. This function is 
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L623)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L618)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtablefiltered-function-projectstreamingtablefiltered-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-src-minisql-executor-aggregate-ml-2111044177"></a>
 ### projectStreamingTableFiltered
@@ -640,7 +641,7 @@ Preserves filtered streaming aggregation for non-server callers.
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L595)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L590)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtablefilteredcontrolled-function-projectstreamingtablefilteredcontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-519674565"></a>
 ### projectStreamingTableFilteredControlled
@@ -664,7 +665,7 @@ Filters and aggregates a table under cooperative server control.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L609)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L604)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtablefilteredcore-function-projectstreamingtablefilteredcore-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-2007529947"></a>
 ### projectStreamingTableFilteredCore
@@ -688,7 +689,7 @@ Streams one filtered base table through fixed-size scalar aggregate accumulators
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L557)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L552)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtableparallel-function-projectstreamingtableparallel-databasepath-table-readcache-selectexpressions-src-minisql-executor-aggregate-ml-959428731"></a>
 ### projectStreamingTableParallel
@@ -707,7 +708,7 @@ Preserves parallel aggregate execution for callers without a query token.
 | `selectExpressions` | `dynamic` | — | selectExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L729)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L724)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtableparallelcontrolled-function-projectstreamingtableparallelcontrolled-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-442185683"></a>
 ### projectStreamingTableParallelControlled
@@ -728,7 +729,7 @@ Propagates server cancellation and deadlines into parallel aggregate workers.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L740)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L735)
 
 <a id="function-function-minisql-executor-aggregate-projectstreamingtableparallelcore-function-projectstreamingtableparallelcore-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-633892341"></a>
 ### projectStreamingTableParallelCore
@@ -749,7 +750,7 @@ Executes an unfiltered scalar aggregate with page-partitioned native workers. Sm
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L678)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L673)
 
 <a id="function-function-minisql-executor-aggregate-projectwithspill-function-projectwithspill-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-temporaryroot-threshold-src-minisql-executor-aggregate-ml-1182730562"></a>
 ### projectWithSpill
@@ -771,7 +772,7 @@ Executes grouped aggregation one hash partition at a time when the input exceeds
 | `threshold` | `dynamic` | — | threshold value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L985)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L980)
 
 <a id="function-function-minisql-executor-aggregate-samevalue-function-samevalue-left-right-src-minisql-executor-aggregate-ml-234742147"></a>
 ### sameValue
@@ -788,7 +789,7 @@ Implements same value for this module. Returns the computed value or operation s
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L190)
 
 <a id="function-function-minisql-executor-aggregate-samevalues-function-samevalues-left-right-src-minisql-executor-aggregate-ml-1674414761"></a>
 ### sameValues
@@ -805,7 +806,7 @@ Implements same values for this module. Returns the computed value or operation 
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L200)
 
 <a id="function-function-minisql-executor-aggregate-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-aggregate-ml-226947013"></a>
 ### scannedSpillRows
@@ -821,7 +822,7 @@ Restores value-only scanned rows from a validated spill partition.
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L954)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L949)
 
 <a id="function-function-minisql-executor-aggregate-setoperation-function-setoperation-leftrows-rightrows-operatorvalue-all-src-minisql-executor-aggregate-ml-1081334583"></a>
 ### setOperation
@@ -840,7 +841,7 @@ Implements set operation for this module. Requires arguments that satisfy the va
 | `all` | `dynamic` | — | all value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1077)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1072)
 
 <a id="function-function-minisql-executor-aggregate-streamingaccumulators-function-streamingaccumulators-selectexpressions-operation-src-minisql-executor-aggregate-ml-642545548"></a>
 ### streamingAccumulators
@@ -857,7 +858,7 @@ Creates accumulator state for a validated streaming scalar aggregate list.
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L479)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L474)
 
 <a id="function-function-minisql-executor-aggregate-streamingrequiredcolumns-function-streamingrequiredcolumns-table-selectexpressions-src-minisql-executor-aggregate-ml-1995208803"></a>
 ### streamingRequiredColumns
@@ -874,7 +875,7 @@ Builds the narrowest safe source-column mask for direct aggregate arguments. Com
 | `selectExpressions` | `dynamic` | — | selectExpressions value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L460)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L455)
 
 <a id="function-function-minisql-executor-aggregate-targetmilestone-function-targetmilestone-src-minisql-executor-aggregate-ml-1507961956"></a>
 ### targetMilestone
@@ -886,7 +887,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql executor aggregate module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L1117)
 
 <a id="constant-constant-minisql-executor-aggregate-type-mismatch-const-type-mismatch-9017-src-minisql-executor-aggregate-ml-1339377856"></a>
 ### TYPE_MISMATCH
@@ -898,7 +899,7 @@ const TYPE_MISMATCH = 9017
 Defines the type mismatch constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L26)
 
 <a id="constant-constant-minisql-executor-aggregate-vector-batch-rows-const-vector-batch-rows-256-src-minisql-executor-aggregate-ml-1760719404"></a>
 ### VECTOR_BATCH_ROWS
@@ -910,4 +911,4 @@ const VECTOR_BATCH_ROWS = 256
 Defines the vector batch rows constant used by the minisql executor aggregate module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L36)

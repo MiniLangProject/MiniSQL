@@ -7,7 +7,7 @@ The repository exposes exactly one user-facing launcher:
 .\test.ps1 -Compiler C:\path\to\mlc_win64.py -Target linux-x64
 ```
 
-Dynamic acceptance requires MiniLangCompilerPy or MiniLangCompilerML 1.1.0 or
+Dynamic acceptance requires MiniLangCompilerPy or MiniLangCompilerML 1.3.0 or
 newer so both targets, native `std.checksum.crc32c`, CPU dispatch, SIMD, and the
 portable standard-library services used by the current source tree are
 available.
@@ -35,13 +35,13 @@ job disposal and later connection acceptance; see
 A successful run ends with:
 
 ```text
-MiniSQL 1.1.0 test suite: SUCCESS
+MiniSQL 1.1.1 test suite: SUCCESS
 ```
 
 and creates one archive:
 
 ```text
-build\MiniSQL_1.1.0_RESULTS_<timestamp>.zip
+build\MiniSQL_1.1.1_RESULTS_<timestamp>.zip
 ```
 
 Source-only validation:

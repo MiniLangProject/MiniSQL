@@ -38,6 +38,12 @@
       "targetMilestone": "M2"
     },
     {
+      "path": "src/minisql/common/byte_ops.ml",
+      "package": "minisql.common.byte_ops",
+      "component": "common.byte_ops",
+      "targetMilestone": "M2"
+    },
+    {
       "path": "src/minisql/common/uuid.ml",
       "package": "minisql.common.uuid",
       "component": "common.uuid",

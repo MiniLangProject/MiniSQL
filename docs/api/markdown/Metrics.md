@@ -8,19 +8,19 @@ Static metrics are calculated from target-specific preprocessed MiniLang files i
 
 | Metric | Value |
 | --- | ---: |
-| Blank lines | 4596 |
-| Clone groups | 367 |
-| Cognitive complexity | 20755 (maximum per function: 150) |
-| Comment lines | 19166 |
-| Cyclomatic complexity | 18026 (average: 5.44, maximum: 84) |
-| Documentation coverage | 100% (13999 of 13999 documentation items) |
-| Duplicated lines | 2125 (4.96%) |
-| Files | 89 |
-| Functions | 3315 |
-| Maintainability index | 2.05 / 100 |
-| Physical lines | 66628 |
-| Source lines | 42868 |
-| Statements | 36193 |
+| Blank lines | 4605 |
+| Clone groups | 364 |
+| Cognitive complexity | 20748 (maximum per function: 150) |
+| Comment lines | 19191 |
+| Cyclomatic complexity | 18030 (average: 5.43, maximum: 84) |
+| Documentation coverage | 100% (14012 of 14012 documentation items) |
+| Duplicated lines | 2101 (4.9%) |
+| Files | 90 |
+| Functions | 3321 |
+| Maintainability index | 2.1 / 100 |
+| Physical lines | 66708 |
+| Source lines | 42914 |
+| Statements | 36191 |
 
 ## Documentation coverage
 
@@ -28,19 +28,19 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 
 | Category | Documented | Total | Coverage |
 | --- | ---: | ---: | ---: |
-| API declarations | 3809 | 3809 | 100% |
-| Constants | 1172 | 1172 | 100% |
+| API declarations | 3815 | 3815 | 100% |
+| Constants | 1173 | 1173 | 100% |
 | Enum variants | 86 | 86 | 100% |
 | Fields | 1628 | 1628 | 100% |
 | Globals | 28 | 28 | 100% |
-| Overall | 13999 | 13999 | 100% |
-| Parameters | 7276 | 7276 | 100% |
+| Overall | 14012 | 14012 | 100% |
+| Parameters | 7282 | 7282 | 100% |
 
 ## Halstead metrics
 
 | Distinct operators | Distinct operands | Total operators | Total operands | Vocabulary | Length | Volume | Difficulty | Effort | Estimated defects |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 55 | 13380 | 229406 | 164977 | 13435 | 394383 | 5408453.58 | 339.08 | 1833889182.81 | 1802.82 |
+| 56 | 13404 | 229488 | 165117 | 13460 | 394605 | 5412556.39 | 344.92 | 1866886156.74 | 1804.19 |
 
 ## Files
 
@@ -58,10 +58,11 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`src/minisql/catalog/catalog.ml`](File-src-minisql-catalog-catalog-ml-1154366378.md) | 1034 | 79 | 455 / 5.76 / 58 | 509 / 101 | 63 (6.09%) | 95069.08 | 0 |
 | [`src/minisql/catalog/metadata.ml`](File-src-minisql-catalog-metadata-ml-2104219808.md) | 598 | 39 | 194 / 4.97 / 25 | 198 / 33 | 7 (1.17%) | 49101.04 | 0 |
 | [`src/minisql/catalog/schema_history.ml`](File-src-minisql-catalog-schema-history-ml-67428687.md) | 1969 | 160 | 776 / 4.85 / 38 | 944 / 81 | 60 (3.05%) | 175207 | 0 |
-| [`src/minisql/catalog/statistics.ml`](File-src-minisql-catalog-statistics-ml-1707584758.md) | 862 | 49 | 407 / 8.31 / 52 | 608 / 89 | 53 (6.15%) | 72419.61 | 0 |
+| [`src/minisql/catalog/statistics.ml`](File-src-minisql-catalog-statistics-ml-1707584758.md) | 857 | 49 | 405 / 8.27 / 52 | 605 / 89 | 44 (5.13%) | 72209.71 | 0 |
 | [`src/minisql/client/client.ml`](File-src-minisql-client-client-ml-193935498.md) | 318 | 35 | 126 / 3.6 / 27 | 103 / 29 | 8 (2.52%) | 24922.77 | 0 |
 | [`src/minisql/client/console.ml`](File-src-minisql-client-console-ml-931665780.md) | 453 | 35 | 218 / 6.23 / 44 | 280 / 85 | 13 (2.87%) | 33408.14 | 0 |
 | [`src/minisql/client/formatter.ml`](File-src-minisql-client-formatter-ml-1949327393.md) | 108 | 8 | 43 / 5.38 / 11 | 49 / 19 | 0 (0%) | 6837.52 | 23.01 |
+| [`src/minisql/common/byte_ops.ml`](File-src-minisql-common-byte-ops-ml-400961654.md) | 70 | 6 | 17 / 2.83 / 8 | 14 / 7 | 0 (0%) | 2511.23 | 33.66 |
 | [`src/minisql/common/crc32c.ml`](File-src-minisql-common-crc32c-ml-2102127649.md) | 50 | 9 | 23 / 2.56 / 8 | 14 / 7 | 0 (0%) | 1970.47 | 36.78 |
 | [`src/minisql/common/diagnostics.ml`](File-src-minisql-common-diagnostics-ml-1805539733.md) | 343 | 31 | 128 / 4.13 / 26 | 117 / 39 | 9 (2.62%) | 26681.95 | 0 |
 | [`src/minisql/common/endian.ml`](File-src-minisql-common-endian-ml-71280848.md) | 394 | 55 | 81 / 1.47 / 8 | 26 / 7 | 0 (0%) | 19148.57 | 2.5 |
@@ -74,11 +75,11 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`src/minisql/config/loader.ml`](File-src-minisql-config-loader-ml-616728659.md) | 338 | 25 | 116 / 4.64 / 14 | 132 / 31 | 0 (0%) | 22282.87 | 0 |
 | [`src/minisql/config/model.ml`](File-src-minisql-config-model-ml-1120384851.md) | 124 | 14 | 14 / 1 / 1 | 0 / 0 | 0 (0%) | 2461.79 | 28.71 |
 | [`src/minisql/config/validation.ml`](File-src-minisql-config-validation-ml-366716535.md) | 83 | 7 | 66 / 9.43 / 56 | 59 / 55 | 0 (0%) | 8211.02 | 21.85 |
-| [`src/minisql/executor/aggregate.ml`](File-src-minisql-executor-aggregate-ml-1058141144.md) | 790 | 44 | 340 / 7.73 / 65 | 476 / 115 | 133 (16.84%) | 61386.07 | 0 |
+| [`src/minisql/executor/aggregate.ml`](File-src-minisql-executor-aggregate-ml-1058141144.md) | 785 | 44 | 338 / 7.68 / 65 | 473 / 115 | 125 (15.92%) | 61179.15 | 0 |
 | [`src/minisql/executor/dml.ml`](File-src-minisql-executor-dml-ml-1278137778.md) | 1881 | 128 | 857 / 6.7 / 31 | 1231 / 111 | 82 (4.36%) | 172786.41 | 0 |
 | [`src/minisql/executor/executor.ml`](File-src-minisql-executor-executor-ml-1548110730.md) | 3814 | 209 | 1814 / 8.68 / 50 | 2445 / 72 | 156 (4.09%) | 423003.04 | 0 |
 | [`src/minisql/executor/filter.ml`](File-src-minisql-executor-filter-ml-1336995315.md) | 26 | 5 | 11 / 2.2 / 7 | 8 / 8 | 0 (0%) | 1107.48 | 46.34 |
-| [`src/minisql/executor/join.ml`](File-src-minisql-executor-join-ml-2069389245.md) | 440 | 29 | 190 / 6.55 / 41 | 287 / 76 | 123 (27.95%) | 32824.82 | 0 |
+| [`src/minisql/executor/join.ml`](File-src-minisql-executor-join-ml-2069389245.md) | 435 | 29 | 188 / 6.48 / 41 | 284 / 76 | 116 (26.67%) | 32606.94 | 0 |
 | [`src/minisql/executor/projection.ml`](File-src-minisql-executor-projection-ml-1842888238.md) | 351 | 28 | 172 / 6.14 / 38 | 195 / 53 | 86 (24.5%) | 25396.99 | 0 |
 | [`src/minisql/executor/scan.ml`](File-src-minisql-executor-scan-ml-657274302.md) | 617 | 58 | 246 / 4.24 / 19 | 261 / 35 | 66 (10.7%) | 47233.92 | 0 |
 | [`src/minisql/executor/sort.ml`](File-src-minisql-executor-sort-ml-267147473.md) | 397 | 25 | 170 / 6.8 / 34 | 236 / 52 | 63 (15.87%) | 32525.85 | 0 |
@@ -116,7 +117,7 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`src/minisql/sql/token.ml`](File-src-minisql-sql-token-ml-1018094825.md) | 71 | 8 | 27 / 3.38 / 12 | 19 / 11 | 0 (0%) | 3003.8 | 31.63 |
 | [`src/minisql/sql/types.ml`](File-src-minisql-sql-types-ml-1842329761.md) | 190 | 21 | 128 / 6.1 / 31 | 113 / 31 | 0 (0%) | 12610.84 | 4.36 |
 | [`src/minisql/sql/values.ml`](File-src-minisql-sql-values-ml-1302895578.md) | 544 | 38 | 317 / 8.34 / 45 | 377 / 65 | 20 (3.68%) | 41559.65 | 0 |
-| [`src/minisql/storage/btree.ml`](File-src-minisql-storage-btree-ml-1474397187.md) | 841 | 55 | 381 / 6.93 / 40 | 451 / 68 | 32 (3.8%) | 72572.3 | 0 |
+| [`src/minisql/storage/btree.ml`](File-src-minisql-storage-btree-ml-1474397187.md) | 832 | 55 | 374 / 6.8 / 40 | 439 / 68 | 32 (3.85%) | 71835.36 | 0 |
 | [`src/minisql/storage/buffer_pool.ml`](File-src-minisql-storage-buffer-pool-ml-1867626530.md) | 407 | 32 | 120 / 3.75 / 11 | 102 / 10 | 0 (0%) | 20397.61 | 0 |
 | [`src/minisql/storage/checksum.ml`](File-src-minisql-storage-checksum-ml-273339408.md) | 142 | 13 | 42 / 3.23 / 10 | 30 / 9 | 6 (4.23%) | 7245.5 | 20.37 |
 | [`src/minisql/storage/heap_file.ml`](File-src-minisql-storage-heap-file-ml-1771906446.md) | 474 | 39 | 177 / 4.54 / 15 | 187 / 24 | 8 (1.69%) | 35672.56 | 0 |
@@ -646,55 +647,55 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`minisql.catalog.schema_history.writeString`](File-src-minisql-catalog-schema-history-ml-67428687.md#function-function-minisql-catalog-schema-history-writestring-function-writestring-output-offset-value-src-minisql-catalog-schema-history-ml-476662019) | `src/minisql/catalog/schema_history.ml:562` | 7 | 7 | 3 | 2 | 1 | 375.64 | 63.13 |
 | [`minisql.catalog.schema_history.writeStringArray`](File-src-minisql-catalog-schema-history-ml-67428687.md#function-function-minisql-catalog-schema-history-writestringarray-function-writestringarray-output-offset-values-src-minisql-catalog-schema-history-ml-502389460) | `src/minisql/catalog/schema_history.ml:601` | 8 | 5 | 2 | 1 | 1 | 214.05 | 63.71 |
 | [`minisql.catalog.schema_history.writeWhole`](File-src-minisql-catalog-schema-history-ml-67428687.md#function-function-minisql-catalog-schema-history-writewhole-function-writewhole-path-data-src-minisql-catalog-schema-history-ml-1467431125) | `src/minisql/catalog/schema_history.ml:526` | 9 | 9 | 3 | 2 | 1 | 435.97 | 60.3 |
-| [`minisql.catalog.statistics.analyzeSample`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzesample-function-analyzesample-table-populationrows-rows-pagecount-src-minisql-catalog-statistics-ml-1250963425) | `src/minisql/catalog/statistics.ml:718` | 3 | 1 | 1 | 0 | 0 | 102.8 | 75.37 |
-| [`minisql.catalog.statistics.analyzeSampleWithGroups`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzesamplewithgroups-function-analyzesamplewithgroups-table-populationrows-rows-pagecount-columngroups-src-minisql-catalog-statistics-ml-2109569963) | `src/minisql/catalog/statistics.ml:661` | 51 | 57 | 36 | 62 | 4 | 4348.86 | 32.43 |
-| [`minisql.catalog.statistics.analyzeTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzetable-function-analyzetable-table-rows-pagecount-src-minisql-catalog-statistics-ml-23324639) | `src/minisql/catalog/statistics.ml:727` | 3 | 1 | 1 | 0 | 0 | 89.62 | 75.79 |
-| [`minisql.catalog.statistics.bytesEqual`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-bytesequal-function-bytesequal-left-right-src-minisql-catalog-statistics-ml-515183063) | `src/minisql/catalog/statistics.ml:203` | 8 | 8 | 7 | 7 | 2 | 384.59 | 61.26 |
-| [`minisql.catalog.statistics.compactStatisticScalar`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-compactstatisticscalar-function-compactstatisticscalar-candidate-src-minisql-catalog-statistics-ml-1029670255) | `src/minisql/catalog/statistics.ml:361` | 8 | 7 | 4 | 4 | 2 | 280.46 | 62.62 |
-| [`minisql.catalog.statistics.componentName`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-componentname-function-componentname-src-minisql-catalog-statistics-ml-1208793912) | `src/minisql/catalog/statistics.ml:1160` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.catalog.statistics.create`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-create-function-create-databaseid-src-minisql-catalog-statistics-ml-253783548) | `src/minisql/catalog/statistics.ml:215` | 4 | 3 | 3 | 2 | 1 | 213.62 | 70.15 |
-| [`minisql.catalog.statistics.decode`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decode-function-decode-encoded-src-minisql-catalog-statistics-ml-2018924002) | `src/minisql/catalog/statistics.ml:1095` | 3 | 1 | 1 | 0 | 0 | 36 | 78.56 |
-| [`minisql.catalog.statistics.decodeCatalog`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecatalog-function-decodecatalog-encoded-src-minisql-catalog-statistics-ml-1779189864) | `src/minisql/catalog/statistics.ml:1034` | 53 | 49 | 24 | 49 | 4 | 3576.92 | 34.28 |
-| [`minisql.catalog.statistics.decodeColumnGroupRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecolumngrouprecord-function-decodecolumngrouprecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-1574939893) | `src/minisql/catalog/statistics.ml:998` | 32 | 31 | 18 | 24 | 4 | 2261.75 | 41.26 |
-| [`minisql.catalog.statistics.decodeColumnRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecolumnrecord-function-decodecolumnrecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-676435385) | `src/minisql/catalog/statistics.ml:924` | 66 | 70 | 43 | 65 | 4 | 5365.75 | 28.41 |
-| [`minisql.catalog.statistics.decodeNative`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodenative-function-decodenative-words-operation-name-src-minisql-catalog-statistics-ml-5258399) | `src/minisql/catalog/statistics.ml:912` | 4 | 3 | 2 | 1 | 1 | 178.38 | 70.83 |
-| [`minisql.catalog.statistics.distinctCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-distinctcount-function-distinctcount-columnindex-rows-src-minisql-catalog-statistics-ml-1038299231) | `src/minisql/catalog/statistics.ml:329` | 22 | 19 | 7 | 16 | 4 | 645.73 | 50.1 |
-| [`minisql.catalog.statistics.encode`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encode-function-encode-state-src-minisql-catalog-statistics-ml-456684267) | `src/minisql/catalog/statistics.ml:890` | 16 | 15 | 5 | 4 | 1 | 1000.18 | 52.05 |
-| [`minisql.catalog.statistics.encodeColumnGroupRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodecolumngrouprecord-function-encodecolumngrouprecord-payload-cursor-group-rowcount-src-minisql-catalog-statistics-ml-1984135064) | `src/minisql/catalog/statistics.ml:826` | 30 | 31 | 20 | 25 | 3 | 2620.39 | 41.15 |
-| [`minisql.catalog.statistics.encodeColumnRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodecolumnrecord-function-encodecolumnrecord-payload-cursor-column-rowcount-src-minisql-catalog-statistics-ml-1484728195) | `src/minisql/catalog/statistics.ml:757` | 63 | 74 | 52 | 65 | 3 | 6634.74 | 26.99 |
-| [`minisql.catalog.statistics.encodedSize`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodedsize-function-encodedsize-state-src-minisql-catalog-statistics-ml-530085929) | `src/minisql/catalog/statistics.ml:734` | 7 | 4 | 2 | 1 | 1 | 201.74 | 65.16 |
-| [`minisql.catalog.statistics.encodeTableRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodetablerecord-function-encodetablerecord-payload-cursor-table-src-minisql-catalog-statistics-ml-1611084810) | `src/minisql/catalog/statistics.ml:861` | 25 | 26 | 9 | 8 | 1 | 1882.84 | 45.36 |
-| [`minisql.catalog.statistics.fail`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-fail-function-fail-code-operation-message-src-minisql-catalog-statistics-ml-1919516987) | `src/minisql/catalog/statistics.ml:135` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
-| [`minisql.catalog.statistics.findTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-findtable-function-findtable-state-tableid-src-minisql-catalog-statistics-ml-1133388196) | `src/minisql/catalog/statistics.ml:232` | 7 | 6 | 6 | 6 | 2 | 295 | 63.46 |
-| [`minisql.catalog.statistics.groupDistinctCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-groupdistinctcount-function-groupdistinctcount-columnindexes-rows-src-minisql-catalog-statistics-ml-1624896485) | `src/minisql/catalog/statistics.ml:608` | 32 | 34 | 13 | 37 | 6 | 1316.62 | 43.58 |
-| [`minisql.catalog.statistics.groupDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-groupdistribution-function-groupdistribution-columnindexes-rows-populationrows-src-minisql-catalog-statistics-ml-1286578933) | `src/minisql/catalog/statistics.ml:594` | 8 | 6 | 3 | 3 | 2 | 289.51 | 62.66 |
-| [`minisql.catalog.statistics.hashBytes`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hashbytes-function-hashbytes-input-seed-src-minisql-catalog-statistics-ml-2135418485) | `src/minisql/catalog/statistics.ml:284` | 9 | 5 | 3 | 3 | 2 | 264.4 | 61.82 |
-| [`minisql.catalog.statistics.hashedDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hasheddistribution-function-hasheddistribution-columnindex-rows-populationrows-src-minisql-catalog-statistics-ml-1329821327) | `src/minisql/catalog/statistics.ml:568` | 8 | 6 | 3 | 3 | 2 | 291.48 | 62.64 |
-| [`minisql.catalog.statistics.hashValue`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hashvalue-function-hashvalue-value-src-minisql-catalog-statistics-ml-1301438765) | `src/minisql/catalog/statistics.ml:296` | 28 | 28 | 10 | 10 | 2 | 2535.31 | 43.25 |
-| [`minisql.catalog.statistics.integerDivide`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integerdivide-function-integerdivide-numerator-denominator-src-minisql-catalog-statistics-ml-659929245) | `src/minisql/catalog/statistics.ml:143` | 22 | 16 | 9 | 9 | 2 | 608.76 | 50.01 |
-| [`minisql.catalog.statistics.integralBounds`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integralbounds-function-integralbounds-columnindex-rows-src-minisql-catalog-statistics-ml-1037697349) | `src/minisql/catalog/statistics.ml:375` | 16 | 15 | 10 | 16 | 3 | 586.68 | 53 |
-| [`minisql.catalog.statistics.integralDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integraldistribution-function-integraldistribution-columnindex-rows-populationrows-bounds-src-minisql-catalog-statistics-ml-1300685232) | `src/minisql/catalog/statistics.ml:428` | 84 | 80 | 33 | 89 | 7 | 4116.65 | 28.28 |
-| [`minisql.catalog.statistics.isColumnGroupStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-iscolumngroupstatistics-function-iscolumngroupstatistics-value-src-minisql-catalog-statistics-ml-45673359) | `src/minisql/catalog/statistics.ml:181` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
-| [`minisql.catalog.statistics.isColumnStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-iscolumnstatistics-function-iscolumnstatistics-value-src-minisql-catalog-statistics-ml-154364607) | `src/minisql/catalog/statistics.ml:175` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
-| [`minisql.catalog.statistics.isImplemented`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-isimplemented-function-isimplemented-src-minisql-catalog-statistics-ml-1678053104) | `src/minisql/catalog/statistics.ml:1172` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.catalog.statistics.isStatisticsCatalog`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-isstatisticscatalog-function-isstatisticscatalog-value-src-minisql-catalog-statistics-ml-1364981647) | `src/minisql/catalog/statistics.ml:195` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
-| [`minisql.catalog.statistics.isTableStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-istablestatistics-function-istablestatistics-value-src-minisql-catalog-statistics-ml-1770237373) | `src/minisql/catalog/statistics.ml:188` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
-| [`minisql.catalog.statistics.loadOrCreate`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-loadorcreate-function-loadorcreate-databasepath-databaseid-src-minisql-catalog-statistics-ml-2031492762) | `src/minisql/catalog/statistics.ml:1149` | 8 | 9 | 4 | 3 | 1 | 397.46 | 61.56 |
-| [`minisql.catalog.statistics.magic`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-magic-function-magic-src-minisql-catalog-statistics-ml-1140359386) | `src/minisql/catalog/statistics.ml:168` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
-| [`minisql.catalog.statistics.path`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-path-function-path-databasepath-src-minisql-catalog-statistics-ml-1117104922) | `src/minisql/catalog/statistics.ml:223` | 4 | 3 | 3 | 2 | 1 | 230.32 | 69.92 |
-| [`minisql.catalog.statistics.readWhole`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-readwhole-function-readwhole-filepath-src-minisql-catalog-statistics-ml-1245405581) | `src/minisql/catalog/statistics.ml:1102` | 8 | 7 | 2 | 1 | 1 | 267.57 | 63.03 |
-| [`minisql.catalog.statistics.replaceTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-replacetable-function-replacetable-state-value-src-minisql-catalog-statistics-ml-690541326) | `src/minisql/catalog/statistics.ml:244` | 16 | 13 | 6 | 6 | 2 | 500.11 | 54.03 |
-| [`minisql.catalog.statistics.sameValue`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-samevalue-function-samevalue-left-right-src-minisql-catalog-statistics-ml-1885782181) | `src/minisql/catalog/statistics.ml:275` | 4 | 3 | 3 | 2 | 1 | 165.67 | 70.92 |
-| [`minisql.catalog.statistics.save`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-save-function-save-databasepath-state-src-minisql-catalog-statistics-ml-1453989001) | `src/minisql/catalog/statistics.ml:1134` | 10 | 13 | 4 | 3 | 1 | 513.83 | 58.67 |
-| [`minisql.catalog.statistics.scaleSampleCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-scalesamplecount-function-scalesamplecount-samplevalue-populationrows-samplerows-src-minisql-catalog-statistics-ml-64739958) | `src/minisql/catalog/statistics.ml:645` | 6 | 5 | 2 | 1 | 1 | 210.83 | 66.48 |
-| [`minisql.catalog.statistics.sortStatisticScalars`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-sortstatisticscalars-function-sortstatisticscalars-items-left-right-src-minisql-catalog-statistics-ml-1338897343) | `src/minisql/catalog/statistics.ml:396` | 24 | 21 | 8 | 10 | 2 | 704.41 | 48.88 |
-| [`minisql.catalog.statistics.supportsIntegralBounds`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-supportsintegralbounds-function-supportsintegralbounds-column-src-minisql-catalog-statistics-ml-1888245874) | `src/minisql/catalog/statistics.ml:355` | 3 | 1 | 1 | 0 | 0 | 192.11 | 73.47 |
-| [`minisql.catalog.statistics.targetMilestone`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-targetmilestone-function-targetmilestone-src-minisql-catalog-statistics-ml-417217334) | `src/minisql/catalog/statistics.ml:1166` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.catalog.statistics.topHashFrequencies`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-tophashfrequencies-function-tophashfrequencies-hashes-populationrows-samplerows-src-minisql-catalog-statistics-ml-917157235) | `src/minisql/catalog/statistics.ml:518` | 45 | 43 | 22 | 56 | 6 | 2140.67 | 37.66 |
-| [`minisql.catalog.statistics.tupleHash`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-tuplehash-function-tuplehash-columnindexes-sqlvalues-src-minisql-catalog-statistics-ml-1370251396) | `src/minisql/catalog/statistics.ml:580` | 9 | 7 | 3 | 3 | 2 | 264.97 | 61.81 |
-| [`minisql.catalog.statistics.validateNative`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-validatenative-function-validatenative-value-operation-name-src-minisql-catalog-statistics-ml-252233627) | `src/minisql/catalog/statistics.ml:747` | 4 | 3 | 4 | 3 | 1 | 209.22 | 70.08 |
-| [`minisql.catalog.statistics.valueWidth`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-valuewidth-function-valuewidth-value-src-minisql-catalog-statistics-ml-1311092519) | `src/minisql/catalog/statistics.ml:264` | 6 | 7 | 5 | 4 | 1 | 303.08 | 64.98 |
-| [`minisql.catalog.statistics.writeAtomic`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-writeatomic-function-writeatomic-filepath-encoded-src-minisql-catalog-statistics-ml-1472445963) | `src/minisql/catalog/statistics.ml:1115` | 14 | 21 | 6 | 5 | 1 | 954.44 | 53.33 |
+| [`minisql.catalog.statistics.analyzeSample`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzesample-function-analyzesample-table-populationrows-rows-pagecount-src-minisql-catalog-statistics-ml-1250963425) | `src/minisql/catalog/statistics.ml:713` | 3 | 1 | 1 | 0 | 0 | 102.8 | 75.37 |
+| [`minisql.catalog.statistics.analyzeSampleWithGroups`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzesamplewithgroups-function-analyzesamplewithgroups-table-populationrows-rows-pagecount-columngroups-src-minisql-catalog-statistics-ml-2109569963) | `src/minisql/catalog/statistics.ml:656` | 51 | 57 | 36 | 62 | 4 | 4348.86 | 32.43 |
+| [`minisql.catalog.statistics.analyzeTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-analyzetable-function-analyzetable-table-rows-pagecount-src-minisql-catalog-statistics-ml-23324639) | `src/minisql/catalog/statistics.ml:722` | 3 | 1 | 1 | 0 | 0 | 89.62 | 75.79 |
+| [`minisql.catalog.statistics.bytesEqual`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-bytesequal-function-bytesequal-left-right-src-minisql-catalog-statistics-ml-515183063) | `src/minisql/catalog/statistics.ml:204` | 8 | 8 | 7 | 7 | 2 | 384.59 | 61.26 |
+| [`minisql.catalog.statistics.compactStatisticScalar`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-compactstatisticscalar-function-compactstatisticscalar-candidate-src-minisql-catalog-statistics-ml-1029670255) | `src/minisql/catalog/statistics.ml:356` | 8 | 7 | 4 | 4 | 2 | 280.46 | 62.62 |
+| [`minisql.catalog.statistics.componentName`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-componentname-function-componentname-src-minisql-catalog-statistics-ml-1208793912) | `src/minisql/catalog/statistics.ml:1155` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.catalog.statistics.create`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-create-function-create-databaseid-src-minisql-catalog-statistics-ml-253783548) | `src/minisql/catalog/statistics.ml:216` | 4 | 3 | 3 | 2 | 1 | 213.62 | 70.15 |
+| [`minisql.catalog.statistics.decode`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decode-function-decode-encoded-src-minisql-catalog-statistics-ml-2018924002) | `src/minisql/catalog/statistics.ml:1090` | 3 | 1 | 1 | 0 | 0 | 36 | 78.56 |
+| [`minisql.catalog.statistics.decodeCatalog`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecatalog-function-decodecatalog-encoded-src-minisql-catalog-statistics-ml-1779189864) | `src/minisql/catalog/statistics.ml:1029` | 53 | 49 | 24 | 49 | 4 | 3576.92 | 34.28 |
+| [`minisql.catalog.statistics.decodeColumnGroupRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecolumngrouprecord-function-decodecolumngrouprecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-1574939893) | `src/minisql/catalog/statistics.ml:993` | 32 | 31 | 18 | 24 | 4 | 2261.75 | 41.26 |
+| [`minisql.catalog.statistics.decodeColumnRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodecolumnrecord-function-decodecolumnrecord-payload-cursor-encodedversion-rowcount-destination-destinationindex-src-minisql-catalog-statistics-ml-676435385) | `src/minisql/catalog/statistics.ml:919` | 66 | 70 | 43 | 65 | 4 | 5365.75 | 28.41 |
+| [`minisql.catalog.statistics.decodeNative`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-decodenative-function-decodenative-words-operation-name-src-minisql-catalog-statistics-ml-5258399) | `src/minisql/catalog/statistics.ml:907` | 4 | 3 | 2 | 1 | 1 | 178.38 | 70.83 |
+| [`minisql.catalog.statistics.distinctCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-distinctcount-function-distinctcount-columnindex-rows-src-minisql-catalog-statistics-ml-1038299231) | `src/minisql/catalog/statistics.ml:324` | 22 | 19 | 7 | 16 | 4 | 645.73 | 50.1 |
+| [`minisql.catalog.statistics.encode`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encode-function-encode-state-src-minisql-catalog-statistics-ml-456684267) | `src/minisql/catalog/statistics.ml:885` | 16 | 15 | 5 | 4 | 1 | 1000.18 | 52.05 |
+| [`minisql.catalog.statistics.encodeColumnGroupRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodecolumngrouprecord-function-encodecolumngrouprecord-payload-cursor-group-rowcount-src-minisql-catalog-statistics-ml-1984135064) | `src/minisql/catalog/statistics.ml:821` | 30 | 31 | 20 | 25 | 3 | 2620.39 | 41.15 |
+| [`minisql.catalog.statistics.encodeColumnRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodecolumnrecord-function-encodecolumnrecord-payload-cursor-column-rowcount-src-minisql-catalog-statistics-ml-1484728195) | `src/minisql/catalog/statistics.ml:752` | 63 | 74 | 52 | 65 | 3 | 6634.74 | 26.99 |
+| [`minisql.catalog.statistics.encodedSize`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodedsize-function-encodedsize-state-src-minisql-catalog-statistics-ml-530085929) | `src/minisql/catalog/statistics.ml:729` | 7 | 4 | 2 | 1 | 1 | 201.74 | 65.16 |
+| [`minisql.catalog.statistics.encodeTableRecord`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-encodetablerecord-function-encodetablerecord-payload-cursor-table-src-minisql-catalog-statistics-ml-1611084810) | `src/minisql/catalog/statistics.ml:856` | 25 | 26 | 9 | 8 | 1 | 1882.84 | 45.36 |
+| [`minisql.catalog.statistics.fail`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-fail-function-fail-code-operation-message-src-minisql-catalog-statistics-ml-1919516987) | `src/minisql/catalog/statistics.ml:136` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
+| [`minisql.catalog.statistics.findTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-findtable-function-findtable-state-tableid-src-minisql-catalog-statistics-ml-1133388196) | `src/minisql/catalog/statistics.ml:233` | 7 | 6 | 6 | 6 | 2 | 295 | 63.46 |
+| [`minisql.catalog.statistics.groupDistinctCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-groupdistinctcount-function-groupdistinctcount-columnindexes-rows-src-minisql-catalog-statistics-ml-1624896485) | `src/minisql/catalog/statistics.ml:603` | 32 | 34 | 13 | 37 | 6 | 1316.62 | 43.58 |
+| [`minisql.catalog.statistics.groupDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-groupdistribution-function-groupdistribution-columnindexes-rows-populationrows-src-minisql-catalog-statistics-ml-1286578933) | `src/minisql/catalog/statistics.ml:589` | 8 | 6 | 3 | 3 | 2 | 289.51 | 62.66 |
+| [`minisql.catalog.statistics.hashBytes`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hashbytes-function-hashbytes-input-seed-src-minisql-catalog-statistics-ml-2135418485) | `src/minisql/catalog/statistics.ml:285` | 3 | 1 | 1 | 0 | 0 | 64.53 | 76.79 |
+| [`minisql.catalog.statistics.hashedDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hasheddistribution-function-hasheddistribution-columnindex-rows-populationrows-src-minisql-catalog-statistics-ml-1329821327) | `src/minisql/catalog/statistics.ml:563` | 8 | 6 | 3 | 3 | 2 | 291.48 | 62.64 |
+| [`minisql.catalog.statistics.hashValue`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-hashvalue-function-hashvalue-value-src-minisql-catalog-statistics-ml-1301438765) | `src/minisql/catalog/statistics.ml:291` | 28 | 28 | 10 | 10 | 2 | 2535.31 | 43.25 |
+| [`minisql.catalog.statistics.integerDivide`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integerdivide-function-integerdivide-numerator-denominator-src-minisql-catalog-statistics-ml-659929245) | `src/minisql/catalog/statistics.ml:144` | 22 | 16 | 9 | 9 | 2 | 608.76 | 50.01 |
+| [`minisql.catalog.statistics.integralBounds`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integralbounds-function-integralbounds-columnindex-rows-src-minisql-catalog-statistics-ml-1037697349) | `src/minisql/catalog/statistics.ml:370` | 16 | 15 | 10 | 16 | 3 | 586.68 | 53 |
+| [`minisql.catalog.statistics.integralDistribution`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-integraldistribution-function-integraldistribution-columnindex-rows-populationrows-bounds-src-minisql-catalog-statistics-ml-1300685232) | `src/minisql/catalog/statistics.ml:423` | 84 | 80 | 33 | 89 | 7 | 4116.65 | 28.28 |
+| [`minisql.catalog.statistics.isColumnGroupStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-iscolumngroupstatistics-function-iscolumngroupstatistics-value-src-minisql-catalog-statistics-ml-45673359) | `src/minisql/catalog/statistics.ml:182` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
+| [`minisql.catalog.statistics.isColumnStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-iscolumnstatistics-function-iscolumnstatistics-value-src-minisql-catalog-statistics-ml-154364607) | `src/minisql/catalog/statistics.ml:176` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
+| [`minisql.catalog.statistics.isImplemented`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-isimplemented-function-isimplemented-src-minisql-catalog-statistics-ml-1678053104) | `src/minisql/catalog/statistics.ml:1167` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.catalog.statistics.isStatisticsCatalog`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-isstatisticscatalog-function-isstatisticscatalog-value-src-minisql-catalog-statistics-ml-1364981647) | `src/minisql/catalog/statistics.ml:196` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
+| [`minisql.catalog.statistics.isTableStatistics`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-istablestatistics-function-istablestatistics-value-src-minisql-catalog-statistics-ml-1770237373) | `src/minisql/catalog/statistics.ml:189` | 3 | 1 | 1 | 0 | 0 | 34.87 | 78.66 |
+| [`minisql.catalog.statistics.loadOrCreate`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-loadorcreate-function-loadorcreate-databasepath-databaseid-src-minisql-catalog-statistics-ml-2031492762) | `src/minisql/catalog/statistics.ml:1144` | 8 | 9 | 4 | 3 | 1 | 397.46 | 61.56 |
+| [`minisql.catalog.statistics.magic`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-magic-function-magic-src-minisql-catalog-statistics-ml-1140359386) | `src/minisql/catalog/statistics.ml:169` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
+| [`minisql.catalog.statistics.path`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-path-function-path-databasepath-src-minisql-catalog-statistics-ml-1117104922) | `src/minisql/catalog/statistics.ml:224` | 4 | 3 | 3 | 2 | 1 | 230.32 | 69.92 |
+| [`minisql.catalog.statistics.readWhole`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-readwhole-function-readwhole-filepath-src-minisql-catalog-statistics-ml-1245405581) | `src/minisql/catalog/statistics.ml:1097` | 8 | 7 | 2 | 1 | 1 | 267.57 | 63.03 |
+| [`minisql.catalog.statistics.replaceTable`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-replacetable-function-replacetable-state-value-src-minisql-catalog-statistics-ml-690541326) | `src/minisql/catalog/statistics.ml:245` | 16 | 13 | 6 | 6 | 2 | 500.11 | 54.03 |
+| [`minisql.catalog.statistics.sameValue`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-samevalue-function-samevalue-left-right-src-minisql-catalog-statistics-ml-1885782181) | `src/minisql/catalog/statistics.ml:276` | 4 | 3 | 3 | 2 | 1 | 165.67 | 70.92 |
+| [`minisql.catalog.statistics.save`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-save-function-save-databasepath-state-src-minisql-catalog-statistics-ml-1453989001) | `src/minisql/catalog/statistics.ml:1129` | 10 | 13 | 4 | 3 | 1 | 513.83 | 58.67 |
+| [`minisql.catalog.statistics.scaleSampleCount`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-scalesamplecount-function-scalesamplecount-samplevalue-populationrows-samplerows-src-minisql-catalog-statistics-ml-64739958) | `src/minisql/catalog/statistics.ml:640` | 6 | 5 | 2 | 1 | 1 | 210.83 | 66.48 |
+| [`minisql.catalog.statistics.sortStatisticScalars`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-sortstatisticscalars-function-sortstatisticscalars-items-left-right-src-minisql-catalog-statistics-ml-1338897343) | `src/minisql/catalog/statistics.ml:391` | 24 | 21 | 8 | 10 | 2 | 704.41 | 48.88 |
+| [`minisql.catalog.statistics.supportsIntegralBounds`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-supportsintegralbounds-function-supportsintegralbounds-column-src-minisql-catalog-statistics-ml-1888245874) | `src/minisql/catalog/statistics.ml:350` | 3 | 1 | 1 | 0 | 0 | 192.11 | 73.47 |
+| [`minisql.catalog.statistics.targetMilestone`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-targetmilestone-function-targetmilestone-src-minisql-catalog-statistics-ml-417217334) | `src/minisql/catalog/statistics.ml:1161` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.catalog.statistics.topHashFrequencies`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-tophashfrequencies-function-tophashfrequencies-hashes-populationrows-samplerows-src-minisql-catalog-statistics-ml-917157235) | `src/minisql/catalog/statistics.ml:513` | 45 | 43 | 22 | 56 | 6 | 2140.67 | 37.66 |
+| [`minisql.catalog.statistics.tupleHash`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-tuplehash-function-tuplehash-columnindexes-sqlvalues-src-minisql-catalog-statistics-ml-1370251396) | `src/minisql/catalog/statistics.ml:575` | 9 | 7 | 3 | 3 | 2 | 264.97 | 61.81 |
+| [`minisql.catalog.statistics.validateNative`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-validatenative-function-validatenative-value-operation-name-src-minisql-catalog-statistics-ml-252233627) | `src/minisql/catalog/statistics.ml:742` | 4 | 3 | 4 | 3 | 1 | 209.22 | 70.08 |
+| [`minisql.catalog.statistics.valueWidth`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-valuewidth-function-valuewidth-value-src-minisql-catalog-statistics-ml-1311092519) | `src/minisql/catalog/statistics.ml:265` | 6 | 7 | 5 | 4 | 1 | 303.08 | 64.98 |
+| [`minisql.catalog.statistics.writeAtomic`](File-src-minisql-catalog-statistics-ml-1707584758.md#function-function-minisql-catalog-statistics-writeatomic-function-writeatomic-filepath-encoded-src-minisql-catalog-statistics-ml-1472445963) | `src/minisql/catalog/statistics.ml:1110` | 14 | 21 | 6 | 5 | 1 | 954.44 | 53.33 |
 | [`minisql.client.client.abort`](File-src-minisql-client-client-ml-193935498.md#function-function-minisql-client-client-abort-function-abort-client-src-minisql-client-client-ml-614055763) | `src/minisql/client/client.ml:516` | 9 | 10 | 4 | 3 | 1 | 356.62 | 60.78 |
 | [`minisql.client.client.authenticationFailure`](File-src-minisql-client-client-ml-193935498.md#function-function-minisql-client-client-authenticationfailure-function-authenticationfailure-operation-src-minisql-client-client-ml-1506524669) | `src/minisql/client/client.ml:82` | 3 | 1 | 1 | 0 | 0 | 55.35 | 77.25 |
 | [`minisql.client.client.beginQuery`](File-src-minisql-client-client-ml-193935498.md#function-function-minisql-client-client-beginquery-function-beginquery-client-sqltext-src-minisql-client-client-ml-1192851786) | `src/minisql/client/client.ml:409` | 11 | 12 | 4 | 3 | 1 | 586.68 | 57.36 |
@@ -773,6 +774,12 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`minisql.client.formatter.responsesFromResult`](File-src-minisql-client-formatter-ml-1949327393.md#function-function-minisql-client-formatter-responsesfromresult-function-responsesfromresult-result-src-minisql-client-formatter-ml-332183251) | `src/minisql/client/formatter.ml:79` | 28 | 27 | 11 | 12 | 2 | 1741.01 | 44.26 |
 | [`minisql.client.formatter.targetMilestone`](File-src-minisql-client-formatter-ml-1949327393.md#function-function-minisql-client-formatter-targetmilestone-function-targetmilestone-src-minisql-client-formatter-ml-1425316000) | `src/minisql/client/formatter.ml:147` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.client.formatter.valueText`](File-src-minisql-client-formatter-ml-1949327393.md#function-function-minisql-client-formatter-valuetext-function-valuetext-value-src-minisql-client-formatter-ml-290748291) | `src/minisql/client/formatter.ml:34` | 17 | 20 | 11 | 12 | 2 | 1005.01 | 50.66 |
+| [`minisql.common.byte_ops.compareLexicographic`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-comparelexicographic-inline-function-comparelexicographic-left-right-src-minisql-common-byte-ops-ml-81929950) | `src/minisql/common/byte_ops.ml:76` | 29 | 11 | 8 | 7 | 1 | 1071.12 | 45.81 |
+| [`minisql.common.byte_ops.componentName`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-componentname-function-componentname-src-minisql-common-byte-ops-ml-1087781652) | `src/minisql/common/byte_ops.ml:14` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.common.byte_ops.fnv1a31`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-fnv1a31-inline-function-fnv1a31-input-seed-src-minisql-common-byte-ops-ml-1230510686) | `src/minisql/common/byte_ops.ml:34` | 18 | 2 | 2 | 1 | 0 | 561.01 | 53.1 |
+| [`minisql.common.byte_ops.fnv1a31Adaptive`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-fnv1a31adaptive-inline-function-fnv1a31adaptive-input-seed-src-minisql-common-byte-ops-ml-1324371654) | `src/minisql/common/byte_ops.ml:58` | 12 | 7 | 4 | 6 | 3 | 365 | 57.98 |
+| [`minisql.common.byte_ops.isImplemented`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-isimplemented-function-isimplemented-src-minisql-common-byte-ops-ml-1926948604) | `src/minisql/common/byte_ops.ml:24` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.common.byte_ops.targetMilestone`](File-src-minisql-common-byte-ops-ml-400961654.md#function-function-minisql-common-byte-ops-targetmilestone-function-targetmilestone-src-minisql-common-byte-ops-ml-2026285082) | `src/minisql/common/byte_ops.ml:19` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.common.crc32c.componentName`](File-src-minisql-common-crc32c-ml-2102127649.md#function-function-minisql-common-crc32c-componentname-function-componentname-src-minisql-common-crc32c-ml-1264954026) | `src/minisql/common/crc32c.ml:91` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.common.crc32c.compute`](File-src-minisql-common-crc32c-ml-2102127649.md#function-function-minisql-common-crc32c-compute-function-compute-buffer-src-minisql-common-crc32c-ml-2143744414) | `src/minisql/common/crc32c.ml:69` | 6 | 3 | 2 | 1 | 1 | 152.93 | 67.46 |
 | [`minisql.common.crc32c.computeRange`](File-src-minisql-common-crc32c-ml-2102127649.md#function-function-minisql-common-crc32c-computerange-function-computerange-buffer-offset-length-src-minisql-common-crc32c-ml-132163775) | `src/minisql/common/crc32c.ml:62` | 3 | 1 | 1 | 0 | 0 | 78.87 | 76.18 |
@@ -1025,50 +1032,50 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`minisql.config.validation.positive`](File-src-minisql-config-validation-ml-366716535.md#function-function-minisql-config-validation-positive-function-positive-value-name-src-minisql-config-validation-ml-468436278) | `src/minisql/config/validation.ml:29` | 4 | 3 | 3 | 2 | 1 | 140.55 | 71.42 |
 | [`minisql.config.validation.targetMilestone`](File-src-minisql-config-validation-ml-366716535.md#function-function-minisql-config-validation-targetmilestone-function-targetmilestone-src-minisql-config-validation-ml-536604996) | `src/minisql/config/validation.ml:120` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.config.validation.validate`](File-src-minisql-config-validation-ml-366716535.md#function-function-minisql-config-validation-validate-function-validate-config-src-minisql-config-validation-ml-298327412) | `src/minisql/config/validation.ml:50` | 59 | 84 | 56 | 55 | 1 | 7026.46 | 26.9 |
-| [`minisql.executor.aggregate.accumulate`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-accumulate-function-accumulate-state-row-src-minisql-executor-aggregate-ml-554184651) | `src/minisql/executor/aggregate.ml:342` | 27 | 29 | 15 | 17 | 3 | 1455.99 | 44.61 |
-| [`minisql.executor.aggregate.accumulateBatch`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-accumulatebatch-function-accumulatebatch-states-rows-src-minisql-executor-aggregate-ml-1452920695) | `src/minisql/executor/aggregate.ml:379` | 9 | 6 | 4 | 6 | 3 | 220.08 | 62.24 |
-| [`minisql.executor.aggregate.aggregatePageRange`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-aggregatepagerange-function-aggregatepagerange-task-src-minisql-executor-aggregate-ml-173467701) | `src/minisql/executor/aggregate.ml:417` | 23 | 31 | 11 | 14 | 2 | 1406.76 | 46.77 |
-| [`minisql.executor.aggregate.aggregateValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-aggregatevalue-function-aggregatevalue-expression-rows-src-minisql-executor-aggregate-ml-1815246775) | `src/minisql/executor/aggregate.ml:246` | 84 | 76 | 42 | 89 | 6 | 5040.27 | 26.45 |
-| [`minisql.executor.aggregate.componentName`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-componentname-function-componentname-src-minisql-executor-aggregate-ml-1565929558) | `src/minisql/executor/aggregate.ml:1115` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.executor.aggregate.createAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-createaccumulator-function-createaccumulator-expression-src-minisql-executor-aggregate-ml-136780032) | `src/minisql/executor/aggregate.ml:333` | 5 | 4 | 2 | 1 | 1 | 162.52 | 69 |
-| [`minisql.executor.aggregate.distinctValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-distinctvalues-function-distinctvalues-input-src-minisql-executor-aggregate-ml-777826826) | `src/minisql/executor/aggregate.ml:219` | 11 | 10 | 5 | 8 | 3 | 275.78 | 59.52 |
-| [`minisql.executor.aggregate.evaluateArgument`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluateargument-function-evaluateargument-expression-row-src-minisql-executor-aggregate-ml-1558258396) | `src/minisql/executor/aggregate.ml:236` | 3 | 1 | 1 | 0 | 0 | 95.18 | 75.6 |
-| [`minisql.executor.aggregate.evaluateGroup`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluategroup-function-evaluategroup-expression-rows-representative-src-minisql-executor-aggregate-ml-2049059416) | `src/minisql/executor/aggregate.ml:750` | 111 | 119 | 65 | 115 | 4 | 8958.83 | 18.97 |
-| [`minisql.executor.aggregate.evaluateList`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluatelist-function-evaluatelist-boundexpressions-rows-representative-src-minisql-executor-aggregate-ml-1168022623) | `src/minisql/executor/aggregate.ml:868` | 7 | 4 | 2 | 1 | 1 | 164.23 | 65.78 |
-| [`minisql.executor.aggregate.fail`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-fail-function-fail-code-operation-message-src-minisql-executor-aggregate-ml-1897074913) | `src/minisql/executor/aggregate.ml:122` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
-| [`minisql.executor.aggregate.findMatching`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-findmatching-function-findmatching-rows-candidate-used-src-minisql-executor-aggregate-ml-45937607) | `src/minisql/executor/aggregate.ml:1061` | 7 | 6 | 5 | 5 | 2 | 302.86 | 63.52 |
-| [`minisql.executor.aggregate.finishAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-finishaccumulator-function-finishaccumulator-state-src-minisql-executor-aggregate-ml-574208863) | `src/minisql/executor/aggregate.ml:443` | 11 | 16 | 9 | 8 | 1 | 993.32 | 55.09 |
-| [`minisql.executor.aggregate.finishStreaming`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-finishstreaming-function-finishstreaming-states-src-minisql-executor-aggregate-ml-1737727722) | `src/minisql/executor/aggregate.ml:490` | 7 | 4 | 2 | 1 | 1 | 187.3 | 65.38 |
-| [`minisql.executor.aggregate.groupRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-grouprows-function-grouprows-rows-groupexpressions-aggregatequery-src-minisql-executor-aggregate-ml-167787480) | `src/minisql/executor/aggregate.ml:882` | 30 | 29 | 11 | 17 | 3 | 1482.59 | 44.1 |
-| [`minisql.executor.aggregate.hashBytes`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashbytes-function-hashbytes-input-seed-src-minisql-executor-aggregate-ml-350454739) | `src/minisql/executor/aggregate.ml:131` | 9 | 5 | 3 | 3 | 2 | 264.4 | 61.82 |
-| [`minisql.executor.aggregate.hashValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashvalue-function-hashvalue-value-src-minisql-executor-aggregate-ml-1006498035) | `src/minisql/executor/aggregate.ml:146` | 29 | 30 | 11 | 11 | 2 | 2743.67 | 42.54 |
-| [`minisql.executor.aggregate.hashValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashvalues-function-hashvalues-input-src-minisql-executor-aggregate-ml-621631530) | `src/minisql/executor/aggregate.ml:182` | 7 | 4 | 2 | 1 | 1 | 159.91 | 65.86 |
-| [`minisql.executor.aggregate.integerDivide`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-aggregate-ml-155382195) | `src/minisql/executor/aggregate.ml:42` | 4 | 3 | 3 | 2 | 1 | 182.84 | 70.62 |
-| [`minisql.executor.aggregate.isImplemented`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-isimplemented-function-isimplemented-src-minisql-executor-aggregate-ml-902752878) | `src/minisql/executor/aggregate.ml:1129` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.executor.aggregate.mergeAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-mergeaccumulator-function-mergeaccumulator-target-partial-src-minisql-executor-aggregate-ml-260712376) | `src/minisql/executor/aggregate.ml:394` | 20 | 15 | 11 | 13 | 3 | 885.61 | 49.5 |
-| [`minisql.executor.aggregate.project`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-project-function-project-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-src-minisql-executor-aggregate-ml-1675282638) | `src/minisql/executor/aggregate.ml:922` | 19 | 16 | 6 | 8 | 2 | 962.29 | 50.41 |
-| [`minisql.executor.aggregate.projectedSpillRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-aggregate-ml-1026336065) | `src/minisql/executor/aggregate.ml:944` | 7 | 4 | 2 | 1 | 1 | 173.92 | 65.61 |
-| [`minisql.executor.aggregate.projectSpilledPartition`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectspilledpartition-function-projectspilledpartition-task-src-minisql-executor-aggregate-ml-1701208801) | `src/minisql/executor/aggregate.ml:965` | 9 | 11 | 4 | 3 | 1 | 560 | 59.4 |
-| [`minisql.executor.aggregate.projectStreamingRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrows-function-projectstreamingrows-rows-selectexpressions-predicate-src-minisql-executor-aggregate-ml-446170085) | `src/minisql/executor/aggregate.ml:531` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
-| [`minisql.executor.aggregate.projectStreamingRowsControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrowscontrolled-function-projectstreamingrowscontrolled-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-107233609) | `src/minisql/executor/aggregate.ml:541` | 3 | 1 | 1 | 0 | 0 | 103.61 | 75.35 |
-| [`minisql.executor.aggregate.projectStreamingRowsCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrowscore-function-projectstreamingrowscore-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-1185759817) | `src/minisql/executor/aggregate.ml:506` | 20 | 18 | 12 | 21 | 4 | 1055.75 | 48.83 |
-| [`minisql.executor.aggregate.projectStreamingTable`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtable-function-projectstreamingtable-databasepath-table-pagetransaction-readcache-selectexpressions-src-minisql-executor-aggregate-ml-1700060926) | `src/minisql/executor/aggregate.ml:653` | 3 | 1 | 1 | 0 | 0 | 125.02 | 74.77 |
-| [`minisql.executor.aggregate.projectStreamingTableControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablecontrolled-function-projectstreamingtablecontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-459496904) | `src/minisql/executor/aggregate.ml:665` | 3 | 1 | 1 | 0 | 0 | 140.65 | 74.42 |
-| [`minisql.executor.aggregate.projectStreamingTableCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablecore-function-projectstreamingtablecore-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-1145734150) | `src/minisql/executor/aggregate.ml:623` | 23 | 29 | 12 | 15 | 2 | 1440.22 | 46.57 |
-| [`minisql.executor.aggregate.projectStreamingTableFiltered`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefiltered-function-projectstreamingtablefiltered-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-src-minisql-executor-aggregate-ml-2111044177) | `src/minisql/executor/aggregate.ml:595` | 3 | 1 | 1 | 0 | 0 | 163.5 | 73.96 |
-| [`minisql.executor.aggregate.projectStreamingTableFilteredControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefilteredcontrolled-function-projectstreamingtablefilteredcontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-519674565) | `src/minisql/executor/aggregate.ml:609` | 3 | 1 | 1 | 0 | 0 | 179.85 | 73.67 |
-| [`minisql.executor.aggregate.projectStreamingTableFilteredCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefilteredcore-function-projectstreamingtablefilteredcore-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-2007529947) | `src/minisql/executor/aggregate.ml:557` | 29 | 29 | 15 | 23 | 4 | 1626 | 43.6 |
-| [`minisql.executor.aggregate.projectStreamingTableParallel`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallel-function-projectstreamingtableparallel-databasepath-table-readcache-selectexpressions-src-minisql-executor-aggregate-ml-959428731) | `src/minisql/executor/aggregate.ml:729` | 3 | 1 | 1 | 0 | 0 | 106.61 | 75.26 |
-| [`minisql.executor.aggregate.projectStreamingTableParallelControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallelcontrolled-function-projectstreamingtableparallelcontrolled-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-442185683) | `src/minisql/executor/aggregate.ml:740` | 3 | 1 | 1 | 0 | 0 | 121.84 | 74.85 |
-| [`minisql.executor.aggregate.projectStreamingTableParallelCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallelcore-function-projectstreamingtableparallelcore-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-633892341) | `src/minisql/executor/aggregate.ml:678` | 44 | 45 | 14 | 16 | 2 | 2525.52 | 38.44 |
-| [`minisql.executor.aggregate.projectWithSpill`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectwithspill-function-projectwithspill-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-temporaryroot-threshold-src-minisql-executor-aggregate-ml-1182730562) | `src/minisql/executor/aggregate.ml:985` | 69 | 64 | 24 | 33 | 3 | 3704.32 | 31.67 |
-| [`minisql.executor.aggregate.sameValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-samevalue-function-samevalue-left-right-src-minisql-executor-aggregate-ml-234742147) | `src/minisql/executor/aggregate.ml:195` | 4 | 3 | 3 | 2 | 1 | 165.67 | 70.92 |
-| [`minisql.executor.aggregate.sameValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-samevalues-function-samevalues-left-right-src-minisql-executor-aggregate-ml-1674414761) | `src/minisql/executor/aggregate.ml:205` | 9 | 7 | 5 | 7 | 3 | 323.33 | 60.94 |
-| [`minisql.executor.aggregate.scannedSpillRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-aggregate-ml-226947013) | `src/minisql/executor/aggregate.ml:954` | 7 | 4 | 2 | 1 | 1 | 160.54 | 65.85 |
-| [`minisql.executor.aggregate.setOperation`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-setoperation-function-setoperation-leftrows-rightrows-operatorvalue-all-src-minisql-executor-aggregate-ml-1081334583) | `src/minisql/executor/aggregate.ml:1077` | 34 | 25 | 13 | 19 | 3 | 1231.43 | 43.2 |
-| [`minisql.executor.aggregate.streamingAccumulators`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-streamingaccumulators-function-streamingaccumulators-selectexpressions-operation-src-minisql-executor-aggregate-ml-642545548) | `src/minisql/executor/aggregate.ml:479` | 8 | 6 | 5 | 5 | 2 | 312.75 | 62.16 |
-| [`minisql.executor.aggregate.streamingRequiredColumns`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-streamingrequiredcolumns-function-streamingrequiredcolumns-table-selectexpressions-src-minisql-executor-aggregate-ml-1995208803) | `src/minisql/executor/aggregate.ml:460` | 14 | 9 | 7 | 10 | 3 | 487.54 | 55.24 |
-| [`minisql.executor.aggregate.targetMilestone`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-targetmilestone-function-targetmilestone-src-minisql-executor-aggregate-ml-1507961956) | `src/minisql/executor/aggregate.ml:1122` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.aggregate.accumulate`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-accumulate-function-accumulate-state-row-src-minisql-executor-aggregate-ml-554184651) | `src/minisql/executor/aggregate.ml:337` | 27 | 29 | 15 | 17 | 3 | 1455.99 | 44.61 |
+| [`minisql.executor.aggregate.accumulateBatch`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-accumulatebatch-function-accumulatebatch-states-rows-src-minisql-executor-aggregate-ml-1452920695) | `src/minisql/executor/aggregate.ml:374` | 9 | 6 | 4 | 6 | 3 | 220.08 | 62.24 |
+| [`minisql.executor.aggregate.aggregatePageRange`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-aggregatepagerange-function-aggregatepagerange-task-src-minisql-executor-aggregate-ml-173467701) | `src/minisql/executor/aggregate.ml:412` | 23 | 31 | 11 | 14 | 2 | 1406.76 | 46.77 |
+| [`minisql.executor.aggregate.aggregateValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-aggregatevalue-function-aggregatevalue-expression-rows-src-minisql-executor-aggregate-ml-1815246775) | `src/minisql/executor/aggregate.ml:241` | 84 | 76 | 42 | 89 | 6 | 5040.27 | 26.45 |
+| [`minisql.executor.aggregate.componentName`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-componentname-function-componentname-src-minisql-executor-aggregate-ml-1565929558) | `src/minisql/executor/aggregate.ml:1110` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.aggregate.createAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-createaccumulator-function-createaccumulator-expression-src-minisql-executor-aggregate-ml-136780032) | `src/minisql/executor/aggregate.ml:328` | 5 | 4 | 2 | 1 | 1 | 162.52 | 69 |
+| [`minisql.executor.aggregate.distinctValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-distinctvalues-function-distinctvalues-input-src-minisql-executor-aggregate-ml-777826826) | `src/minisql/executor/aggregate.ml:214` | 11 | 10 | 5 | 8 | 3 | 275.78 | 59.52 |
+| [`minisql.executor.aggregate.evaluateArgument`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluateargument-function-evaluateargument-expression-row-src-minisql-executor-aggregate-ml-1558258396) | `src/minisql/executor/aggregate.ml:231` | 3 | 1 | 1 | 0 | 0 | 95.18 | 75.6 |
+| [`minisql.executor.aggregate.evaluateGroup`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluategroup-function-evaluategroup-expression-rows-representative-src-minisql-executor-aggregate-ml-2049059416) | `src/minisql/executor/aggregate.ml:745` | 111 | 119 | 65 | 115 | 4 | 8958.83 | 18.97 |
+| [`minisql.executor.aggregate.evaluateList`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-evaluatelist-function-evaluatelist-boundexpressions-rows-representative-src-minisql-executor-aggregate-ml-1168022623) | `src/minisql/executor/aggregate.ml:863` | 7 | 4 | 2 | 1 | 1 | 164.23 | 65.78 |
+| [`minisql.executor.aggregate.fail`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-fail-function-fail-code-operation-message-src-minisql-executor-aggregate-ml-1897074913) | `src/minisql/executor/aggregate.ml:123` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
+| [`minisql.executor.aggregate.findMatching`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-findmatching-function-findmatching-rows-candidate-used-src-minisql-executor-aggregate-ml-45937607) | `src/minisql/executor/aggregate.ml:1056` | 7 | 6 | 5 | 5 | 2 | 302.86 | 63.52 |
+| [`minisql.executor.aggregate.finishAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-finishaccumulator-function-finishaccumulator-state-src-minisql-executor-aggregate-ml-574208863) | `src/minisql/executor/aggregate.ml:438` | 11 | 16 | 9 | 8 | 1 | 993.32 | 55.09 |
+| [`minisql.executor.aggregate.finishStreaming`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-finishstreaming-function-finishstreaming-states-src-minisql-executor-aggregate-ml-1737727722) | `src/minisql/executor/aggregate.ml:485` | 7 | 4 | 2 | 1 | 1 | 187.3 | 65.38 |
+| [`minisql.executor.aggregate.groupRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-grouprows-function-grouprows-rows-groupexpressions-aggregatequery-src-minisql-executor-aggregate-ml-167787480) | `src/minisql/executor/aggregate.ml:877` | 30 | 29 | 11 | 17 | 3 | 1482.59 | 44.1 |
+| [`minisql.executor.aggregate.hashBytes`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashbytes-function-hashbytes-input-seed-src-minisql-executor-aggregate-ml-350454739) | `src/minisql/executor/aggregate.ml:132` | 3 | 1 | 1 | 0 | 0 | 64.53 | 76.79 |
+| [`minisql.executor.aggregate.hashValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashvalue-function-hashvalue-value-src-minisql-executor-aggregate-ml-1006498035) | `src/minisql/executor/aggregate.ml:141` | 29 | 30 | 11 | 11 | 2 | 2743.67 | 42.54 |
+| [`minisql.executor.aggregate.hashValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-hashvalues-function-hashvalues-input-src-minisql-executor-aggregate-ml-621631530) | `src/minisql/executor/aggregate.ml:177` | 7 | 4 | 2 | 1 | 1 | 159.91 | 65.86 |
+| [`minisql.executor.aggregate.integerDivide`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-aggregate-ml-155382195) | `src/minisql/executor/aggregate.ml:43` | 4 | 3 | 3 | 2 | 1 | 182.84 | 70.62 |
+| [`minisql.executor.aggregate.isImplemented`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-isimplemented-function-isimplemented-src-minisql-executor-aggregate-ml-902752878) | `src/minisql/executor/aggregate.ml:1124` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.aggregate.mergeAccumulator`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-mergeaccumulator-function-mergeaccumulator-target-partial-src-minisql-executor-aggregate-ml-260712376) | `src/minisql/executor/aggregate.ml:389` | 20 | 15 | 11 | 13 | 3 | 885.61 | 49.5 |
+| [`minisql.executor.aggregate.project`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-project-function-project-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-src-minisql-executor-aggregate-ml-1675282638) | `src/minisql/executor/aggregate.ml:917` | 19 | 16 | 6 | 8 | 2 | 962.29 | 50.41 |
+| [`minisql.executor.aggregate.projectedSpillRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-aggregate-ml-1026336065) | `src/minisql/executor/aggregate.ml:939` | 7 | 4 | 2 | 1 | 1 | 173.92 | 65.61 |
+| [`minisql.executor.aggregate.projectSpilledPartition`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectspilledpartition-function-projectspilledpartition-task-src-minisql-executor-aggregate-ml-1701208801) | `src/minisql/executor/aggregate.ml:960` | 9 | 11 | 4 | 3 | 1 | 560 | 59.4 |
+| [`minisql.executor.aggregate.projectStreamingRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrows-function-projectstreamingrows-rows-selectexpressions-predicate-src-minisql-executor-aggregate-ml-446170085) | `src/minisql/executor/aggregate.ml:526` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
+| [`minisql.executor.aggregate.projectStreamingRowsControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrowscontrolled-function-projectstreamingrowscontrolled-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-107233609) | `src/minisql/executor/aggregate.ml:536` | 3 | 1 | 1 | 0 | 0 | 103.61 | 75.35 |
+| [`minisql.executor.aggregate.projectStreamingRowsCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingrowscore-function-projectstreamingrowscore-rows-selectexpressions-predicate-database-sessionid-src-minisql-executor-aggregate-ml-1185759817) | `src/minisql/executor/aggregate.ml:501` | 20 | 18 | 12 | 21 | 4 | 1055.75 | 48.83 |
+| [`minisql.executor.aggregate.projectStreamingTable`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtable-function-projectstreamingtable-databasepath-table-pagetransaction-readcache-selectexpressions-src-minisql-executor-aggregate-ml-1700060926) | `src/minisql/executor/aggregate.ml:648` | 3 | 1 | 1 | 0 | 0 | 125.02 | 74.77 |
+| [`minisql.executor.aggregate.projectStreamingTableControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablecontrolled-function-projectstreamingtablecontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-459496904) | `src/minisql/executor/aggregate.ml:660` | 3 | 1 | 1 | 0 | 0 | 140.65 | 74.42 |
+| [`minisql.executor.aggregate.projectStreamingTableCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablecore-function-projectstreamingtablecore-databasepath-table-pagetransaction-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-1145734150) | `src/minisql/executor/aggregate.ml:618` | 23 | 29 | 12 | 15 | 2 | 1440.22 | 46.57 |
+| [`minisql.executor.aggregate.projectStreamingTableFiltered`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefiltered-function-projectstreamingtablefiltered-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-src-minisql-executor-aggregate-ml-2111044177) | `src/minisql/executor/aggregate.ml:590` | 3 | 1 | 1 | 0 | 0 | 163.5 | 73.96 |
+| [`minisql.executor.aggregate.projectStreamingTableFilteredControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefilteredcontrolled-function-projectstreamingtablefilteredcontrolled-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-519674565) | `src/minisql/executor/aggregate.ml:604` | 3 | 1 | 1 | 0 | 0 | 179.85 | 73.67 |
+| [`minisql.executor.aggregate.projectStreamingTableFilteredCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtablefilteredcore-function-projectstreamingtablefilteredcore-databasepath-table-pagetransaction-readcache-selectexpressions-predicate-requiredcolumns-database-sessionid-src-minisql-executor-aggregate-ml-2007529947) | `src/minisql/executor/aggregate.ml:552` | 29 | 29 | 15 | 23 | 4 | 1626 | 43.6 |
+| [`minisql.executor.aggregate.projectStreamingTableParallel`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallel-function-projectstreamingtableparallel-databasepath-table-readcache-selectexpressions-src-minisql-executor-aggregate-ml-959428731) | `src/minisql/executor/aggregate.ml:724` | 3 | 1 | 1 | 0 | 0 | 106.61 | 75.26 |
+| [`minisql.executor.aggregate.projectStreamingTableParallelControlled`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallelcontrolled-function-projectstreamingtableparallelcontrolled-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-442185683) | `src/minisql/executor/aggregate.ml:735` | 3 | 1 | 1 | 0 | 0 | 121.84 | 74.85 |
+| [`minisql.executor.aggregate.projectStreamingTableParallelCore`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectstreamingtableparallelcore-function-projectstreamingtableparallelcore-databasepath-table-readcache-selectexpressions-database-sessionid-src-minisql-executor-aggregate-ml-633892341) | `src/minisql/executor/aggregate.ml:673` | 44 | 45 | 14 | 16 | 2 | 2525.52 | 38.44 |
+| [`minisql.executor.aggregate.projectWithSpill`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-projectwithspill-function-projectwithspill-rows-selectexpressions-groupexpressions-havingexpression-orderexpressions-temporaryroot-threshold-src-minisql-executor-aggregate-ml-1182730562) | `src/minisql/executor/aggregate.ml:980` | 69 | 64 | 24 | 33 | 3 | 3704.32 | 31.67 |
+| [`minisql.executor.aggregate.sameValue`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-samevalue-function-samevalue-left-right-src-minisql-executor-aggregate-ml-234742147) | `src/minisql/executor/aggregate.ml:190` | 4 | 3 | 3 | 2 | 1 | 165.67 | 70.92 |
+| [`minisql.executor.aggregate.sameValues`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-samevalues-function-samevalues-left-right-src-minisql-executor-aggregate-ml-1674414761) | `src/minisql/executor/aggregate.ml:200` | 9 | 7 | 5 | 7 | 3 | 323.33 | 60.94 |
+| [`minisql.executor.aggregate.scannedSpillRows`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-aggregate-ml-226947013) | `src/minisql/executor/aggregate.ml:949` | 7 | 4 | 2 | 1 | 1 | 160.54 | 65.85 |
+| [`minisql.executor.aggregate.setOperation`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-setoperation-function-setoperation-leftrows-rightrows-operatorvalue-all-src-minisql-executor-aggregate-ml-1081334583) | `src/minisql/executor/aggregate.ml:1072` | 34 | 25 | 13 | 19 | 3 | 1231.43 | 43.2 |
+| [`minisql.executor.aggregate.streamingAccumulators`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-streamingaccumulators-function-streamingaccumulators-selectexpressions-operation-src-minisql-executor-aggregate-ml-642545548) | `src/minisql/executor/aggregate.ml:474` | 8 | 6 | 5 | 5 | 2 | 312.75 | 62.16 |
+| [`minisql.executor.aggregate.streamingRequiredColumns`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-streamingrequiredcolumns-function-streamingrequiredcolumns-table-selectexpressions-src-minisql-executor-aggregate-ml-1995208803) | `src/minisql/executor/aggregate.ml:455` | 14 | 9 | 7 | 10 | 3 | 487.54 | 55.24 |
+| [`minisql.executor.aggregate.targetMilestone`](File-src-minisql-executor-aggregate-ml-1058141144.md#function-function-minisql-executor-aggregate-targetmilestone-function-targetmilestone-src-minisql-executor-aggregate-ml-1507961956) | `src/minisql/executor/aggregate.ml:1117` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.executor.dml.appendKeyBytes`](File-src-minisql-executor-dml-ml-1278137778.md#function-function-minisql-executor-dml-appendkeybytes-function-appendkeybytes-left-right-src-minisql-executor-dml-ml-1118650033) | `src/minisql/executor/dml.ml:1336` | 4 | 3 | 3 | 2 | 1 | 168.56 | 70.87 |
 | [`minisql.executor.dml.applyGenerated`](File-src-minisql-executor-dml-ml-1278137778.md#function-function-minisql-executor-dml-applygenerated-function-applygenerated-database-table-row-src-minisql-executor-dml-ml-887687433) | `src/minisql/executor/dml.ml:421` | 11 | 9 | 3 | 3 | 2 | 627.67 | 57.29 |
 | [`minisql.executor.dml.applyInsertedIndexes`](File-src-minisql-executor-dml-ml-1278137778.md#function-function-minisql-executor-dml-applyinsertedindexes-function-applyinsertedindexes-database-table-result-src-minisql-executor-dml-ml-2143230300) | `src/minisql/executor/dml.ml:1759` | 41 | 38 | 21 | 39 | 4 | 2753.14 | 37.91 |
@@ -1411,35 +1418,35 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`minisql.executor.filter.fail`](File-src-minisql-executor-filter-ml-1336995315.md#function-function-minisql-executor-filter-fail-function-fail-code-operation-message-src-minisql-executor-filter-ml-310989407) | `src/minisql/executor/filter.ml:21` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
 | [`minisql.executor.filter.isImplemented`](File-src-minisql-executor-filter-ml-1336995315.md#function-function-minisql-executor-filter-isimplemented-function-isimplemented-src-minisql-executor-filter-ml-262149318) | `src/minisql/executor/filter.ml:59` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.executor.filter.targetMilestone`](File-src-minisql-executor-filter-ml-1336995315.md#function-function-minisql-executor-filter-targetmilestone-function-targetmilestone-src-minisql-executor-filter-ml-1266904520) | `src/minisql/executor/filter.ml:52` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.executor.join.apply`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-apply-function-apply-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-582504799) | `src/minisql/executor/join.ml:589` | 37 | 30 | 19 | 35 | 4 | 2097.77 | 39.98 |
-| [`minisql.executor.join.applyHash`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhash-function-applyhash-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1039039119) | `src/minisql/executor/join.ml:579` | 3 | 1 | 1 | 0 | 0 | 78.87 | 76.18 |
-| [`minisql.executor.join.applyHashBuild`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuild-function-applyhashbuild-leftrows-rightrows-boundjoin-buildright-src-minisql-executor-join-ml-90075153) | `src/minisql/executor/join.ml:384` | 3 | 1 | 1 | 0 | 0 | 106.61 | 75.26 |
-| [`minisql.executor.join.applyHashBuildCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildcore-function-applyhashbuildcore-leftrows-rightrows-boundjoin-buildright-database-sessionid-src-minisql-executor-join-ml-61323851) | `src/minisql/executor/join.ml:357` | 5 | 5 | 4 | 3 | 1 | 376.52 | 66.18 |
-| [`minisql.executor.join.applyHashBuildWithSpill`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspill-function-applyhashbuildwithspill-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-src-minisql-executor-join-ml-2143391679) | `src/minisql/executor/join.ml:558` | 3 | 1 | 1 | 0 | 0 | 144 | 74.34 |
-| [`minisql.executor.join.applyHashBuildWithSpillControlled`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspillcontrolled-function-applyhashbuildwithspillcontrolled-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-583842025) | `src/minisql/executor/join.ml:571` | 3 | 1 | 1 | 0 | 0 | 160 | 74.02 |
-| [`minisql.executor.join.applyHashBuildWithSpillCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspillcore-function-applyhashbuildwithspillcore-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-1207558427) | `src/minisql/executor/join.ml:458` | 92 | 100 | 41 | 76 | 4 | 5970.98 | 25.21 |
-| [`minisql.executor.join.applyHashLeft`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashleft-function-applyhashleft-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-294180477) | `src/minisql/executor/join.ml:375` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
-| [`minisql.executor.join.applyHashLeftCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashleftcore-function-applyhashleftcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-2082804693) | `src/minisql/executor/join.ml:298` | 50 | 49 | 21 | 51 | 6 | 2677.52 | 36.11 |
-| [`minisql.executor.join.applyHashRight`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashright-function-applyhashright-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1106965383) | `src/minisql/executor/join.ml:367` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
-| [`minisql.executor.join.applyHashRightCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashrightcore-function-applyhashrightcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-848546437) | `src/minisql/executor/join.ml:229` | 59 | 57 | 26 | 59 | 6 | 3351.75 | 33.19 |
-| [`minisql.executor.join.applySpilledPartition`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyspilledpartition-function-applyspilledpartition-task-src-minisql-executor-join-ml-257639769) | `src/minisql/executor/join.ml:424` | 22 | 24 | 7 | 8 | 2 | 1055.44 | 48.6 |
-| [`minisql.executor.join.canHash`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-canhash-function-canhash-boundjoin-src-minisql-executor-join-ml-717831136) | `src/minisql/executor/join.ml:210` | 7 | 8 | 5 | 4 | 1 | 376.52 | 62.86 |
-| [`minisql.executor.join.cleanupPartitionTasks`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-cleanuppartitiontasks-function-cleanuppartitiontasks-tasks-src-minisql-executor-join-ml-1028962006) | `src/minisql/executor/join.ml:411` | 9 | 8 | 4 | 5 | 2 | 304.31 | 61.26 |
-| [`minisql.executor.join.combine`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-combine-function-combine-left-right-src-minisql-executor-join-ml-875615771) | `src/minisql/executor/join.ml:89` | 4 | 3 | 3 | 2 | 1 | 282.03 | 69.31 |
-| [`minisql.executor.join.componentName`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-componentname-function-componentname-src-minisql-executor-join-ml-182550798) | `src/minisql/executor/join.ml:630` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.executor.join.conditionPasses`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-conditionpasses-function-conditionpasses-condition-row-src-minisql-executor-join-ml-1218160165) | `src/minisql/executor/join.ml:126` | 4 | 3 | 2 | 1 | 1 | 144.43 | 71.48 |
-| [`minisql.executor.join.equalityColumns`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-equalitycolumns-function-equalitycolumns-boundjoin-src-minisql-executor-join-ml-1971825006) | `src/minisql/executor/join.ml:191` | 13 | 17 | 15 | 14 | 1 | 926.86 | 52.91 |
-| [`minisql.executor.join.fail`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-fail-function-fail-code-operation-message-src-minisql-executor-join-ml-1186142595) | `src/minisql/executor/join.ml:72` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
-| [`minisql.executor.join.hashBytes`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-hashbytes-function-hashbytes-input-seed-src-minisql-executor-join-ml-1202831771) | `src/minisql/executor/join.ml:137` | 10 | 7 | 5 | 5 | 2 | 421.97 | 59.13 |
-| [`minisql.executor.join.hashValue`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-hashvalue-function-hashvalue-value-src-minisql-executor-join-ml-1134870723) | `src/minisql/executor/join.ml:153` | 31 | 32 | 11 | 11 | 2 | 2778.04 | 41.87 |
-| [`minisql.executor.join.integerDivide`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-join-ml-2085825425) | `src/minisql/executor/join.ml:79` | 4 | 3 | 3 | 2 | 1 | 182.84 | 70.62 |
-| [`minisql.executor.join.isImplemented`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-isimplemented-function-isimplemented-src-minisql-executor-join-ml-1916872414) | `src/minisql/executor/join.ml:644` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.executor.join.nullValues`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-nullvalues-function-nullvalues-table-src-minisql-executor-join-ml-995927156) | `src/minisql/executor/join.ml:98` | 7 | 4 | 2 | 1 | 1 | 158.12 | 65.9 |
-| [`minisql.executor.join.nullValuesForTypes`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-nullvaluesfortypes-function-nullvaluesfortypes-typeinfos-src-minisql-executor-join-ml-294311717) | `src/minisql/executor/join.ml:111` | 9 | 8 | 4 | 4 | 2 | 371.38 | 60.65 |
-| [`minisql.executor.join.pollJoinControl`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-polljoincontrol-function-polljoincontrol-database-sessionid-counter-operation-src-minisql-executor-join-ml-588140083) | `src/minisql/executor/join.ml:61` | 4 | 3 | 3 | 2 | 1 | 169.64 | 70.85 |
-| [`minisql.executor.join.projectedSpillRows`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-join-ml-1439279559) | `src/minisql/executor/join.ml:390` | 8 | 6 | 3 | 3 | 2 | 292.3 | 62.63 |
-| [`minisql.executor.join.scannedSpillRows`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-join-ml-1413995643) | `src/minisql/executor/join.ml:401` | 7 | 4 | 2 | 1 | 1 | 160.54 | 65.85 |
-| [`minisql.executor.join.targetMilestone`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-targetmilestone-function-targetmilestone-src-minisql-executor-join-ml-1165845932) | `src/minisql/executor/join.ml:637` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.join.apply`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-apply-function-apply-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-582504799) | `src/minisql/executor/join.ml:584` | 37 | 30 | 19 | 35 | 4 | 2097.77 | 39.98 |
+| [`minisql.executor.join.applyHash`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhash-function-applyhash-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1039039119) | `src/minisql/executor/join.ml:574` | 3 | 1 | 1 | 0 | 0 | 78.87 | 76.18 |
+| [`minisql.executor.join.applyHashBuild`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuild-function-applyhashbuild-leftrows-rightrows-boundjoin-buildright-src-minisql-executor-join-ml-90075153) | `src/minisql/executor/join.ml:379` | 3 | 1 | 1 | 0 | 0 | 106.61 | 75.26 |
+| [`minisql.executor.join.applyHashBuildCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildcore-function-applyhashbuildcore-leftrows-rightrows-boundjoin-buildright-database-sessionid-src-minisql-executor-join-ml-61323851) | `src/minisql/executor/join.ml:352` | 5 | 5 | 4 | 3 | 1 | 376.52 | 66.18 |
+| [`minisql.executor.join.applyHashBuildWithSpill`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspill-function-applyhashbuildwithspill-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-src-minisql-executor-join-ml-2143391679) | `src/minisql/executor/join.ml:553` | 3 | 1 | 1 | 0 | 0 | 144 | 74.34 |
+| [`minisql.executor.join.applyHashBuildWithSpillControlled`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspillcontrolled-function-applyhashbuildwithspillcontrolled-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-583842025) | `src/minisql/executor/join.ml:566` | 3 | 1 | 1 | 0 | 0 | 160 | 74.02 |
+| [`minisql.executor.join.applyHashBuildWithSpillCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashbuildwithspillcore-function-applyhashbuildwithspillcore-leftrows-rightrows-boundjoin-buildright-temporaryroot-threshold-database-sessionid-src-minisql-executor-join-ml-1207558427) | `src/minisql/executor/join.ml:453` | 92 | 100 | 41 | 76 | 4 | 5970.98 | 25.21 |
+| [`minisql.executor.join.applyHashLeft`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashleft-function-applyhashleft-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-294180477) | `src/minisql/executor/join.ml:370` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
+| [`minisql.executor.join.applyHashLeftCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashleftcore-function-applyhashleftcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-2082804693) | `src/minisql/executor/join.ml:293` | 50 | 49 | 21 | 51 | 6 | 2677.52 | 36.11 |
+| [`minisql.executor.join.applyHashRight`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashright-function-applyhashright-leftrows-rightrows-boundjoin-src-minisql-executor-join-ml-1106965383) | `src/minisql/executor/join.ml:362` | 3 | 1 | 1 | 0 | 0 | 88.81 | 75.81 |
+| [`minisql.executor.join.applyHashRightCore`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyhashrightcore-function-applyhashrightcore-leftrows-rightrows-boundjoin-database-sessionid-src-minisql-executor-join-ml-848546437) | `src/minisql/executor/join.ml:224` | 59 | 57 | 26 | 59 | 6 | 3351.75 | 33.19 |
+| [`minisql.executor.join.applySpilledPartition`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-applyspilledpartition-function-applyspilledpartition-task-src-minisql-executor-join-ml-257639769) | `src/minisql/executor/join.ml:419` | 22 | 24 | 7 | 8 | 2 | 1055.44 | 48.6 |
+| [`minisql.executor.join.canHash`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-canhash-function-canhash-boundjoin-src-minisql-executor-join-ml-717831136) | `src/minisql/executor/join.ml:205` | 7 | 8 | 5 | 4 | 1 | 376.52 | 62.86 |
+| [`minisql.executor.join.cleanupPartitionTasks`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-cleanuppartitiontasks-function-cleanuppartitiontasks-tasks-src-minisql-executor-join-ml-1028962006) | `src/minisql/executor/join.ml:406` | 9 | 8 | 4 | 5 | 2 | 304.31 | 61.26 |
+| [`minisql.executor.join.combine`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-combine-function-combine-left-right-src-minisql-executor-join-ml-875615771) | `src/minisql/executor/join.ml:90` | 4 | 3 | 3 | 2 | 1 | 282.03 | 69.31 |
+| [`minisql.executor.join.componentName`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-componentname-function-componentname-src-minisql-executor-join-ml-182550798) | `src/minisql/executor/join.ml:625` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.join.conditionPasses`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-conditionpasses-function-conditionpasses-condition-row-src-minisql-executor-join-ml-1218160165) | `src/minisql/executor/join.ml:127` | 4 | 3 | 2 | 1 | 1 | 144.43 | 71.48 |
+| [`minisql.executor.join.equalityColumns`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-equalitycolumns-function-equalitycolumns-boundjoin-src-minisql-executor-join-ml-1971825006) | `src/minisql/executor/join.ml:186` | 13 | 17 | 15 | 14 | 1 | 926.86 | 52.91 |
+| [`minisql.executor.join.fail`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-fail-function-fail-code-operation-message-src-minisql-executor-join-ml-1186142595) | `src/minisql/executor/join.ml:73` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
+| [`minisql.executor.join.hashBytes`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-hashbytes-function-hashbytes-input-seed-src-minisql-executor-join-ml-1202831771) | `src/minisql/executor/join.ml:138` | 4 | 3 | 3 | 2 | 1 | 199.04 | 70.37 |
+| [`minisql.executor.join.hashValue`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-hashvalue-function-hashvalue-value-src-minisql-executor-join-ml-1134870723) | `src/minisql/executor/join.ml:148` | 31 | 32 | 11 | 11 | 2 | 2778.04 | 41.87 |
+| [`minisql.executor.join.integerDivide`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-integerdivide-function-integerdivide-numerator-denominator-src-minisql-executor-join-ml-2085825425) | `src/minisql/executor/join.ml:80` | 4 | 3 | 3 | 2 | 1 | 182.84 | 70.62 |
+| [`minisql.executor.join.isImplemented`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-isimplemented-function-isimplemented-src-minisql-executor-join-ml-1916872414) | `src/minisql/executor/join.ml:639` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.executor.join.nullValues`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-nullvalues-function-nullvalues-table-src-minisql-executor-join-ml-995927156) | `src/minisql/executor/join.ml:99` | 7 | 4 | 2 | 1 | 1 | 158.12 | 65.9 |
+| [`minisql.executor.join.nullValuesForTypes`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-nullvaluesfortypes-function-nullvaluesfortypes-typeinfos-src-minisql-executor-join-ml-294311717) | `src/minisql/executor/join.ml:112` | 9 | 8 | 4 | 4 | 2 | 371.38 | 60.65 |
+| [`minisql.executor.join.pollJoinControl`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-polljoincontrol-function-polljoincontrol-database-sessionid-counter-operation-src-minisql-executor-join-ml-588140083) | `src/minisql/executor/join.ml:62` | 4 | 3 | 3 | 2 | 1 | 169.64 | 70.85 |
+| [`minisql.executor.join.projectedSpillRows`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-projectedspillrows-function-projectedspillrows-rows-src-minisql-executor-join-ml-1439279559) | `src/minisql/executor/join.ml:385` | 8 | 6 | 3 | 3 | 2 | 292.3 | 62.63 |
+| [`minisql.executor.join.scannedSpillRows`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-scannedspillrows-function-scannedspillrows-rows-src-minisql-executor-join-ml-1413995643) | `src/minisql/executor/join.ml:396` | 7 | 4 | 2 | 1 | 1 | 160.54 | 65.85 |
+| [`minisql.executor.join.targetMilestone`](File-src-minisql-executor-join-ml-2069389245.md#function-function-minisql-executor-join-targetmilestone-function-targetmilestone-src-minisql-executor-join-ml-1165845932) | `src/minisql/executor/join.ml:632` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
 | [`minisql.executor.projection.apply`](File-src-minisql-executor-projection-ml-1842888238.md#function-function-minisql-executor-projection-apply-function-apply-rows-selectexpressions-orderexpressions-src-minisql-executor-projection-ml-1878343791) | `src/minisql/executor/projection.ml:79` | 13 | 11 | 5 | 7 | 3 | 701.49 | 55.1 |
 | [`minisql.executor.projection.applyWindows`](File-src-minisql-executor-projection-ml-1842888238.md#function-function-minisql-executor-projection-applywindows-function-applywindows-rows-selectexpressions-orderexpressions-src-minisql-executor-projection-ml-768487643) | `src/minisql/executor/projection.ml:357` | 9 | 8 | 4 | 4 | 2 | 466.76 | 59.96 |
 | [`minisql.executor.projection.compareNullable`](File-src-minisql-executor-projection-ml-1842888238.md#function-function-minisql-executor-projection-comparenullable-function-comparenullable-left-right-descending-nullsfirst-nullsspecified-src-minisql-executor-projection-ml-236766771) | `src/minisql/executor/projection.ml:420` | 15 | 18 | 11 | 14 | 2 | 640 | 53.22 |
@@ -2852,61 +2859,61 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 | [`minisql.sql.values.truth`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-truth-function-truth-value-src-minisql-sql-values-ml-1630780257) | `src/minisql/sql/values.ml:609` | 6 | 7 | 5 | 4 | 1 | 264.4 | 65.39 |
 | [`minisql.sql.values.unsignedMagnitudeToSigned`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-unsignedmagnitudetosigned-function-unsignedmagnitudetosigned-high-low-negative-src-minisql-sql-values-ml-648787271) | `src/minisql/sql/values.ml:139` | 12 | 11 | 4 | 4 | 2 | 385.44 | 57.81 |
 | [`minisql.sql.values.upperAscii`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-upperascii-function-upperascii-value-src-minisql-sql-values-ml-1332986499) | `src/minisql/sql/values.ml:729` | 13 | 11 | 6 | 8 | 3 | 512.68 | 55.92 |
-| [`minisql.storage.btree.allEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-allentries-function-allentries-tree-src-minisql-storage-btree-ml-304192544) | `src/minisql/storage/btree.ml:807` | 24 | 25 | 10 | 14 | 3 | 1175.47 | 47.05 |
-| [`minisql.storage.btree.auditLeafChain`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditleafchain-function-auditleafchain-tree-src-minisql-storage-btree-ml-1222439520) | `src/minisql/storage/btree.ml:837` | 27 | 30 | 12 | 20 | 3 | 1440.72 | 45.05 |
-| [`minisql.storage.btree.auditNode`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditnode-function-auditnode-tree-pagenumber-expectedlevel-state-src-minisql-storage-btree-ml-282196879) | `src/minisql/storage/btree.ml:1129` | 29 | 29 | 12 | 16 | 3 | 1860.91 | 43.59 |
-| [`minisql.storage.btree.bulkLoad`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bulkload-function-bulkload-tree-values-src-minisql-storage-btree-ml-1643248522) | `src/minisql/storage/btree.ml:797` | 6 | 4 | 1 | 0 | 0 | 128 | 68.14 |
-| [`minisql.storage.btree.bytesEqual`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bytesequal-function-bytesequal-left-right-src-minisql-storage-btree-ml-638325327) | `src/minisql/storage/btree.ml:176` | 8 | 8 | 7 | 7 | 2 | 384.59 | 61.26 |
-| [`minisql.storage.btree.chooseMeta`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-choosemeta-function-choosemeta-first-second-src-minisql-storage-btree-ml-1493140172) | `src/minisql/storage/btree.ml:392` | 16 | 17 | 14 | 18 | 3 | 952.63 | 50.99 |
-| [`minisql.storage.btree.chunkEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-chunkentries-function-chunkentries-values-pagesize-src-minisql-storage-btree-ml-1560533940) | `src/minisql/storage/btree.ml:686` | 17 | 14 | 6 | 6 | 2 | 643.95 | 52.68 |
-| [`minisql.storage.btree.close`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-close-function-close-tree-src-minisql-storage-btree-ml-1598693584) | `src/minisql/storage/btree.ml:1201` | 6 | 4 | 1 | 0 | 0 | 112 | 68.54 |
-| [`minisql.storage.btree.commitSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-commitsorted-function-commitsorted-tree-values-src-minisql-storage-btree-ml-1889270466) | `src/minisql/storage/btree.ml:742` | 47 | 46 | 11 | 17 | 3 | 2586.64 | 38.15 |
-| [`minisql.storage.btree.compareEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-compareentries-function-compareentries-left-right-src-minisql-storage-btree-ml-813618475) | `src/minisql/storage/btree.ml:208` | 6 | 6 | 4 | 3 | 1 | 299.56 | 65.15 |
-| [`minisql.storage.btree.compareKeys`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-comparekeys-function-comparekeys-left-right-src-minisql-storage-btree-ml-1219268477) | `src/minisql/storage/btree.ml:189` | 14 | 16 | 10 | 14 | 3 | 690 | 53.78 |
-| [`minisql.storage.btree.componentName`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-componentname-function-componentname-src-minisql-storage-btree-ml-1535933160) | `src/minisql/storage/btree.ml:1210` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.storage.btree.containsEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-containsentry-function-containsentry-tree-expected-src-minisql-storage-btree-ml-699816718) | `src/minisql/storage/btree.ml:905` | 32 | 37 | 15 | 26 | 3 | 1782 | 42.39 |
-| [`minisql.storage.btree.copyEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-copyentry-function-copyentry-value-src-minisql-storage-btree-ml-962533537) | `src/minisql/storage/btree.ml:228` | 4 | 3 | 2 | 1 | 1 | 151.27 | 71.34 |
-| [`minisql.storage.btree.count`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-count-function-count-tree-src-minisql-storage-btree-ml-1558978018) | `src/minisql/storage/btree.ml:1177` | 4 | 2 | 1 | 0 | 0 | 70.31 | 73.8 |
-| [`minisql.storage.btree.create`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-create-function-create-path-pagesize-fileid-databaseid-unique-src-minisql-storage-btree-ml-428455165) | `src/minisql/storage/btree.ml:416` | 9 | 8 | 2 | 1 | 1 | 724.21 | 58.89 |
-| [`minisql.storage.btree.decodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternal-function-decodeinternal-tree-pagenumber-src-minisql-storage-btree-ml-1010670406) | `src/minisql/storage/btree.ml:678` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
-| [`minisql.storage.btree.decodeInternalWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternalwithcontext-function-decodeinternalwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-1660257631) | `src/minisql/storage/btree.ml:640` | 34 | 40 | 27 | 33 | 3 | 3242.8 | 38.38 |
-| [`minisql.storage.btree.decodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleaf-function-decodeleaf-tree-pagenumber-src-minisql-storage-btree-ml-1860519834) | `src/minisql/storage/btree.ml:593` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
-| [`minisql.storage.btree.decodeLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleafwithcontext-function-decodeleafwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-162776037) | `src/minisql/storage/btree.ml:560` | 29 | 35 | 24 | 27 | 2 | 3029.62 | 40.49 |
-| [`minisql.storage.btree.decodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodemetapage-function-decodemetapage-treefile-pagenumber-src-minisql-storage-btree-ml-18858320) | `src/minisql/storage/btree.ml:363` | 24 | 29 | 24 | 26 | 2 | 2870.15 | 42.45 |
-| [`minisql.storage.btree.decodeNative`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodenative-function-decodenative-words-operation-name-src-minisql-storage-btree-ml-1514441641) | `src/minisql/storage/btree.ml:353` | 5 | 4 | 2 | 1 | 1 | 250.77 | 67.68 |
-| [`minisql.storage.btree.encodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeinternal-function-encodeinternal-tree-pagenumber-level-descriptors-src-minisql-storage-btree-ml-1408795798) | `src/minisql/storage/btree.ml:603` | 31 | 32 | 13 | 14 | 2 | 2660.47 | 41.74 |
-| [`minisql.storage.btree.encodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeleaf-function-encodeleaf-tree-pagenumber-previouspage-nextpage-values-src-minisql-storage-btree-ml-1082243172) | `src/minisql/storage/btree.ml:521` | 33 | 33 | 8 | 9 | 2 | 2537.27 | 41.96 |
-| [`minisql.storage.btree.encodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodemetapage-function-encodemetapage-treefile-pagenumber-generation-unique-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1472260786) | `src/minisql/storage/btree.ml:316` | 30 | 34 | 17 | 16 | 1 | 2680.36 | 41.49 |
-| [`minisql.storage.btree.entry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-entry-function-entry-key-value-src-minisql-storage-btree-ml-4224476) | `src/minisql/storage/btree.ml:219` | 5 | 5 | 7 | 6 | 1 | 423.05 | 65.42 |
-| [`minisql.storage.btree.fail`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-fail-function-fail-code-operation-message-src-minisql-storage-btree-ml-2143870441) | `src/minisql/storage/btree.ml:150` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
-| [`minisql.storage.btree.find`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-find-function-find-tree-key-src-minisql-storage-btree-ml-1108622593) | `src/minisql/storage/btree.ml:1034` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
-| [`minisql.storage.btree.findWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-findwithcontext-function-findwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-1627758102) | `src/minisql/storage/btree.ml:992` | 34 | 41 | 18 | 29 | 3 | 2081.91 | 40.94 |
-| [`minisql.storage.btree.height`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-height-function-height-tree-src-minisql-storage-btree-ml-1211433548) | `src/minisql/storage/btree.ml:1185` | 4 | 2 | 1 | 0 | 0 | 68.11 | 73.9 |
-| [`minisql.storage.btree.insert`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-insert-function-insert-tree-key-value-src-minisql-storage-btree-ml-738273672) | `src/minisql/storage/btree.ml:944` | 19 | 17 | 7 | 8 | 2 | 724.92 | 51.14 |
-| [`minisql.storage.btree.internalMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-internalmagic-function-internalmagic-src-minisql-storage-btree-ml-2134122928) | `src/minisql/storage/btree.ml:168` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
-| [`minisql.storage.btree.isImplemented`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isimplemented-function-isimplemented-src-minisql-storage-btree-ml-1883775896) | `src/minisql/storage/btree.ml:1222` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.storage.btree.isUnique`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isunique-function-isunique-tree-src-minisql-storage-btree-ml-721780756) | `src/minisql/storage/btree.ml:1193` | 4 | 2 | 1 | 0 | 0 | 70.31 | 73.8 |
-| [`minisql.storage.btree.leafMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-leafmagic-function-leafmagic-src-minisql-storage-btree-ml-1666210738) | `src/minisql/storage/btree.ml:162` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
-| [`minisql.storage.btree.locateLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleaf-function-locateleaf-tree-key-src-minisql-storage-btree-ml-1847517933) | `src/minisql/storage/btree.ml:895` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
-| [`minisql.storage.btree.locateLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleafwithcontext-function-locateleafwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-2141609176) | `src/minisql/storage/btree.ml:872` | 19 | 19 | 9 | 12 | 3 | 1022.09 | 49.82 |
-| [`minisql.storage.btree.mergeSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-mergesorted-function-mergesorted-left-right-src-minisql-storage-btree-ml-1557720837) | `src/minisql/storage/btree.ml:237` | 27 | 20 | 6 | 6 | 2 | 767.56 | 47.77 |
-| [`minisql.storage.btree.metaMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-metamagic-function-metamagic-src-minisql-storage-btree-ml-1414963488) | `src/minisql/storage/btree.ml:156` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
-| [`minisql.storage.btree.open`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-open-function-open-path-src-minisql-storage-btree-ml-1067946583) | `src/minisql/storage/btree.ml:460` | 3 | 1 | 1 | 0 | 0 | 56.47 | 77.19 |
-| [`minisql.storage.btree.openReadOnly`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonly-function-openreadonly-path-src-minisql-storage-btree-ml-1734688875) | `src/minisql/storage/btree.ml:467` | 3 | 1 | 1 | 0 | 0 | 56.47 | 77.19 |
-| [`minisql.storage.btree.openReadOnlyForLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyforlookup-function-openreadonlyforlookup-path-src-minisql-storage-btree-ml-655027473) | `src/minisql/storage/btree.ml:478` | 10 | 14 | 4 | 3 | 1 | 767.78 | 57.45 |
-| [`minisql.storage.btree.openReadOnlyForManagedLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyformanagedlookup-function-openreadonlyformanagedlookup-path-src-minisql-storage-btree-ml-1037068571) | `src/minisql/storage/btree.ml:492` | 10 | 14 | 4 | 3 | 1 | 767.78 | 57.45 |
-| [`minisql.storage.btree.openTreeFile`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-opentreefile-function-opentreefile-treefile-src-minisql-storage-btree-ml-1086454918) | `src/minisql/storage/btree.ml:429` | 23 | 32 | 13 | 13 | 2 | 1605.09 | 46.1 |
-| [`minisql.storage.btree.publish`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-publish-function-publish-tree-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1410154387) | `src/minisql/storage/btree.ml:726` | 11 | 10 | 2 | 1 | 1 | 620.39 | 57.46 |
-| [`minisql.storage.btree.range`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-range-function-range-tree-lower-lowerinclusive-upper-upperinclusive-maximum-src-minisql-storage-btree-ml-1143369316) | `src/minisql/storage/btree.ml:1111` | 3 | 1 | 1 | 0 | 0 | 132.83 | 74.59 |
-| [`minisql.storage.btree.rangeWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-rangewithcontext-function-rangewithcontext-tree-lower-lowerinclusive-upper-upperinclusive-maximum-readcontext-src-minisql-storage-btree-ml-1940410515) | `src/minisql/storage/btree.ml:1047` | 53 | 62 | 40 | 68 | 4 | 3537.98 | 32.16 |
-| [`minisql.storage.btree.remove`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-remove-function-remove-tree-key-value-src-minisql-storage-btree-ml-159743392) | `src/minisql/storage/btree.ml:969` | 17 | 13 | 5 | 5 | 2 | 500.26 | 53.59 |
-| [`minisql.storage.btree.sliceArray`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-slicearray-function-slicearray-values-offset-count-src-minisql-storage-btree-ml-1176188886) | `src/minisql/storage/btree.ml:709` | 8 | 6 | 3 | 2 | 1 | 220.08 | 63.49 |
-| [`minisql.storage.btree.sortEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-sortentries-function-sortentries-values-src-minisql-storage-btree-ml-446483214) | `src/minisql/storage/btree.ml:268` | 15 | 15 | 6 | 7 | 2 | 782.24 | 53.28 |
-| [`minisql.storage.btree.targetMilestone`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-targetmilestone-function-targetmilestone-src-minisql-storage-btree-ml-1921177446) | `src/minisql/storage/btree.ml:1216` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
-| [`minisql.storage.btree.validateOpen`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validateopen-function-validateopen-tree-operation-src-minisql-storage-btree-ml-2077186735) | `src/minisql/storage/btree.ml:507` | 6 | 6 | 3 | 2 | 1 | 263.22 | 65.67 |
-| [`minisql.storage.btree.validateSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validatesorted-function-validatesorted-values-unique-operation-src-minisql-storage-btree-ml-1382432732) | `src/minisql/storage/btree.ml:289` | 15 | 15 | 8 | 12 | 3 | 704.27 | 53.33 |
-| [`minisql.storage.btree.verify`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-verify-function-verify-tree-src-minisql-storage-btree-ml-1625814372) | `src/minisql/storage/btree.ml:1162` | 11 | 13 | 6 | 5 | 1 | 813.46 | 56.1 |
-| [`minisql.storage.btree.visitContains`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-visitcontains-function-visitcontains-state-pagenumber-src-minisql-storage-btree-ml-2078111669) | `src/minisql/storage/btree.ml:1119` | 3 | 1 | 1 | 0 | 0 | 70.32 | 76.52 |
+| [`minisql.storage.btree.allEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-allentries-function-allentries-tree-src-minisql-storage-btree-ml-304192544) | `src/minisql/storage/btree.ml:798` | 24 | 25 | 10 | 14 | 3 | 1175.47 | 47.05 |
+| [`minisql.storage.btree.auditLeafChain`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditleafchain-function-auditleafchain-tree-src-minisql-storage-btree-ml-1222439520) | `src/minisql/storage/btree.ml:828` | 27 | 30 | 12 | 20 | 3 | 1440.72 | 45.05 |
+| [`minisql.storage.btree.auditNode`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-auditnode-function-auditnode-tree-pagenumber-expectedlevel-state-src-minisql-storage-btree-ml-282196879) | `src/minisql/storage/btree.ml:1120` | 29 | 29 | 12 | 16 | 3 | 1860.91 | 43.59 |
+| [`minisql.storage.btree.bulkLoad`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bulkload-function-bulkload-tree-values-src-minisql-storage-btree-ml-1643248522) | `src/minisql/storage/btree.ml:788` | 6 | 4 | 1 | 0 | 0 | 128 | 68.14 |
+| [`minisql.storage.btree.bytesEqual`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-bytesequal-function-bytesequal-left-right-src-minisql-storage-btree-ml-638325327) | `src/minisql/storage/btree.ml:177` | 8 | 8 | 7 | 7 | 2 | 384.59 | 61.26 |
+| [`minisql.storage.btree.chooseMeta`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-choosemeta-function-choosemeta-first-second-src-minisql-storage-btree-ml-1493140172) | `src/minisql/storage/btree.ml:383` | 16 | 17 | 14 | 18 | 3 | 952.63 | 50.99 |
+| [`minisql.storage.btree.chunkEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-chunkentries-function-chunkentries-values-pagesize-src-minisql-storage-btree-ml-1560533940) | `src/minisql/storage/btree.ml:677` | 17 | 14 | 6 | 6 | 2 | 643.95 | 52.68 |
+| [`minisql.storage.btree.close`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-close-function-close-tree-src-minisql-storage-btree-ml-1598693584) | `src/minisql/storage/btree.ml:1192` | 6 | 4 | 1 | 0 | 0 | 112 | 68.54 |
+| [`minisql.storage.btree.commitSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-commitsorted-function-commitsorted-tree-values-src-minisql-storage-btree-ml-1889270466) | `src/minisql/storage/btree.ml:733` | 47 | 46 | 11 | 17 | 3 | 2586.64 | 38.15 |
+| [`minisql.storage.btree.compareEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-compareentries-function-compareentries-left-right-src-minisql-storage-btree-ml-813618475) | `src/minisql/storage/btree.ml:199` | 6 | 6 | 4 | 3 | 1 | 299.56 | 65.15 |
+| [`minisql.storage.btree.compareKeys`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-comparekeys-function-comparekeys-left-right-src-minisql-storage-btree-ml-1219268477) | `src/minisql/storage/btree.ml:190` | 4 | 3 | 3 | 2 | 1 | 196.21 | 70.41 |
+| [`minisql.storage.btree.componentName`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-componentname-function-componentname-src-minisql-storage-btree-ml-1535933160) | `src/minisql/storage/btree.ml:1201` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.storage.btree.containsEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-containsentry-function-containsentry-tree-expected-src-minisql-storage-btree-ml-699816718) | `src/minisql/storage/btree.ml:896` | 32 | 37 | 15 | 26 | 3 | 1782 | 42.39 |
+| [`minisql.storage.btree.copyEntry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-copyentry-function-copyentry-value-src-minisql-storage-btree-ml-962533537) | `src/minisql/storage/btree.ml:219` | 4 | 3 | 2 | 1 | 1 | 151.27 | 71.34 |
+| [`minisql.storage.btree.count`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-count-function-count-tree-src-minisql-storage-btree-ml-1558978018) | `src/minisql/storage/btree.ml:1168` | 4 | 2 | 1 | 0 | 0 | 70.31 | 73.8 |
+| [`minisql.storage.btree.create`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-create-function-create-path-pagesize-fileid-databaseid-unique-src-minisql-storage-btree-ml-428455165) | `src/minisql/storage/btree.ml:407` | 9 | 8 | 2 | 1 | 1 | 724.21 | 58.89 |
+| [`minisql.storage.btree.decodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternal-function-decodeinternal-tree-pagenumber-src-minisql-storage-btree-ml-1010670406) | `src/minisql/storage/btree.ml:669` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
+| [`minisql.storage.btree.decodeInternalWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeinternalwithcontext-function-decodeinternalwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-1660257631) | `src/minisql/storage/btree.ml:631` | 34 | 40 | 27 | 33 | 3 | 3242.8 | 38.38 |
+| [`minisql.storage.btree.decodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleaf-function-decodeleaf-tree-pagenumber-src-minisql-storage-btree-ml-1860519834) | `src/minisql/storage/btree.ml:584` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
+| [`minisql.storage.btree.decodeLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodeleafwithcontext-function-decodeleafwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-162776037) | `src/minisql/storage/btree.ml:551` | 29 | 35 | 24 | 27 | 2 | 3029.62 | 40.49 |
+| [`minisql.storage.btree.decodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodemetapage-function-decodemetapage-treefile-pagenumber-src-minisql-storage-btree-ml-18858320) | `src/minisql/storage/btree.ml:354` | 24 | 29 | 24 | 26 | 2 | 2870.15 | 42.45 |
+| [`minisql.storage.btree.decodeNative`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-decodenative-function-decodenative-words-operation-name-src-minisql-storage-btree-ml-1514441641) | `src/minisql/storage/btree.ml:344` | 5 | 4 | 2 | 1 | 1 | 250.77 | 67.68 |
+| [`minisql.storage.btree.encodeInternal`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeinternal-function-encodeinternal-tree-pagenumber-level-descriptors-src-minisql-storage-btree-ml-1408795798) | `src/minisql/storage/btree.ml:594` | 31 | 32 | 13 | 14 | 2 | 2660.47 | 41.74 |
+| [`minisql.storage.btree.encodeLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodeleaf-function-encodeleaf-tree-pagenumber-previouspage-nextpage-values-src-minisql-storage-btree-ml-1082243172) | `src/minisql/storage/btree.ml:512` | 33 | 33 | 8 | 9 | 2 | 2537.27 | 41.96 |
+| [`minisql.storage.btree.encodeMetaPage`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-encodemetapage-function-encodemetapage-treefile-pagenumber-generation-unique-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1472260786) | `src/minisql/storage/btree.ml:307` | 30 | 34 | 17 | 16 | 1 | 2680.36 | 41.49 |
+| [`minisql.storage.btree.entry`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-entry-function-entry-key-value-src-minisql-storage-btree-ml-4224476) | `src/minisql/storage/btree.ml:210` | 5 | 5 | 7 | 6 | 1 | 423.05 | 65.42 |
+| [`minisql.storage.btree.fail`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-fail-function-fail-code-operation-message-src-minisql-storage-btree-ml-2143870441) | `src/minisql/storage/btree.ml:151` | 3 | 1 | 1 | 0 | 0 | 91.38 | 75.73 |
+| [`minisql.storage.btree.find`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-find-function-find-tree-key-src-minisql-storage-btree-ml-1108622593) | `src/minisql/storage/btree.ml:1025` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
+| [`minisql.storage.btree.findWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-findwithcontext-function-findwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-1627758102) | `src/minisql/storage/btree.ml:983` | 34 | 41 | 18 | 29 | 3 | 2081.91 | 40.94 |
+| [`minisql.storage.btree.height`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-height-function-height-tree-src-minisql-storage-btree-ml-1211433548) | `src/minisql/storage/btree.ml:1176` | 4 | 2 | 1 | 0 | 0 | 68.11 | 73.9 |
+| [`minisql.storage.btree.insert`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-insert-function-insert-tree-key-value-src-minisql-storage-btree-ml-738273672) | `src/minisql/storage/btree.ml:935` | 19 | 17 | 7 | 8 | 2 | 724.92 | 51.14 |
+| [`minisql.storage.btree.internalMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-internalmagic-function-internalmagic-src-minisql-storage-btree-ml-2134122928) | `src/minisql/storage/btree.ml:169` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
+| [`minisql.storage.btree.isImplemented`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isimplemented-function-isimplemented-src-minisql-storage-btree-ml-1883775896) | `src/minisql/storage/btree.ml:1213` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.storage.btree.isUnique`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-isunique-function-isunique-tree-src-minisql-storage-btree-ml-721780756) | `src/minisql/storage/btree.ml:1184` | 4 | 2 | 1 | 0 | 0 | 70.31 | 73.8 |
+| [`minisql.storage.btree.leafMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-leafmagic-function-leafmagic-src-minisql-storage-btree-ml-1666210738) | `src/minisql/storage/btree.ml:163` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
+| [`minisql.storage.btree.locateLeaf`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleaf-function-locateleaf-tree-key-src-minisql-storage-btree-ml-1847517933) | `src/minisql/storage/btree.ml:886` | 3 | 1 | 1 | 0 | 0 | 62.27 | 76.89 |
+| [`minisql.storage.btree.locateLeafWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-locateleafwithcontext-function-locateleafwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-2141609176) | `src/minisql/storage/btree.ml:863` | 19 | 19 | 9 | 12 | 3 | 1022.09 | 49.82 |
+| [`minisql.storage.btree.mergeSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-mergesorted-function-mergesorted-left-right-src-minisql-storage-btree-ml-1557720837) | `src/minisql/storage/btree.ml:228` | 27 | 20 | 6 | 6 | 2 | 767.56 | 47.77 |
+| [`minisql.storage.btree.metaMagic`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-metamagic-function-metamagic-src-minisql-storage-btree-ml-1414963488) | `src/minisql/storage/btree.ml:157` | 3 | 1 | 1 | 0 | 0 | 33 | 78.82 |
+| [`minisql.storage.btree.open`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-open-function-open-path-src-minisql-storage-btree-ml-1067946583) | `src/minisql/storage/btree.ml:451` | 3 | 1 | 1 | 0 | 0 | 56.47 | 77.19 |
+| [`minisql.storage.btree.openReadOnly`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonly-function-openreadonly-path-src-minisql-storage-btree-ml-1734688875) | `src/minisql/storage/btree.ml:458` | 3 | 1 | 1 | 0 | 0 | 56.47 | 77.19 |
+| [`minisql.storage.btree.openReadOnlyForLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyforlookup-function-openreadonlyforlookup-path-src-minisql-storage-btree-ml-655027473) | `src/minisql/storage/btree.ml:469` | 10 | 14 | 4 | 3 | 1 | 767.78 | 57.45 |
+| [`minisql.storage.btree.openReadOnlyForManagedLookup`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-openreadonlyformanagedlookup-function-openreadonlyformanagedlookup-path-src-minisql-storage-btree-ml-1037068571) | `src/minisql/storage/btree.ml:483` | 10 | 14 | 4 | 3 | 1 | 767.78 | 57.45 |
+| [`minisql.storage.btree.openTreeFile`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-opentreefile-function-opentreefile-treefile-src-minisql-storage-btree-ml-1086454918) | `src/minisql/storage/btree.ml:420` | 23 | 32 | 13 | 13 | 2 | 1605.09 | 46.1 |
+| [`minisql.storage.btree.publish`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-publish-function-publish-tree-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1410154387) | `src/minisql/storage/btree.ml:717` | 11 | 10 | 2 | 1 | 1 | 620.39 | 57.46 |
+| [`minisql.storage.btree.range`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-range-function-range-tree-lower-lowerinclusive-upper-upperinclusive-maximum-src-minisql-storage-btree-ml-1143369316) | `src/minisql/storage/btree.ml:1102` | 3 | 1 | 1 | 0 | 0 | 132.83 | 74.59 |
+| [`minisql.storage.btree.rangeWithContext`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-rangewithcontext-function-rangewithcontext-tree-lower-lowerinclusive-upper-upperinclusive-maximum-readcontext-src-minisql-storage-btree-ml-1940410515) | `src/minisql/storage/btree.ml:1038` | 53 | 62 | 40 | 68 | 4 | 3537.98 | 32.16 |
+| [`minisql.storage.btree.remove`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-remove-function-remove-tree-key-value-src-minisql-storage-btree-ml-159743392) | `src/minisql/storage/btree.ml:960` | 17 | 13 | 5 | 5 | 2 | 500.26 | 53.59 |
+| [`minisql.storage.btree.sliceArray`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-slicearray-function-slicearray-values-offset-count-src-minisql-storage-btree-ml-1176188886) | `src/minisql/storage/btree.ml:700` | 8 | 6 | 3 | 2 | 1 | 220.08 | 63.49 |
+| [`minisql.storage.btree.sortEntries`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-sortentries-function-sortentries-values-src-minisql-storage-btree-ml-446483214) | `src/minisql/storage/btree.ml:259` | 15 | 15 | 6 | 7 | 2 | 782.24 | 53.28 |
+| [`minisql.storage.btree.targetMilestone`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-targetmilestone-function-targetmilestone-src-minisql-storage-btree-ml-1921177446) | `src/minisql/storage/btree.ml:1207` | 3 | 1 | 1 | 0 | 0 | 22.46 | 80 |
+| [`minisql.storage.btree.validateOpen`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validateopen-function-validateopen-tree-operation-src-minisql-storage-btree-ml-2077186735) | `src/minisql/storage/btree.ml:498` | 6 | 6 | 3 | 2 | 1 | 263.22 | 65.67 |
+| [`minisql.storage.btree.validateSorted`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-validatesorted-function-validatesorted-values-unique-operation-src-minisql-storage-btree-ml-1382432732) | `src/minisql/storage/btree.ml:280` | 15 | 15 | 8 | 12 | 3 | 704.27 | 53.33 |
+| [`minisql.storage.btree.verify`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-verify-function-verify-tree-src-minisql-storage-btree-ml-1625814372) | `src/minisql/storage/btree.ml:1153` | 11 | 13 | 6 | 5 | 1 | 813.46 | 56.1 |
+| [`minisql.storage.btree.visitContains`](File-src-minisql-storage-btree-ml-1474397187.md#function-function-minisql-storage-btree-visitcontains-function-visitcontains-state-pagenumber-src-minisql-storage-btree-ml-2078111669) | `src/minisql/storage/btree.ml:1110` | 3 | 1 | 1 | 0 | 0 | 70.32 | 76.52 |
 | [`minisql.storage.buffer_pool.cachedRowCount`](File-src-minisql-storage-buffer-pool-ml-1867626530.md#function-function-minisql-storage-buffer-pool-cachedrowcount-function-cachedrowcount-cache-tablepath-src-minisql-storage-buffer-pool-ml-1274774075) | `src/minisql/storage/buffer_pool.ml:321` | 8 | 8 | 4 | 3 | 1 | 412.08 | 61.45 |
 | [`minisql.storage.buffer_pool.chooseReadVictim`](File-src-minisql-storage-buffer-pool-ml-1867626530.md#function-function-minisql-storage-buffer-pool-choosereadvictim-function-choosereadvictim-cache-src-minisql-storage-buffer-pool-ml-18702156) | `src/minisql/storage/buffer_pool.ml:242` | 17 | 14 | 5 | 6 | 2 | 559.09 | 53.25 |
 | [`minisql.storage.buffer_pool.chooseVictim`](File-src-minisql-storage-buffer-pool-ml-1867626530.md#function-function-minisql-storage-buffer-pool-choosevictim-function-choosevictim-pool-src-minisql-storage-buffer-pool-ml-1046285356) | `src/minisql/storage/buffer_pool.ml:440` | 23 | 15 | 6 | 9 | 3 | 679.43 | 49.66 |
@@ -3460,7 +3467,7 @@ Coverage is split by documentation contract so strong API summaries cannot hide 
 
 A clone group is an exact sequence of 6 normalized, contiguous code lines found more than once. Comments and formatting whitespace are ignored. Duplicated-line totals count overlapping windows only once.
 
-Found 367 clone group(s). At most 200 groups are shown.
+Found 364 clone group(s). At most 200 groups are shown.
 
 <details>
 <summary>Clone 1 — 2 occurrences</summary>
@@ -4057,10 +4064,10 @@ Found 367 clone group(s). At most 200 groups are shown.
 
 - [`src/minisql/catalog/catalog.ml:192`](File-src-minisql-catalog-catalog-ml-1154366378.md)
 - [`src/minisql/catalog/schema_history.ml:486`](File-src-minisql-catalog-schema-history-ml-67428687.md)
-- [`src/minisql/catalog/statistics.ml:203`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/catalog/statistics.ml:204`](File-src-minisql-catalog-statistics-ml-1707584758.md)
 - [`src/minisql/executor/sort.ml:74`](File-src-minisql-executor-sort-ml-267147473.md)
 - [`src/minisql/server/database_manager.ml:327`](File-src-minisql-server-database-manager-ml-965836460.md)
-- [`src/minisql/storage/btree.ml:176`](File-src-minisql-storage-btree-ml-1474397187.md)
+- [`src/minisql/storage/btree.ml:177`](File-src-minisql-storage-btree-ml-1474397187.md)
 - [`src/minisql/storage/heap_file.ml:131`](File-src-minisql-storage-heap-file-ml-1771906446.md)
 - [`src/minisql/storage/overflow.ml:90`](File-src-minisql-storage-overflow-ml-2096314611.md)
 - [`src/minisql/storage/row_codec.ml:133`](File-src-minisql-storage-row-codec-ml-756043630.md)
@@ -4083,10 +4090,10 @@ Found 367 clone group(s). At most 200 groups are shown.
 
 - [`src/minisql/catalog/catalog.ml:193`](File-src-minisql-catalog-catalog-ml-1154366378.md)
 - [`src/minisql/catalog/schema_history.ml:487`](File-src-minisql-catalog-schema-history-ml-67428687.md)
-- [`src/minisql/catalog/statistics.ml:204`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/catalog/statistics.ml:205`](File-src-minisql-catalog-statistics-ml-1707584758.md)
 - [`src/minisql/executor/sort.ml:75`](File-src-minisql-executor-sort-ml-267147473.md)
 - [`src/minisql/server/database_manager.ml:328`](File-src-minisql-server-database-manager-ml-965836460.md)
-- [`src/minisql/storage/btree.ml:177`](File-src-minisql-storage-btree-ml-1474397187.md)
+- [`src/minisql/storage/btree.ml:178`](File-src-minisql-storage-btree-ml-1474397187.md)
 - [`src/minisql/storage/heap_file.ml:132`](File-src-minisql-storage-heap-file-ml-1771906446.md)
 - [`src/minisql/storage/overflow.ml:91`](File-src-minisql-storage-overflow-ml-2096314611.md)
 - [`src/minisql/storage/row_codec.ml:134`](File-src-minisql-storage-row-codec-ml-756043630.md)
@@ -4109,11 +4116,11 @@ Found 367 clone group(s). At most 200 groups are shown.
 
 - [`src/minisql/catalog/catalog.ml:194`](File-src-minisql-catalog-catalog-ml-1154366378.md)
 - [`src/minisql/catalog/schema_history.ml:488`](File-src-minisql-catalog-schema-history-ml-67428687.md)
-- [`src/minisql/catalog/statistics.ml:205`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/catalog/statistics.ml:206`](File-src-minisql-catalog-statistics-ml-1707584758.md)
 - [`src/minisql/executor/sort.ml:76`](File-src-minisql-executor-sort-ml-267147473.md)
 - [`src/minisql/server/database_manager.ml:329`](File-src-minisql-server-database-manager-ml-965836460.md)
 - [`src/minisql/sql/binder.ml:1731`](File-src-minisql-sql-binder-ml-1729118960.md)
-- [`src/minisql/storage/btree.ml:178`](File-src-minisql-storage-btree-ml-1474397187.md)
+- [`src/minisql/storage/btree.ml:179`](File-src-minisql-storage-btree-ml-1474397187.md)
 - [`src/minisql/storage/checksum.ml:97`](File-src-minisql-storage-checksum-ml-273339408.md)
 - [`src/minisql/storage/heap_file.ml:133`](File-src-minisql-storage-heap-file-ml-1771906446.md)
 - [`src/minisql/storage/overflow.ml:92`](File-src-minisql-storage-overflow-ml-2096314611.md)
@@ -4203,70 +4210,55 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 47 — 2 occurrences</summary>
+<summary>Clone 47 — 3 occurrences</summary>
 
-    function hashBytes ( input , seed )
-    result = seed & HASH_MASK
-    if len ( input ) > 0 then
-    for index = 0 to len ( input ) - 1
-    result = ( ( result ^ input [ index ] ) * 16777619 ) & HASH_MASK
-    end for
+    quotient = 0
+    remainder = numerator
+    scale = denominator
+    bit = 1
+    while scale <= remainder and scale <= ( endian . MAX_MINILANG_INT >> 1 )
+    scale = scale << 1
 
-- [`src/minisql/catalog/statistics.ml:284`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:131`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/catalog/statistics.ml:148`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/planner/optimizer.ml:89`](File-src-minisql-planner-optimizer-ml-1479207859.md)
+- [`src/minisql/planner/rewrites.ml:38`](File-src-minisql-planner-rewrites-ml-771945595.md)
 
 </details>
 
 <details>
 <summary>Clone 48 — 3 occurrences</summary>
 
-    result = seed & HASH_MASK
-    if len ( input ) > 0 then
-    for index = 0 to len ( input ) - 1
-    result = ( ( result ^ input [ index ] ) * 16777619 ) & HASH_MASK
-    end for
-    end if
+    remainder = numerator
+    scale = denominator
+    bit = 1
+    while scale <= remainder and scale <= ( endian . MAX_MINILANG_INT >> 1 )
+    scale = scale << 1
+    bit = bit << 1
 
-- [`src/minisql/catalog/statistics.ml:285`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:132`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:139`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:149`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/planner/optimizer.ml:90`](File-src-minisql-planner-optimizer-ml-1479207859.md)
+- [`src/minisql/planner/rewrites.ml:39`](File-src-minisql-planner-rewrites-ml-771945595.md)
 
 </details>
 
 <details>
 <summary>Clone 49 — 3 occurrences</summary>
 
-    if len ( input ) > 0 then
-    for index = 0 to len ( input ) - 1
-    result = ( ( result ^ input [ index ] ) * 16777619 ) & HASH_MASK
-    end for
-    end if
-    return result
+    scale = denominator
+    bit = 1
+    while scale <= remainder and scale <= ( endian . MAX_MINILANG_INT >> 1 )
+    scale = scale << 1
+    bit = bit << 1
+    end while
 
-- [`src/minisql/catalog/statistics.ml:286`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:133`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:140`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:150`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/planner/optimizer.ml:91`](File-src-minisql-planner-optimizer-ml-1479207859.md)
+- [`src/minisql/planner/rewrites.ml:40`](File-src-minisql-planner-rewrites-ml-771945595.md)
 
 </details>
 
 <details>
 <summary>Clone 50 — 3 occurrences</summary>
-
-    for index = 0 to len ( input ) - 1
-    result = ( ( result ^ input [ index ] ) * 16777619 ) & HASH_MASK
-    end for
-    end if
-    return result
-    end function
-
-- [`src/minisql/catalog/statistics.ml:287`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:134`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:141`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 51 — 3 occurrences</summary>
 
     if value . isNull then return 0 end if
     result = ( 2166136261 ^ value . typeKind ) & HASH_MASK
@@ -4275,14 +4267,14 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( value . value ) == "bool" then
     if value . value then return ( ( result ^ 1 ) * 16777619 ) & HASH_MASK end if
 
-- [`src/minisql/catalog/statistics.ml:297`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:148`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:155`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:292`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:143`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:150`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 52 — 3 occurrences</summary>
+<summary>Clone 51 — 3 occurrences</summary>
 
     result = ( 2166136261 ^ value . typeKind ) & HASH_MASK
     if typeof ( value . value ) == "string" then return hashBytes ( bytes ( value . value ) , result ) end if
@@ -4291,14 +4283,14 @@ Found 367 clone group(s). At most 200 groups are shown.
     if value . value then return ( ( result ^ 1 ) * 16777619 ) & HASH_MASK end if
     return ( ( result ^ 0 ) * 16777619 ) & HASH_MASK
 
-- [`src/minisql/catalog/statistics.ml:298`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:149`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:156`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:293`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:144`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:151`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 53 — 3 occurrences</summary>
+<summary>Clone 52 — 3 occurrences</summary>
 
     if typeof ( value . value ) == "string" then return hashBytes ( bytes ( value . value ) , result ) end if
     if typeof ( value . value ) == "bytes" then return hashBytes ( value . value , result ) end if
@@ -4307,14 +4299,14 @@ Found 367 clone group(s). At most 200 groups are shown.
     return ( ( result ^ 0 ) * 16777619 ) & HASH_MASK
     end if
 
-- [`src/minisql/catalog/statistics.ml:299`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:150`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:157`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:294`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:145`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:152`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 54 — 2 occurrences</summary>
+<summary>Clone 53 — 2 occurrences</summary>
 
     if typeof ( value . value ) == "bytes" then return hashBytes ( value . value , result ) end if
     if typeof ( value . value ) == "bool" then
@@ -4323,13 +4315,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
     if typeof ( value . value ) == "float" and value . value == 0.0 then return hashBytes ( bytes ( "0.0" ) , result ) end if
 
-- [`src/minisql/catalog/statistics.ml:300`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/join.ml:158`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:295`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/join.ml:153`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 55 — 2 occurrences</summary>
+<summary>Clone 54 — 2 occurrences</summary>
 
     if typeof ( value . value ) == "bool" then
     if value . value then return ( ( result ^ 1 ) * 16777619 ) & HASH_MASK end if
@@ -4338,13 +4330,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( value . value ) == "float" and value . value == 0.0 then return hashBytes ( bytes ( "0.0" ) , result ) end if
     if typeof ( value . value ) == "int" then
 
-- [`src/minisql/catalog/statistics.ml:301`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/join.ml:159`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:296`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/join.ml:154`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 56 — 2 occurrences</summary>
+<summary>Clone 55 — 2 occurrences</summary>
 
     if value . value then return ( ( result ^ 1 ) * 16777619 ) & HASH_MASK end if
     return ( ( result ^ 0 ) * 16777619 ) & HASH_MASK
@@ -4353,13 +4345,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( value . value ) == "int" then
     result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
 
-- [`src/minisql/catalog/statistics.ml:302`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/join.ml:160`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:297`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/join.ml:155`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 57 — 2 occurrences</summary>
+<summary>Clone 56 — 2 occurrences</summary>
 
     return ( ( result ^ 0 ) * 16777619 ) & HASH_MASK
     end if
@@ -4368,13 +4360,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
 
-- [`src/minisql/catalog/statistics.ml:303`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/join.ml:161`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:298`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/join.ml:156`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 58 — 2 occurrences</summary>
+<summary>Clone 57 — 2 occurrences</summary>
 
     end if
     if typeof ( value . value ) == "float" and value . value == 0.0 then return hashBytes ( bytes ( "0.0" ) , result ) end if
@@ -4383,13 +4375,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
 
-- [`src/minisql/catalog/statistics.ml:304`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/join.ml:162`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/catalog/statistics.ml:299`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/join.ml:157`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 59 — 2 occurrences</summary>
+<summary>Clone 58 — 2 occurrences</summary>
 
     if typeof ( value . value ) == "float" and value . value == 0.0 then return hashBytes ( bytes ( "0.0" ) , result ) end if
     if typeof ( value . value ) == "int" then
@@ -4397,6 +4389,81 @@ Found 367 clone group(s). At most 200 groups are shown.
     result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
     return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:300`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:153`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+
+</details>
+
+<details>
+<summary>Clone 59 — 2 occurrences</summary>
+
+    if typeof ( value . value ) == "int" then
+    result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
+
+- [`src/minisql/catalog/statistics.ml:301`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:154`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+
+</details>
+
+<details>
+<summary>Clone 60 — 2 occurrences</summary>
+
+    result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
+    if endian . isInt64Words ( value . value ) then
+
+- [`src/minisql/catalog/statistics.ml:302`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:155`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+
+</details>
+
+<details>
+<summary>Clone 61 — 2 occurrences</summary>
+
+    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
+    if endian . isInt64Words ( value . value ) then
+    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:303`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:156`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+
+</details>
+
+<details>
+<summary>Clone 62 — 2 occurrences</summary>
+
+    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
+    if endian . isInt64Words ( value . value ) then
+    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:304`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:157`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+
+</details>
+
+<details>
+<summary>Clone 63 — 2 occurrences</summary>
+
+    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
+    if endian . isInt64Words ( value . value ) then
+    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
 
 - [`src/minisql/catalog/statistics.ml:305`](File-src-minisql-catalog-statistics-ml-1707584758.md)
 - [`src/minisql/executor/aggregate.ml:158`](File-src-minisql-executor-aggregate-ml-1058141144.md)
@@ -4404,74 +4471,78 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 60 — 2 occurrences</summary>
+<summary>Clone 64 — 3 occurrences</summary>
 
-    if typeof ( value . value ) == "int" then
-    result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    end if
-
-- [`src/minisql/catalog/statistics.ml:306`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:159`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-
-</details>
-
-<details>
-<summary>Clone 61 — 2 occurrences</summary>
-
-    result = ( ( result ^ ( value . value & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    end if
-    if endian . isInt64Words ( value . value ) then
-
-- [`src/minisql/catalog/statistics.ml:307`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:160`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-
-</details>
-
-<details>
-<summary>Clone 62 — 2 occurrences</summary>
-
-    result = ( ( result ^ ( ( value . value >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    end if
-    if endian . isInt64Words ( value . value ) then
-    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:308`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:161`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-
-</details>
-
-<details>
-<summary>Clone 63 — 2 occurrences</summary>
-
-    result = ( ( result ^ ( ( value . value >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    end if
-    if endian . isInt64Words ( value . value ) then
-    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:309`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:162`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-
-</details>
-
-<details>
-<summary>Clone 64 — 2 occurrences</summary>
-
-    return ( ( result ^ ( ( value . value >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
     end if
     if endian . isInt64Words ( value . value ) then
     result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:306`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:159`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:165`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 65 — 3 occurrences</summary>
+
+    if endian . isInt64Words ( value . value ) then
+    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:307`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:160`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:166`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 66 — 3 occurrences</summary>
+
+    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:308`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:161`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:167`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 67 — 3 occurrences</summary>
+
+    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+
+- [`src/minisql/catalog/statistics.ml:309`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:162`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:168`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 68 — 2 occurrences</summary>
+
+    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    return ( ( result ^ ( ( value . value . high >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
 
 - [`src/minisql/catalog/statistics.ml:310`](File-src-minisql-catalog-statistics-ml-1707584758.md)
 - [`src/minisql/executor/aggregate.ml:163`](File-src-minisql-executor-aggregate-ml-1058141144.md)
@@ -4479,101 +4550,22 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 65 — 3 occurrences</summary>
-
-    end if
-    if endian . isInt64Words ( value . value ) then
-    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:311`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:164`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:170`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 66 — 3 occurrences</summary>
-
-    if endian . isInt64Words ( value . value ) then
-    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:312`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:165`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:171`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 67 — 3 occurrences</summary>
-
-    result = ( ( result ^ ( value . value . low & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:313`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:166`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:172`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 68 — 3 occurrences</summary>
-
-    result = ( ( result ^ ( ( value . value . low >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-
-- [`src/minisql/catalog/statistics.ml:314`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:167`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:173`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
 <summary>Clone 69 — 2 occurrences</summary>
 
-    result = ( ( result ^ ( ( value . value . low >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
     return ( ( result ^ ( ( value . value . high >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
+    end if
 
-- [`src/minisql/catalog/statistics.ml:315`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:168`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/catalog/statistics.ml:311`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:164`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 
 </details>
 
 <details>
 <summary>Clone 70 — 2 occurrences</summary>
-
-    result = ( ( result ^ ( ( value . value . low >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    return ( ( result ^ ( ( value . value . high >> 24 ) & 255 ) ) * 16777619 ) & HASH_MASK
-    end if
-
-- [`src/minisql/catalog/statistics.ml:316`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:169`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-
-</details>
-
-<details>
-<summary>Clone 71 — 2 occurrences</summary>
 
     result = ( ( result ^ ( value . value . high & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
@@ -4582,13 +4574,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
     return hashBytes ( bytes ( "" + value . value ) , result )
 
-- [`src/minisql/catalog/statistics.ml:317`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:170`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/catalog/statistics.ml:312`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:165`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 
 </details>
 
 <details>
-<summary>Clone 72 — 2 occurrences</summary>
+<summary>Clone 71 — 2 occurrences</summary>
 
     result = ( ( result ^ ( ( value . value . high >> 8 ) & 255 ) ) * 16777619 ) & HASH_MASK
     result = ( ( result ^ ( ( value . value . high >> 16 ) & 255 ) ) * 16777619 ) & HASH_MASK
@@ -4597,13 +4589,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     return hashBytes ( bytes ( "" + value . value ) , result )
     end function
 
-- [`src/minisql/catalog/statistics.ml:318`](File-src-minisql-catalog-statistics-ml-1707584758.md)
-- [`src/minisql/executor/aggregate.ml:171`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/catalog/statistics.ml:313`](File-src-minisql-catalog-statistics-ml-1707584758.md)
+- [`src/minisql/executor/aggregate.ml:166`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 
 </details>
 
 <details>
-<summary>Clone 73 — 2 occurrences</summary>
+<summary>Clone 72 — 2 occurrences</summary>
 
     if typeof ( left ) != "bytes" or typeof ( right ) != "bytes" or len ( left ) != len ( right ) then return false end if
     difference = 0
@@ -4618,7 +4610,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 74 — 2 occurrences</summary>
+<summary>Clone 73 — 2 occurrences</summary>
 
     difference = 0
     if len ( left ) > 0 then
@@ -4633,7 +4625,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 75 — 2 occurrences</summary>
+<summary>Clone 74 — 2 occurrences</summary>
 
     if len ( left ) > 0 then
     for index = 0 to len ( left ) - 1
@@ -4648,7 +4640,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 76 — 2 occurrences</summary>
+<summary>Clone 75 — 2 occurrences</summary>
 
     for index = 0 to len ( left ) - 1
     difference = difference | ( left [ index ] ^ right [ index ] )
@@ -4663,7 +4655,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 77 — 2 occurrences</summary>
+<summary>Clone 76 — 2 occurrences</summary>
 
     if typeof ( saltedPassword ) == "error" then return saltedPassword end if
     verifier = try ( scramCredential ( saltedPassword ) )
@@ -4678,7 +4670,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 78 — 2 occurrences</summary>
+<summary>Clone 77 — 2 occurrences</summary>
 
     if typeof ( actual ) == "error" then return actual end if
     if len ( expected ) == PASSWORD_CREDENTIAL_BYTES then
@@ -4693,7 +4685,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 79 — 2 occurrences</summary>
+<summary>Clone 78 — 2 occurrences</summary>
 
     if len ( expected ) == PASSWORD_CREDENTIAL_BYTES then
     credential = try ( scramCredential ( actual ) )
@@ -4708,7 +4700,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 80 — 2 occurrences</summary>
+<summary>Clone 79 — 2 occurrences</summary>
 
     credential = try ( scramCredential ( actual ) )
     wipeSecret ( actual )
@@ -4723,7 +4715,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 81 — 2 occurrences</summary>
+<summary>Clone 80 — 2 occurrences</summary>
 
     wipeSecret ( actual )
     if typeof ( credential ) == "error" then return credential end if
@@ -4738,7 +4730,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 82 — 2 occurrences</summary>
+<summary>Clone 81 — 2 occurrences</summary>
 
     if typeof ( credential ) == "error" then return credential end if
     result = constantTimeEquals ( credential , expected )
@@ -4753,7 +4745,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 83 — 2 occurrences</summary>
+<summary>Clone 82 — 2 occurrences</summary>
 
     if len ( input ) > 0 then status = BCryptHashData ( hashHandle , input , len ( input ) , 0 ) end if
     output = bytes ( 32 , 0 )
@@ -4768,14 +4760,14 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 84 — 2 occurrences</summary>
+<summary>Clone 83 — 2 occurrences</summary>
 
+    import minisql . common . endian as endian
     import std . concurrent . thread_pool as thread_pool
     import minisql . executor . projection as projection
     import minisql . executor . scan as scan
     import minisql . executor . sort as sort
     import minisql . platform . file as file_api
-    import minisql . server . database_manager as database_manager
 
 - [`src/minisql/executor/aggregate.ml:10`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/join.ml:10`](File-src-minisql-executor-join-ml-2069389245.md)
@@ -4783,7 +4775,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 </details>
 
 <details>
-<summary>Clone 85 — 2 occurrences</summary>
+<summary>Clone 84 — 2 occurrences</summary>
 
     end for
     workerCount = len ( tasks )
@@ -4792,13 +4784,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( pool ) == "error" then
     for each task in tasks
 
-- [`src/minisql/executor/aggregate.ml:1018`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:508`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1013`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:503`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 86 — 2 occurrences</summary>
+<summary>Clone 85 — 2 occurrences</summary>
 
     end if
     jobs = jobs + [ job ]
@@ -4807,13 +4799,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     pool . AwaitTermination ( )
     output = [ ]
 
-- [`src/minisql/executor/aggregate.ml:1039`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:535`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1034`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:530`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 87 — 2 occurrences</summary>
+<summary>Clone 86 — 2 occurrences</summary>
 
     jobs = jobs + [ job ]
     end for
@@ -4822,44 +4814,44 @@ Found 367 clone group(s). At most 200 groups are shown.
     output = [ ]
     for each job in jobs
 
-- [`src/minisql/executor/aggregate.ml:1040`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:536`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1035`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:531`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 87 — 2 occurrences</summary>
+
+    end for
+    pool . Shutdown ( )
+    pool . AwaitTermination ( )
+    output = [ ]
+    for each job in jobs
+    partitionOutput = try ( job . GetResult ( ) )
+
+- [`src/minisql/executor/aggregate.ml:1036`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:532`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
 <summary>Clone 88 — 2 occurrences</summary>
 
-    end for
     pool . Shutdown ( )
     pool . AwaitTermination ( )
     output = [ ]
     for each job in jobs
     partitionOutput = try ( job . GetResult ( ) )
+    disposed = job . Dispose ( )
 
-- [`src/minisql/executor/aggregate.ml:1041`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:537`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1037`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:533`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
 <summary>Clone 89 — 2 occurrences</summary>
 
-    pool . Shutdown ( )
-    pool . AwaitTermination ( )
-    output = [ ]
-    for each job in jobs
-    partitionOutput = try ( job . GetResult ( ) )
-    disposed = job . Dispose ( )
-
-- [`src/minisql/executor/aggregate.ml:1042`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:538`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 90 — 2 occurrences</summary>
-
     pool . AwaitTermination ( )
     output = [ ]
     for each job in jobs
@@ -4867,13 +4859,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     disposed = job . Dispose ( )
     if typeof ( partitionOutput ) == "error" then pool . Dispose ( ) ; return partitionOutput end if
 
-- [`src/minisql/executor/aggregate.ml:1043`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:539`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1038`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:534`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 91 — 2 occurrences</summary>
+<summary>Clone 90 — 2 occurrences</summary>
 
     output = [ ]
     for each job in jobs
@@ -4882,13 +4874,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( partitionOutput ) == "error" then pool . Dispose ( ) ; return partitionOutput end if
     output = output + partitionOutput
 
-- [`src/minisql/executor/aggregate.ml:1044`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:540`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1039`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:535`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 92 — 2 occurrences</summary>
+<summary>Clone 91 — 2 occurrences</summary>
 
     for each job in jobs
     partitionOutput = try ( job . GetResult ( ) )
@@ -4897,13 +4889,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     output = output + partitionOutput
     end for
 
-- [`src/minisql/executor/aggregate.ml:1045`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:541`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1040`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:536`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 93 — 2 occurrences</summary>
+<summary>Clone 92 — 2 occurrences</summary>
 
     partitionOutput = try ( job . GetResult ( ) )
     disposed = job . Dispose ( )
@@ -4912,13 +4904,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     end for
     pool . Dispose ( )
 
-- [`src/minisql/executor/aggregate.ml:1046`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:542`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1041`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:537`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 94 — 2 occurrences</summary>
+<summary>Clone 93 — 2 occurrences</summary>
 
     disposed = job . Dispose ( )
     if typeof ( partitionOutput ) == "error" then pool . Dispose ( ) ; return partitionOutput end if
@@ -4927,13 +4919,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     pool . Dispose ( )
     return output
 
-- [`src/minisql/executor/aggregate.ml:1047`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:543`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1042`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:538`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 95 — 2 occurrences</summary>
+<summary>Clone 94 — 2 occurrences</summary>
 
     if typeof ( partitionOutput ) == "error" then pool . Dispose ( ) ; return partitionOutput end if
     output = output + partitionOutput
@@ -4942,8 +4934,23 @@ Found 367 clone group(s). At most 200 groups are shown.
     return output
     end function
 
-- [`src/minisql/executor/aggregate.ml:1048`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:544`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:1043`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:539`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 95 — 2 occurrences</summary>
+
+    import std . concurrent . thread_pool as thread_pool
+    import minisql . executor . projection as projection
+    import minisql . executor . scan as scan
+    import minisql . executor . sort as sort
+    import minisql . platform . file as file_api
+    import minisql . server . database_manager as database_manager
+
+- [`src/minisql/executor/aggregate.ml:11`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:11`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -4957,8 +4964,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     import minisql . server . database_manager as database_manager
     import minisql . sql . ast as ast
 
-- [`src/minisql/executor/aggregate.ml:11`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:11`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:12`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:12`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -4972,8 +4979,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     import minisql . sql . ast as ast
     import minisql . sql . expressions as expressions
 
-- [`src/minisql/executor/aggregate.ml:12`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:12`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:13`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:13`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -4987,28 +4994,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     import minisql . sql . expressions as expressions
     import minisql . sql . types as types
 
-- [`src/minisql/executor/aggregate.ml:13`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:13`](File-src-minisql-executor-join-ml-2069389245.md)
-
-</details>
-
-<details>
-<summary>Clone 99 — 2 occurrences</summary>
-
-    import minisql . platform . file as file_api
-    import minisql . server . database_manager as database_manager
-    import minisql . sql . ast as ast
-    import minisql . sql . expressions as expressions
-    import minisql . sql . types as types
-    import minisql . sql . values as values
-
 - [`src/minisql/executor/aggregate.ml:14`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/join.ml:14`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 100 — 2 occurrences</summary>
+<summary>Clone 99 — 2 occurrences</summary>
 
     function hashValue ( value )
     if not values . isSqlValue ( value ) then return fail ( INVALID_ARGUMENT , "hashValue" , "value must be SqlValue" ) end if
@@ -5017,13 +5009,13 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( value . value ) == "string" then return hashBytes ( bytes ( value . value ) , result ) end if
     if typeof ( value . value ) == "bytes" then return hashBytes ( value . value , result ) end if
 
-- [`src/minisql/executor/aggregate.ml:146`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:153`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:141`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:148`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
 <details>
-<summary>Clone 101 — 2 occurrences</summary>
+<summary>Clone 100 — 2 occurrences</summary>
 
     if not values . isSqlValue ( value ) then return fail ( INVALID_ARGUMENT , "hashValue" , "value must be SqlValue" ) end if
     if value . isNull then return 0 end if
@@ -5032,8 +5024,23 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( value . value ) == "bytes" then return hashBytes ( value . value , result ) end if
     if typeof ( value . value ) == "bool" then
 
-- [`src/minisql/executor/aggregate.ml:147`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:154`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:142`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:149`](File-src-minisql-executor-join-ml-2069389245.md)
+
+</details>
+
+<details>
+<summary>Clone 101 — 2 occurrences</summary>
+
+    import minisql . platform . file as file_api
+    import minisql . server . database_manager as database_manager
+    import minisql . sql . ast as ast
+    import minisql . sql . expressions as expressions
+    import minisql . sql . types as types
+    import minisql . sql . values as values
+
+- [`src/minisql/executor/aggregate.ml:15`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:15`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5047,7 +5054,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     total = 0
     for each candidate in candidates
 
-- [`src/minisql/executor/aggregate.ml:314`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:309`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/projection.ml:221`](File-src-minisql-executor-projection-ml-1842888238.md)
 
 </details>
@@ -5062,7 +5069,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     for each candidate in candidates
     total = total + values . asNumber ( candidate )
 
-- [`src/minisql/executor/aggregate.ml:315`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:310`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/projection.ml:222`](File-src-minisql-executor-projection-ml-1842888238.md)
 
 </details>
@@ -5077,7 +5084,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     total = total + values . asNumber ( candidate )
     end for
 
-- [`src/minisql/executor/aggregate.ml:316`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:311`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/projection.ml:223`](File-src-minisql-executor-projection-ml-1842888238.md)
 
 </details>
@@ -5092,8 +5099,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( controlled ) == "error" then scan . close ( reader ) ; return controlled end if
     end if
 
-- [`src/minisql/executor/aggregate.ml:560`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/aggregate.ml:626`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:555`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:621`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 
 </details>
 
@@ -5107,20 +5114,20 @@ Found 367 clone group(s). At most 200 groups are shown.
     return finishStreaming ( states )
     end function
 
-- [`src/minisql/executor/aggregate.ml:580`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/aggregate.ml:640`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:575`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/aggregate.ml:635`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 
 </details>
 
 <details>
 <summary>Clone 107 — 2 occurrences</summary>
 
+    import minisql . common . byte_ops as byte_ops
     import minisql . common . endian as endian
     import std . concurrent . thread_pool as thread_pool
     import minisql . executor . projection as projection
     import minisql . executor . scan as scan
     import minisql . executor . sort as sort
-    import minisql . platform . file as file_api
 
 - [`src/minisql/executor/aggregate.ml:9`](File-src-minisql-executor-aggregate-ml-1058141144.md)
 - [`src/minisql/executor/join.ml:9`](File-src-minisql-executor-join-ml-2069389245.md)
@@ -5137,8 +5144,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     end for
     return output
 
-- [`src/minisql/executor/aggregate.ml:954`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:401`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:949`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:396`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5152,8 +5159,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     return output
     end function
 
-- [`src/minisql/executor/aggregate.ml:955`](File-src-minisql-executor-aggregate-ml-1058141144.md)
-- [`src/minisql/executor/join.ml:402`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/aggregate.ml:950`](File-src-minisql-executor-aggregate-ml-1058141144.md)
+- [`src/minisql/executor/join.ml:397`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5559,7 +5566,7 @@ Found 367 clone group(s). At most 200 groups are shown.
 
 - [`src/minisql/executor/executor.ml:2656`](File-src-minisql-executor-executor-ml-1548110730.md)
 - [`src/minisql/executor/executor.ml:2680`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:341`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:336`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5649,7 +5656,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     end function
 
 - [`src/minisql/executor/executor.ml:2681`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:342`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:337`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5769,7 +5776,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
 
 - [`src/minisql/executor/executor.ml:2942`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:603`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:598`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5784,7 +5791,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     if ( boundJoin . joinType == ast . JOIN_LEFT or boundJoin . joinType == ast . JOIN_FULL ) and not matched then
 
 - [`src/minisql/executor/executor.ml:2943`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:604`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:599`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5799,7 +5806,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
 
 - [`src/minisql/executor/executor.ml:2960`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:617`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:612`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5814,7 +5821,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
 
 - [`src/minisql/executor/executor.ml:2961`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:618`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:613`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5829,7 +5836,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     return output
 
 - [`src/minisql/executor/executor.ml:2962`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:619`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:614`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5844,7 +5851,7 @@ Found 367 clone group(s). At most 200 groups are shown.
     end function
 
 - [`src/minisql/executor/executor.ml:2963`](File-src-minisql-executor-executor-ml-1548110730.md)
-- [`src/minisql/executor/join.ml:620`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:615`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5858,8 +5865,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     if candidateCount % 4096 == 0 and database is not void then
     polledCandidate = try ( database_manager . pollSessionControl ( database , sessionId ) )
 
-- [`src/minisql/executor/join.ml:264`](File-src-minisql-executor-join-ml-2069389245.md)
-- [`src/minisql/executor/join.ml:329`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:259`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:324`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5873,8 +5880,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     polledCandidate = try ( database_manager . pollSessionControl ( database , sessionId ) )
     if typeof ( polledCandidate ) == "error" then return polledCandidate end if
 
-- [`src/minisql/executor/join.ml:265`](File-src-minisql-executor-join-ml-2069389245.md)
-- [`src/minisql/executor/join.ml:330`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:260`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:325`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5888,8 +5895,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     if typeof ( polledCandidate ) == "error" then return polledCandidate end if
     end if
 
-- [`src/minisql/executor/join.ml:266`](File-src-minisql-executor-join-ml-2069389245.md)
-- [`src/minisql/executor/join.ml:331`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:261`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:326`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5903,8 +5910,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     end if
     candidateCount = candidateCount + 1
 
-- [`src/minisql/executor/join.ml:267`](File-src-minisql-executor-join-ml-2069389245.md)
-- [`src/minisql/executor/join.ml:332`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:262`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:327`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 
@@ -5918,8 +5925,8 @@ Found 367 clone group(s). At most 200 groups are shown.
     sort . cleanupRuns ( runs )
     end for
 
-- [`src/minisql/executor/join.ml:412`](File-src-minisql-executor-join-ml-2069389245.md)
-- [`src/minisql/executor/join.ml:513`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:407`](File-src-minisql-executor-join-ml-2069389245.md)
+- [`src/minisql/executor/join.ml:508`](File-src-minisql-executor-join-ml-2069389245.md)
 
 </details>
 

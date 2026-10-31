@@ -6,12 +6,22 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased
 
+## 1.1.1 — 2026-10-31
+
+- added bounded x64 byte-hash and lexicographic-comparison primitives for long
+  hash-operator values and B+ tree keys, retaining the faster portable hash for
+  values below the measured 16-byte crossover;
+- documented MiniLang 1.3 compiler/std and inline-assembly A/B results,
+  including unchanged peak memory, a repeatable 14.4-14.9% long-text grouping
+  median gain, and the rejected slower integer-ASM candidate;
 - restored source compatibility with MiniLang Compiler 1.2.4 and newer by
   renaming the newly reserved `operator` identifier throughout the SQL parser,
   binder, planner, optimizer, executor, and their focused regression tests;
 - made the M78 production-fault acceptance gate hermetic by passing its freshly
   compiled server, checker, crash-worker, and storage-fault executables
   explicitly, with an actionable prerequisite diagnostic when one is missing.
+- raised the source-build minimum to MiniLang 1.3.0 for the new inline-assembly
+  byte primitives while preserving database and wire format version 1.
 
 ## 1.1.0 — 2026-09-02
 

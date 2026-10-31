@@ -3,6 +3,7 @@
 // Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
 
 import minisql.common.crc32c as crc32c
+import minisql.common.byte_ops as byte_ops
 import minisql.storage.checksum as checksum
 import tests.support.testkit as test
 import std.cpu as cpu
@@ -15,6 +16,24 @@ function main(args)
   test.equal(state, crc32c.compute(bytes("123456789")), 0xE3069283, "CRC check string")
   test.equal(state, crc32c.compute(bytes("abc")), 0x364B3FB7, "CRC abc")
   test.equal(state, crc32c.compute(bytes(32, 0)), 0x8A9136AA, "CRC 32 zero bytes")
+
+  // Stable byte primitives accelerate hash operators and B+ tree traversal.
+  // Exact values and boundary ordering protect the unsafe assembly loops.
+  test.equal(state, byte_ops.fnv1a31(bytes(), 2166136261), 18652613, "FNV empty seed masking")
+  test.equal(state, byte_ops.fnv1a31(bytes("abc"), 2166136261), 440920331, "FNV abc")
+  test.equal(state, byte_ops.fnv1a31Adaptive(bytes("abc"), 2166136261), 440920331, "adaptive FNV short input")
+  crossoverInput = bytes("0123456789abcdef")
+  crossoverHash = byte_ops.fnv1a31(crossoverInput, 2166136261)
+  test.equal(state, byte_ops.fnv1a31Adaptive(crossoverInput, 2166136261), crossoverHash, "adaptive FNV assembly crossover")
+  test.equal(state, byte_ops.compareLexicographic(bytes(), bytes()), 0, "byte compare empty")
+  test.equal(state, byte_ops.compareLexicographic(bytes("abc"), bytes("abc")), 0, "byte compare equal")
+  test.equal(state, byte_ops.compareLexicographic(bytes("abc"), bytes("abd")), -1, "byte compare lower byte")
+  test.equal(state, byte_ops.compareLexicographic(bytes("abd"), bytes("abc")), 1, "byte compare greater byte")
+  test.equal(state, byte_ops.compareLexicographic(bytes("abc"), bytes("abcd")), -1, "byte compare shorter prefix")
+  test.equal(state, byte_ops.compareLexicographic(bytes("abcd"), bytes("abc")), 1, "byte compare longer prefix")
+  lowUnsigned = bytes(1, 0)
+  highUnsigned = bytes(1, 255)
+  test.equal(state, byte_ops.compareLexicographic(lowUnsigned, highUnsigned), -1, "byte compare unsigned")
 
   // Exact values on both sides of every eight-byte block boundary protect the
   // native qword path and its scalar tail from off-by-one regressions.

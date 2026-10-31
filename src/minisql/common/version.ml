@@ -9,7 +9,7 @@ package minisql.common.version
 
 const PRODUCT_NAME = "MiniSQL"
 /// Defines the product version constant used by the minisql common version module.
-const PRODUCT_VERSION = "1.1.0"
+const PRODUCT_VERSION = "1.1.1"
 /// Defines the milestone constant used by the minisql common version module.
 const MILESTONE = "M50"
 /// Defines the revision constant used by the minisql common version module.

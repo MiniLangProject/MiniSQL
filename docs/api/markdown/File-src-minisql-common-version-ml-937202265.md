@@ -82,11 +82,11 @@ Central product, wire-protocol, and database-format identity. Persisted and
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L10)
 
-<a id="constant-constant-minisql-common-version-product-version-const-product-version-1-1-0-src-minisql-common-version-ml-838981743"></a>
+<a id="constant-constant-minisql-common-version-product-version-const-product-version-1-1-1-src-minisql-common-version-ml-1670925334"></a>
 ### PRODUCT_VERSION
 
 ```ml
-const PRODUCT_VERSION = "1.1.0"
+const PRODUCT_VERSION = "1.1.1"
 ```
 
 Defines the product version constant used by the minisql common version module.

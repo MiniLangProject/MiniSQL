@@ -10,7 +10,7 @@ Every delivered source archive exposes exactly one user-facing root acceptance l
 ```
 
 The accepted compiler baseline is MiniLangCompilerPy or MiniLangCompilerML
-1.1.0 or newer. It supplies both native targets, CRC-32C, SIMD, and the portable
+1.3.0 or newer. It supplies both native targets, CRC-32C, SIMD, and the portable
 standard-library contracts referenced by the source package; using an older
 compiler is not a valid acceptance run.
 

@@ -6,6 +6,7 @@ package minisql.catalog.statistics
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.catalog.catalog as catalog
+import minisql.common.byte_ops as byte_ops
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.sql.types as types
@@ -282,13 +283,7 @@ end function
 /// @param input input value consumed by this operation.
 /// @param seed seed value consumed by this operation.
 function hashBytes(input, seed)
-  result = seed & HASH_MASK
-  if len(input) > 0 then
-    for index = 0 to len(input) - 1
-      result = ((result ^ input[index]) * 16777619) & HASH_MASK
-    end for
-  end if
-  return result
+  return byte_ops.fnv1a31Adaptive(input, seed)
 end function
 
 /// Hashes one non-NULL SQL payload consistently with sameValue comparison.

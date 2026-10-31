@@ -12,7 +12,7 @@ struct TableStatistics
 Defines the table statistics record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L106)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnGroups
 Joint statistics for bounded-width composite index keys.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L118)
 
 <a id="field-field-minisql-catalog-statistics-tablestatistics-columns-columns-src-minisql-catalog-statistics-ml-2041183284"></a>
 ### columns
@@ -38,7 +38,7 @@ columns
 Columns field of the table statistics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L116)
 
 <a id="field-field-minisql-catalog-statistics-tablestatistics-pagecount-pagecount-src-minisql-catalog-statistics-ml-1998009072"></a>
 ### pageCount
@@ -50,7 +50,7 @@ pageCount
 Page count field of the table statistics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L112)
 
 <a id="field-field-minisql-catalog-statistics-tablestatistics-rowcount-rowcount-src-minisql-catalog-statistics-ml-1127900794"></a>
 ### rowCount
@@ -62,7 +62,7 @@ rowCount
 Row count field of the table statistics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L109)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L110)
 
 <a id="field-field-minisql-catalog-statistics-tablestatistics-samplecount-samplecount-src-minisql-catalog-statistics-ml-1688122768"></a>
 ### sampleCount
@@ -74,7 +74,7 @@ sampleCount
 Number of decoded rows contributing column distribution statistics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L114)
 
 <a id="field-field-minisql-catalog-statistics-tablestatistics-tableid-tableid-src-minisql-catalog-statistics-ml-647627036"></a>
 ### tableId
@@ -86,4 +86,4 @@ tableId
 Table id field of the table statistics.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/statistics.ml#L108)
