@@ -4,6 +4,15 @@ All notable release-level changes are documented here. The detailed milestone
 and repair-candidate log from development is preserved in
 `docs/history/DEVELOPMENT_CHANGELOG.md`.
 
+## Unreleased
+
+- restored source compatibility with MiniLang Compiler 1.2.4 and newer by
+  renaming the newly reserved `operator` identifier throughout the SQL parser,
+  binder, planner, optimizer, executor, and their focused regression tests;
+- made the M78 production-fault acceptance gate hermetic by passing its freshly
+  compiled server, checker, crash-worker, and storage-fault executables
+  explicitly, with an actionable prerequisite diagnostic when one is missing.
+
 ## 1.1.0 — 2026-09-02
 
 - added generated MiniDoc HTML and Markdown API references with checked output

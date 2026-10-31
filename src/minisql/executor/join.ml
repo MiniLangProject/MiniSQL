@@ -191,7 +191,7 @@ end function
 function equalityColumns(boundJoin)
   if typeof(boundJoin) != "struct" or not expressions.isBoundExpression(boundJoin.condition) then return void end if
   condition = boundJoin.condition
-  if condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
+  if condition.kind != expressions.BOUND_BINARY or condition.operatorValue != "=" then return void end if
   if not expressions.isBoundExpression(condition.left) or not expressions.isBoundExpression(condition.right) then return void end if
   if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return void end if
   leftCount = len(boundJoin.leftTypes)

@@ -64,11 +64,11 @@ Stores the estimated rows associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/physical_plan.ml#L22)
 
-<a id="field-field-minisql-planner-physical-plan-physicalplan-operator-operator-src-minisql-planner-physical-plan-ml-659188035"></a>
-### operator
+<a id="field-field-minisql-planner-physical-plan-physicalplan-operatorvalue-operatorvalue-src-minisql-planner-physical-plan-ml-1355707319"></a>
+### operatorValue
 
 ```ml
-operator
+operatorValue
 ```
 
 Stores the operator associated with this value.

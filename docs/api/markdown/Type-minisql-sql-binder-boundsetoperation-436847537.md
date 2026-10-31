@@ -28,11 +28,11 @@ Stores the all associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L108)
 
-<a id="field-field-minisql-sql-binder-boundsetoperation-operator-operator-src-minisql-sql-binder-ml-329689230"></a>
-### operator
+<a id="field-field-minisql-sql-binder-boundsetoperation-operatorvalue-operatorvalue-src-minisql-sql-binder-ml-1761049690"></a>
+### operatorValue
 
 ```ml
-operator
+operatorValue
 ```
 
 Stores the operator associated with this value.

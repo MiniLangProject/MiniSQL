@@ -60,7 +60,7 @@ struct BoundExpression
   /// Stores the kind associated with this value.
   kind
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the type info associated with this value.
   typeInfo
   /// Stores the literal associated with this value.
@@ -353,25 +353,25 @@ end function
 /// Requires arguments that satisfy the validation performed below.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param operand operand value consumed by this operation.
 /// @param typeInfo typeInfo value consumed by this operation.
-function unary(operator, operand, typeInfo)
-  if typeof(operator) != "string" or not isBoundExpression(operand) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "unary", "invalid unary binding") end if
-  return BoundExpression(BOUND_UNARY, operator, typeInfo, void, -1, operand, void)
+function unary(operatorValue, operand, typeInfo)
+  if typeof(operatorValue) != "string" or not isBoundExpression(operand) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "unary", "invalid unary binding") end if
+  return BoundExpression(BOUND_UNARY, operatorValue, typeInfo, void, -1, operand, void)
 end function
 
 /// Implements binary for this module.
 /// Requires arguments that satisfy the validation performed below.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param left left value consumed by this operation.
 /// @param right right value consumed by this operation.
 /// @param typeInfo typeInfo value consumed by this operation.
-function binary(operator, left, right, typeInfo)
-  if typeof(operator) != "string" or not isBoundExpression(left) or not isBoundExpression(right) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "binary", "invalid binary binding") end if
-  return BoundExpression(BOUND_BINARY, operator, typeInfo, void, -1, left, right)
+function binary(operatorValue, left, right, typeInfo)
+  if typeof(operatorValue) != "string" or not isBoundExpression(left) or not isBoundExpression(right) or not types.isSqlType(typeInfo) then return fail(INVALID_ARGUMENT, "binary", "invalid binary binding") end if
+  return BoundExpression(BOUND_BINARY, operatorValue, typeInfo, void, -1, left, right)
 end function
 
 /// Returns whether the supplied value satisfies the null condition.
@@ -382,9 +382,9 @@ end function
 /// @param negated negated value consumed by this operation.
 function isNull(operand, negated)
   if not isBoundExpression(operand) or typeof(negated) != "bool" then return fail(INVALID_ARGUMENT, "isNull", "invalid IS NULL binding") end if
-  operator = "IS NULL"
-  if negated then operator = "IS NOT NULL" end if
-  return BoundExpression(BOUND_IS_NULL, operator, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false), void, -1, operand, void)
+  operatorValue = "IS NULL"
+  if negated then operatorValue = "IS NOT NULL" end if
+  return BoundExpression(BOUND_IS_NULL, operatorValue, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false), void, -1, operand, void)
 end function
 
 /// Implements aggregate for this module.
@@ -767,7 +767,7 @@ function sameBinding(left, right)
     return sameBinding(left.separator, right.separator)
   end if
   if left is BoundExpression or right is BoundExpression then
-    if left is not BoundExpression or right is not BoundExpression or left.kind != right.kind or left.operator != right.operator then return false end if
+    if left is not BoundExpression or right is not BoundExpression or left.kind != right.kind or left.operatorValue != right.operatorValue then return false end if
     if left.kind == BOUND_LITERAL then
       if left.literal.isNull or right.literal.isNull then return left.literal.isNull and right.literal.isNull end if
       return values.compareNonNull(left.literal, right.literal) == 0
@@ -852,21 +852,21 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param left left value consumed by this operation.
 /// @param right right value consumed by this operation.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param resultType resultType value consumed by this operation.
-function numericResult(left, right, operator, resultType)
+function numericResult(left, right, operatorValue, resultType)
   if left.isNull or right.isNull then return values.nullValue(resultType.kind) end if
   leftNumber = values.asNumber(left)
   rightNumber = values.asNumber(right)
   result = 0
-  if operator == "+" then result = leftNumber + rightNumber end if
-  if operator == "-" then result = leftNumber - rightNumber end if
-  if operator == "*" then result = leftNumber * rightNumber end if
-  if operator == "/" then
+  if operatorValue == "+" then result = leftNumber + rightNumber end if
+  if operatorValue == "-" then result = leftNumber - rightNumber end if
+  if operatorValue == "*" then result = leftNumber * rightNumber end if
+  if operatorValue == "/" then
     if rightNumber == 0 then return fail(TYPE_MISMATCH, "numericResult", "division by zero") end if
     result = leftNumber / rightNumber
   end if
-  if operator == "%" then
+  if operatorValue == "%" then
     if rightNumber == 0 then return fail(TYPE_MISMATCH, "numericResult", "modulo by zero") end if
     result = leftNumber % rightNumber
   end if
@@ -880,17 +880,17 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param left left value consumed by this operation.
 /// @param right right value consumed by this operation.
-/// @param operator operator value consumed by this operation.
-function comparisonResult(left, right, operator)
+/// @param operatorValue operator value consumed by this operation.
+function comparisonResult(left, right, operatorValue)
   if left.isNull or right.isNull then return values.nullValue(types.SqlTypeKind.Boolean) end if
   comparison = values.compareNonNull(left, right)
   result = false
-  if operator == "=" then result = comparison == 0 end if
-  if operator == "<>" or operator == "!=" then result = comparison != 0 end if
-  if operator == "<" then result = comparison < 0 end if
-  if operator == "<=" then result = comparison <= 0 end if
-  if operator == ">" then result = comparison > 0 end if
-  if operator == ">=" then result = comparison >= 0 end if
+  if operatorValue == "=" then result = comparison == 0 end if
+  if operatorValue == "<>" or operatorValue == "!=" then result = comparison != 0 end if
+  if operatorValue == "<" then result = comparison < 0 end if
+  if operatorValue == "<=" then result = comparison <= 0 end if
+  if operatorValue == ">" then result = comparison > 0 end if
+  if operatorValue == ">=" then result = comparison >= 0 end if
   return values.boolean(result)
 end function
 
@@ -1316,48 +1316,48 @@ function evaluate(expression, context)
   if expression.kind == BOUND_IS_NULL then
     operandValue = evaluate(expression.left, context)
     result = operandValue.isNull
-    if expression.operator == "IS NOT NULL" then result = not result end if
+    if expression.operatorValue == "IS NOT NULL" then result = not result end if
     return values.boolean(result)
   end if
   if expression.kind == BOUND_UNARY then
     operandValue = evaluate(expression.left, context)
-    if expression.operator == "NOT" then return values.logicalNot(operandValue) end if
+    if expression.operatorValue == "NOT" then return values.logicalNot(operandValue) end if
     if operandValue.isNull then return values.nullValue(expression.typeInfo.kind) end if
     number = values.asNumber(operandValue)
-    if expression.operator == "+" then return values.convert(values.of(operandValue.typeKind, number), expression.typeInfo) end if
-    if expression.operator == "-" then return values.convert(values.of(operandValue.typeKind, 0 - number), expression.typeInfo) end if
+    if expression.operatorValue == "+" then return values.convert(values.of(operandValue.typeKind, number), expression.typeInfo) end if
+    if expression.operatorValue == "-" then return values.convert(values.of(operandValue.typeKind, 0 - number), expression.typeInfo) end if
     return fail(BINDING_ERROR, "evaluate", "unknown unary operator")
   end if
   if expression.kind == BOUND_BINARY then
     leftValue = evaluate(expression.left, context)
-    if expression.operator == "AND" then
+    if expression.operatorValue == "AND" then
       leftTruth = values.truth(leftValue)
       if leftTruth == 0 then return values.boolean(false) end if
       return values.logicalAnd(leftValue, evaluate(expression.right, context))
     end if
-    if expression.operator == "OR" then
+    if expression.operatorValue == "OR" then
       leftTruth = values.truth(leftValue)
       if leftTruth == 1 then return values.boolean(true) end if
       return values.logicalOr(leftValue, evaluate(expression.right, context))
     end if
     rightValue = evaluate(expression.right, context)
-    if expression.operator == "+" or expression.operator == "-" or expression.operator == "*" or expression.operator == "/" or expression.operator == "%" then
-      return numericResult(leftValue, rightValue, expression.operator, expression.typeInfo)
+    if expression.operatorValue == "+" or expression.operatorValue == "-" or expression.operatorValue == "*" or expression.operatorValue == "/" or expression.operatorValue == "%" then
+      return numericResult(leftValue, rightValue, expression.operatorValue, expression.typeInfo)
     end if
-    if expression.operator == "=" or expression.operator == "<>" or expression.operator == "!=" or expression.operator == "<" or expression.operator == "<=" or expression.operator == ">" or expression.operator == ">=" then
-      return comparisonResult(leftValue, rightValue, expression.operator)
+    if expression.operatorValue == "=" or expression.operatorValue == "<>" or expression.operatorValue == "!=" or expression.operatorValue == "<" or expression.operatorValue == "<=" or expression.operatorValue == ">" or expression.operatorValue == ">=" then
+      return comparisonResult(leftValue, rightValue, expression.operatorValue)
     end if
-    if expression.operator == "LIKE" or expression.operator == "NOT LIKE" then
+    if expression.operatorValue == "LIKE" or expression.operatorValue == "NOT LIKE" then
       result = likeResult(leftValue, rightValue)
-      if expression.operator == "NOT LIKE" then result = values.logicalNot(result) end if
+      if expression.operatorValue == "NOT LIKE" then result = values.logicalNot(result) end if
       return result
     end if
-    if expression.operator == "||" then
+    if expression.operatorValue == "||" then
       if leftValue.isNull or rightValue.isNull then return values.nullValue(expression.typeInfo.kind) end if
       if typeof(leftValue.value) != "string" or typeof(rightValue.value) != "string" then return fail(TYPE_MISMATCH, "evaluate", "|| requires text") end if
       return values.of(expression.typeInfo.kind, leftValue.value + rightValue.value)
     end if
-    return fail(BINDING_ERROR, "evaluate", "unknown binary operator " + expression.operator)
+    return fail(BINDING_ERROR, "evaluate", "unknown binary operator " + expression.operatorValue)
   end if
   return fail(BINDING_ERROR, "evaluate", "unknown bound expression kind")
 end function

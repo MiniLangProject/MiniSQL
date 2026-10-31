@@ -258,9 +258,9 @@ end function
 /// @param inputRows inputRows value consumed by this operation.
 /// @param tableRows tableRows value consumed by this operation.
 /// @param current current value consumed by this operation.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param literal literal value consumed by this operation.
-function integralRangeRows(inputRows, tableRows, current, operator, literal)
+function integralRangeRows(inputRows, tableRows, current, operatorValue, literal)
   if current is void or not current.hasIntegralBounds or literal is void or literal.isNull or typeof(literal.value) != "int" then return void end if
   if tableRows <= 0 then return 0 end if
   nonNullRows = scaleFraction(inputRows, tableRows - current.nullCount, tableRows)
@@ -268,13 +268,13 @@ function integralRangeRows(inputRows, tableRows, current, operator, literal)
   maximum = current.maximumIntegral
   candidate = literal.value
   histogramEstimate = void
-  if operator == "<=" then histogramEstimate = histogramLessOrEqual(current, candidate) end if
-  if operator == "<" then histogramEstimate = histogramLessOrEqual(current, candidate - 1) end if
-  if operator == ">" then
+  if operatorValue == "<=" then histogramEstimate = histogramLessOrEqual(current, candidate) end if
+  if operatorValue == "<" then histogramEstimate = histogramLessOrEqual(current, candidate - 1) end if
+  if operatorValue == ">" then
     lessOrEqual = histogramLessOrEqual(current, candidate)
     if lessOrEqual is not void then histogramEstimate = tableRows - current.nullCount - lessOrEqual end if
   end if
-  if operator == ">=" then
+  if operatorValue == ">=" then
     less = histogramLessOrEqual(current, candidate - 1)
     if less is not void then histogramEstimate = tableRows - current.nullCount - less end if
   end if
@@ -284,19 +284,19 @@ function integralRangeRows(inputRows, tableRows, current, operator, literal)
   end if
   span = maximum - minimum + 1
   numerator = 0
-  if operator == ">=" then
+  if operatorValue == ">=" then
     if candidate <= minimum then return nonNullRows end if
     if candidate > maximum then return 0 end if
     numerator = maximum - candidate + 1
-  else if operator == ">" then
+  else if operatorValue == ">" then
     if candidate < minimum then return nonNullRows end if
     if candidate >= maximum then return 0 end if
     numerator = maximum - candidate
-  else if operator == "<=" then
+  else if operatorValue == "<=" then
     if candidate >= maximum then return nonNullRows end if
     if candidate < minimum then return 0 end if
     numerator = candidate - minimum + 1
-  else if operator == "<" then
+  else if operatorValue == "<" then
     if candidate > maximum then return nonNullRows end if
     if candidate <= minimum then return 0 end if
     numerator = candidate - minimum
@@ -449,8 +449,8 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
       comparison = void
       if localIndex >= 0 then comparison = rewrites.comparisonForColumn(predicate, source.offset + localIndex) else comparison = rewrites.comparisonForExpression(predicate, index.keyExpressions[keyPosition]) end if
       if not comparison[0] then break end if
-      operator = comparison[1]
-      if operator == "=" then
+      operatorValue = comparison[1]
+      if operatorValue == "=" then
         prefix = prefix + 1
         keyLiterals = keyLiterals + [comparison[2]]
         current = void
@@ -463,12 +463,12 @@ function indexCandidate(bound, source, predicate, state, found, rows, outputRows
         else
           candidateRows = rewrites.estimateFilteredRows(candidateRows, predicate)
         end if
-      else if prefix == 0 and (operator == "<" or operator == "<=" or operator == ">" or operator == ">=") then
+      else if prefix == 0 and (operatorValue == "<" or operatorValue == "<=" or operatorValue == ">" or operatorValue == ">=") then
         prefix = 1
         allEquality = false
         current = void
         if localIndex >= 0 then current = columnStats(found, localIndex) end if
-        candidateRows = integralRangeRows(candidateRows, rows, current, operator, comparison[2])
+        candidateRows = integralRangeRows(candidateRows, rows, current, operatorValue, comparison[2])
         if candidateRows is void then candidateRows = integerDivide(rows, 3) end if
         if candidateRows == 0 and rows > 0 then candidateRows = 1 end if
         break
@@ -524,8 +524,8 @@ function combinedIndexCandidate(bound, source, predicate, state, found, rows)
   if len(bound.sources) != 1 or len(bound.joins) != 0 or predicate is void or not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
   accessKind = execution_plan.ACCESS_SEQUENTIAL
   parts = []
-  if predicate.operator == "AND" then accessKind = execution_plan.ACCESS_INDEX_INTERSECTION; parts = rewrites.conjuncts(predicate) end if
-  if predicate.operator == "OR" then accessKind = execution_plan.ACCESS_INDEX_UNION; parts = rewrites.disjuncts(predicate) end if
+  if predicate.operatorValue == "AND" then accessKind = execution_plan.ACCESS_INDEX_INTERSECTION; parts = rewrites.conjuncts(predicate) end if
+  if predicate.operatorValue == "OR" then accessKind = execution_plan.ACCESS_INDEX_UNION; parts = rewrites.disjuncts(predicate) end if
   if accessKind == execution_plan.ACCESS_SEQUENTIAL or len(parts) < 2 then return [execution_plan.ACCESS_SEQUENTIAL, [], rows, endian.MAX_MINILANG_INT] end if
   names = []
   estimates = []
@@ -1088,8 +1088,8 @@ function optimize(bound, state)
     rows = currentCost.rows + rightPlan.root.estimatedRows
     if not operation.all then rows = integerDivide(rows, 2) end if
     name = "Union"
-    if operation.operator == ast.SET_INTERSECT then name = "Intersect" end if
-    if operation.operator == ast.SET_EXCEPT then name = "Except" end if
+    if operation.operatorValue == ast.SET_INTERSECT then name = "Intersect" end if
+    if operation.operatorValue == ast.SET_EXCEPT then name = "Except" end if
     if operation.all then name = name + " All" end if
     total = currentCost.total + rightPlan.root.estimatedCost + rows
     root = physical_plan.PhysicalPlan(name, "", rows, total, [root, rightPlan.root])

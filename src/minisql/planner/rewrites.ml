@@ -68,7 +68,7 @@ end function
 /// @param expression expression value consumed by this operation.
 function isColumnEquality(expression)
   if not expressions.isBaseBoundExpression(expression) then return false end if
-  if expression.kind != expressions.BOUND_BINARY or expression.operator != "=" then return false end if
+  if expression.kind != expressions.BOUND_BINARY or expression.operatorValue != "=" then return false end if
   if expressions.isBoundAggregate(expression.left) or expressions.isBoundAggregate(expression.right) then return false end if
   return expression.left.kind == expressions.BOUND_COLUMN and expression.right.kind == expressions.BOUND_COLUMN
 end function
@@ -96,18 +96,18 @@ function selectivityPermille(expression)
   if isConstantBoolean(expression, false) then return 0 end if
   if expression.kind == expressions.BOUND_IS_NULL then return 100 end if
   if expression.kind == expressions.BOUND_BINARY then
-    if expression.operator == "AND" then return integerDivide(selectivityPermille(expression.left) * selectivityPermille(expression.right), 1000) end if
-    if expression.operator == "OR" then
+    if expression.operatorValue == "AND" then return integerDivide(selectivityPermille(expression.left) * selectivityPermille(expression.right), 1000) end if
+    if expression.operatorValue == "OR" then
       left = selectivityPermille(expression.left)
       right = selectivityPermille(expression.right)
       combined = left + right - integerDivide(left * right, 1000)
       if combined > 1000 then combined = 1000 end if
       return combined
     end if
-    if expression.operator == "=" then return 100 end if
-    if expression.operator == "<>" or expression.operator == "!=" then return 900 end if
-    if expression.operator == "<" or expression.operator == "<=" or expression.operator == ">" or expression.operator == ">=" then return 333 end if
-    if expression.operator == "LIKE" then return 200 end if
+    if expression.operatorValue == "=" then return 100 end if
+    if expression.operatorValue == "<>" or expression.operatorValue == "!=" then return 900 end if
+    if expression.operatorValue == "<" or expression.operatorValue == "<=" or expression.operatorValue == ">" or expression.operatorValue == ">=" then return 333 end if
+    if expression.operatorValue == "LIKE" then return 200 end if
   end if
   return 500
 end function
@@ -134,13 +134,13 @@ function simplify(expression)
   if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return expression end if
   if expression.kind == expressions.BOUND_UNARY then
     operand = simplify(expression.left)
-    rewritten = expressions.unary(expression.operator, operand, expression.typeInfo)
+    rewritten = expressions.unary(expression.operatorValue, operand, expression.typeInfo)
     if operand.kind == expressions.BOUND_LITERAL then return expressions.literal(expressions.evaluate(rewritten, expressions.rowContext([])), expression.typeInfo) end if
     return rewritten
   end if
   if expression.kind == expressions.BOUND_IS_NULL then
     operand = simplify(expression.left)
-    rewritten = expressions.isNull(operand, expression.operator == "IS NOT NULL")
+    rewritten = expressions.isNull(operand, expression.operatorValue == "IS NOT NULL")
     if operand.kind == expressions.BOUND_LITERAL then return expressions.literal(expressions.evaluate(rewritten, expressions.rowContext([])), expression.typeInfo) end if
     return rewritten
   end if
@@ -151,20 +151,20 @@ function simplify(expression)
     // raising a folded error from an unreachable expression such as
     // FALSE AND (1 / 0 = 1).
     if left.kind == expressions.BOUND_LITERAL then
-      if expression.operator == "AND" then
+      if expression.operatorValue == "AND" then
         leftTruth = values.truth(left.literal)
         if leftTruth == 0 then return left end if
-      else if expression.operator == "OR" then
+      else if expression.operatorValue == "OR" then
         leftTruth = values.truth(left.literal)
         if leftTruth == 1 then return left end if
       end if
     end if
     right = simplify(expression.right)
     if left.kind == expressions.BOUND_LITERAL then
-      if expression.operator == "AND" and values.truth(left.literal) == 1 then return right end if
-      if expression.operator == "OR" and values.truth(left.literal) == 0 then return right end if
+      if expression.operatorValue == "AND" and values.truth(left.literal) == 1 then return right end if
+      if expression.operatorValue == "OR" and values.truth(left.literal) == 0 then return right end if
     end if
-    rewritten = expressions.binary(expression.operator, left, right, expression.typeInfo)
+    rewritten = expressions.binary(expression.operatorValue, left, right, expression.typeInfo)
     if left.kind == expressions.BOUND_LITERAL and right.kind == expressions.BOUND_LITERAL then return expressions.literal(expressions.evaluate(rewritten, expressions.rowContext([])), expression.typeInfo) end if
     return rewritten
   end if
@@ -295,7 +295,7 @@ end function
 /// @param expression expression value consumed by this operation.
 function conjuncts(expression)
   if expression is void then return [] end if
-  if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operator == "AND" then return conjuncts(expression.left) + conjuncts(expression.right) end if
+  if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operatorValue == "AND" then return conjuncts(expression.left) + conjuncts(expression.right) end if
   return [expression]
 end function
 
@@ -303,7 +303,7 @@ end function
 /// @param expression expression value consumed by this operation.
 function disjuncts(expression)
   if expression is void then return [] end if
-  if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operator == "OR" then return disjuncts(expression.left) + disjuncts(expression.right) end if
+  if expressions.isBaseBoundExpression(expression) and expression.kind == expressions.BOUND_BINARY and expression.operatorValue == "OR" then return disjuncts(expression.left) + disjuncts(expression.right) end if
   return [expression]
 end function
 
@@ -311,17 +311,17 @@ end function
 /// @param expression expression value consumed by this operation.
 function comparisonConstraint(expression)
   if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
-  operator = expression.operator
-  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  operatorValue = expression.operatorValue
+  if operatorValue != "=" and operatorValue != "<" and operatorValue != "<=" and operatorValue != ">" and operatorValue != ">=" then return void end if
   column = expression.left
   literal = expression.right
   if column.kind == expressions.BOUND_LITERAL and literal.kind == expressions.BOUND_COLUMN then
     column = expression.right
     literal = expression.left
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
   end if
   if column.kind != expressions.BOUND_COLUMN or literal.kind != expressions.BOUND_LITERAL or literal.literal.isNull then return void end if
-  return [column.columnIndex, operator, literal.literal]
+  return [column.columnIndex, operatorValue, literal.literal]
 end function
 
 /// Proves implication between two normalized single-column literal bounds.
@@ -361,7 +361,7 @@ end function
 function conjunctImplies(candidate, required)
   if expressions.sameBinding(candidate, required) then return true end if
   if comparisonImplies(candidate, required) then return true end if
-  if expressions.isBaseBoundExpression(required) and required.kind == expressions.BOUND_IS_NULL and required.operator == "IS NOT NULL" and expressions.isBaseBoundExpression(required.left) and required.left.kind == expressions.BOUND_COLUMN then
+  if expressions.isBaseBoundExpression(required) and required.kind == expressions.BOUND_IS_NULL and required.operatorValue == "IS NOT NULL" and expressions.isBaseBoundExpression(required.left) and required.left.kind == expressions.BOUND_COLUMN then
     candidateBound = comparisonConstraint(candidate)
     return candidateBound is not void and candidateBound[0] == required.left.columnIndex
   end if
@@ -460,7 +460,7 @@ function propagateJoinConstants(whereExpression, sources, joins, buckets)
   end for
   collectEqualityLinks(whereExpression, links, columnTypes)
   for each predicate in conjuncts(whereExpression)
-    if not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY or predicate.operator != "=" then continue end if
+    if not expressions.isBaseBoundExpression(predicate) or predicate.kind != expressions.BOUND_BINARY or predicate.operatorValue != "=" then continue end if
     columnExpression = predicate.left
     literalExpression = predicate.right
     if columnExpression.kind == expressions.BOUND_LITERAL and literalExpression.kind == expressions.BOUND_COLUMN then columnExpression = predicate.right; literalExpression = predicate.left end if
@@ -581,16 +581,16 @@ end function
 function comparisonForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
-  if expression.operator == "AND" then
+  if expression.operatorValue == "AND" then
     left = comparisonForColumn(expression.left, columnIndex)
     if left[0] then return left end if
     return comparisonForColumn(expression.right, columnIndex)
   end if
-  operator = expression.operator
-  if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operator, expression.right.literal] end if
+  operatorValue = expression.operatorValue
+  if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operatorValue, expression.right.literal] end if
   if expression.right.kind == expressions.BOUND_COLUMN and expression.right.columnIndex == columnIndex and expression.left.kind == expressions.BOUND_LITERAL then
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
-    return [true, operator, expression.left.literal]
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
+    return [true, operatorValue, expression.left.literal]
   end if
   return [false, "", void]
 end function
@@ -601,16 +601,16 @@ end function
 function comparisonForExpression(expression, keyExpression)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
-  if expression.operator == "AND" then
+  if expression.operatorValue == "AND" then
     left = comparisonForExpression(expression.left, keyExpression)
     if left[0] then return left end if
     return comparisonForExpression(expression.right, keyExpression)
   end if
-  operator = expression.operator
-  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operator, expression.right.literal] end if
+  operatorValue = expression.operatorValue
+  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operatorValue, expression.right.literal] end if
   if expressions.sameBinding(expression.right, keyExpression) and expressions.isBoundLiteral(expression.left) then
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
-    return [true, operator, expression.left.literal]
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
+    return [true, operatorValue, expression.left.literal]
   end if
   return [false, "", void]
 end function

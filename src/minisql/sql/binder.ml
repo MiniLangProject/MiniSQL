@@ -103,7 +103,7 @@ end struct
 /// Groups the bound set operation state and preserves the field relationships documented below.
 struct BoundSetOperation
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the all associated with this value.
   all
   /// Stores the query associated with this value.
@@ -1006,8 +1006,8 @@ end function
 function maskOuterExpression(expression, sources, statement)
   if ast.isColumnExpression(expression) then return maskOuterColumn(expression, sources, statement) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, maskOuterExpression(expression.operand, sources, statement)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, maskOuterExpression(expression.left, sources, statement), maskOuterExpression(expression.right, sources, statement)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, maskOuterExpression(expression.operand, sources, statement)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, maskOuterExpression(expression.left, sources, statement), maskOuterExpression(expression.right, sources, statement)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(maskOuterExpression(expression.operand, sources, statement), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -1080,7 +1080,7 @@ function maskOuterSelect(statement, sources)
   if statement.havingExpression is not void then havingExpression = maskOuterExpression(statement.havingExpression, sources, statement) end if
   setOperations = []
   for each value in statement.setOperations
-    setOperations = setOperations + [ast.SetOperation(value.operator, value.all, maskOuterSelect(value.query, sources))]
+    setOperations = setOperations + [ast.SetOperation(value.operatorValue, value.all, maskOuterSelect(value.query, sources))]
   end for
   orderBy = []
   for each value in statement.orderBy
@@ -1230,20 +1230,20 @@ end function
 /// @param allowAggregates Whether this clause permits aggregate expressions.
 /// @param database Catalog handle used by nested expression binding.
 function bindUnaryExpression(expression, sources, allowAggregates, database)
-  if expression.operator == "-" and ast.isLiteralExpression(expression.operand) and expression.operand.literalKind == ast.LITERAL_INTEGER and typeof(expression.operand.value) == "string" then
+  if expression.operatorValue == "-" and ast.isLiteralExpression(expression.operand) and expression.operand.literalKind == ast.LITERAL_INTEGER and typeof(expression.operand.value) == "string" then
     signedValue = values.literalInteger("-" + expression.operand.value)
     return expressions.literal(signedValue, literalType(signedValue))
   end if
   operand = bindExpressionInternal(expression.operand, sources, allowAggregates, database)
-  if expression.operator == "NOT" then
+  if expression.operatorValue == "NOT" then
     ensureBoolean(operand, "bindExpression.NOT")
     return expressions.unary("NOT", operand, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, operand.typeInfo.nullable))
   end if
-  if expression.operator == "+" or expression.operator == "-" then
+  if expression.operatorValue == "+" or expression.operatorValue == "-" then
     if not types.isNumeric(operand.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "unary numeric operator requires number") end if
-    return expressions.unary(expression.operator, operand, operand.typeInfo)
+    return expressions.unary(expression.operatorValue, operand, operand.typeInfo)
   end if
-  return fail(BINDING_ERROR, "bindExpression", "unsupported unary operator " + expression.operator)
+  return fail(BINDING_ERROR, "bindExpression", "unsupported unary operator " + expression.operatorValue)
 end function
 
 /// Binds a binary operator and computes its SQL result type.
@@ -1254,32 +1254,32 @@ end function
 function bindBinaryExpression(expression, sources, allowAggregates, database)
   left = bindExpressionInternal(expression.left, sources, allowAggregates, database)
   right = bindExpressionInternal(expression.right, sources, allowAggregates, database)
-  operator = expression.operator
-  if operator == "AND" or operator == "OR" then
+  operatorValue = expression.operatorValue
+  if operatorValue == "AND" or operatorValue == "OR" then
     ensureBoolean(left, "bindExpression.logical.left")
     ensureBoolean(right, "bindExpression.logical.right")
-    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+    return expressions.binary(operatorValue, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
   end if
-  if operator == "+" or operator == "-" or operator == "*" or operator == "/" or operator == "%" then
+  if operatorValue == "+" or operatorValue == "-" or operatorValue == "*" or operatorValue == "/" or operatorValue == "%" then
     if not types.isNumeric(left.typeInfo) or not types.isNumeric(right.typeInfo) then return fail(TYPE_MISMATCH, "bindExpression", "arithmetic requires numeric operands") end if
     resultType = types.commonNumeric(left.typeInfo, right.typeInfo)
-    if operator == "/" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, resultType.nullable) end if
-    return expressions.binary(operator, left, right, resultType)
+    if operatorValue == "/" then resultType = types.create(types.SqlTypeKind.Double, 0, 0, 0, resultType.nullable) end if
+    return expressions.binary(operatorValue, left, right, resultType)
   end if
-  if operator == "||" then
+  if operatorValue == "||" then
     if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "|| requires text operands") end if
-    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Text, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+    return expressions.binary(operatorValue, left, right, types.create(types.SqlTypeKind.Text, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
   end if
-  if operator == "LIKE" or operator == "NOT LIKE" then
+  if operatorValue == "LIKE" or operatorValue == "NOT LIKE" then
     if not types.isTextKind(left.typeInfo.kind) or not types.isTextKind(right.typeInfo.kind) then return fail(TYPE_MISMATCH, "bindExpression", "LIKE requires text operands") end if
-    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+    return expressions.binary(operatorValue, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
   end if
-  if operator == "=" or operator == "<>" or operator == "!=" or operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then
+  if operatorValue == "=" or operatorValue == "<>" or operatorValue == "!=" or operatorValue == "<" or operatorValue == "<=" or operatorValue == ">" or operatorValue == ">=" then
     comparable = isNullBoundLiteral(left) or isNullBoundLiteral(right) or types.comparable(left.typeInfo, right.typeInfo)
     if not comparable then return fail(TYPE_MISMATCH, "bindExpression", "comparison operands are incompatible") end if
-    return expressions.binary(operator, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
+    return expressions.binary(operatorValue, left, right, types.create(types.SqlTypeKind.Boolean, 0, 0, 0, left.typeInfo.nullable or right.typeInfo.nullable))
   end if
-  return fail(BINDING_ERROR, "bindExpression", "unsupported binary operator " + operator)
+  return fail(BINDING_ERROR, "bindExpression", "unsupported binary operator " + operatorValue)
 end function
 
 /// Dispatches one AST expression to its node-specific binder.
@@ -1333,12 +1333,12 @@ end function
 /// @param source source value consumed by this operation.
 function crossJoinEqualityForSource(expression, source)
   if expression is void or not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY then return void end if
-  if expression.operator == "AND" then
+  if expression.operatorValue == "AND" then
     left = crossJoinEqualityForSource(expression.left, source)
     if left is not void then return left end if
     return crossJoinEqualityForSource(expression.right, source)
   end if
-  if expression.operator != "=" or expression.left.kind != expressions.BOUND_COLUMN or expression.right.kind != expressions.BOUND_COLUMN then return void end if
+  if expression.operatorValue != "=" or expression.left.kind != expressions.BOUND_COLUMN or expression.right.kind != expressions.BOUND_COLUMN then return void end if
   sourceStart = source.offset
   sourceEnd = sourceStart + len(source.table.columns)
   leftInSource = expression.left.columnIndex >= sourceStart and expression.left.columnIndex < sourceEnd
@@ -1356,7 +1356,7 @@ end function
 function removeBoundConjunct(expression, target)
   if expression is void then return void end if
   if expressions.sameBinding(expression, target) then return void end if
-  if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY or expression.operator != "AND" then return expression end if
+  if not expressions.isBaseBoundExpression(expression) or expression.kind != expressions.BOUND_BINARY or expression.operatorValue != "AND" then return expression end if
   left = removeBoundConjunct(expression.left, target)
   right = removeBoundConjunct(expression.right, target)
   if left is void then return right end if
@@ -1534,7 +1534,7 @@ function bindSelectInternal(statement, database, inheritedQueries, viewStack)
   for each cte in statement.ctes
     if namedQueryIndex(availableQueries, cte.name) >= 0 or catalog.findTable(database, cte.name) is not void then return fail(BINDING_ERROR, "bindSelect", "duplicate or shadowed CTE name " + cte.name) end if
     if cte.recursive and selectReferencesSource(cte.query, cte.name) then
-      if len(cte.query.setOperations) != 1 or cte.query.setOperations[0].operator != ast.SET_UNION then return fail(BINDING_ERROR, "bindSelect", "recursive CTE " + cte.name + " requires anchor UNION [ALL] recursive-term") end if
+      if len(cte.query.setOperations) != 1 or cte.query.setOperations[0].operatorValue != ast.SET_UNION then return fail(BINDING_ERROR, "bindSelect", "recursive CTE " + cte.name + " requires anchor UNION [ALL] recursive-term") end if
       anchorStatement = ast.SelectStatement(cte.query.distinct, cte.query.items, cte.query.tableName, cte.query.tableAlias, cte.query.joins, cte.query.whereExpression, cte.query.groupBy, cte.query.havingExpression, [], cte.query.orderBy, cte.query.limit, cte.query.offset, cte.query.ctes)
       anchorBound = bindSelectInternal(anchorStatement, database, availableQueries, viewStack)
       recursiveTable = tableForQuery(cte.name, anchorBound, cte.columnNames)
@@ -1668,7 +1668,7 @@ function bindSelectInternal(statement, database, inheritedQueries, viewStack)
         if not types.comparable(items[index].typeInfo, right.items[index].typeInfo) then return fail(TYPE_MISMATCH, "bindSelect", "set-operation column types are incompatible") end if
       end for
     end if
-    setOperations = setOperations + [BoundSetOperation(operation.operator, operation.all, right)]
+    setOperations = setOperations + [BoundSetOperation(operation.operatorValue, operation.all, right)]
   end for
   preliminary.setOperations = setOperations
   if len(setOperations) > 0 then
@@ -1778,8 +1778,8 @@ function rewriteConflictExpression(expression, targetName)
     if qualifier is void then qualifier = targetName end if
     return ast.columnExpression(qualifier, expression.name)
   end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, rewriteConflictExpression(expression.operand, targetName)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, rewriteConflictExpression(expression.left, targetName), rewriteConflictExpression(expression.right, targetName)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, rewriteConflictExpression(expression.operand, targetName)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, rewriteConflictExpression(expression.left, targetName), rewriteConflictExpression(expression.right, targetName)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(rewriteConflictExpression(expression.operand, targetName), expression.negated) end if
   if ast.isFunctionExpression(expression) then
     arguments = []
@@ -1897,9 +1897,9 @@ function decimalLiteralText(expression)
     end if
     return void
   end if
-  if ast.isUnaryExpression(expression) and (expression.operator == "+" or expression.operator == "-") then
+  if ast.isUnaryExpression(expression) and (expression.operatorValue == "+" or expression.operatorValue == "-") then
     operandText = decimalLiteralText(expression.operand)
-    if operandText is not void then return expression.operator + operandText end if
+    if operandText is not void then return expression.operatorValue + operandText end if
   end if
   return void
 end function

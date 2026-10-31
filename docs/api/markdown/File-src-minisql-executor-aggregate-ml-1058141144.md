@@ -823,11 +823,11 @@ Restores value-only scanned rows from a validated spill partition.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/aggregate.ml#L954)
 
-<a id="function-function-minisql-executor-aggregate-setoperation-function-setoperation-leftrows-rightrows-operator-all-src-minisql-executor-aggregate-ml-1388778196"></a>
+<a id="function-function-minisql-executor-aggregate-setoperation-function-setoperation-leftrows-rightrows-operatorvalue-all-src-minisql-executor-aggregate-ml-1081334583"></a>
 ### setOperation
 
 ```ml
-function setOperation(leftRows, rightRows, operator, all)
+function setOperation(leftRows, rightRows, operatorValue, all)
 ```
 
 Implements set operation for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
@@ -836,7 +836,7 @@ Implements set operation for this module. Requires arguments that satisfy the va
 | --- | --- | --- | --- |
 | `leftRows` | `dynamic` | — | leftRows value consumed by this operation. |
 | `rightRows` | `dynamic` | — | rightRows value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `all` | `dynamic` | — | all value consumed by this operation. |
 
 

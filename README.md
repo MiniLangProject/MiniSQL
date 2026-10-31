@@ -182,6 +182,8 @@ advisory and CRC-32C protected; the version-5 reader accepts versions 1–4.
 TLS always runs in-process. Windows builds use Schannel and CryptoAPI; Linux
 builds use the OpenSSL 3 system libraries through MiniLang's native `std.tls`,
 `std.crypto`, and `std.uuid` interfaces. Python is not in the TLS data path.
+The source and complete Windows build were most recently revalidated with both
+MiniLang Compiler implementations at version 1.2.22 on 2026-10-23.
 
 ## Build
 
@@ -195,7 +197,9 @@ $compiler = "C:\path\to\MiniLangCompilerPy\mlc_win64.py"
 `MiniLangCompilerML\build\mlc_win64.exe`. The build and acceptance launchers
 discover its repository-level `std/` automatically and select the canonical
 object pipeline for large self-hosted builds, bounding the live code-generation
-graph without changing target bytes.
+graph. Compiler compatibility and generated-program behavior are covered by the
+cumulative acceptance suite; exact PE byte identity is not a compatibility
+requirement between the Python and self-hosted compiler implementations.
 
 Windows applications are written to `build\bin`:
 

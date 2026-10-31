@@ -394,11 +394,11 @@ Implements integer divide for this module. Requires arguments that satisfy the v
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/optimizer.ml#L87)
 
-<a id="function-function-minisql-planner-optimizer-integralrangerows-function-integralrangerows-inputrows-tablerows-current-operator-literal-src-minisql-planner-optimizer-ml-2069824678"></a>
+<a id="function-function-minisql-planner-optimizer-integralrangerows-function-integralrangerows-inputrows-tablerows-current-operatorvalue-literal-src-minisql-planner-optimizer-ml-436982381"></a>
 ### integralRangeRows
 
 ```ml
-function integralRangeRows(inputRows, tableRows, current, operator, literal)
+function integralRangeRows(inputRows, tableRows, current, operatorValue, literal)
 ```
 
 Estimates an integral inequality from a cumulative histogram, with a uniform interpolation inside each bucket and a bounds-only fallback for v1-v3 data.
@@ -408,7 +408,7 @@ Estimates an integral inequality from a cumulative histogram, with a uniform int
 | `inputRows` | `dynamic` | — | inputRows value consumed by this operation. |
 | `tableRows` | `dynamic` | — | tableRows value consumed by this operation. |
 | `current` | `dynamic` | — | current value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `literal` | `dynamic` | — | literal value consumed by this operation. |
 
 

@@ -28,11 +28,11 @@ Stores the all associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L439)
 
-<a id="field-field-minisql-sql-ast-setoperation-operator-operator-src-minisql-sql-ast-ml-1675000972"></a>
-### operator
+<a id="field-field-minisql-sql-ast-setoperation-operatorvalue-operatorvalue-src-minisql-sql-ast-ml-1013246720"></a>
+### operatorValue
 
 ```ml
-operator
+operatorValue
 ```
 
 Stores the operator associated with this value.

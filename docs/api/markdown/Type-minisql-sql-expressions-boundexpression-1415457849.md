@@ -64,11 +64,11 @@ Stores the literal associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L67)
 
-<a id="field-field-minisql-sql-expressions-boundexpression-operator-operator-src-minisql-sql-expressions-ml-1692230269"></a>
-### operator
+<a id="field-field-minisql-sql-expressions-boundexpression-operatorvalue-operatorvalue-src-minisql-sql-expressions-ml-318230793"></a>
+### operatorValue
 
 ```ml
-operator
+operatorValue
 ```
 
 Stores the operator associated with this value.

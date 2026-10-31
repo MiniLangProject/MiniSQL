@@ -1194,18 +1194,18 @@ end function
 function parseSelect(state)
   statement = parseSelectCore(state)
   while checkKeyword(state, "UNION") or checkKeyword(state, "INTERSECT") or checkKeyword(state, "EXCEPT")
-    operator = ast.SET_UNION
+    operatorValue = ast.SET_UNION
     if matchKeyword(state, "UNION") then
-      operator = ast.SET_UNION
+      operatorValue = ast.SET_UNION
     else if matchKeyword(state, "INTERSECT") then
-      operator = ast.SET_INTERSECT
+      operatorValue = ast.SET_INTERSECT
     else
       expectKeyword(state, "EXCEPT")
-      operator = ast.SET_EXCEPT
+      operatorValue = ast.SET_EXCEPT
     end if
     all = matchKeyword(state, "ALL")
     expectKeyword(state, "SELECT")
-    statement.setOperations = statement.setOperations + [ast.SetOperation(operator, all, parseSelectCore(state))]
+    statement.setOperations = statement.setOperations + [ast.SetOperation(operatorValue, all, parseSelectCore(state))]
   end while
   orderBy = []
   if matchKeyword(state, "ORDER") then
@@ -1663,9 +1663,9 @@ function parsePredicateTail(state, expression)
       end if
       if matchKeyword(state, "LIKE") then
         right = parseExpression(state, 3)
-        operator = "LIKE"
-        if negated then operator = "NOT LIKE" end if
-        expression = ast.binaryExpression(operator, expression, right)
+        operatorValue = "LIKE"
+        if negated then operatorValue = "NOT LIKE" end if
+        expression = ast.binaryExpression(operatorValue, expression, right)
       else if matchKeyword(state, "IN") then
         expectKind(state, token.TokenKind.LeftParen, "'('")
         if matchKeyword(state, "WITH") then

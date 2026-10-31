@@ -40,11 +40,11 @@ Stores the left associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L195)
 
-<a id="field-field-minisql-sql-ast-binaryexpression-operator-operator-src-minisql-sql-ast-ml-14420846"></a>
-### operator
+<a id="field-field-minisql-sql-ast-binaryexpression-operatorvalue-operatorvalue-src-minisql-sql-ast-ml-965800634"></a>
+### operatorValue
 
 ```ml
-operator
+operatorValue
 ```
 
 Stores the operator associated with this value.

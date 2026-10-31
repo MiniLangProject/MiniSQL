@@ -192,18 +192,18 @@ Implements between expression for this module. Requires arguments that satisfy t
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1158)
 
 - [minisql.sql.ast.BetweenExpression](Type-minisql-sql-ast-betweenexpression-1728802310.md) — struct
-<a id="function-function-minisql-sql-ast-binaryexpression-function-binaryexpression-operator-left-right-src-minisql-sql-ast-ml-375397191"></a>
+<a id="function-function-minisql-sql-ast-binaryexpression-function-binaryexpression-operatorvalue-left-right-src-minisql-sql-ast-ml-1850423608"></a>
 ### binaryExpression
 
 ```ml
-function binaryExpression(operator, left, right)
+function binaryExpression(operatorValue, left, right)
 ```
 
 Implements binary expression for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `left` | `dynamic` | — | left value consumed by this operation. |
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
@@ -2519,18 +2519,18 @@ Implements type name for this module. Returns the computed value or operation st
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L982)
 
 - [minisql.sql.ast.TypeName](Type-minisql-sql-ast-typename-1736152255.md) — struct
-<a id="function-function-minisql-sql-ast-unaryexpression-function-unaryexpression-operator-operand-src-minisql-sql-ast-ml-1944287861"></a>
+<a id="function-function-minisql-sql-ast-unaryexpression-function-unaryexpression-operatorvalue-operand-src-minisql-sql-ast-ml-175154014"></a>
 ### unaryExpression
 
 ```ml
-function unaryExpression(operator, operand)
+function unaryExpression(operatorValue, operand)
 ```
 
 Implements unary expression for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `operand` | `dynamic` | — | operand value consumed by this operation. |
 
 

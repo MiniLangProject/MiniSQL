@@ -2088,10 +2088,10 @@ end function
 /// @param table table value consumed by this operation.
 /// @param columnIndex Zero-based index of column.
 /// @param literalValue literalValue value consumed by this operation.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param pageTransaction pageTransaction value consumed by this operation.
 /// @param indexName indexName value consumed by this operation.
-function namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, indexName)
+function namedRangeIndexRows(database, table, columnIndex, literalValue, operatorValue, pageTransaction, indexName)
   constraint = namedConstraintForSingleColumn(database, table, columnIndex, indexName)
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
@@ -2102,12 +2102,12 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
   upper = void
   lowerInclusive = true
   upperInclusive = true
-  if operator == ">" or operator == ">=" then
+  if operatorValue == ">" or operatorValue == ">=" then
     lower = key
-    lowerInclusive = operator == ">="
+    lowerInclusive = operatorValue == ">="
   else
     upper = key
-    upperInclusive = operator == "<="
+    upperInclusive = operatorValue == "<="
   end if
   indexLease = openReadOnlyIndex(database, constraint, "rangeIndexRows")
   tree = readOnlyIndexTree(indexLease)
@@ -2123,10 +2123,10 @@ end function
 /// @param table table value consumed by this operation.
 /// @param columnIndex Zero-based index of column.
 /// @param literalValue literalValue value consumed by this operation.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param pageTransaction pageTransaction value consumed by this operation.
-function rangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction)
-  return namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, "")
+function rangeIndexRows(database, table, columnIndex, literalValue, operatorValue, pageTransaction)
+  return namedRangeIndexRows(database, table, columnIndex, literalValue, operatorValue, pageTransaction, "")
 end function
 
 /// Implements equality literal for column for this module.
@@ -2137,12 +2137,12 @@ end function
 function equalityLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, void] end if
-  if expression.operator == "AND" then
+  if expression.operatorValue == "AND" then
     left = equalityLiteralForColumn(expression.left, columnIndex)
     if left[0] then return left end if
     return equalityLiteralForColumn(expression.right, columnIndex)
   end if
-  if expression.operator != "=" then return [false, void] end if
+  if expression.operatorValue != "=" then return [false, void] end if
   if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, expression.right.literal] end if
   if expression.right.kind == expressions.BOUND_COLUMN and expression.right.columnIndex == columnIndex and expression.left.kind == expressions.BOUND_LITERAL then return [true, expression.left.literal] end if
   return [false, void]
@@ -2215,7 +2215,7 @@ end function
 /// @param indexName indexName value consumed by this operation.
 function namedSingleIndexRows(database, table, expression, pageTransaction, indexName)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return void end if
-  if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
+  if expression.kind == expressions.BOUND_BINARY and (expression.operatorValue == "AND" or expression.operatorValue == "OR") then
     left = namedSingleIndexRows(database, table, expression.left, pageTransaction, indexName)
     if left is not void then return left end if
     return namedSingleIndexRows(database, table, expression.right, pageTransaction, indexName)
@@ -2223,18 +2223,18 @@ function namedSingleIndexRows(database, table, expression, pageTransaction, inde
   if expression.kind != expressions.BOUND_BINARY then return void end if
   columnExpression = void
   literalExpression = void
-  operator = expression.operator
+  operatorValue = expression.operatorValue
   if expression.left.kind == expressions.BOUND_COLUMN and expression.right.kind == expressions.BOUND_LITERAL then
     columnExpression = expression.left
     literalExpression = expression.right
   else if expression.right.kind == expressions.BOUND_COLUMN and expression.left.kind == expressions.BOUND_LITERAL then
     columnExpression = expression.right
     literalExpression = expression.left
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
   end if
   if columnExpression is void or literalExpression is void then return void end if
-  if operator == "=" then return namedEqualityIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, pageTransaction, indexName) end if
-  if operator == "<" or operator == "<=" or operator == ">" or operator == ">=" then return namedRangeIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, operator, pageTransaction, indexName) end if
+  if operatorValue == "=" then return namedEqualityIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, pageTransaction, indexName) end if
+  if operatorValue == "<" or operatorValue == "<=" or operatorValue == ">" or operatorValue == ">=" then return namedRangeIndexRows(database, table, columnExpression.columnIndex, literalExpression.literal, operatorValue, pageTransaction, indexName) end if
   return void
 end function
 
@@ -2264,16 +2264,16 @@ end function
 function comparisonLiteralForBoundKey(expression, keyExpression)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
-  if expression.operator == "AND" then
+  if expression.operatorValue == "AND" then
     left = comparisonLiteralForBoundKey(expression.left, keyExpression)
     if left[0] then return left end if
     return comparisonLiteralForBoundKey(expression.right, keyExpression)
   end if
-  operator = expression.operator
-  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operator, expression.right.literal] end if
+  operatorValue = expression.operatorValue
+  if expressions.sameBinding(expression.left, keyExpression) and expressions.isBoundLiteral(expression.right) then return [true, operatorValue, expression.right.literal] end if
   if expressions.sameBinding(expression.right, keyExpression) and expressions.isBoundLiteral(expression.left) then
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
-    return [true, operator, expression.left.literal]
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
+    return [true, operatorValue, expression.left.literal]
   end if
   return [false, "", void]
 end function
@@ -2290,8 +2290,8 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   keyExpression = binder.bindExpression(parser.parseExpressionText(schema_history.indexExpressionSql(constraint.columns[0])), table, void)
   found = comparisonLiteralForBoundKey(expression, keyExpression)
   if not found[0] then return void end if
-  operator = found[1]
-  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  operatorValue = found[1]
+  if operatorValue != "=" and operatorValue != "<" and operatorValue != "<=" and operatorValue != ">" and operatorValue != ">=" then return void end if
   converted = values.convert(found[2], keyExpression.typeInfo)
   if converted.isNull then return [] end if
   if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
@@ -2299,7 +2299,7 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   indexLease = openReadOnlyIndex(database, constraint, "expressionIndexRows")
   tree = readOnlyIndexTree(indexLease)
   entries = []
-  if operator == "=" then
+  if operatorValue == "=" then
     foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
     if typeof(foundValues) == "error" then closeReadOnlyIndex(indexLease); return foundValues end if
     for each rowValue in foundValues
@@ -2310,7 +2310,7 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
     upper = void
     lowerInclusive = true
     upperInclusive = true
-    if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
+    if operatorValue == ">" or operatorValue == ">=" then lower = encodedKey; lowerInclusive = operatorValue == ">=" else upper = encodedKey; upperInclusive = operatorValue == "<=" end if
     entries = try(btree.rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, 0, readOnlyIndexContext(indexLease)))
   end if
   closeResult = try(closeReadOnlyIndex(indexLease))
@@ -2324,17 +2324,17 @@ end function
 /// @param columnIndex Zero-based index of column.
 function comparisonLiteralForColumn(expression, columnIndex)
   if expression is void or not expressions.isBaseBoundExpression(expression) then return [false, "", void] end if
-  if expression.kind == expressions.BOUND_BINARY and (expression.operator == "AND" or expression.operator == "OR") then
+  if expression.kind == expressions.BOUND_BINARY and (expression.operatorValue == "AND" or expression.operatorValue == "OR") then
     left = comparisonLiteralForColumn(expression.left, columnIndex)
     if left[0] then return left end if
     return comparisonLiteralForColumn(expression.right, columnIndex)
   end if
   if expression.kind != expressions.BOUND_BINARY then return [false, "", void] end if
-  operator = expression.operator
-  if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operator, expression.right.literal] end if
+  operatorValue = expression.operatorValue
+  if expression.left.kind == expressions.BOUND_COLUMN and expression.left.columnIndex == columnIndex and expression.right.kind == expressions.BOUND_LITERAL then return [true, operatorValue, expression.right.literal] end if
   if expression.right.kind == expressions.BOUND_COLUMN and expression.right.columnIndex == columnIndex and expression.left.kind == expressions.BOUND_LITERAL then
-    if operator == "<" then operator = ">" else if operator == "<=" then operator = ">=" else if operator == ">" then operator = "<" else if operator == ">=" then operator = "<=" end if
-    return [true, operator, expression.left.literal]
+    if operatorValue == "<" then operatorValue = ">" else if operatorValue == "<=" then operatorValue = ">=" else if operatorValue == ">" then operatorValue = "<" else if operatorValue == ">=" then operatorValue = "<=" end if
+    return [true, operatorValue, expression.left.literal]
   end if
   return [false, "", void]
 end function
@@ -2374,8 +2374,8 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   columnIndex = binder.findColumnIndex(table, constraint.columns[0])
   found = comparisonLiteralForColumn(expression, columnIndex)
   if not found[0] then return void end if
-  operator = found[1]
-  if operator != "=" and operator != "<" and operator != "<=" and operator != ">" and operator != ">=" then return void end if
+  operatorValue = found[1]
+  if operatorValue != "=" and operatorValue != "<" and operatorValue != "<=" and operatorValue != ">" and operatorValue != ">=" then return void end if
   converted = values.convert(found[2], types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
   if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
@@ -2383,7 +2383,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
   tree = readOnlyIndexTree(indexLease)
   entries = void
-  if operator == "=" then
+  if operatorValue == "=" then
     foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
     if typeof(foundValues) != "error" then
       entries = []
@@ -2398,7 +2398,7 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
     upper = void
     lowerInclusive = true
     upperInclusive = true
-    if operator == ">" or operator == ">=" then lower = encodedKey; lowerInclusive = operator == ">=" else upper = encodedKey; upperInclusive = operator == "<=" end if
+    if operatorValue == ">" or operatorValue == ">=" then lower = encodedKey; lowerInclusive = operatorValue == ">=" else upper = encodedKey; upperInclusive = operatorValue == "<=" end if
     entries = try(btree.rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, 0, readOnlyIndexContext(indexLease)))
   end if
   closeResult = try(closeReadOnlyIndex(indexLease))
@@ -2575,7 +2575,7 @@ end function
 /// @param pageTransaction pageTransaction value consumed by this operation.
 function joinIndexRows(database, source, condition, leftRow, pageTransaction)
   if pageTransaction is not void and transaction.stagedPageCount(pageTransaction) > 0 then return void end if
-  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operatorValue != "=" then return void end if
   leftColumn = void
   rightColumn = void
   if condition.left.kind == expressions.BOUND_COLUMN and condition.right.kind == expressions.BOUND_COLUMN then

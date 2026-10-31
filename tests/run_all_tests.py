@@ -1687,11 +1687,30 @@ def run_m49_soak(verbose: bool) -> None:
 def run_m78_fault_drill(verbose: bool) -> None:
     """Runs the isolated storage, process, network and WAL production fault drill."""
     output_root = RESULTS_DIR / "m78-production-fault"
+    executables = {
+        "server": BUILD_ROOT / "minisqld.exe",
+        "check": BUILD_ROOT / "minisql-check.exe",
+        "crash_worker": BUILD_ROOT / "minisql-m7-crash-worker.exe",
+        "storage_fault": BUILD_ROOT / "minisql-m78-fault-injection.exe",
+    }
+    missing = [str(path) for path in executables.values() if not path.is_file()]
+    if missing:
+        raise AcceptanceFailure(
+            "M78 production fault drill prerequisites are unavailable: " + ", ".join(missing)
+        )
     command = [
         sys.executable,
         str(ROOT / "tests/fault/production_fault_drill.py"),
         "--work-root",
         str(output_root),
+        "--server-exe",
+        str(executables["server"]),
+        "--check-exe",
+        str(executables["check"]),
+        "--crash-worker",
+        str(executables["crash_worker"]),
+        "--storage-fault-exe",
+        str(executables["storage_fault"]),
         "--writers",
         "4",
         "--confirmed-before-kill",

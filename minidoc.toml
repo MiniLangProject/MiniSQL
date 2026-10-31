@@ -22,6 +22,7 @@ formats = ["html", "markdown"]
 html_dir = "docs/api/html"
 markdown_dir = "docs/api/markdown"
 markdown_profile = "repository"
+include_timestamp = false
 
 [graphs]
 imports = true

@@ -308,18 +308,18 @@ Renders into using the supplied inputs. Returns the computed value or operation 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/planner/logical_plan.ml#L161)
 
-<a id="function-function-minisql-planner-logical-plan-setname-function-setname-operator-all-src-minisql-planner-logical-plan-ml-1205155633"></a>
+<a id="function-function-minisql-planner-logical-plan-setname-function-setname-operatorvalue-all-src-minisql-planner-logical-plan-ml-2089386438"></a>
 ### setName
 
 ```ml
-function setName(operator, all)
+function setName(operatorValue, all)
 ```
 
 Implements set name for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `all` | `dynamic` | — | all value consumed by this operation. |
 
 

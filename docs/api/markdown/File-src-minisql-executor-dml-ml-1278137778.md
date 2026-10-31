@@ -1355,11 +1355,11 @@ Executes an equality/range probe against one named expression index.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2287)
 
-<a id="function-function-minisql-executor-dml-namedrangeindexrows-function-namedrangeindexrows-database-table-columnindex-literalvalue-operator-pagetransaction-indexname-src-minisql-executor-dml-ml-619370781"></a>
+<a id="function-function-minisql-executor-dml-namedrangeindexrows-function-namedrangeindexrows-database-table-columnindex-literalvalue-operatorvalue-pagetransaction-indexname-src-minisql-executor-dml-ml-805901488"></a>
 ### namedRangeIndexRows
 
 ```ml
-function namedRangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction, indexName)
+function namedRangeIndexRows(database, table, columnIndex, literalValue, operatorValue, pageTransaction, indexName)
 ```
 
 Executes a range lookup through one explicitly named single-column index, or through the first matching index when indexName is empty.
@@ -1370,7 +1370,7 @@ Executes a range lookup through one explicitly named single-column index, or thr
 | `table` | `dynamic` | — | table value consumed by this operation. |
 | `columnIndex` | `dynamic` | — | Zero-based index of column. |
 | `literalValue` | `dynamic` | — | literalValue value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
@@ -1590,11 +1590,11 @@ Implements publish committed for this module. Requires arguments that satisfy th
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1263)
 
-<a id="function-function-minisql-executor-dml-rangeindexrows-function-rangeindexrows-database-table-columnindex-literalvalue-operator-pagetransaction-src-minisql-executor-dml-ml-567612606"></a>
+<a id="function-function-minisql-executor-dml-rangeindexrows-function-rangeindexrows-database-table-columnindex-literalvalue-operatorvalue-pagetransaction-src-minisql-executor-dml-ml-2111149529"></a>
 ### rangeIndexRows
 
 ```ml
-function rangeIndexRows(database, table, columnIndex, literalValue, operator, pageTransaction)
+function rangeIndexRows(database, table, columnIndex, literalValue, operatorValue, pageTransaction)
 ```
 
 Preserves the legacy range-index API for callers without a physical plan.
@@ -1605,7 +1605,7 @@ Preserves the legacy range-index API for callers without a physical plan.
 | `table` | `dynamic` | — | table value consumed by this operation. |
 | `columnIndex` | `dynamic` | — | Zero-based index of column. |
 | `literalValue` | `dynamic` | — | literalValue value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 

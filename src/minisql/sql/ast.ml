@@ -180,7 +180,7 @@ struct UnaryExpression
   /// Stores the kind associated with this value.
   kind
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the operand associated with this value.
   operand
 end struct
@@ -190,7 +190,7 @@ struct BinaryExpression
   /// Stores the kind associated with this value.
   kind
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the left associated with this value.
   left
   /// Stores the right associated with this value.
@@ -434,7 +434,7 @@ end struct
 /// Groups the set operation state and preserves the field relationships documented below.
 struct SetOperation
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the all associated with this value.
   all
   /// Stores the query associated with this value.
@@ -1049,20 +1049,20 @@ end function
 /// Implements unary expression for this module.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param operand operand value consumed by this operation.
-function unaryExpression(operator, operand)
-  return UnaryExpression(EXPR_UNARY, operator, operand)
+function unaryExpression(operatorValue, operand)
+  return UnaryExpression(EXPR_UNARY, operatorValue, operand)
 end function
 
 /// Implements binary expression for this module.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param left left value consumed by this operation.
 /// @param right right value consumed by this operation.
-function binaryExpression(operator, left, right)
-  return BinaryExpression(EXPR_BINARY, operator, left, right)
+function binaryExpression(operatorValue, left, right)
+  return BinaryExpression(EXPR_BINARY, operatorValue, left, right)
 end function
 
 /// Returns whether the supplied value satisfies the null expression condition.
@@ -1942,8 +1942,8 @@ function formatExpression(expression)
   end if
   if expression is FunctionExpression then return formatFunction(expression) end if
   if expression is ParameterExpression then return "?" end if
-  if expression is UnaryExpression then return expression.operator + " (" + formatExpression(expression.operand) + ")" end if
-  if expression is BinaryExpression then return "(" + formatExpression(expression.left) + " " + expression.operator + " " + formatExpression(expression.right) + ")" end if
+  if expression is UnaryExpression then return expression.operatorValue + " (" + formatExpression(expression.operand) + ")" end if
+  if expression is BinaryExpression then return "(" + formatExpression(expression.left) + " " + expression.operatorValue + " " + formatExpression(expression.right) + ")" end if
   if expression is IsNullExpression then
     suffix = " IS NULL"
     if expression.negated then suffix = " IS NOT NULL" end if
@@ -2097,7 +2097,7 @@ function formatSelect(statement)
   end if
   if statement.havingExpression is not void then output = output + " HAVING " + formatExpression(statement.havingExpression) end if
   for each operation in statement.setOperations
-    if operation.operator == SET_INTERSECT then output = output + " INTERSECT" else if operation.operator == SET_EXCEPT then output = output + " EXCEPT" else output = output + " UNION" end if
+    if operation.operatorValue == SET_INTERSECT then output = output + " INTERSECT" else if operation.operatorValue == SET_EXCEPT then output = output + " EXCEPT" else output = output + " UNION" end if
     if operation.all then output = output + " ALL" end if
     output = output + " " + formatSelect(operation.query)
   end for

@@ -640,8 +640,8 @@ function substituteExpression(expression, parameters)
     return parameters[expression.index]
   end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isColumnExpression(expression) or ast.isStarExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, substituteExpression(expression.operand, parameters)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, substituteExpression(expression.left, parameters), substituteExpression(expression.right, parameters)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, substituteExpression(expression.operand, parameters)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, substituteExpression(expression.left, parameters), substituteExpression(expression.right, parameters)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(substituteExpression(expression.operand, parameters), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -717,7 +717,7 @@ function substituteSelect(statement, parameters)
   if statement.havingExpression is not void then havingExpression = substituteExpression(statement.havingExpression, parameters) end if
   setOperations = []
   for each value in statement.setOperations
-    setOperations = setOperations + [ast.SetOperation(value.operator, value.all, substituteSelect(value.query, parameters))]
+    setOperations = setOperations + [ast.SetOperation(value.operatorValue, value.all, substituteSelect(value.query, parameters))]
   end for
   orderBy = []
   for each value in statement.orderBy
@@ -797,8 +797,8 @@ end function
 /// @param deferSubqueries deferSubqueries value consumed by this operation.
 function materializeExpression(engine, expression, pageTransaction, deferSubqueries)
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isColumnExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, materializeExpression(engine, expression.left, pageTransaction, deferSubqueries), materializeExpression(engine, expression.right, pageTransaction, deferSubqueries)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, materializeExpression(engine, expression.left, pageTransaction, deferSubqueries), materializeExpression(engine, expression.right, pageTransaction, deferSubqueries)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(materializeExpression(engine, expression.operand, pageTransaction, deferSubqueries), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -912,7 +912,7 @@ function materializeSelectStatement(engine, statement, pageTransaction)
   if statement.havingExpression is not void then havingExpression = materializeExpression(engine, statement.havingExpression, pageTransaction, true) end if
   setOperations = []
   for each value in statement.setOperations
-    setOperations = setOperations + [ast.SetOperation(value.operator, value.all, materializeSelectStatement(engine, value.query, pageTransaction))]
+    setOperations = setOperations + [ast.SetOperation(value.operatorValue, value.all, materializeSelectStatement(engine, value.query, pageTransaction))]
   end for
   orderBy = []
   for each value in statement.orderBy
@@ -1047,8 +1047,8 @@ end function
 function substituteOuterExpression(expression, sources, rowValues, statement)
   if ast.isColumnExpression(expression) then return substituteOuterColumn(expression, sources, rowValues, statement) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, substituteOuterExpression(expression.operand, sources, rowValues, statement)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, substituteOuterExpression(expression.left, sources, rowValues, statement), substituteOuterExpression(expression.right, sources, rowValues, statement)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, substituteOuterExpression(expression.operand, sources, rowValues, statement)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, substituteOuterExpression(expression.left, sources, rowValues, statement), substituteOuterExpression(expression.right, sources, rowValues, statement)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(substituteOuterExpression(expression.operand, sources, rowValues, statement), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -1122,7 +1122,7 @@ function substituteOuterSelect(statement, sources, rowValues)
   if statement.havingExpression is not void then havingExpression = substituteOuterExpression(statement.havingExpression, sources, rowValues, statement) end if
   setOperations = []
   for each value in statement.setOperations
-    setOperations = setOperations + [ast.SetOperation(value.operator, value.all, substituteOuterSelect(value.query, sources, rowValues))]
+    setOperations = setOperations + [ast.SetOperation(value.operatorValue, value.all, substituteOuterSelect(value.query, sources, rowValues))]
   end for
   orderBy = []
   for each value in statement.orderBy
@@ -1464,8 +1464,8 @@ function replaceTriggerExpression(expression, table, oldRow, newRow)
     return expression
   end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, replaceTriggerExpression(expression.operand, table, oldRow, newRow)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, replaceTriggerExpression(expression.left, table, oldRow, newRow), replaceTriggerExpression(expression.right, table, oldRow, newRow)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, replaceTriggerExpression(expression.operand, table, oldRow, newRow)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, replaceTriggerExpression(expression.left, table, oldRow, newRow), replaceTriggerExpression(expression.right, table, oldRow, newRow)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(replaceTriggerExpression(expression.operand, table, oldRow, newRow), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -1584,8 +1584,8 @@ end function
 function replaceMergeExpression(expression, statement, sourceTable, sourceRow)
   if ast.isColumnExpression(expression) then return replaceMergeColumn(expression, statement, sourceTable, sourceRow) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, replaceMergeExpression(expression.left, statement, sourceTable, sourceRow), replaceMergeExpression(expression.right, statement, sourceTable, sourceRow)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, replaceMergeExpression(expression.left, statement, sourceTable, sourceRow), replaceMergeExpression(expression.right, statement, sourceTable, sourceRow)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(replaceMergeExpression(expression.operand, statement, sourceTable, sourceRow), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -1637,8 +1637,8 @@ end function
 function replaceProcedureExpression(expression, parameterNames, parameterValues)
   if ast.isColumnExpression(expression) then return replaceProcedureParameter(expression, parameterNames, parameterValues) end if
   if ast.isLiteralExpression(expression) or ast.isTypedLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, replaceProcedureExpression(expression.operand, parameterNames, parameterValues)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, replaceProcedureExpression(expression.left, parameterNames, parameterValues), replaceProcedureExpression(expression.right, parameterNames, parameterValues)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, replaceProcedureExpression(expression.operand, parameterNames, parameterValues)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, replaceProcedureExpression(expression.left, parameterNames, parameterValues), replaceProcedureExpression(expression.right, parameterNames, parameterValues)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(replaceProcedureExpression(expression.operand, parameterNames, parameterValues), expression.negated) end if
   if ast.isCaseExpression(expression) then
     branches = []
@@ -2586,7 +2586,7 @@ end function
 /// @param condition condition value consumed by this operation.
 /// @param source source value consumed by this operation.
 function canonicalEqualityColumns(condition, source)
-  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return void end if
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operatorValue != "=" then return void end if
   if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return void end if
   leftInSource = condition.left.columnIndex >= source.offset and condition.left.columnIndex < source.offset + len(source.table.columns)
   rightInSource = condition.right.columnIndex >= source.offset and condition.right.columnIndex < source.offset + len(source.table.columns)
@@ -2889,16 +2889,16 @@ end function
 function joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate)
   if predicate is void then return true end if
   if not expressions.isBaseBoundExpression(predicate) then return false end if
-  if predicate.kind == expressions.BOUND_BINARY and predicate.operator == "AND" then
+  if predicate.kind == expressions.BOUND_BINARY and predicate.operatorValue == "AND" then
     return joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate.left) and joinProbeGuaranteesPredicate(boundJoin, leftRow, predicate.right)
   end if
-  if predicate.kind != expressions.BOUND_BINARY or predicate.operator != "=" then return false end if
+  if predicate.kind != expressions.BOUND_BINARY or predicate.operatorValue != "=" then return false end if
   predicateColumn = predicate.left
   predicateLiteral = predicate.right
   if predicateColumn.kind == expressions.BOUND_LITERAL then predicateColumn = predicate.right; predicateLiteral = predicate.left end if
   if predicateColumn.kind != expressions.BOUND_COLUMN or predicateLiteral.kind != expressions.BOUND_LITERAL or predicateLiteral.literal.isNull then return false end if
   condition = boundJoin.condition
-  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operator != "=" then return false end if
+  if condition is void or not expressions.isBaseBoundExpression(condition) or condition.kind != expressions.BOUND_BINARY or condition.operatorValue != "=" then return false end if
   if condition.left.kind != expressions.BOUND_COLUMN or condition.right.kind != expressions.BOUND_COLUMN then return false end if
   source = boundJoin.source
   rightColumn = condition.left
@@ -3128,9 +3128,9 @@ function materializeBoundExpression(engine, expression, bound, row, pageTransact
   if expressions.isBoundSubquery(expression) then return materializeBoundSubquery(engine, expression, bound, row, pageTransaction) end if
   if expressions.isBaseBoundExpression(expression) then
     if expression.kind == expressions.BOUND_LITERAL or expression.kind == expressions.BOUND_COLUMN then return expression end if
-    if expression.kind == expressions.BOUND_UNARY then return expressions.unary(expression.operator, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.typeInfo) end if
-    if expression.kind == expressions.BOUND_IS_NULL then return expressions.isNull(materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.operator == "IS NOT NULL") end if
-    if expression.kind == expressions.BOUND_BINARY then return expressions.binary(expression.operator, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), materializeBoundExpression(engine, expression.right, bound, row, pageTransaction), expression.typeInfo) end if
+    if expression.kind == expressions.BOUND_UNARY then return expressions.unary(expression.operatorValue, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.typeInfo) end if
+    if expression.kind == expressions.BOUND_IS_NULL then return expressions.isNull(materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), expression.operatorValue == "IS NOT NULL") end if
+    if expression.kind == expressions.BOUND_BINARY then return expressions.binary(expression.operatorValue, materializeBoundExpression(engine, expression.left, bound, row, pageTransaction), materializeBoundExpression(engine, expression.right, bound, row, pageTransaction), expression.typeInfo) end if
   end if
   if expressions.isBoundCase(expression) then
     branches = []
@@ -3621,7 +3621,7 @@ function selectProjected(engine, bound, pageTransaction)
   if bound.statement.distinct then projected = projection.distinct(projected) end if
   for each operation in bound.setOperations
     right = selectProjected(engine, operation.query, pageTransaction)
-    projected = aggregate.setOperation(projected, right, operation.operator, operation.all)
+    projected = aggregate.setOperation(projected, right, operation.operatorValue, operation.all)
   end for
   projected = normalizeCompoundOrder(projected, bound)
   temporaryRoot = file_api.joinPath(engine.database.path, "tmp")

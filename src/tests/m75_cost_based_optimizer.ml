@@ -26,10 +26,10 @@ function planContains(result, prefix)
 end function
 
 // Constructs one typed integer comparison for implication boundary tests.
-function integerComparison(columnIndex, operator, literalValue)
+function integerComparison(columnIndex, operatorValue, literalValue)
   integerType = types.create(types.SqlTypeKind.Integer, 0, 0, 0, false)
   booleanType = types.create(types.SqlTypeKind.Boolean, 0, 0, 0, false)
-  return expressions.binary(operator, expressions.column(columnIndex, integerType), expressions.literal(values.integer(literalValue), integerType), booleanType)
+  return expressions.binary(operatorValue, expressions.column(columnIndex, integerType), expressions.literal(values.integer(literalValue), integerType), booleanType)
 end function
 
 // Exercises physical planning, bounded execution, caching, and regressions.

@@ -15,7 +15,7 @@ const INVALID_ARGUMENT = 9001
 /// Groups the physical plan state and preserves the field relationships documented below.
 struct PhysicalPlan
   /// Stores the operator associated with this value.
-  operator
+  operatorValue
   /// Stores the details associated with this value.
   details
   /// Stores the estimated rows associated with this value.
@@ -90,7 +90,7 @@ end function
 /// @param depth depth value consumed by this operation.
 /// @param lines lines value consumed by this operation.
 function renderInto(plan, depth, lines)
-  line = indent(depth) + plan.operator
+  line = indent(depth) + plan.operatorValue
   if len(plan.details) > 0 then line = line + " [" + plan.details + "]" end if
   line = line + " rows=" + plan.estimatedRows + " cost=" + plan.estimatedCost
   lines = lines + [line]

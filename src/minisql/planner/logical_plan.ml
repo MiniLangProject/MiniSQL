@@ -95,13 +95,13 @@ end function
 /// Implements set name for this module.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param all all value consumed by this operation.
-function setName(operator, all)
+function setName(operatorValue, all)
   suffix = ""
   if all then suffix = " All" end if
-  if operator == ast.SET_INTERSECT then return "Intersect" + suffix end if
-  if operator == ast.SET_EXCEPT then return "Except" + suffix end if
+  if operatorValue == ast.SET_INTERSECT then return "Intersect" + suffix end if
+  if operatorValue == ast.SET_EXCEPT then return "Except" + suffix end if
   return "Union" + suffix
 end function
 
@@ -127,7 +127,7 @@ function build(bound)
   if bound.statement.distinct then current = node(NODE_DISTINCT, "Distinct", "", current.estimatedRows, [current]) end if
   for each operation in bound.setOperations
     rightPlan = build(operation.query)
-    current = node(NODE_SET, setName(operation.operator, operation.all), "", current.estimatedRows + rightPlan.estimatedRows, [current, rightPlan])
+    current = node(NODE_SET, setName(operation.operatorValue, operation.all), "", current.estimatedRows + rightPlan.estimatedRows, [current, rightPlan])
   end for
   if len(bound.statement.orderBy) > 0 then current = node(NODE_SORT, "Sort", "keys=" + len(bound.statement.orderBy), current.estimatedRows, [current]) end if
   if bound.statement.limit >= 0 or bound.statement.offset > 0 then

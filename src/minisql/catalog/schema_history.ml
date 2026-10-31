@@ -1188,8 +1188,8 @@ function renameExpression(expression, oldName, newName)
     return expression
   end if
   if ast.isLiteralExpression(expression) or ast.isStarExpression(expression) or ast.isParameterExpression(expression) then return expression end if
-  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operator, renameExpression(expression.operand, oldName, newName)) end if
-  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operator, renameExpression(expression.left, oldName, newName), renameExpression(expression.right, oldName, newName)) end if
+  if ast.isUnaryExpression(expression) then return ast.unaryExpression(expression.operatorValue, renameExpression(expression.operand, oldName, newName)) end if
+  if ast.isBinaryExpression(expression) then return ast.binaryExpression(expression.operatorValue, renameExpression(expression.left, oldName, newName), renameExpression(expression.right, oldName, newName)) end if
   if ast.isIsNullExpression(expression) then return ast.isNullExpression(renameExpression(expression.operand, oldName, newName), expression.negated) end if
   if ast.isCastExpression(expression) then return ast.castExpression(renameExpression(expression.operand, oldName, newName), expression.targetType) end if
   if ast.isFunctionExpression(expression) then

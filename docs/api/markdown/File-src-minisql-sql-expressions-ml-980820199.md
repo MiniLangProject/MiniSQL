@@ -91,18 +91,18 @@ Implements between predicate for this module. Requires arguments that satisfy th
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L485)
 
-<a id="function-function-minisql-sql-expressions-binary-function-binary-operator-left-right-typeinfo-src-minisql-sql-expressions-ml-2011680027"></a>
+<a id="function-function-minisql-sql-expressions-binary-function-binary-operatorvalue-left-right-typeinfo-src-minisql-sql-expressions-ml-561372558"></a>
 ### binary
 
 ```ml
-function binary(operator, left, right, typeInfo)
+function binary(operatorValue, left, right, typeInfo)
 ```
 
 Implements binary for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `left` | `dynamic` | — | left value consumed by this operation. |
 | `right` | `dynamic` | — | right value consumed by this operation. |
 | `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
@@ -421,11 +421,11 @@ Implements column for this module. Requires arguments that satisfy the validatio
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L347)
 
-<a id="function-function-minisql-sql-expressions-comparisonresult-function-comparisonresult-left-right-operator-src-minisql-sql-expressions-ml-1687809711"></a>
+<a id="function-function-minisql-sql-expressions-comparisonresult-function-comparisonresult-left-right-operatorvalue-src-minisql-sql-expressions-ml-1794775326"></a>
 ### comparisonResult
 
 ```ml
-function comparisonResult(left, right, operator)
+function comparisonResult(left, right, operatorValue)
 ```
 
 Implements comparison result for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
@@ -434,7 +434,7 @@ Implements comparison result for this module. Returns the computed value or oper
 | --- | --- | --- | --- |
 | `left` | `dynamic` | — | left value consumed by this operation. |
 | `right` | `dynamic` | — | right value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L884)
@@ -970,11 +970,11 @@ Implements literal for this module. Returns the computed value or operation stat
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L336)
 
-<a id="function-function-minisql-sql-expressions-numericresult-function-numericresult-left-right-operator-resulttype-src-minisql-sql-expressions-ml-684013274"></a>
+<a id="function-function-minisql-sql-expressions-numericresult-function-numericresult-left-right-operatorvalue-resulttype-src-minisql-sql-expressions-ml-858699355"></a>
 ### numericResult
 
 ```ml
-function numericResult(left, right, operator, resultType)
+function numericResult(left, right, operatorValue, resultType)
 ```
 
 Implements numeric result for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
@@ -983,7 +983,7 @@ Implements numeric result for this module. Requires arguments that satisfy the v
 | --- | --- | --- | --- |
 | `left` | `dynamic` | — | left value consumed by this operation. |
 | `right` | `dynamic` | — | right value consumed by this operation. |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `resultType` | `dynamic` | — | resultType value consumed by this operation. |
 
 
@@ -1191,18 +1191,18 @@ Defines the type mismatch constant used by the minisql sql expressions module.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/expressions.ml#L18)
 
-<a id="function-function-minisql-sql-expressions-unary-function-unary-operator-operand-typeinfo-src-minisql-sql-expressions-ml-510660709"></a>
+<a id="function-function-minisql-sql-expressions-unary-function-unary-operatorvalue-operand-typeinfo-src-minisql-sql-expressions-ml-1559105784"></a>
 ### unary
 
 ```ml
-function unary(operator, operand, typeInfo)
+function unary(operatorValue, operand, typeInfo)
 ```
 
 Implements unary for this module. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `operator` | `dynamic` | — | operator value consumed by this operation. |
+| `operatorValue` | `dynamic` | — | operator value consumed by this operation. |
 | `operand` | `dynamic` | — | operand value consumed by this operation. |
 | `typeInfo` | `dynamic` | — | typeInfo value consumed by this operation. |
 

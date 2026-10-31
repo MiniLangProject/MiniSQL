@@ -821,37 +821,37 @@ function evaluateGroup(expression, rows, representative)
   if expression.kind == expressions.BOUND_IS_NULL then
     operand = evaluateGroup(expression.left, rows, representative)
     result = operand.isNull
-    if expression.operator == "IS NOT NULL" then result = not result end if
+    if expression.operatorValue == "IS NOT NULL" then result = not result end if
     return values.boolean(result)
   end if
   if expression.kind == expressions.BOUND_UNARY then
     operand = evaluateGroup(expression.left, rows, representative)
-    if expression.operator == "NOT" then return values.logicalNot(operand) end if
+    if expression.operatorValue == "NOT" then return values.logicalNot(operand) end if
     if operand.isNull then return values.nullValue(expression.typeInfo.kind) end if
     number = values.asNumber(operand)
-    if expression.operator == "+" then return values.convert(values.of(operand.typeKind, number), expression.typeInfo) end if
-    if expression.operator == "-" then return values.convert(values.of(operand.typeKind, 0 - number), expression.typeInfo) end if
+    if expression.operatorValue == "+" then return values.convert(values.of(operand.typeKind, number), expression.typeInfo) end if
+    if expression.operatorValue == "-" then return values.convert(values.of(operand.typeKind, 0 - number), expression.typeInfo) end if
     return fail(BINDING_ERROR, "evaluateGroup", "unknown unary operator")
   end if
   if expression.kind == expressions.BOUND_BINARY then
     left = evaluateGroup(expression.left, rows, representative)
-    if expression.operator == "AND" then
+    if expression.operatorValue == "AND" then
       if values.truth(left) == 0 then return values.boolean(false) end if
       return values.logicalAnd(left, evaluateGroup(expression.right, rows, representative))
     end if
-    if expression.operator == "OR" then
+    if expression.operatorValue == "OR" then
       if values.truth(left) == 1 then return values.boolean(true) end if
       return values.logicalOr(left, evaluateGroup(expression.right, rows, representative))
     end if
     right = evaluateGroup(expression.right, rows, representative)
-    if expression.operator == "+" or expression.operator == "-" or expression.operator == "*" or expression.operator == "/" or expression.operator == "%" then return expressions.numericResult(left, right, expression.operator, expression.typeInfo) end if
-    if expression.operator == "=" or expression.operator == "<>" or expression.operator == "!=" or expression.operator == "<" or expression.operator == "<=" or expression.operator == ">" or expression.operator == ">=" then return expressions.comparisonResult(left, right, expression.operator) end if
-    if expression.operator == "LIKE" or expression.operator == "NOT LIKE" then
+    if expression.operatorValue == "+" or expression.operatorValue == "-" or expression.operatorValue == "*" or expression.operatorValue == "/" or expression.operatorValue == "%" then return expressions.numericResult(left, right, expression.operatorValue, expression.typeInfo) end if
+    if expression.operatorValue == "=" or expression.operatorValue == "<>" or expression.operatorValue == "!=" or expression.operatorValue == "<" or expression.operatorValue == "<=" or expression.operatorValue == ">" or expression.operatorValue == ">=" then return expressions.comparisonResult(left, right, expression.operatorValue) end if
+    if expression.operatorValue == "LIKE" or expression.operatorValue == "NOT LIKE" then
       result = expressions.likeResult(left, right)
-      if expression.operator == "NOT LIKE" then result = values.logicalNot(result) end if
+      if expression.operatorValue == "NOT LIKE" then result = values.logicalNot(result) end if
       return result
     end if
-    if expression.operator == "||" then
+    if expression.operatorValue == "||" then
       if left.isNull or right.isNull then return values.nullValue(expression.typeInfo.kind) end if
       return values.of(expression.typeInfo.kind, left.value + right.value)
     end if
@@ -1072,11 +1072,11 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param leftRows leftRows value consumed by this operation.
 /// @param rightRows rightRows value consumed by this operation.
-/// @param operator operator value consumed by this operation.
+/// @param operatorValue operator value consumed by this operation.
 /// @param all all value consumed by this operation.
-function setOperation(leftRows, rightRows, operator, all)
-  if typeof(leftRows) != "array" or typeof(rightRows) != "array" or typeof(operator) != "int" or typeof(all) != "bool" then return fail(INVALID_ARGUMENT, "setOperation", "invalid arguments") end if
-  if operator == ast.SET_UNION then
+function setOperation(leftRows, rightRows, operatorValue, all)
+  if typeof(leftRows) != "array" or typeof(rightRows) != "array" or typeof(operatorValue) != "int" or typeof(all) != "bool" then return fail(INVALID_ARGUMENT, "setOperation", "invalid arguments") end if
+  if operatorValue == ast.SET_UNION then
     output = leftRows + rightRows
     if not all then output = projection.distinct(output) end if
     return output
@@ -1091,12 +1091,12 @@ function setOperation(leftRows, rightRows, operator, all)
   output = []
   for each candidate in left
     matchIndex = findMatching(right, candidate, used)
-    if operator == ast.SET_INTERSECT then
+    if operatorValue == ast.SET_INTERSECT then
       if matchIndex >= 0 then
         output = output + [candidate]
         used[matchIndex] = true
       end if
-    else if operator == ast.SET_EXCEPT then
+    else if operatorValue == ast.SET_EXCEPT then
       if matchIndex < 0 then
         output = output + [candidate]
       else
