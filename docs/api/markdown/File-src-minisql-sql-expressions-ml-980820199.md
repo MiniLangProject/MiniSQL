@@ -13,8 +13,8 @@ Reachable from entry: **yes**
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/sql/types.ml` as `types` → [src/minisql/sql/types.ml](File-src-minisql-sql-types-ml-1842329761.md)
 - `minisql/sql/values.ml` as `values` → [src/minisql/sql/values.ml](File-src-minisql-sql-values-ml-1302895578.md)
-- `std/bytes.ml` as `bytes_api` → `../MiniLangCompilerML/std/bytes.ml` — external dependency
-- `std/math.ml` as `math` → `../MiniLangCompilerML/std/math.ml` — external dependency
+- `std/bytes.ml` as `bytes_api` → `../../MiniLangCompilerML/std/bytes.ml` — external dependency
+- `std/math.ml` as `math` → `../../MiniLangCompilerML/std/math.ml` — external dependency
 
 ## Declarations
 

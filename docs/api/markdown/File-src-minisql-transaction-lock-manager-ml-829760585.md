@@ -11,7 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/platform/clock.ml` as `clock` → [src/minisql/platform/clock.ml](File-src-minisql-platform-clock-ml-2055787141.md)
-- `std/threading.ml` as `threading` → `../MiniLangCompilerML/std/threading.ml` — external dependency
+- `std/threading.ml` as `threading` → `../../MiniLangCompilerML/std/threading.ml` — external dependency
 
 ## Declarations
 

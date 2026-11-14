@@ -10,7 +10,7 @@ Reachable from entry: **yes**
 
 ## Imports
 
-- `std/time.ml` as `time_api` → `../MiniLangCompilerML/std/time.ml` — external dependency
+- `std/time.ml` as `time_api` → `../../MiniLangCompilerML/std/time.ml` — external dependency
 
 ## Declarations
 

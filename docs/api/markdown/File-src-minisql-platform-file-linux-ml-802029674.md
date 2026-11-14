@@ -10,7 +10,7 @@ Reachable from entry: **no**
 
 ## Imports
 
-- `std/io/file.ml` as `portable` → `../MiniLangCompilerML/std/io/file.ml` — external dependency
+- `std/io/file.ml` as `portable` → `../../MiniLangCompilerML/std/io/file.ml` — external dependency
 
 ## Declarations
 

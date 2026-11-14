@@ -27,10 +27,10 @@ Reachable from entry: **yes**
 - `minisql/transaction/recovery.ml` as `recovery` → [src/minisql/transaction/recovery.ml](File-src-minisql-transaction-recovery-ml-1551350049.md)
 - `minisql/transaction/transaction.ml` as `transaction` → [src/minisql/transaction/transaction.ml](File-src-minisql-transaction-transaction-ml-1157597470.md)
 - `minisql/transaction/wal.ml` as `wal` → [src/minisql/transaction/wal.ml](File-src-minisql-transaction-wal-ml-860713478.md)
-- `std/ds/hashmap.ml` as `hashmap` → `../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
-- `std/ds/list.ml` as `list` → `../MiniLangCompilerML/std/ds/list.ml` — external dependency
-- `std/threading.ml` as `threading` → `../MiniLangCompilerML/std/threading.ml` — external dependency
-- `std/time.ml` as `time_api` → `../MiniLangCompilerML/std/time.ml` — external dependency
+- `std/ds/hashmap.ml` as `hashmap` → `../../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
+- `std/ds/list.ml` as `list` → `../../MiniLangCompilerML/std/ds/list.ml` — external dependency
+- `std/threading.ml` as `threading` → `../../MiniLangCompilerML/std/threading.ml` — external dependency
+- `std/time.ml` as `time_api` → `../../MiniLangCompilerML/std/time.ml` — external dependency
 
 ## Declarations
 

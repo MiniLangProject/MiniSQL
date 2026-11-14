@@ -64,8 +64,8 @@ end function
 
 /// Resolves the per-user connection-alias file and creates its parent directory.
 function defaultPath()
-  override = environment("MINISQL_ADMIN_PROFILE_PATH")
-  if len(override) > 0 then return override end if
+  profileOverride = environment("MINISQL_ADMIN_PROFILE_PATH")
+  if len(profileOverride) > 0 then return profileOverride end if
   appData = environment("APPDATA")
   if len(appData) == 0 then return "minisql-workbench-profiles.json" end if
   directory = file_api.joinPath(appData, "MiniSQL")

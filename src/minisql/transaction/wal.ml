@@ -407,10 +407,10 @@ function protectRecord(record, encryptionKey)
   uuid.wipeSecret(aad)
   if typeof(sealed) == "error" then uuid.wipeSecret(nonce); return sealed end if
   protectedPayload = nonce + sealed
-  protected = WalRecord(record.recordType, record.flags, record.lsn, HEADER_SIZE + len(protectedPayload), record.transactionId, record.fileId, record.pageNumber, record.pageLsn, protectedPayload, true)
+  protectedRecord = WalRecord(record.recordType, record.flags, record.lsn, HEADER_SIZE + len(protectedPayload), record.transactionId, record.fileId, record.pageNumber, record.pageLsn, protectedPayload, true)
   uuid.wipeSecret(nonce)
   uuid.wipeSecret(sealed)
-  return protected
+  return protectedRecord
 end function
 
 /// Decodes one plaintext or encrypted WAL record with an optional DEK.
@@ -668,9 +668,9 @@ function appendRecord(writer, recordType, flags, transactionId, fileId, pageNumb
     record.pageLsn = record.lsn
     record.totalLength = HEADER_SIZE + len(image)
   end if
-  protected = try(protectRecord(record, writer.encryptionKey))
-  if typeof(protected) == "error" then return protected end if
-  encoded = encode(protected)
+  protectedRecord = try(protectRecord(record, writer.encryptionKey))
+  if typeof(protectedRecord) == "error" then return protectedRecord end if
+  encoded = encode(protectedRecord)
   file_api.append(writer.file, encoded, 0, len(encoded))
   writer.nextLsn = writer.nextLsn + len(encoded)
   writer.recordCount = writer.recordCount + 1
@@ -692,9 +692,9 @@ function encodeRecordAt(writer, record, lsn)
     record.pageLsn = record.lsn
     record.totalLength = HEADER_SIZE + len(image)
   end if
-  protected = try(protectRecord(record, writer.encryptionKey))
-  if typeof(protected) == "error" then return protected end if
-  return encode(protected)
+  protectedRecord = try(protectRecord(record, writer.encryptionKey))
+  if typeof(protectedRecord) == "error" then return protectedRecord end if
+  return encode(protectedRecord)
 end function
 
 /// Flushes the occupied prefix of a bounded append batch.
