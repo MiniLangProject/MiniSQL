@@ -13,8 +13,8 @@ Reachable from entry: **yes**
 - `minisql/common/limits.ml` as `limits` → [src/minisql/common/limits.ml](File-src-minisql-common-limits-ml-173680577.md)
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
-- `std/ds/hashmap.ml` as `hashmap` → `../../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
-- `std/threading.ml` as `threading` → `../../MiniLangCompilerML/std/threading.ml` — external dependency
+- `std/ds/hashmap.ml` as `hashmap` → `../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
+- `std/threading.ml` as `threading` → `../MiniLangCompilerML/std/threading.ml` — external dependency
 
 ## Declarations
 

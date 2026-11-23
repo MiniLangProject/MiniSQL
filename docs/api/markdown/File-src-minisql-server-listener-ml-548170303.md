@@ -20,8 +20,8 @@ Reachable from entry: **yes**
 - `minisql/protocol/messages.ml` as `messages` → [src/minisql/protocol/messages.ml](File-src-minisql-protocol-messages-ml-1580707356.md)
 - `minisql/server/database_manager.ml` as `database_manager` → [src/minisql/server/database_manager.ml](File-src-minisql-server-database-manager-ml-965836460.md)
 - `minisql/server/session.ml` as `session` → [src/minisql/server/session.ml](File-src-minisql-server-session-ml-1747510267.md)
-- `std/concurrent/thread_pool.ml` as `thread_pool` → `../../MiniLangCompilerML/std/concurrent/thread_pool.ml` — external dependency
-- `std/threading.ml` as `threading` → `../../MiniLangCompilerML/std/threading.ml` — external dependency
+- `std/concurrent/thread_pool.ml` as `thread_pool` → `../MiniLangCompilerML/std/concurrent/thread_pool.ml` — external dependency
+- `std/threading.ml` as `threading` → `../MiniLangCompilerML/std/threading.ml` — external dependency
 
 ## Declarations
 

@@ -19,7 +19,7 @@ Reachable from entry: **yes**
 - `minisql/sql/types.ml` as `types` → [src/minisql/sql/types.ml](File-src-minisql-sql-types-ml-1842329761.md)
 - `minisql/sql/values.ml` as `values` → [src/minisql/sql/values.ml](File-src-minisql-sql-values-ml-1302895578.md)
 - `minisql/storage/row_codec.ml` as `row_codec` → [src/minisql/storage/row_codec.ml](File-src-minisql-storage-row-codec-ml-756043630.md)
-- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
+- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
 
 ## Declarations
 

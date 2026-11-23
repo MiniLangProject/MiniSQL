@@ -10,7 +10,7 @@ Reachable from entry: **yes**
 
 ## Imports
 
-- `std/checksum/crc32c.ml` as `stdCrc32c` → `../../MiniLangCompilerML/std/checksum/crc32c.ml` — external dependency
+- `std/checksum/crc32c.ml` as `stdCrc32c` → `../MiniLangCompilerML/std/checksum/crc32c.ml` — external dependency
 
 ## Declarations
 

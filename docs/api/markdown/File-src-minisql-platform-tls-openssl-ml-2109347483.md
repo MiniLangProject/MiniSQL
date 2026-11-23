@@ -12,7 +12,7 @@ Reachable from entry: **no**
 
 - `minisql/platform/network.ml` as `network` → [src/minisql/platform/network.ml](File-src-minisql-platform-network-ml-77221021.md)
 - `minisql/platform/tls_policy.ml` as `tls_policy` → [src/minisql/platform/tls_policy.ml](File-src-minisql-platform-tls-policy-ml-1426658235.md)
-- `std/tls/_openssl.ml` as `openssl` → `../../MiniLangCompilerML/std/tls/_openssl.ml` — external dependency
+- `std/tls/_openssl.ml` as `openssl` → `../MiniLangCompilerML/std/tls/_openssl.ml` — external dependency
 
 ## Declarations
 

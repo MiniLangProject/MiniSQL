@@ -12,7 +12,7 @@ Reachable from entry: **yes**
 
 - `minisql/sql/dialect.ml` as `dialect` → [src/minisql/sql/dialect.ml](File-src-minisql-sql-dialect-ml-1642253820.md)
 - `minisql/sql/token.ml` as `token` → [src/minisql/sql/token.ml](File-src-minisql-sql-token-ml-1018094825.md)
-- `std/ds/list.ml` as `list` → `../../MiniLangCompilerML/std/ds/list.ml` — external dependency
+- `std/ds/list.ml` as `list` → `../MiniLangCompilerML/std/ds/list.ml` — external dependency
 
 ## Declarations
 

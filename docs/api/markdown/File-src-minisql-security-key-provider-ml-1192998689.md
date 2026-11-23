@@ -14,7 +14,7 @@ Reachable from entry: **yes**
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/common/uuid.ml` as `uuid` → [src/minisql/common/uuid.ml](File-src-minisql-common-uuid-ml-1458519464.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
-- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
+- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
 
 ## Declarations
 

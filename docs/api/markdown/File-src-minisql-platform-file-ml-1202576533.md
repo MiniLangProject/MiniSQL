@@ -12,7 +12,7 @@ Reachable from entry: **yes**
 
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
 - `minisql/platform/file_win32.ml` as `native` → [src/minisql/platform/file_win32.ml](File-src-minisql-platform-file-win32-ml-727822533.md)
-- `std/string.ml` as `string_api` → `../../MiniLangCompilerML/std/string.ml` — external dependency
+- `std/string.ml` as `string_api` → `../MiniLangCompilerML/std/string.ml` — external dependency
 
 ## Declarations
 

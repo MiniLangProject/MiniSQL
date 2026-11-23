@@ -16,8 +16,8 @@ Reachable from entry: **yes**
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/security/key_provider.ml` as `key_provider` → [src/minisql/security/key_provider.ml](File-src-minisql-security-key-provider-ml-1192998689.md)
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
-- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
-- `std/ds/list.ml` as `list` → `../../MiniLangCompilerML/std/ds/list.ml` — external dependency
+- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
+- `std/ds/list.ml` as `list` → `../MiniLangCompilerML/std/ds/list.ml` — external dependency
 
 ## Declarations
 

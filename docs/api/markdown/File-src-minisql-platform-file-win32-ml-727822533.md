@@ -11,7 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
-- `std/threading.ml` as `threading` → `../../MiniLangCompilerML/std/threading.ml` — external dependency
+- `std/threading.ml` as `threading` → `../MiniLangCompilerML/std/threading.ml` — external dependency
 
 ## Declarations
 

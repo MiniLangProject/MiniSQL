@@ -12,8 +12,8 @@ Reachable from entry: **yes**
 
 - `minisql/platform/clock.ml` as `clock` → [src/minisql/platform/clock.ml](File-src-minisql-platform-clock-ml-2055787141.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
-- `std/string_builder.ml` as `string_builder` → `../../MiniLangCompilerML/std/string_builder.ml` — external dependency
-- `std/time.ml` as `time_api` → `../../MiniLangCompilerML/std/time.ml` — external dependency
+- `std/string_builder.ml` as `string_builder` → `../MiniLangCompilerML/std/string_builder.ml` — external dependency
+- `std/time.ml` as `time_api` → `../MiniLangCompilerML/std/time.ml` — external dependency
 
 ## Declarations
 

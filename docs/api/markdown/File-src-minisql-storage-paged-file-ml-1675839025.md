@@ -18,7 +18,7 @@ Reachable from entry: **yes**
 - `minisql/security/key_provider.ml` as `key_provider` → [src/minisql/security/key_provider.ml](File-src-minisql-security-key-provider-ml-1192998689.md)
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
 - `minisql/storage/superblock.ml` as `superblock` → [src/minisql/storage/superblock.ml](File-src-minisql-storage-superblock-ml-1268029913.md)
-- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
+- `std/crypto/aes_gcm.ml` as `aes_gcm` → `../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
 
 ## Declarations
 

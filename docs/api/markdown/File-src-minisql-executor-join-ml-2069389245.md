@@ -21,7 +21,7 @@ Reachable from entry: **yes**
 - `minisql/sql/expressions.ml` as `expressions` → [src/minisql/sql/expressions.ml](File-src-minisql-sql-expressions-ml-980820199.md)
 - `minisql/sql/types.ml` as `types` → [src/minisql/sql/types.ml](File-src-minisql-sql-types-ml-1842329761.md)
 - `minisql/sql/values.ml` as `values` → [src/minisql/sql/values.ml](File-src-minisql-sql-values-ml-1302895578.md)
-- `std/concurrent/thread_pool.ml` as `thread_pool` → `../../MiniLangCompilerML/std/concurrent/thread_pool.ml` — external dependency
+- `std/concurrent/thread_pool.ml` as `thread_pool` → `../MiniLangCompilerML/std/concurrent/thread_pool.ml` — external dependency
 
 ## Declarations
 

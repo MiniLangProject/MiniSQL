@@ -14,8 +14,8 @@ Reachable from entry: **yes**
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/transaction/wal.ml` as `wal` → [src/minisql/transaction/wal.ml](File-src-minisql-transaction-wal-ml-860713478.md)
-- `std/ds/hashmap.ml` as `hashmap` → `../../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
-- `std/ds/list.ml` as `list` → `../../MiniLangCompilerML/std/ds/list.ml` — external dependency
+- `std/ds/hashmap.ml` as `hashmap` → `../MiniLangCompilerML/std/ds/hashmap.ml` — external dependency
+- `std/ds/list.ml` as `list` → `../MiniLangCompilerML/std/ds/list.ml` — external dependency
 
 ## Declarations
 

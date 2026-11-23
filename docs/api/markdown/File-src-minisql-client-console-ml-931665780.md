@@ -16,7 +16,7 @@ Reachable from entry: **yes**
 - `minisql/common/uuid.ml` as `uuid` → [src/minisql/common/uuid.ml](File-src-minisql-common-uuid-ml-1458519464.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/protocol/constants.ml` as `constants` → [src/minisql/protocol/constants.ml](File-src-minisql-protocol-constants-ml-2117523449.md)
-- `std/console.ml` as `console_api` → `../../MiniLangCompilerML/std/console.ml` — external dependency
+- `std/console.ml` as `console_api` → `../MiniLangCompilerML/std/console.ml` — external dependency
 
 ## Declarations
 

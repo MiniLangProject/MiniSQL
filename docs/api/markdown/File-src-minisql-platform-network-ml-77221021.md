@@ -11,7 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
-- `std/time.ml` as `time_api` → `../../MiniLangCompilerML/std/time.ml` — external dependency
+- `std/time.ml` as `time_api` → `../MiniLangCompilerML/std/time.ml` — external dependency
 
 ## Declarations
 
