@@ -1,5 +1,9 @@
 # Slotted-page payload format v1
 
+> Archived unaligned payload contract. Current tables use
+> [slotted-page payload v2](slotted-page-v2.md), selected by database/table
+> format 2 even though the common page-header version remains 1.
+
 The common MiniSQL page header occupies bytes 0-63. Slots begin at byte 64 and are 8 bytes:
 
 | Relative offset | Size | Field |

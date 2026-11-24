@@ -235,23 +235,23 @@
         },
         "databaseFormatVersion": {
           "type": "integer",
-          "minimum": 1
+          "const": 2
         },
         "tableFileFormatVersion": {
           "type": "integer",
-          "minimum": 1
+          "const": 2
         },
         "indexFileFormatVersion": {
           "type": "integer",
-          "minimum": 1
+          "const": 2
         },
         "walFormatVersion": {
           "type": "integer",
-          "minimum": 1
+          "const": 1
         },
         "rowFormatVersion": {
           "type": "integer",
-          "minimum": 1
+          "const": 2
         }
       }
     },

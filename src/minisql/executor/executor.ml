@@ -33,6 +33,7 @@ import minisql.sql.parser as parser
 import minisql.sql.types as types
 import minisql.sql.values as values
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.transaction as transaction
 import std.ds.list as list
@@ -3811,7 +3812,7 @@ end function
 function analyzeTable(engine, state, table)
   populationRows = scan.countTableRowsCached(engine.database.path, table, void, engine.database.readCache)
   rows = scan.sampleTableRowsCached(engine.database.path, table, populationRows, ANALYZE_SAMPLE_ROWS, engine.database.readCache)
-  tableFile = paged_file.open(catalog.tableFilePath(engine.database.path, table.tableId))
+  tableFile = table_header.open(catalog.tableFilePath(engine.database.path, table.tableId))
   pageCount = tableFile.pageCount
   paged_file.close(tableFile)
   return statistics.replaceTable(state, statistics.analyzeSampleWithGroups(table, populationRows, rows, pageCount, analyzeColumnGroups(engine, table)))

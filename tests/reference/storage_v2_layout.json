@@ -1,0 +1,20 @@
+{
+  "versions": {"database": 2, "table": 2, "index": 2, "row": 2, "overflow": 2, "wal": 1},
+  "floating": [
+    {"value": "0x0p+0", "littleEndian": "0000000000000000"},
+    {"value": "-0x0p+0", "littleEndian": "0000000000000080"},
+    {"value": "0x1p-1074", "littleEndian": "0100000000000000"},
+    {"value": "0x1p-1022", "littleEndian": "0000000000001000"},
+    {"value": "0x1.999999999999ap-4", "littleEndian": "9a9999999999b93f"},
+    {"value": "0x1.fffffffffffffp+1023", "littleEndian": "ffffffffffffef7f"}
+  ],
+  "integerKeys": [
+    {"value": -9223372036854775808, "hex": "4d534b02030000000000000080"},
+    {"value": -1, "hex": "4d534b0203ffffffffffffffff"},
+    {"value": 255, "hex": "4d534b0203ff00000000000000"},
+    {"value": 256, "hex": "4d534b02030001000000000000"},
+    {"value": 9223372036854775807, "hex": "4d534b0203ffffffffffffff7f"}
+  ],
+  "overflowPointer": "4d534f50020000007b00000000000000030000000000000004030201000000000807060500000000d4c3b2a1274af41d",
+  "row": "4d535257020001000300010018000000000000000000000004000000300008000a00000038000400010000003c00010001000000000000004e696c7301000000"
+}

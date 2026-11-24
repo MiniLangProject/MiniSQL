@@ -7,12 +7,14 @@ package minisql.storage.btree
 
 import minisql.common.byte_ops as byte_ops
 import minisql.common.endian as endian
+import minisql.common.format_version as format_version
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.superblock as superblock
 import std.ds.list as list
 
-/// Persistent B+ tree v1.
+/// Persistent B+ tree v2. SQL keys use typed little-endian components; raw
+/// keys retain byte ordering and leaf values always retain byte ordering.
 
 const INVALID_ARGUMENT = 9001
 /// Defines the unsupported format constant used by the minisql storage btree module.
@@ -27,7 +29,7 @@ const OBJECT_EXISTS = 9013
 const OBJECT_NOT_FOUND = 9014
 
 /// Defines the format version constant used by the minisql storage btree module.
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = format_version.INDEX
 /// Defines the meta page a constant used by the minisql storage btree module.
 const META_PAGE_A = 0
 /// Defines the meta page b constant used by the minisql storage btree module.
@@ -183,13 +185,169 @@ function bytesEqual(left, right)
   return true
 end function
 
-/// Compares the keys.
-/// Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
-/// @param left left value consumed by this operation.
-/// @param right right value consumed by this operation.
+/// Returns the reserved SQL-key family marker and its byte-sized version.
+/// Raw B+ tree clients may use any key outside the reserved ASCII MSK prefix.
+function sqlKeyPrefix()
+  return bytes([77, 83, 75, FORMAT_VERSION])
+end function
+
+/// Identifies typed keys without interpreting arbitrary raw B+ tree bytes.
+/// An unsupported version inside the reserved family is never read as raw.
+/// @param encoded Encoded key bytes.
+function isSqlKey(encoded)
+  if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "isSqlKey", "key must be bytes") end if
+  if len(encoded) < 3 then return false end if
+  if encoded[0] != 77 or encoded[1] != 83 or encoded[2] != 75 then return false end if
+  if len(encoded) < 4 or encoded[3] != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "isSqlKey", "unsupported SQL key version") end if
+  return true
+end function
+
+/// Validates one self-delimiting component and returns the next byte offset.
+/// No slices or temporary SQL values are allocated on the comparator path.
+/// @param encoded Encoded SQL key.
+/// @param cursor Offset of the component tag.
+function sqlPartEnd(encoded, cursor)
+  if cursor >= len(encoded) then return fail(CORRUPT_DATA, "sqlPartEnd", "missing SQL key component") end if
+  tag = encoded[cursor]
+  cursor = cursor + 1
+  if tag == 1 then return cursor end if
+  if tag == 2 then
+    if cursor >= len(encoded) or encoded[cursor] > 1 then return fail(CORRUPT_DATA, "sqlPartEnd", "invalid Boolean SQL key component") end if
+    return cursor + 1
+  end if
+  if tag == 3 or tag == 4 then
+    if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, "sqlPartEnd", "truncated numeric SQL key component") end if
+    if tag == 4 and (endian.readU32LE(encoded, cursor + 4) & 2146435072) == 2146435072 then return fail(CORRUPT_DATA, "sqlPartEnd", "non-finite floating SQL key component") end if
+    return cursor + 8
+  end if
+  if tag != 5 and tag != 6 then return fail(CORRUPT_DATA, "sqlPartEnd", "unknown SQL key component tag") end if
+  while cursor < len(encoded)
+    if encoded[cursor] == 0 then
+      if cursor + 1 >= len(encoded) then return fail(CORRUPT_DATA, "sqlPartEnd", "truncated SQL key escape") end if
+      escaped = encoded[cursor + 1]
+      if escaped == 0 then return cursor + 2 end if
+      if escaped != 255 then return fail(CORRUPT_DATA, "sqlPartEnd", "invalid SQL key escape") end if
+      cursor = cursor + 2
+    else
+      cursor = cursor + 1
+    end if
+  end while
+  return fail(CORRUPT_DATA, "sqlPartEnd", "unterminated SQL key component")
+end function
+
+/// Validates the complete typed representation at storage and lookup boundaries.
+/// @param encoded Raw or SQL key bytes.
+function validateKey(encoded)
+  if typeof(encoded) != "bytes" then return fail(INVALID_ARGUMENT, "validateKey", "key must be bytes") end if
+  if not isSqlKey(encoded) then return true end if
+  if len(encoded) == 4 then return fail(CORRUPT_DATA, "validateKey", "SQL key has no components") end if
+  cursor = 4
+  while cursor < len(encoded)
+    cursor = sqlPartEnd(encoded, cursor)
+  end while
+  return true
+end function
+
+/// Compares two same-tag numeric components directly from their LE words.
+/// Signed integers compare signed high words then unsigned low words. Finite
+/// binary64 values compare magnitude words, reversed for negatives; both zero
+/// signs compare equal. This avoids a lossy scalar conversion for INT64 limits.
+/// @param left Left key.
+/// @param leftOffset Left numeric payload offset.
+/// @param right Right key.
+/// @param rightOffset Right numeric payload offset.
+/// @param floating Whether the payload is finite IEEE-754 binary64.
+function compareNumericPart(left, leftOffset, right, rightOffset, floating)
+  leftLow = endian.readU32LE(left, leftOffset)
+  rightLow = endian.readU32LE(right, rightOffset)
+  leftHigh = endian.readU32LE(left, leftOffset + 4)
+  rightHigh = endian.readU32LE(right, rightOffset + 4)
+  if not floating then
+    if leftHigh >= 2147483648 then leftHigh = leftHigh - 4294967296 end if
+    if rightHigh >= 2147483648 then rightHigh = rightHigh - 4294967296 end if
+    if leftHigh < rightHigh then return -1 end if
+    if leftHigh > rightHigh then return 1 end if
+    if leftLow < rightLow then return -1 end if
+    if leftLow > rightLow then return 1 end if
+    return 0
+  end if
+  leftNegative = leftHigh >= 2147483648
+  rightNegative = rightHigh >= 2147483648
+  leftMagnitude = leftHigh & 2147483647
+  rightMagnitude = rightHigh & 2147483647
+  if leftMagnitude == 0 and leftLow == 0 and rightMagnitude == 0 and rightLow == 0 then return 0 end if
+  if leftNegative != rightNegative then
+    if leftNegative then return -1 end if
+    return 1
+  end if
+  direction = 1
+  if leftNegative then direction = -1 end if
+  if leftMagnitude < rightMagnitude then return 0 - direction end if
+  if leftMagnitude > rightMagnitude then return direction end if
+  if leftLow < rightLow then return 0 - direction end if
+  if leftLow > rightLow then return direction end if
+  return 0
+end function
+
+/// Compares already-validated escaped byte components without allocating slices.
+/// The 00 FF escape and 00 00 terminator preserve bytewise text/binary ordering.
+/// @param left Left key.
+/// @param leftStart Left component payload offset.
+/// @param leftEnd Offset after the left component.
+/// @param right Right key.
+/// @param rightStart Right component payload offset.
+/// @param rightEnd Offset after the right component.
+function compareByteParts(left, leftStart, leftEnd, right, rightStart, rightEnd)
+  while leftStart < leftEnd and rightStart < rightEnd
+    if left[leftStart] < right[rightStart] then return -1 end if
+    if left[leftStart] > right[rightStart] then return 1 end if
+    leftStart = leftStart + 1
+    rightStart = rightStart + 1
+  end while
+  if leftStart < leftEnd then return 1 end if
+  if rightStart < rightEnd then return -1 end if
+  return 0
+end function
+
+/// Compares SQL components semantically while preserving the raw-key API.
+/// A component prefix sorts before its extensions. Raw keys precede typed keys
+/// in mixed trees so the ordering remains transitive across the two domains.
+/// @param left Left raw or typed key.
+/// @param right Right raw or typed key.
 function compareKeys(left, right)
   if typeof(left) != "bytes" or typeof(right) != "bytes" then return fail(INVALID_ARGUMENT, "compareKeys", "keys must be bytes") end if
-  return byte_ops.compareLexicographic(left, right)
+  leftSql = isSqlKey(left)
+  rightSql = isSqlKey(right)
+  if not leftSql and not rightSql then return byte_ops.compareLexicographic(left, right) end if
+  if leftSql != rightSql then
+    if leftSql then return 1 end if
+    return -1
+  end if
+  if len(left) == 4 or len(right) == 4 then return fail(CORRUPT_DATA, "compareKeys", "SQL key has no components") end if
+  leftCursor = 4
+  rightCursor = 4
+  while leftCursor < len(left) and rightCursor < len(right)
+    leftEnd = sqlPartEnd(left, leftCursor)
+    rightEnd = sqlPartEnd(right, rightCursor)
+    leftTag = left[leftCursor]
+    rightTag = right[rightCursor]
+    if leftTag < rightTag then return -1 end if
+    if leftTag > rightTag then return 1 end if
+    comparison = 0
+    if leftTag == 2 then
+      comparison = left[leftCursor + 1] - right[rightCursor + 1]
+    else if leftTag == 3 or leftTag == 4 then
+      comparison = compareNumericPart(left, leftCursor + 1, right, rightCursor + 1, leftTag == 4)
+    else if leftTag == 5 or leftTag == 6 then
+      comparison = compareByteParts(left, leftCursor + 1, leftEnd, right, rightCursor + 1, rightEnd)
+    end if
+    if comparison != 0 then return comparison end if
+    leftCursor = leftEnd
+    rightCursor = rightEnd
+  end while
+  if leftCursor < len(left) then return 1 end if
+  if rightCursor < len(right) then return -1 end if
+  return 0
 end function
 
 /// Compares the entries.
@@ -200,7 +358,8 @@ function compareEntries(left, right)
   if left is not BTreeEntry or right is not BTreeEntry then return fail(INVALID_ARGUMENT, "compareEntries", "values must be BTreeEntry") end if
   keyResult = compareKeys(left.key, right.key)
   if keyResult != 0 then return keyResult end if
-  return compareKeys(left.value, right.value)
+  // Values are opaque row references / INCLUDE payloads, never typed keys.
+  return byte_ops.compareLexicographic(left.value, right.value)
 end function
 
 /// Performs the entry operation for this module.
@@ -210,6 +369,7 @@ end function
 function entry(key, value)
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "entry", "key must contain 1..256 bytes") end if
   if typeof(value) != "bytes" or len(value) == 0 or len(value) > MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "entry", "value must contain 1..3584 bytes") end if
+  validateKey(key)
   return BTreeEntry(bytes(key), bytes(value))
 end function
 
@@ -650,6 +810,7 @@ function decodeInternalWithContext(tree, pageNumber, readContext)
     if child < 2 or child >= tree.pagedFile.pageCount then return fail(CORRUPT_DATA, "decodeInternal", "child is outside file") end if
     if cursor > len(encoded) - 12 - keyLength then return fail(CORRUPT_DATA, "decodeInternal", "internal key is truncated") end if
     key = slice(encoded, cursor + 12, keyLength)
+    validateKey(key)
     if previous is not void then
       separatorOrder = compareKeys(previous, key)
       if separatorOrder > 0 or (separatorOrder == 0 and tree.meta.unique) then return fail(CORRUPT_DATA, "decodeInternal", "separator keys violate index ordering") end if
@@ -984,6 +1145,7 @@ function findWithContext(tree, key, readContext)
   if typeof(readContext) == "error" then return readContext end if
   validateOpen(tree, "find")
   if typeof(key) != "bytes" or len(key) == 0 or len(key) > MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "find", "key must contain 1..256 bytes") end if
+  validateKey(key)
   if tree.meta.entryCount == 0 then return [] end if
   result = []
   leaf = locateLeafWithContext(tree, key, readContext)
@@ -1040,6 +1202,8 @@ function rangeWithContext(tree, lower, lowerInclusive, upper, upperInclusive, ma
   validateOpen(tree, "range")
   if lower is not void and typeof(lower) != "bytes" then return fail(INVALID_ARGUMENT, "range", "lower must be bytes or void") end if
   if upper is not void and typeof(upper) != "bytes" then return fail(INVALID_ARGUMENT, "range", "upper must be bytes or void") end if
+  if lower is not void then validateKey(lower) end if
+  if upper is not void then validateKey(upper) end if
   if typeof(lowerInclusive) != "bool" or typeof(upperInclusive) != "bool" then return fail(INVALID_ARGUMENT, "range", "inclusive flags must be bool") end if
   if typeof(maximum) != "int" or maximum < 0 then return fail(INVALID_ARGUMENT, "range", "maximum must be non-negative") end if
   if tree.meta.entryCount == 0 then return [] end if

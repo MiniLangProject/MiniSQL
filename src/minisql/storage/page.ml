@@ -40,6 +40,8 @@ const TYPE_BTREE_INTERNAL = 3
 const TYPE_BTREE_LEAF = 4
 /// Defines the type catalog constant used by the minisql storage page module.
 const TYPE_CATALOG = 5
+/// Identifies the immutable page-zero identity header of a version-two user table.
+const TYPE_TABLE_META = 6
 /// Defines the type generic constant used by the minisql storage page module.
 const TYPE_GENERIC = 255
 

@@ -34,7 +34,7 @@ function main(args)
   testkit.equal(state, version.productVersion(), "1.1.1", "release semantic version")
   testkit.equal(state, version.milestone(), "M50", "release milestone freeze")
   testkit.equal(state, version.WIRE_PROTOCOL_VERSION, 1, "wire protocol remains v1")
-  testkit.equal(state, version.DATABASE_FORMAT_VERSION, 1, "database format remains v1")
+  testkit.equal(state, version.DATABASE_FORMAT_VERSION, 2, "database format v2")
 
   for each pageSize in [4096, 8192, 16384, 32768]
     settings = config_model.defaultDatabaseSettings(pageSize)

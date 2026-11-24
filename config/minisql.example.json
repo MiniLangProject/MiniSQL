@@ -49,11 +49,11 @@
     "walSegmentBytes": 16777216,
     "textEncoding": "utf-8",
     "defaultCollation": "binary",
-    "databaseFormatVersion": 1,
-    "tableFileFormatVersion": 1,
-    "indexFileFormatVersion": 1,
+    "databaseFormatVersion": 2,
+    "tableFileFormatVersion": 2,
+    "indexFileFormatVersion": 2,
     "walFormatVersion": 1,
-    "rowFormatVersion": 1
+    "rowFormatVersion": 2
   },
   "safety": {
     "allowRemoteWithoutAuthentication": false,

@@ -7,6 +7,7 @@ package minisql.config.validation
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.limits as limits
+import minisql.common.format_version as format_version
 import minisql.config.model as model
 
 /// Defines the invalid configuration constant used by the minisql config validation module.
@@ -80,8 +81,8 @@ function validate(config)
   if config.databaseDefaults.defaultCollation != "binary" then return fail("only binary collation is supported in M8") end if
   positive(config.databaseDefaults.walSegmentBytes, "databaseDefaults.walSegmentBytes")
   if config.databaseDefaults.walSegmentBytes < 4096 then return fail("databaseDefaults.walSegmentBytes must be at least 4096") end if
-  if config.databaseDefaults.databaseFormatVersion != 1 or config.databaseDefaults.tableFileFormatVersion != 1 or config.databaseDefaults.indexFileFormatVersion != 1 or config.databaseDefaults.walFormatVersion != 1 or config.databaseDefaults.rowFormatVersion != 1 then
-    return fail("all persisted format versions must be 1")
+  if config.databaseDefaults.databaseFormatVersion != format_version.DATABASE or config.databaseDefaults.tableFileFormatVersion != format_version.TABLE or config.databaseDefaults.indexFileFormatVersion != format_version.INDEX or config.databaseDefaults.walFormatVersion != format_version.WAL or config.databaseDefaults.rowFormatVersion != format_version.ROW then
+    return fail("database/table/index/row format versions must be 2 and WAL framing version must be 1")
   end if
   if config.runtime.logLevel != "debug" and config.runtime.logLevel != "info" and config.runtime.logLevel != "warning" and config.runtime.logLevel != "warn" and config.runtime.logLevel != "error" then return fail("runtime.logLevel must be debug, info, warning or error") end if
   if typeof(config.logging.stdoutEnabled) != "bool" or typeof(config.logging.fileEnabled) != "bool" then return fail("logging destination flags must be boolean") end if

@@ -14,6 +14,7 @@ import minisql.config.model as config_model
 import minisql.platform.file as file_api
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.superblock as superblock
 import minisql.transaction.checkpoint as checkpoint
 import minisql.transaction.wal as wal
@@ -465,7 +466,7 @@ end function
 function validateTableFiles(path, databaseMetadata, catalogState)
   for each table in catalogState.tables
     tablePath = tableFilePath(path, table.tableId)
-    opened = try(paged_file.open(tablePath))
+    opened = try(table_header.open(tablePath))
     if typeof(opened) == "error" then return fail(CORRUPT_DATA, "validateTableFiles", "table file is missing or unreadable for table " + table.name) end if
     valid = opened.fileType == superblock.FILE_TYPE_TABLE and opened.fileId == table.tableId and opened.pageSize == databaseMetadata.pageSize and bytesEqual(opened.databaseId, databaseMetadata.databaseId)
     paged_file.close(opened)
@@ -643,7 +644,7 @@ function createTable(database, name, definitions)
   physicalPath = tableFilePath(database.path, tableId)
   if file_api.pathExists(physicalPath) then return fail(OBJECT_EXISTS, "createTable", "table file already exists") end if
 
-  physical = paged_file.create(physicalPath, database.metadata.pageSize, superblock.FILE_TYPE_TABLE, tableId, database.metadata.databaseId)
+  physical = table_header.create(physicalPath, database.metadata.pageSize, tableId, database.metadata.databaseId)
   paged_file.close(physical)
 
   oldTables = database.catalog.tables

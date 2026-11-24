@@ -7,6 +7,13 @@ MiniSQL is a transactional relational database management system written in
 [MiniLang](https://github.com/MiniLangProject/MiniLangCompilerPy) and compiled
 to native Windows x64 PE or Linux x64 ELF applications.
 
+**Current development tree: storage format 2.** This unreleased change stores
+REAL/DOUBLE as binary64LE, aligns rows, reserves table page 0 for metadata, uses
+U32 overflow lengths and little-endian numeric index keys. Existing format-1
+databases are rejected and must be recreated. See the
+[storage-v2 specification](docs/formats/storage-v2.md) and
+[compatibility rules](docs/formats/FORMAT_COMPATIBILITY.md).
+
 Browse the committed [GitHub-friendly API documentation](docs/api/markdown/README.md),
 or download the repository and open the [offline HTML reference](docs/api/html/index.html).
 Both documentation trees are generated directly from the MiniLang sources with
@@ -28,13 +35,20 @@ The strict MiniDoc configuration rejects missing documentation; use `--check`
 to validate it without rewriting the committed reference.
 
 The frozen M0-M50 plan is complete. The accepted 1.0 baseline revision is
-`M48-M50R3`; MiniSQL 1.1.1 retains database and wire format version 1. The
-current tree was revalidated on 2026-09-02: Windows passed all
+`M48-M50R3`; released MiniSQL 1.1.1 retained database and wire format version 1.
+That baseline was revalidated on 2026-09-02: Windows passed all
 **106/106 cumulative phases**, including crash recovery, genuinely parallel
 same-database reads, concurrent clients, TLS integration, replication, fuzzing,
 soak tests, and deterministic release packaging; the focused Linux gate passed
 all storage, client/server, concurrent scheduling, authentication, and native
 TLS checks under WSL2.
+
+Those historical results do not certify the new storage-v2 development changes.
+Their focused binary-format gate is `./test.ps1 -StorageV2 -Target linux-x64`
+or `./test.ps1 -StorageV2 -Target windows-x64` on the corresponding host. The
+same five new format tests are included in the cumulative row/storage phase.
+The [storage-v2 validation report](docs/acceptance/STORAGE_V2_2026-11-24.md)
+records the focused native results and the platform limits of this development check.
 
 > MiniSQL is an independently developed database engine. Version 1.0 has a
 > substantial project-specific test suite, but it has not received an

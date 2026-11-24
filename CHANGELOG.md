@@ -6,6 +6,21 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased
 
+- introduced incompatible database/storage format 2; new binaries reject
+  format-1 databases instead of attempting an implicit conversion;
+- store REAL and DOUBLE as exact eight-byte IEEE-754 binary64 little-endian
+  values, preserving finite bit patterns including signed zero and subnormals;
+- align row starts and lengths to eight bytes, align fixed-width fields to
+  their natural widths, and validate zero padding during decoding;
+- reserve every user table's logical page 0 for a checksummed `MSTB` header,
+  with heap and overflow pages starting at page 1;
+- encode overflow lengths as U32, retain aligned U64 identifiers in the 48-byte
+  pointer, and protect the pointer with an additional CRC-32C;
+- encode numeric SQL index components in little-endian and compare typed keys
+  numerically, including floating-point range and covering-index scans;
+- add byte-golden, malformed-input, sorting, reopening and compatibility tests
+  through `test.ps1 -StorageV2` and the cumulative acceptance launcher.
+
 ## 1.1.1 — 2026-10-31
 
 - added bounded x64 byte-hash and lexicographic-comparison primitives for long

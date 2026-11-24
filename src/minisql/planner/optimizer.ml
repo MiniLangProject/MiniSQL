@@ -406,7 +406,7 @@ function indexCoversBound(bound, source, index, predicate)
   for each columnIndex in index.columnIndexes + index.includedColumnIndexes
     if columnIndex < 0 or columnIndex >= len(source.table.columns) then return false end if
     typeCode = source.table.columns[columnIndex].typeCode
-    decodable = typeCode == types.SqlTypeKind.Boolean or types.isIntegralKind(typeCode) or typeCode == types.SqlTypeKind.Decimal or typeCode == types.SqlTypeKind.Date or typeCode == types.SqlTypeKind.Time or typeCode == types.SqlTypeKind.Timestamp or types.isTextKind(typeCode) or types.isBinaryKind(typeCode)
+    decodable = typeCode == types.SqlTypeKind.Boolean or types.isIntegralKind(typeCode) or typeCode == types.SqlTypeKind.Real or typeCode == types.SqlTypeKind.Double or typeCode == types.SqlTypeKind.Decimal or typeCode == types.SqlTypeKind.Date or typeCode == types.SqlTypeKind.Time or typeCode == types.SqlTypeKind.Timestamp or types.isTextKind(typeCode) or types.isBinaryKind(typeCode)
     if not decodable then return false end if
   end for
   if not expressionCoveredByIndex(predicate, source, index) or not expressionCoveredByIndex(bound.havingExpression, source, index) then return false end if

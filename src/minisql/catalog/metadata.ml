@@ -6,6 +6,7 @@ package minisql.catalog.metadata
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import minisql.common.format_version as format_version
 import minisql.storage.checksum as checksum
 
 /// Versioned catalog metadata codecs. Decoders validate kind, version, bounds,
@@ -17,7 +18,7 @@ const UNSUPPORTED_FORMAT = 9003
 const CORRUPT_DATA = 9004
 
 /// Defines the database format version constant used by the minisql catalog metadata module.
-const DATABASE_FORMAT_VERSION = 1
+const DATABASE_FORMAT_VERSION = format_version.DATABASE
 /// Defines the catalog format version constant used by the minisql catalog metadata module.
 const CATALOG_FORMAT_VERSION = 1
 /// Defines the database kind constant used by the minisql catalog metadata module.
@@ -199,8 +200,8 @@ function createDatabase(name, databaseId, pageSize, walSegmentBytes, databaseFor
   validateDatabaseId(databaseId, "createDatabase")
   if typeof(pageSize) != "int" or pageSize < 4096 or pageSize > 32768 then return fail(INVALID_ARGUMENT, "createDatabase", "invalid pageSize") end if
   if typeof(walSegmentBytes) != "int" or walSegmentBytes < 4096 then return fail(INVALID_ARGUMENT, "createDatabase", "invalid walSegmentBytes") end if
-  if databaseFormatVersion != 1 or tableFileFormatVersion != 1 or indexFileFormatVersion != 1 or walFormatVersion != 1 or rowFormatVersion != 1 then
-    return fail(UNSUPPORTED_FORMAT, "createDatabase", "only format version 1 is supported")
+  if databaseFormatVersion != format_version.DATABASE or tableFileFormatVersion != format_version.TABLE or indexFileFormatVersion != format_version.INDEX or walFormatVersion != format_version.WAL or rowFormatVersion != format_version.ROW then
+    return fail(UNSUPPORTED_FORMAT, "createDatabase", "storage format v2 is required; existing v1 databases must be recreated")
   end if
   return DatabaseMetadata(name, bytes(databaseId), pageSize, walSegmentBytes, databaseFormatVersion, tableFileFormatVersion, indexFileFormatVersion, walFormatVersion, rowFormatVersion, 3, 1, 0)
 end function
@@ -252,10 +253,11 @@ end function
 /// @param encoded encoded value consumed by this operation.
 function decodeDatabase(encoded)
   envelope = checksum.decodeEnvelope(encoded, databaseMagic(), DATABASE_FORMAT_VERSION, DATABASE_KIND)
+  if envelope.flags != 0 then return fail(UNSUPPORTED_FORMAT, "decodeDatabase", "unsupported metadata flags") end if
   payload = envelope.payload
   if len(payload) < 80 then return fail(CORRUPT_DATA, "decodeDatabase", "database metadata payload too short") end if
   if endian.readU16LE(payload, 18) != 1 or endian.readU16LE(payload, 20) != 1 then return fail(UNSUPPORTED_FORMAT, "decodeDatabase", "unsupported encoding or collation") end if
-  if endian.readU32LE(payload, 64) != 0 or endian.readU32LE(payload, 68) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeDatabase", "reserved fields are non-zero") end if
+  if endian.readU32LE(payload, 64) != 0 or endian.readU32LE(payload, 68) != 0 or endian.readU32LE(payload, 72) != 0 or endian.readU32LE(payload, 76) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeDatabase", "reserved fields are non-zero") end if
   nameLength = endian.readU16LE(payload, 22)
   if len(payload) != 80 + nameLength then return fail(CORRUPT_DATA, "decodeDatabase", "name length mismatch") end if
   metadata = createDatabase(

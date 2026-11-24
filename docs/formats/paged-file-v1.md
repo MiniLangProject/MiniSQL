@@ -1,5 +1,11 @@
 # Paged file format v1
 
+Storage generation 2 retains this superblock layout. The offsets below describe
+plaintext pages. With feature bit 0 set, physical page records have stride
+`pageSize + 28`; see [encryption-envelope-v1.md](encryption-envelope-v1.md).
+Current user-table and index payloads follow [table v2](table-file-v2.md) and
+[B+ tree v2](btree-v2.md), independently of the superblock version.
+
 A paged file has a fixed 8192-byte metadata region independent of its persisted page
 size.
 

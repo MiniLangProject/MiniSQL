@@ -19,6 +19,7 @@ import minisql.storage.buffer_pool as buffer_pool
 import minisql.storage.heap_file as heap_file
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.row_codec as row_codec
 import minisql.storage.slotted_page as slotted_page
 import minisql.transaction.transaction as transaction
@@ -217,7 +218,7 @@ function openCached(databasePath, table, pageTransaction, readCache)
   if not metadata.isTableMetadata(table) then return fail(INVALID_ARGUMENT, "open", "table must be TableMetadata") end if
   if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.open") end if
   tablePath = catalog.tableFilePath(databasePath, table.tableId)
-  file = try(paged_file.openReadOnly(tablePath))
+  file = try(table_header.openReadOnly(tablePath))
   if typeof(file) == "error" then return fail(file.code, "open", "cannot open table file " + tablePath + ": " + file.message) end if
   state = try(schema_history.loadOrCreate(databasePath, file.databaseId))
   if typeof(state) == "error" then
@@ -243,7 +244,7 @@ function openCachedWithSchema(databasePath, table, pageTransaction, readCache, s
   if not schema_history.isSchemaState(state) then return fail(INVALID_ARGUMENT, "openWithSchema", "state must be SchemaState") end if
   if pageTransaction is not void then transaction.validateTransaction(pageTransaction, "executor.scan.openWithSchema") end if
   tablePath = catalog.tableFilePath(databasePath, table.tableId)
-  file = try(paged_file.openReadOnly(tablePath))
+  file = try(table_header.openReadOnly(tablePath))
   if typeof(file) == "error" then return fail(file.code, "openWithSchema", "cannot open table file " + tablePath + ": " + file.message) end if
   tableSchemaValue = schema_history.findTableSchema(state, table.tableId)
   generatedColumns = schema_history.generatedForTable(state, table.tableId)
@@ -329,7 +330,7 @@ end function
 /// @param pageNumber pageNumber value consumed by this operation.
 function visiblePage(reader, pageNumber)
   validateOpen(reader, "visiblePage")
-  if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber >= reader.file.pageCount then return fail(INVALID_ARGUMENT, "visiblePage", "page number is outside table") end if
+  if typeof(pageNumber) != "int" or pageNumber < table_header.FIRST_DATA_PAGE or pageNumber >= reader.file.pageCount then return fail(INVALID_ARGUMENT, "visiblePage", "page number is outside table data pages") end if
   if reader.pageTransaction is not void then
     privatePage = transaction.readPrivatePage(reader.pageTransaction, reader.table.tableId, pageNumber)
     if privatePage is not void then return privatePage end if
@@ -685,7 +686,7 @@ function allRangeColumns(reader, offset, limit, requiredColumns)
   if typeof(limit) != "int" or limit < -1 then return fail(INVALID_ARGUMENT, "allRange", "limit must be -1 or non-negative") end if
   if requiredColumns is not void and (typeof(requiredColumns) != "array" or len(requiredColumns) != len(reader.table.columns)) then return fail(INVALID_ARGUMENT, "allRange", "required column mask must match the table") end if
   if limit == 0 then return [] end if
-  if reader.file.pageCount == 0 then return [] end if
+  if reader.file.pageCount == table_header.FIRST_DATA_PAGE then return [] end if
   // A growable buffer keeps appends amortized O(1) while allowing each page to
   // be read and checksum-verified only once. The former exact pre-count pass
   // doubled I/O and CRC work for every sequential SELECT.
@@ -743,7 +744,7 @@ end function
 function readReference(reader, reference)
   validateOpen(reader, "readReference")
   if reference is not RowReference then return fail(INVALID_ARGUMENT, "readReference", "reference must be RowReference") end if
-  if reference.pageNumber < 0 or reference.pageNumber >= reader.file.pageCount then return void end if
+  if reference.pageNumber < table_header.FIRST_DATA_PAGE or reference.pageNumber >= reader.file.pageCount then return void end if
   pageBytes = visiblePage(reader, reference.pageNumber)
   header = page.verify(pageBytes)
   if header.pageType != page.TYPE_HEAP then return fail(CORRUPT_DATA, "readReference", "table page has wrong type") end if

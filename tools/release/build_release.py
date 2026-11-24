@@ -94,7 +94,7 @@ def manifest(files: dict[str, bytes]) -> dict[str, object]:
         "product": "MiniSQL",
         "version": VERSION,
         "milestone": "M50",
-        "databaseFormatVersion": 1,
+        "databaseFormatVersion": 2,
         "wireProtocolVersion": 1,
         "platform": "windows-x64",
         "nativeTransports": ["Windows Schannel TLS 1.3/X.509"],

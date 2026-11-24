@@ -24,6 +24,7 @@ import json
 import os
 import re
 import socket
+import struct
 import subprocess
 import sys
 import time
@@ -748,7 +749,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 84,
+        "moduleCount": 87,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -886,8 +887,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 84:
-        raise AcceptanceFailure("Module catalog must contain exactly 84 source modules")
+    if not isinstance(modules, list) or len(modules) != 87:
+        raise AcceptanceFailure("Module catalog must contain exactly 87 source modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1021,7 +1022,7 @@ def validate_source_contracts() -> None:
             'const MILESTONE = "M50"',
             'const REVISION = "M48-M50R3"',
             "const WIRE_PROTOCOL_VERSION = 1",
-            "const DATABASE_FORMAT_VERSION = 1",
+            "const DATABASE_FORMAT_VERSION = format_version.DATABASE",
         ],
         "src/minisql/platform/network.ml": [
             "extern function send(s as ptr, buffer as ptr, count as i32, flags as i32) from \"ws2_32.dll\" returns i32",
@@ -1329,10 +1330,40 @@ def validate_platform_compare_cache_hygiene() -> None:
         base.clean_path(probe_root)
 
 
+def validate_storage_v2_vectors() -> None:
+    """Checks independent storage-v2 goldens with Python's numeric codecs and CRC reference."""
+    vectors = load_json(ROOT / "tests/reference/storage_v2_layout.json")
+    if vectors["versions"] != {"database": 2, "table": 2, "index": 2, "row": 2, "overflow": 2, "wal": 1}:
+        raise AcceptanceFailure("Storage-v2 version registry mismatch")
+    for item in vectors["floating"]:
+        if struct.pack("<d", float.fromhex(item["value"])).hex() != item["littleEndian"]:
+            raise AcceptanceFailure("IEEE-754 independent golden mismatch")
+    for item in vectors["integerKeys"]:
+        expected = b"MSK\x02\x03" + struct.pack("<q", item["value"])
+        if expected.hex() != item["hex"]:
+            raise AcceptanceFailure("Little-endian integer key golden mismatch")
+    pointer = bytearray(struct.pack("<4sHHQQIIQII", b"MSOP", 2, 0, 123, 3,
+                                    0x01020304, 0, 0x05060708, 0xA1B2C3D4, 0))
+    struct.pack_into("<I", pointer, 44, base.crc32c_python(pointer))
+    if pointer.hex() != vectors["overflowPointer"]:
+        raise AcceptanceFailure("U32 overflow pointer/CRC golden mismatch")
+    row = bytes.fromhex(vectors["row"])
+    if len(row) != 64 or struct.unpack_from("<H", row, 12)[0] != 24:
+        raise AcceptanceFailure("Aligned row golden header mismatch")
+    if struct.unpack_from("<q", row, 48)[0] != 1 or row[56:60] != b"Nils" or row[60:] != b"\x01\0\0\0":
+        raise AcceptanceFailure("Aligned row golden values mismatch")
+    defaults = load_json(ROOT / "config/minisql.example.json")["databaseDefaults"]
+    for name, expected in (("databaseFormatVersion", 2), ("tableFileFormatVersion", 2),
+                           ("indexFileFormatVersion", 2), ("rowFormatVersion", 2), ("walFormatVersion", 1)):
+        if defaults[name] != expected:
+            raise AcceptanceFailure(f"Storage-v2 configuration mismatch: {name}")
+
+
 def validate_reference_vectors() -> None:
     """Validates independent binary, parser and security reference vectors."""
     if PHASE_COUNT != 106:
         raise AcceptanceFailure("MiniSQL 1.1.1 phase count must remain 106")
+    validate_storage_v2_vectors()
     corpus_document = load_json(ROOT / "tests/fuzz/m49_sql_corpus.json")
     corpus = corpus_document.get("statements")
     if not isinstance(corpus, list) or len(corpus) < 32 or not all(isinstance(item, str) for item in corpus):
@@ -1357,7 +1388,7 @@ def validate_reference_vectors() -> None:
         raise AcceptanceFailure("MiniSQL 1.1.1 acceptance reference mismatch")
     upgrade = load_json(ROOT / "docs/release/upgrade-matrix.json")
     features = load_json(ROOT / "docs/release/feature-matrix.json")
-    if upgrade.get("targetVersion") != VERSION or upgrade.get("databaseFormatVersion") != 1:
+    if upgrade.get("targetVersion") != VERSION or upgrade.get("databaseFormatVersion") != 2:
         raise AcceptanceFailure("M50 upgrade matrix version mismatch")
     if features.get("version") != VERSION or features.get("wireProtocolVersion") != 1:
         raise AcceptanceFailure("M50 feature matrix version mismatch")
@@ -1853,6 +1884,18 @@ def package_results() -> Path:
     return archive
 
 
+def run_row_and_storage_v2(compiler: Path, verbose: bool) -> None:
+    """Runs the established row scenario and the five new storage-format regressions."""
+    base.run_m9_row(compiler, verbose)
+    result = base.run_command(
+        [sys.executable, str(ROOT / "tests/run_storage_v2.py"), "--compiler", str(compiler),
+         "--target", "windows-x64"],
+        log_name="storage-v2.run.log", verbose=verbose, timeout=3600.0,
+    )
+    if result.returncode != 0 or "MiniSQL storage v2 tests: SUCCESS" not in result.stdout:
+        raise AcceptanceFailure("Storage-v2 binary-format regression gate failed")
+
+
 def parse_args() -> argparse.Namespace:
     """Parses and returns the acceptance runner command-line arguments."""
     parser = argparse.ArgumentParser(description="Run the complete MiniSQL 1.1.1 M0-M50 test suite")
@@ -1870,7 +1913,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 84-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 87-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -1902,7 +1945,7 @@ def main() -> int:
             ("M7 process termination before commit", lambda: base.run_m7_crash_uncommitted(compiler,args.verbose)),
             ("M8 strict configuration loader and defaults", lambda: base.run_m8_config(compiler,args.verbose)),
             ("M8 database directory, catalog and manager", lambda: base.run_m8_catalog(compiler,args.verbose)),
-            ("M9 row format and SQL NULL codec", lambda: base.run_m9_row(compiler,args.verbose)),
+            ("M9 row codec and storage-v2 byte-format regressions", lambda: run_row_and_storage_v2(compiler,args.verbose)),
             ("M9 slotted pages and heap-file workload", lambda: base.run_m9_heap(compiler,args.verbose)),
             ("M10 overflow chains, replacement and reclamation", lambda: base.run_m10_overflow(compiler,args.verbose)),
             ("M10 71-module implementation smoke", lambda: base.run_m10_modules(compiler,args.verbose)),

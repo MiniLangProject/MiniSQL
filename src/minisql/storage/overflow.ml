@@ -7,11 +7,12 @@ package minisql.storage.overflow
 
 import minisql.common.crc32c as crc32c
 import minisql.common.endian as endian
+import minisql.common.format_version as format_version
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.row_codec as row_codec
 
-/// Overflow-chain format v1 for large TEXT/BLOB values. Every chain page is a
+/// Overflow-chain format v2 uses U32 lengths and independently checksummed pointers.
 
 const INVALID_ARGUMENT = 9001
 /// Defines the unsupported format constant used by the minisql storage overflow module.
@@ -20,9 +21,11 @@ const UNSUPPORTED_FORMAT = 9003
 const CORRUPT_DATA = 9004
 
 /// Defines the format version constant used by the minisql storage overflow module.
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = format_version.OVERFLOW
 /// Defines the pointer size constant used by the minisql storage overflow module.
 const POINTER_SIZE = 48
+/// Stores the pointer checksum after the whole-value checksum; zero during CRC calculation.
+const POINTER_CHECKSUM_OFFSET = 44
 /// Defines the chain header offset constant used by the minisql storage overflow module.
 const CHAIN_HEADER_OFFSET = 64
 /// Defines the chain header size constant used by the minisql storage overflow module.
@@ -144,10 +147,12 @@ function encodePointer(pointer)
   else
     endian.writeU64LE(output, 16, endian.uint64FromInt(checked.firstPage))
   end if
-  endian.writeU64LE(output, 24, endian.uint64FromInt(checked.totalLength))
+  endian.writeU32LE(output, 24, checked.totalLength)
+  endian.writeU32LE(output, 28, 0)
   endian.writeU64LE(output, 32, endian.uint64FromInt(checked.ownerId))
   endian.writeU32LE(output, 40, checked.valueChecksum)
-  endian.writeU32LE(output, 44, 0)
+  endian.writeU32LE(output, POINTER_CHECKSUM_OFFSET, 0)
+  endian.writeU32LE(output, POINTER_CHECKSUM_OFFSET, crc32c.compute(output))
   return output
 end function
 
@@ -167,14 +172,19 @@ end function
 function decodePointer(encoded)
   if typeof(encoded) != "bytes" or len(encoded) != POINTER_SIZE then return fail(CORRUPT_DATA, "decodePointer", "pointer must be 48 bytes") end if
   if not bytesEqual(slice(encoded, 0, 4), pointerMagic()) then return fail(UNSUPPORTED_FORMAT, "decodePointer", "pointer magic mismatch") end if
-  if endian.readU16LE(encoded, 4) != FORMAT_VERSION or endian.readU16LE(encoded, 6) != 0 or endian.readU32LE(encoded, 44) != 0 then return fail(UNSUPPORTED_FORMAT, "decodePointer", "unsupported pointer fields") end if
+  if endian.readU16LE(encoded, 4) != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decodePointer", "storage format v2 required; legacy overflow pointers are unsupported") end if
+  pointerBytes = bytes(encoded)
+  expectedChecksum = endian.readU32LE(pointerBytes, POINTER_CHECKSUM_OFFSET)
+  endian.writeU32LE(pointerBytes, POINTER_CHECKSUM_OFFSET, 0)
+  if crc32c.compute(pointerBytes) != expectedChecksum then return fail(CORRUPT_DATA, "decodePointer", "pointer checksum mismatch") end if
+  if endian.readU16LE(encoded, 6) != 0 or endian.readU32LE(encoded, 28) != 0 then return fail(UNSUPPORTED_FORMAT, "decodePointer", "reserved pointer fields are non-zero") end if
   firstWords = endian.readU64LE(encoded, 16)
   firstPage = -1
   if firstWords.high != endian.MAX_U32 or firstWords.low != endian.MAX_U32 then firstPage = decodeNative(firstWords, "decodePointer", "firstPage") end if
   return createPointer(
     decodeNative(endian.readU64LE(encoded, 8), "decodePointer", "fileId"),
     firstPage,
-    decodeNative(endian.readU64LE(encoded, 24), "decodePointer", "totalLength"),
+    endian.readU32LE(encoded, 24),
     decodeNative(endian.readU64LE(encoded, 32), "decodePointer", "ownerId"),
     endian.readU32LE(encoded, 40)
   )

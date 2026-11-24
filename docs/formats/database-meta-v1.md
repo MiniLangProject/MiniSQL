@@ -1,5 +1,9 @@
 # Database metadata format v1 envelope
 
+> Archived format-1 design note. The current unreleased engine requires
+> [database metadata v2](database-meta-v2.md); this historical sketch is not its
+> byte-level specification and does not imply legacy read or upgrade support.
+
 `db.meta` contains two fixed-capacity superblock slots. Each slot contains:
 
 - magic and metadata format version

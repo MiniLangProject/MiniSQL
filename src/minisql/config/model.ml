@@ -6,6 +6,8 @@ package minisql.config.model
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+import minisql.common.format_version as format_version
+
 /// Groups the paths config state and preserves the field relationships documented below.
 struct PathsConfig
   /// Stores the data root associated with this value.
@@ -243,7 +245,7 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param pageSize pageSize value consumed by this operation.
 function defaultDatabaseSettings(pageSize)
-  return DatabaseDefaults(pageSize, "crc32c", 16777216, "utf-8", "binary", 1, 1, 1, 1, 1)
+  return DatabaseDefaults(pageSize, "crc32c", 16777216, "utf-8", "binary", format_version.DATABASE, format_version.TABLE, format_version.INDEX, format_version.WAL, format_version.ROW)
 end function
 
 /// Implements default config for this module.

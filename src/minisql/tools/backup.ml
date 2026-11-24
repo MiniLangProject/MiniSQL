@@ -22,6 +22,7 @@ import minisql.server.database_manager as database_manager
 import minisql.storage.btree as btree
 import minisql.storage.checksum as checksum
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.transaction.wal as wal
 import minisql.transaction.checkpoint as checkpoint
 import std.crypto.aes_gcm as aes_gcm
@@ -400,7 +401,7 @@ function captureDatabase(database)
 
   for each table in database.catalogHandle.catalog.tables
     relativePath = "tables\\" + catalog.tableFileName(table.tableId)
-    tableFile = try(paged_file.open(catalog.tableFilePath(database.path, table.tableId)))
+    tableFile = try(table_header.open(catalog.tableFilePath(database.path, table.tableId)))
     if typeof(tableFile) == "error" then return tableFile end if
     image = try(paged_file.snapshotDurableBytes(tableFile, MAX_FILE_BYTES))
     closeResult = try(paged_file.close(tableFile))

@@ -1,5 +1,9 @@
 # B+ tree format v1
 
+> Archived format-1 specification. The current engine implements
+> [B+ tree v2](btree-v2.md) and rejects version-1 metadata and node payloads.
+> No implicit conversion is provided.
+
 An index is a standard paged file with `FILE_TYPE_INDEX`. Page 0 and page 1 are redundant
 metadata pages. Their payload begins at byte 64 with magic `MSBM`, version 1, uniqueness
 flags, generation, root/first-leaf/last-leaf page numbers, entry count and height.

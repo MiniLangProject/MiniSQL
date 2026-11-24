@@ -1,5 +1,10 @@
 # Overflow pointer and page format v1
 
+> Archived format-1 design notes. The current byte layout, including the U32
+> length and independent pointer CRC, is specified in
+> [overflow v2](overflow-v2.md). Version-1 pointers and chain pages are rejected;
+> the historical summary below is not the current serializer contract.
+
 ## External pointer — 48 bytes
 
 The pointer stores magic/version, file ID, first page, total length (U32), owner ID,

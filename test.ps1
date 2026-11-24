@@ -18,6 +18,8 @@ Python executable used to run the acceptance orchestrator.
 Selects the existing complete Windows suite or the portable Linux x64 suite.
 .PARAMETER StaticOnly
 Runs repository and source-contract checks without compiling native targets.
+.PARAMETER StorageV2
+Runs the focused storage-v2 binary-layout and compatibility regression gate.
 .PARAMETER KeepArtifacts
 Preserves intermediate acceptance files for diagnosis.
 .PARAMETER VerboseOutput
@@ -29,12 +31,22 @@ param(
   [ValidateSet("windows-x64", "linux-x64")]
   [string]$Target = "windows-x64",
   [switch]$StaticOnly,
+  [switch]$StorageV2,
   [switch]$KeepArtifacts,
   [switch]$VerboseOutput
 )
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+if ($StorageV2 -and -not $StaticOnly) {
+  $StorageArguments = @((Join-Path $Root "tests/run_storage_v2.py"), "--target", $Target)
+  if (-not [string]::IsNullOrWhiteSpace($Compiler)) {
+    $StorageArguments += @("--compiler", $Compiler)
+  }
+  & $Python @StorageArguments
+  exit $LASTEXITCODE
+}
 
 if ($Target -eq "linux-x64" -and -not $StaticOnly) {
   if ([string]::IsNullOrWhiteSpace($Compiler)) {

@@ -8,7 +8,7 @@ package minisql.storage.slotted_page
 import minisql.common.endian as endian
 import minisql.storage.page as page
 
-/// Slotted-page format v1. The slot directory grows from the beginning of the
+/// Slotted-page format v2 places record allocations on eight-byte boundaries.
 
 const INVALID_ARGUMENT = 9001
 /// Defines the corrupt data constant used by the minisql storage slotted page module.
@@ -22,6 +22,8 @@ const STALE_REFERENCE = 9018
 
 /// Defines the slot size constant used by the minisql storage slotted page module.
 const SLOT_SIZE = 8
+/// Every body owns its rounded-up allocation; bytes after its logical end are zero.
+const RECORD_ALIGNMENT = 8
 /// Defines the slot flag live constant used by the minisql storage slotted page module.
 const SLOT_FLAG_LIVE = 0
 /// Defines the slot flag deleted constant used by the minisql storage slotted page module.
@@ -68,6 +70,12 @@ end function
 /// @param slotId Identifier of slot.
 function slotOffset(slotId)
   return page.HEADER_SIZE + slotId * SLOT_SIZE
+end function
+
+/// Returns physical storage charged for a body, excluding its directory entry.
+/// @param recordLength Logical body length in bytes.
+function allocationSize(recordLength)
+  return ((recordLength + RECORD_ALIGNMENT - 1) >> 3) << 3
 end function
 
 /// Performs the valid flags operation for this module.
@@ -142,6 +150,7 @@ function validate(pageBytes, operation)
   expectedFreeStart = page.HEADER_SIZE + header.itemCount * SLOT_SIZE
   if header.freeStart != expectedFreeStart then return fail(CORRUPT_DATA, operation, "slot directory length mismatch") end if
   if header.freeStart > header.freeEnd then return fail(CORRUPT_DATA, operation, "slot directory overlaps record data") end if
+  if header.freeEnd % RECORD_ALIGNMENT != 0 then return fail(CORRUPT_DATA, operation, "record area is not aligned") end if
 
   occupied = bytes(len(pageBytes), 0)
   usedBytes = 0
@@ -154,12 +163,15 @@ function validate(pageBytes, operation)
         if entry.dataOffset != 0 or entry.dataLength != 0 then return fail(CORRUPT_DATA, operation, "deleted slot still references data") end if
       else
         if entry.dataLength == 0 then return fail(CORRUPT_DATA, operation, "live slot has zero length") end if
-        if entry.dataOffset < header.freeEnd or entry.dataOffset > len(pageBytes) or entry.dataLength > len(pageBytes) - entry.dataOffset then
+        allocated = allocationSize(entry.dataLength)
+        if entry.dataOffset % RECORD_ALIGNMENT != 0 then return fail(CORRUPT_DATA, operation, "record offset is not aligned") end if
+        if entry.dataOffset < header.freeEnd or entry.dataOffset > len(pageBytes) or allocated > len(pageBytes) - entry.dataOffset then
           return fail(CORRUPT_DATA, operation, "slot data range is invalid")
         end if
-        usedBytes = usedBytes + entry.dataLength
-        for byteIndex = entry.dataOffset to entry.dataOffset + entry.dataLength - 1
+        usedBytes = usedBytes + allocated
+        for byteIndex = entry.dataOffset to entry.dataOffset + allocated - 1
           if occupied[byteIndex] != 0 then return fail(CORRUPT_DATA, operation, "slot data ranges overlap") end if
+          if byteIndex >= entry.dataOffset + entry.dataLength and pageBytes[byteIndex] != 0 then return fail(CORRUPT_DATA, operation, "non-zero record alignment padding") end if
           occupied[byteIndex] = 1
         end for
       end if
@@ -320,7 +332,7 @@ function rebuild(pageBytes, replacementSlot, replacement, replacementFlags, dele
       if deleted then
         writeEntry(output, slotId, SlotEntry(0, 0, SLOT_FLAG_DELETED, generation))
       else
-        cursor = cursor - len(data)
+        cursor = cursor - allocationSize(len(data))
         if cursor < outputHeader.freeStart then return fail(PAGE_FULL, "rebuild", "records do not fit in page") end if
         copyBytes(output, cursor, data, 0, len(data))
         writeEntry(output, slotId, SlotEntry(cursor, len(data), flags, generation))
@@ -357,7 +369,7 @@ function insertWithFlags(pageBytes, recordBytes, slotFlags)
   reusable = findDeleted(working, header)
   directoryBytes = SLOT_SIZE
   if reusable >= 0 then directoryBytes = 0 end if
-  if len(recordBytes) + directoryBytes > header.freeEnd - header.freeStart then return fail(PAGE_FULL, "insertWithFlags", "record does not fit") end if
+  if allocationSize(len(recordBytes)) + directoryBytes > header.freeEnd - header.freeStart then return fail(PAGE_FULL, "insertWithFlags", "aligned record does not fit") end if
 
   slotId = reusable
   generation = 1
@@ -368,7 +380,7 @@ function insertWithFlags(pageBytes, recordBytes, slotFlags)
   else
     generation = rawEntry(working, slotId).generation
   end if
-  dataOffset = header.freeEnd - len(recordBytes)
+  dataOffset = header.freeEnd - allocationSize(len(recordBytes))
   copyBytes(working, dataOffset, recordBytes, 0, len(recordBytes))
   writeEntry(working, slotId, SlotEntry(dataOffset, len(recordBytes), slotFlags, generation))
   header.freeEnd = dataOffset
