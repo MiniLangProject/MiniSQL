@@ -1,0 +1,179 @@
+\chapter{From data to a relational database}
+\label{learn:foundations}
+\learning{Understand tables, rows, keys, relationships, SQL statements, client/server sessions and durable storage. Learn which part of MiniSQL performs each job before installing anything.}
+
+\section{What a database gives you}
+\index{database}\index{relational model}
+Imagine keeping a small shop in a spreadsheet. One sheet lists customers,
+another products, and a third orders. A product's name should be recorded in
+one authoritative place, not copied into hundreds of order rows. Every order
+must identify a real customer. Two people should not accidentally sell the
+same last item because they both read yesterday's stock count. If a process
+stops, you need a defined way to recover committed work.
+
+A relational database organizes facts into \emph{tables} and lets you express
+relationships between them. A table has named \emph{columns}; each column has
+a declared type and constraints. Each \emph{row} records one instance of the
+kind of thing that the table represents. A query produces a result table.
+A transaction groups related changes into one decision to keep or undo the
+changes. These ideas are independent of any particular interface.
+
+MiniSQL implements this model in native programs written in MiniLang. It
+includes a persistent server, a console client, a Windows Workbench,
+offline maintenance utilities, and Python and Java connectors. It also
+implements its own parser, planner, executor and disk storage. Its SQL is
+not SQLite's SQL, and a MiniSQL database directory is not an SQLite file.
+Choose tools designed for MiniSQL and read the dialect details in this book.
+
+\section{Tables, rows and types}
+\index{table}\index{row}\index{column}
+The following table records three products. A product identifier answers
+``which product?''; the name describes it; the stock records a quantity.
+
+\begin{table}[htbp]\centering
+\caption{A first relation: selected columns from the teaching products table}
+\begin{tabular}{r l r}\toprule
+product\_id & name & stock\\\midrule
+101 & Mechanical Keyboard & 12\\
+102 & Optical Mouse & 30\\
+103 & USB-C Cable & 100\\\bottomrule
+\end{tabular}
+\end{table}
+
+An \code{INTEGER} column stores whole numbers. A \code{VARCHAR(100)} column
+stores text with a maximum encoded byte length of 100 in this implementation.
+A \code{BOOLEAN} holds a truth value. \code{NULL} records that a value is
+missing or unknown; it is not the number zero, an empty string, or a false
+Boolean. Types and nullability describe the allowed values; constraints
+describe additional rules such as nonnegative stock.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE first_product (
+    product_id INTEGER PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    stock INTEGER NOT NULL CHECK (stock >= 0)
+);
+\end{lstlisting}
+
+This definition creates a structure, not a row. \code{INSERT} adds rows.
+\code{SELECT} retrieves values. \code{UPDATE} changes matching rows, and
+\code{DELETE} removes matching rows. A table is not an ordered list: if a
+result must be sorted, request \code{ORDER BY}.
+
+\section{Keys and relationships}
+\index{primary key}\index{foreign key}\index{normalization}
+A \emph{primary key} identifies one row without ambiguity. It can be one
+column or a combination of columns. A \emph{foreign key} names a relationship
+to a key in another table. The shop stores the customer's identifier in an
+order, so the order can be joined to the customer's current name without
+duplicating the entire customer record.
+
+A product can occur in several orders, and an order can contain several
+products. That many-to-many relationship needs a separate table,
+\code{order\_items}. Its pair \code{(order\_id, product\_id)} identifies a
+product line within an order. Quantity belongs to the line, not to the
+customer or product alone. Price at purchase also belongs to the line:
+changing a product's current price should not rewrite past purchases.
+
+This separation is a practical beginning to normalization: place a fact in
+the table whose key determines it. Do not store a comma-separated list of
+product identifiers in an order column. Separate rows make joins,
+constraints, aggregation and updates possible without reparsing a text field.
+
+\warning{Keep referenced keys stable}{At this revision MiniSQL checks normal
+child inserts against referenced keys and rejects certain parent deletes,
+but its foreign-key update and cascade behavior is incomplete. A parent-key
+update can leave an orphan. The examples use immutable identifiers and
+explicit, correctly ordered child/parent changes. Read the constraints
+chapter before designing cascading workflows.}
+
+\section{What SQL statements do}
+\index{SQL}
+SQL is a language for describing data structures and desired results. The
+following families are useful vocabulary, not separate programs.
+
+\begin{table}[htbp]\centering
+\caption{The main kinds of work expressed in MiniSQL SQL}
+\begin{tabularx}{\linewidth}{p{.18\linewidth}p{.31\linewidth}X}\toprule
+Family & Examples & Purpose\\\midrule
+Definition (DDL) & \code{CREATE TABLE}, \code{ALTER TABLE}, \code{DROP VIEW} & Define or change objects and rules.\\
+Data changes (DML) & \code{INSERT}, \code{UPDATE}, \code{DELETE}, \code{MERGE} & Add, revise or remove rows.\\
+Queries & \code{SELECT}, \code{WITH}, joins & Derive a result from stored or calculated data.\\
+Transactions & \code{BEGIN}, \code{COMMIT}, \code{ROLLBACK} & Choose a boundary for related changes.\\
+Access control (DCL) & \code{CREATE USER}, \code{GRANT}, \code{REVOKE} & Define principals and permissions.\\
+Operations & \code{ANALYZE}, \code{SHOW STATUS}, \code{SHUTDOWN} & Inspect, maintain and manage the engine.\\\bottomrule
+\end{tabularx}
+\end{table}
+
+SQL differs from an imperative row-by-row loop. ``Return the products whose
+stock is less than 15'' leaves the engine free to scan a table or use an
+index. You state the condition; the planner chooses an executable plan.
+Small examples can look immediate, but a query still has to be parsed, bound
+to real objects, checked for types and permissions, and executed.
+
+\section{Clients, the server and the database directory}
+\index{client/server}\index{session}
+The \code{minisqld} program opens a database directory and listens for
+connections. The \code{minisql} console connects to that server. A Python
+application and the Workbench are also clients. A \emph{session} is the
+server-side state of one connection: its identity, prepared plans,
+transaction and other request state. Two separate \code{--query} invocations
+open two separate sessions. A transaction cannot begin in one invocation
+and continue in another.
+
+\input{figures/architecture}
+
+The server is pointed at an already-created database directory. It does not
+offer a SQL \code{CREATE DATABASE} or \code{USE database} workflow. Create a
+database with \code{minisqld --init}; then start the server using the exact
+directory printed by that command. Client connection paths such as
+\code{/main} are protocol labels, not a way to switch the running server to
+another disk database.
+
+The directory contains authoritative catalog, table, index and WAL files as
+well as metadata and derived acceleration files. Treat the database as a
+whole. Copying an individual table file is not a supported way to export a
+table, and renaming storage files is not the same as renaming SQL objects.
+Offline tools take locks and expect the appropriate stopped-database state;
+read their operation-specific instructions before running them.
+
+\section{Durability, transactions and what an acknowledgement means}
+\index{durability}\index{write-ahead log}
+In autocommit mode, each successful data-changing statement has its own
+transaction boundary. With an explicit transaction, you can perform several
+changes and then \code{COMMIT} or \code{ROLLBACK}. MiniSQL uses a write-ahead
+log (WAL), checksummed pages and recovery procedures. Committed work is
+recovered using the engine's durable records; an arbitrary file copy made
+while pages are changing is not a substitute for a backup procedure.
+
+There are two different questions after a connection fails: did the server
+commit the transaction, and did the application receive the reply? The
+second can be false even when the first is true. An application that blindly
+retries an order insertion can therefore create duplicate work. Use a stable
+application identifier or unique key and a reconciliation query so you can
+determine whether the operation already succeeded. This is an application
+design rule, not a guarantee that a client can infer success from a lost
+connection.
+
+\section{A method for learning and diagnosing}
+For each new feature, work through four questions: What result do I intend?
+Which rows and keys represent it? Which MiniSQL syntax expresses it? How can
+I verify the result? First run a \code{SELECT} that identifies the intended
+rows. Then make the change inside a disposable transaction. Query the result
+and either commit intentionally or roll back. Once correctness is established,
+measure the plan and performance.
+
+When an error occurs, preserve the smallest statement that reproduces it,
+the relevant table definition, the source revision and the full error code
+and text. Separate a parsing error from a constraint rejection, a connection
+problem, an unsupported feature and damaged storage. The troubleshooting
+chapter follows this distinction.
+
+\tip{Checkpoint before continuing}{You should now be able to explain why
+orders store a customer identifier, why order items need their own table,
+why \code{NULL} differs from zero, and why a console connection is not the
+database itself. The next chapter installs the programs; the guided tutorial
+turns these ideas into a reproducible dataset.}
+\sourcecode{src/apps/minisqld/main.ml}{Database initialization and the server's public modes.}
+\sourcecode{src/minisql/client/console.ml}{A shell or script runs statements through one client session.}
+\sourcecode{src/minisql/executor/dml.ml}{DML constraints and relationship validation.}

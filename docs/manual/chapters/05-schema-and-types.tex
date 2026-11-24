@@ -1,0 +1,446 @@
+\chapter{Designing schemas, tables, types, and indexes}
+\label{sql:schema}
+
+A schema translates an application's rules into durable structure. It answers four questions: what constitutes one row, how a row is identified, which values are allowed, and how rows refer to one another. Good SQL begins with those decisions. The database can enforce many of them, but the current implementation has specific boundaries that must be understood before relying on an apparently familiar keyword.
+
+\section{From a business fact to a table}
+
+The tutorial store separates customers, products, orders, and order items. A customer's name belongs in the customer row; an order refers to that customer by an identifier. An order can contain several products, and a product can occur in several orders, so a separate order-item table represents that many-to-many relationship. Its quantity describes one product in one order.
+
+This avoids repeating the customer address in every product row or storing a comma-separated list of product identifiers inside an order. Repetition creates update anomalies: one copy is changed while another remains stale. A list inside a string loses ordinary relational checks and requires application parsing. Columns should contain individual values appropriate to their declared types.
+
+A primary key identifies one row. A foreign key records a relationship. A unique constraint prevents duplicate candidate keys. NOT NULL requires a value; CHECK adds a row-level condition. An index is a physical access structure that may speed queries and can also implement uniqueness. These concepts are related, but they solve different problems.
+
+\section{Create and remove a schema}
+\index{schema}\index{CREATE SCHEMA}\index{DROP SCHEMA}
+
+\begin{lstlisting}[language=SQL]
+CREATE SCHEMA [IF NOT EXISTS] schema_name;
+DROP SCHEMA [IF EXISTS] schema_name [RESTRICT];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+CREATE SCHEMA IF NOT EXISTS reporting;
+CREATE TABLE reporting.daily_count (
+    day_number INTEGER PRIMARY KEY,
+    order_count INTEGER NOT NULL CHECK (order_count >= 0)
+);
+\end{lstlisting}
+
+The built-in schemas \code{public} and \code{information\_schema} always exist. An omitted schema means public. There is no session search-path configuration and no cross-database three-part qualification. DROP SCHEMA is restrictive: remove its objects before dropping it. There is no schema CASCADE shortcut in this grammar.
+
+Use separate schemas to clarify ownership or purpose, not as an assumption about independent database files or independent transaction domains. A schema is a namespace inside the open database. Administrative database creation uses the server's initialization command, not \code{CREATE DATABASE} SQL.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseCreateSchema, parseDrop, and parseObjectName define schema syntax and qualification.}
+\sourcecode{src/minisql/executor/executor.ml}{Schema DDL and INFORMATION\_SCHEMA execution enforce the database namespace rules.}
+
+\section{The complete CREATE TABLE form}
+\index{CREATE TABLE}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE [IF NOT EXISTS] [schema_name.]table_name (
+    column_name data_type [column_attribute ...],
+    ...
+    [table_constraint, ...]
+);
+\end{lstlisting}
+
+At least one column is required. Column names must be distinct. A column attribute can specify NULL or NOT NULL, DEFAULT, a primary or unique key, CHECK, a reference, an identity, or a stored generated expression. Table constraints express multi-column keys and explicitly named rules.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE inventory_example (
+    item_id INTEGER PRIMARY KEY,
+    sku VARCHAR(30) NOT NULL,
+    label VARCHAR(100) NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uq_inventory_sku UNIQUE (sku),
+    CONSTRAINT ck_inventory_stock CHECK (stock >= 0)
+);
+\end{lstlisting}
+
+The named constraints make later maintenance readable. IF NOT EXISTS suppresses the conflict caused by an existing name; it does not compare the existing schema with the requested definition. A deployment script should inspect metadata or maintain its own schema version instead of treating an idempotent CREATE as a migration verifier.
+
+There is no \code{CREATE TABLE AS SELECT}, temporary-table declaration, table inheritance, partitioning syntax, or table-level storage-engine selector. Create the desired table explicitly, then use INSERT SELECT to populate it. Tables do not have an implicit user-visible row identifier: define your own key.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseCreateTable, parseColumnDefinition, and parseTableConstraint define the table grammar.}
+\sourcecode{src/minisql/sql/binder.ml}{bindCreateTable validates duplicate names, types, identity counts, and generated-column references.}
+
+\section{Choosing a data type}
+\index{data types}\index{BIGINT}\index{BINARY}\index{BLOB}\index{BOOLEAN}\index{CHAR}\index{DATE}\index{DECIMAL}\index{DOUBLE}\index{INTEGER}\index{REAL}\index{SMALLINT}\index{TEXT}\index{TIME}\index{TIMESTAMP}\index{VARBINARY}\index{VARCHAR}
+\label{sql:types}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Type & Meaning and limits in this implementation \\
+\midrule
+\endhead
+BOOLEAN & TRUE, FALSE, or NULL if nullable. An integer column is not a substitute for a Boolean predicate. \\
+SMALLINT & Signed 16-bit integer: -32,768 through 32,767. Overflow is rejected. \\
+INTEGER, INT & Signed 32-bit integer: -2,147,483,648 through 2,147,483,647. INT is an alias. \\
+BIGINT & Signed 64-bit storage using a high/low-word representation. Full-width values can be stored and compared, but not every scalar arithmetic or text-formatting path supports the entire range. \\
+REAL & Approximate numeric value. Storage format 2 stores it as IEEE-754 binary64, not a 32-bit float. \\
+DOUBLE, DOUBLE PRECISION, FLOAT & Approximate binary64 numeric value; FLOAT maps to DOUBLE. No user-selected FLOAT precision is implemented as a separate storage class. \\
+DECIMAL(p,s), NUMERIC(p,s) & Exact scaled integer input and storage, with \(1\leq p\leq18\), \(0\leq s\leq p\). Bare DECIMAL defaults to precision 18, scale 0. The computation and display caveats below are essential. \\
+CHAR(n) & Text bounded by n UTF-8 bytes and padded with ASCII spaces to exactly n bytes. A positive length is required. \\
+VARCHAR(n) & Text bounded by n UTF-8 bytes without padding. A positive length is required. \\
+TEXT & Variable-size text, with overflow storage for large values. Resource and storage limits still apply. \\
+BINARY(n) & Exactly n bytes. A short value is rejected rather than zero-padded. SQL text has no binary-literal syntax. \\
+VARBINARY(n) & Up to n bytes. A positive length is required. The same input-interface limitation applies. \\
+BLOB & Variable-size binary data, including overflow storage. Ordinary SQL text and current connector parameters do not provide a general non-NULL binary input path. \\
+DATE & Signed integer count of days relative to 1970-01-01. Current temporal conversion does not parse ISO date strings. \\
+TIME[(p)] & Signed 64-bit microsecond representation for time of day; precision parameter 0 through 6 is accepted. \\
+TIMESTAMP[(p)] & Signed 64-bit microsecond count relative to the Unix epoch; precision parameter 0 through 6 is accepted. No timezone-qualified SQL type exists. \\
+\bottomrule
+\end{longtable}
+
+Type spelling matters at the grammar boundary. Use the documented keyword spellings, including BOOLEAN. Although an internal type helper mentions BOOL, BOOL is not a normal recognized type keyword in the current lexer and should not be used as a portable alias.
+
+\subsection{Text length is a byte limit}
+
+A VARCHAR declaration limits encoded bytes, whereas LENGTH and CHAR\_LENGTH count UTF-8 character starts. ASCII characters use one byte, but many other characters use two or more. A column declared VARCHAR(5) cannot necessarily hold five displayed characters. Combining marks and multi-code-point emoji make a visual character count an additional, different concept.
+
+Choose lengths from the actual encoding and application constraints. Do not use CHAR to obtain case-insensitive matching or automatic trimming: its padding remains part of the value. Use TRIM explicitly when removing surrounding ASCII spaces is appropriate. MiniSQL does not provide locale collations or Unicode normalization.
+
+\subsection{Exact DECIMAL input does not imply correct DECIMAL calculations}
+\label{sql:decimal-caveat}
+
+DECIMAL(p,s) stores an integer coefficient with an implied scale. For DECIMAL(10,2), logical 3.30 is represented by coefficient 330. The insertion path can preserve the spelling of a numeric literal and convert it exactly. Excess nonzero fractional digits and precision overflow are errors, not silently rounded values.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE decimal_demo (
+    id INTEGER PRIMARY KEY,
+    amount DECIMAL(10,2) NOT NULL
+);
+INSERT INTO decimal_demo(id, amount) VALUES (1, 3.30);
+-- Rejected: a nonzero third fractional digit requires rounding.
+-- INSERT INTO decimal_demo(id, amount) VALUES (2, 3.333);
+\end{lstlisting}
+
+\warning{Current numeric correctness boundary}{At the documented revision, exact DECIMAL insertion and storage are implemented, but general DECIMAL arithmetic, mixed-scale comparisons, casts, aggregate calculations, and text presentation are not consistently scale-aware. This is a correctness limitation, not a cosmetic formatting choice. Do not use DECIMAL expressions in this revision as a financial calculation engine.}
+
+The checked implementation illustrates the problem concretely:
+
+\begin{longtable}{p{.48\linewidth}p{.45\linewidth}}
+\toprule
+Expression or operation & Observed current behavior \\
+\midrule
+\endhead
+CAST('3.30' AS DECIMAL(10,2)) & Text output is 330, the stored coefficient. \\
+Adding that value to CAST('1.20' AS DECIMAL(10,2)) & Text output is 45000: the coefficients are added and rescaled again. \\
+Comparing that DECIMAL 3.30 with integer 330 & Returns TRUE by comparing raw integral representations. \\
+ROUND, CEIL, FLOOR of DECIMAL & Explicitly rejected because scale-aware rounding is not implemented. \\
+\bottomrule
+\end{longtable}
+
+For exact application calculations, store an explicitly named integer unit such as \code{price\_cents} and keep all operands in that unit, with validated range bounds. Compute display decimals in application code. Alternatively, retain DECIMAL as a stored interchange value and perform arithmetic in an application decimal library using the schema's scale. Do not cast a DECIMAL to DOUBLE and assume the coefficient has automatically been divided by its scale.
+
+An INTEGER cents column gives a smaller range than BIGINT, while BIGINT expression paths still have native scalar limits. Choose a range that has been tested for the complete calculation, not merely for insertion. Document the unit in both the schema and the application interface.
+
+\subsection{Approximate numbers}
+
+REAL and DOUBLE are approximate and unsuitable for exact equality of independently computed decimal fractions. They are appropriate for measurements and other data where approximation is acceptable. Storage format 2 uses eight little-endian IEEE-754 bytes for both declared types. This is one of the explicit changes from the older development format that stored floating-point values as text.
+
+Numeric literals accept a decimal point and scientific notation, such as 1.25e2 and -4.75. A comma remains SQL punctuation. Integral division produces a DOUBLE result, so \code{SELECT 5 / 2} returns 2.5. Division or modulo by zero is an error. Some operations convert a full-width BIGINT into the narrower native MiniLang scalar range and reject values that do not fit; storage support alone does not guarantee all arithmetic over \(-2^{63}\) through \(2^{63}-1\).
+
+\subsection{Temporal values: use explicit units}
+\label{sql:temporal-caveat}
+
+\begin{lstlisting}[language=SQL]
+SELECT DATE_PART('year', CAST(0 AS DATE)) AS epoch_year;
+SELECT DATE_PART('day', CAST(86400000000 AS TIMESTAMP))
+       AS epoch_plus_one_day;
+SELECT DATE_PART('hour', CAST(3661000000 AS TIME))
+       AS hour_value;
+\end{lstlisting}
+
+These return 1970, 2, and 1 respectively. The timestamp example is one day after the epoch; the time example is 01:01:01 in microseconds. Use these numeric conversions as the supported temporal input mechanism. The SQL text formatter emits the numeric representation rather than an ISO timestamp.
+
+\warning{Temporal features are incomplete}{CURRENT\_TIMESTAMP currently evaluates to epoch zero. Direct DATE/TIME/TIMESTAMP comparison is accepted by the type checker but fails in the scalar comparator; even CAST(0 AS DATE) = CAST(0 AS DATE) fails. There is no timezone-aware type, date-literal syntax, ISO-string parser, interval arithmetic, or reliable automatic timestamp default. Supply timestamps from the application and, when filtering and ordering are required, use an explicitly documented INTEGER day count or BIGINT epoch count that has been tested with the chosen operations.}
+
+TIME and TIMESTAMP precision parameters are declaration metadata; do not assume comprehensive precision rounding or range validation for time-of-day input. DATE\_PART supports only year, month, day, hour, minute, and second; it returns an integer second component and does not expose fractional microseconds as a separate part. Be explicit about UTC and epoch units at the application boundary.
+
+\sourcecode{src/minisql/sql/types.ml}{SqlTypeKind, create, fromTypeName, and canAssign define types and supported attributes.}
+\sourcecode{src/minisql/sql/values.ml}{convert, cast, asNumber, and compareNonNull expose numeric and temporal implementation limits.}
+\sourcecode{src/minisql/sql/binder.ml}{bindLiteral currently binds CURRENT\_TIMESTAMP to zero.}
+\sourcecode{src/minisql/client/formatter.ml}{valueText prints Int64Words coefficients without DECIMAL scale or temporal formatting.}
+
+\section{Defaults, required values, and CHECK}
+\index{DEFAULT}\index{NOT NULL}\index{CHECK}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE task_example (
+    task_id INTEGER PRIMARY KEY,
+    title VARCHAR(120) NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 1,
+    done BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT ck_task_priority CHECK (priority BETWEEN 1 AND 5)
+);
+INSERT INTO task_example(task_id, title)
+VALUES (1, 'Check the restored database');
+\end{lstlisting}
+
+An omitted column receives its default if defined, an identity or generated value if applicable, or NULL otherwise. An explicitly supplied NULL does not request the default. NOT NULL is enforced independently of a default. For the example, priority is 1 and done is false.
+
+The INSERT grammar does not accept \code{DEFAULT VALUES}, empty VALUES tuples, or DEFAULT as a general VALUES expression. Omit defaulted columns from an explicit target-column list. A table consisting only of an identity column consequently has no ordinary empty-row INSERT form in this grammar; include a meaningful writable column or use a deliberately designed alternative.
+
+CHECK expressions operate on one row. They are not a substitute for a foreign key or an aggregate rule across rows. Unknown passes a CHECK, so pair it with NOT NULL when needed. Name important CHECK constraints so a diagnostic identifies the business rule. There is no deferred-constraint syntax; current DML validates constraints as rows are processed.
+
+For CREATE TABLE defaults, use simple constant values and tested expressions. For ALTER TABLE ADD COLUMN and ALTER COLUMN SET DEFAULT, the supported metadata-only path deliberately requires a restricted deterministic constant expression; CURRENT\_TIMESTAMP is rejected there. Do not assume all scalar functions qualify as schema constants merely because they return the same value for a given input.
+
+\sourcecode{src/minisql/executor/dml.ml}{initialRow and validateRow apply defaults, generated values, type checks, and row constraints.}
+\sourcecode{src/minisql/sql/binder.ml}{constantSchemaExpression and bindAlterTable restrict metadata-only defaults.}
+
+\section{Keys and relationships}
+
+\subsection{Primary and unique keys}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE enrollment_example (
+    course_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    note VARCHAR(100),
+    CONSTRAINT pk_enrollment PRIMARY KEY (course_id, student_id)
+);
+\end{lstlisting}
+
+A composite key identifies a combination, not each component independently. This permits many students in one course and one student in many courses, while prohibiting the same pair twice. Primary-key components cannot be NULL. A UNIQUE constraint skips a key that contains NULL, allowing multiple absent values; it does not make the column required. Use NOT NULL when the candidate key must always exist.
+
+An explicit unique index and a table UNIQUE constraint both enforce uniqueness, but the ownership of their physical index differs. Drop a constraint-owned index through ALTER TABLE DROP CONSTRAINT. DROP INDEX is for explicitly created indexes and refuses constraint-owned primary/unique structures.
+
+\subsection{Foreign keys}
+\index{foreign key!limitations}\index{REFERENCES}\index{CASCADE}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE parent_example (
+    parent_id INTEGER PRIMARY KEY,
+    label VARCHAR(40) NOT NULL
+);
+CREATE TABLE child_example (
+    child_id INTEGER PRIMARY KEY,
+    parent_id INTEGER NOT NULL,
+    CONSTRAINT fk_child_parent
+      FOREIGN KEY (parent_id)
+      REFERENCES parent_example(parent_id)
+);
+\end{lstlisting}
+
+Create the parent before the child and insert parent rows before dependent child rows. Reference a declared primary or unique key with matching columns and compatible types. Composite foreign keys list corresponding columns in the same order. A foreign key containing NULL is not checked for a matching parent, which is another reason to add NOT NULL when the relationship is mandatory.
+
+The grammar accepts these action words after REFERENCES:
+
+\begin{lstlisting}[language=SQL]
+[ON DELETE {NO ACTION | RESTRICT | CASCADE | SET NULL}]
+[ON UPDATE {NO ACTION | RESTRICT | CASCADE | SET NULL}]
+\end{lstlisting}
+
+\warning{Referential actions are not fully implemented}{The current engine enforces outgoing foreign keys on inserted/updated child rows and rejects ordinary deletion of a referenced parent. However, ON DELETE CASCADE and SET NULL are only parsed and persisted; deleting a parent with dependants reports unsupported SQL. Incoming references are not revalidated when a parent key is updated, so a parent-key UPDATE can leave orphaned child rows. Stored ON UPDATE action names do not provide a cascade or reliable protection. Treat referenced keys as immutable in this revision.}
+
+To remove a parent deliberately, delete or detach its children explicitly in the same transaction, then delete the parent. To change a business identifier, keep a stable surrogate primary key and update a separate non-key attribute. If a key must change, construct and validate a migration with new parent rows, updated child references, and removal of the old parent. Audit relationships with a left anti-join after importing or migrating data. This avoids the current correlated NOT EXISTS runtime defect:
+
+\begin{lstlisting}[language=SQL]
+SELECT c.child_id, c.parent_id
+FROM child_example AS c
+LEFT JOIN parent_example AS p ON p.parent_id = c.parent_id
+WHERE p.parent_id IS NULL;
+\end{lstlisting}
+
+An empty result is the desired outcome. This is an application-level integrity check and must not be confused with physical page consistency checking.
+
+\sourcecode{src/minisql/executor/dml.ml}{validateUnique, validateForeignKey, validateDeleteReferences, and updateInner implement the current constraint behavior.}
+\sourcecode{src/minisql/catalog/schema_history.ml}{Constraint definitions persist referential action names; persistence does not imply execution support.}
+
+\section{Identity columns}
+\index{identity}\index{AUTO\_INCREMENT}\index{AUTOINCREMENT}
+\label{sql:identity}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE identity_example (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    label VARCHAR(60) NOT NULL
+);
+INSERT INTO identity_example(label) VALUES ('first') RETURNING id;
+\end{lstlisting}
+
+The aliases \code{AUTO\_INCREMENT} and \code{AUTOINCREMENT} are supported in a column definition. Only one identity column is allowed per table. Its type must be SMALLINT, INTEGER, or BIGINT; it cannot also have DEFAULT. The engine makes it non-nullable. Explicit INSERT values and UPDATE assignments to it are rejected, including values supplied through a conflict-update branch.
+
+The next identity is calculated from the currently visible rows: maximum existing value plus one, or 1 for an empty table. It is not an independent monotonically advancing sequence object. Removing the highest row can therefore allow reuse of its number, and emptying the table allows the next number to start at 1. A rolled-back row does not guarantee a permanently consumed identifier.
+
+Use RETURNING to obtain the assigned value from the same statement. Do not run MAX(id) afterwards to discover the row another concurrent connection may have inserted. If the application requires a never-reused external identifier, define that contract separately; MiniSQL identity as implemented does not provide it. Standalone sequences have different persistence and session rules, discussed in Chapter~\ref{sql:advanced}.
+
+\sourcecode{src/minisql/executor/dml.ml}{nextIdentity, initialRow, and updateInner define allocation and immutability.}
+\sourcecode{src/tests/m43_auto_increment_decimal.ml}{Tests verify identity aliases, explicit-value rejection, type restrictions, and reopen behavior.}
+
+\section{Stored generated columns}
+\index{generated columns}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE line_example (
+    id INTEGER PRIMARY KEY,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
+    total_cents INTEGER
+      GENERATED ALWAYS AS (quantity * price_cents) STORED
+);
+INSERT INTO line_example(id, quantity, price_cents)
+VALUES (1, 3, 700) RETURNING total_cents;
+\end{lstlisting}
+
+The returned total is 2100. Updating quantity recomputes total. Users cannot insert or update total directly. A generated column cannot also have DEFAULT or IDENTITY. Only STORED syntax exists; a VIRTUAL keyword is not supported. In CREATE TABLE, the expression may reference only earlier columns, which makes evaluation order explicit. Keep expressions row-local and deterministic; aggregates, windows, and subqueries are not supported as generated expressions.
+
+ALTER TABLE can add a supported generated column to an existing table. Older rows are materialized with the generated expression when read through schema-evolution logic. Do not infer that adding the column rewrites every old disk row immediately. Avoid DECIMAL arithmetic in these expressions for the reasons in Section~\ref{sql:decimal-caveat}.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindCreateTable and bindAlterTable validate generated expressions.}
+\sourcecode{src/minisql/executor/dml.ml}{applyGenerated maintains generated values during changes.}
+\sourcecode{src/tests/m45_sequences_generated_triggers.ml}{The invoice and legacy-item examples cover generated values and schema evolution.}
+
+\section{Changing a table safely}
+\index{ALTER TABLE}\index{schema evolution}
+
+\begin{longtable}{p{.48\linewidth}p{.45\linewidth}}
+\toprule
+Supported ALTER TABLE suffix & Important rule \\
+\midrule
+\endhead
+ADD [COLUMN] column definition & Metadata-compatible addition. Required ordinary columns need a deterministic DEFAULT; identity additions are rejected. Add key/CHECK/reference constraints separately. \\
+ADD [CONSTRAINT name] PRIMARY KEY (...) & Validate existing rows and create the key structure. \\
+ADD [CONSTRAINT name] UNIQUE (...) & Reject existing duplicate non-NULL keys. \\
+ADD [CONSTRAINT name] CHECK (...) & Validate existing rows against the check. \\
+ADD [CONSTRAINT name] FOREIGN KEY (...) REFERENCES ... & Validate existing child rows against the referenced relation. \\
+DROP CONSTRAINT name & Remove the named rule, subject to dependencies such as a foreign key referencing a unique key. \\
+RENAME COLUMN old TO new & Rename a column and its supported catalog references. Review stored application SQL separately. \\
+RENAME TO new & Rename within the existing schema; this is not a schema move. \\
+DROP COLUMN column & Only for an empty table and an unreferenced column. At least one column must remain. \\
+ALTER [COLUMN] column SET DEFAULT expression & Restricted deterministic constant expression; affects future omitted values. \\
+ALTER [COLUMN] column DROP DEFAULT & Restore absence of a default. \\
+ALTER [COLUMN] column SET \mbox{NOT NULL} & Existing NULL values must be corrected first. \\
+ALTER [COLUMN] column DROP \mbox{NOT NULL} & Not permitted for a primary-key column. \\
+\bottomrule
+\end{longtable}
+
+Each ALTER statement contains one action. There is no general ALTER COLUMN TYPE operation, implicit populated-table column removal, column reordering, or identity-addition rewrite. For an incompatible logical schema change, create a new table, copy explicitly selected columns, validate counts and relationships, and arrange a controlled application cutover. The offline page-size migration utility changes physical settings; it is not a general SQL schema-conversion tool.
+
+\begin{lstlisting}[language=SQL]
+ALTER TABLE inventory_example
+  ADD COLUMN category VARCHAR(40) DEFAULT 'uncategorized';
+ALTER TABLE inventory_example
+  ALTER COLUMN category SET NOT NULL;
+ALTER TABLE inventory_example
+  ADD CONSTRAINT ck_inventory_label CHECK (LENGTH(label) > 0);
+\end{lstlisting}
+
+Read the transaction chapter before combining DDL with data changes. Core table DDL has transactional support, while extension objects such as procedures and sequences have autocommit-only paths. Do not infer one universal DDL rule from another SQL system.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseAlterTable is the complete ALTER grammar.}
+\sourcecode{src/minisql/sql/binder.ml}{bindAlterTable validates each supported action.}
+\sourcecode{src/tests/m24_schema_evolution.ml}{Tests cover defaults on old rows, rollback, named constraints, nullable-state changes, rename, and empty-table column removal.}
+
+\section{Indexes: correctness, access, and coverage}
+\index{CREATE INDEX}
+\label{sql:indexes}
+
+\begin{lstlisting}[language=SQL]
+CREATE [UNIQUE] INDEX [IF NOT EXISTS] index_name
+ON table_name (key_column_or_expression [, ...])
+[INCLUDE (payload_column [, ...])]
+[WHERE deterministic_row_predicate];
+
+DROP INDEX [IF EXISTS] index_name;
+\end{lstlisting}
+
+An index contains ordered keys and references to matching rows. It can reduce the number of rows read for a selective predicate or provide values without opening the table heap. It also adds work to INSERT, UPDATE, and DELETE. Start with indexes justified by actual access patterns and inspect EXPLAIN; an index's existence does not guarantee its selection.
+
+\subsection{Ordinary and composite indexes}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX ix_orders_customer ON orders(customer_id);
+CREATE INDEX ix_orders_status_customer
+  ON orders(order_status, customer_id);
+\end{lstlisting}
+
+A composite key has an ordered list of components. The current optimizer selects a composite index for a complete equality group covering every key component. Leading-prefix-only probes and composite range probes are not exposed by the storage integration. Single-column indexes can support eligible equality and range probes. A different composite order represents a different access structure, but does not add missing prefix-range support. One encoded B+ tree key is limited to 256 bytes, so large text keys can fail even if the table column itself can hold the value. The limit applies to the complete encoded composite key, not independently to every column.
+
+CREATE UNIQUE INDEX enforces uniqueness for qualifying non-NULL keys. It can be convenient for a functional or partial rule, but should not be treated as an automatic substitute for every primary-key or foreign-key requirement. Constraint-owned indexes have a different lifecycle from ordinary indexes.
+
+\subsection{Covering indexes with INCLUDE}
+\index{covering index}\index{INCLUDE}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX ix_orders_customer_cover
+  ON orders(customer_id)
+  INCLUDE (order_id, order_status);
+\end{lstlisting}
+
+Included columns are payload in the leaves. They do not participate in ordering or uniqueness. When all values needed by a query are decodable from the key and payload, the optimizer may select an Index Only Scan. INCLUDE names must exist and must not duplicate ordinary key columns. A leaf payload is limited to 3,584 encoded bytes so the entry can fit a minimum-size page. Wide TEXT data therefore does not make a good covering payload merely because INCLUDE accepts a column name.
+
+\subsection{Partial indexes}
+\index{partial index}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX ix_active_customer_city
+  ON customers(city)
+  INCLUDE (customer_id, name)
+  WHERE active = TRUE;
+\end{lstlisting}
+
+Only rows whose predicate is true are indexed; false and unknown are omitted. Predicates must be deterministic, row-local base expressions. Columns, literals, unary/binary operators, and IS NULL can be used; function calls, subqueries, aggregates, and windows are rejected for partial predicates. A partial unique index enforces uniqueness only within its qualifying subset.
+
+The optimizer uses a partial index only when it can prove that the query implies every predicate conjunct. Proof is deliberately bounded: identical typed conjuncts and stronger compatible single-column literal bounds are supported, not arbitrary logical equivalence. Include the predicate explicitly in a query when that expresses its intention. Current ON CONFLICT column targets cannot infer partial unique indexes, and partial uniqueness is not a foreign-key target.
+
+\subsection{Functional indexes}
+\index{functional index}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX ix_customer_lower_name
+  ON customers(LOWER(name));
+
+SELECT customer_id, name
+FROM customers
+WHERE LOWER(name) = 'ada';
+\end{lstlisting}
+
+Exactly one deterministic expression key is supported. Its tree must depend on the row; a constant-only expression is rejected. Deterministic scalar functions, casts, columns, literals within a row-dependent expression, and ordinary operators are available. Mixed expression-and-column composite keys, parameters, sequences, current timestamps, aggregates, subqueries, and windows are not supported.
+
+The query expression must bind to the same typed expression and be compared with a literal. Merely mathematical equivalence does not establish index eligibility. Functional scans currently fetch heap rows; they do not have expression-aware index-only decoding. INCLUDE, WHERE, and UNIQUE can be combined subject to their own restrictions. Identifiers that cannot survive the current expression formatting/reparsing roundtrip are rejected.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindCreateIndex, indexPredicateSafe, indexKeyAstDeterministic, and indexKeyExpressionRoundTrips validate index definitions.}
+\sourcecode{src/minisql/storage/btree.ml}{MAX\_KEY\_BYTES and MAX\_VALUE\_BYTES define per-entry bounds.}
+\sourcecode{src/tests/m23_index_integration.ml}{Tests cover maintenance, covering payloads, partial predicates, functional expressions, and persistence.}
+
+\section{Inspecting and removing objects}
+\index{DESCRIBE}\index{SHOW TABLES}\index{SHOW INDEXES}\index{DROP TABLE}\index{DROP INDEX}
+
+\begin{lstlisting}[language=SQL]
+SHOW TABLES;
+DESCRIBE inventory_example;
+SHOW INDEXES FROM inventory_example;
+-- SHOW INDEXES ON inventory_example is also accepted.
+
+SELECT table_schema, table_name
+FROM information_schema.tables
+ORDER BY table_schema, table_name;
+
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'inventory_example'
+ORDER BY ordinal_position;
+\end{lstlisting}
+
+DESCRIBE returns ordinal, column name, data type, nullable flag, default SQL, and identity flag. SHOW INDEXES returns index name, kind, uniqueness, key columns, included columns, and predicate. INFORMATION\_SCHEMA provides relational metadata that can be filtered, joined, and consumed by applications.
+
+Available virtual relations are \code{schemata}, \code{tables}, \code{columns}, \code{table\_constraints}, \code{views}, and \code{routines}. There is no promise that MiniSQL implements the entire SQL-standard INFORMATION\_SCHEMA. Discover the available columns with a small query before copying metadata SQL from another engine.
+
+\begin{lstlisting}[language=SQL]
+DROP TABLE [IF EXISTS] table_name;
+\end{lstlisting}
+
+DROP TABLE removes the object and its data. It is different from DELETE, which leaves the table and can select rows, and TRUNCATE, which empties the table. There is no DROP TABLE CASCADE grammar. Resolve dependencies explicitly. IF EXISTS is appropriate for cleanup scripts but can conceal a typo during a carefully controlled migration, so use it intentionally.
+
+\sourcecode{src/minisql/sql/binder.ml}{Information-schema source definitions enumerate the virtual relation columns.}
+\sourcecode{src/minisql/executor/executor.ml}{SHOW, DESCRIBE, and metadata-result construction define displayed fields.}
+\sourcecode{src/tests/m34_catalog_introspection.ml}{Examples exercise schemas, metadata filters, constraints, and DROP INDEX behavior.}
+
+\section{Design review exercise}
+
+Design a book-loan table with a stable loan identifier, book identifier, borrower identifier, and required checkout day stored as an explicitly documented integer day count. Decide which columns may be NULL and what constitutes a duplicate loan. Explain how you would prevent a borrower from disappearing while a loan exists under the current referential-action limitations. Add an index for the query that lists a borrower's active loans, and justify its key order. Finally, explain why a generated charge column based on DECIMAL arithmetic would be inappropriate for this revision and propose an integer-unit alternative.

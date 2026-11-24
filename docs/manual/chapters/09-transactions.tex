@@ -1,0 +1,357 @@
+\chapter{Transactions, isolation, and concurrent work}
+\label{ops:transactions}
+
+\section{What a transaction gives an application}
+
+A transaction groups changes into one unit that can be committed or rolled
+back. Consider an order: its header, line items, and stock adjustment should
+either become durable together or leave the database unchanged. A sequence
+of successful individual statements is not enough if the application fails
+between them.
+
+MiniSQL uses autocommit when no explicit transaction is active. Each ordinary
+data-changing statement receives its own transaction. To group statements,
+use \code{BEGIN}, execute the related operations, and finish with
+\code{COMMIT}. Use \code{ROLLBACK} when the operation cannot be completed.
+
+\begin{lstlisting}[language=SQL]
+BEGIN;
+INSERT INTO orders(order_id, customer_id, order_status)
+VALUES (900, 1, 'new');
+INSERT INTO order_items(order_id, product_id, quantity, unit_price)
+VALUES (900, 101, 2, 79.90);
+UPDATE products SET stock = stock - 2 WHERE product_id = 101;
+COMMIT;
+\end{lstlisting}
+
+This example illustrates transaction boundaries; an application must still
+ensure that the product exists and enough stock is available. A transaction
+does not invent a business rule. Express an invariant through a constraint
+where possible, or check the affected-row count of a conditional update
+inside the transaction.
+
+\begin{lstlisting}[language=SQL]
+UPDATE products
+SET stock = stock - 2
+WHERE product_id = 101 AND stock >= 2;
+\end{lstlisting}
+
+If the affected-row count is zero, the application should not proceed as
+though stock were reserved. It should roll back the whole order operation
+or recover to an earlier savepoint according to its intended workflow.
+
+\sourcecode{src/minisql/executor/executor.ml}{beginExplicit, executeDml, commitExplicit, and rollbackExplicit.}
+
+\section{Complete transaction syntax}
+\index{BEGIN}\index{COMMIT}\index{ROLLBACK}
+
+\begin{lstlisting}[language=SQL]
+BEGIN [TRANSACTION]
+  [READ ONLY | READ WRITE]
+  [ISOLATION LEVEL SERIALIZABLE | ISOLATION LEVEL READ COMMITTED];
+COMMIT [TRANSACTION];
+ROLLBACK [TRANSACTION];
+SAVEPOINT savepoint_name;
+ROLLBACK [TRANSACTION] TO [SAVEPOINT] savepoint_name;
+RELEASE [SAVEPOINT] savepoint_name;
+\end{lstlisting}
+
+Square brackets in this reference denote optional syntax; do not type the
+brackets. The default is \code{READ WRITE} with \code{SERIALIZABLE}
+isolation. The parser accepts the read mode and isolation clause in either
+order. Use each at most once in clear application SQL. There is no nested
+\code{BEGIN}, no SQL \code{SET TRANSACTION}, and no
+\code{REPEATABLE READ} or \code{READ UNCOMMITTED} isolation level.
+
+\code{COMMIT} or \code{ROLLBACK} without an explicit transaction reports a
+transaction-state error. Starting another explicit transaction while one is
+already active also reports an error. Transaction state belongs to the
+session, so sending \code{BEGIN} on one connection and the changes on
+another cannot group those changes.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseBegin and transaction statement dispatch.}
+
+\section{Read-only work and the two isolation levels}
+\index{isolation}\index{READ COMMITTED}\index{SERIALIZABLE}\index{read-only transactions}
+
+\begin{lstlisting}[language=SQL]
+BEGIN READ ONLY ISOLATION LEVEL SERIALIZABLE;
+SELECT COUNT(*) AS customer_count FROM customers;
+SELECT COUNT(*) AS order_count FROM orders;
+COMMIT;
+\end{lstlisting}
+
+A read-only transaction declares that it will not modify data. MiniSQL opens
+the page transaction lazily; a SELECT-only explicit transaction need not
+allocate a WAL transaction or object identifier. This is useful for reporting,
+but it is not a declaration that the report will never delay a writer.
+
+\warning{NEXTVAL is outside the ordinary read-only guarantee}{NEXTVAL advances
+persisted sequence state directly, outside the page transaction's read-only
+check, and rollback does not undo consumption. The native validation for this
+manual confirmed a successful NEXTVAL inside BEGIN READ ONLY and a surviving
+CURRVAL after ROLLBACK. The streaming cursor probe materializes expressions
+before deciding whether a plan is streamable; a fallback can materialize
+NEXTVAL again. Plain EXPLAIN also materializes it. Keep NEXTVAL out of
+read-only reports, standby queries, and diagnostic EXPLAIN statements in this
+revision. Do not assume that a SELECT-looking statement is free of side
+effects or consumes one sequence value per output row. The SQL reference
+documents the concrete sequence limitations.}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Isolation & Current locking behavior and application consequence \\
+\midrule
+\endhead
+\code{READ COMMITTED} & A statement acquires a read lease and releases a
+newly acquired read lease when that statement finishes. Separate SELECTs can
+therefore observe changes committed between them. A read lease already held
+by the transaction, or its writer ownership, is not independently released
+by this statement cleanup. \\
+\code{SERIALIZABLE} & Read locks are retained through the explicit transaction.
+Other transactions cannot freely interleave writes that would invalidate the
+protected read work. Keep the transaction short because its read ownership
+can delay a writer. \\
+\bottomrule
+\end{longtable}
+
+These are lock-based semantics. MiniSQL does not implement a multiversion
+snapshot engine in which long readers can assume that writers continue
+unimpeded. A practical diagnostic experiment uses two sessions: let session A
+begin a serializable transaction and read a table; let session B attempt an
+update; then commit A. B may have to wait, or reach its deadline if A remains
+open too long. Repeat with read committed and observe that the read lease is
+released after the statement. Use a disposable database and avoid interpreting
+wall-clock timing as a correctness proof.
+
+\sourcecode{src/minisql/transaction/lock_manager.ml}{acquireStatementRead, finishStatement, and finishTransaction.}
+\sourcecode{src/minisql/executor/executor.ml}{statementIsolation and statement read-lease handling.}
+
+\section{Savepoints: recover part of a larger operation}
+\index{SAVEPOINT}\index{RELEASE}
+
+A savepoint records a recoverable position inside an explicit DML
+transaction. It is not an independent commit. Changes before and after a
+savepoint remain part of the same enclosing transaction until the final
+\code{COMMIT}.
+
+\begin{lstlisting}[language=SQL]
+BEGIN;
+UPDATE customers SET city = 'Hamburg' WHERE customer_id = 1;
+SAVEPOINT optional_change;
+UPDATE products SET stock = stock + 5 WHERE product_id = 101;
+ROLLBACK TO SAVEPOINT optional_change;
+RELEASE SAVEPOINT optional_change;
+COMMIT;
+\end{lstlisting}
+
+The city change is committed; the stock increase is undone. Rolling back to
+a savepoint retains the named savepoint but removes savepoints created after
+it. Releasing a savepoint removes that savepoint and later ones, without
+undoing their data changes. If a name is reused, lookup selects the most
+recent matching savepoint. Unique descriptive names make this stack behavior
+easier to reason about.
+
+Creating a savepoint requires an explicit transaction. It selects the DML
+transaction path even if no data statement has yet run. DDL savepoints are
+not supported. A rollback to a valid DML savepoint also clears the explicit
+transaction's failed state, allowing a controlled recovery after a statement
+error.
+
+\subsection{Recovering from a constraint error}
+
+Suppose a business operation has an optional insert that might collide with
+an existing key. In an interactive session:
+
+\begin{lstlisting}[language=SQL]
+BEGIN;
+SAVEPOINT before_optional;
+INSERT INTO customers(customer_id, name)
+VALUES (1, 'Duplicate identifier');
+-- If the insert fails because customer 1 exists:
+ROLLBACK TO before_optional;
+-- Continue only after inspecting that error.
+UPDATE customers SET active = TRUE WHERE customer_id = 1;
+COMMIT;
+\end{lstlisting}
+
+This is a branching application workflow, not a promise that a script runner
+will continue after the error. A script client normally stops on an error;
+application code should catch it and issue the recovery command deliberately.
+For routine insert conflicts, the SQL \code{ON CONFLICT} forms may be a
+clearer design than deliberately triggering an error.
+
+\sourcecode{src/minisql/transaction/transaction.ml}{Savepoint stack and change snapshots.}
+\sourcecode{src/minisql/executor/executor.ml}{executeSavepoint, executeRollbackTo, and executeReleaseSavepoint.}
+
+\section{The failed-transaction state}
+\index{failed transactions}
+
+When a statement error marks an explicit transaction failed, subsequent
+normal work and \code{COMMIT} cannot be treated as successful continuation.
+The diagnostic explicitly requests rollback. Use \code{ROLLBACK} to abandon
+the transaction, or \code{ROLLBACK TO} a valid DML savepoint when the program
+has a defined partial-recovery strategy. Merely retrying the failed SQL
+without repairing transaction state is insufficient.
+
+A disconnected session is cleaned up by the engine, which abandons its
+uncommitted work and releases locks. Nevertheless, a lost connection during
+commit creates an application-level uncertainty: the durable commit may have
+completed even though its acknowledgement was not received. Reconnecting and
+blindly repeating a non-idempotent operation can duplicate effects. Use a
+stable application request identifier or inspect the intended business record
+before retrying an operation whose commit outcome is unknown.
+
+Distinguish three cases in application error handling: a rejected statement
+whose transaction can be rolled back, a transient lock/deadline conflict
+whose entire business transaction can be retried, and an uncertain
+post-disconnection commit whose outcome must be reconciled. The server's
+transaction machinery solves durable grouping; it cannot decide which
+business request a replacement connection is trying to repeat.
+
+\section{DDL is not uniformly transactional}
+
+MiniSQL has a schema-journal path for a subset of table and index DDL. That
+does not mean that arbitrary schema changes can be mixed with data updates
+inside one transaction.
+
+\begin{longtable}{p{.34\linewidth}p{.59\linewidth}}
+\toprule
+Operation & Explicit-transaction rule \\
+\midrule
+\endhead
+Ordinary INSERT, UPDATE, DELETE, MERGE, TRUNCATE & Supported on the DML path.
+Constraints, indexes, and supported triggers participate in the operation. \\
+Table/index DDL handled by the schema journal & The supported staged DDL path
+is available only to trusted sessions. It must not be mixed with DML. \\
+SELECT after staged DDL & Rejected: the executor does not query a partly
+staged schema. Commit the DDL first. \\
+Authenticated table/index DDL & Autocommit only. \\
+Schema, view, trigger, sequence, and procedure DDL & Autocommit only. \\
+Users, roles, GRANT, and REVOKE & Autocommit only. \\
+ANALYZE, VACUUM, REINDEX & Autocommit maintenance operations. \\
+Savepoints for schema changes & Unsupported. \\
+\bottomrule
+\end{longtable}
+
+For application migrations, the clearest workflow is therefore to execute
+schema changes as explicit migration steps outside a DML transaction, verify
+the new schema, and then run data transformations in their own transactions.
+Keep a migration log in the application if multiple steps must be tracked.
+Do not copy a PostgreSQL or MySQL migration file under the assumption that all
+DDL has the same transactional behavior.
+
+\sourcecode{src/minisql/executor/executor.ml}{ensureExplicitDml, ensureExplicitDdl, executeDdl, and object-specific DDL handlers.}
+
+\section{How concurrent sessions are scheduled}
+
+The server has a dedicated acceptor and a bounded native thread pool. A
+worker owns one connection and its protocol/session state for the lifetime
+of that connection. Independent clients can therefore parse network frames
+and communicate concurrently; one slow socket does not serialize every
+other socket.
+
+Inside each open database, a writer-prioritized readers/writer execution
+gate protects physical execution. Ordinary read-only SELECT, EXPLAIN, and
+metadata work can share the gate. Data changes, schema changes, security
+changes, maintenance, and conservative session-state
+operations require exclusive execution. When a writer is waiting, the gate
+stops admitting new readers until that writer gets its turn. Existing readers
+finish first.
+
+This gives real parallel execution for independent reads, while preserving
+one physical writer per database. Increasing \code{maxConnections} increases
+connection capacity; it does not turn the engine into a multiwriter storage
+system. A workload with many idle pooled connections can occupy workers
+without producing useful parallelism. Size connection pools together with
+the server limit and query working memory.
+
+The logical lock manager is separate from the physical execution gate. It
+retains transaction-level ownership, detects waiting relationships, and
+enforces lock waits. A statement can therefore wait even after receiving a
+worker. Avoid leaving a transaction open while asking a human a question,
+calling a slow external service, or waiting for another application subsystem.
+
+\sourcecode{src/minisql/server/listener.ml}{Bounded connection workers and execution gate dispatch.}
+\sourcecode{src/minisql/server/session.ml}{Statement execution and cooperative lock waiting.}
+\sourcecode{src/minisql/transaction/lock_manager.ml}{Logical readers, writer, waits, and deadlock handling.}
+
+\section{Deadlines, cancellation, and retry policies}
+\index{timeouts}\index{cancellation}\index{retry}
+
+The configured query timeout is an absolute cooperative deadline beginning
+at request admission. It covers parsing, gate waiting, execution, and
+streamed output. Scans and DML poll at defined boundaries rather than being
+preempted at any machine instruction. A client-side timeout and the server's
+query deadline are different controls; set them coherently so the application
+can receive a useful server diagnostic.
+
+\Needspace{19\baselineskip}
+\begin{longtable}{p{.15\linewidth}p{.78\linewidth}}
+\toprule
+Error & Operational interpretation \\
+\midrule
+\endhead
+9032 & Established logical lock-wait failure. The wait consumes the request
+deadline and is counted in timeout statistics. \\
+9035 & Administrative cancellation requested for the session's work. \\
+9036 & Request deadline reached. \\
+9037 & A managed-memory, spill, result-row, or result-byte resource limit was
+reached. Increasing a timeout alone cannot fix this limit. \\
+9038 & A fenced writer no longer has a valid leadership lease/epoch. Do not
+retry writes directly against that retired backend. \\
+\bottomrule
+\end{longtable}
+
+Python \code{Connection.cancel()} and JDBC \code{Statement.cancel()} use a
+separate control connection so cancellation need not compete with the query
+already occupying its original socket. Authenticated cancellation requires
+database \code{ADMIN}. The administrative chapter explains how to identify
+the target session.
+
+For a transient conflict, roll back the transaction, wait a bounded interval,
+and retry the whole business operation if it is safe to do so. Limit retries
+and preserve the original error for diagnosis. A permanently invalid value,
+missing permission, unsupported SQL feature, or lost fencing lease is not a
+reason for an unbounded retry loop.
+
+\section{Durability, WAL, and crash recovery}
+
+Changed pages are recorded in a write-ahead log. A successful commit appends
+the transaction's records and flushes the WAL before the transaction is
+acknowledged as committed. Recovery uses transaction status and page images
+to restore committed work and avoid exposing incomplete work. Checkpoints
+bound the amount of recovery work by publishing a durable boundary.
+
+Do not delete \path{wal/wal.log}, its durable marker, checkpoint metadata, or
+epoch records as a space-saving operation. Their relationship to table pages
+is part of recovery correctness. Use supported maintenance and archive
+rotation procedures. A crash test that passes on one host is not a guarantee
+that every storage device, filesystem, virtual disk, or power-loss scenario
+has the same persistence behavior.
+
+MiniSQL exposes only \code{full} durability in its configuration. There is
+no documented relaxed-commit setting to trade acknowledged durability for
+throughput. If durable writes are slow, first measure the workload and its
+transaction size. Grouping related inserts in one transaction can reduce
+per-commit overhead, but transactions should remain bounded to avoid large
+change sets and long-held locks.
+
+\sourcecode{src/minisql/transaction/transaction.ml}{commit and failure rewind behavior.}
+\sourcecode{src/minisql/transaction/recovery.ml}{Recovery validation and replay.}
+\sourcecode{src/minisql/transaction/checkpoint.ml}{Durable checkpoint records.}
+
+\section{Practice: verify a transaction, rather than merely typing one}
+
+Create a small disposable table with a primary key and a non-negative quantity
+check. Insert a baseline row and record its value. In an explicit transaction,
+change the value and read it through the same session; roll back and verify
+the original value. Repeat with commit, restart the server, and verify the
+new value. Finally create a savepoint, trigger a duplicate-key error, recover
+to the savepoint, and commit a valid change.
+
+For each step, predict which value should be visible before executing it.
+This exercise connects SQL syntax to session state, rollback semantics, and
+durability. Extend it with two sessions only after the single-session result
+is understood; otherwise a locking delay can obscure a simpler transaction
+mistake.

@@ -1,0 +1,231 @@
+\chapter{Query Plans and Performance}
+\label{adv:performance}
+
+\section{Start with a measured question}
+
+Performance work begins with an observable requirement: a query takes too long, an import produces too many round trips, a report uses too much memory, or readers delay a writer. Record the SQL, parameter values, row counts, database page size, server limits, concurrency, and elapsed time. Then change one relevant factor and compare the same workload. A fast query on an empty tutorial database is not evidence of capacity at production size.
+
+MiniSQL separates parsing, binding, optimization, and execution. Binding resolves names and types. Optimization chooses a typed executable plan. EXPLAIN renders that plan; execution consumes its chosen access and operator decisions. This makes plan inspection useful, but an estimated cost is still a model rather than a promise of milliseconds.
+
+\begin{lstlisting}[language=SQL]
+EXPLAIN SELECT product_id, name
+FROM products WHERE stock = 20;
+
+EXPLAIN ANALYZE SELECT product_id, name
+FROM products WHERE stock = 20;
+\end{lstlisting}
+
+EXPLAIN currently accepts SELECT. EXPLAIN ANALYZE actually executes the SELECT and reports measurements; do not treat it as a free inspection command. A SELECT can consume a sequence value or perform expensive work even when its result is only a plan report. Run diagnostic statements with the same privileges and workload expectations as the underlying query.
+
+\sourcecode{src/minisql/executor/executor.ml}{executeExplain builds and executes SELECT diagnostics.}
+\sourcecode{src/minisql/planner/execution_plan.ml}{Typed access, join, aggregate, and sort selections.}
+
+\section{Read an EXPLAIN result}
+\index{EXPLAIN}\index{EXPLAIN ANALYZE}\index{query plan}
+
+The result has one text column named \code{QUERY PLAN}. The leading diagnostic identifies \code{statistics=defaults} or \code{statistics=analyzed}. An indexed first source can also retain an \code{Index Seek rows=...} compatibility line; inspect the following operator tree for the complete picture.
+
+\begin{longtable}{p{.3\linewidth}p{.61\linewidth}}
+\toprule Operator or field & Interpretation \\\midrule
+Sequential access / scan & Visit qualifying heap rows without a selective B+ tree access path. Often appropriate for small tables or a large qualifying fraction. \\
+Index Scan & Use an index to find row references, then retrieve heap rows. \\
+Index Only Scan & Obtain every required value from index keys and INCLUDE payloads, avoiding heap/overflow reads. \\
+Index intersection/union & Combine row-reference sets from eligible indexed conjunctions/disjunctions; union removes duplicate references. \\
+Nested Loop Join & Compare inner rows for each outer row. Useful for small inputs or predicates without an eligible equality strategy. \\
+Index Nested Loop Join & Probe an index for outer rows when the matching access path is available. \\
+Hash Join & Build and probe hash partitions for an eligible equality join. \\
+Dynamic Join Order & Reorder an eligible connected inner-equijoin graph using cost estimates. \\
+Hash Aggregate & Accumulate groups; eligible large inputs can spill and use partition workers. \\
+Streaming Aggregate & Maintain bounded scalar accumulators for eligible aggregate queries. \\
+Count Slots & Count verified live slots for eligible COUNT(*) queries. \\
+Streaming Join Count & Count final matches of eligible reordered inner joins without retaining the complete final join rowset. \\
+Top-N & Retain only the needed ordered prefix for an eligible ORDER BY with a small LIMIT. \\
+External Merge Sort & Write sorted runs to temporary storage and merge them. \\
+\bottomrule
+\end{longtable}
+
+With ANALYZE, trailing rows include elapsed milliseconds, buffer-cache hit/read deltas, actual output row count, and query-memory/spill counters. The exact numerical values depend on the data, cache state, machine, and competing work.
+
+\begin{longtable}{p{.28\linewidth}p{.63\linewidth}}
+\toprule Metric & What it tells you \\\midrule
+\code{timeMs} & Engine execution time for the measured operation; not an end-to-end client timing including all application work. \\
+\code{buffers hit}, \code{read} & Delta in the MiniSQL read cache's hits and misses; not a direct count of physical device operations below the operating system cache. \\
+\code{actual rows} & Final output count. A scalar aggregate can output one row after reading many input rows. \\
+\code{peakBytes} & Engine's estimated retained operator representation, not total process RSS. \\
+\code{limitBytes} & Soft per-query operator memory policy. \\
+\code{spillBytes}, \code{spillRuns} & Disk-backed work reported by the query's spill accounting. \\
+\bottomrule
+\end{longtable}
+
+A useful experiment measures a first execution and repeated executions separately. A warm cache can make repeated tests much faster. Do not report the best warm run as the cold-start time, and do not assume the cache counters include the application's own buffering.
+
+\section{Maintain optimizer statistics}
+\index{statistics}
+
+\begin{lstlisting}[language=SQL]
+ANALYZE products;
+ANALYZE;
+\end{lstlisting}
+
+The table form updates one table; the bare form updates all catalog tables. ANALYZE is autocommit-only. It obtains exact live population and page counts, then samples at most 8192 uniformly spaced rows for column distributions. Small tables whose full population fits the sample can have exact sampled distributions; larger tables produce estimates.
+
+Statistics include NULL counts, distinct estimates, average value widths, bounded numeric/date histograms, up to eight most-common values, and joint distinct/most-common information for composite index key groups of up to eight columns. The current histogram representation uses eight equi-depth buckets where compact comparable values are available. Some wide values use hashes for equality-frequency estimates. These do not supply complete ordering distributions for every SQL type or expression.
+
+Statistics are advisory and checksummed. They do not change rows or constraints. Refresh after bulk loading, large deletions, major skew changes, or index changes that matter to a repeated workload. Stale statistics can select a poor plan even though the result remains correct. Full expression distributions, functional dependencies, bushy join search, and unrestricted correlation models are not implemented.
+
+\tip{Teach selectivity with a concrete count}{If 5 of 100000 orders are pending, an index may avoid most heap work. If 95000 are pending, scanning may be cheaper than following thousands of index references. The optimizer needs population and distribution information to distinguish these cases; the existence of an index alone does not guarantee its use.}
+
+\sourcecode{src/minisql/catalog/statistics.ml}{Distribution encoding, bounded histograms/MCVs, and column groups.}
+\sourcecode{src/minisql/executor/executor.ml}{ANALYZE sampling and planning-context invalidation.}
+
+\section{Design indexes around real predicates}
+\index{index design}
+\input{figures/index-access}
+\subsection{Basic and unique indexes}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX idx_products_stock ON products(stock);
+CREATE UNIQUE INDEX ux_products_name ON products(name);
+SHOW INDEXES FROM products;
+\end{lstlisting}
+
+A normal index permits repeated keys. A unique index adds a uniqueness rule, so create one because the rule is meaningful, not merely because a lookup happens to return one row today. Indexes cost storage and add work to inserts, updates, deletes, maintenance, and recovery. Before adding several indexes, identify the query each one is meant to improve.
+
+Single-column equality and range predicates can use eligible B+ tree paths. The catalog type of the indexed expression and bound query must agree. Avoid gratuitous casts or function wrappers around an indexed column: they can change the bound expression and prevent the intended access path.
+
+The encoded key has a hard 256-byte limit, including type tags, separators, escapes, and the four-byte SQL prefix. A long VARCHAR declaration does not guarantee that every value can be indexed. Variable values containing zero bytes expand under escaping. The leaf payload has a separate 3584-byte limit, independent of database page size. Size keys and included payloads for realistic maximum values, not only an average row.
+
+\subsection{Composite indexes: the current restriction matters}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX idx_orders_customer_status
+ON orders(customer_id, order_status);
+
+EXPLAIN SELECT order_id FROM orders
+WHERE customer_id = 1 AND order_status = 'new';
+\end{lstlisting}
+
+The current SQL optimizer accepts a composite index for equality on every key column. It does not select a partial leftmost-prefix lookup or a composite range access path. Therefore the index above is not a general replacement for a separate \code{customer\_id} index when the query filters only on that column. This is narrower than the usual textbook description of a B+ tree's theoretical capabilities.
+
+Composite encoding and the tree comparator do understand component boundaries, but a representable range is not automatically an implemented planner path. Use EXPLAIN on the exact predicate. When both full-key and single-column queries are important, compare the benefit and write cost of a separate single-column index.
+
+\sourcecode{src/minisql/planner/optimizer.ml}{chooseIndex requires complete equality for multi-column keys.}
+
+\subsection{Covering indexes with INCLUDE}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX idx_orders_customer_cover
+ON orders(customer_id) INCLUDE (order_id, order_status);
+
+EXPLAIN SELECT order_id, order_status FROM orders
+WHERE customer_id = 1;
+\end{lstlisting}
+
+INCLUDE columns are stored in leaf payloads. They do not participate in key ordering or uniqueness. Key and included column lists may not overlap. An index-only plan is possible only when the key and included values cover every value required by projections, predicates, grouping, and ordering in the eligible query.
+
+Covering is particularly useful when the omitted heap columns contain large TEXT/BLOB payloads. Projection pruning already avoids loading unreferenced external values during supported scans; index-only access can avoid opening heap/overflow pages entirely. However, including large text values duplicates them in every relevant leaf entry and can exceed the payload bound. Use INCLUDE for compact frequently returned values.
+
+\subsection{Partial indexes}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX idx_active_customers_city
+ON customers(city) INCLUDE (customer_id, name)
+WHERE active = TRUE;
+
+EXPLAIN SELECT customer_id, name FROM customers
+WHERE active = TRUE AND city = 'London';
+\end{lstlisting}
+
+A partial index stores only rows whose predicate is TRUE; FALSE and UNKNOWN/NULL are omitted. Its predicate must be an immutable, row-local Boolean expression. The supported subset uses columns, literals, unary/binary operations, and IS NULL. Functions, subqueries, aggregates, windows, and session-dependent expressions are rejected in this predicate position.
+
+The optimizer proves safety conservatively for single-table plans. It recognizes identical typed conjuncts and certain stronger typed equality/range bounds on the same column. It does not prove arbitrary Boolean equivalence or floating-point bounds. A query can be logically compatible with a partial index and still fall back to another path. Rewriting a query to match the established predicate directly can make the intent clearer, but never weaken the predicate merely to obtain an index plan.
+
+A partial unique index enforces uniqueness only among qualifying rows. It is not an eligible foreign-key target, and the current ON CONFLICT column target cannot infer it because that syntax does not specify a partial predicate.
+
+\subsection{Functional indexes}
+
+\begin{lstlisting}[language=SQL]
+CREATE INDEX idx_customers_lower_name
+ON customers(LOWER(name));
+
+EXPLAIN SELECT customer_id, name FROM customers
+WHERE LOWER(name) = 'ada';
+\end{lstlisting}
+
+The current functional index accepts one deterministic row-dependent scalar expression. Casts, literals within that expression, deterministic scalar functions, and unary/binary operations are supported where binding permits them. Constant-only keys, parameters, subqueries, aggregates, windows, and mixed expression/composite keys are rejected.
+
+The query must compare the same typed bound expression with a literal. Functional join probes, expression statistics, and expression-aware index-only decoding are not implemented; matching rows are fetched from the heap. INCLUDE, WHERE, and UNIQUE can be combined with a functional key within their individual restrictions. A quoted identifier whose meaning cannot survive canonical expression serialization is rejected at index creation rather than being persisted ambiguously.
+
+\subsection{Combine access paths without changing correctness}
+
+Eligible independent indexed conjunctions can intersect row-reference sets; fully indexable disjunctions can union and deduplicate them. This is useful when no single index matches a combination well. A residual predicate remains necessary for conditions not guaranteed by the access path. The optimizer also propagates typed non-NULL constants across top-level inner-equality graphs, enabling selective access on related tables. Outer-join inference is deliberately excluded because moving a condition can change which unmatched rows survive.
+
+\sourcecode{src/minisql/planner/optimizer.ml}{Covering decisions, selectivity, access-path combinations, and join order.}
+\sourcecode{src/minisql/executor/dml.ml}{Typed index maintenance, partial predicates, functional keys, and INCLUDE decoding.}
+
+\section{Join order and operator behavior}
+\index{join algorithms}\index{optimizer}
+
+Connected inner-equijoin graphs of up to eight sources use bounded left-deep dynamic programming. Larger graphs use a deterministic connected greedy fallback. Outer joins retain their SQL order. There is no unrestricted search of bushy join trees.
+
+Use explicit JOIN syntax for clarity. Comma-separated FROM sources are accepted; an equality linking sources can be promoted into the same costed join machinery, while other predicates remain residual filters. This optimization does not rescue a missing join condition: a cartesian product still multiplies rows and can dominate memory and runtime.
+
+A hash join is not universally faster than nested loops. A selective outer input plus a matching index can favor index nested loops; tiny tables may favor a simple nested loop. Large eligible hash joins and grouped aggregates can partition to validated temporary runs and use up to four native workers. Parallelism has startup and partitioning costs, so small tutorial queries should not be expected to use all cores.
+
+For aggregation, scalar COUNT/SUM/AVG/MIN/MAX/BOOL\_AND/BOOL\_OR can use fixed-size streaming accumulators in eligible plans. COUNT(*) can use verified slot metadata. Grouping requires retaining or spilling groups, and STRING\_AGG necessarily accumulates output content. A one-row aggregate result does not mean one row of work.
+
+\section{Memory, temporary files, and result size}
+\index{spill}\index{Top-N}
+
+The per-session \code{runtime.temporaryMemoryBytes} setting supplies a soft blocking-operator budget. The engine default is 64 MiB; the accepted minimum is 1 MiB. Sort and hash operators estimate row widths and derive thresholds from bytes rather than treating a short row and a huge row as equivalent. Eligible operations spill to the database's temporary area.
+
+This setting is not a total-process ceiling. Parser objects, unsupported materializing operations, a very wide row, and a compatibility result array can temporarily exceed it. \code{runtime.temporaryStorageBytes} separately limits shared spill reservations. \code{runtime.processMemoryBytes} uses live MiniLang managed-heap accounting at admission and cooperative polling points; native TLS/socket allocations, mapped files, and total RSS remain outside that measure. Set an operating-system limit when a strict process ceiling is required.
+
+Result rows are transmitted in bounded continuation frames, normally at most 512 rows and targeting roughly 1 MiB. The protocol's defensive payload ceiling is 16 MiB; one unsplittable row must still fit. Server max-result-row/byte controls can reject a statement even when its operators stayed within their spill budgets. Client-side fetch size does not override these server bounds.
+
+Three independent questions must therefore be answered:
+
+\begin{enumerate}
+\item Does the server operator stream or materialize its inputs and result?
+\item Does the transport divide the result into bounded frames?
+\item Does the application consume incrementally or retain every received row?
+\end{enumerate}
+
+A positive answer to only the second question does not bound total memory. Use narrow projections, explicit predicates, and meaningful LIMITs when the application needs only a subset. Avoid SELECT * for exports that intentionally exclude large payloads.
+
+\section{Plan reuse and cache invalidation}
+\index{plan cache}
+
+Each engine session has a 64-entry optimizer plan cache. Exact top-level SQL text and canonical nested AST keys are used. Repeating structurally similar SQL with different inline literal text is not the same as guaranteed reuse of one top-level key. Driver prepared statements provide another explicit reuse layer, with their own lifetimes and bounds.
+
+DDL, ANALYZE, VACUUM, and REINDEX invalidate planning context across attached sessions. This prevents a cached plan from silently assuming an obsolete schema or statistics generation. After maintenance, the first query can incur replanning and a cold read-cache path. Measure a representative sequence rather than treating that first execution as a permanent regression.
+
+Cache counters describe implementation activity; they are not guarantees that every part of a query bypassed parsing, binding, authorization, or storage checks. Prepared statements also do not freeze data or isolation behavior.
+
+\section{Concurrency and application design}
+\index{concurrency}\index{readers/writer gate}
+
+\input{figures/read-write-gate}
+
+Each connection occupies a worker in the bounded native connection pool. Network handling, framing, and independent read-only plans can proceed in parallel. Every database has a writer-prioritized readers/writer execution gate: ordinary read-only SELECT, EXPLAIN, and metadata can be shared, while ordinary mutations, maintenance, and session-state operations are conservatively exclusive. The NEXTVAL materialization path has classification gaps: cursor probing and EXPLAIN can consume sequence values before the normal checks. Do not treat sequence-bearing queries as a proven read-only or exclusive boundary; see the sequence and transaction chapters.
+
+There is one active physical writer per database. Raising maxConnections admits more sessions; it does not create multiple physical writers. When a writer waits, new readers stop entering so it will not starve. Existing readers still need to complete. Long queries, slow result consumers, and long logical transactions can therefore affect other work even when the machine has idle CPU capacity.
+
+Keep application transactions short and purposeful. Do not wait for a user dialog, HTTP call, or lengthy file processing while retaining database locks. Parse and validate an import before or incrementally within a carefully chosen transaction strategy. For very large loads, decide whether all-file atomicity is worth a long transaction or whether independently committed chunks with an explicit restart key better fit the application.
+
+\section{A repeatable tuning exercise}
+
+Use a disposable copy of the tutorial database, and add enough rows to make access differences visible. Preserve query results before and after each change; performance tuning must not change the answer.
+
+\begin{enumerate}
+\item Run a filtered SELECT without new indexes. Record wall time and EXPLAIN ANALYZE.
+\item Run ANALYZE and compare estimated selectivity with actual output counts.
+\item Add one index matching the equality or range predicate. Explain the identical SQL again; a small table may still favor a scan.
+\item Add compact INCLUDE columns for a frequent projection. Check whether Index Only Scan appears and whether heap reads decrease.
+\item Compare a narrow projection with SELECT * when another column has external TEXT/BLOB values.
+\item Compare ordered LIMIT queries against full ORDER BY results. Look for Top-N only when its eligibility conditions are met.
+\item Repeat with several simultaneous reader connections, then introduce a controlled writer and measure its waiting time.
+\item Remove any experimental index whose measured value does not justify its storage and write cost.
+\end{enumerate}
+
+Use the performance and production-control test programs in \path{tests/performance} and \path{tests/integration} as workload examples. Their dated results describe particular earlier revisions and machines; the current storage-v2 development commit must be qualified independently for the intended deployment.

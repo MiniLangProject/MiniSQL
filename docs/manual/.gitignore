@@ -1,0 +1,12 @@
+/build/
+*.aux
+*.toc
+*.lof
+*.lot
+*.idx
+*.ind
+*.ilg
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz

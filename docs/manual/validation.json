@@ -1,0 +1,973 @@
+{
+  "source_baseline": "9bedab0c9de307d0435d3abfb3eab98a2f6d42a5",
+  "platform": "linux",
+  "storage_format": 2,
+  "wire_protocol": 1,
+  "scope": "Native CLI scripts and focused documentation assertions; not a full release gate",
+  "scripts": [
+    {
+      "file": "examples/01-create-shop.sql",
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "CREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nBEGIN 0 transaction started\nINSERT 4 DML staged\nINSERT 5 DML staged\nINSERT 4 DML staged\nINSERT 6 DML staged\nCOMMIT 0 transaction committed\ncustomer_count\n4\n(1 rows)\nproduct_count\n5\n(1 rows)\norder_count\n4\n(1 rows)\nitem_count\n6\n(1 rows)\nMiniSQL script completed statements=14\n",
+      "stderr": ""
+    },
+    {
+      "file": "examples/02-query-shop.sql",
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "customer_id | name | city | active\n1 | Ada | London | TRUE\n2 | Grace | New York | TRUE\n3 | Linus | Helsinki | TRUE\n4 | Margaret | NULL | FALSE\n(4 rows)\nproduct_id | name | stock\n104 | Monitor Stand | 8\n101 | Mechanical Keyboard | 12\n(2 rows)\ncustomer_id | name\n4 | Margaret\n(1 rows)\nknown_cities | customers\n3 | 4\n(1 rows)\norder_id | name | order_status\n1001 | Ada | new\n1002 | Grace | shipped\n1003 | Ada | paid\n1004 | Linus | new\n(4 rows)\nname | order_count\nAda | 2\nGrace | 1\nLinus | 1\nMargaret | 0\n(4 rows)\nname | units\nAda | 6\nGrace | 3\n(2 rows)\nproduct_id | name | stock\n103 | USB-C Cable | 100\n105 | Notebook | 50\n(2 rows)\ntotal_units\n10\n(1 rows)\nproduct_id | price\n101 | 7990\n(1 rows)\nMiniSQL script completed statements=10\n",
+      "stderr": ""
+    },
+    {
+      "file": "examples/03-transactions.sql",
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "BEGIN 0 transaction started\nUPDATE 1 DML staged\nafter_first_update\n11\n(1 rows)\nSAVEPOINT 0 before_second\nUPDATE 1 DML staged\nafter_second_update\n9\n(1 rows)\nROLLBACK TO 0 before_second\nafter_savepoint_rollback\n11\n(1 rows)\nRELEASE 0 before_second\nROLLBACK 0 transaction rolled back\nafter_full_rollback\n12\n(1 rows)\nBEGIN 0 transaction started\ncustomer_id | name\n99 | Practice\n(1 rows)\ncustomer_id | city\n99 | Bergen\n(1 rows)\ncustomer_id\n99\n(1 rows)\nROLLBACK 0 transaction rolled back\npractice_rows\n0\n(1 rows)\nMiniSQL script completed statements=17\n",
+      "stderr": ""
+    },
+    {
+      "file": "examples/04-query-workshop.sql",
+      "passed": true,
+      "exit_code": 0,
+      "stdout": "order_id | name | unit_count\n1001 | Ada | 3\n1002 | Grace | 3\n1003 | Ada | 3\n1004 | Linus | 1\n(4 rows)\ncustomer_id | name\n4 | Margaret\n(1 rows)\norder_id | customer_id | customer_order\n1001 | 1 | 1\n1003 | 1 | 2\n1002 | 2 | 1\n1004 | 3 | 1\n(4 rows)\nname | state | recorded_city\nAda | active | London\nGrace | active | New York\nLinus | active | Helsinki\nMargaret | inactive | not recorded\n(4 rows)\nn\n1\n2\n3\n4\n5\n(5 rows)\nMiniSQL script completed statements=5\n",
+      "stderr": ""
+    }
+  ],
+  "checks": [
+    {
+      "name": "table row counts",
+      "sql": "SELECT (SELECT COUNT(*) FROM customers),(SELECT COUNT(*) FROM products),(SELECT COUNT(*) FROM orders),(SELECT COUNT(*) FROM order_items)",
+      "rows": [
+        [
+          "4",
+          "5",
+          "4",
+          "6"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "4",
+          "5",
+          "4",
+          "6"
+        ]
+      ]
+    },
+    {
+      "name": "low stock order",
+      "sql": "SELECT product_id,stock FROM products WHERE stock<15 ORDER BY stock,product_id",
+      "rows": [
+        [
+          "104",
+          "8"
+        ],
+        [
+          "101",
+          "12"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "104",
+          "8"
+        ],
+        [
+          "101",
+          "12"
+        ]
+      ]
+    },
+    {
+      "name": "null city",
+      "sql": "SELECT customer_id FROM customers WHERE city IS NULL",
+      "rows": [
+        [
+          "4"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "name": "COUNT ignores null",
+      "sql": "SELECT COUNT(city),COUNT(*) FROM customers",
+      "rows": [
+        [
+          "3",
+          "4"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "3",
+          "4"
+        ]
+      ]
+    },
+    {
+      "name": "outer join zero orders",
+      "sql": "SELECT c.name,COUNT(o.order_id) FROM customers c LEFT JOIN orders o ON o.customer_id=c.customer_id GROUP BY c.name ORDER BY c.name",
+      "rows": [
+        [
+          "Ada",
+          "2"
+        ],
+        [
+          "Grace",
+          "1"
+        ],
+        [
+          "Linus",
+          "1"
+        ],
+        [
+          "Margaret",
+          "0"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "Ada",
+          "2"
+        ],
+        [
+          "Grace",
+          "1"
+        ],
+        [
+          "Linus",
+          "1"
+        ],
+        [
+          "Margaret",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "grouped units",
+      "sql": "SELECT c.name,SUM(i.quantity) FROM customers c JOIN orders o ON o.customer_id=c.customer_id JOIN order_items i ON i.order_id=o.order_id GROUP BY c.name HAVING SUM(i.quantity)>=3 ORDER BY c.name",
+      "rows": [
+        [
+          "Ada",
+          "6"
+        ],
+        [
+          "Grace",
+          "3"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "Ada",
+          "6"
+        ],
+        [
+          "Grace",
+          "3"
+        ]
+      ]
+    },
+    {
+      "name": "total units",
+      "sql": "SELECT SUM(quantity) FROM order_items",
+      "rows": [
+        [
+          "10"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "10"
+        ]
+      ]
+    },
+    {
+      "name": "top two stock",
+      "sql": "SELECT product_id,stock FROM products ORDER BY stock DESC,product_id LIMIT 2",
+      "rows": [
+        [
+          "103",
+          "100"
+        ],
+        [
+          "105",
+          "50"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "103",
+          "100"
+        ],
+        [
+          "105",
+          "50"
+        ]
+      ]
+    },
+    {
+      "name": "transaction script restored state",
+      "sql": "SELECT stock FROM products WHERE product_id=101",
+      "rows": [
+        [
+          "12"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "12"
+        ]
+      ]
+    },
+    {
+      "name": "practice row rolled back",
+      "sql": "SELECT COUNT(*) FROM customers WHERE customer_id=99",
+      "rows": [
+        [
+          "0"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "anti join",
+      "sql": "SELECT c.customer_id FROM customers c LEFT JOIN orders o ON o.customer_id=c.customer_id WHERE o.order_id IS NULL",
+      "rows": [
+        [
+          "4"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "name": "window numbering",
+      "sql": "SELECT order_id,ROW_NUMBER() OVER(PARTITION BY customer_id ORDER BY order_id) FROM orders ORDER BY customer_id,order_id",
+      "rows": [
+        [
+          "1001",
+          "1"
+        ],
+        [
+          "1003",
+          "2"
+        ],
+        [
+          "1002",
+          "1"
+        ],
+        [
+          "1004",
+          "1"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1001",
+          "1"
+        ],
+        [
+          "1003",
+          "2"
+        ],
+        [
+          "1002",
+          "1"
+        ],
+        [
+          "1004",
+          "1"
+        ]
+      ]
+    },
+    {
+      "name": "recursive query",
+      "sql": "WITH RECURSIVE numbers(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM numbers WHERE n<5) SELECT n FROM numbers ORDER BY n",
+      "rows": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ],
+        [
+          "4"
+        ],
+        [
+          "5"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ],
+        [
+          "4"
+        ],
+        [
+          "5"
+        ]
+      ]
+    },
+    {
+      "name": "reject duplicate key",
+      "sql": "INSERT INTO customers(customer_id,name) VALUES(1,'Duplicate')",
+      "error": "executor.dml.validateUniqueBatch: duplicate key for pk_customers_customer_id",
+      "passed": true,
+      "expected_error_contains": "duplicate"
+    },
+    {
+      "name": "reject missing parent",
+      "sql": "INSERT INTO orders(order_id,customer_id,order_status) VALUES(9999,9999,'new')",
+      "error": "executor.dml.validateForeignKey: foreign key failed: fk_orders_customer_id",
+      "passed": true,
+      "expected_error_contains": "foreign"
+    },
+    {
+      "name": "reject negative stock",
+      "sql": "UPDATE products SET stock=-1 WHERE product_id=101",
+      "error": "executor.dml.validateCheck: CHECK constraint failed: constraint_products_2",
+      "passed": true,
+      "expected_error_contains": "CHECK"
+    },
+    {
+      "name": "decimal wire coefficient",
+      "sql": "SELECT price FROM products WHERE product_id=101",
+      "rows": [
+        [
+          "7990"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "7990"
+        ]
+      ]
+    },
+    {
+      "name": "decimal arithmetic limitation",
+      "sql": "SELECT CAST('3.30' AS DECIMAL(10,2))+CAST('1.20' AS DECIMAL(10,2))",
+      "rows": [
+        [
+          "45000"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "45000"
+        ]
+      ]
+    },
+    {
+      "name": "decimal mixed comparison limitation",
+      "sql": "SELECT CAST('3.30' AS DECIMAL(10,2))=330",
+      "rows": [
+        [
+          "TRUE"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "TRUE"
+        ]
+      ]
+    },
+    {
+      "name": "NULLIF limitation",
+      "sql": "SELECT NULLIF(5,NULL)",
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "name": "temporal comparison limitation",
+      "sql": "SELECT CAST(0 AS DATE)=CAST(0 AS DATE)",
+      "error": "sql.values.compareNonNull: values are not comparable",
+      "passed": true,
+      "expected_error_contains": "not comparable"
+    },
+    {
+      "name": "current timestamp limitation",
+      "sql": "SELECT CURRENT_TIMESTAMP",
+      "rows": [
+        [
+          "0"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "division returns DOUBLE",
+      "sql": "SELECT 5/2",
+      "rows": [
+        [
+          "2.5"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "2.5"
+        ]
+      ]
+    },
+    {
+      "name": "text NULL ambiguity",
+      "sql": "SELECT 'NULL',NULL",
+      "rows": [
+        [
+          null,
+          null
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "name": "create referential probe parent",
+      "sql": "CREATE TABLE manual_probe_parent(id INTEGER PRIMARY KEY)",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "create referential probe child",
+      "sql": "CREATE TABLE manual_probe_child(id INTEGER PRIMARY KEY,pid INTEGER REFERENCES manual_probe_parent(id) ON DELETE CASCADE ON UPDATE CASCADE)",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "insert referential probe parent",
+      "sql": "INSERT INTO manual_probe_parent VALUES(1)",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "insert referential probe child",
+      "sql": "INSERT INTO manual_probe_child VALUES(10,1)",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "delete cascade limitation",
+      "sql": "DELETE FROM manual_probe_parent WHERE id=1",
+      "error": "executor.dml.validateDeleteReferences: ON DELETE CASCADE execution is introduced after the basic DML milestone",
+      "passed": true,
+      "expected_error_contains": "CASCADE execution"
+    },
+    {
+      "name": "parent update limitation",
+      "sql": "UPDATE manual_probe_parent SET id=2 WHERE id=1",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "orphan demonstrates update limitation",
+      "sql": "SELECT p.id,c.pid FROM manual_probe_parent p CROSS JOIN manual_probe_child c",
+      "rows": [
+        [
+          "2",
+          "1"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "2",
+          "1"
+        ]
+      ]
+    },
+    {
+      "name": "drop referential probe child",
+      "sql": "DROP TABLE manual_probe_child",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "drop referential probe parent",
+      "sql": "DROP TABLE manual_probe_parent",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "correlated EXISTS",
+      "sql": "SELECT c.customer_id FROM customers c WHERE EXISTS(SELECT 1 FROM orders o WHERE o.customer_id=c.customer_id) ORDER BY c.customer_id",
+      "rows": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ]
+      ]
+    },
+    {
+      "name": "correlated scalar aggregate",
+      "sql": "SELECT c.customer_id,(SELECT COUNT(*) FROM orders o WHERE o.customer_id=c.customer_id) FROM customers c ORDER BY c.customer_id",
+      "rows": [
+        [
+          "1",
+          "2"
+        ],
+        [
+          "2",
+          "1"
+        ],
+        [
+          "3",
+          "1"
+        ],
+        [
+          "4",
+          "0"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1",
+          "2"
+        ],
+        [
+          "2",
+          "1"
+        ],
+        [
+          "3",
+          "1"
+        ],
+        [
+          "4",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "IN subquery",
+      "sql": "SELECT customer_id FROM customers WHERE customer_id IN(SELECT customer_id FROM orders) ORDER BY customer_id",
+      "rows": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1"
+        ],
+        [
+          "2"
+        ],
+        [
+          "3"
+        ]
+      ]
+    },
+    {
+      "name": "correlated NOT EXISTS limitation",
+      "sql": "SELECT c.customer_id FROM customers c WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.customer_id=c.customer_id)",
+      "error": "Struct has no member 'kind'",
+      "passed": true,
+      "expected_error_contains": "Struct has no member"
+    },
+    {
+      "name": "create sequence probe",
+      "sql": "CREATE SEQUENCE manual_seq START WITH 1 INCREMENT BY 1",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "sequence materialization limitation",
+      "sql": "SELECT NEXTVAL('manual_seq') FROM products ORDER BY product_id",
+      "rows": [
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ],
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "name": "sequence double-consumption limitation",
+      "sql": "SELECT NEXTVAL('manual_seq')",
+      "rows": [
+        [
+          "4"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "4"
+        ]
+      ]
+    },
+    {
+      "name": "read-only sequence begin",
+      "sql": "BEGIN READ ONLY",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "read-only sequence limitation",
+      "sql": "SELECT NEXTVAL('manual_seq')",
+      "rows": [
+        [
+          "6"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "6"
+        ]
+      ]
+    },
+    {
+      "name": "read-only sequence rollback",
+      "sql": "ROLLBACK",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "sequence survives rollback",
+      "sql": "SELECT CURRVAL('manual_seq')",
+      "rows": [
+        [
+          "6"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "6"
+        ]
+      ]
+    },
+    {
+      "name": "drop sequence probe",
+      "sql": "DROP SEQUENCE manual_seq",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "create identity probe",
+      "sql": "CREATE TABLE manual_identity(id INTEGER AUTO_INCREMENT PRIMARY KEY,label VARCHAR(20))",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "identity first insert",
+      "sql": "INSERT INTO manual_identity(label) VALUES('first') RETURNING id",
+      "rows": [
+        [
+          "1"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "name": "identity second insert",
+      "sql": "INSERT INTO manual_identity(label) VALUES('second') RETURNING id",
+      "rows": [
+        [
+          "2"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "name": "delete highest identity",
+      "sql": "DELETE FROM manual_identity WHERE id=2",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "identity reuse limitation",
+      "sql": "INSERT INTO manual_identity(label) VALUES('replacement') RETURNING id",
+      "rows": [
+        [
+          "2"
+        ]
+      ],
+      "passed": true,
+      "expected": [
+        [
+          "2"
+        ]
+      ]
+    },
+    {
+      "name": "drop identity probe",
+      "sql": "DROP TABLE manual_identity",
+      "rows": [],
+      "passed": true
+    },
+    {
+      "name": "operational status",
+      "sql": "SHOW STATUS",
+      "rows": [
+        [
+          "uptime_ms",
+          "875"
+        ],
+        [
+          "active_sessions",
+          "1"
+        ],
+        [
+          "total_connections",
+          "5"
+        ],
+        [
+          "total_statements",
+          "97"
+        ],
+        [
+          "failed_statements",
+          "6"
+        ],
+        [
+          "rows_returned",
+          "133"
+        ],
+        [
+          "checkpoint_resets",
+          "0"
+        ],
+        [
+          "max_statement_bytes",
+          "1048576"
+        ],
+        [
+          "max_frame_bytes",
+          "8388608"
+        ],
+        [
+          "max_result_rows",
+          "1000000"
+        ],
+        [
+          "idle_timeout_ms",
+          "300000"
+        ],
+        [
+          "query_memory_bytes",
+          "67108864"
+        ],
+        [
+          "query_timeout_ms",
+          "30000"
+        ],
+        [
+          "max_result_bytes",
+          "268435456"
+        ],
+        [
+          "process_memory_bytes",
+          "2147483648"
+        ],
+        [
+          "heap_used_bytes",
+          "72790648"
+        ],
+        [
+          "heap_committed_bytes",
+          "83886080"
+        ],
+        [
+          "temporary_storage_bytes",
+          "1073741824"
+        ],
+        [
+          "temporary_reserved_bytes",
+          "0"
+        ],
+        [
+          "temporary_peak_bytes",
+          "0"
+        ],
+        [
+          "cancelled_statements",
+          "0"
+        ],
+        [
+          "timed_out_statements",
+          "0"
+        ],
+        [
+          "resource_rejected_statements",
+          "0"
+        ],
+        [
+          "total_execution_ms",
+          "763"
+        ],
+        [
+          "maximum_execution_ms",
+          "57"
+        ],
+        [
+          "slow_query_count",
+          "0"
+        ],
+        [
+          "slow_query_ms",
+          "1000"
+        ],
+        [
+          "result_bytes_returned",
+          "9702"
+        ],
+        [
+          "fencing_enabled",
+          "0"
+        ],
+        [
+          "fencing_epoch",
+          "0"
+        ],
+        [
+          "fencing_rejections",
+          "0"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "name": "operational process list",
+      "sql": "SHOW PROCESSLIST",
+      "rows": [
+        [
+          "1",
+          "admin",
+          "127.0.0.1:50968",
+          "FALSE",
+          "EXECUTING",
+          "0",
+          "SHOW PROCESSLIST",
+          "52"
+        ]
+      ],
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "check_count": 53,
+  "script_count": 4
+}

@@ -1,0 +1,322 @@
+\chapter{SQL foundations: values, names, and expressions}
+\label{sql:foundations}
+
+SQL describes the result or change you want. A query does not tell MiniSQL which disk page to read first or which join algorithm to use. You name the data, describe relationships and conditions, and let the engine choose an executable plan. Understanding this distinction helps you write correct queries before trying to make them faster.
+
+This chapter introduces the language shared by table definitions, queries, and data changes. Later chapters give complete statement forms. The reference describes the checked source revision, including places where accepted syntax has a narrower meaning than in another database.
+
+\section{A statement, a script, and a session}
+
+A statement is one instruction, such as a \code{SELECT} or \code{INSERT}. A script is a sequence of statements separated by semicolons. A session is the connection in which statements run; it owns transaction state, prepared statements, and the session's last sequence values. A second connection does not inherit that state.
+
+\begin{lstlisting}[language=SQL]
+SELECT 2 + 3 AS answer;
+SELECT 'MiniSQL' AS product;
+\end{lstlisting}
+
+The first result has one column named \code{answer} and one value, 5. The second has one column named \code{product}. A \code{SELECT} without \code{FROM} evaluates a single conceptual input row, making it useful for learning expressions. \code{SELECT *} needs a source table; there are no columns to expand otherwise.
+
+The parser accepts a final statement without a semicolon at end of input, but the interactive shell uses the terminator to decide when to submit accumulated input. Write terminators consistently in saved scripts. Repeated empty semicolon statements are ignored. A script containing several statements is not automatically one transaction: use an explicit transaction when the changes must succeed or fail together. A syntax error and a runtime error occur at different stages, so do not infer that earlier statements were undone merely because a later statement failed.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseTokens and parseStatement define statement boundaries and the accepted statement families.}
+
+\section{Reading the syntax diagrams in this manual}
+
+In reference listings, capital words are SQL keywords, lower-case names stand for your identifiers, square brackets mark optional syntax, braces with a vertical bar show alternatives, and an ellipsis means repetition. These notation characters are explanatory; they are not all typed literally. Parentheses shown in statement forms are literal SQL punctuation unless the surrounding explanation says otherwise.
+
+For example:
+
+\begin{lstlisting}[language=SQL]
+SELECT [DISTINCT] expression [AS output_name] [, ...]
+FROM table_name [AS alias]
+[WHERE boolean_expression];
+\end{lstlisting}
+
+An actual statement might be:
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name AS customer_name
+FROM customers
+WHERE active = TRUE;
+\end{lstlisting}
+
+SQL result rows have no guaranteed order unless the query specifies \code{ORDER BY}. Physical insertion order, primary-key order, and the order printed by an earlier run are not substitutes for an ordering clause.
+
+\section{Keywords, identifiers, quoting, and comments}
+\index{identifiers}\index{reserved words}\index{quoting}\index{comments}
+
+\subsection{Names and letter case}
+
+Keywords are case-insensitive. Unquoted identifiers are normalized using ASCII lowercasing, so \code{CUSTOMERS}, \code{Customers}, and \code{customers} refer to the same ordinary name. Double-quoted identifiers preserve spelling and case. Single quotes delimit string values, not identifiers.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE name_example (
+    id INTEGER PRIMARY KEY,
+    "DisplayName" VARCHAR(60)
+);
+INSERT INTO name_example(id, "DisplayName")
+VALUES (1, 'Ada''s account');
+SELECT "DisplayName" FROM name_example;
+\end{lstlisting}
+
+The value contains one apostrophe: \code{Ada's account}. Double a single quote inside a string and double a double quote inside a quoted identifier. Backticks, bracketed identifiers, and backslash string escapes are not alternative quoting conventions in this grammar.
+
+An unquoted identifier begins with a letter, underscore, or non-ASCII UTF-8 byte; subsequent characters may also include digits and a dollar sign. Prefer short ASCII names with underscores for portable scripts and persisted expression definitions. Some words, particularly data-type and built-in function names, are contextual keywords and remain usable as identifiers. Grammar words such as \code{SELECT}, \code{WHERE}, and \code{ORDER} should be avoided as ordinary names.
+
+\warning{Quoted names and persisted expressions}{Quoted identifiers work in ordinary SQL, but the current functional-index persistence check rejects names whose meaning would change after formatting and reparsing. Choosing simple lower-case names avoids this limitation and makes scripts easier to maintain.}
+
+\subsection{Schemas and qualification}
+
+The ordinary schema is \code{public}. \code{customers} and \code{public.customers} name the same table. An object in another schema uses a two-part name, for example \code{sales.orders}. Column references can use a table alias, such as \code{o.order\_id}. Three-part catalog names and configurable search paths are not implemented. A database is selected when the server or connection is opened; there is no \code{USE database} statement.
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name
+FROM public.customers AS c
+WHERE c.active = TRUE;
+\end{lstlisting}
+
+After introducing an alias, use it consistently. When two sources have a column with the same name, qualify the reference to avoid ambiguity.
+
+\subsection{Comments and whitespace}
+
+Whitespace can separate tokens across lines. The lexer supports line comments introduced by two hyphens and block comments delimited by slash-star and star-slash.
+
+\begin{lstlisting}[language=SQL]
+-- Find active customers.
+SELECT customer_id, name
+FROM customers
+/* Add more filters here when required. */
+WHERE active = TRUE;
+\end{lstlisting}
+
+Block comments are not nested. A terminator inside a quoted string is part of that string, not the end of the statement. Keep explanatory comments separate from data literals when building scripts in another language.
+
+\sourcecode{src/minisql/sql/lexer.ml}{skipIgnored, readIdentifier, readQuotedIdentifier, and the string scanner define the lexical rules.}
+\sourcecode{src/minisql/sql/dialect.ml}{keywordList, nonReservedIdentifierKeywordList, and canonicalIdentifier provide the exact keyword policy.}
+
+\section{Literal values and explicit conversion}
+\index{literals}\index{CAST}\index{type conversion}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Form & Meaning and practical rule \\
+\midrule
+\endhead
+\code{42}, \code{-7} & Integer literals. Unary signs are parsed as operators. Large positive integer tokens can use the full stored BIGINT representation, but arithmetic and negative boundary expressions have additional runtime limits. \\
+\code{3.3}, \code{1.25e2} & Approximate-number literals, normally bound as DOUBLE. The decimal separator is a dot. INSERT into DECIMAL uses target-directed exact literal conversion. \\
+\code{'hello'} & A string value. Two adjacent quotes inside it represent one quote. An empty string is distinct from NULL. \\
+\code{TRUE}, \code{FALSE} & Boolean values. Conditions require Boolean expressions; an arbitrary integer is not a truth value. \\
+\code{NULL} & An absent or unknown value, not zero, an empty string, or the string \code{'NULL'}. \\
+\code{?} & A positional parameter in a prepared statement. It represents a value, never a table name, keyword, or arbitrary SQL fragment. \\
+\code{CURRENT\_TIMESTAMP} & Recognized by the grammar, but the checked implementation binds an epoch-zero placeholder. Do not use it to record the current time. \\
+\bottomrule
+\end{longtable}
+
+Use \code{CAST(expression AS type)} for a deliberate conversion:
+
+\begin{lstlisting}[language=SQL]
+SELECT CAST('42' AS INTEGER) AS answer;
+SELECT CAST(7 AS VARCHAR(8)) AS number_as_text;
+SELECT CAST('TRUE' AS BOOLEAN) AS enabled;
+SELECT CAST('3.30' AS DECIMAL(10,2)) AS amount;
+\end{lstlisting}
+
+The first three logical values are integer 42, text \code{'7'}, and Boolean true. The last value is stored exactly at scale two; the current text formatter prints its scaled coefficient, 330. This display limitation and the more serious DECIMAL-expression limitations are explained in Chapter~\ref{sql:schema}.
+
+Assignment conversion is stricter than explicit casting. A quoted string is not silently accepted for every numeric column. The text-to-number cast validates spelling and overflow. Numeric-to-Boolean casts accept only 0 and 1; text-to-Boolean casts accept case-insensitive \code{TRUE}/\code{FALSE} and the strings \code{'1'}/\code{'0'}. A cast is not a general-purpose date parser: ISO dates and times in strings are not parsed by the present temporal conversion code.
+
+There are no SQL binary literals such as \code{X'ABCD'}, no array literal, and no JSON data type. BINARY, VARBINARY, and BLOB exist in the engine, but the SQL text interface cannot currently construct a non-NULL binary value from a binary literal. A connector's existence does not imply that it supplies typed binary parameters.
+
+\sourcecode{src/minisql/sql/values.ml}{fromLiteral, literalInteger, decimalWordsFromText, convert, and cast define literal and conversion behavior.}
+\sourcecode{src/minisql/client/formatter.ml}{valueText exposes scalar and Int64Words values as protocol text.}
+
+\section{NULL and three-valued logic}
+\index{NULL}\index{three-valued logic}
+\label{sql:null}
+
+SQL conditions have three possible logical outcomes: true, false, and unknown. A comparison involving NULL normally yields unknown. A \code{WHERE} clause retains only rows for which its condition is true. Both false and unknown are filtered out.
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name
+FROM customers
+WHERE city IS NULL;
+
+SELECT customer_id, name
+FROM customers
+WHERE city IS NOT NULL;
+\end{lstlisting}
+
+Do not write \code{city = NULL}. That asks for a comparison with an unknown value. Use the dedicated \code{IS NULL} predicate. NULL also propagates through ordinary arithmetic and text concatenation.
+
+\begin{longtable}{p{.25\linewidth}p{.20\linewidth}p{.20\linewidth}p{.23\linewidth}}
+\toprule
+Left & Right & AND & OR \\
+\midrule
+\endhead
+TRUE & TRUE & TRUE & TRUE \\
+TRUE & FALSE & FALSE & TRUE \\
+TRUE & UNKNOWN & UNKNOWN & TRUE \\
+FALSE & FALSE & FALSE & FALSE \\
+FALSE & UNKNOWN & FALSE & UNKNOWN \\
+UNKNOWN & UNKNOWN & UNKNOWN & UNKNOWN \\
+\bottomrule
+\end{longtable}
+
+The table is symmetric: exchanging the operands does not change the logical result. \code{NOT TRUE} is false, \code{NOT FALSE} is true, and \code{NOT UNKNOWN} is unknown. The evaluator short-circuits Boolean AND after a false left operand and OR after a true left operand.
+
+The truth-test predicates always produce a non-NULL Boolean result:
+
+\begin{lstlisting}[language=SQL]
+SELECT TRUE IS TRUE AS a,
+       FALSE IS NOT TRUE AS b,
+       CAST(NULL AS BOOLEAN) IS UNKNOWN AS c;
+\end{lstlisting}
+
+All three values are true. Supported forms are \code{IS [NOT] TRUE}, \code{IS [NOT] FALSE}, and \code{IS [NOT] UNKNOWN}. Parenthesize a compound condition before attaching a truth test:
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id
+FROM customers
+WHERE (city = 'Berlin') IS UNKNOWN;
+\end{lstlisting}
+
+\subsection{CHECK differs from WHERE}
+
+A \code{CHECK} constraint rejects false; true and unknown pass. Therefore \code{CHECK (quantity > 0)} does not by itself prohibit NULL. Write \code{quantity INTEGER NOT NULL CHECK (quantity > 0)} when every row must have a positive quantity. This distinction is central to reliable schema design.
+
+\subsection{Replacing an absent value}
+
+\code{COALESCE} returns the first non-NULL argument. Use a compatible fallback type:
+
+\begin{lstlisting}[language=SQL]
+SELECT name, COALESCE(city, 'Not recorded') AS city_label
+FROM customers;
+\end{lstlisting}
+
+The original column remains NULL in the table; only the result is replaced. A display replacement should not be confused with a data correction. To store a replacement, issue an explicit \code{UPDATE}.
+
+\warning{NULLIF implementation difference}{The current scalar evaluator propagates any NULL argument before its NULLIF-specific comparison. Consequently \code{NULLIF(5, NULL)} produces NULL in this revision. This differs from the usual SQL behavior. Use an explicit CASE expression when the second argument may be NULL and retaining the first value matters.}
+
+\sourcecode{src/minisql/sql/values.ml}{truth, logicalAnd, logicalOr, and logicalNot implement three-valued logic.}
+\sourcecode{src/minisql/sql/expressions.ml}{predicatePasses, checkPasses, and evaluateScalarValues distinguish filtering, CHECK, and scalar NULL handling.}
+
+\section{Operators and precedence}
+\index{operators}\index{operator precedence}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Binary group, weakest first & Operators and interpretation \\
+\midrule
+\endhead
+Boolean alternative & \code{OR}. At least one condition must be true. \\
+Boolean conjunction & \code{AND}. Both conditions must be true. \\
+Comparisons & \code{=}, \code{<>}, \code{!=}, \code{<}, \code{<=}, \code{>}, \code{>=}. Operands must have compatible types. \\
+Text concatenation & \code{||}. Both operands must be text. NULL yields NULL. \\
+Additive arithmetic & \code{+}, \code{-}. Numeric operands only. \\
+Multiplicative arithmetic & \code{*}, \code{/}, \code{\%}. Numeric operands only; zero divisors are errors. \\
+\bottomrule
+\end{longtable}
+
+Within a binary precedence group, evaluation is left-associative. Parentheses override grouping. Unary \code{+}, unary \code{-}, and \code{NOT} are parsed tightly. Predicate suffixes such as \code{IS NULL}, \code{LIKE}, \code{IN}, and \code{BETWEEN} are attached during primary-expression parsing. This is not an exact copy of every other SQL dialect's precedence table.
+
+\begin{lstlisting}[language=SQL]
+SELECT 2 + 3 * 4 AS a, (2 + 3) * 4 AS b;
+-- a = 14, b = 20
+
+SELECT customer_id
+FROM customers
+WHERE active = TRUE AND (city = 'Berlin' OR city = 'Bonn');
+\end{lstlisting}
+
+Always write \code{NOT (stock > 0)} when negating a comparison. For a computed left operand, write \code{(stock + 1) BETWEEN 2 AND 5} or \code{(name || '!') LIKE 'A\%'}. Parentheses make the intended predicate boundary unambiguous in this parser.
+
+Mixed numeric types use a common type. The numeric rank increases from SMALLINT through INTEGER, BIGINT, DECIMAL, REAL, and DOUBLE. This ranking does not promise complete scale-aware DECIMAL mathematics or arbitrary-precision arithmetic. Division always binds a DOUBLE result, so \code{SELECT 5 / 2} returns 2.5. Assignment of a fractional result back into an integral column is a separate conversion and must not be assumed to truncate safely. See the type caveats before building accounting logic.
+
+String comparison is lexicographic over UTF-8 bytes and case-sensitive. There is no configurable collation, accent-insensitive comparison, or Unicode case-folding locale. CHAR values are padded with spaces to their declared byte width; trailing spaces remain part of their stored string. Normalize values deliberately if comparison should ignore superficial differences.
+
+\sourcecode{src/minisql/sql/parser.ml}{operatorPrecedence, parseUnary, parsePredicateTail, and parseExpression define the actual grouping rules.}
+\sourcecode{src/minisql/sql/types.ml}{commonNumeric and comparable define type combination and comparison eligibility.}
+\sourcecode{src/minisql/sql/expressions.ml}{numericResult and comparisonResult execute operators.}
+
+\section{Predicates for finding the right rows}
+
+\subsection{Ranges with BETWEEN}
+\index{BETWEEN}
+
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name, stock
+FROM products
+WHERE stock BETWEEN 5 AND 20;
+\end{lstlisting}
+
+Both endpoints are included. The expression means \code{stock >= 5 AND stock <= 20}. \code{NOT BETWEEN} negates the test. A NULL operand or endpoint produces unknown unless the underlying three-valued conjunction can determine a false result. For a range with an exclusive upper bound, write the two comparisons explicitly.
+
+\subsection{Membership with IN}
+\index{IN}\index{NOT IN}
+
+\begin{lstlisting}[language=SQL]
+SELECT order_id, order_status
+FROM orders
+WHERE order_status IN ('new', 'paid');
+\end{lstlisting}
+
+The list must contain at least one value. \code{NOT IN} is useful only when its NULL behavior is understood. If no value matches and the candidate list contains NULL, the result is unknown rather than true. Thus \code{2 NOT IN (1, NULL)} does not pass a filter. For the current native implementation, use a LEFT JOIN followed by an IS NULL test on the non-nullable joined key when checking for absent related rows. A verified defect in correlated NOT EXISTS is described in Section~\ref{sql:subqueries}.
+
+\subsection{Patterns with LIKE}
+\index{LIKE}
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name
+FROM customers
+WHERE name LIKE 'A%';
+\end{lstlisting}
+
+Percent matches zero or more bytes. Underscore matches one byte. The matching engine is case-sensitive and operates on UTF-8 bytes; an underscore is not guaranteed to match one non-ASCII character. Common prefix, suffix, and contains patterns have optimized byte-search paths, while the general matcher uses bounded-memory wildcard matching.
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Pattern & Matches \\
+\midrule
+\endhead
+\code{'Mini\%'} & Any text beginning with \code{Mini}. \\
+\code{'\%SQL'} & Any text ending with \code{SQL}. \\
+\code{'\%shop\%'} & Text containing the byte sequence \code{shop}. \\
+\code{'A\_'} & An ASCII A followed by exactly one byte. \\
+\bottomrule
+\end{longtable}
+
+\code{NOT LIKE} is supported. There is no \code{ESCAPE} clause and no regular-expression operator. If percent or underscore is ordinary data that must match literally, do not assume that a backslash escapes it; use equality or perform the more specialized matching in the application.
+
+\sourcecode{src/minisql/sql/expressions.ml}{likeResult, evaluateIn, evaluateBetween, and evaluateTruthTest implement these predicates.}
+\sourcecode{src/tests/m36_predicates_fetch.ml}{Regression examples cover IN, BETWEEN, truth tests, NOT LIKE, NULL-sensitive NOT IN, and FETCH.}
+
+\section{CASE: choosing an output value}
+\index{CASE}
+
+A searched CASE evaluates conditions in order and chooses the first true branch. A simple CASE compares one operand with each WHEN value. If no branch matches and no ELSE is present, the result is NULL. Branch result types must be compatible.
+
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name,
+       CASE
+         WHEN stock = 0 THEN 'out of stock'
+         WHEN stock < 5 THEN 'low stock'
+         ELSE 'available'
+       END AS stock_state
+FROM products;
+
+SELECT order_id,
+       CASE order_status
+         WHEN 'new' THEN 'Awaiting payment'
+         WHEN 'paid' THEN 'Ready to ship'
+         ELSE 'Other state'
+       END AS next_action
+FROM orders;
+\end{lstlisting}
+
+CASE returns a value; it does not execute SQL statements or provide procedural branching. The chosen result branch is evaluated at runtime, but all branches must still be valid and type-compatible when the query is bound. An unreachable branch is not a way to hide an unknown column.
+
+\tip{A disciplined query-writing routine}{First identify the source and the required row set. Write the WHERE clause, inspect a small ordered sample, then add computed columns. Add aggregation only after verifying the input rows. Keep explicit aliases for calculated columns so client code does not depend on automatically formatted expression names.}
+
+\section{Check your understanding}
+
+Before continuing, be able to explain why \code{city IS NULL} is different from \code{city = NULL}; why a primary key does not imply result order; why \code{CHECK (stock >= 0)} still needs NOT NULL if absence is forbidden; and why a parameter cannot stand in for a table name. Write a query that lists active customers whose city is either Berlin or Bonn, and another that gives an explicit label to customers without a city. The important result is a correct set of rows, not a particular physical execution plan.

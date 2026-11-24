@@ -1,0 +1,144 @@
+\chapter{Validation, source map and reproducibility}
+\label{appendix:validation}
+
+\section{What was checked for this edition}
+The source baseline is \texttt{\SourceCommit}. The executable examples were
+checked with newly built Linux x64 programs from that revision, using
+MiniLangCompilerPy 1.3.10 at compiler revision
+\texttt{8e64c9cfda92199b68ac5d3974fea445f12f6c39}.
+The server, native client, consistency checker and backup tool were compiled
+for the validation. Each run used fresh, disposable database directories.
+No existing user database was used as a mutable test fixture.
+
+The manual validation runner executes four complete SQL files through the
+native console and checks 53 focused outcomes through the repository's Python
+connector. A separate recovery runner verifies the offline backup/restore
+procedure, runs the native checker before backup and after restore, starts
+the restored database, compares counts and a joined aggregate, and verifies
+a writable transaction followed by rollback.
+
+\begin{longtable}{p{.29\linewidth}p{.63\linewidth}}
+\caption{Documentation validation and its limits}\\
+\toprule Area & Evidence and interpretation\\\midrule\endhead
+Teaching setup & Four tables and 19 data rows loaded through the native script client. Counts are 4 customers, 5 products, 4 orders and 6 order items.\\
+Queries & Filtering, sorting, NULL counts, joins, grouped totals, outer-join anti-matching, CTEs, recursion, windows, working subquery shapes and expected results.\\
+Changes & Insert/update/delete with RETURNING, savepoint rollback, full rollback, duplicate-key rejection, missing-parent rejection and CHECK rejection.\\
+Known limitations & Decimal scaling/presentation, temporal comparison, CURRENT\_TIMESTAMP, NULLIF, text NULL ambiguity, unsupported DELETE CASCADE, orphan-producing parent-key updates, correlated NOT EXISTS, identity reuse and sequence materialization.\\
+Operational recipe & Clean stop, native checker, offline backup, restore to a new path, checker on the restored copy, restarted SQL and reversible write.\\
+Source review & Parser/binder/executor, command entrypoints, config, security, drivers, Workbench, planner, storage, recovery and replication implementations.\\
+Not a claim of execution & This work did not run the full Windows acceptance suite, Windows Workbench, all TLS certificate scenarios, long-duration soak, every replication failure scenario or every SQL combination. Those descriptions are source-reviewed and linked to relevant tests.\\\bottomrule
+\end{longtable}
+
+\warning{A passing limitation probe is not a correctness endorsement}{Some
+checks deliberately assert an observed defect or unsupported behavior. Such a
+check passes when the manual describes the running implementation faithfully.
+For example, confirming that \code{NULLIF(5,NULL)} returns null does not make
+that result standard-conforming. When the engine changes, a failed limitation
+probe may indicate that a warning can be removed after investigation.}
+
+\section{Reproduce the teaching checks}
+From the repository root, with matching native executables already built:
+\begin{lstlisting}[language=bash]
+python3 docs/manual/tools/validate_examples.py \
+  --bin-dir build/bin-linux \
+  --output build/manual-validation.json
+
+python3 docs/manual/tools/validate_recovery.py \
+  --bin-dir build/bin-linux \
+  --output build/manual-recovery-validation.json
+\end{lstlisting}
+On Windows use \code{python} and \path{build/bin}. The runners discover a
+free loopback port, create temporary directories under \path{build/}, start
+and stop their own processes, and remove their disposable databases when
+finished. They do not need a running application server and must not be
+pointed at a production database. \code{--bin-dir} selects executables, not
+a database path.
+
+The committed \path{validation.json} and \path{recovery-validation.json}
+contain the outcomes used for this edition. They record the source baseline,
+platform, script output, expected values and observed results. Rerun with an
+output under \path{build/} while comparing a new revision; replace the
+committed evidence only as part of a reviewed documentation update.
+
+\section{Selected observed edge cases}
+The table below summarizes the focused probes. Read the corresponding
+language and operations chapters for explanations and practical workarounds.
+
+\begin{longtable}{p{.45\linewidth}p{.47\linewidth}}
+\caption{Actual behavior of important boundary cases at the pinned revision}\\
+\toprule Probe & Observed outcome\\\midrule\endhead
+\code{CAST('3.30' AS DECIMAL(10,2))} & Wire cell \code{330}; the schema scale is not applied by the generic formatter.\\
+Add decimal 3.30 and 1.20 & Wire cell \code{45000}; arithmetic adds raw coefficients and rescales incorrectly.\\
+Compare decimal 3.30 to integer 330 & \code{TRUE}; mixed-scale comparison is not a reliable numeric comparison.\\
+\code{NULLIF(5,NULL)} & SQL NULL.\\
+Compare two \code{CAST(0 AS DATE)} values & Error: values are not comparable.\\
+\code{CURRENT\_TIMESTAMP} & Wire cell \code{0}, not the current wall-clock time.\\
+\code{5 / 2} & \code{2.5}; division deliberately produces a floating result.\\
+\code{SELECT 'NULL', NULL} through Python & Both values appear as Python \code{None}.\\
+Delete referenced parent with DELETE CASCADE & Rejected with an implementation-stage diagnostic.\\
+Update parent key from 1 to 2 with existing child & Update succeeds; child remains at 1.\\
+Correlated EXISTS and scalar COUNT subquery & Correct expected fixture results in the tested shapes.\\
+Correlated NOT EXISTS & Runtime error 1306: \code{Struct has no member 'kind'}.\\
+Sequence starts at 1; query NEXTVAL over products ordered by key & Five rows all display 2; evaluation is not once per row and the cursor/fallback path consumes twice.\\
+Next standalone NEXTVAL on that sequence & 4, reflecting the same double-materialization path.\\
+BEGIN READ ONLY; NEXTVAL; ROLLBACK & NEXTVAL succeeds with 6; CURRVAL remains 6 after rollback.\\
+Identity rows 1,2; delete 2; insert again & The new row reuses 2 because allocation uses the current maximum.\\\bottomrule
+\end{longtable}
+
+\section{How the manual covers the repository}
+\begin{longtable}{p{.28\linewidth}p{.64\linewidth}}
+\caption{The implementation areas behind the handbook}\\
+\toprule Area & Primary files and corresponding chapters\\\midrule\endhead
+Build and applications & \path{build.ps1}; all six \path{src/apps/*/main.ml} entrypoints. Installation, console, administration and recovery chapters.\\
+SQL surface & \path{src/minisql/sql/parser.ml}, \path{lexer.ml}, \path{ast.ml}, \path{binder.ml}, \path{types.ml}, \path{values.ml}, \path{expressions.ml}. Language chapters.\\
+Execution & \path{src/minisql/executor/executor.ml}, \path{dml.ml}, aggregate, join, projection and sort modules. Language, transaction and performance chapters.\\
+Catalog and schema & \path{src/minisql/catalog/catalog.ml}, \path{schema_history.ml}, \path{statistics.ml}. Definitions, permissions, metadata and internals.\\
+Transactions & \path{src/minisql/transaction/transaction.ml}, WAL, recovery and checkpoint modules; database manager and logical locks. Transaction and recovery chapters.\\
+Server and configuration & \path{src/minisql/server/}, \path{src/minisql/config/}, logger, diagnostics and deployment templates. Installation and administration.\\
+Security & Catalog security, common crypto helpers, TLS platform adapters, protocol authentication, TDE and backup encryption. Security and integration.\\
+Client interfaces & \path{src/minisql/client/}, \path{src/minisql/admin/}, \path{clients/python/}, \path{clients/jdbc/}. Clients chapter.\\
+Optimizer & \path{src/minisql/planner/}, statistics and executor operators. Performance and queries.\\
+Physical formats & \path{src/minisql/storage/}, \path{docs/formats/}, \path{common/format_version.ml}. Storage chapter.\\
+Operational tools & \path{src/minisql/tools/}, \path{tools/monitoring/}, \path{tools/replication/}, recovery/fault/soak tests. Administration, recovery and diagnostics.\\\bottomrule
+\end{longtable}
+
+The abbreviated module names in this overview inherit the directory of their
+first fully qualified sibling. Exact links in the chapters always identify
+the full repository path. \path{source-map.json} lists the verified source
+references by chapter so that an update can identify which chapters depend
+on a changed file. The generated API documentation in \path{docs/api/}
+complements this book with declaration-level detail.
+
+\section{Build the PDF from its LaTeX sources}
+Install a normal TeX Live or MiKTeX distribution providing pdfLaTeX,
+MakeIndex, Latin Modern, TikZ/PGF, tcolorbox, listings, booktabs, longtable,
+tabularx, enumitem, titlesec, fancyhdr, microtype, hyperref and bookmark.
+The commonly supplied recommended and extra LaTeX packages contain these.
+The build uses no shell escape and needs no raster-image generator.
+
+\begin{lstlisting}[language=bash]
+python3 docs/manual/tools/build_manual.py
+\end{lstlisting}
+The build writes auxiliary files to \path{docs/manual/build/}, runs the index
+and enough LaTeX passes to resolve navigation, and copies the final document
+to \path{docs/manual/minisql-user-manual.pdf}. To choose another output path,
+use \code{--output}. All illustrations are editable TikZ source files under
+\path{figures/}; all tutorial SQL is under \path{examples/}. The main document
+is \path{minisql-user-manual.tex}, with formatting in \path{preamble.tex} and
+the pinned source identity in \path{edition.tex}.
+
+\section{Review checklist for the next edition}
+When the implementation changes, inspect the changed code and identify
+affected manual chapters through the source map. Rebuild native programs
+with a recorded compiler. Run the tutorial and recovery checks, then revise
+the SQL syntax, limits, examples and known-defect descriptions as needed.
+Keep historical release evidence clearly separate from new validation.
+Rebuild the PDF and inspect pages containing long command lines, dense
+tables, diagrams and chapter transitions. Check hyperlinks, contents entries,
+the index, and the absence of missing references.
+
+Publish the source, PDF, executable examples and validation evidence together.
+A manual is most useful when another person can both read its explanations
+and reproduce the behaviors it describes.
+\sourcecode{docs/acceptance/STORAGE_V2_2026-11-24.md}{The separate storage-v2 implementation gate and its explicit platform scope.}
+\sourcecode{tests/run_storage_v2.py}{Native focused and selected storage regression runner.}

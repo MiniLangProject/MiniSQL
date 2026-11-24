@@ -1,0 +1,92 @@
+{
+  "source_baseline": "9bedab0c9de307d0435d3abfb3eab98a2f6d42a5",
+  "platform": "linux",
+  "scope": "Offline plain backup and restore with native check and restarted SQL verification",
+  "steps": [
+    {
+      "name": "initialize fresh source",
+      "exit_code": 0,
+      "stdout": "MiniSQL database created: /workspace/scratch/f7d19a5ecb43/MiniSQL/build/manual-recovery-qlr_37sw/data/db_6b2c9c40fd3c4eb6996a309147fe2cba\nDatabase name: recovery\nPage size: 4096\n",
+      "stderr": ""
+    },
+    {
+      "name": "load teaching schema and rows",
+      "exit_code": 0,
+      "stdout": "CREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nCREATE TABLE 0 DDL committed\nBEGIN 0 transaction started\nINSERT 4 DML staged\nINSERT 5 DML staged\nINSERT 4 DML staged\nINSERT 6 DML staged\nCOMMIT 0 transaction committed\ncustomer_count\n4\n(1 rows)\nproduct_count\n5\n(1 rows)\norder_count\n4\n(1 rows)\nitem_count\n6\n(1 rows)\nMiniSQL script completed statements=14\n",
+      "stderr": ""
+    },
+    {
+      "name": "check stopped source",
+      "exit_code": 0,
+      "stdout": "MiniSQL check: SUCCESS tables=4 rows=19 indexes=4\nWARNING: statistics are not present; run ANALYZE\n",
+      "stderr": ""
+    },
+    {
+      "name": "create offline backup",
+      "exit_code": 0,
+      "stdout": "MiniSQL backup: SUCCESS files=21 bytes=233099\n",
+      "stderr": ""
+    },
+    {
+      "name": "restore into new directory",
+      "exit_code": 0,
+      "stdout": "MiniSQL restore: SUCCESS files=21 bytes=233099\n",
+      "stderr": ""
+    },
+    {
+      "name": "check restored database",
+      "exit_code": 0,
+      "stdout": "MiniSQL check: SUCCESS tables=4 rows=19 indexes=4\nWARNING: statistics are not present; run ANALYZE\n",
+      "stderr": ""
+    },
+    {
+      "name": "restored SQL row counts",
+      "expected": [
+        [
+          "4",
+          "5",
+          "4",
+          "6"
+        ]
+      ],
+      "actual": [
+        [
+          "4",
+          "5",
+          "4",
+          "6"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "name": "restored joined aggregate",
+      "expected": [
+        [
+          "Ada",
+          "6"
+        ],
+        [
+          "Grace",
+          "3"
+        ]
+      ],
+      "actual": [
+        [
+          "Ada",
+          "6"
+        ],
+        [
+          "Grace",
+          "3"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "name": "restored writable transaction and rollback",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

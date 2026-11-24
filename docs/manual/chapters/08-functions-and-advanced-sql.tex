@@ -1,0 +1,540 @@
+\chapter{Function reference and reusable SQL objects}
+\label{sql:advanced}
+
+This chapter completes the SQL reference with every built-in scalar, aggregate, and window function recognized by the current binder, followed by views, prepared statements, sequences, triggers, and stored procedures. Use it as a reference after working through the earlier query chapters. Each family solves a different problem: a scalar function transforms one value, an aggregate summarizes rows, a window attaches a calculation to existing rows, and a stored object gives a reusable name to a definition.
+
+\section{Scalar functions}
+\index{scalar functions}
+\label{sql:scalar-functions}
+
+Function names are case-insensitive. Arguments must have compatible declared types; automatic conversion is deliberately limited. Unless described otherwise, a NULL argument causes a NULL result. For example, CONCAT does not silently treat NULL as an empty string. Apply COALESCE explicitly when that is the required policy.
+
+\subsection{NULL selection}
+\index{COALESCE}\index{NULLIF}
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Function & Contract \\
+\midrule
+\endhead
+COALESCE(a [, ...]) & At least one argument. Return the first non-NULL value after deriving a compatible result type from all arguments. All-NULL arguments yield NULL. Evaluation stops after the chosen value. \\
+NULLIF(a,b) & Exactly two compatible values. Equal non-NULL values yield NULL; different non-NULL values yield a. The current evaluator also returns NULL if either argument is NULL, including a non-NULL first argument and NULL second argument. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=SQL]
+SELECT COALESCE(NULL, NULL, 'fallback') AS chosen;
+SELECT NULLIF(5, 5) AS equal_case,
+       NULLIF(5, 6) AS different_case;
+\end{lstlisting}
+
+The results are text \code{fallback}, NULL, and integer 5. COALESCE(1, 'text') is not a generic formatting operation; the incompatible result types are rejected. Cast intentionally if the application wants text.
+
+The NULLIF difference is significant for expressions copied from other SQL engines. For a nullable second value, express the intended rule with CASE instead of assuming the standard shortcut. For example, \code{CASE WHEN b IS NULL THEN a WHEN a = b THEN NULL ELSE a END} retains a when b is absent. The CASE branches must still have compatible types.
+
+\subsection{Text functions}
+\index{text functions}\index{LOWER}\index{UPPER}\index{SUBSTRING}\index{TRIM}\index{REPLACE}\index{CONCAT}\index{LENGTH}
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Function & Contract and boundaries \\
+\midrule
+\endhead
+LOWER(text) & Lowercase ASCII A--Z. Non-ASCII UTF-8 bytes are preserved, not Unicode-case-folded. \\
+UPPER(text) & Uppercase ASCII a--z, with the same non-ASCII limitation. \\
+LENGTH(text) & Count UTF-8 character starts. This is not the byte limit enforced by VARCHAR(n). \\
+CHAR\_LENGTH(text) & Same behavior as LENGTH in this implementation. \\
+SUBSTRING(text,start [,length]) & One-based character offset. Start must be at least 1; optional length must be nonnegative. Omitting length takes the remainder. This is comma-argument syntax, not SQL's FROM/FOR spelling. \\
+TRIM(text) & Remove surrounding ASCII space bytes only. There is no LEADING/TRAILING/BOTH modifier, custom trim character, or general Unicode-whitespace trimming. \\
+REPLACE(text,\allowbreak search,\allowbreak replacement) & Replace every nonoverlapping matching byte sequence. All three arguments are text. Empty search returns the input unchanged. \\
+CONCAT(text [, ...]) & At least one text argument. Concatenate all arguments. A NULL argument yields NULL. Numeric arguments require explicit text conversion. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=SQL]
+SELECT LOWER('MiniSQL') AS lower_name,
+       UPPER('MiniSQL') AS upper_name,
+       LENGTH('MiniSQL') AS characters,
+       SUBSTRING('MiniSQL', 5, 3) AS suffix,
+       TRIM('  ready  ') AS trimmed,
+       REPLACE('a-b-a', 'a', 'x') AS replaced,
+       CONCAT('Mini', 'SQL') AS joined;
+\end{lstlisting}
+
+The values are \code{minisql}, \code{MINISQL}, 7, \code{SQL}, \code{ready}, \code{x-b-x}, and \code{MiniSQL}. SUBSTRING works in character offsets for valid UTF-8, while LIKE's underscore wildcard works in bytes. Those two operations should not be assumed to have identical Unicode behavior.
+
+An application's text policy may require Unicode normalization, case folding, accent handling, or grapheme counting. Perform those transformations in the application when needed and store the normalized comparison key deliberately. A LOWER-based functional index accelerates MiniSQL's ASCII normalization semantics; it does not add a locale-aware collation.
+
+\subsection{Numeric functions}
+\index{numeric functions}\index{ABS}\index{ROUND}\index{CEIL}\index{FLOOR}\index{POWER}
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Function & Contract and boundaries \\
+\midrule
+\endhead
+ABS(number) & Absolute value, retaining the argument's type. The full-width signed BIGINT minimum cannot be negated and produces overflow. \\
+ROUND(number) & One numeric argument. Integral values are unchanged; approximate values are rounded by the native math implementation and retain the approximate type. There is no second decimal-place argument. DECIMAL input is rejected. \\
+CEIL(number) & Smallest integral-valued number no smaller than the input, returned in the argument's numeric type. DECIMAL input is rejected. \\
+FLOOR(number) & Largest integral-valued number no larger than the input. DECIMAL input is rejected. \\
+POWER(base,exponent) & Two numeric arguments and a DOUBLE result. Undefined real-domain operations are errors. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=SQL]
+SELECT ABS(-7) AS magnitude,
+       ROUND(2.6) AS rounded,
+       CEIL(-2.2) AS upward,
+       FLOOR(-2.2) AS downward,
+       POWER(2, 10) AS powered;
+\end{lstlisting}
+
+The logical values are 7, 3, -2, -3, and 1024. Approximate result presentation can include or omit a fractional suffix. POWER(-2, 0.5) is outside the real domain and is rejected. There are no built-in SQRT, LOG, trigonometric, random-number, or user-defined scalar functions in the current binder. Use POWER only for semantics that fit its documented domain.
+
+These functions do not repair DECIMAL arithmetic. Although ABS preserves an existing scaled representation, general arithmetic, comparisons across scales, and conversion to approximate values still have the limitations in Section~\ref{sql:decimal-caveat}. Treat result units and scale as part of the application contract.
+
+\subsection{Temporal extraction}
+\index{DATE\_PART}\index{CURRENT\_TIMESTAMP}
+
+\begin{lstlisting}[language=SQL]
+DATE_PART(part_name, temporal_value)
+\end{lstlisting}
+
+The first argument is text. Accepted case-insensitive names are YEAR, MONTH, DAY, HOUR, MINUTE, and SECOND. The second argument must be DATE, TIME, or TIMESTAMP. TIME supports only hour, minute, and second. DATE's time components are zero. TIMESTAMP is decomposed from its epoch microseconds. The result is INTEGER, including an integer second component.
+
+\begin{lstlisting}[language=SQL]
+SELECT DATE_PART('year', CAST(0 AS DATE)) AS y,
+       DATE_PART('minute', CAST(3661000000 AS TIME)) AS m;
+\end{lstlisting}
+
+This returns 1970 and 1. DATE\_PART is not an ISO date-string parser or a timezone converter. The absence of reliable CURRENT\_TIMESTAMP and direct temporal comparison remains relevant even though component extraction is available.
+
+\sourcecode{src/minisql/sql/binder.ml}{isScalarFunctionName and bindScalarFunction enumerate all supported scalar names, arities, and argument types.}
+\sourcecode{src/minisql/sql/expressions.ml}{evaluateScalarValues, asciiCase, utf8CharacterCount, utf8ByteOffset, and replaceText define results.}
+\sourcecode{src/tests/m35_scalar_expressions.ml}{Tests cover CASE, casts, NULL selection, UTF-8 substring/length, numeric functions, and temporal extraction.}
+
+\section{Aggregate function reference}
+\index{aggregate functions}\index{COUNT}\index{SUM}\index{AVG}\index{MIN}\index{MAX}\index{STRING\_AGG}\index{BOOL\_AND}\index{BOOL\_OR}
+\label{sql:aggregate-functions}
+
+An aggregate consumes a group of input rows. Apart from COUNT(*), aggregates ignore NULL input values. The DISTINCT modifier removes duplicate non-NULL argument values before aggregation. Nested aggregate calls at the same query level are rejected.
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Function & Meaning and result type \\
+\midrule
+\endhead
+COUNT(*) & Number of input rows, including rows containing NULL. Non-nullable BIGINT result; empty input gives 0. COUNT(DISTINCT *) is invalid. \\
+COUNT([DISTINCT] expression) & Number of contributing non-NULL values. BIGINT result; empty/all-NULL input gives 0. \\
+SUM([DISTINCT] number) & Numeric total. Integral input promotes to BIGINT; approximate/DECIMAL types otherwise follow their type rules. Empty input gives NULL. DECIMAL sums are subject to the current scaling defect. \\
+AVG([DISTINCT] number) & Arithmetic mean of non-NULL values; DOUBLE result. Empty input gives NULL. DECIMAL inputs expose raw scaled coefficients in the present calculation path. \\
+MIN([DISTINCT] expression) & Least contributing value using the current comparator; retains the argument type and is nullable. DISTINCT has no effect on the minimum. \\
+MAX([DISTINCT] expression) & Greatest contributing value, with analogous type and NULL behavior. \\
+BOOL\_AND([DISTINCT] boolean) & True when every contributing non-NULL Boolean is true. All-NULL/empty input gives NULL. \\
+BOOL\_OR([DISTINCT] boolean) & True when at least one contributing non-NULL Boolean is true. All-NULL/empty input gives NULL. \\
+STRING\_AGG([DISTINCT] text,delimiter) & Concatenate contributing text values, using the text delimiter between entries. Empty/all-NULL input gives NULL. A NULL delimiter contributes no separator at that boundary. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE aggregate_demo (
+    group_id INTEGER,
+    label VARCHAR(30),
+    quantity INTEGER,
+    accepted BOOLEAN
+);
+INSERT INTO aggregate_demo(group_id, label, quantity, accepted)
+VALUES (1, 'alpha', 10, TRUE),
+       (1, 'beta', 20, FALSE),
+       (1, 'gamma', NULL, NULL),
+       (2, 'delta', 5, TRUE);
+
+SELECT group_id, COUNT(*) AS rows_in_group,
+       COUNT(quantity) AS recorded_quantities,
+       SUM(quantity) AS total_quantity,
+       AVG(quantity) AS average_quantity,
+       BOOL_AND(accepted) AS all_accepted,
+       BOOL_OR(accepted) AS any_accepted
+FROM aggregate_demo
+GROUP BY group_id
+ORDER BY group_id;
+\end{lstlisting}
+
+For group 1, the row count is 3, recorded-quantity count is 2, sum is 30, average is 15, all-accepted is false, and any-accepted is true. The unknown accepted value is ignored rather than making the entire Boolean aggregate unknown. For group 2, the corresponding counts are 1 and 1, total and average are 5, and both Boolean aggregates are true.
+
+\begin{lstlisting}[language=SQL]
+SELECT group_id, STRING_AGG(label, ', ') AS labels
+FROM aggregate_demo
+GROUP BY group_id;
+\end{lstlisting}
+
+STRING\_AGG has no ORDER BY argument or WITHIN GROUP clause. An outer ORDER BY orders the resulting groups, not the values inside each concatenated string. Do not use the concatenation as a canonical ordered serialization unless the order is established outside this aggregate by an explicitly tested application process. A constant delimiter is normally clearer than a per-row delimiter expression.
+
+Aggregate arithmetic uses native scalar accumulation and remains bounded by its range. Full-width BIGINT storage is not a promise that SUM over arbitrary BIGINT values can never overflow. MIN/MAX also depend on the supported comparison paths; current temporal scalar comparison failures apply there. Test edge values and reject out-of-contract inputs in the application.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindAggregate defines accepted names, DISTINCT handling, and result types.}
+\sourcecode{src/minisql/executor/aggregate.ml}{aggregateValue, accumulateRow, and finishAccumulator define grouped and streaming calculations.}
+\sourcecode{src/tests/m16_relational_engine.ml}{Tests exercise numeric, text, and Boolean aggregates with joins and HAVING.}
+
+\section{Window function reference}
+\index{window functions}\index{ROW\_NUMBER}\index{RANK}\index{DENSE\_RANK}\index{LAG}\index{LEAD}\index{NTILE}
+\label{sql:window-functions}
+
+\begin{lstlisting}[language=SQL]
+function_name(arguments) OVER (
+    [PARTITION BY expression [, ...]]
+    [ORDER BY expression [ASC | DESC] [NULLS FIRST | NULLS LAST]
+              [, ...]]
+)
+\end{lstlisting}
+
+The current implementation has no explicit window frame. All supported aggregate windows use the complete partition. Navigation functions require ORDER BY. Ranking functions are accepted without an order, but an explicitly chosen order is needed for a meaningful deterministic ranking. A final outer ORDER BY controls the displayed row order independently.
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Function & Meaning within its partition \\
+\midrule
+\endhead
+ROW\_NUMBER() & One-based row position. Add a unique tie-breaker to ORDER BY when tied rows need deterministic individual numbering. BIGINT result. \\
+RANK() & One-based position of the first row in the current peer group; ties share a rank and leave gaps. BIGINT result. \\
+DENSE\_RANK() & Peer-group number; ties share a rank without gaps. BIGINT result. \\
+PERCENT\_RANK() & \((rank-1)/(row\_count-1)\), with 0 for a one-row partition. DOUBLE result. \\
+CUME\_DIST() & Number of rows up to the end of the current peer group divided by partition size. DOUBLE result. \\
+NTILE(bucket\_count) & Split the ordered rows into a positive number of buckets; larger buckets come first. BIGINT bucket number. \\
+LAG(value [,offset [,default]]) & Value from an earlier ordered row. Default offset 1; offset must be a nonnegative integer. Missing target yields the supplied default or NULL. \\
+LEAD(value [,offset [,default]]) & Analogous value from a later ordered row. \\
+FIRST\_VALUE(value) & Value in the first row of the complete ordered partition. \\
+LAST\_VALUE(value) & Value in the last row of the complete ordered partition, not the last row of a running frame. \\
+NTH\_VALUE(value,n) & Value at one-based positive position n in the complete ordered partition, or NULL if it does not exist. \\
+COUNT(*), COUNT(value) & Whole-partition row/non-NULL count. \\
+SUM(value), AVG(value), MIN(value), MAX(value) & Whole-partition aggregate with the corresponding aggregate's NULL and type rules. \\
+\bottomrule
+\end{longtable}
+
+BOOL\_AND, BOOL\_OR, and STRING\_AGG are ordinary aggregates only; they are not window aggregates in this revision. DISTINCT window aggregation is not implemented. The parser's OVER conversion does not preserve a DISTINCT flag, so an accepted DISTINCT spelling must not be treated as evidence of distinct-window semantics. Avoid it.
+
+\subsection{An explicit ranking example}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE score_demo (
+    id INTEGER PRIMARY KEY,
+    team INTEGER NOT NULL,
+    score INTEGER NOT NULL
+);
+INSERT INTO score_demo(id, team, score)
+VALUES (1, 1, 10), (2, 1, 20), (3, 1, 20),
+       (4, 2, 5), (5, 2, 15);
+
+SELECT id, team, score,
+       ROW_NUMBER() OVER (
+           PARTITION BY team ORDER BY score DESC, id
+       ) AS position,
+       RANK() OVER (
+           PARTITION BY team ORDER BY score DESC
+       ) AS rank_value,
+       DENSE_RANK() OVER (
+           PARTITION BY team ORDER BY score DESC
+       ) AS dense_value,
+       SUM(score) OVER (PARTITION BY team) AS team_total
+FROM score_demo
+ORDER BY id;
+\end{lstlisting}
+
+\begin{longtable}{rrrrrrr}
+\toprule
+id & team & score & position & rank & dense rank & team total \\
+\midrule
+\endhead
+1 & 1 & 10 & 3 & 3 & 2 & 50 \\
+2 & 1 & 20 & 1 & 1 & 1 & 50 \\
+3 & 1 & 20 & 2 & 1 & 1 & 50 \\
+4 & 2 & 5 & 2 & 2 & 2 & 20 \\
+5 & 2 & 15 & 1 & 1 & 1 & 20 \\
+\bottomrule
+\end{longtable}
+
+The ROW\_NUMBER ordering includes id so tied scores receive distinct predictable positions. RANK and DENSE\_RANK intentionally omit id so the tied scores remain peers. Adding a unique key to those rankings would eliminate the tie and change the question being answered.
+
+\subsection{Navigation and missing rows}
+
+\begin{lstlisting}[language=SQL]
+SELECT id, team, score,
+       LAG(score, 1, -1) OVER (
+           PARTITION BY team ORDER BY score, id
+       ) AS previous_score,
+       LEAD(score, 1, -1) OVER (
+           PARTITION BY team ORDER BY score, id
+       ) AS next_score,
+       LAST_VALUE(score) OVER (
+           PARTITION BY team ORDER BY score, id
+       ) AS final_score
+FROM score_demo
+ORDER BY id;
+\end{lstlisting}
+
+For team 1 in ascending score order, the previous-score values are -1, 10, and 20; the final-score value is 20 on every row. A default is used only when the target row is out of range. If a real target row contains NULL, that NULL remains the result. There is no IGNORE NULLS modifier. Defaults must be compatible with the value type and are converted to that type.
+
+To compute a difference involving LAG, place this window projection in a derived table or CTE and subtract in the outer query. Directly writing \code{score - LAG(score) OVER (...)} is rejected by the current top-level-window restriction. Likewise, filter ranked results in an outer query instead of writing a window function in WHERE.
+
+Window evaluation can materialize and repeatedly inspect partitions. It is not covered by every streaming or spillable operator optimization. Start with bounded reports, inspect runtime resource behavior, and do not assume that a window calculation over millions of wide rows has the same memory profile as a simple indexed SELECT.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindWindowExpression, validateWindowArguments, isWindowAggregateName, and windowTopLevelSafe define supported shapes.}
+\sourcecode{src/minisql/executor/projection.ml}{windowValue, windowAggregate, and applyWindows calculate whole-partition results.}
+\sourcecode{src/tests/m44_cte_windows.ml}{Ranking, navigation, whole-partition aggregates, invalid arguments, and persisted window views are tested.}
+
+\section{Views: a persistent query name}
+\index{views}\index{CREATE VIEW}
+\label{sql:views}
+
+\begin{lstlisting}[language=SQL]
+CREATE [OR REPLACE] VIEW view_name AS select_query;
+DROP VIEW [IF EXISTS] view_name;
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+CREATE VIEW active_customers AS
+SELECT customer_id, name, city
+FROM customers
+WHERE active = TRUE;
+
+SELECT customer_id, name
+FROM active_customers
+ORDER BY customer_id;
+\end{lstlisting}
+
+A view stores the query definition, not a snapshot of its result. Reading it evaluates the definition against the current database state visible to the statement. OR REPLACE updates the stored definition. There is no CREATE VIEW IF NOT EXISTS form, explicit view column-name list, materialized-view storage, or REFRESH MATERIALIZED VIEW command.
+
+Give calculated output expressions stable aliases before storing the view. Views can contain supported CTEs, recursion, and windows. Cyclic view dependencies are rejected. A view is a query source, not an updatable DML target in this implementation. Change the base table with an explicit statement.
+
+View DDL is autocommit-only. End an explicit transaction before creating, replacing, or dropping a view. Stored definitions may depend on base-table columns, so include dependent views in a schema migration plan and verify them after changes. Do not assume a view executes with a separate owner's elevated privileges: authorization follows referenced sources and the invoking session's permissions.
+
+\begin{lstlisting}[language=SQL]
+SELECT table_schema, table_name, view_definition
+FROM information_schema.views
+ORDER BY table_schema, table_name;
+\end{lstlisting}
+
+\sourcecode{src/minisql/executor/executor.ml}{executeViewDdl, authorizeNamedSource, and authorizeSelectInternal implement persistence and access checks.}
+\sourcecode{src/minisql/sql/binder.ml}{resolveNamedQuery resolves stored SELECT definitions and rejects cycles.}
+
+\section{Prepared statements}
+\index{prepared statements}\index{PREPARE}\index{EXECUTE}\index{DEALLOCATE}
+\label{sql:prepared}
+
+\begin{lstlisting}[language=SQL]
+PREPARE statement_name AS {SELECT ... | INSERT ... |
+                           UPDATE ... | DELETE ...};
+EXECUTE statement_name [USING value_expression [, ...]];
+DEALLOCATE [PREPARE] statement_name;
+\end{lstlisting}
+
+A prepared statement stores a SQL template in the current session. Question marks are numbered by occurrence from left to right within that one template. They stand for values. Preparing two statements in one script gives each template its own parameter sequence.
+
+\begin{lstlisting}[language=SQL]
+PREPARE find_product AS
+SELECT product_id, name, stock
+FROM products
+WHERE product_id = ?;
+
+EXECUTE find_product USING 1;
+EXECUTE find_product USING 2;
+DEALLOCATE PREPARE find_product;
+\end{lstlisting}
+
+EXECUTE requires exactly the parameter count. USING arguments must be constant value expressions, not columns from an imaginary row. A duplicate prepared name is rejected; deallocate it before reusing the name. Closing the session removes its prepared statements. Reopening the database does not restore them.
+
+\begin{lstlisting}[language=SQL]
+PREPARE adjust_stock AS
+UPDATE products
+SET stock = stock + ?
+WHERE product_id = ?
+RETURNING product_id, stock;
+
+EXECUTE adjust_stock USING 5, 1;
+DEALLOCATE adjust_stock;
+\end{lstlisting}
+
+The template can include supported RETURNING or conflict clauses of its inner statement. PREPARE does not support DDL, MERGE, TRUNCATE, CALL, or a sequence of statements as one prepared body. A WITH query is represented internally as a SELECT and follows the same query restrictions.
+
+Preparation is not a complete execution-time validation or a guarantee that schema changes can never invalidate the statement. The implementation records a planning generation and rebinds/replans as required; a removed column can still make a later EXECUTE fail. Parameter values are inserted into typed expression processing and the resulting statement is checked against the then-current schema and privileges.
+
+Use a connector's parameter API for application code; its placeholder style may differ from the SQL-level question-mark syntax. For example, the Python connector's DB-API convention is described in its integration chapter. Never concatenate untrusted values into SQL merely because a prepared facility exists elsewhere in the application. Parameters do not substitute identifiers, ordering keywords, or entire predicates.
+
+\sourcecode{src/minisql/sql/parser.ml}{preparableStatement, parsePrepare, parseExecutePrepared, and parseDeallocate define the SQL interface.}
+\sourcecode{src/minisql/executor/executor.ml}{executePrepare, executePrepared, substituteStatement, and executeDeallocate manage session state.}
+\sourcecode{src/tests/m22_prepared_statements.ml}{Tests cover parameter counts, duplicate names, schema changes, DML, deallocation, and session lifetime.}
+
+\section{Standalone sequences}
+\index{sequences}\index{NEXTVAL}\index{CURRVAL}
+\label{sql:sequences}
+
+\begin{lstlisting}[language=SQL]
+CREATE SEQUENCE [IF NOT EXISTS] sequence_name
+[START [WITH] integer]
+[INCREMENT [BY] integer]
+[MINVALUE integer]
+[MAXVALUE integer]
+[{CYCLE | NO CYCLE}];
+
+DROP SEQUENCE [IF EXISTS] sequence_name;
+SELECT NEXTVAL('sequence_name');
+SELECT CURRVAL('sequence_name');
+\end{lstlisting}
+
+CREATE defaults to start 1, increment 1, and NO CYCLE. The parser's default bounds are \(-2^{60}\) through \(2^{60}-1\), reflecting native scalar limits rather than the entire stored BIGINT domain. The increment must be nonzero; bounds must be ordered and include the start value. A negative increment is possible. CYCLE wraps at the configured bound; a noncycling exhausted sequence is an error.
+
+\begin{lstlisting}[language=SQL]
+CREATE SEQUENCE ticket_demo
+START WITH 10 INCREMENT BY 5 MINVALUE 10 MAXVALUE 20 CYCLE;
+
+SELECT NEXTVAL('ticket_demo') AS ticket;
+SELECT NEXTVAL('ticket_demo') AS ticket;
+SELECT CURRVAL('ticket_demo') AS current_ticket;
+SELECT NEXTVAL('ticket_demo') AS ticket;
+SELECT NEXTVAL('ticket_demo') AS ticket;
+\end{lstlisting}
+
+The embedded executor regression test allocates 10, 15, then reads CURRVAL 15, followed by 20 and the cycled value 10. The current network SELECT path can consume an additional value before producing a result, so these are not promised console outputs; the allocation caveat below applies. CURRVAL reads the last value allocated for that sequence in the current session; it does not ask for a global last value from another connection. It is undefined before this session has obtained a value. The sequence name argument must be a string literal; it is not an arbitrary expression. A public-qualified literal and its unqualified equivalent resolve to the same public sequence.
+
+Sequence state is persisted independently in schema-extension metadata. DDL is autocommit-only. NEXTVAL consumes durable sequence state and is not rolled back by ROLLBACK. The current execution path also permits NEXTVAL inside BEGIN READ ONLY; read-only transaction mode is not a protection against this sequence side effect. Use a noncycling sequence when reusing a number would violate the application's identifier contract, and still plan for capacity and backup/recovery semantics.
+
+\warning{NEXTVAL is materialized before row evaluation}{The executor replaces each syntactic NEXTVAL occurrence with a typed literal before executing the query or DML body. It is not a row-by-row generator in a SELECT over many rows. A query such as SELECT NEXTVAL('ticket\_demo') FROM products can therefore repeat one allocated value across its result rows. Obtain values with explicit single-row calls, or use the identity behavior if its documented reuse semantics are suitable. Do not assume per-row sequence-default behavior from another database.}
+
+There is no ALTER SEQUENCE, RESTART SEQUENCE, SETVAL, sequence cache clause, or BY DEFAULT identity syntax. Standalone sequence objects and identity columns are distinct mechanisms in this implementation. TRUNCATE CONTINUE IDENTITY remains rejected despite the existence of sequence objects.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseCreateSequence validates numeric options and bounds.}
+\sourcecode{src/minisql/executor/executor.ml}{executeSequenceDdl, materializeExpression, rememberSequenceValue, and currentSequenceValue define persistence and per-occurrence evaluation.}
+\sourcecode{src/minisql/catalog/schema_history.ml}{nextSequence persists the sequence state.}
+
+\section{Row triggers}
+\index{triggers}\index{CREATE TRIGGER}
+\label{sql:triggers}
+
+\begin{lstlisting}[language=SQL]
+CREATE TRIGGER [IF NOT EXISTS] trigger_name
+{BEFORE | AFTER}
+{INSERT | UPDATE [OF column_name] | DELETE}
+ON table_name
+[FOR EACH ROW]
+single_dml_statement;
+
+ALTER TRIGGER trigger_name {ENABLE | DISABLE};
+DROP TRIGGER [IF EXISTS] trigger_name;
+\end{lstlisting}
+
+Triggers attach a supported DML body to row changes. FOR EACH ROW is optional syntax, but the implementation is row-oriented; there is no statement-trigger mode. UPDATE OF accepts one column. It selects updates that assign that column, not only updates whose resulting value differs from its old value.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE trigger_subject (
+    id INTEGER PRIMARY KEY,
+    quantity INTEGER NOT NULL
+);
+CREATE TABLE trigger_log (
+    subject_id INTEGER,
+    old_quantity INTEGER,
+    new_quantity INTEGER,
+    event_name VARCHAR(10)
+);
+
+CREATE TRIGGER subject_quantity_log
+AFTER UPDATE OF quantity ON trigger_subject
+FOR EACH ROW
+INSERT INTO trigger_log
+    (subject_id, old_quantity, new_quantity, event_name)
+VALUES (NEW.id, OLD.quantity, NEW.quantity, 'UPDATE');
+
+INSERT INTO trigger_subject(id, quantity) VALUES (1, 10);
+UPDATE trigger_subject SET quantity = 12 WHERE id = 1;
+SELECT subject_id, old_quantity, new_quantity
+FROM trigger_log;
+\end{lstlisting}
+
+The log contains subject 1 with old quantity 10 and new quantity 12. OLD and NEW are read-only row images. INSERT has NEW, DELETE has OLD, and UPDATE has both. Referencing an unavailable image is an error. A trigger cannot assign NEW.column to rewrite the proposed row.
+
+\warning{BEFORE does not mean before the base mutation here}{The checked executor first performs the base DML and its row validation, then invokes fireTriggers with the completed old/new images. It runs the BEFORE-labelled trigger group before the AFTER-labelled group. Consequently a BEFORE trigger is not a conventional pre-insert/pre-constraint hook and cannot repair an invalid row before validation. Use it only with this documented ordering behavior; the AFTER audit example is the clearer general pattern.}
+
+The body is exactly one VALUES-based INSERT, UPDATE, or DELETE. It cannot contain RETURNING, ON CONFLICT, INSERT SELECT, a block of statements, IF/LOOP, a subquery, or a window function. There is no WHEN trigger condition, INSTEAD OF trigger, or multiple-event trigger declaration. Put a supported row filter in an UPDATE/DELETE body when that expresses the required effect.
+
+Trigger bodies run in the same page transaction and are authorized using the invoking session. A failure rolls back an implicit DML transaction; explicit transaction error handling should follow the transaction chapter. Recursive trigger invocation is bounded at depth eight. Design triggers so their effect terminates naturally instead of relying on the depth guard. In particular, writing back to the same table can fire another trigger repeatedly.
+
+TRUNCATE is not mapped to the INSERT/UPDATE/DELETE trigger-event code and does not fire these row DELETE triggers. Use DELETE if a workflow specifically depends on delete-trigger side effects. Likewise, do not assume that UPSERT invokes a conventional pair of INSERT and UPDATE trigger families: its bound statement remains INSERT in the current trigger-event classifier. Validate trigger behavior for each conflict path before using it for authoritative auditing.
+
+CREATE, DROP, and ENABLE/DISABLE trigger operations are autocommit-only. Disabled state is durable. A disabled audit trigger means subsequent matching changes are not logged; reenabling does not reconstruct the missed records. Keep schema-level audit logging distinct from the server's operational/security audit facilities.
+
+\sourcecode{src/minisql/executor/executor.ml}{triggerEventCode, executeDml, fireTriggers, executeTriggerBody, persistedProgramBodySupported, and executeTriggerDdl define actual timing and body limits.}
+\sourcecode{src/tests/m45_sequences_generated_triggers.ml}{Tests cover OLD/NEW images, timing groups, enable/disable state, and trigger failure propagation; the depth bound is enforced in executeTriggerBody.}
+
+\section{Typed single-statement procedures}
+\index{procedures}\index{CREATE PROCEDURE}\index{CALL}
+\label{sql:procedures}
+
+\begin{lstlisting}[language=SQL]
+CREATE [OR REPLACE] PROCEDURE procedure_name(
+    parameter_name data_type [, ...]
+)
+AS single_dml_statement;
+
+CALL procedure_name(value_expression [, ...]);
+DROP PROCEDURE [IF EXISTS] procedure_name;
+\end{lstlisting}
+
+The parameter list may be empty, and a zero-parameter call still uses parentheses. Parameters are positional inputs with persisted SQL types. There are no OUT/INOUT modes, defaults, named-call arguments, overloaded signatures, return declarations, or procedural statement blocks.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE procedure_demo (
+    id INTEGER PRIMARY KEY,
+    label VARCHAR(40) NOT NULL
+);
+
+CREATE PROCEDURE add_demo_item(p_id INTEGER, p_label VARCHAR(40))
+AS INSERT INTO procedure_demo(id, label) VALUES (p_id, p_label);
+
+CALL add_demo_item(7, 'stored');
+SELECT id, label FROM procedure_demo WHERE id = 7;
+\end{lstlisting}
+
+The result contains id 7 and label \code{stored}. The CALL command reports the body's affected rows. Parameter count and type conversion are checked, including after the database is reopened. Use a prefix such as \code{p\_} for parameters to avoid ambiguity with unqualified column names: substitution replaces matching unqualified references with argument values.
+
+OR REPLACE stores a new body and parameter definition under the same name. The supported body has the same persistence restrictions as a trigger: one VALUES INSERT, UPDATE, or DELETE without RETURNING or ON CONFLICT. INSERT SELECT, subqueries involving parameters, windows, multi-statement logic, SELECT result procedures, and user-defined functions are not implemented. A procedure does not own an independent nested transaction; its DML follows the caller's transaction context.
+
+Procedure DDL is autocommit-only. The body executes with the caller's authorization checks, not an implicit privileged definer context. The grammar supports SQL CALL, but that does not imply that every connector implements JDBC CallableStatement or Python callproc. A connector may allow a plain SQL CALL through its ordinary execute method while rejecting a specialized API.
+
+\begin{lstlisting}[language=SQL]
+SELECT routine_schema, routine_name, routine_type
+FROM information_schema.routines
+ORDER BY routine_schema, routine_name;
+\end{lstlisting}
+
+\sourcecode{src/minisql/sql/parser.ml}{parseCreateProcedure and parseCall define parameters and invocation syntax.}
+\sourcecode{src/minisql/executor/executor.ml}{encodeProcedureParameters, executeProcedureDdl, replaceProcedureStatement, and executeCall enforce persistent type metadata and body execution.}
+
+\Needspace{30\baselineskip}
+\section{Choosing the right reusable mechanism}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Need & Appropriate mechanism and boundary \\
+\midrule
+\endhead
+A named intermediate result in one query & A CTE or derived table. It is not persistent. \\
+A reusable read query & A view. It stores a SELECT definition and is not an updatable table. \\
+Repeated SQL with varying values & A session prepared statement or a connector's parameter API. The template is not restored after reconnect. \\
+A stored, typed DML operation & A single-statement procedure, when its limited body form is sufficient. \\
+A row-change side effect & A trigger, after accounting for the actual timing, conflict-path, and recursion behavior. \\
+A stored calculated column & A STORED generated column for supported row-local expressions. Avoid current DECIMAL calculation defects. \\
+A durable number allocator & A standalone sequence with explicit single-row NEXTVAL calls and a policy for gaps, bounds, and cycling. \\
+A convenient table-local row number & An identity column, when MAX(existing)+1 and possible reuse satisfy the application contract. \\
+\bottomrule
+\end{longtable}
+
+\section{Dialect boundaries checklist}
+
+The implemented language is substantial, but it is not a drop-in PostgreSQL, SQLite, MySQL, or SQL Server dialect. In particular, it has no CREATE DATABASE/USE SQL, general ALTER COLUMN TYPE, CTAS, temporary tables, JSON type/functions, binary literal, regex operator, full date/time library, SQL user-defined function, multi-statement procedure language, NATURAL/USING/LATERAL joins, aggregate FILTER/ROLLUP/CUBE, named or framed windows, SELECT FOR UPDATE, RETURNING on MERGE/TRUNCATE, or generic file COPY/LOAD DATA command.
+
+Some accepted syntax also has explicit functional limits: referential cascades, parent-key update protection, DECIMAL computations, temporal comparison/current time, BEFORE trigger timing, per-row NEXTVAL expectations, and DISTINCT window aggregates. These are documented where they affect the user's decision. A parser accepting a word is not sufficient evidence that its familiar behavior is implemented.
+
+To port an existing application, inventory its actual SQL and compare each used construct with this reference. Start with a small representative database, verify result values and error cases, then test transaction behavior, reconnects, resource limits, and backups. Keep the tested source revision with the application so a later database update can repeat the same compatibility checks.
+
+\section{Capstone exercise}
+
+Create a view of active customers, prepare a parameterized stock adjustment, and add an AFTER trigger that records changes to an integer quantity. Write a procedure that inserts a named item with typed inputs. Demonstrate that a prepared statement disappears on reconnect while the view, trigger, and procedure remain. Then explain why a generated DECIMAL total, CURRENT\_TIMESTAMP default, and per-row NEXTVAL SELECT would not be acceptable assumptions for this revision. The goal is to know both the available mechanisms and their real operational boundaries.

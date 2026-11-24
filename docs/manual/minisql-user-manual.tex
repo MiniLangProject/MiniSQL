@@ -1,0 +1,49 @@
+% Copyright 2026 MiniLangProject contributors
+% SPDX-License-Identifier: Apache-2.0
+\documentclass[11pt,a4paper,oneside,openany]{book}
+\input{edition}
+\input{preamble}
+\begin{document}
+\begin{titlepage}
+\begin{tikzpicture}[remember picture,overlay]
+\fill[Navy] (current page.south west) rectangle (current page.north east);
+\fill[Teal] ([xshift=19mm]current page.south west) rectangle ([xshift=23mm]current page.north west);
+\foreach \r in {0,1,2,3,4}{\foreach \c in {0,1,2}{\fill[white,opacity=.07] ([xshift=133mm+\c*13mm,yshift=-39mm-\r*13mm]current page.north west) rectangle ++(10mm,-10mm);}}
+\node[anchor=north west,text=white,align=left,text width=155mm] at ([xshift=34mm,yshift=-38mm]current page.north west) {\sffamily\large\bfseries MINILANG PROJECT};
+\node[anchor=north west,text=white,align=left,text width=155mm] at ([xshift=34mm,yshift=-81mm]current page.north west) {\sffamily\fontsize{52}{58}\selectfont\bfseries MiniSQL\\[8mm]\fontsize{30}{36}\selectfont User Manual};
+\node[anchor=north west,text=white,align=left,text width=141mm] at ([xshift=34mm,yshift=-153mm]current page.north west) {\sffamily\Large From your first database\\to SQL, operations and internals\\[10mm]\normalsize A practical course and implementation reference\\with worked examples, diagrams and exercises};
+\node[anchor=south west,text=white,align=left,text width=146mm] at ([xshift=34mm,yshift=28mm]current page.south west) {\sffamily\small\textbf{IMPLEMENTATION EDITION}\quad\EditionDate\\[3mm]Source revision \SourceShort\quad |\quad Storage format 2\quad |\quad Wire protocol 1};
+\end{tikzpicture}
+\end{titlepage}
+\frontmatter
+\input{chapters/00-about}
+\tableofcontents
+\listoffigures
+\listoftables
+\mainmatter
+\part{Learn MiniSQL}
+\input{chapters/01-foundations}
+\input{chapters/02-installation}
+\input{chapters/03-guided-tutorial}
+\part{The MiniSQL SQL Language}
+\input{chapters/04-sql-foundations}
+\input{chapters/05-schema-and-types}
+\input{chapters/06-data-changes}
+\input{chapters/07-queries}
+\input{chapters/08-functions-and-advanced-sql}
+\part{Operate and Protect a Database}
+\input{chapters/09-transactions}
+\input{chapters/10-security}
+\input{chapters/11-administration}
+\input{chapters/12-backup-recovery-replication}
+\part{Build, Diagnose and Understand}
+\input{chapters/13-clients-and-integration}
+\input{chapters/14-performance}
+\input{chapters/15-storage-and-internals}
+\input{chapters/16-workshops}
+\input{chapters/17-reference-and-troubleshooting}
+\appendix
+\input{chapters/18-validation-and-sources}
+\backmatter
+\printindex
+\end{document}

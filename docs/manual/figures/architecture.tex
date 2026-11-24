@@ -1,0 +1,22 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=7mm and 6mm]
+\node[box,text width=36mm] (shell) {Native console\\and SQL scripts};
+\node[box,text width=36mm,right=of shell] (apps) {Python DB-API\\Java JDBC};
+\node[box,text width=36mm,right=of apps] (gui) {Windows\\Workbench};
+\node[strong,text width=120mm,below=10mm of apps] (server) {\textbf{minisqld}\quad Session, authentication, transport and resource limits};
+\foreach \n in {shell,apps,gui}{\draw[arrow] (\n.south) -- (server.north -| \n.south);}
+\node[box,text width=36mm,below=10mm of server.south west,anchor=north west] (sql) {Parse and bind\\SQL / catalog};
+\node[box,text width=36mm,right=of sql] (plan) {Choose a plan\\Statistics / costs};
+\node[box,text width=36mm,right=of plan] (execute) {Execute\\Read gate / writer};
+\draw[arrow] (server.south) -- ++(0,-3mm) -| (sql.north);
+\draw[arrow] (sql) -- (plan);\draw[arrow] (plan) -- (execute);
+\node[strong,text width=55mm,below=12mm of sql.south west,anchor=north west] (wal) {Transactions / WAL\\Commit, recovery, checkpoints};
+\node[strong,text width=55mm,right=7mm of wal] (files) {Paged files\\Tables, indexes, overflow, catalog};
+\draw[arrow] (execute.south) -- ++(0,-4mm) -| (files.north);
+\draw[arrow] (execute.south) -- ++(0,-4mm) -| (wal.north);
+\draw[arrow] (wal) -- (files);
+\end{tikzpicture}
+\caption{MiniSQL's main components. Every client uses the server's SQL engine; the Workbench adds a user interface. Offline tools open a stopped database directly.}
+\label{fig:architecture}
+\end{figure}

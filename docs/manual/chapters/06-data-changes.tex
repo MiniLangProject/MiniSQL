@@ -1,0 +1,307 @@
+\chapter{Creating, changing, and removing data}
+\label{sql:dml}
+
+Data manipulation language, or DML, changes the rows in existing tables. The main operations are INSERT, UPDATE, and DELETE. MiniSQL also supports INSERT SELECT, conflict handling, a core MERGE form, and transactional TRUNCATE. This chapter shows how to use those operations while preserving a clear relationship between the rows you intend to change and the rows actually affected.
+
+Use explicit column lists and explicit conditions. Inspect the affected-row count returned by a statement. When the operation is part of a larger logical change, use a transaction and verify the result before committing. A successful RETURNING result describes a statement's changes, but those changes can still be rolled back by an enclosing transaction.
+
+\section{A small working table}
+
+The following self-contained table is used in several examples in this chapter. It stores whole units so the examples do not depend on the current DECIMAL calculation limitations.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE stock_demo (
+    id INTEGER PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_stock_demo_quantity CHECK (quantity >= 0)
+);
+\end{lstlisting}
+
+Run this CREATE once in your practice database. Repeating the examples changes its state; when an example says that the row already exists, it refers to the earlier statements in this chapter. To repeat the complete exercise, remove the practice table and create it again after ensuring no other objects depend on it.
+
+\section{INSERT: adding rows}
+\index{INSERT}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO table_name [(column_name [, ...])]
+VALUES (expression [, ...]) [, (...)]
+[ON CONFLICT ...]
+[RETURNING select_item [, ...]];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (1, 'notebook', 10),
+       (2, 'pencil', 20),
+       (3, 'folder', 5);
+\end{lstlisting}
+
+Each VALUES tuple creates one row. The number of values must match the number of target columns. Explicit target names make a script robust against changes to the physical column order. Omitting the target list binds values to the table's complete declared column list; that is inconvenient for identity or generated columns, which must not receive explicit values.
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code)
+VALUES (4, 'eraser');
+\end{lstlisting}
+
+Quantity becomes 0 because it was omitted and has a default. Supplying NULL would be a different request and would fail the NOT NULL constraint. MiniSQL does not support DEFAULT VALUES or a DEFAULT token as a general expression inside a VALUES tuple. Omit the defaulted columns instead.
+
+VALUES expressions can compute constant values, but they do not have a table-row source. To derive a value from existing rows, use INSERT SELECT. A type mismatch, a failed CHECK, a missing foreign-key target, or an unhandled duplicate key causes an error. DO NOTHING handles only the unique conflicts described later; it does not suppress arbitrary bad input.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseInsert defines VALUES tuples, optional target columns, conflict clauses, and RETURNING.}
+\sourcecode{src/minisql/sql/binder.ml}{bindInsert validates counts, source compatibility, and conflict targets.}
+\sourcecode{src/minisql/executor/dml.ml}{initialRow, insertInner, and insertBatchWithoutConflict apply defaults and validate the resulting rows.}
+
+\section{RETURNING: use the values from the change}
+\index{RETURNING}
+\label{sql:returning}
+
+INSERT, UPDATE, and DELETE can return row expressions directly:
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (5, 'marker', 12)
+RETURNING id, code, quantity;
+
+UPDATE stock_demo
+SET quantity = quantity + 3
+WHERE id = 5
+RETURNING id, quantity;
+
+DELETE FROM stock_demo
+WHERE id = 5
+RETURNING id, code, quantity;
+\end{lstlisting}
+
+The INSERT returns quantity 12. The UPDATE returns the new quantity 15. The DELETE returns the removed row, whose quantity was 15. RETURNING can expand \code{*} or use aliases and ordinary row expressions. It does not provide an independent FROM clause, aggregate query, window calculation, or subquery context.
+
+For an identity column, omit the identity from INSERT and request it with RETURNING. This associates the generated value with the statement that created it, avoiding a separate MAX(id) query. A skipped conflict row produces no RETURNING row. An UPSERT that updates produces the final updated row. There is no RETURNING clause on the supported MERGE or TRUNCATE forms.
+
+RETURNING output still consumes the server's result-row and result-byte budgets. A large UPDATE RETURNING * can generate a large result even if the change itself is simple. Return only the columns the application needs, and consume the stream before reusing a connection whose driver allows only one unread result.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindReturning binds output expressions against the target table.}
+\sourcecode{src/minisql/executor/dml.ml}{evaluateReturning uses inserted/updated values or the deleted row image.}
+\sourcecode{src/tests/m38_returning.ml}{The regression suite exercises DML result projections and rollback.}
+
+\section{INSERT SELECT: copying and transforming data}
+\index{INSERT SELECT}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO target_table [(column_name [, ...])]
+SELECT ...
+[ON CONFLICT ...]
+[RETURNING select_item [, ...]];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE replenishment_demo (
+    id INTEGER PRIMARY KEY,
+    code VARCHAR(30) NOT NULL,
+    suggested_quantity INTEGER NOT NULL
+);
+
+INSERT INTO replenishment_demo(id, code, suggested_quantity)
+SELECT id, code, 10 - quantity
+FROM stock_demo
+WHERE quantity < 10
+RETURNING id, code, suggested_quantity;
+\end{lstlisting}
+
+The source query decides which rows exist and what values they contribute. Target columns are matched positionally, not by the names of source aliases. The source column count and types must match the target list. Defaults apply to omitted target columns, just as with VALUES.
+
+A self-copy, where the target also appears in the source query, uses a materialized finite source snapshot so the newly inserted rows do not recursively become more source rows in the same statement. This protects against runaway self-insertion, but it also means that a large copy can require memory. Plan batch sizes with the configured resource limits.
+
+The grammar starts the source with SELECT. A top-level \code{WITH ... INSERT} or \code{INSERT ... WITH ... SELECT} form is not implemented. If a reusable intermediate query is helpful, use a derived table inside SELECT or a view, subject to the normal query restrictions. CREATE TABLE AS SELECT is also absent: define the destination first.
+
+\sourcecode{src/tests/m39_insert_select.ml}{Tests verify expression copying, omitted-column defaults, self-copy snapshot behavior, rollback, and count/type errors.}
+
+\section{UPDATE: modify a selected set}
+\index{UPDATE}
+
+\begin{lstlisting}[language=SQL]
+UPDATE table_name
+SET column_name = expression [, ...]
+[WHERE boolean_expression]
+[RETURNING select_item [, ...]];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+SELECT id, code, quantity FROM stock_demo WHERE id = 1;
+
+UPDATE stock_demo
+SET quantity = quantity - 2
+WHERE id = 1 AND quantity >= 2
+RETURNING id, quantity;
+\end{lstlisting}
+
+The condition both identifies the row and states the precondition that enough stock exists. One affected row means that the operation found an eligible row; zero means that no row satisfied the complete condition. Do not treat zero affected rows as proof that the key exists or that the requested change occurred.
+
+Assignments use the old row as their input. If a statement sets two columns, the right-hand side of the second assignment does not read the already-updated first value. The same target column cannot be assigned twice. The resulting row is checked for type, length, NULL, key, CHECK, and outgoing foreign-key validity; generated columns are recalculated. Identity and generated columns cannot be assigned directly.
+
+The present grammar has one target table and no UPDATE FROM, target alias declaration, join-update clause, ORDER BY, or LIMIT. Subqueries are not bound in ordinary UPDATE expressions or filters in the same way as they are in SELECT. Use a supported MERGE for a simple source-to-target update, or select the required keys in application code and apply parameterized statements within a suitable transaction.
+
+\warning{An omitted WHERE changes every row}{Use a preview SELECT with the same condition before a maintenance update, then inspect affected rows. Keep referenced primary keys immutable because the current incoming-foreign-key update checks are incomplete. Updating a parent's key can leave child rows pointing to an absent parent even though updating a child's reference is checked.}
+
+\sourcecode{src/minisql/sql/parser.ml}{parseUpdate defines the single-table grammar.}
+\sourcecode{src/minisql/executor/dml.ml}{updateInner evaluates assignments against source.values and validates nextRow.}
+
+\section{DELETE: remove selected rows}
+\index{DELETE}
+
+\begin{lstlisting}[language=SQL]
+DELETE FROM table_name
+[WHERE boolean_expression]
+[RETURNING select_item [, ...]];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+DELETE FROM stock_demo
+WHERE quantity = 0
+RETURNING id, code;
+\end{lstlisting}
+
+The table definition, indexes, and constraints remain. An omitted WHERE deletes all rows, subject to constraints and triggers. The supported form has no target alias, USING source list, ORDER BY, or LIMIT. To perform a bounded deletion, select an explicit batch of keys and delete them using parameterized statements or a tested IN list; manage the batch transaction deliberately.
+
+Deleting a referenced parent is rejected while matching child rows remain. CASCADE and SET NULL referential-action execution are not implemented. Remove children explicitly before the parent in one transaction when that is the intended business operation. Deleting rows does not necessarily shrink the table file immediately; reclaimed storage and VACUUM are administration topics.
+
+\sourcecode{src/minisql/executor/dml.ml}{deleteInner and validateDeleteReferences define row removal and referenced-parent protection.}
+
+\section{Conflict handling and UPSERT}
+\index{UPSERT}\index{ON CONFLICT}
+\label{sql:upsert}
+
+\subsection{Ignore a duplicate deliberately}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (1, 'ignored-duplicate-id', 99)
+ON CONFLICT DO NOTHING
+RETURNING id;
+\end{lstlisting}
+
+If id 1 exists, this inserts no row and returns no row. Without a conflict target, DO NOTHING skips primary-key or unique conflicts encountered by the implementation. With a target, only that matching rule is handled:
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (6, 'notebook', 2)
+ON CONFLICT (code) DO NOTHING;
+\end{lstlisting}
+
+A target is an ordered list of columns that exactly matches a persisted PRIMARY KEY or full UNIQUE rule. Composite target order matters. The syntax cannot name a constraint directly, attach a partial predicate, or infer a partial unique index. A conflict on another unique rule remains an error. Multiple NULL values in a nullable UNIQUE key do not create an ordinary uniqueness conflict.
+
+DO NOTHING is useful for idempotent import of already-known keys, but it can hide a meaningful disagreement in other column values. Decide whether duplicate input should be ignored, compared, or treated as an application error.
+
+\subsection{Update on a selected conflict}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO table_name [(column_name [, ...])]
+VALUES (...)
+ON CONFLICT (key_column [, ...]) DO UPDATE
+SET column_name = expression [, ...]
+[WHERE boolean_expression]
+[RETURNING select_item [, ...]];
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (1, 'notebook', 5)
+ON CONFLICT (id) DO UPDATE
+SET quantity = stock_demo.quantity + excluded.quantity
+RETURNING id, quantity;
+\end{lstlisting}
+
+The table-qualified value refers to the existing row. The special \code{excluded} qualifier refers to the row that the INSERT attempted to create. If id 1 exists with quantity 8 after the earlier update, the new quantity is 13. If no matching conflict exists, the candidate row is inserted normally.
+
+DO UPDATE requires an explicit supported conflict target. Its optional WHERE applies to the conflict-update branch, not to deciding whether an ordinary insert is permitted. A false or unknown branch condition skips the update and produces no RETURNING row. The final updated row must satisfy all other constraints. An unrelated unique conflict, a negative quantity, or an illegal identity/generated assignment is still an error.
+
+\begin{lstlisting}[language=SQL]
+INSERT INTO stock_demo(id, code, quantity)
+VALUES (1, 'notebook', 0)
+ON CONFLICT (id) DO UPDATE
+SET quantity = excluded.quantity
+WHERE excluded.quantity > 0
+RETURNING id;
+\end{lstlisting}
+
+This preserves the existing row when the candidate quantity is zero. A successful statement with zero affected rows is therefore meaningful and should be handled deliberately in application code.
+
+\sourcecode{src/minisql/sql/binder.ml}{conflictConstraint, conflictBindingSources, and bindConflictAssignments resolve target and EXCLUDED references.}
+\sourcecode{src/tests/m40_conflict_nothing.ml}{Tests distinguish targetless and targeted skips, composite target order, and unrelated conflicts.}
+\sourcecode{src/tests/m41_upsert.ml}{Tests cover accumulated values, branch filters, final constraints, prepared UPSERT, and rollback.}
+
+\section{MERGE: reconcile one source table}
+\index{MERGE}
+
+MERGE compares a source table with a target table. The core supported form contains one matched action and one not-matched insert action:
+
+\begin{lstlisting}[language=SQL]
+MERGE INTO target_table [AS target_alias]
+USING source_table [AS source_alias]
+ON match_condition
+[WHEN MATCHED THEN
+   {UPDATE SET column = expression [, ...] | DELETE}]
+[WHEN NOT MATCHED THEN
+   INSERT [(column [, ...])] VALUES (expression [, ...])];
+\end{lstlisting}
+
+At least one action is required. Use at most one action for each branch. The implementation does not model a list of conditional matched branches, a query-valued USING source, a NOT MATCHED BY SOURCE branch, or MERGE RETURNING. Do not paste a richer MERGE from another database and assume unsupported branch details are preserved.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE incoming_stock_demo (
+    id INTEGER PRIMARY KEY,
+    code VARCHAR(30) NOT NULL,
+    quantity INTEGER NOT NULL
+);
+INSERT INTO incoming_stock_demo(id, code, quantity)
+VALUES (1, 'notebook', 30), (8, 'binder', 12);
+
+MERGE INTO stock_demo AS t
+USING incoming_stock_demo AS s
+ON t.id = s.id
+WHEN MATCHED THEN UPDATE
+  SET code = s.code, quantity = s.quantity
+WHEN NOT MATCHED THEN INSERT (id, code, quantity)
+  VALUES (s.id, s.code, s.quantity);
+\end{lstlisting}
+
+The first source row updates target id 1. The second inserts id 8 if absent. Make the source key unique so the intended match is unambiguous. Verify the source table before merging, including duplicates and invalid values. All actions use the ordinary DML constraint, index, and trigger paths and form one database transaction; a failing action does not intentionally leave earlier MERGE actions committed.
+
+MERGE is useful for reconciling a prepared staging table. It does not itself read CSV files, discover column mappings, or validate application semantics. Importing data safely still requires a staging design and a validation plan.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseMerge defines the actual source-table and branch grammar.}
+\sourcecode{src/minisql/executor/executor.ml}{MERGE materialization and execution use normal DML statements and restore statement state on failure.}
+\sourcecode{src/tests/m45_sequences_generated_triggers.ml}{Tests exercise matched UPDATE, unmatched INSERT, matched DELETE, and rollback after trigger failure.}
+
+\section{TRUNCATE: empty a table transactionally}
+\index{TRUNCATE}
+
+\begin{lstlisting}[language=SQL]
+TRUNCATE [TABLE] table_name [RESTART IDENTITY];
+\end{lstlisting}
+
+TRUNCATE removes all rows while keeping the table. It is transactional and reports the affected row count. The current implementation scans and stages row deletions, so do not assume the constant-time file replacement behavior of another engine. It checks referenced-parent dependencies before deletion and maintains index consistency through the normal transaction paths.
+
+\begin{lstlisting}[language=SQL]
+BEGIN;
+TRUNCATE TABLE incoming_stock_demo;
+SELECT COUNT(*) AS remaining FROM incoming_stock_demo;
+ROLLBACK;
+\end{lstlisting}
+
+The count inside the transaction is zero. Rollback restores the rows. Without an explicit transaction, a successful TRUNCATE commits according to autocommit behavior. RESTART IDENTITY is the default; an emptied identity table derives its next value as 1. CONTINUE IDENTITY is recognized by the parser but rejected by the binder in this revision, even though standalone sequence objects also exist.
+
+TRUNCATE has no WHERE clause, CASCADE option, multiple-table list, or RETURNING output. If only some rows should be removed, use DELETE. If the schema itself should disappear, use DROP TABLE.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindTruncate explicitly rejects CONTINUE IDENTITY.}
+\sourcecode{src/minisql/executor/dml.ml}{truncate validates references and stages deletions.}
+\sourcecode{src/tests/m42_truncate.ml}{Tests cover rollback, identity restart, dependent-row checks, and reopen durability.}
+
+\section{A repeatable data-change workflow}
+
+For a maintenance task, first state an invariant such as ``only order 104 may change from new to paid.'' Express that invariant in the WHERE clause and verify the selected rows. Use a transaction when related rows must change together. Execute the change, check its affected count and selected RETURNING values, run a validation query, and then commit. If validation fails, roll back rather than attempting an improvised inverse update whose original values may no longer be known.
+
+For repeated application operations, prepare the SQL and bind values. Keep identifiers fixed or select them from a trusted allow-list in application code. Batching can reduce round trips, but an extremely large VALUES list increases SQL payload, parsing, transaction, and result costs. Choose bounded batches that fit the configured limits and test the actual workload.
+
+\section{Practice task}
+
+Create a practice stock table with a nonnegative quantity rule. Insert three products and one omitted quantity. Decrease one product only when sufficient stock exists. Write an UPSERT that accumulates incoming stock, and show how its result differs from an UPSERT that replaces stock. Finally, empty a staging table inside a transaction and prove that rollback restores it. For each operation, record the expected affected-row count before running it and compare the actual result.

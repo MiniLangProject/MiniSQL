@@ -1,0 +1,636 @@
+\chapter{Operating, monitoring, and maintaining a server}
+\label{ops:administration}
+
+\section{A repeatable server configuration}
+
+For a learning session, positional arguments are sufficient. For an ongoing
+installation, copy \path{config/minisql.example.json}, change the paths and
+policy deliberately, and start a configuration-driven listener. MiniSQL does
+not search the working directory for a configuration file automatically: the
+file is an explicit command argument.
+
+\begin{lstlisting}
+minisqld.exe --serve-config C:\MiniSQL-Data\db_ACTUAL_ID `
+  C:\MiniSQL-Config\local.json
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+minisqld --serve-config /srv/minisql/db_ACTUAL_ID \
+  /etc/minisql/local.json
+\end{lstlisting}
+
+This trusted configuration mode must bind exactly \code{127.0.0.1}.
+Use \code{--serve-tls-config} for the native TLS listener, with
+\code{tls.enabled} set to true and a valid platform-specific certificate
+reference. The \code{--serve-authenticated-config} mode uses password
+authentication and MiniSQL's protected framing. The
+\code{--serve-standby-config} mode is a trusted loopback standby listener.
+Choosing one mode is part of the command; changing \code{tls.enabled}
+does not transform \code{--serve-config} into the TLS listener.
+
+Configuration is loaded and validated at startup. There is no documented
+live-reload command. Restart with the revised file when changing server
+settings, and keep the previous known-good file for rollback. A malformed
+or unknown key is rejected instead of silently ignored.
+
+
+Positional launchers do not automatically apply the example JSON's runtime
+settings. They configure default logging but use the lower-level server
+defaults: for example, its query-memory budget is 64 MiB and ordinary
+positional concurrent listeners use a 5000 ms logical lock wait. Configured
+startup passes the JSON query-memory value (128 MiB by default) and its
+query-timeout value to lock-wait handling. Use the configured forms when the
+precise operational limits matter, and inspect SHOW STATUS for active values.
+
+\sourcecode{src/apps/minisqld/main.ml}{runConfiguredServer and mode-specific dispatch.}
+\sourcecode{src/minisql/config/loader.ml}{Required keys, optional sections, and unknown-key rejection.}
+
+\section{Complete configuration reference}
+\index{configuration}
+
+The following tables cover every key in the current model. Values are the
+compiled defaults unless an example-file difference is explicitly noted.
+Byte limits are decimal integers in JSON. A MiB is 1,048,576 bytes; a GiB is
+1,073,741,824 bytes.
+
+The required top-level sections are \code{configVersion}, \code{paths},
+\code{server}, \code{runtime}, \code{databaseDefaults}, and \code{safety}.
+The \code{logging}, \code{binlog}, and \code{tls} sections are optional;
+omitting a whole section selects its compiled defaults. Once one of those
+sections is present, its documented members are required. Recent resource
+controls in the server/runtime sections have fallback defaults so older
+version-1 configuration structures remain readable, provided their persisted
+format settings are updated to the current required versions.
+
+\subsection{Version and paths}
+
+\begin{longtable}{p{.36\linewidth}p{.57\linewidth}}
+\toprule
+Key / default & Meaning and restrictions \\
+\midrule
+\endhead
+\code{configVersion}: 1 & Configuration structure version; exactly 1. This
+does not mean database format 1. \\
+\code{paths.dataRoot}: \path{./data} & Nonempty path retained in the model.
+The configured daemon opens the explicit database-path argument; it does not
+derive or create that database from this key. \\
+\code{paths.temporaryRoot}: \path{./tmp} & Nonempty configured path. Current
+query execution places spill files under \path{<database>/tmp}; this setting
+does not relocate that directory in the daemon execution path. \\
+\code{paths.logDirectory}: \path{./logs} & Nonempty directory used for
+ordinary file logs and SQL binlogs. It is active in configured startup. \\
+\bottomrule
+\end{longtable}
+
+Relative paths are relative to the server's working directory, not
+necessarily the JSON file's directory. In JSON, escape a Windows backslash,
+for example:
+
+\begin{lstlisting}
+"logDirectory": "C:\\MiniSQL-Logs"
+\end{lstlisting}
+
+Forward slashes in a Windows path are often easier to read. Prefer absolute
+deployment paths and a documented working directory.
+
+\subsection{Server limits}
+\index{connection limits}\index{frame limits}
+
+All entries in the next table have prefix \code{server.}.
+
+\begin{longtable}{p{.30\linewidth}p{.19\linewidth}p{.44\linewidth}}
+\toprule
+Key & Default & Effective operational range / meaning \\
+\midrule
+\endhead
+\code{bindAddress} & \code{127.0.0.1} & Nonempty address. Trusted and standby
+configured modes require the exact loopback address. Remote exposure needs
+the intended authenticated transport and validation policy. \\
+\code{port} & 7432 & Integer 1--65535. \\
+\code{maxConnections} & 32 & Native concurrent listener accepts 1--128.
+This bounds active workers/sessions, not write parallelism. \\
+\code{maxStatementBytes} & 1048576 & At least 1024; maximum encoded SQL
+request payload admitted by the database. Wire framing also has its own
+protocol ceiling. \\
+\code{maxFrameBytes} & 8388608 & 1024--16777216; encoded response payload
+limit per frame. Large results use continuation frames. \\
+\code{maxResultRows} & 1000000 & Positive integer; maximum returned rows per
+statement across materialized and streamed delivery. \\
+\code{maxResultBytes} & 268435456 & At least 1048576; cumulative encoded
+response-byte limit per statement. \\
+\code{idleTimeoutMs} & 300000 & At least 1000; inactive client lifetime in
+milliseconds. \\
+\bottomrule
+\end{longtable}
+
+\code{maxResultRows}, \code{maxResultBytes}, and \code{idleTimeoutMs} may
+be omitted from an older server object and receive the defaults above. The
+remaining server fields are required. The generic JSON validator initially
+accepts some positive values more loosely, but the database/listener rejects
+values outside the effective operational ranges. In particular, the schema's
+unbounded positive \code{maxConnections} does not override the listener's
+128-worker ceiling.
+
+\subsection{Runtime budgets}
+\index{memory budgets}\index{temporary storage}
+
+All entries in the next table have prefix \code{runtime.}.
+
+\begin{longtable}{p{.30\linewidth}p{.19\linewidth}p{.44\linewidth}}
+\toprule
+Key & Default & Meaning and validation \\
+\midrule
+\endhead
+\code{bufferPoolBytes} & 268435456 & Shared read-cache budget. The JSON
+schema recommends at least 1 MiB; the database open path requires at least
+4096 and the actual page-cache construction must accommodate its page size. \\
+\code{queryTimeoutMs} & 30000 & Positive absolute cooperative request
+deadline, including waiting and streaming. Also supplied to logical lock-wait
+handling by configured startup. \\
+\code{checkpointWalBytes} & 67108864 & Threshold for WAL/checkpoint
+maintenance. Schema minimum 1 MiB; database open path minimum 4096. \\
+\code{temporaryMemoryBytes} & 134217728 & Soft per-session blocking-operator
+budget; at least 1 MiB at database open. \\
+\code{processMemoryBytes} & 2147483648 & Managed-heap admission/poll ceiling;
+at least 16 MiB, and configuration validation requires it to cover the sum
+of buffer-pool and temporary-memory settings. \\
+\code{temporaryStorageBytes} & 1073741824 & Shared concurrent spill-reservation
+limit; at least 1 MiB. \\
+\code{slowQueryMs} & 1000 & Positive duration threshold for slow-query
+counting and WARNING records. \\
+\code{logLevel} & \code{info} & One of \code{debug}, \code{info},
+\code{warning}, \code{warn}, or \code{error}. \code{warn} is an alias. \\
+\bottomrule
+\end{longtable}
+
+The process-memory, temporary-storage, and slow-query settings are optional
+members with these fallback values. Other runtime members are required.
+Configuration validation and \path{config/config.schema.json} differ in a
+few lower bounds. Use values satisfying the published schema and the effective
+runtime checks; relying on a smaller value accepted by only one layer makes
+configuration validation less portable.
+
+\subsection{Logging and binlog}
+
+\begin{longtable}{p{.36\linewidth}p{.57\linewidth}}
+\toprule
+Key / default & Meaning and restrictions \\
+\midrule
+\endhead
+\code{logging.stdoutEnabled}: true & Boolean destination switch. \\
+\code{logging.fileEnabled}: true & Boolean destination switch. At least one
+ordinary destination must remain enabled. \\
+\code{logging.fileName}: \path{minisql.log} & Nonempty file name inside the
+log directory; no slash, backslash, colon, or NUL. \\
+\code{logging.rotationHours}: 24 & Integer 1--87600; elapsed-time rotation
+of a nonempty active log. \\
+\code{binlog.enabled}: false & Enables complete valid UTF-8 SQL statement
+capture independently of ordinary severity filtering. \\
+\code{binlog.fileName}: \path{minisql-bin.log} & Nonempty file name with the
+same filename restrictions. Must differ from the ordinary log filename. \\
+\bottomrule
+\end{longtable}
+
+The singleton logger serializes records from multiple workers, preventing
+their file writes from interleaving. It opens enabled destinations eagerly:
+an invalid log directory fails startup instead of quietly losing later
+records. File output is written before stdout. Rotation creates successive
+archive files; it is not an automatic retention/deletion policy. Manage disk
+capacity and retention outside the server.
+
+\subsection{TLS configuration}
+
+All entries in the next table have prefix \code{tls.}.
+
+\begin{longtable}{p{.30\linewidth}p{.63\linewidth}}
+\toprule
+Key & Default and accepted meaning \\
+\midrule
+\endhead
+\code{enabled} & false. Must be true for \code{--serve-tls-config}. \\
+\code{certificateReference} & Compiled default \code{store:}; the example
+file contains \path{pfx:.\\config\\server.pfx}. Neither is a ready-to-use
+certificate. Set an actual \code{store:}, \code{pfx:}, or Linux
+\code{pem:cert-path|key-path} reference. Nonempty when enabled. \\
+\code{pfxPasswordEnvironment} & Exactly
+\code{MINISQL\_TLS\_PFX\_PASSWORD}. \\
+\code{protocolVersion} & Exactly \code{TLS1.3}. \\
+\code{cipherSuite} & Exactly \code{TLS\_AES\_256\_GCM\_SHA384}. \\
+\code{namedGroup} & Exactly \code{X25519}. \\
+\bottomrule
+\end{longtable}
+
+The validation rule for a non-loopback bind requires either the TLS-enabled
+flag or the explicit unsafe override in the safety model. That flag is a
+configuration check; the selected command still determines the actual
+listener. Use \code{--serve-tls-config} when intending TLS. Do not satisfy
+validation by turning on a flag and then start a different transport mode.
+
+\subsection{Persisted database defaults}
+
+All entries below have prefix \code{databaseDefaults.}. They are required by
+the JSON structure. Existing database format parameters are read from its
+metadata and are not changed by startup defaults.
+
+\begin{longtable}{p{.34\linewidth}p{.59\linewidth}}
+\toprule
+Key & Default and accepted values \\
+\midrule
+\endhead
+\code{pageSize} & 4096; one of 4096, 8192, 16384, 32768. \\
+\code{checksumAlgorithm} & Exactly \code{crc32c}. \\
+\code{walSegmentBytes} & 16777216; runtime validator minimum 4096, JSON
+schema minimum 1048576. Do not treat it as a complete archive-retention policy. \\
+\code{textEncoding} & Exactly \code{utf-8}. \\
+\code{defaultCollation} & Exactly \code{binary}. \\
+\code{databaseFormatVersion} & Exactly 2. \\
+\code{tableFileFormatVersion} & Exactly 2. \\
+\code{indexFileFormatVersion} & Exactly 2. \\
+\code{walFormatVersion} & Exactly 1. \\
+\code{rowFormatVersion} & Exactly 2. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Safety settings}
+
+\begin{longtable}{p{.42\linewidth}p{.51\linewidth}}
+\toprule
+Key & Meaning \\
+\midrule
+\endhead
+\code{safety.durability} & Exactly \code{full}. There is no supported
+relaxed durability mode. \\
+\code{safety.allowUnknownFormatFeatures} & false; true is rejected.
+Unknown persisted feature bits must not be accepted speculatively. \\
+\code{safety.\allowbreak allowRemote\allowbreak WithoutAuthentication} & false in the example,
+compiled default, and schema. The runtime model permits true as an explicit
+unsafe override of the non-loopback configuration check. It does not change
+the command's authentication mode, and trusted/standby configured listeners
+still reject non-loopback addresses. Leave false in supported configurations. \\
+\bottomrule
+\end{longtable}
+
+\sourcecode{config/minisql.example.json}{Complete example configuration.}
+\sourcecode{config/config.schema.json}{Published schema and lower bounds.}
+\sourcecode{src/minisql/config/model.ml}{Compiled defaults.}
+\sourcecode{src/minisql/config/validation.ml}{Cross-field validation and safety policy.}
+\sourcecode{src/minisql/server/database_manager.ml}{Effective open-time and operational limits.}
+\sourcecode{src/minisql/server/listener.ml}{Concurrent listener worker ceiling.}
+
+\section{Size memory, results, and temporary storage together}
+
+The three memory-related settings serve different purposes. The buffer pool
+is a shared cache. Temporary memory is a soft per-session operator budget.
+Process memory is a managed-heap admission and cooperative-abort threshold.
+The last is not an operating-system resident-set-size ceiling: native TLS
+state, sockets, thread stacks, mappings, and other runtime allocations can
+fall outside it. Apply the final process/container resource boundary at the
+OS layer when one is required.
+
+Hash joins, grouped aggregation, and sort use sampled row width to derive
+thresholds and spill eligible work to the database's temporary directory.
+A large row or an operator that still materializes its inputs can exceed a
+soft query budget. The compatibility result API can also retain data beyond
+an operator's internal budget. Streaming result frames limit transport chunks;
+they do not prove that every query plan is constant-memory.
+
+Increasing \code{maxConnections} while keeping a large per-query budget can
+raise peak memory substantially. Increasing \code{maxResultBytes} can permit
+very large result transfers even if each frame is small. Before changing a
+limit, identify whether the observed failure is a row limit, response-byte
+limit, spill limit, heap limit, or deadline. The correct remedy might be a
+more selective query, projection of fewer columns, pagination, an index, or a
+smaller batch rather than a larger global limit.
+
+\section{Inspect status and active sessions}
+\index{SHOW STATUS}\index{SHOW PROCESSLIST}
+
+\begin{lstlisting}[language=SQL]
+SHOW STATUS;
+SHOW PROCESSLIST;
+\end{lstlisting}
+
+Authenticated callers require database ADMIN for both. Trusted sessions are
+administrative. SHOW STATUS returns \code{variable\_name} and
+\code{value} text columns; convert numeric values when graphing them. The
+counters are process-local and reset on restart.
+
+\begin{longtable}{p{.29\linewidth}p{.64\linewidth}}
+\toprule
+Group & Status names \\
+\midrule
+\endhead
+Lifetime and work & \code{uptime\_ms}, \code{active\_sessions},
+\code{total\_connections}, \code{total\_statements},
+\code{failed\_statements}, \code{rows\_returned},
+\code{checkpoint\_resets}. \\
+Request/result policy & \code{max\_statement\_bytes},
+\code{max\_frame\_bytes}, \code{max\_result\_rows},
+\code{max\_result\_bytes}, \code{idle\_timeout\_ms},
+\code{query\_timeout\_ms}. \\
+Memory/spill & \code{query\_memory\_bytes}, \code{process\_memory\_bytes},
+\code{heap\_used\_bytes}, \code{heap\_committed\_bytes},
+\code{temporary\_storage\_bytes}, \code{temporary\_reserved\_bytes},
+\code{temporary\_peak\_bytes}. \\
+Failures and timing & \code{cancelled\_statements},
+\code{timed\_out\_statements}, \code{resource\_rejected\_statements},
+\code{total\_execution\_ms}, \code{maximum\_execution\_ms},
+\code{slow\_query\_count}, \code{slow\_query\_ms},
+\code{result\_bytes\_returned}. \\
+Write fencing & \code{fencing\_enabled}, \code{fencing\_epoch},
+\code{fencing\_rejections}. \\
+\bottomrule
+\end{longtable}
+
+SHOW PROCESSLIST returns \code{session\_id}, \code{principal},
+\code{peer}, \code{tls}, \code{state}, \code{state\_time\_ms},
+\code{statement}, and \code{requests}. The statement field is a bounded
+summary, not a complete audit trail. The TLS flag is set from the presence
+of a native TLS credential on the listener; it does not describe the caller's
+certificate trust policy. MiniSQL-specific protected framing can be in use
+while this TLS flag is false.
+
+Interpret age together with state. An idle connection is different from a
+long-running query. A waiting query is different from one doing expensive
+work. Keep a timestamped status snapshot when investigating a problem so a
+later counter increase can be distinguished from activity before the incident.
+
+\sourcecode{src/minisql/executor/executor.ml}{executeShowStatus and executeShowProcesslist.}
+\sourcecode{src/minisql/server/listener.ml}{registerSessionPeer TLS argument.}
+
+\section{Cancel work without abandoning all other clients}
+
+Find the session ID with SHOW PROCESSLIST. Use the supported client API on a
+separate administrative connection to request cancellation. Python exposes
+\code{cancel\_session(id)} for an identified target and
+\code{Connection.cancel()} for the connection's own active operation.
+JDBC exposes \code{Statement.cancel()}. Native clients have
+\code{cancelSession(client, id)}.
+
+Cancellation is cooperative. It can take effect at an execution poll boundary,
+and the client still needs to handle the resulting error and transaction
+state. It is not a SQL \code{KILL} command or a guarantee that a thread has
+been forcibly destroyed. If an explicit transaction is failed, roll it back
+or recover through a valid savepoint before further ordinary work.
+
+The control connection itself needs an available server connection slot and,
+in authenticated mode, ADMIN. Leave operational capacity instead of consuming
+all slots with an oversized application pool. A separate connection is used
+because a blocked query socket cannot simultaneously carry an independent
+administrative request.
+
+\section{Monitor through the Prometheus bridge}
+\index{Prometheus}\index{monitoring}
+
+The repository includes a small exporter that uses the Python connector to
+run SHOW STATUS and expose numeric values as Prometheus text:
+
+\begin{lstlisting}[language=bash]
+python3 tools/monitoring/minisql_exporter.py \
+  --database-port 7432 --database learning --listen-port 9107
+\end{lstlisting}
+
+The default listen address is \code{127.0.0.1}; the exporter rejects
+non-loopback binds. Both \path{/metrics} and \path{/healthz} perform a
+database scrape. Success returns HTTP 200 with \code{minisql\_up 1};
+failure returns HTTP 503 with \code{minisql\_up 0}. An exporter process
+that is running but cannot reach its database must therefore be treated as an
+unhealthy scrape, not healthy monitoring.
+
+\begin{longtable}{p{.32\linewidth}p{.61\linewidth}}
+\toprule
+Exporter option & Default / purpose \\
+\midrule
+\endhead
+\code{--listen-address} & \code{127.0.0.1}; loopback-only policy. \\
+\code{--listen-port} & 9107. \\
+\code{--database-host} & \code{127.0.0.1}. \\
+\code{--database-port} & 7432. \\
+\code{--database} & \code{main}; set the intended logical connection name. \\
+\code{--user} & Omitted for trusted mode; use an ADMIN-capable authenticated
+account otherwise. \\
+\code{--password-env} & \code{MINISQL\_EXPORTER\_PASSWORD}; name of the
+environment variable containing the secret. \\
+\code{--tls} & Enables driver TLS. \\
+\code{--server-name} & \code{localhost}; expected TLS identity. \\
+\code{--pin-sha256} & Optional expected leaf-certificate digest. \\
+\code{--ca-file} & Optional trusted CA file. \\
+\code{--timeout} & 5.0 seconds for connect/socket operations. \\
+\code{--self-test} & Runs the metrics-rendering check without serving HTTP. \\
+\bottomrule
+\end{longtable}
+
+The current exporter renders all numeric status values with Prometheus
+\code{gauge} type declarations, including cumulative server counters. Build
+dashboards with their actual monotonic/reset behavior in mind. Authentication
+and remote exposure of the HTTP endpoint belong in a protected reverse proxy;
+the exporter does not provide its own remote HTTP authentication service.
+
+\sourcecode{tools/monitoring/minisql_exporter.py}{Options, scrape behavior, metrics names, and HTTP health policy.}
+
+\section{Routine maintenance: ANALYZE, REINDEX, and VACUUM}
+\index{ANALYZE}\index{REINDEX}\index{VACUUM}
+
+\begin{lstlisting}[language=SQL]
+ANALYZE;
+ANALYZE products;
+REINDEX;
+REINDEX products;
+REINDEX product_name_index;
+VACUUM;
+VACUUM products;
+\end{lstlisting}
+
+ANALYZE refreshes optimizer statistics. Use it after substantial changes to
+row counts or data distributions and inspect plans before attributing a slow
+query to storage corruption. Statistics are advisory; they guide choices
+without changing what the SQL means. The performance chapter explains their
+sampled distributions and query-plan effects.
+
+REINDEX rebuilds derived indexes for the whole database, a table, or an
+explicit index. It does not reconstruct missing authoritative table rows.
+VACUUM rewrites selected table storage, rebuilds indexes, and refreshes
+statistics. It is useful after enough deletes/updates have changed physical
+space use, but it has a greater I/O and temporary-space cost than simply
+updating statistics.
+
+All three require autocommit and database MAINTAIN for authenticated users.
+They execute exclusively. Schedule the work with its expected duration and
+free-space requirement in mind; do not start it inside an application DML
+transaction. DDL/ANALYZE/VACUUM/REINDEX also invalidate relevant cached
+planning generations so later statements can be planned against current
+metadata.
+
+VACUUM and operations that rewrite/reset physical state break the continuity
+assumptions of a DML-only WAL archive. Stop the replication workflow and make
+a new base after the maintenance or migration. A WAL archive is not an
+independent copy of every schema and physical-layout transition.
+
+\sourcecode{src/minisql/executor/executor.ml}{executeVacuum, executeReindex, and analyze handling.}
+\sourcecode{src/minisql/executor/dml.ml}{Heap rewrites and index rebuild maintenance.}
+
+\section{Offline consistency checking}
+\index{consistency checker}
+
+Stop the server, preserve a backup when investigating damage, and run:
+
+\begin{lstlisting}
+minisql-check.exe C:\MiniSQL-Data\db_ACTUAL_ID
+\end{lstlisting}
+
+A successful run prints a SUCCESS summary with table, row, and index counts,
+and may print warnings. The checker streams heap rows, external TEXT/BLOB
+chains, and active B+ tree leaves. It proves heap/index agreement using exact
+entry probes and count agreement, so it is bounded by an individual row
+rather than retaining the entire dataset. Its time still scales with the
+authoritative data that must be read and verified.
+
+The checker opens through the normal database manager, which can perform
+recovery and derived repair as part of opening. Treat it as an offline
+verification operation with an exclusive database lock, not a purely
+read-only forensic acquisition utility. Preserve the original directory
+before checking a copy when unchanged evidence is required.
+
+A successful structural check does not prove that every application invariant
+is satisfied. In particular, it is not a substitute for queries that look for
+orphan relationships or for the documented SQL implementation caveats. Run
+semantic checks relevant to the application after restore or migration.
+
+Small \path{*.heap-pages} files beside table files are derived physical scan
+directories. Missing, stale, or damaged copies rebuild from checksummed table
+pages. Deleting one while the database is stopped can be a safe targeted
+repair; copying one from another table or physical generation is not. Do not
+extend this advice to table files, metadata, WAL, or index dirty markers.
+
+\sourcecode{src/minisql/tools/check.ml}{Streaming validation and structural checks.}
+\sourcecode{src/apps/minisql_check/main.ml}{Public checker command and exit behavior.}
+
+\section{Service supervision and shutdown}
+\index{SHUTDOWN}\index{systemd}\index{Task Scheduler}
+
+\subsection{Linux systemd template}
+
+The supplied \path{deploy/systemd/minisql.service} uses a dedicated
+\code{minisql} user/group, a fixed working directory, a trusted configured
+listener, restart-on-failure, and an ExecStop SQL SHUTDOWN command. Its default
+paths are template values. Replace the database path with the actual
+initialized directory, install the binaries/configuration where the unit
+expects them, and create the service account and directories with appropriate
+ownership.
+
+The template's filesystem protection permits writes under its declared data
+and log paths. If configuration selects a different write location, update
+that policy as well. The stop command uses port 7432; changing the server's
+port requires changing the stop command. For an authenticated/TLS listener,
+replace the trusted stop command with an operator-managed credential helper
+that issues SHUTDOWN through the matching transport.
+
+\subsection{Windows templates}
+
+\path{deploy/windows/Start-MiniSQL.ps1} accepts
+\code{-DatabasePath}, \code{-ConfigPath}, and optional
+\code{-BinaryDirectory}. It resolves paths and runs the trusted configured
+daemon in the foreground. \path{Stop-MiniSQL.ps1} accepts \code{-Port}
+and the binary directory and sends SHUTDOWN through the trusted client.
+Use them with Task Scheduler or a suitable supervisor if unattended operation
+is needed.
+
+These scripts do not register a native Windows Service Control Manager
+service. The current MiniLang runtime does not expose the SCM callback ABI
+needed to claim that integration. A wrapper can supervise the process, but
+the wrapper's startup, account, working directory, logging, and graceful-stop
+behavior must be configured explicitly.
+
+\subsection{Graceful and abnormal stops}
+
+SQL SHUTDOWN acknowledges the request and asks the listener to drain workers
+and close storage cooperatively. The console also advertises Ctrl+C for
+stopping an operational server. Prefer the SQL path for planned maintenance
+when an administrative connection is available. After an abnormal process
+termination, open/recovery and an offline check provide evidence before the
+database is returned to important work.
+
+Do not start a second writable server against the same database directory.
+The database lock exists to prevent conflicting ownership. Deleting its file
+while a process still owns storage does not create safe multiwriter access.
+
+\sourcecode{deploy/systemd/minisql.service}{Linux supervision example.}
+\sourcecode{deploy/windows/Start-MiniSQL.ps1}{Windows startup wrapper.}
+\sourcecode{deploy/windows/Stop-MiniSQL.ps1}{Trusted shutdown wrapper.}
+
+\section{Daemon command reference}
+
+The forms below omit \path{.exe} for readability. Angle-bracket names are
+placeholders, not literal path text. Optional \code{max-clients} defaults to
+32 for the ordinary persistent modes; concurrent modes accept at most 128.
+An optional request budget of zero means unbounded operation.
+
+\begin{lstlisting}
+minisqld --version
+minisqld --m0-self-test
+minisqld --init <data-root> <name> [page-size]
+minisqld --set-admin-password <database>
+minisqld --set-user-password <database> <user>
+minisqld --generate-encryption-key <new-key-file>
+minisqld --enable-encryption <database> <key-file>
+minisqld --rotate-encryption-key <database> <new-key-file>
+
+minisqld --serve <database> <port> [max-clients]
+minisqld --serve-authenticated <database> <port> [max-clients]
+minisqld --serve-standby <standby> <port> [max-clients]
+minisqld --serve-secure <database> <address> <port>
+  <max-clients> [max-requests]
+minisqld --serve-tls <database> <address> <port>
+  <max-clients> <certificate-reference> [max-requests]
+minisqld --serve-fenced <database> <port> <max-clients>
+  <lease-file> <epoch> <node-id> <max-clock-skew-ms>
+
+minisqld --serve-config <database> <config-file>
+minisqld --serve-authenticated-config <database> <config-file>
+minisqld --serve-standby-config <standby> <config-file>
+minisqld --serve-tls-config <database> <config-file>
+
+minisqld --serve-one <database> <port> [max-requests]
+minisqld --serve-auth <database> <port> [max-requests]
+minisqld --serve-many <database> <port> <max-clients>
+  [max-requests]
+minisqld --serve-auth-many <database> <port> <max-clients>
+  [max-requests]
+\end{lstlisting}
+
+Wrapped lines in this syntax reference are one command. The one-session and
+request-budget forms are retained for compatibility and tests. Use persistent
+operational forms for a service. The \code{--m0-self-test} banner is a
+historical interface check, not the full test suite. Usage errors generally
+return exit code 2; an operational error prints \code{ERROR number: message}
+and returns 1; successful commands return 0. Inspect both the exit status and
+output in administrative automation.
+
+\sourcecode{src/apps/minisqld/main.ml}{Complete public daemon dispatch.}
+
+\section{Operational qualification and incident records}
+
+The repository includes workload, capacity, fault, recovery, and HA drills.
+Run destructive drills only in their intended new disposable work roots.
+The production fault drill tests controlled storage exhaustion, native crash
+boundaries, interrupted TCP frames, termination during concurrent commits,
+restart, continued writes, and corruption rejection. It deliberately avoids
+filling the host volume. A real filesystem-full test belongs on a disposable
+quota-limited volume.
+
+The soak script measures a representative persistent workload over an extended
+period and can fail on workload errors, process disappearance, RSS/handle/
+thread drift, or latency thresholds. Historical results are evidence about
+the tested revision, hardware, and workload. Preserve a report for the
+deployment's actual binary and largest representative database.
+
+When an incident occurs, record the source revision, binary versions,
+configuration, SQL/error text with secrets removed, time, process status,
+disk free space, status counters, and relevant logs. Before attempting repair,
+copy the complete stopped directory and its required keys to a controlled
+location. Prefer restoring a verified copy over modifying the only surviving
+data in place.
+
+\sourcecode{tests/fault/production_fault_drill.py}{Isolated fault qualification.}
+\sourcecode{tests/soak/production_soak.py}{Long-running workload/resource checks.}
+\sourcecode{tests/integration/production_controls_live.py}{Operational limit and cancellation scenarios.}

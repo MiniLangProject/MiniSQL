@@ -1,0 +1,103 @@
+\chapter*{About this edition}
+\addcontentsline{toc}{chapter}{About this edition}
+This book teaches MiniSQL as it is implemented in the repository at revision
+\href{\RepositoryURL/commit/\SourceCommit}{\texttt{\SourceShort}}.
+It combines a course for a first-time database user with a reference for the
+person who develops applications, operates a server, diagnoses a slow query,
+or needs to understand a database file. All prose, examples and figure sources
+are included beside this PDF so the book can evolve with the engine.
+
+\begin{table}[htbp]\centering
+\caption{The identity of the implementation described in this book}
+\begin{tabularx}{\linewidth}{p{.29\linewidth}X}
+\toprule
+Item & This edition\\\midrule
+Repository & \url{https://github.com/MiniLangProject/MiniSQL}\\
+Source baseline & \texttt{\SourceShort}; full identifier in \path{edition.tex}\\
+Application version banner & MiniSQL 1.1.1\\
+Storage generation & 2, an unreleased development change at this revision\\
+Wire protocol & 1; independent of storage generation\\
+Main operating targets & Native Windows x64 and Linux x64\\
+Graphical Workbench & Native Windows application\\
+Manual edition & \ManualVersion, \EditionDate\\\bottomrule
+\end{tabularx}
+\end{table}
+
+\warning{Read the version identity before opening existing data}{The
+\code{1.1.1} program banner does not mean that the current development tree
+opens a released format-1 database. Storage format 2 rejects format-1 files.
+There is no automatic format-1 converter. Changing a version number in a file
+or configuration does not migrate its contents. Keep the old executable and
+its database together while preparing a separately verified logical rebuild.}
+
+\section*{How the book establishes a claim}
+The primary sources are the program entry points, parser, binder, executor,
+storage code, connector implementations and tests at the pinned revision.
+An \emph{Implementation evidence} note identifies the relevant repository
+file, with a link fixed to the source commit. Existing release guides and
+historical acceptance reports provide context; they do not override behavior
+in the current code. The executable teaching examples and focused edge-case
+probes are recorded in \path{validation.json}. The appendix states precisely
+what was executed and what was reviewed from source.
+
+This matters because a parser can recognize a clause that the executor later
+rejects. It also matters because implementing a storage type does not prove
+that all arithmetic, comparison and wire-conversion paths have standard SQL
+semantics. The book marks such cases at the point where a learner would
+otherwise be likely to rely on them.
+
+\section*{Learning routes}
+Read Chapters 1--3 in order if you have never used a relational database.
+Continue through the language chapters while running the supplied SQL files.
+Use the workshops to check understanding. The operations chapters then turn a
+local experiment into a managed service: accounts, limits, backups, restore
+verification and replication. Application developers should also read the
+connector chapter before adopting transaction or type-conversion assumptions
+from another database driver. The performance and storage chapters explain
+how to investigate behavior rather than guess.
+
+An experienced SQL user can start with the type and language differences,
+the transactions chapter and the compatibility matrix, then use the detailed
+reference. An operator can start with installation and the server-mode table,
+but should still read the version warning and the limitations below.
+
+\section*{Conventions}
+SQL keywords are capitalized for readability, not as a requirement. Examples
+use lowercase, uncomplicated identifiers. Angle-bracketed text in command
+syntax, such as \code{<database-path>}, is a placeholder to replace, not literal
+text to type. Square brackets in a syntax summary mean an optional part;
+square brackets in actual programming code retain that language's meaning.
+Statements in the console end in a semicolon. A listing with no shell prompt
+can be copied without deleting prompt characters.
+
+Shell commands and operational paths are relative to the repository root unless stated otherwise. References to the manual's own \path{chapters/}, \path{figures/}, \path{examples/} and \path{tools/} directories are relative to \path{docs/manual/}.
+Linux commands use \path{build/bin-linux}; Windows commands use
+\path{build/bin}. A concrete database path is the \path{db_<uuid>} directory
+printed by \code{--init}, not just its human-readable database name.
+Output tables omit irrelevant diagnostic logs. Query row order is guaranteed
+in examples only where \code{ORDER BY} is specified.
+
+\section*{Important boundaries at this revision}
+The chapters explain the full implemented public surface, including its
+restrictions. They do not imply conformance to every feature in an SQL
+standard. In particular, the current implementation has verified limitations
+in scaled-decimal arithmetic and presentation, date/time comparison,
+\code{CURRENT\_TIMESTAMP}, \code{NULLIF} with a null argument, and referential
+actions. Updating a referenced parent key can leave an orphaned child;
+therefore the teaching database treats keys as immutable. Protocol-v1 result
+cells are text and cannot distinguish SQL NULL from the literal string
+\code{'NULL'} in the general result path. These are operationally meaningful
+limitations, not exercises for the reader to discover accidentally.
+
+Historical full Windows acceptance is separate from the focused native Linux
+checks performed for this documentation. A successful example is evidence
+for that example, not an independent production or security audit.
+
+\section*{License and maintenance}
+The manual, examples and build tools use the repository's Apache-2.0 license.
+See the repository \path{LICENSE} and \path{NOTICE.md}. The figures are editable
+LaTeX/TikZ drawings created for this manual. When updating the source baseline,
+rerun the examples, inspect the parser and command inventories, rebuild the
+PDF, and check its pages. Merely changing \path{edition.tex} is not a content
+review.
+\sourcecode{src/minisql/common/format_version.ml}{The storage version registry is independent of the application banner and wire protocol.}

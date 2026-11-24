@@ -1,0 +1,222 @@
+{
+  "source_baseline": "9bedab0c9de307d0435d3abfb3eab98a2f6d42a5",
+  "chapters": {
+    "00-about.tex": [
+      "src/minisql/common/format_version.ml"
+    ],
+    "01-foundations.tex": [
+      "src/apps/minisqld/main.ml",
+      "src/minisql/client/console.ml",
+      "src/minisql/executor/dml.ml"
+    ],
+    "02-installation.tex": [
+      "build.ps1",
+      "docs/acceptance/STORAGE_V2_2026-11-24.md",
+      "docs/formats/FORMAT_COMPATIBILITY.md",
+      "src/apps/minisql/main.ml",
+      "src/apps/minisqld/main.ml",
+      "src/minisql/catalog/catalog.ml",
+      "src/minisql/common/format_version.ml",
+      "tests/run_storage_v2.py"
+    ],
+    "03-guided-tutorial.tex": [
+      "src/minisql/client/formatter.ml",
+      "src/minisql/executor/dml.ml",
+      "src/minisql/sql/parser.ml"
+    ],
+    "04-sql-foundations.tex": [
+      "src/minisql/client/formatter.ml",
+      "src/minisql/sql/dialect.ml",
+      "src/minisql/sql/expressions.ml",
+      "src/minisql/sql/lexer.ml",
+      "src/minisql/sql/parser.ml",
+      "src/minisql/sql/types.ml",
+      "src/minisql/sql/values.ml",
+      "src/tests/m36_predicates_fetch.ml"
+    ],
+    "05-schema-and-types.tex": [
+      "src/minisql/catalog/schema_history.ml",
+      "src/minisql/client/formatter.ml",
+      "src/minisql/executor/dml.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/sql/binder.ml",
+      "src/minisql/sql/parser.ml",
+      "src/minisql/sql/types.ml",
+      "src/minisql/sql/values.ml",
+      "src/minisql/storage/btree.ml",
+      "src/tests/m23_index_integration.ml",
+      "src/tests/m24_schema_evolution.ml",
+      "src/tests/m34_catalog_introspection.ml",
+      "src/tests/m43_auto_increment_decimal.ml",
+      "src/tests/m45_sequences_generated_triggers.ml"
+    ],
+    "06-data-changes.tex": [
+      "src/minisql/executor/dml.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/sql/binder.ml",
+      "src/minisql/sql/parser.ml",
+      "src/tests/m38_returning.ml",
+      "src/tests/m39_insert_select.ml",
+      "src/tests/m40_conflict_nothing.ml",
+      "src/tests/m41_upsert.ml",
+      "src/tests/m42_truncate.ml",
+      "src/tests/m45_sequences_generated_triggers.ml"
+    ],
+    "07-queries.tex": [
+      "src/minisql/executor/aggregate.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/executor/projection.ml",
+      "src/minisql/executor/sort.ml",
+      "src/minisql/sql/binder.ml",
+      "src/minisql/sql/parser.ml",
+      "src/tests/m16_relational_engine.ml",
+      "src/tests/m36_predicates_fetch.ml",
+      "src/tests/m37_outer_joins.ml",
+      "src/tests/m43_views_subqueries.ml",
+      "src/tests/m44_cte_windows.ml"
+    ],
+    "08-functions-and-advanced-sql.tex": [
+      "src/minisql/catalog/schema_history.ml",
+      "src/minisql/executor/aggregate.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/executor/projection.ml",
+      "src/minisql/sql/binder.ml",
+      "src/minisql/sql/expressions.ml",
+      "src/minisql/sql/parser.ml",
+      "src/tests/m16_relational_engine.ml",
+      "src/tests/m22_prepared_statements.ml",
+      "src/tests/m35_scalar_expressions.ml",
+      "src/tests/m44_cte_windows.ml",
+      "src/tests/m45_sequences_generated_triggers.ml"
+    ],
+    "09-transactions.tex": [
+      "src/minisql/executor/executor.ml",
+      "src/minisql/server/listener.ml",
+      "src/minisql/server/session.ml",
+      "src/minisql/sql/parser.ml",
+      "src/minisql/transaction/checkpoint.ml",
+      "src/minisql/transaction/lock_manager.ml",
+      "src/minisql/transaction/recovery.ml",
+      "src/minisql/transaction/transaction.ml"
+    ],
+    "10-security.tex": [
+      "docs/formats/secure-transport-v1.md",
+      "src/apps/minisql/main.ml",
+      "src/apps/minisqld/main.ml",
+      "src/minisql/catalog/catalog.ml",
+      "src/minisql/common/diagnostics.ml",
+      "src/minisql/common/logger.ml",
+      "src/minisql/common/uuid.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/platform/tls_openssl.ml",
+      "src/minisql/platform/tls_policy.ml",
+      "src/minisql/platform/tls_schannel.ml",
+      "src/minisql/security/key_provider.ml",
+      "src/minisql/server/server.ml",
+      "src/minisql/sql/parser.ml",
+      "src/minisql/tools/backup.ml",
+      "src/minisql/tools/encryption.ml",
+      "src/minisql/tools/migrate.ml",
+      "src/tests/m30_audit_grants.ml"
+    ],
+    "11-administration.tex": [
+      "config/config.schema.json",
+      "config/minisql.example.json",
+      "deploy/systemd/minisql.service",
+      "deploy/windows/Start-MiniSQL.ps1",
+      "deploy/windows/Stop-MiniSQL.ps1",
+      "src/apps/minisql_check/main.ml",
+      "src/apps/minisqld/main.ml",
+      "src/minisql/config/loader.ml",
+      "src/minisql/config/model.ml",
+      "src/minisql/config/validation.ml",
+      "src/minisql/executor/dml.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/server/database_manager.ml",
+      "src/minisql/server/listener.ml",
+      "src/minisql/tools/check.ml",
+      "tests/fault/production_fault_drill.py",
+      "tests/integration/production_controls_live.py",
+      "tests/soak/production_soak.py",
+      "tools/monitoring/minisql_exporter.py"
+    ],
+    "12-backup-recovery-replication.tex": [
+      "docs/formats/ha-fencing-records-v1.md",
+      "docs/formats/wal-archive-v1.md",
+      "docs/release/REPLICATION.md",
+      "src/apps/minisql_backup/main.ml",
+      "src/apps/minisql_check/main.ml",
+      "src/apps/minisql_migrate/main.ml",
+      "src/minisql/server/database_manager.ml",
+      "src/minisql/tools/backup.ml",
+      "src/minisql/tools/migrate.ml",
+      "tests/ha/automatic_controller_live.py",
+      "tests/ha/automatic_fencing_drill.py",
+      "tests/ha/production_failover_drill.py",
+      "tools/recovery/production_recovery_drill.py",
+      "tools/replication/minisql_ha_controller.py",
+      "tools/replication/minisql_hot_replica.py"
+    ],
+    "13-clients-and-integration.tex": [
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java",
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java",
+      "clients/python/minisql/dbapi.py",
+      "clients/python/minisql/protocol.py",
+      "src/apps/minisql/main.ml",
+      "src/apps/minisql_admin/main.ml",
+      "src/minisql/admin/fullclient.ml",
+      "src/minisql/admin/win32_client.ml",
+      "src/minisql/client/client.ml",
+      "src/minisql/client/console.ml",
+      "src/minisql/executor/executor.ml",
+      "src/tests/m15_sql_engine.ml"
+    ],
+    "14-performance.tex": [
+      "src/minisql/catalog/statistics.ml",
+      "src/minisql/executor/dml.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/planner/execution_plan.ml",
+      "src/minisql/planner/optimizer.ml"
+    ],
+    "15-storage-and-internals.tex": [
+      "docs/formats/FORMAT_COMPATIBILITY.md",
+      "src/minisql/catalog/catalog.ml",
+      "src/minisql/catalog/metadata.ml",
+      "src/minisql/catalog/schema_history.ml",
+      "src/minisql/common/float_codec.ml",
+      "src/minisql/common/format_version.ml",
+      "src/minisql/executor/dml.ml",
+      "src/minisql/storage/btree.ml",
+      "src/minisql/storage/heap_file.ml",
+      "src/minisql/storage/overflow.ml",
+      "src/minisql/storage/page.ml",
+      "src/minisql/storage/paged_file.ml",
+      "src/minisql/storage/row_codec.ml",
+      "src/minisql/storage/slotted_page.ml",
+      "src/minisql/storage/superblock.ml",
+      "src/minisql/storage/table_header.ml",
+      "src/minisql/transaction/checkpoint.ml",
+      "src/minisql/transaction/recovery.ml",
+      "src/minisql/transaction/wal.ml"
+    ],
+    "16-workshops.tex": [
+      "clients/python/minisql/dbapi.py",
+      "src/minisql/planner/optimizer.ml"
+    ],
+    "17-reference-and-troubleshooting.tex": [
+      "docs/acceptance/STORAGE_V2_2026-11-24.md",
+      "docs/formats/wire-protocol-v1.md",
+      "docs/release/LIMITATIONS.md",
+      "src/minisql/common/errors.ml",
+      "src/minisql/executor/executor.ml",
+      "src/minisql/protocol/constants.ml",
+      "src/minisql/protocol/messages.ml",
+      "src/minisql/server/database_manager.ml",
+      "src/minisql/storage/btree.ml"
+    ],
+    "18-validation-and-sources.tex": [
+      "docs/acceptance/STORAGE_V2_2026-11-24.md",
+      "tests/run_storage_v2.py"
+    ]
+  }
+}

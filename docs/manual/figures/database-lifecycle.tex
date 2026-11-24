@@ -1,0 +1,17 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=12mm and 11mm]
+\node[box,text width=37mm] (init) {Create database\\\texttt{--init}};
+\node[strong,text width=37mm,right=of init] (serve) {Open server\\Connect clients};
+\node[box,text width=37mm,right=of serve] (stop) {Graceful shutdown\\Release file locks};
+\node[box,text width=37mm,below=of init] (restore) {Restore to new path\\Validate separately};
+\node[box,text width=37mm,below=of serve] (backup) {Offline backup\\Keep matching keys};
+\node[box,text width=37mm,below=of stop] (check) {Offline check\\or page-size rewrite};
+\draw[arrow] (init) -- (serve);\draw[arrow] (serve) -- (stop);\draw[arrow] (stop) -- (check);
+\draw[arrow] (stop.south) -- ++(0,-4mm) -| (backup.north);
+\draw[arrow] (backup) -- (restore);\draw[arrow] (restore.west) -- ++(-5mm,0) |- (init.west);
+\draw[arrow] (check.east) -- ++(5mm,0) |- (serve.north);
+\end{tikzpicture}
+\caption{A safe teaching workflow. A restore is a new candidate database that must be checked before it replaces the working copy. Advanced replication has additional base, WAL and fencing requirements.}
+\label{fig:database-lifecycle}
+\end{figure}

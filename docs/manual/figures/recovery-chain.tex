@@ -1,0 +1,14 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=10mm and 12mm]
+\node[strong,text width=47mm] (base) {Verified base backup\\Schema and physical identity};
+\node[box,text width=47mm,right=of base] (wal) {Contiguous archived WAL\\Same base and schema contract};
+\node[strong,text width=47mm,below=of base] (restore) {Restore to a new directory\\Replay to chosen LSN / latest};
+\node[box,text width=47mm,right=of restore] (key) {Matching external keys\\when encryption is used};
+\node[box,text width=47mm,below=of restore] (verify) {Offline consistency check\\Then application-level checks};
+\node[strong,text width=47mm,right=of verify] (publish) {Select authoritative copy\\Update client endpoint};
+\draw[arrow] (base) -- (restore);\draw[arrow] (wal.south) -- ++(0,-4mm) -| (restore.north);
+\draw[arrow] (key) -- (restore);\draw[arrow] (restore) -- (verify);\draw[arrow] (verify) -- (publish);
+\end{tikzpicture}
+\caption{The evidence needed for point-in-time recovery. A missing WAL range, incompatible schema base or unavailable key cannot be repaired by choosing a later target.}
+\label{fig:recovery-chain}
+\end{figure}

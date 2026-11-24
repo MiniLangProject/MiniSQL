@@ -1,0 +1,17 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=7mm and 16mm]
+\node[strong,text width=57mm] (question) {\textbf{Business question}\\Which customers ordered at least three units?};
+\node[strong,text width=57mm,right=of question] (physical) {\textbf{Physical choices}\\Observe with EXPLAIN};
+\node[box,text width=57mm,below=of question] (sources) {FROM / JOIN\\Find related rows};
+\node[box,text width=57mm,below=of physical] (access) {Index or sequential scan\\Join order and join algorithm};
+\node[box,text width=57mm,below=of sources] (filter) {WHERE, then GROUP BY\\Filter rows and form groups};
+\node[box,text width=57mm,below=of access] (blocking) {Filter pushdown / aggregation\\Memory or temporary spill};
+\node[box,text width=57mm,below=of filter] (result) {HAVING / SELECT / ORDER BY\\Keep groups, choose columns, sort};
+\node[box,text width=57mm,below=of blocking] (delivery) {Projection / sort / Top-N\\Bounded result frames};
+\foreach \a/\b in {question/sources,sources/filter,filter/result,physical/access,access/blocking,blocking/delivery}{\draw[arrow] (\a) -- (\b);}
+\draw[arrow,dashed] (sources) -- (access);\draw[arrow,dashed] (filter) -- (blocking);\draw[arrow,dashed] (result) -- (delivery);
+\end{tikzpicture}
+\caption{A learning model for a grouped query. SQL describes a result; the optimizer selects the physical work. This is a conceptual ordering, not a promise that every operator executes in the written order.}
+\label{fig:query-thinking}
+\end{figure}

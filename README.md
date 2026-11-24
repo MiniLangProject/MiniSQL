@@ -14,6 +14,18 @@ databases are rejected and must be recreated. See the
 [storage-v2 specification](docs/formats/storage-v2.md) and
 [compatibility rules](docs/formats/FORMAT_COMPATIBILITY.md).
 
+## User manual
+
+The comprehensive English [MiniSQL User Manual](docs/manual/minisql-user-manual.pdf)
+teaches the current implementation from first principles through SQL,
+administration, security, backup/recovery, application integration, performance,
+and physical storage. It includes a complete shop tutorial, worked exercises,
+vector illustrations, reference tables, and explicit implementation limitations.
+The [manual directory](docs/manual/README.md) contains the editable LaTeX sources,
+reproducible PDF build, executable examples, and recorded validation evidence.
+
+## API documentation
+
 Browse the committed [GitHub-friendly API documentation](docs/api/markdown/README.md),
 or download the repository and open the [offline HTML reference](docs/api/html/index.html).
 Both documentation trees are generated directly from the MiniLang sources with

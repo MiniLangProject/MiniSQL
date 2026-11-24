@@ -1,0 +1,14 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=18mm and 20mm]
+\node[strong,text width=55mm,align=left] (customers) {\textbf{customers}\\\rule{54mm}{.3pt}\\\textbf{customer\_id} : INTEGER (PK)\\name : VARCHAR(80)\\city : VARCHAR(60)\\active : BOOLEAN};
+\node[strong,text width=55mm,align=left,right=of customers] (orders) {\textbf{orders}\\\rule{54mm}{.3pt}\\\textbf{order\_id} : INTEGER (PK)\\customer\_id : INTEGER (FK)\\order\_status : VARCHAR(20)};
+\node[strong,text width=55mm,align=left,below=of customers] (products) {\textbf{products}\\\rule{54mm}{.3pt}\\\textbf{product\_id} : INTEGER (PK)\\name : VARCHAR(100)\\price : DECIMAL(10,2)\\stock : INTEGER};
+\node[strong,text width=55mm,align=left,below=of orders] (items) {\textbf{order\_items}\\\rule{54mm}{.3pt}\\\textbf{order\_id, product\_id} (PK)\\Both also foreign keys\\quantity : INTEGER\\unit\_price : DECIMAL(10,2)};
+\draw[arrow] (customers) -- node[smalllabel,above] {1 to many} (orders);
+\draw[arrow] (orders) -- node[smalllabel,right] {1 to many} (items);
+\draw[arrow] (products) -- node[smalllabel,above] {1 to many} (items);
+\end{tikzpicture}
+\caption{The teaching database: one customer can place many orders; order items connect orders to products. Keys are immutable in these examples.}
+\label{fig:shop-schema}
+\end{figure}

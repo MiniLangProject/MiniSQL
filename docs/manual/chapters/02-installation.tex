@@ -1,0 +1,362 @@
+\chapter{Installation and database creation}
+\label{ops:installation}
+
+\section{Choose the implementation you intend to run}
+
+MiniSQL is a native database server written in MiniLang. The server owns a
+database directory; clients connect to its TCP listener and send SQL. The
+command-line client is a separate program, so starting a client does not start
+a server automatically. The native Windows Workbench is another client of the
+same server. Python and Java applications can connect through the supplied
+drivers.
+
+This manual describes the development revision printed on its title page.
+That revision uses database, table, index, and row format version 2. Its WAL
+record framing remains version 1. The application version string and the
+storage-format version answer different questions: a binary identifying
+itself as MiniSQL 1.1.1 is not sufficient evidence that it can open a
+particular database. Record the source revision and build target alongside
+the executable.
+
+\warning{Existing databases}{The current source rejects format-1 databases.
+Do not point a newly built format-2 server at the only copy of an older
+database. Retain the matching old executable, export the schema and data
+through that executable, create a new database with the current executable,
+and load the exported information. The page-size migration tool does not
+implement a format-1 to format-2 conversion.}
+
+\sourcecode{src/minisql/common/format_version.ml}{Persisted format identifiers.}
+\sourcecode{docs/formats/FORMAT_COMPATIBILITY.md}{Compatibility policy for the current tree.}
+
+\section{Platforms, prerequisites, and program inventory}
+\index{installation}\index{Windows}\index{Linux}\index{build prerequisites}
+
+The supported native targets are Windows x64 and Linux x64. Linux requires
+glibc; native TLS requires OpenSSL 3, including \path{libssl.so.3} and
+\path{libcrypto.so.3}. Windows uses Schannel and CryptoAPI for native TLS and
+needs an operating-system configuration capable of the required TLS 1.3
+profile. The Windows GUI is not a portable Linux application.
+
+For a source build, use MiniLangCompilerPy or MiniLangCompilerML 1.3.0 or
+newer, as required by the current repository. The Python compiler and the
+repository's build/test tooling require Python 3.11 or newer. The Python
+database connector itself has a separate Python 3.10 minimum. PowerShell is
+needed for the supplied \path{build.ps1} launcher. A direct compiler command
+can be used on Linux without that launcher.
+
+\begin{longtable}{p{.27\linewidth}p{.66\linewidth}}
+\toprule
+Program & Purpose \\
+\midrule
+\endhead
+\path{minisqld} & Creates databases, administers local passwords and encryption,
+and runs the server. \\
+\path{minisql} & Interactive SQL shell, single-query client, script runner,
+and connection checks. \\
+\path{minisql-check} & Opens a stopped database and verifies authoritative
+storage, rows, overflow values, and indexes. \\
+\path{minisql-backup} & Base backups, encrypted backups, restores, WAL archives,
+point-in-time recovery, and standby administration. \\
+\path{minisql-migrate} & Checks whether a page-size change is needed and
+performs a separate offline copy-and-rewrite when requested. \\
+\path{minisql-admin} & Windows-only graphical MiniSQL Workbench. \\
+\bottomrule
+\end{longtable}
+
+Windows names end in \path{.exe}. Windows builds are placed in
+\path{build/bin}; Linux builds are placed in \path{build/bin-linux} and omit
+that suffix. Keep all programs from the same source revision together. A
+checker or backup program is part of the storage implementation, so mixing
+it with an unrelated server build is an unnecessary compatibility risk.
+
+\sourcecode{build.ps1}{Target selection, compiler discovery, include paths, and executable inventory.}
+
+\section{Build from source on Windows}
+\index{build.ps1}\index{compiler}
+
+Keep sibling checkouts for MiniSQL and the compiler. In PowerShell, change to
+the MiniSQL repository and run:
+
+\begin{lstlisting}
+git clone https://github.com/MiniLangProject/MiniSQL.git
+git clone https://github.com/MiniLangProject/MiniLangCompilerPy.git
+cd MiniSQL
+$compiler = "..\MiniLangCompilerPy\mlc_win64.py"
+.\build.ps1 -Compiler $compiler -Target windows-x64 -AppsOnly
+.\build\bin\minisqld.exe --version
+\end{lstlisting}
+
+The compiler path can be absolute. If \code{-Compiler} is omitted, the script
+checks \code{MINILANG\_COMPILER} and several conventional repository-relative
+locations. Explicit paths make a build easier to reproduce. Use
+\code{-Python} to select a particular Python executable when more than one
+is installed.
+
+\begin{lstlisting}
+.\build.ps1 -Compiler C:\Tools\MiniLangCompilerPy\mlc_win64.py `
+  -Python C:\Python311\python.exe -Target windows-x64 -AppsOnly
+\end{lstlisting}
+
+With the native self-hosted compiler, supply its executable instead:
+
+\begin{lstlisting}
+.\build.ps1 -Compiler ..\MiniLangCompilerML\build\mlc_win64.exe `
+  -Target windows-x64 -AppsOnly
+\end{lstlisting}
+
+The launcher discovers the compiler's \path{std/} include root and selects
+its object pipeline for the large self-hosted build. \code{-AppsOnly} builds
+the public programs; omitting it also compiles the native test applications.
+\code{-Clean} removes the selected binary output directory before rebuilding.
+The script verifies both the compiler's exit code and the existence of each
+expected executable. A zero exit status from the compiler without an output
+file is treated as failure.
+
+Building Linux targets from the same checkout is possible by selecting
+\code{-Target linux-x64}. Compiling a Linux ELF file does not execute its
+tests on Windows; native execution requires Linux or an appropriate WSL
+environment.
+
+\section{Build and run on Linux}
+\index{Linux!building}
+
+If PowerShell is available on Linux, the same launcher can select
+\code{linux-x64}. The following direct Python-compiler commands show the
+equivalent source/include relationship without depending on PowerShell.
+Run them from the MiniSQL repository with a sibling compiler checkout:
+
+\begin{lstlisting}[language=bash]
+mkdir -p build/bin-linux
+compiler=../MiniLangCompilerPy/mlc_win64.py
+compiler_root=../MiniLangCompilerPy
+python3 "$compiler" src/apps/minisqld/main.ml \
+  build/bin-linux/minisqld -I src -I "$compiler_root" \
+  --target linux-x64
+python3 "$compiler" src/apps/minisql/main.ml \
+  build/bin-linux/minisql -I src -I "$compiler_root" \
+  --target linux-x64
+python3 "$compiler" src/apps/minisql_check/main.ml \
+  build/bin-linux/minisql-check -I src -I "$compiler_root" \
+  --target linux-x64
+python3 "$compiler" src/apps/minisql_backup/main.ml \
+  build/bin-linux/minisql-backup -I src -I "$compiler_root" \
+  --target linux-x64
+python3 "$compiler" src/apps/minisql_migrate/main.ml \
+  build/bin-linux/minisql-migrate -I src -I "$compiler_root" \
+  --target linux-x64
+chmod +x build/bin-linux/minisql*
+build/bin-linux/minisqld --version
+\end{lstlisting}
+
+The output remains native machine code: Python is a build dependency here,
+not an interpreter that runs each SQL query. The optional monitoring,
+replication, and qualification scripts use Python independently of the native
+server.
+
+If a generated program reports that a shared library cannot be loaded,
+inspect the Linux runtime dependencies before changing SQL or database files.
+If the compiler cannot find \code{std} modules, check the second include root.
+If the shell reports permission denied for a compiled binary, check its
+executable permission and the mount's execution policy.
+
+\section{Create the first database}
+
+\subsection{A database is created by the server tool}
+
+MiniSQL does not implement SQL \code{CREATE DATABASE}, \code{DROP DATABASE},
+or \code{USE}. A server instance is opened on one database path. Creating a
+table in an existing database and creating that database directory are
+different operations.
+
+\begin{lstlisting}
+# Windows PowerShell, from the repository root
+.\build\bin\minisqld.exe --init .\data learning 4096
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+# Linux, from the repository root
+build/bin-linux/minisqld --init ./data learning 4096
+\end{lstlisting}
+
+The tool reports a generated path of the form
+\path{data/db_<32-hexadecimal-digits>}, the logical name \code{learning},
+and the page size. Copy the actual path from this output. The database is not
+necessarily stored in a directory named \path{learning}; the UUID-derived
+directory avoids confusing a logical database name with its physical identity.
+
+Supported page sizes are 4096, 8192, 16384, and 32768 bytes. Omitting the last
+argument selects 4096. Start with 4096 unless a measured workload gives a
+reason to choose differently. Page size is persisted when the database is
+created. Editing a JSON default later does not change existing pages.
+
+The public \code{--init} command accepts the data root, logical name, and
+optional page size. It uses the compiled default database settings. There is
+no \code{--init-config} command that consumes arbitrary creation defaults
+from JSON. Do not assume that a configuration file is read automatically.
+
+\sourcecode{src/apps/minisqld/main.ml}{initializeDatabase and the --init argument branch.}
+\sourcecode{src/minisql/catalog/catalog.ml}{Database creation and UUID-based paths.}
+
+\subsection{Start a local learning server}
+
+Replace the example path below with the path printed by initialization:
+
+\begin{lstlisting}
+$database = ".\data\db_REPLACE_WITH_THE_PRINTED_ID"
+.\build\bin\minisqld.exe --serve $database 7432 32
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+database='./data/db_REPLACE_WITH_THE_PRINTED_ID'
+build/bin-linux/minisqld --serve "$database" 7432 32
+\end{lstlisting}
+
+The process remains running. Its startup banner reports the mode, physical
+database path, address, port, connection limit, and request budget. This
+particular mode binds to \code{127.0.0.1} and trusts local clients. Every
+local client that can reach the port is administrative; a database password
+does not protect this mode.
+
+Open a second terminal in the repository and connect:
+
+\begin{lstlisting}
+.\build\bin\minisql.exe --ping 7432
+.\build\bin\minisql.exe --shell 7432
+\end{lstlisting}
+
+On Linux the equivalents are \path{build/bin-linux/minisql --ping 7432} and
+\path{build/bin-linux/minisql --shell 7432}. At the SQL prompt:
+
+\begin{lstlisting}[language=SQL]
+SELECT 2 + 3 AS answer;
+SHOW TABLES;
+\end{lstlisting}
+
+The first query should return one row containing 5. A fresh database has no
+user-created tables. The client session and the server process have separate
+lifetimes: leaving the shell disconnects that client but keeps the server
+running. To request a graceful stop from an authorized session, execute:
+
+\begin{lstlisting}[language=SQL]
+SHUTDOWN;
+\end{lstlisting}
+
+\sourcecode{src/apps/minisql/main.ml}{Client command forms.}
+\sourcecode{src/apps/minisqld/main.ml}{Server mode selection and startup banner.}
+
+\section{Choose a connection mode deliberately}
+
+\begin{longtable}{p{.32\linewidth}p{.61\linewidth}}
+\toprule
+Server mode & Meaning and matching client family \\
+\midrule
+\endhead
+\code{--serve} & Trusted loopback. Use \code{--shell}, \code{--query},
+\code{--script}, or \code{--ping}. Appropriate for a local tutorial or an
+environment whose local access is the intended trust boundary. \\
+\code{--serve-authenticated} & Password-authenticated loopback with MiniSQL
+protected framing after login. Use \code{--auth-shell-prompt} and the related
+prompt commands. This mode is not TLS. \\
+\code{--serve-secure} & MiniSQL-specific authenticated encrypted framing.
+Use the \code{--secure-*} client family. This is a distinct protocol from TLS. \\
+\code{--serve-tls} & Native TLS 1.3 plus database authentication. Use
+\code{--tls-*} or \code{--tls-pin-*}. The certificate identity and trust
+configuration must match. \\
+\code{--serve-standby} & Read-only standby server, bound to loopback. This
+requires a database materialized as a standby. \\
+\bottomrule
+\end{longtable}
+
+Configuration-driven variants and fencing are explained later. The positional
+\code{--serve-\allowbreak authenticated} fixes the address to loopback; the configured
+authenticated listener has an explicit address from JSON and uses the same
+MiniSQL-specific protected framing after authentication. Native TLS remains
+the separate \code{--serve-tls} family. Match the client to the actual listener
+mode rather than assuming that every encrypted listener speaks TLS.
+
+\section{Organize an installation for repeatable operation}
+
+Separate application binaries, database directories, configuration, keys,
+logs, and backup destinations. Give the process write access to the database
+and its intended logging/spill locations, read access to required certificates
+and encryption keys, and no unnecessary permissions. Use absolute database,
+configuration, log, and key paths in unattended launchers. Relative paths
+resolve against the process working directory, which can differ between an
+interactive shell and a service supervisor.
+
+There is no universal installer wizard in the repository. Copying the native
+binaries and supplying an explicit configuration is the deployment model.
+The supplied systemd unit and Windows launch/stop scripts are templates to
+adapt, not automatic account creation or service registration tools.
+
+Keep a small installation record: source commit, compiler revision, target,
+binary directory, database path and logical name, page size, listener mode,
+port, configuration path, key-provider paths, and the date of the latest
+successful restore drill. This information makes a later upgrade or incident
+recovery concrete.
+
+\section{Check the installation before loading important data}
+
+At minimum, verify a query, a committed write, a restart, and an offline check.
+Use a disposable database for these checks. A query result proves connection
+and execution; a row that survives restart proves a more relevant path for
+durable use. A checker result adds storage consistency evidence.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE installation_check (
+  id INTEGER PRIMARY KEY,
+  note VARCHAR(80) NOT NULL
+);
+INSERT INTO installation_check VALUES (1, 'restart verification');
+SELECT * FROM installation_check;
+SHUTDOWN;
+\end{lstlisting}
+
+Run \path{minisql-check <database-path>} while the server is stopped. Start
+the server again, query \code{installation\_check}, and confirm the row.
+Drop this disposable table after the check if continuing to use the database.
+
+For storage-format qualification, the repository provides a focused gate:
+
+\begin{lstlisting}
+.\test.ps1 -StorageV2 -Target windows-x64
+.\test.ps1 -StorageV2 -Target linux-x64
+\end{lstlisting}
+
+Use the corresponding native host for execution. The direct Python runner
+also supports \code{--compiler}, \code{--target}, selected cases,
+\code{--integration}, and compile-only cross-target checks. The historical
+106-phase release results belong to earlier validated revisions; they do not
+automatically certify every new storage-format change. Consult the current
+acceptance report and run the relevant gate for the binary being deployed.
+
+\sourcecode{tests/run_storage_v2.py}{Focused storage-v2 compilation and execution gate.}
+\sourcecode{docs/acceptance/STORAGE_V2_2026-11-24.md}{Recorded evidence and platform limits.}
+
+\section{Troubleshooting the first connection}
+
+\begin{longtable}{p{.29\linewidth}p{.64\linewidth}}
+\toprule
+Symptom & Check first \\
+\midrule
+\endhead
+Connection refused & The server must still be running on the selected port.
+The shell and server are different programs. \\
+Database cannot be opened & Use the actual UUID directory, not only the data
+root. Check permissions, the required encryption key, and whether another
+process already owns the database lock. \\
+Unsupported format & Confirm the source/build revision and persisted format.
+Do not edit a header to bypass the check. \\
+Authentication failure & Use the matching client mode, an enabled account,
+the correct password, and a database \code{CONNECT} grant. \\
+TLS handshake failure & Verify TLS 1.3 support, certificate/private-key
+availability, the requested server name, and the trust or pin mode. \\
+Handshake appears stuck in an older Windows daemon & Exit console selection
+mode with Escape. Current code disables QuickEdit before logging, but an
+already-running older process may still be paused by text selection. \\
+\bottomrule
+\end{longtable}
+
+Do not troubleshoot a format or encryption error by deleting metadata, WAL,
+lock files, or audit files. Preserve the directory and use the diagnostic
+message to identify the failing boundary.

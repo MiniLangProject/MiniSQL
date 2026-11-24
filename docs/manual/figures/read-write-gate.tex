@@ -1,0 +1,17 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1mm,y=1mm]
+\node[font=\sffamily\small,anchor=east] at (0,34) {Readers};
+\node[font=\sffamily\small,anchor=east] at (0,14) {Writer};
+\draw[arrow] (5,0) -- (137,0) node[right,smalllabel] {time};
+\fill[Teal!25] (5,28) rectangle (47,40);\node[font=\sffamily\small] at (26,34) {Read A};
+\fill[Teal!25] (12,43) rectangle (62,55);\node[font=\sffamily\small] at (37,49) {Read B};
+\fill[Amber!18] (28,8) rectangle (62,20);\node[smalllabel] at (45,14) {writer waits};
+\fill[Navy!25] (62,8) rectangle (100,20);\node[font=\sffamily\small] at (81,14) {Write};
+\fill[Teal!25] (100,28) rectangle (133,40);\node[font=\sffamily\small] at (116.5,34) {Read C};
+\draw[dashed,draw=Muted] (28,0) -- (28,26);\draw[dashed,draw=Muted] (62,0) -- (62,58);\draw[dashed,draw=Muted] (100,0) -- (100,43);
+\node[smalllabel,align=center] at (80,51) {New readers wait\\behind a pending writer};
+\end{tikzpicture}
+\caption{The database execution gate permits concurrent ordinary reads and one exclusive writer. This scheduling diagram is separate from SQL transaction isolation and logical locks.}
+\label{fig:read-write-gate}
+\end{figure}

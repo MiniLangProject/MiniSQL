@@ -1,0 +1,268 @@
+\chapter{Practice workshops and worked solutions}
+\label{learn:workshops}
+\learning{Turn reference knowledge into repeatable tasks: query a business model, change data safely, use parameters, inspect a plan and prove that a backup can be restored. Each workshop includes a result or acceptance condition.}
+
+\section{How to use the workshops}
+Start with a fresh teaching database loaded by
+\path{docs/manual/examples/01-create-shop.sql}. For query-only workshops the dataset
+should remain unchanged. For experiments with schema or administration,
+use a separate disposable database. Read the task before looking at its
+solution. A correct answer must both produce the intended result and respect
+the current implementation's limits.
+
+These workshops deliberately distinguish correctness from speed. A four-row
+table is suitable for proving join semantics; it is not suitable for drawing
+conclusions about throughput. Likewise, a backup command's success status
+proves less than an actual restore followed by a checker run and application
+queries.
+
+\section{Workshop 1: a stock and customer report}
+\subsection{Tasks}
+List all active customers in name order. Identify customers whose city is
+unknown. Find the two products with the highest stock. Count the total
+stock across all products. Explain why an empty city string and SQL NULL
+would produce different answers to \code{COUNT(city)}.
+
+\subsection{Solution}
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name
+FROM customers WHERE active = TRUE ORDER BY name;
+
+SELECT customer_id, name
+FROM customers WHERE city IS NULL ORDER BY customer_id;
+
+SELECT product_id, name, stock
+FROM products ORDER BY stock DESC, product_id LIMIT 2;
+
+SELECT SUM(stock) AS total_stock FROM products;
+\end{lstlisting}
+The active customers are Ada, Grace and Linus. Margaret has an unknown city.
+The highest-stock products are USB-C Cable (100) and Notebook (50). Total
+stock is 200. \code{COUNT(city)} ignores SQL NULL but counts an empty string
+as a non-null value. Unknown and known-empty are different facts.
+
+\subsection{Reasoning check}
+A result may coincidentally appear sorted without an \code{ORDER BY}.
+That does not make the ordering part of the query contract. If two products
+have equal stock, the product identifier in the sort makes the displayed
+order repeatable.
+
+\section{Workshop 2: joins and customers without orders}
+\subsection{Tasks}
+Produce one row per order containing the customer's name. Then produce one
+row per customer with an order count, including zero. Finally list only
+customers with no orders. Explain why a left join followed by
+\code{WHERE o.order\_id IS NULL} answers the last question.
+
+\subsection{Solution}
+\begin{lstlisting}[language=SQL]
+SELECT o.order_id, c.name
+FROM orders o JOIN customers c
+  ON c.customer_id = o.customer_id
+ORDER BY o.order_id;
+
+SELECT c.customer_id, c.name, COUNT(o.order_id) AS orders
+FROM customers c LEFT JOIN orders o
+  ON o.customer_id = c.customer_id
+GROUP BY c.customer_id, c.name
+ORDER BY c.customer_id;
+
+SELECT c.customer_id, c.name
+FROM customers c LEFT JOIN orders o
+  ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL
+ORDER BY c.customer_id;
+\end{lstlisting}
+The counts are 2, 1, 1 and 0 for customer identifiers 1--4. The final query
+returns only Margaret. A matching order's primary key cannot be null.
+Therefore the null right-hand key identifies the synthetic unmatched row
+created by the outer join. Using a nullable non-key column as the unmatched
+test would be unsafe because a real matched row might also contain null.
+
+\section{Workshop 3: aggregates, CTEs and windows}
+\subsection{Tasks}
+Find the quantity in each order. Name the intermediate aggregate with a CTE,
+then join it to orders and customers. Number each customer's orders in order
+identifier order. Explain the difference between aggregation and a window
+function in the shape of the result.
+
+\subsection{Solution}
+\begin{lstlisting}[language=SQL]
+WITH units AS (
+  SELECT order_id, SUM(quantity) AS unit_count
+  FROM order_items GROUP BY order_id
+)
+SELECT o.order_id, c.name, u.unit_count
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+JOIN units u ON u.order_id = o.order_id
+ORDER BY o.order_id;
+
+SELECT order_id, customer_id,
+  ROW_NUMBER() OVER (
+    PARTITION BY customer_id ORDER BY order_id
+  ) AS customer_order
+FROM orders ORDER BY customer_id, order_id;
+\end{lstlisting}
+The first query returns order quantities 3, 3, 3 and 1. The window query
+returns four order rows: Ada's orders are numbered 1 and 2; Grace's and
+Linus's orders are numbered 1. An aggregate collapses rows into groups. A
+window expression calculates a value across related rows while retaining
+the row-level result. Consult the window chapter for the implementation's
+fixed-frame behavior; explicit frame syntax is unavailable.
+
+\section{Workshop 4: transactions and targeted changes}
+\subsection{Tasks}
+Reduce keyboard stock by one. Create a savepoint. Reduce it by two more.
+Undo only the second change, verify the stock, then undo the entire
+transaction. Explain why the final value must equal its initial value.
+Do this in one shell session or one script.
+
+\subsection{Solution and checkpoints}
+\begin{lstlisting}[language=SQL]
+BEGIN;
+UPDATE products SET stock = stock - 1 WHERE product_id = 101;
+SAVEPOINT second_attempt;
+UPDATE products SET stock = stock - 2 WHERE product_id = 101;
+SELECT stock FROM products WHERE product_id = 101;
+ROLLBACK TO second_attempt;
+SELECT stock FROM products WHERE product_id = 101;
+ROLLBACK;
+SELECT stock FROM products WHERE product_id = 101;
+\end{lstlisting}
+The displayed values are 9, 11 and 12. The first rollback restores the
+savepoint's state; it does not end the transaction. The final rollback
+restores the transaction's initial state. Two independent \code{--query}
+commands do not share this state, even if both connect to the same port.
+
+As a second exercise, first \code{SELECT} the rows matching a proposed
+\code{UPDATE} or \code{DELETE} condition. Compare their identifiers with
+your intention before running the change. This habit catches an omitted
+predicate more reliably than checking a large affected-row count afterwards.
+
+\section{Workshop 5: application input and result decoding}
+\subsection{Tasks}
+Write a Python function that fetches a customer by identifier using a bound
+parameter. Close both cursor and connection. Explain the return type of the
+identifier. Extend the function to return \code{None} when the customer does
+not exist. Keep connection secrets outside source code.
+
+\subsection{Solution}
+\begin{lstlisting}[language=Python]
+import minisql
+
+def customer_by_id(dsn, customer_id):
+    connection = minisql.connect(dsn, autocommit=True)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT customer_id, name FROM customers "
+                "WHERE customer_id = ?",
+                (customer_id,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            return {"customer_id": int(row[0]), "name": row[1]}
+    finally:
+        connection.close()
+\end{lstlisting}
+The connector returns ordinary non-null result cells as strings, so the
+application converts the known integer identifier explicitly. A bound
+parameter represents a value; it does not replace a table or column name.
+The comma in \code{(customer\_id,)} creates a one-element Python tuple.
+
+The connection context manager in this connector controls a transaction
+boundary and does not close the connection. The explicit \code{finally}
+block is intentional. With \code{autocommit=True}, this single read does not
+leave a lazy explicit transaction open. For a multi-step write operation,
+use the transaction pattern in the connector chapter instead.
+
+\section{Workshop 6: investigate an index}
+\subsection{Tasks}
+Explain a query that looks up a product by primary key. Explain a query that
+filters a non-key column. On a separate larger fixture, create a suitable
+explicit index, run \code{ANALYZE}, then compare \code{EXPLAIN ANALYZE}
+before and after. Record both plan shape and observed work.
+
+\subsection{Procedure}
+\begin{lstlisting}[language=SQL]
+EXPLAIN SELECT product_id, name
+FROM products WHERE product_id = 103;
+
+EXPLAIN SELECT product_id, name
+FROM products WHERE stock = 100;
+
+CREATE INDEX idx_product_stock ON products(stock);
+ANALYZE products;
+
+EXPLAIN ANALYZE SELECT product_id, name
+FROM products WHERE stock = 100;
+\end{lstlisting}
+The acceptance condition is not a particular millisecond value or a promise
+that a five-row table must use an index. You should be able to identify the
+selected access path, describe the predicate, and explain the trade-off
+between reading the table and using a key followed by heap access. Repeat on
+data of realistic size and distribution before drawing a performance
+conclusion. The performance chapter covers covering, partial and functional
+indexes, the full-equality requirement for composite index access, and
+statistics that affect these choices.
+
+\section{Workshop 7: a backup is useful only if you can restore it}
+\subsection{Tasks}
+Use a disposable teaching database. Stop its server gracefully. Create a
+backup into a new location using the exact command in the backup chapter.
+Restore into a different new location. Run the offline checker on the
+restored database, start it on a different port, and compare table counts
+and representative joined results with the source.
+
+\subsection{Acceptance conditions}
+Record the source directory, backup path, restored directory, source
+revision, storage format, page size and tool exit statuses. If encryption
+is enabled, demonstrate that the separately protected matching key is
+available. The restored server must produce counts 4, 5, 4 and 6 for the
+teaching tables, plus Ada 6 and Grace 3 for the grouped-units query. Make a
+small reversible write on the restored copy to prove that it is usable as
+the intended writable recovery target.
+
+A successful command that merely creates an archive is not sufficient.
+An untested key, missing WAL range or schema-mismatched replication base can
+remain invisible until recovery is needed. The goal is to prove a full
+procedure without changing the original database.
+
+\section{Workshop 8: explain a current implementation limit}
+Choose one of the limitations below and write a short explanation containing
+the intended SQL meaning, observed behavior at this revision, an example
+that exposes the difference and a practical design response.
+\begin{itemize}
+\item Scaled-decimal coefficients, arithmetic and wire formatting.
+\item A parent-key update that leaves a foreign-key child unchanged.
+\item \code{CURRENT\_TIMESTAMP} returning epoch zero.
+\item \code{NULLIF(5,NULL)} returning null in this implementation.
+\item Automatic identities using the current maximum row value rather than
+an independent durable sequence allocator.
+\item Text \code{'NULL'} and SQL NULL being ambiguous in protocol-v1 results.
+\end{itemize}
+The worked probe results in the validation appendix are the answer key.
+An expert answer states the boundary precisely. For example, binary64 row
+storage does not fix decimal arithmetic, and a successful foreign-key
+definition does not prove that cascading actions execute. When a future
+revision repairs a limitation, rerun the relevant probe and revise both
+the warning and the expected result.
+
+\section{A capstone project}
+Build a small inventory application around the shop model. It should have
+parameterized customer/product lookups, a transaction for an order and its
+lines, immutable referenced keys, a documented money representation,
+explicit handling of every database error, and a repeatable restore test.
+Include a short operator guide with the server mode, credentials source,
+resource limits, log location, backup retention policy and stop procedure.
+Document the exact MiniSQL revision you used.
+
+Assess the project by asking whether a second person can reproduce it from
+the instructions, whether failed operations leave a verified state, and
+whether the application can distinguish a known failure from an uncertain
+commit after a broken connection. These checks combine language knowledge
+with the operational judgement needed to use a database well.
+\sourcecode{clients/python/minisql/dbapi.py}{Parameter binding, cursor behavior, lazy transactions and connection lifetime.}
+\sourcecode{src/minisql/planner/optimizer.ml}{Costed access paths and the index eligibility rules used in the performance workshop.}

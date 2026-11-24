@@ -1,0 +1,610 @@
+\chapter{Backup, recovery, migration, and replication}
+\label{ops:recovery}
+
+\section{Define what must be recoverable}
+
+A backup is useful only if it can be restored with the available executable,
+keys, storage capacity, and operational instructions. Decide which data loss
+is acceptable and how long recovery may take. A periodic base backup protects
+a point in time. A WAL archive can extend recovery beyond that base. An
+asynchronous standby can shorten some failover steps but may lag committed
+primary work. These mechanisms have different failure boundaries.
+
+Keep the source revision/build, configuration, external keys, and restore
+instructions alongside the backup inventory, with keys protected separately
+from the captured database artifacts. A copy on the same failed disk does
+not create an independent recovery location. Test a restore into a fresh
+directory instead of assuming that a successful copy command proves recovery.
+
+\input{figures/database-lifecycle}
+
+\section{Create and verify a base backup}
+\index{backup}
+
+\subsection{The command-line backup is an offline operation}
+
+The base-backup command opens the database directly and takes its normal
+database ownership lock. Stop the server before invoking it. The internal
+\code{runOpen} API can work with an already-open managed database, but that
+does not make the public standalone CLI a network online-backup service.
+
+Choose a destination that does not exist, including its staging counterpart:
+
+\begin{lstlisting}
+minisql-backup.exe backup C:\MiniSQL-Data\db_ACTUAL_ID `
+  E:\MiniSQL-Backups\learning-base-001
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+minisql-backup backup /srv/minisql/db_ACTUAL_ID \
+  /backup/minisql/learning-base-001
+\end{lstlisting}
+
+MiniSQL captures authoritative metadata, catalog/security state, schema state,
+optional statistics/encryption metadata, audit artifacts, WAL/checkpoint
+state, tables, and indexes. It writes a directory containing captured files
+and a checksummed \path{backup.manifest}. The report gives file count and
+total bytes. The destination is not a single ZIP file and should be treated
+as one complete backup unit.
+
+Derived \path{*.heap-pages} scan directories are not needed for the backup;
+restored databases rebuild them from authoritative table pages. Runtime
+configuration, executable binaries, external raw keys, TLS private keys, and
+ordinary server log directories are not all automatically included in this
+database capture. Inventory those separately.
+
+\subsection{Capacity and memory limitations}
+
+The current capture code reads file images into memory and retains the
+captured file collection while constructing the backup. It is not the
+streaming algorithm used by the checker. A large database can therefore need
+substantial working memory in addition to destination disk space. Encrypted
+backup temporarily retains captured and encrypted representations as well.
+Measure the largest real backup, not just a tiny demonstration database.
+
+The explicit per-file safety limit is 4,294,967,295 bytes. The manifest uses
+wide lengths, but the current implementation still applies this U32-sized
+file cap. Its total safety bound is
+1,152,921,504,606,846,975 bytes and its entry-count cap is U32; these format
+bounds are not claims that the in-memory implementation can practically back
+up that amount of data. Relative manifest paths are limited to 240 bytes and
+validated against traversal/absolute-path forms.
+
+\sourcecode{src/minisql/tools/backup.ml}{captureDatabase, runOpen, manifest limits, and path validation.}
+
+\section{Restore a base into a new directory}
+\index{restore}
+
+\begin{lstlisting}
+minisql-backup.exe restore E:\MiniSQL-Backups\learning-base-001 `
+  C:\MiniSQL-Restores\learning-restore-001
+minisql-check.exe C:\MiniSQL-Restores\learning-restore-001
+\end{lstlisting}
+
+The target and its \path{.restore-new} staging path must not exist. Restore
+validates captured file lengths/checksums, stages the database, opens it for
+recovery/verification, checks its database identity, and publishes the
+validated target. It does not overwrite an existing live database in place.
+The restored database retains the backup's logical database identity; the
+chosen directory name is an operational path, not a new SQL database name.
+
+After structural checking, start the restored copy on a separate unused port
+and run semantic application checks: representative row counts, important
+records, totals computed with the currently documented type semantics, and
+relationship checks. Do not expose both the old and restored writable copy to
+the same application by accident. Choose a single authoritative copy and
+update application connection configuration deliberately.
+
+If a restore fails, preserve the diagnostic and the original backup. A
+leftover staging directory can be evidence of the failure. Inspect it before
+removing it to retry, and never mistake a staging directory for a fully
+published restore. Existing-target refusal is a deliberate guard against
+overwriting prior data or a previous recovery attempt.
+
+\sourcecode{src/minisql/tools/backup.ml}{restore and post-copy identity/consistency validation.}
+
+\subsection{Automate the restore drill}
+
+The repository's recovery drill performs backup, restore, and checker stages,
+records timings and bounded command output, and writes a JSON report:
+
+\begin{lstlisting}[language=bash]
+python3 tools/recovery/production_recovery_drill.py \
+  /srv/minisql/db_ACTUAL_ID \
+  /backup/minisql/drill-base-001 \
+  /srv/minisql-restores/drill-001 \
+  --bin-dir build/bin-linux \
+  --report build/recovery/drill-001.json
+\end{lstlisting}
+
+The default binary directory is \path{build/bin}; Linux users must select
+\path{build/bin-linux} unless they have installed the programs elsewhere.
+The default report path is \path{build/recovery/recovery-drill.json}.
+Both output destinations must be new. This runner does not start and stop
+your live server for you; arrange its offline prerequisite first.
+
+\sourcecode{tools/recovery/production_recovery_drill.py}{Arguments, three stages, and evidence report.}
+
+\section{Encrypt a backup independently of live TDE}
+
+Generate a distinct 32-byte backup key outside the backup tree and create an
+encrypted backup:
+
+\begin{lstlisting}
+minisqld.exe --generate-encryption-key D:\MiniSQL-Keys\backup-001.key
+minisql-backup.exe backup-encrypted C:\MiniSQL-Data\db_ACTUAL_ID `
+  E:\MiniSQL-Backups\learning-encrypted-001 `
+  D:\MiniSQL-Keys\backup-001.key
+minisql-backup.exe restore-encrypted `
+  E:\MiniSQL-Backups\learning-encrypted-001 `
+  C:\MiniSQL-Restores\learning-encrypted-001 `
+  D:\MiniSQL-Keys\backup-001.key
+\end{lstlisting}
+
+Each captured file is encrypted/authenticated independently and remains
+covered by the manifest. Wrong keys or modified encrypted payloads fail
+closed. If live TDE is enabled, the backup process rewraps its DEK for the
+backup provider. On restore, the same key bytes can be supplied from a new
+machine-local path; MiniSQL authenticates the exported envelope and rewraps
+the DEK to that restore provider identity before opening the database.
+
+Keep the backup key available for the retained backup's lifetime. Rotating the
+live KEK does not magically update already-created backups. The normal
+\code{restore} command is not a substitute for \code{restore-encrypted},
+and a password reset is not an encrypted-backup recovery method. The backup
+key is a binary file argument, not a SQL user's password.
+
+\sourcecode{src/minisql/tools/backup.ml}{Encrypted record format, runOpenEncrypted, and restoreEncrypted.}
+
+\section{WAL archives and point-in-time recovery}
+\index{PITR}\index{WAL archive}\index{recovery}
+\input{figures/recovery-chain}
+
+\subsection{Understand the archive model}
+
+A WAL archive contains a verified base backup and successive complete durable
+WAL prefixes. Its manifest records database identity, page size, generation,
+base-end LSN, latest-end LSN, WAL file name, length, and checksum. LSN is a
+byte-position boundary in this WAL model, not a timestamp or SQL transaction
+number.
+
+Initialize an archive while the primary is stopped:
+
+\begin{lstlisting}
+minisql-backup.exe archive-init C:\MiniSQL-Data\db_ACTUAL_ID `
+  E:\MiniSQL-Archives\learning-001
+minisql-backup.exe archive-verify E:\MiniSQL-Archives\learning-001
+\end{lstlisting}
+
+Start the primary and export a durable prefix while it remains online:
+
+\begin{lstlisting}
+minisql-backup.exe archive-wal-live C:\MiniSQL-Data\db_ACTUAL_ID `
+  E:\MiniSQL-Archives\learning-001
+\end{lstlisting}
+
+The live form reads the durable WAL marker and validates that the captured
+prefix ends at a complete record boundary. It verifies continuity against
+the previous archive prefix. If no new bytes are durable, it can return the
+same generation. The \code{archive-wal} form opens the database normally
+and is an offline form. Use only one archive writer for a given archive
+directory.
+
+Every generation stores a complete prefix, not only the delta from the
+previous generation. Older files are retained so a verifier that already
+read an older manifest can still find its referenced file. Archive growth
+can therefore be substantial. Create a fresh verified base periodically and
+retire old archive sets under a retention policy only after their recovery
+requirements have expired.
+
+\warning{The archive follows a fixed base schema}{The current shipping model
+is intended for DML on the already archived schema/security state. After DDL,
+DCL, VACUUM, page-size migration, key/envelope transitions, or operations that
+rewrite or rewind physical state, stop the replication workflow and create a
+new verified base. A lost WAL-prefix relationship is diagnosed; editing the
+manifest does not repair it.}
+
+\sourcecode{src/minisql/tools/backup.ml}{archiveInit, snapshotDurableWalLive, archiveWalLive, and verifyArchive.}
+\sourcecode{docs/formats/wal-archive-v1.md}{Archive and standby metadata fields.}
+
+\subsection{Automatic checkpoints can break archive continuity}
+
+The current automatic checkpoint implementation resets the physical WAL to
+zero when it reaches \code{runtime.checkpointWalBytes}, 64 MiB by default.
+It has no archive-aware retention handshake. A subsequent live export then
+finds that the new WAL is not an extension of the archived prefix and rejects
+the export. Normal DML can reach this boundary even when no operator has
+issued VACUUM or changed the schema.
+
+Do not assume that either sidecar automatically rebases across this reset.
+The hot-primary exporter propagates the failure. The HA controller's
+replication error also propagates, and its cleanup stops the managed primary.
+For a qualified archival workflow, plan a new base before a reset, monitor
+WAL growth/checkpoint resets, and select a threshold consistent with that
+maintenance window where the chosen launcher exposes configuration. The
+current fenced controller uses the positional server mode and does not offer
+a checkpoint-threshold argument. Increasing a threshold postpones the issue;
+it does not implement archive-aware WAL retention, and the archive file-size
+and memory limits still apply.
+
+\sourcecode{src/minisql/server/database_manager.ml}{checkpointIfNeeded rewinds WAL without an archive-retention handshake.}
+\sourcecode{tools/replication/minisql_ha_controller.py}{Replication failure propagation and process cleanup.}
+
+\subsection{Restore to latest or an exact record boundary}
+
+\begin{lstlisting}
+minisql-backup.exe restore-pitr E:\MiniSQL-Archives\learning-001 `
+  C:\MiniSQL-Restores\learning-latest latest
+minisql-check.exe C:\MiniSQL-Restores\learning-latest
+\end{lstlisting}
+
+For an earlier recovery target, replace \code{latest} with an exact numeric
+LSN taken from valid archive/WAL evidence. The target must lie between the
+base-end and latest-end LSN and must be a complete record boundary. A number
+in the middle of a record is rejected. There is no public
+\code{restore-until-timestamp} switch; mapping a business event to an LSN
+requires operational evidence outside this command.
+
+Recovery replays committed transactions within the selected prefix. A
+transaction whose commit has not been included is not made committed merely
+because some of its records precede the target. When post-base authoritative
+table pages have been replayed, the base indexes are marked dirty and rebuilt
+before the restored generation is published. An exact base-boundary restore
+can retain the already verified base indexes.
+
+The restore destination and its \path{.pitr-stage} must be new. Preserve the
+original primary if investigating an accidental change; restore separately,
+check the selected state, and only then decide how to resume application
+traffic. PITR is a database-wide recovery operation, not a built-in single-row
+undo command.
+
+\sourcecode{src/minisql/tools/backup.ml}{walPrefixAt, restoreToLsn, restoreLatest, and repairRecoveredIndexes.}
+
+\section{Materialize and refresh a read-only standby}
+\index{standby}
+
+\begin{lstlisting}
+minisql-backup.exe standby-materialize `
+  E:\MiniSQL-Archives\learning-001 C:\MiniSQL-Standby\slot-a
+minisqld.exe --serve-standby C:\MiniSQL-Standby\slot-a 7433 16
+\end{lstlisting}
+
+Materialization restores the latest verified archive state and writes a
+standby marker before publishing the target. The marker records database
+identity, archive generation, and applied LSN. The ordinary writable open path
+rejects an unpromoted standby. The standby server permits reads and rejects
+attempts to use it as a writable primary.
+
+This describes ordinary mutation dispatch, not a complete safety guarantee for
+all expression paths. In this revision, NEXTVAL can be materialized during
+streaming-plan probing or EXPLAIN outside the ordinary read-only checks.
+Exclude sequence-consuming expressions from standby workloads; do not use
+this known gap to advance a standby's state. See the transaction and sequence
+chapters for the observed behavior and restrictions.
+
+To advance a manually managed standby, stop its server first, export the
+latest primary WAL, and refresh:
+
+\begin{lstlisting}
+minisql-backup.exe standby-refresh E:\MiniSQL-Archives\learning-001 `
+  C:\MiniSQL-Standby\slot-a
+\end{lstlisting}
+
+\warning{Stop the standby before refresh}{The direct refresh routine replaces
+WAL/checkpoint files before opening the standby through the database manager.
+Do not rely on a later lock conflict to make an attempted live refresh safe.
+The public command is for a stopped standby. Use the alternating-slot sidecar
+for continued read service while a separate generation is prepared.}
+
+Refresh validates the archive identity and monotonic generation/LSN, checks
+the prefix relationship, replays the new state, repairs derived indexes, and
+updates the standby marker. A standby can be behind the primary even while
+its server answers queries normally. Monitor applied LSN and source LSN;
+availability of the read endpoint is not proof that it is current.
+
+\sourcecode{src/minisql/tools/backup.ml}{materializeStandby, refreshStandby, and standby markers.}
+\sourcecode{src/minisql/server/database_manager.ml}{Writable-open rejection of unpromoted standbys.}
+
+\section{Continuous shipping with the hot-replica sidecar}
+\index{replication}
+
+The Python sidecar automates durable-prefix export and maintains two standby
+slots. A loopback TCP switch sends new connections to the current verified
+generation while another slot is prepared. Existing connections remain
+associated with their selected backend; they are not silently transferred
+mid-session to a different database generation. Backend retirement waits for
+clients according to the sidecar's lifecycle/timeout policy.
+
+After creating the initial archive, run the primary exporter in a separate
+process:
+
+\begin{lstlisting}[language=bash]
+python3 tools/replication/minisql_hot_replica.py primary \
+  --database /srv/minisql/db_ACTUAL_ID \
+  --archive /srv/minisql-ha/archive \
+  --backup-exe build/bin-linux/minisql-backup \
+  --status-file /srv/minisql-ha/primary-status.json
+\end{lstlisting}
+
+Run the standby sidecar against that archive:
+
+\begin{lstlisting}[language=bash]
+python3 tools/replication/minisql_hot_replica.py standby \
+  --archive /srv/minisql-ha/archive \
+  --slot-root /srv/minisql-ha/slots \
+  --backup-exe build/bin-linux/minisql-backup \
+  --server-exe build/bin-linux/minisqld \
+  --listen-port 7433 \
+  --status-file /srv/minisql-ha/standby-status.json
+\end{lstlisting}
+
+The reference proxy binds only to loopback because it fronts a trusted
+standby listener. This script does not distribute archives to another machine,
+provision network storage, or add remote authentication by itself. Arrange
+the intended shared/transferred archive and its access controls outside the
+script. Only one process may write a particular archive.
+
+\begin{longtable}{p{.34\linewidth}p{.59\linewidth}}
+\toprule
+Sidecar option & Meaning / default \\
+\midrule
+\endhead
+Both: \code{--archive}, \code{--backup-exe} & Required archive path and
+native backup executable. \\
+Primary: \code{--database} & Required primary database path. \\
+Both: \code{--cycles} & 0 means continue indefinitely; positive bounds are
+useful for qualification. \\
+Both: \code{--interval-ms} & 250 between cycles. \\
+Both: \code{--command-timeout} & 600 seconds for native child operations. \\
+Both: \code{--status-file}, \code{--ready-file} & Optional atomic status and
+startup readiness files. \\
+Standby: \code{--slot-root}, \code{--server-exe} & Required alternate-slot
+root and native server executable. \\
+Standby: \code{--listen-host} & \code{127.0.0.1}; loopback-only switch. \\
+Standby: \code{--listen-port} & Required stable read endpoint port. \\
+Standby: \code{--backend-port-a}, \code{--backend-port-b} & 0 selects free
+backend ports. \\
+Standby: \code{--maximum-clients} & 16 for backend native server capacity. \\
+Standby: \code{--max-connections} & 0 means unlimited total proxy connections;
+this is distinct from simultaneous backend capacity. \\
+Standby: \code{--client-timeout} & 600 seconds in proxy/client handling. \\
+\bottomrule
+\end{longtable}
+
+Use the atomic status files to monitor \code{healthy}, generation,
+\code{sourceLsn}, \code{standbyLsn}, \code{lagBytes}, and
+\code{cycleDurationMs}. Check both freshness and health; an old healthy file
+from a stopped process is not a current success signal. The sidecar has a
+\code{self-test} mode for its proxy/backend lifecycle. That test does not
+replace a real database failover drill.
+
+\sourcecode{tools/replication/minisql_hot_replica.py}{CLI, two-slot lifecycle, loopback switch, and status reports.}
+
+\section{Promote a standby manually}
+
+Promotion is a controlled change of authority. First stop or positively fence
+the old primary so it cannot continue accepting writes. Stop the standby
+server, verify the newest available archive state, and decide whether its
+known replication lag is acceptable. Then run:
+
+\begin{lstlisting}
+minisql-backup.exe standby-promote C:\MiniSQL-Standby\slot-a
+minisql-check.exe C:\MiniSQL-Standby\slot-a
+minisqld.exe --serve C:\MiniSQL-Standby\slot-a 7432 32
+\end{lstlisting}
+
+Use the intended authenticated/TLS mode for a secured deployment instead of
+the trusted demonstration mode above. Promotion publishes a promotion marker
+and removes the standby marker. Recovery advances future transaction IDs
+beyond observed archived transactions, avoiding reuse when the promoted
+database begins writing.
+
+Reconnect clients to the selected leader and verify one controlled write.
+Existing transactions on a failed connection do not transfer to the promoted
+database. Reconcile uncertain commit outcomes as described in the transaction
+chapter. Rebuild the retired node from the new authoritative primary rather
+than allowing both divergent copies to resume writing.
+
+\warning{Asynchronous does not mean lossless}{A primary can acknowledge a
+commit before a later shipping cycle archives it. If that primary is lost,
+promotion may omit acknowledged changes that never reached the archive.
+Measure and report lag; do not promise zero data loss or synchronous quorum
+commit semantics.}
+
+\sourcecode{src/minisql/tools/backup.ml}{promoteStandby.}
+\sourcecode{docs/release/REPLICATION.md}{Supported failover scope and current limitations.}
+
+\section{Automatic single-host failover and native write fencing}
+\index{failover}\index{fencing}\index{HA controller}
+
+The separate HA controller owns a local primary/backend lifecycle, a stable
+loopback endpoint, a file witness, and automatic promotion. The witness
+serializes leadership terms. A dedicated renewal thread updates the lease so
+a long standby materialization does not by itself stop lease renewal.
+
+The server is started with a lease path, epoch, node ID, and maximum clock
+skew. It checks the persistent epoch and current lease before mutations and
+again immediately before DML/DDL commit. Missing, malformed, expired, or
+foreign records reject writes with error 9038. Reads and rollback remain
+available for diagnosis.
+
+\begin{lstlisting}[language=bash]
+python3 tools/replication/minisql_ha_controller.py run \
+  --primary-db /srv/minisql/db_ACTUAL_ID \
+  --archive /srv/minisql-ha/archive \
+  --slot-root /srv/minisql-ha/slots \
+  --witness-dir /srv/minisql-ha/witness \
+  --server-exe build/bin-linux/minisqld \
+  --backup-exe build/bin-linux/minisql-backup \
+  --proxy-port 7432 \
+  --status-file /srv/minisql-ha/controller-status.json
+\end{lstlisting}
+
+Start this as the owner of the intended primary process; do not leave an
+independently started writer running against the same directory. Use the
+controller's documented disposable drill before adapting it to persistent
+data. New proxy connections switch to the new leader after a promotion;
+established sessions are not live-migrated and must reconnect if their backend
+is retired or fails.
+
+\begin{longtable}{p{.34\linewidth}p{.59\linewidth}}
+\toprule
+Controller run option & Default / meaning \\
+\midrule
+\endhead
+\code{--primary-db}, \code{--archive}, \code{--slot-root},
+\code{--witness-dir} & Required database and HA state directories. \\
+\code{--server-exe}, \code{--backup-exe}, \code{--proxy-port} & Required
+native executables and stable endpoint port. \\
+\code{--backend-port-a}, \code{--backend-port-b} & 0 chooses free local
+backend ports. \\
+\code{--maximum-clients} & 32. \\
+\code{--node-id} & 1; leader identity used in fencing records. \\
+\code{--lease-ms} & 5000; lease duration. \\
+\code{--clock-skew-ms} & 250; expiry allowance before a replacement leader
+is promoted. \\
+\code{--replication-ms} & 2000; replication-cycle interval. \\
+\code{--command-timeout} & 300 seconds for child commands. \\
+\code{--status-file} & Optional atomic controller status. \\
+\code{--run-seconds} & 0 runs indefinitely. \\
+\code{--max-failovers} & 0 leaves the failover count unbounded. \\
+\bottomrule
+\end{longtable}
+
+The other controller modes are \code{self-test} for fencing record codecs
+and \code{write-epoch --database path --epoch n --node-id n} for offline
+epoch administration. They are implementation/qualification tools; changing
+epochs without understanding the active lease and owner can revoke or confuse
+leadership. Prefer the controller-owned workflow.
+
+\subsection{What the witness does not provide}
+
+A local file witness is not distributed consensus. The directory must have
+one controller writer and reliable atomic-replacement semantics. Copying the
+witness independently to multiple machines does not preserve one shared
+leadership decision. A multiple-host design needs an external quorum-based
+lease/leadership service and fencing at an authoritative write boundary.
+The supplied controller does not add synchronous replication or zero-loss
+commits.
+
+The five-second lease and 250-millisecond skew allowance are operational
+defaults, not universal safety guarantees for arbitrary clock behavior or
+network filesystems. Qualify the actual host, process supervision, witness
+filesystem, restart behavior, and client reconnection policy together.
+
+\sourcecode{tools/replication/minisql_ha_controller.py}{Controller modes, leases, promotion, and stable endpoint.}
+\sourcecode{src/minisql/server/database_manager.ml}{validateWriteFence and epoch/lease record checks.}
+\sourcecode{docs/formats/ha-fencing-records-v1.md}{Persistent fencing-record formats.}
+
+\section{Change page size with an offline rewrite}
+\index{migration}\index{page size}
+
+Changing \code{databaseDefaults.pageSize} in JSON does not rewrite a
+database. The short migration command only checks whether the requested size
+already matches:
+
+\begin{lstlisting}
+minisql-migrate.exe C:\MiniSQL-Data\db_ACTUAL_ID 8192
+\end{lstlisting}
+
+If the source already uses 8192, it reports success with no change. If it
+uses another supported size, it reports that an offline rewrite is required
+and does not modify the source. Request that rewrite explicitly:
+
+\begin{lstlisting}
+minisql-migrate.exe --rewrite C:\MiniSQL-Data\db_ACTUAL_ID `
+  C:\MiniSQL-Migrated learning_8k 8192
+\end{lstlisting}
+
+The tool opens the stopped source, creates a new database under a staging
+root, clones catalog/schema/security state, reads and rewrites rows at the
+new page size, rebuilds indexes, checks the result, and publishes a new
+UUID-based target path. It prints that actual path plus row/index counts.
+The logical name is the supplied target name; the database identity is new.
+The source remains available for rollback.
+
+Supported sizes remain 4096, 8192, 16384, and 32768. Current copy code
+materializes each source table's rows for rewriting, so plan memory as well
+as additional disk capacity. It preserves the supported schema extensions,
+including views, sequences, triggers, and procedure definitions, through the
+cloned schema state, but it does not copy the old physical WAL history or
+automatically preserve the source's TDE envelope. Enable/verify encryption
+on the new target if required, refresh optimizer statistics as appropriate,
+and create a fresh replication base.
+
+This command accepts only databases the current engine can open. It cannot
+convert a rejected format-1 database into format 2. For that version boundary,
+use the old matching engine to extract logical data and rebuild it in a new
+current-format database. Compare actual rows and schema objects before
+retiring the old copy.
+
+\sourcecode{src/minisql/tools/migrate.ml}{plan, run, copyDatabaseState, and rewrite.}
+\sourcecode{src/apps/minisql_migrate/main.ml}{Public migration arguments and success output.}
+
+\section{Complete backup, checker, and migration command reference}
+
+\begin{lstlisting}
+minisql-check --version
+minisql-check --m0-self-test
+minisql-check <database>
+
+minisql-backup --version
+minisql-backup --m0-self-test
+minisql-backup backup <database> <new-backup>
+minisql-backup backup-encrypted <database> <new-backup> <key-file>
+minisql-backup restore <backup> <new-database>
+minisql-backup restore-encrypted <backup> <new-database> <key-file>
+minisql-backup archive-init <database> <new-archive>
+minisql-backup archive-wal <stopped-database> <archive>
+minisql-backup archive-wal-live <database> <archive>
+minisql-backup archive-verify <archive>
+minisql-backup restore-pitr <archive> <new-database> <lsn|latest>
+minisql-backup standby-materialize <archive> <new-standby>
+minisql-backup standby-refresh <archive> <stopped-standby>
+minisql-backup standby-promote <stopped-standby>
+
+minisql-migrate --version
+minisql-migrate --m0-self-test
+minisql-migrate <stopped-database> <page-size>
+minisql-migrate --rewrite <stopped-source> <target-root>
+  <target-name> <page-size>
+\end{lstlisting}
+
+Use \path{.exe} on Windows. The bracketed \code{lsn|latest} position means
+choose a numeric LSN or the literal \code{latest}; do not pass the bar.
+Wrapped reference lines are one command. These tools return 0 on success,
+1 for a reported operational failure, and 2 for invalid usage. Preserve the
+printed error code/message, rather than treating every nonzero exit as a
+generic copy failure.
+
+\sourcecode{src/apps/minisql_backup/main.ml}{Complete backup/archive/standby dispatch.}
+\sourcecode{src/apps/minisql_check/main.ml}{Checker dispatch and warnings.}
+\sourcecode{src/apps/minisql_migrate/main.ml}{Migration dispatch.}
+
+\section{A recovery rehearsal from beginning to end}
+
+For a disposable learning database, insert a distinctive baseline record,
+stop the server, and create a base/archive. Restart it, insert a second record,
+and export a live WAL prefix. Restore the base to one fresh path and the
+latest archive to another. Verify that the base has only the baseline record
+and the latest restore includes the later committed record. Run the checker
+on each stopped copy.
+
+Next materialize a standby, query it through a standby listener, and confirm
+that a write is rejected. Stop the original primary and standby listener,
+promote the standby, restart it in the intended writable mode, and commit a
+third record. This teaches the distinction between a verified backup, an
+applied archive generation, a read-only standby, and an authoritative writable
+leader.
+
+For automated qualification, use the repository's production failover,
+automatic-fencing, and automatic-controller drills in new empty work roots.
+The fencing drill deliberately leaves an old leader alive and verifies write
+rejection; the controller drill terminates a controller-owned leader and
+checks promotion. Keep the reports, repeat them for the deployed revision,
+and measure recovery time on data volumes representative of the actual
+installation.
+
+\sourcecode{tests/ha/production_failover_drill.py}{Live shipping and manual promotion drill.}
+\sourcecode{tests/ha/automatic_fencing_drill.py}{Stale-writer rejection and fenced leadership transition.}
+\sourcecode{tests/ha/automatic_controller_live.py}{Controller-owned leader failure and automatic promotion.}

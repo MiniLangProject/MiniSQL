@@ -1,0 +1,266 @@
+\chapter{Troubleshooting and Reference}
+\label{adv:reference}
+
+\section{Use the diagnostic before changing the system}
+
+A useful incident record contains the executable/source revision, persisted storage generation, command line or exact SQL, error code and message, relevant server settings, and the smallest reproduction. Add whether the error occurred during connection, parsing, binding, execution, commit, recovery, or result fetching. The same visible symptom can have different causes at these stages.
+
+Before retrying a failed mutation, determine its transaction outcome. A rejected statement, a failed explicit transaction, and a lost connection after a possible commit are different situations. If the application did not receive the result, do not assume either that nothing happened or that retrying is harmless. Use a business key or idempotent application operation to reconcile uncertain outcomes.
+
+\subsection{Connection problems}
+
+\begin{longtable}{p{.3\linewidth}p{.61\linewidth}}
+\toprule Symptom & Investigation and next step \\\midrule
+Connection refused & Confirm that minisqld is running and that address/port match its listener. Check daemon startup output before changing credentials. \\
+Connection closes during HELLO/authentication & Check trusted versus authenticated versus TLS mode. A password-authenticated client cannot be substituted for a TLS client merely because both encrypt some traffic. \\
+Wrong database contents & Check the actual daemon database path. Changing the Workbench label, Python database argument, or JDBC catalog label does not switch server databases. \\
+TLS failure & Check TLS 1.3 support, required cipher/group, expected server name, certificate dates/trust, correct pin, and the platform credential format. \\
+Password rejected & Check principal spelling, enabled/login state, credential source, and endpoint. Do not repeatedly modify users on a different local database. \\
+Native client stalls in an older Windows console server & Leave console selection/mark mode with Esc; current daemon code disables QuickEdit, but an older running binary can still be paused by text selection. \\
+New statements fail while fetching a prior result & Consume or close the active cursor/ResultSet. Protocol v1 is ordered and does not multiplex unread results. \\
+\bottomrule
+\end{longtable}
+
+Use the native \code{--ping} family matching the listener before testing a complex query. A successful ping proves an operational connection, not sufficient privileges for every object. A socket read timeout is a client-side deadline; it does not prove that the server rolled back a completed statement.
+
+\subsection{SQL and data problems}
+
+\begin{longtable}{p{.3\linewidth}p{.61\linewidth}}
+\toprule Symptom & Explanation and response \\\midrule
+An apparently ordinary name causes a syntax error & It may be a reserved keyword. For example, use the tutorial's \code{order\_status}, or explicitly quote an intended identifier. Recheck the grammar at the failing token. \\
+An index exists but the plan scans & Check selectivity, ANALYZE, exact expression/type binding, covering requirements, and supported access shape. Composite indexes currently need equality on all key columns. \\
+DECIMAL 3.30 displays as 330 & The formatter emits its scaled coefficient. Apply the known schema scale in the client; generic expression scale is not transmitted. \\
+DECIMAL arithmetic/comparison surprises & Exact input/storage does not imply correct scale-aware operations in this revision. See Section~\ref{sql:decimal-caveat}; use tested integer units or application decimal arithmetic. \\
+DATE/TIME/TIMESTAMP comparison fails & Temporal storage and conversions exist, but current scalar comparison is incomplete. Use the SQL chapter's documented integer-unit alternative where comparisons are required. \\
+CURRENT\_TIMESTAMP is zero & This implementation returns epoch zero; provide an application timestamp instead of relying on a real-time default. \\
+Text equal to NULL becomes a null in the connector & Wire v1 has no NULL bitmap and uses the token NULL. Project an explicit null indicator when the distinction matters; see Section~\ref{adv:wire-null}. \\
+Correlated NOT EXISTS reports runtime error 1306 & A current executor defect produces a missing-struct-member diagnostic. A suitably equivalent LEFT JOIN with a non-nullable joined-key IS NULL test is the documented workaround; ordinary EXISTS and IN subquery support should not be confused with this defect. \\
+NULLIF with a NULL second operand is surprising & Current evaluator behavior differs from ordinary SQL expectations in this case; consult the function reference and avoid relying on the unsupported semantic edge. \\
+A parent-key UPDATE leaves an orphan child & Incoming foreign-key checks/actions are incomplete. Keep referenced keys immutable and validate existing relationships explicitly. \\
+ON DELETE CASCADE/SET NULL fails & The action is parsed and stored but is not implemented as a working cascade. Perform a deliberately ordered, transactional application operation using supported DML. \\
+A script stops halfway & The script client stops at the first error. Earlier autocommit statements remain committed. Inspect state before rerunning; scripts are not implicit transactions. \\
+A large native script cannot be read & Native script/source reading has a 1 MiB file bound. Split scripts or import through bounded connector batches. \\
+\bottomrule
+\end{longtable}
+
+These are implementation observations, not merely syntax limitations. Some constructs are accepted by the parser and still have narrower execution behavior. The manual's explicit caveats take precedence over generic SQL tutorials and broad historical feature summaries.
+
+\subsection{Transaction, capacity, and storage problems}
+
+If a transaction has failed, issue ROLLBACK before attempting normal work, unless a supported savepoint recovery path was deliberately established. A second BEGIN is not a general reset operation. In Python, remember that DDL/maintenance can commit earlier DML through the connector's classification; in JDBC, move schema work to autocommit mode yourself.
+
+For slow or blocked work, use an administrative SHOW PROCESSLIST and SHOW STATUS connection. Distinguish a logical lock wait from the database's physical reader/writer gate. Increasing connection count cannot add concurrent physical writers. Cancellation is cooperative and can wait until the next storage-page or DML-row polling point. A long native call or scalar expression may delay that point.
+
+A resource-limit failure can mean statement bytes, response frame size, total result rows/bytes, temporary storage, or managed-heap pressure. Read the complete message and current limits. Increasing every limit at once hides the cause. First narrow a projection, bound a query, release an unread result, or split an import if that matches the application's need. Use OS measurements for total RSS rather than interpreting the managed-heap limit as all allocated process memory.
+
+For corruption or format rejection, stop using the questionable copy for writes, preserve the diagnostic, and run the offline checker on an appropriate stopped database or isolated copy. A format mismatch is not a checksum problem. Never edit the version field to make a file appear current. For an actual corrupt authoritative file, use a verified backup and compatible recovery chain. REINDEX rebuilds indexes; it cannot recreate lost heap rows.
+
+\section{Stable error-code reference}
+\index{error codes}
+
+The following registry is part of the observable MiniSQL API. Native clients commonly print \code{ERROR code: message}; connectors map selected codes into language-specific exception types. The module/operation text after the code often supplies the decisive context.
+
+\begin{longtable}{p{.1\linewidth}p{.27\linewidth}p{.52\linewidth}}
+\toprule Code & Name & Interpretation / first response \\\midrule
+0 & Ok & Success. \\
+9000 & NotImplemented & A code path is not implemented; choose a documented alternative. \\
+9001 & InvalidArgument & Check API/CLI inputs and bounds. \\
+9002 & InvalidConfiguration & Correct the identified configuration field or relationship. \\
+9003 & UnsupportedFormat & Verify format generation, flags, and engine compatibility. \\
+9004 & CorruptData & Preserve evidence and check the stopped database/copy. \\
+9005 & IoFailure & Check path, permissions, free space, and underlying storage diagnostics. \\
+9006 & ProtocolFailure & Check matching client/server mode and complete framing diagnostics. \\
+9007 & LockConflict & Inspect concurrent ownership/locks and transaction scope. \\
+9008 & ClosedHandle & Do not reuse a closed connection, engine, or storage handle. \\
+9009 & BufferPoolExhausted & Review buffer use and pinned resources. \\
+9010 & PinnedPage & A requested operation conflicts with a pinned page. \\
+9011 & TransactionState & Inspect active/failed transaction state; roll back as required. \\
+9012 & ReadOnlyViolation & A writable operation was attempted in read-only state. \\
+9013 & ObjectExists & Inspect the existing object before retrying creation. \\
+9014 & ObjectNotFound & Verify name, schema, endpoint, and object lifetime. \\
+9015 & PageFull & A physical record/allocation cannot fit; review row width and supported externalization. \\
+9016 & RowNotFound & The targeted physical row is unavailable. \\
+9017 & TypeMismatch & Correct type, range, scale, or conversion. \\
+9018 & StaleReference & A physical row reference no longer has the expected slot generation. \\
+9019 & SqlSyntax & Inspect grammar and the failing token. \\
+9020 & BindingError & Resolve names, types, scope, or unsupported bound expression shape. \\
+9021 & ConstraintViolation & Read the violated NOT NULL/CHECK/reference/other rule. \\
+9022 & DuplicateKey & A primary/unique key conflicts; inspect the business key. \\
+9023 & DdlState & DDL context, publication, or transaction state is invalid. \\
+9024 & IndexCorrupt & Check/rebuild the affected derived index through supported procedures. \\
+9025 & UnsupportedSql & The syntax or execution shape is outside implemented SQL. \\
+9026 & NetworkFailure & Inspect transport connectivity and possible transaction outcome. \\
+9027 & AuthenticationFailed & Verify credentials and principal state. \\
+9028 & AuthenticationRequired & Use a matching authenticated session. \\
+9029 & PermissionDenied & Review principal, role memberships, and required grant. \\
+9030 & SecurityState & Security metadata or state is inconsistent. \\
+9031 & ArchiveState & Backup/archive/replication identities or sequence disagree. \\
+9032 & LockTimeout & A logical lock wait exceeded its deadline. \\
+9033 & StandbyState & The standby cannot execute the requested writable operation. \\
+9034 & TlsFailure & Native TLS setup or transport validation failed. \\
+9035 & QueryCancelled & An administrative cancellation token was observed. \\
+9036 & QueryTimeout & The absolute cooperative query deadline expired. \\
+9037 & ResourceLimit & A configured memory, spill, result, or related resource bound was exceeded. \\
+9038 & Write-fence rejection & Leadership lease or epoch no longer permits mutation; check the active primary and fencing state. This code is defined outside the central registry. \\
+\bottomrule
+\end{longtable}
+
+\sourcecode{src/minisql/common/errors.ml}{Central stable error-code registry through 9037 at the documented revision.}
+\sourcecode{src/minisql/server/database_manager.ml}{Fenced-primary mutation rejection uses additional code 9038.}
+
+\section{Capability matrix for migration planning}
+\index{compatibility}\index{unsupported features}
+
+Use this matrix when porting an application from another database. ``Implemented'' means the stated subset exists, not that all constructs in another vendor's dialect work. Behavioral exceptions in the SQL chapters remain part of the contract.
+
+\begin{longtable}{p{.27\linewidth}p{.64\linewidth}}
+\toprule Area & Current implementation and boundary \\\midrule
+Platforms & Native Windows x64 and Linux x64 command-line applications; graphical Workbench is Windows-only. \\
+Database selection & One database per listener endpoint; initialization is an administrative tool operation. No SQL CREATE DATABASE or USE workflow. \\
+Schemas & Two-part names and public/information\_schema; no configurable search path or three-part catalog qualification. \\
+Tables and types & Implemented scalar/text/binary/temporal types, constraints, defaults, identity aliases, stored generated columns; temporal and DECIMAL expression caveats apply. \\
+Schema evolution & Supported ALTER operations with dependency/data restrictions; no unrestricted arbitrary type rewrite. \\
+DML & INSERT VALUES/SELECT, UPDATE, DELETE, RETURNING, ON CONFLICT, and bounded MERGE form. \\
+Foreign keys & Child-reference validation and restrictive parent deletion; parsed cascading actions and parent-key updates have the limitations documented above. \\
+Queries & Filtering, ordering, grouping, aggregates, joins including outer forms, derived tables, and set operations in the documented grammar. \\
+Subqueries & Scalar, EXISTS, IN, and NOT IN; correlation requires qualified outer references and is limited to supported non-grouped contexts. \\
+CTEs & Nonrecursive and recursive anchor plus one UNION/UNION ALL recursive term; no mutual recursion; 10000-iteration guard. \\
+Windows & Ranking, navigation, and aggregate windows over complete partitions; no explicit ROWS/RANGE/GROUPS frames or named windows. \\
+Views & Stored SELECT definitions; no materialized-view refresh system. \\
+Triggers & Row BEFORE/AFTER INSERT/UPDATE/DELETE with one supported DML body and read-only OLD/NEW; recursion depth is bounded to eight. \\
+Procedures & Typed positional input parameters and one persisted DML body; no general procedural language or user-defined functions. \\
+Sequences & Persisted sequences with session current-value behavior; current evaluation can consume values before per-row execution, so do not rely on NEXTVAL in a SELECT to allocate one distinct value per output row. The cursor-probing path has gaps in read-only and exclusive classification; NEXTVAL can consume twice and can mutate inside BEGIN READ ONLY. Do not rely on those boundaries for sequence use; see the sequence and transaction chapters. Numbering is not gapless. \\
+Prepared statements & SQL PREPARE/EXECUTE/DEALLOCATE and connector support; no typed wire parameter-binding frame. \\
+Transactions & Explicit/autocommit, savepoints, READ COMMITTED and SERIALIZABLE, supported read-only state; no cross-database transaction or XA coordinator. \\
+Concurrency & Parallel connections and eligible independent reads; one physical writer per database. \\
+Indexes & B+ tree normal/unique, INCLUDE, partial predicates, and single functional expression within documented restrictions. \\
+Composite access & Full-key equality; generic leftmost-prefix and composite range access are not selected by the current SQL optimizer. \\
+Planning & Costed scans/joins/aggregates/sorts, bounded inner join reorder, sampled statistics, generation-safe session cache; no optimizer hint language or unrestricted plan search. \\
+Administration & Status/process list, SHUTDOWN, cancellation, deadlines, logs/binlog, and configured resource controls. \\
+Security & Users/roles/grants, password authentication, protected framing, native TLS, audit, and at-rest encryption workflows. \\
+Backup/recovery & Physical backup/restore/check, supported archive/PITR, recovery journals, and offline page-size rewrite; no format-1 conversion in the current engine. \\
+Replication/HA & Asynchronous existing-schema WAL replication, standby, fencing, and single-host reference controller; no distributed consensus or synchronous quorum commit. \\
+Import/export & SQL scripts, connector programs, Workbench CSV output and clipboard staging; no SQL COPY/LOAD DATA command. \\
+Drivers & Python DB-API and Java JDBC; no ODBC or separate HTTP SQL service. \\
+Results & Text protocol with string/NULL ambiguity and conservative type metadata; in-process results retain SQL value types. \\
+\bottomrule
+\end{longtable}
+
+\sourcecode{docs/release/LIMITATIONS.md}{Cross-component scope inventory, checked against the source and explicit caveats in this manual.}
+
+\section{Useful hard bounds and their scope}
+\index{limits}
+
+A physical format bound, configured operational limit, and client convenience limit answer different questions. For example, a U32 overflow length does not mean a 4-GiB value can be transmitted in one protocol row.
+
+\begin{longtable}{p{.4\linewidth}p{.49\linewidth}}
+\toprule Bound & Value and scope \\\midrule
+Database logical pages & 4096, 8192, 16384, or 32768 bytes. \\
+Aligned physical row size & At most 65528 bytes by row U16 fields, additionally limited by its page. \\
+Row codec column count & 1--4095; not a promise that every such wide row fits a page or result. \\
+External value length & U32, at most 4294967295 bytes; other budgets apply. \\
+Encoded B+ tree key & 256 bytes including SQL prefix/tags/escaping. \\
+B+ tree leaf value & 3584 bytes including row reference and INCLUDE payload. \\
+Leaf/internal node capacity & At most 10 entries / 12 children in the current tree implementation. \\
+Protocol header/payload & 32-byte header; 16777216-byte defensive payload ceiling. \\
+Protocol result frame & At most 1024 columns and normally at most 512 rows; byte limits also apply. \\
+Native script file & At most 1048576 bytes read by --script or shell source. \\
+Execution scan batch & 128 rows in supported engine batch paths. \\
+Optimizer plan cache & 64 entries per session. \\
+Python prepared-plan cache & 128 entries per connection. \\
+Connector insert coalescing & 256 rows and 768 KiB SQL per combined request. \\
+ANALYZE sample & At most 8192 uniformly spaced rows; exact population count. \\
+Join-order dynamic search & Up to eight eligible connected inner-equijoin sources. \\
+Eligible hash partition workers & Up to four native workers. \\
+Recursive CTE guard & 10000 iterations. \\
+Trigger recursion guard & Eight nested trigger executions. \\
+Heap forwarding resolution & At most 64 links, with cycle rejection. \\
+Workbench history/results & 100 history items and 32 result tabs. \\
+Workbench browse/paste & Default page 100; browse maximum 1000; paste at most 1000 inserts. \\
+\bottomrule
+\end{longtable}
+
+Configured server limits can be stricter. Consult the configuration chapter and SHOW STATUS for effective settings rather than treating a compiled protocol maximum as the active deployment policy.
+
+\sourcecode{src/minisql/protocol/constants.ml}{Frame limits, continuation flag, and message registry.}
+\sourcecode{src/minisql/storage/btree.ml}{Physical index entry and node limits.}
+\sourcecode{src/minisql/executor/executor.ml}{Cache, scan, recursion, and trigger bounds.}
+
+\section{Wire protocol anatomy for implementers}
+\index{wire protocol}
+
+A client implementing MiniSQL directly must validate the entire frame, not just read SQL text from a socket. The 32-byte little-endian header contains:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Field \\\midrule
+0 & 4 & ASCII MSQL. \\
+4 & 2 & Protocol version 1. \\
+6 & 2 & Message type. \\
+8 & 4 & Flags. \\
+12 & 4 & Request ID. \\
+16 & 4 & Payload length. \\
+20 & 4 & Payload CRC-32C. \\
+24 & 4 & Header CRC-32C with this field zeroed. \\
+28 & 4 & Reserved zero. \\
+\bottomrule
+\end{longtable}
+
+Types 1--9 are HELLO, QUERY, PING, CLOSE, AUTH\_BEGIN, AUTH\_CHALLENGE, AUTH\_PROOF, AUTH\_OK, and CANCEL. Types 100--102 are RESPONSE, PONG, and ERROR. Response statuses distinguish command, rows, and error. Flag 1 marks authenticated protected framing; flag 2 means another continuation response with the same request ID follows. Each row frame repeats column information, and the client must reject an unexpected schema or request ID.
+
+HELLO advertises \code{session=<positive-u32>} in its informational message. CANCEL carries a four-byte U32 target session ID and is sent on a separate administrator connection. Its acknowledgement confirms that the cooperative token was set, not that arbitrary native work was synchronously terminated. Older v1 clients can continue interpreting HELLO as text, but an old server without a session identifier cannot supply this cancellation feature.
+
+Password authentication also enables directional authenticated encryption for subsequent MiniSQL frames, including when TLS supplies an outer transport. Implementations must follow nonce/sequence/key-direction rules in the secure-transport specification; do not substitute CRC as an authentication mechanism. Most applications should use the maintained connectors instead of reimplementing this protocol.
+
+\sourcecode{src/minisql/protocol/constants.ml}{Message types, statuses, flags, and payload limits.}
+\sourcecode{src/minisql/protocol/messages.ml}{Payload codecs and validation.}
+\sourcecode{docs/formats/wire-protocol-v1.md}{Framing and cooperative cancellation extension.}
+
+\section{Glossary}
+\index{glossary}
+
+\begin{longtable}{p{.25\linewidth}p{.66\linewidth}}
+\toprule Term & Meaning in this manual \\\midrule
+Affected rows & Rows changed by a command, distinct from rows returned by a SELECT or RETURNING result. \\
+Autocommit & A statement executes without a user-opened multi-statement transaction; connector defaults can differ. \\
+Binder & Resolves names, scopes, and types after parsing. \\
+Catalog & Metadata describing database objects; JDBC's catalog label is not a database-switch command. \\
+Checkpoint & Durable recovery position that bounds later redo work. \\
+Collation & Ordering/comparison rule for text; the persisted default is binary. \\
+Covering index & An index containing all values required by an eligible query, including INCLUDE columns. \\
+CRC-32C & Castagnoli cyclic redundancy check used to detect accidental corruption. \\
+DDL / DML / DCL & Definition, data manipulation, and access-control statements respectively. \\
+Durable & Written using the engine's required flush/publication protocol, subject to the storage stack honoring those operations. \\
+Epoch unit & Integer day or microsecond count relative to a defined origin; not an implicitly timezone-aware timestamp. \\
+Execution gate & Per-database coordination of shared readers and exclusive operations. \\
+Foreign key & A declared relationship requiring a referenced key; this revision's referential-action limitations must be observed. \\
+Heap & Table storage organized around pages and slots, without primary-key clustering. \\
+Identity & A generated column value intended for identifiers; not a promise of gapless business numbering. \\
+Index-only scan & Query access that obtains needed values from an index without heap reads. \\
+LSN & Log sequence number locating/order-identifying WAL state. \\
+NULL / UNKNOWN & Missing SQL value and its three-valued Boolean consequence. \\
+Overflow & External page chain holding a large TEXT/BLOB value. \\
+Partial index & Index containing only rows whose stored predicate is TRUE. \\
+Physical row reference & Heap page, slot, and generation information locating a stored row. \\
+PITR & Point-in-time recovery using a compatible base archive and available committed WAL history. \\
+Prepared statement & A named session statement used with supplied values; not a frozen result. \\
+Principal & User or role participating in authorization. \\
+Residual predicate & A filter still evaluated after an access path or join has narrowed candidates. \\
+Savepoint & A named position for supported partial rollback inside an explicit transaction. \\
+Schema version & Evolution of a table definition, distinct from database/row physical format generation. \\
+Selectivity & Fraction of rows estimated or observed to satisfy a condition. \\
+Spill & Temporary disk representation used by an operator to reduce its retained memory. \\
+Standby & Database endpoint serving supported reads while applying compatible replicated history. \\
+Superblock & Redundant paged-file metadata slot describing identity and committed allocation. \\
+TDE & Transparent data encryption of the supported stored structures. \\
+TLS & Transport Layer Security; distinct from MiniSQL's inner authenticated framing. \\
+WAL & Write-ahead log used for page-change durability/recovery; not the optional SQL binlog. \\
+\bottomrule
+\end{longtable}
+
+\section{Read validation evidence precisely}
+
+The historical release gate and the current storage-v2 checks are different evidence. The repository's storage-v2 report records five focused format suites and selected Linux-native regressions, while explicitly stating that the full historical Windows release matrix was not rerun for that change. A successful compile for another target is not a native execution test.
+
+The examples and additional probes delivered with this manual identify their own tested source revision and scope. They improve confidence in the documented learning path and expose known behavior; they do not certify every possible SQL query, driver framework, hardware failure, or production workload. Preserve reproducible test inputs and actual diagnostic output when extending MiniSQL, and update both capability descriptions and limitations when behavior changes.
+
+\sourcecode{docs/acceptance/STORAGE_V2_2026-11-24.md}{Current format-focused validation scope and historical/platform boundaries.}

@@ -1,0 +1,14 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=10mm and 12mm]
+\node[strong,text width=50mm] (root) {B+ tree internal page\\Separators choose a child};
+\node[box,text width=45mm,below=15mm of root,xshift=-31mm] (leaf1) {Leaf entries\\key + row reference};
+\node[box,text width=45mm,below=15mm of root,xshift=31mm] (leaf2) {Covering leaf entries\\key + reference + INCLUDE};
+\node[box,text width=45mm,below=of leaf1] (heap) {Heap row\\Read missing columns};
+\node[strong,text width=45mm,below=of leaf2] (covered) {Eligible index-only result\\No heap lookup};
+\draw[arrow] (root) -- (leaf1);\draw[arrow] (root) -- (leaf2);
+\draw[arrow] (leaf1) -- (heap);\draw[arrow] (leaf2) -- (covered);
+\draw[arrow,dashed] (leaf2.west) -- ++(-6mm,0) |- node[smalllabel,pos=.8,above] {missing value} (heap.east);
+\end{tikzpicture}
+\caption{Why a covering index can avoid heap reads. The right branch is available only when every referenced value is recoverable from an eligible index; functional indexes currently remain heap-backed.}
+\label{fig:index-access}
+\end{figure}

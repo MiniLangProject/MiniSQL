@@ -1,0 +1,338 @@
+\chapter{Your first complete database}
+\label{learn:tutorial}
+\index{tutorial}
+\learning{Create a fresh database, load a relational schema, insert data, retrieve useful answers, make reversible changes and verify the results. Every file in this chapter is supplied with the manual.}
+
+\section{Prepare two terminals and one fresh database}
+Complete the installation chapter first. Work from the repository root. Use
+one terminal for the server and another for the client. In the first terminal
+create a new teaching database:
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisqld --init ./data shop 4096
+\end{lstlisting}
+On Windows the equivalent command is:
+\begin{lstlisting}[language=PowerShell]
+.\build\bin\minisqld.exe --init .\data shop 4096
+\end{lstlisting}
+The output includes a directory beginning with \code{db\_}, a human-readable
+database name and a page size. Copy the actual directory into the server
+command. The following placeholder is deliberately not a real directory:
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisqld --serve ./data/db_<uuid> 7432 16
+\end{lstlisting}
+The server remains running. A listener-ready message means the server has
+opened the database and reached its listener setup. Check the complete
+startup output if the next command cannot connect.
+
+In the second terminal, test the connection:
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisql --ping 7432
+./build/bin-linux/minisql --shell 7432
+\end{lstlisting}
+\code{--ping} prints \code{PONG} on success. The shell displays a
+\code{minisql>} prompt. The trusted listener is a local learning mode: its
+sessions have administrative authority. Read the security chapter before
+allowing users or applications to connect in a deployment.
+
+\section{Understand the model before typing the schema}
+The teaching database represents customers, products, orders and individual
+order lines. A customer may have no orders. A product may have stock but no
+orders. One order can contain several products. The schema retains these
+distinctions instead of trying to fit all facts into one table.
+\input{figures/shop-schema}
+
+The examples use explicit stable identifiers so that expected results are
+easy to compare. Identity and sequence features are taught later, with their
+different allocation semantics. The identifier of an existing customer or
+product is never changed during this tutorial.
+
+\section{Create and populate the tables}
+Leave the shell with \code{\textbackslash quit}, or open a third terminal,
+and run the first script:
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisql --script 7432 \
+  docs/manual/examples/01-create-shop.sql
+\end{lstlisting}
+On Windows:
+\begin{lstlisting}[language=PowerShell]
+.\build\bin\minisql.exe --script 7432 `
+  .\docs\manual\examples\01-create-shop.sql
+\end{lstlisting}
+The file contains the following complete setup. It is intentionally designed
+for a new empty database. Rerunning it on the same database should fail when
+objects already exist; an unexpected pre-existing schema must not be silently
+accepted as the tutorial schema.
+\lstinputlisting[language=SQL,caption={The complete reproducible teaching database}]{examples/01-create-shop.sql}
+
+The four \code{CREATE TABLE} statements are schema changes. They run before
+the explicit transaction that loads data. The \code{BEGIN}/\code{COMMIT}
+pair makes the initial row population one transaction. Parents are inserted
+before children, so foreign-key checks can find the referenced rows.
+\code{CHECK (stock >= 0)} prevents a negative quantity; \code{CHECK (quantity
+> 0)} requires a positive order-line quantity. \code{NOT NULL} requires a
+value rather than leaving it unknown.
+
+The final count queries should report the following values:
+\begin{table}[htbp]\centering
+\caption{The teaching database after successful setup}
+\begin{tabular}{l r l}\toprule
+Table & Rows & What one row means\\\midrule
+customers & 4 & One customer\\
+products & 5 & One product offered for sale\\
+orders & 4 & One order placed by a customer\\
+order\_items & 6 & One product line in an order\\\bottomrule
+\end{tabular}
+\end{table}
+
+\tip{What to do after a setup error}{Read the first error, not only the final
+script status. A script stops at its failure point; earlier DDL may already
+be committed. For the tutorial, create another fresh database instead of
+guessing which objects to delete. The validation tool always uses a new
+temporary directory.}
+
+\section{Inspect rows and choose columns}
+Reconnect with \code{--shell 7432} and run:
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name, city, active
+FROM customers
+ORDER BY customer_id;
+\end{lstlisting}
+\begin{table}[htbp]\centering
+\caption{The four customers in identifier order}
+\begin{tabular}{r l l l}\toprule
+customer\_id & name & city & active\\\midrule
+1 & Ada & London & TRUE\\
+2 & Grace & New York & TRUE\\
+3 & Linus & Helsinki & TRUE\\
+4 & Margaret & NULL & FALSE\\\bottomrule
+\end{tabular}
+\end{table}
+The selected column list controls the result's shape. It can omit columns,
+reorder them or add expressions. A column alias such as
+\code{COUNT(*) AS customer\_count} gives the result a readable heading.
+Use explicit columns in application code so a later schema extension does
+not accidentally change the expected result layout.
+
+\section{Filter and sort}
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name, stock
+FROM products
+WHERE stock < 15
+ORDER BY stock, product_id;
+\end{lstlisting}
+The result contains Monitor Stand (104) with stock 8 and Mechanical Keyboard
+(101) with stock 12, in that order. \code{WHERE} keeps rows for which its
+condition is true. \code{ORDER BY stock, product\_id} sorts by stock, then
+uses the identifier as a deterministic tie-breaker.
+
+To find the two products with the most stock, reverse the first sort:
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name, stock
+FROM products
+ORDER BY stock DESC, product_id
+LIMIT 2;
+\end{lstlisting}
+The result is USB-C Cable (103, stock 100) followed by Notebook (105, stock
+50). A bare \code{LIMIT 2} without \code{ORDER BY} would mean ``any first two
+rows produced by the chosen plan'', not ``the two largest''.
+
+\section{Work correctly with unknown values}
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name FROM customers
+WHERE city IS NULL;
+
+SELECT COUNT(city) AS known_cities,
+       COUNT(*) AS customer_count
+FROM customers;
+\end{lstlisting}
+Margaret is the customer with no recorded city. The counts are 3 known cities
+and 4 customers. \code{COUNT(city)} counts non-null city values;
+\code{COUNT(*)} counts rows. The test for an unknown value is
+\code{IS NULL}, not \code{= NULL}. The language chapter develops the
+three-valued logic behind this distinction.
+
+\warning{NULL in the current text protocol}{The native console displays SQL
+NULL as \code{NULL}. Protocol version 1 also uses that text for an actual
+string containing the four characters \code{NULL}. The general Python/JDBC
+result path consequently cannot distinguish them. Do not choose that literal
+string as a special missing-data marker. This limitation is separate from
+the engine's internal typed null representation.}
+
+\section{Join related tables}
+\begin{lstlisting}[language=SQL]
+SELECT o.order_id, c.name, o.order_status
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+ORDER BY o.order_id;
+\end{lstlisting}
+\code{o} and \code{c} are table aliases. Qualified names such as
+\code{o.customer\_id} make each column's origin clear. The join condition
+matches an order's customer key to a customer row.
+
+\begin{table}[htbp]\centering
+\caption{Joining orders to their customers}
+\begin{tabular}{r l l}\toprule
+order\_id & name & order\_status\\\midrule
+1001 & Ada & new\\
+1002 & Grace & shipped\\
+1003 & Ada & paid\\
+1004 & Linus & new\\\bottomrule
+\end{tabular}
+\end{table}
+Notice that Ada appears twice because she has two orders. A join produces
+matching row combinations; it does not implicitly deduplicate customer
+names. If a customer has no orders, an inner join omits that customer.
+
+\section{Retain unmatched rows and count correctly}
+\begin{lstlisting}[language=SQL]
+SELECT c.name, COUNT(o.order_id) AS order_count
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.customer_id
+GROUP BY c.name
+ORDER BY c.name;
+\end{lstlisting}
+The left join retains every customer. Margaret's unmatched right-hand
+columns are null, so \code{COUNT(o.order\_id)} returns zero for her group.
+The four results are Ada 2, Grace 1, Linus 1 and Margaret 0. Replacing
+\code{COUNT(o.order\_id)} with \code{COUNT(*)} would count the retained
+unmatched row as one. This is a common beginner mistake.
+
+Names happen to be unique in this small fixture. In a real customer report,
+group by the stable customer identifier as well as the display name, or two
+different people with the same name could be merged into one group.
+
+\section{Build a grouped business query}
+\begin{lstlisting}[language=SQL]
+SELECT c.name, SUM(i.quantity) AS units
+FROM customers c
+JOIN orders o ON o.customer_id = c.customer_id
+JOIN order_items i ON i.order_id = o.order_id
+GROUP BY c.name
+HAVING SUM(i.quantity) >= 3
+ORDER BY c.name;
+\end{lstlisting}
+This asks for customers whose orders contain at least three units in total.
+The result is Ada 6 and Grace 3. \code{SUM(i.quantity)} adds integer
+quantities within each customer's group. \code{HAVING} filters groups after
+aggregation. \code{WHERE}, if present, would filter the input rows before
+grouping. The total quantity across all six order lines is 10.
+\input{figures/query-thinking}
+
+\section{Interpret the price columns without assuming a wire format}
+\begin{lstlisting}[language=SQL]
+SELECT product_id, price FROM products WHERE product_id = 101;
+\end{lstlisting}
+At this revision the console returns \code{101 | 7990}. The declared scale is
+2, so the stored coefficient 7990 represents the decimal value 79.90.
+Exact decimal storage and exact decimal input validation are present, but
+the generic wire formatter emits the coefficient without its decimal point.
+The SQL arithmetic path also has a separate rescaling defect. For example,
+the tested expression adding decimal 3.30 and 1.20 produces wire text 45000,
+not a correct decimal sum representation.
+
+The tutorial therefore uses integer quantities for SQL aggregation.
+For an application that needs money calculations at this revision, one
+workable design is to store and calculate integer minor units explicitly
+(for example, cents), enforce a consistent scale in the application, and
+format the result there. Range-check multiplication and sums. If reading an
+existing \code{DECIMAL(10,2)} column, the application must know that column's
+scale and decode its coefficient deliberately; ordinary result metadata does
+not carry enough type information to reconstruct every value automatically.
+Do not compensate for the arithmetic bug by guessing an extra divisor in
+arbitrary SQL expressions.
+
+\section{Make reversible changes}
+Run the supplied transaction script:
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisql --script 7432 \
+  docs/manual/examples/03-transactions.sql
+\end{lstlisting}
+Its first experiment is:
+\begin{lstlisting}[language=SQL]
+BEGIN;
+UPDATE products SET stock = stock - 1 WHERE product_id = 101;
+SAVEPOINT before_second;
+UPDATE products SET stock = stock - 2 WHERE product_id = 101;
+ROLLBACK TO before_second;
+RELEASE before_second;
+ROLLBACK;
+\end{lstlisting}
+The complete file queries the intermediate values. Stock starts at 12,
+changes to 11, then 9, returns to 11 after the savepoint rollback, and returns
+to 12 after the full rollback. A savepoint gives a named position within the
+transaction; it does not commit earlier work. \code{RELEASE} removes that
+savepoint. The final \code{ROLLBACK} abandons the transaction.
+
+\input{figures/savepoints}
+
+Its second experiment inserts customer 99, updates the city, and deletes the
+row, returning the changed values with \code{RETURNING}. A final rollback
+leaves the teaching dataset unchanged. The check for customer 99 returns
+zero rows counted. Read the transaction chapter before depending on failure,
+DDL or concurrency behavior in application code.
+
+\section{See constraints reject mistakes}
+Run each of the following separately, outside an explicit transaction. Each
+is an intentional error and is therefore not placed in the successful setup
+script:
+\begin{lstlisting}[language=SQL]
+INSERT INTO customers(customer_id, name) VALUES (1, 'Duplicate');
+INSERT INTO orders(order_id, customer_id, order_status)
+VALUES (9999, 9999, 'new');
+UPDATE products SET stock = -1 WHERE product_id = 101;
+\end{lstlisting}
+The first conflicts with an existing primary key. The second references a
+customer that does not exist. The third violates the stock check. Query the
+original rows afterwards to confirm that the rejected operations did not
+perform the intended invalid change. In application code, treat a constraint
+failure as a result to handle; do not convert every database error into
+``try again forever''.
+
+\section{Move to CTEs and window functions}
+\path{examples/04-query-workshop.sql} gives named intermediate queries,
+left-join anti-matching, per-customer order numbering, conditional display
+values and a recursive sequence from 1 to 5. These build on the same schema.
+The CTE that totals units per order returns 3, 3, 3 and 1 for orders
+1001--1004. The window query numbers Ada's two orders 1 and 2 while restarting
+at 1 for each other customer.
+
+The query that finds customers without orders uses:
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL
+ORDER BY c.customer_id;
+\end{lstlisting}
+The result is Margaret (4). This uses an implemented, verified query shape.
+The correlated-subquery section describes the narrower support and the
+runtime issue found during validation; do not assume every standard
+anti-join spelling is interchangeable in this development revision.
+
+\section{Stop cleanly and reproduce your results}
+When you have finished, issue \code{SHUTDOWN;} from the trusted shell. The
+listener acknowledges the request, drains workers and closes its database.
+You can then run offline tools on the directory. Reopen the same directory
+with \code{--serve} to resume; do not run \code{--init} as a way of opening
+an existing database.
+
+To execute the tutorial in an isolated temporary database and compare its
+results automatically, run:
+\begin{lstlisting}[language=bash]
+python3 docs/manual/tools/validate_examples.py \
+  --bin-dir build/bin-linux \
+  --output build/manual-validation.json
+\end{lstlisting}
+On Windows use \code{python}, the Windows binary directory, and normal
+PowerShell line continuation if splitting the command. The runner starts
+its own server on a free loopback port and removes its temporary database
+afterwards. It does not open your teaching or application database.
+
+\tip{You have completed the first learning milestone}{You can now create
+and connect to a database, define relationships, load data, ask sorted and
+grouped questions, retain unmatched rows, observe constraint errors and
+undo a change. The next chapters explain each SQL feature systematically,
+including syntax and MiniSQL-specific limitations.}
+\sourcecode{src/minisql/sql/parser.ml}{The SQL parser and reserved-word behavior; the tutorial uses order\_status because STATUS is a keyword.}
+\sourcecode{src/minisql/client/formatter.ml}{Result text formatting, including decimal coefficients.}
+\sourcecode{src/minisql/executor/dml.ml}{Constraint checks and row changes used in the tutorial.}

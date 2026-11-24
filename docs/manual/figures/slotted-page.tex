@@ -1,0 +1,22 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1mm,y=1mm]
+\draw[draw=Rule,fill=Pale] (0,0) rectangle (135,72);
+\fill[Teal!20] (0,61) rectangle (135,72);
+\node[font=\sffamily\small] at (67.5,66.5) {64-byte common header: identity, LSN, space bounds, CRCs};
+\fill[Navy!14] (0,48) rectangle (135,61);
+\node[font=\sffamily\small] at (67.5,54.5) {Slot directory: 8 bytes per slot};
+\draw[arrow] (8,47) -- (8,35);\node[smalllabel,anchor=west] at (14,41) {directory grows towards higher offsets};
+\node[font=\sffamily\small\color{Muted}] at (67.5,29) {Contiguous free space};
+\draw[arrow] (127,14) -- (127,26);\node[smalllabel,anchor=east] at (121,20) {record allocations grow backwards};
+\fill[Teal!18] (0,0) rectangle (135,12);
+\node[font=\sffamily\small] at (67.5,6) {Aligned records: start and allocation are multiples of 8};
+\node[smalllabel,anchor=east] at (-2,72) {0};
+\node[smalllabel,anchor=east] at (-2,61) {64};
+\node[smalllabel,anchor=east] at (-2,48) {freeStart};
+\node[smalllabel,anchor=east] at (-2,12) {freeEnd};
+\node[smalllabel,anchor=east] at (-2,0) {page size};
+\end{tikzpicture}
+\caption{A slotted data page in storage format 2 (schematic, not to scale). Slot identities remain stable when record bodies move during page compaction. Table page 0 has a different metadata layout.}
+\label{fig:slotted-page}
+\end{figure}

@@ -1,0 +1,453 @@
+\chapter{Storage Architecture and Formats}
+\label{adv:storage}
+
+\section{Why an administrator should understand the files}
+
+SQL users normally manipulate tables, not bytes. Physical knowledge becomes useful when estimating storage, selecting a page size, diagnosing corruption, interpreting a backup, or writing an inspection tool. It also prevents dangerous assumptions: a table is not a single CSV-like sequence of rows, deleting a row need not shrink its file, and a WAL file is not a replayable list of SQL statements.
+
+This chapter describes the current storage-v2 development implementation. The product version string remains 1.1.1, but that does not identify the on-disk generation. Earlier 1.1.1 builds used database format 1. The explicit persisted format fields decide whether a database can open.
+
+\warning{Storage generation 2 is an intentional break}{Format-1 databases and backups containing them are rejected. Editing a version number or configuration value cannot convert their layout. The page-size rewrite tool operates on databases accepted by the current engine and is not a format-1 importer. Preserve an appropriate old engine when extracting data from an older database.}
+
+Unless stated otherwise, numeric fields below are little-endian, offsets are zero-based, and lengths are bytes. UUIDs and text are byte strings rather than endian-swapped integers. Reserved bytes must have the specified zero values; an inspector must validate them rather than inventing meanings.
+
+\begin{longtable}{p{.56\linewidth}p{.33\linewidth}}
+\toprule Structure & Current version \\\midrule
+Database metadata identity/envelope & 2 \\
+User-table header, physical row & 2 \\
+Overflow pointer and page payload & 2 \\
+B+ tree metadata and nodes, SQL key, INCLUDE payload & 2 \\
+Paged-file superblock and common page header & 1 \\
+WAL record framing, checkpoint and durable marker & 1 \\
+Catalog envelope and generic envelope header structure & 1 \\
+Wire protocol & 1 \\
+\bottomrule
+\end{longtable}
+
+A retained version-1 wrapper does not make its new payload compatible with old engines. For example, a common page header remains version 1 around a version-2 row or index payload. Schema version is another independent number: it tracks compatible column evolution within the physical row generation.
+
+\sourcecode{src/minisql/common/format_version.ml}{Central format-version registry.}
+\sourcecode{docs/formats/FORMAT_COMPATIBILITY.md}{Storage-v2 compatibility boundaries.}
+
+\section{Database directory and ownership}
+
+Initialization creates a generated \path{db_<uuid>} directory under the requested root. Use the returned actual path for daemon and offline commands. The friendly SQL database name lives in metadata; it is not the physical directory name.
+
+\begin{longtable}{p{.36\linewidth}p{.55\linewidth}}
+\toprule Path or family & Purpose \\\midrule
+\path{db.meta} & Database UUID, name, persisted format tuple, page size, and identifier/checkpoint high-water marks. \\
+\path{db.lock} & Operating-system-backed ownership/locking coordination. A filename alone is not proof of a live lock. \\
+\path{catalog/catalog.tbl} & Bootstrap table/column catalog in a scalable paged representation. \\
+\path{catalog/schema.history} & Table schema versions, constraints, defaults, identities, and index-related metadata. \\
+\path{catalog/schema.extensions} & Additional schema objects and their durable definitions, as used by the extension layer. \\
+\path{catalog/security.tbl}, \path{catalog/security.0.tbl}, \path{catalog/security.1.tbl}, \path{catalog/security.v2} & Security metadata, scalable independently durable generations, and publication marker. These form a coordinated state. \\
+\path{tables/t<ID>.tbl} & User-table header, heap pages, and overflow pages. \\
+\path{tables/t<ID>.tbl.heap-pages} & Derived checksummed heap-page directory used to accelerate scans. \\
+\path{indexes/i<ID>.idx} & B+ tree index file. \\
+\path{wal/wal.log} & Transaction records and full page images. \\
+\path{wal/checkpoint.meta} & Redundant checkpoint positions. \\
+\path{wal/wal.log.durable} & Published durable WAL prefix used by replication. \\
+\path{tmp/} & Temporary sort/hash work. \\
+\path{audit/} & Audit chain and anchor records when used. \\
+\bottomrule
+\end{longtable}
+
+The engine also creates pending journals, index-dirty markers, statistics, encryption metadata, and replication/fencing state for the relevant features. Presence depends on the database's history and configuration. Treat a database directory as one coordinated unit. Copying a table, catalog, security generation, or WAL file in isolation does not create a consistent database.
+
+The heap-page directory is derived acceleration metadata. If it is missing, stale, or damaged, the engine rebuilds it by classifying physical pages; it excludes user-table page zero. Do not restore it independently of its table. Authoritative data and derived metadata have different recovery roles, but an operator should still use supported maintenance and backup procedures instead of deleting files while the server runs.
+
+\sourcecode{src/minisql/catalog/catalog.ml}{ensureLayout, generated database paths, catalog and security file ownership.}
+\sourcecode{src/minisql/storage/heap_file.ml}{Heap pages, derived directories, and forwarding.}
+\sourcecode{src/minisql/catalog/schema_history.ml}{Schema history and extension paths.}
+
+\section{Paged-file wrapper and superblocks}
+\index{superblocks}
+
+A paged file starts with two 4096-byte superblock slots, independent of the logical page size. Logical page 0 begins after these 8192 bytes. For an unencrypted file with page size $P$, logical page $n$ starts at
+\[
+  \mathrm{offset}(n) = 8192 + nP.
+\]
+The supported $P$ values are 4096, 8192, 16384, and 32768. Increasing page size does not remove every independent per-entry or protocol bound.
+
+Each superblock slot has this layout:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Field \\\midrule
+0 & 8 & ASCII \code{MSQLSB01}. \\
+8 & 2 & Superblock format version 1. \\
+10 & 2 & Header size 128. \\
+12 & 2 & File type: table 1, index 2, WAL 3, database metadata 4, generic 255. \\
+14 & 2 & Reserved zero. \\
+16 & 8 & Generation. \\
+24 & 4 & Logical page size. \\
+28 & 4 & Reserved zero. \\
+32 & 8 & File identifier. \\
+40 & 8 & Committed logical page count. \\
+48 & 16 & Database UUID. \\
+64 & 4 & Feature flags; bit 0 enables page encryption. \\
+68 & 4 & Reserved zero. \\
+72 & 4 & CRC-32C of the full 4096-byte slot with this field zeroed. \\
+76 & 52 & Reserved header bytes. \\
+128 & 3968 & Reserved slot bytes. \\
+\bottomrule
+\end{longtable}
+
+The redundant slots permit generation-based publication and validation of an independently valid slot. The committed page count is the allocation authority; a physical tail beyond that frontier is not automatically committed data. Database/file identity must agree across the selected superblock, page headers, and catalog expectations.
+
+With TDE, the superblocks remain plaintext. Each logical page is stored as 12 nonce bytes, $P$ ciphertext bytes, and a 16-byte GCM tag, giving stride $P+28$. The unencrypted logical-page offsets then refer to the decrypted page contents, not direct byte positions in the ciphertext file. Inspectors must authenticate and decrypt before parsing page headers.
+
+\sourcecode{src/minisql/storage/superblock.ml}{Slot codec, generation selection, and supported identifiers.}
+\sourcecode{src/minisql/storage/paged_file.ml}{Physical page offsets, publication, and encryption stride.}
+
+\section{The common page header}
+\index{page header}\index{CRC-32C}
+
+Every ordinary logical page starts with a 64-byte header. It protects both identity and content.
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Field \\\midrule
+0 & 4 & ASCII \code{MSPG}. \\
+4 & 2 & Page-header version 1. \\
+6 & 2 & Header size 64. \\
+8 & 2 & Page type. \\
+10 & 2 & Flags. \\
+12 & 4 & Reserved zero. \\
+16 & 8 & File identifier. \\
+24 & 8 & Logical page number. \\
+32 & 8 & Page LSN. \\
+40 & 8 & Page generation. \\
+48 & 2 & Item count. \\
+50 & 2 & Free-start offset. \\
+52 & 2 & Free-end offset. \\
+54 & 2 & Reserved zero. \\
+56 & 4 & CRC-32C of the payload, bytes 64 through end of page. \\
+60 & 4 & CRC-32C of all 64 header bytes with this field zeroed. \\
+\bottomrule
+\end{longtable}
+
+Page types are free 0, heap 1, overflow 2, B+ tree internal 3, B+ tree leaf 4, catalog 5, table metadata 6, and generic 255. The payload's own marker and version refine this interpretation. A checksum is not authentication; CRC detects accidental corruption, while encrypted pages additionally use authenticated encryption.
+
+\sourcecode{src/minisql/storage/page.ml}{Header fields and page-type registry.}
+
+\section{User-table page zero}
+\index{table metadata page}
+
+A format-v2 user table always reserves logical page 0 for immutable identity metadata. Heap and overflow data begin at page 1. This rule does not apply to catalog/security files merely because they share the paged-file table type.
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Field in the decrypted logical page \\\midrule
+0 & 64 & Common header, type TABLE\_META (6), page 0, LSN 0, item count 0, free-start 128, free-end $P$. \\
+64 & 4 & ASCII \code{MSTB}. \\
+68 & 2 & Table format 2. \\
+70 & 2 & Occupied header bytes 128. \\
+72 & 16 & Database UUID. \\
+88 & 8 & Table/file object identifier. \\
+96 & 4 & Logical page size $P$. \\
+100 & 2 & Checksum algorithm 1, CRC-32C. \\
+102 & 2 & Physical row format 2. \\
+104 & 8 & Nonzero immutable creation generation. \\
+112 & 8 & First permitted data page, 1. \\
+120 & 8 & Reserved zero. \\
+128 & $P-128$ & Reserved zero tail. \\
+\bottomrule
+\end{longtable}
+
+Page zero is made durable before data allocation. It intentionally has no mutable page-count hint: the superblock owns that information. The common header generation equals the recorded creation generation and must not exceed the selected superblock generation. Creation, reopen, VACUUM, and page-size rewrite all validate or create this header. A row identifier that points to page zero is invalid.
+
+\sourcecode{src/minisql/storage/table_header.ml}{encode, validatePage, initialize, and checked open paths.}
+
+\section{Heap pages and stable row references}
+\index{slotted page}\index{row reference}
+\input{figures/slotted-page}
+
+A heap page has a slot directory growing upward from byte 64 and record allocations growing downward from the page end. A slot is eight bytes: U16 record offset, U16 logical record length, U16 state, and U16 generation. Slot $i$ starts at $64+8i$.
+
+\begin{longtable}{p{.17\linewidth}p{.72\linewidth}}
+\toprule State & Meaning \\\midrule
+0 & Live record. \\
+1 & Deleted; offset and length are zero. \\
+2 & Forwarding root, retaining the externally referenced row identity. \\
+3 & Internal forwarding record. \\
+4 & Moved record. \\
+\bottomrule
+\end{longtable}
+
+These are enumerated states, not flags that may be combined. Every nondeleted allocation starts on an eight-byte boundary and occupies the logical length rounded up to eight bytes. Padding is zero. A row-v2 record already has an aligned length; a short forwarding or other record can need slot-level padding.
+
+The directory size is $8\times\mathrm{slotCount}$, so free-start is $64+8\times\mathrm{slotCount}$. Free-end is aligned. If no deleted slot can be reused, inserting a record requires its rounded allocation size plus another eight directory bytes. On an empty 4096-byte page, a three-byte body occupies eight bytes at offset 4088. A following nine-byte body occupies sixteen bytes at 4072. Two directory entries consume sixteen bytes, leaving $4096-64-16-24=3992$ contiguous free bytes.
+
+Compaction moves record bodies but preserves slot IDs and generations. Deletion advances a slot generation; generation 65535 is retired instead of wrapped. Thus a stale row reference cannot silently identify a new row that reused the same physical slot. A forwarding record retains a stable root when a growing row moves. Its 24-byte \code{MSFW} layout contains version, target page, slot, and generation; resolution rejects cycles and is bounded to 64 links.
+
+\sourcecode{src/minisql/storage/slotted_page.ml}{Slot states, aligned allocation, generation handling, and validation.}
+\sourcecode{src/minisql/storage/heap_file.ml}{Stable row identities and forwarding chains.}
+
+\section{Physical row format 2}
+\index{row format}\index{binary64}
+\subsection{Header, NULL bitmap, and directory}
+
+A row starts at an eight-byte-aligned offset and its total encoded length is a multiple of eight. Its header is:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Field \\\midrule
+0 & 4 & ASCII \code{MSRW}. \\
+4 & 2 & Row format 2. \\
+6 & 2 & Schema version, 1--65535. \\
+8 & 2 & Stored column count; codec limit 1--4095. \\
+10 & 2 & NULL bitmap bytes, $\lceil C/8\rceil$. \\
+12 & 2 & Directory offset, $\mathrm{align8}(16+\lceil C/8\rceil)$. \\
+14 & 2 & Reserved zero. \\
+16 & variable & NULL bitmap, then zero alignment padding. \\
+\bottomrule
+\end{longtable}
+
+For column $i$, the NULL bit is bit $i\bmod 8$ of byte $\lfloor i/8\rfloor$, least-significant bit first. Unused bitmap bits are zero. Each eight-byte directory entry contains U16 type code, U16 flags, U16 value offset, and U16 value length. Value offsets are relative to the row start.
+
+Flags are exactly 0 for inline, 1 for NULL, or 2 for an external TEXT/BLOB pointer. A NULL has length zero and the current value cursor, without new alignment padding; its bitmap bit and flag must agree. An empty string instead has flag 0, a clear NULL bit, and length zero. Readers reject combinations such as flag 3, inconsistent bitmap entries, noncanonical offsets, and nonzero padding.
+
+\subsection{Value representations}
+
+\begin{longtable}{p{.08\linewidth}p{.18\linewidth}p{.48\linewidth}p{.12\linewidth}}
+\toprule Code & Type & Physical value & Align \\\midrule
+1 & BOOLEAN & One byte, 0 or 1. & 1 \\
+2 & SMALLINT & Signed 16-bit. & 2 \\
+3 & INTEGER & Signed 32-bit. & 4 \\
+4 & BIGINT & Signed two's-complement 64-bit. & 8 \\
+5 & REAL & Finite IEEE-754 binary64. & 8 \\
+6 & DOUBLE & Finite IEEE-754 binary64. & 8 \\
+7 & DECIMAL & Signed 64-bit coefficient; scale belongs to schema. & 8 \\
+8 & CHAR & UTF-8 with ASCII-space padding to declared byte width. & 1 \\
+9 & VARCHAR & UTF-8 bytes. & 1 \\
+10 & TEXT & UTF-8 inline or external pointer. & 1/8 \\
+11 & BINARY & Exact-width raw bytes. & 1 \\
+12 & VARBINARY & Raw bytes. & 1 \\
+13 & BLOB & Raw bytes inline or external pointer. & 1/8 \\
+14 & DATE & Signed 32-bit epoch-day count. & 4 \\
+15 & TIME & Signed 64-bit microseconds. & 8 \\
+16 & TIMESTAMP & Signed 64-bit epoch microseconds. & 8 \\
+\bottomrule
+\end{longtable}
+
+Every non-NULL value begins at its natural alignment; introduced bytes are zero. External pointers align to eight regardless of logical type. After the last value, zero padding brings the entire row to eight-byte length. The U16 lengths/offsets give a maximum aligned encoded row size of 65528 bytes, while the containing page and directory usually impose a lower inline limit.
+
+Both REAL and DOUBLE use eight bytes. REAL is not a four-byte float here. Positive/negative zero, subnormal values, and finite binary64 significands are preserved by the storage codec. NaN and infinities are rejected. Exact storage does not remove the separately documented SQL expression and network-rendering limitations.
+
+\subsection{A complete row example}
+
+For schema version 1 containing BIGINT 1, TEXT \code{Nils}, and BOOLEAN true, the directory begins at 24, the three value offsets are 48, 56, and 60, and the complete row has 64 bytes:
+
+\begin{lstlisting}
+4d 53 52 57 02 00 01 00 03 00 01 00 18 00 00 00
+00 00 00 00 00 00 00 00 04 00 00 00 30 00 08 00
+0a 00 00 00 38 00 04 00 01 00 00 00 3c 00 01 00
+01 00 00 00 00 00 00 00 4e 69 6c 73 01 00 00 00
+\end{lstlisting}
+
+The first sixteen bytes are the header. Byte 16 is the NULL bitmap; bytes 17--23 align the directory. Three directory entries consume 24 bytes. The BIGINT occupies eight bytes, the text four, and the Boolean one; the final three bytes are padding. An inspector needs the catalog schema for decimal scale and declared widths, not merely the row's type tags.
+
+Compatible schema evolution can leave an older stored column prefix. The decoder accepts that prefix within the same physical generation, and the executor supplies missing trailing columns from schema rules. This is not permission to decode a row-format-1 record with a row-format-2 codec.
+
+\sourcecode{src/minisql/storage/row_codec.ml}{Aligned row encode/decode, type tags, and prefix-compatible decoding.}
+\sourcecode{src/minisql/common/float_codec.ml}{Exact finite binary64 conversion.}
+
+\section{Overflow values}
+\index{overflow}
+
+The SQL writer externalizes TEXT/BLOB values larger than one quarter of the database page size. Their row directory entry refers to a 48-byte pointer rather than the whole value. The physical maximum length is U32, 4294967295 bytes; transport and configured resource bounds can be much smaller.
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & External pointer field \\\midrule
+0 & 4 & ASCII \code{MSOP}. \\
+4 & 2 & Version 2. \\
+6 & 2 & Reserved zero. \\
+8 & 8 & File identifier. \\
+16 & 8 & First overflow page. \\
+24 & 4 & Total value length, U32. \\
+28 & 4 & Reserved zero alignment; not a high length word. \\
+32 & 8 & Owner identifier. \\
+40 & 4 & CRC-32C of the complete external value. \\
+44 & 4 & CRC-32C of the 48-byte pointer with this field zeroed. \\
+\bottomrule
+\end{longtable}
+
+An empty external value has no chain and uses UINT64\_MAX as the first-page sentinel. Nonempty chain pages use common type 2. After the 64-byte page header, their payload is:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Overflow page field \\\midrule
+64 & 4 & ASCII \code{MSOV}. \\
+68 & 2 & Version 2. \\
+70 & 2 & Reserved zero. \\
+72 & 8 & Owner identifier. \\
+80 & 8 & Next page, or UINT64\_MAX at chain end. \\
+88 & 4 & Chunk byte length. \\
+92 & 4 & Total value length, U32. \\
+96 & 4 & Zero-based chunk sequence. \\
+100 & 4 & Reserved zero. \\
+104 & variable & Chunk bytes, at most $P-104$. \\
+\bottomrule
+\end{longtable}
+
+Reads validate page identity, owner, sequence, length, checksums, and termination before returning a value. The pointer checksum, each page checksum, and full-value checksum serve different scopes. A valid pointer checksum alone cannot prove the chain is complete.
+
+\sourcecode{src/minisql/storage/overflow.ml}{Pointer, chain encoding, and validated reads.}
+
+\section{B+ tree files and typed keys}
+\index{B+ tree}\index{index key encoding}
+\subsection{Tree metadata and nodes}
+
+An index uses the same 8192-byte superblock region. Logical pages 0 and 1 contain redundant tree metadata; nodes start at page 2. Metadata uses common page type 3 with flag 32768, zero item count, free-start 128, and free-end $P$.
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Tree metadata payload \\\midrule
+64 & 4 & ASCII \code{MSBM}. \\
+68 & 2 & Version 2. \\
+70 & 2 & Unique flag: 1 for unique, otherwise 0. \\
+72 & 8 & Tree generation. \\
+80 & 8 & Root page. \\
+88 & 8 & First leaf page. \\
+96 & 8 & Last leaf page. \\
+104 & 4 & Entry count. \\
+108 & 2 & Tree height. \\
+110 & 18 & Reserved zero. \\
+\bottomrule
+\end{longtable}
+
+An empty tree has zero height/count/references. Publication alternates metadata pages after appending the new node state. Full open verifies the highest valid referenced graph and can fall back to an older independently valid generation when the latest graph is damaged. This is a structural recovery mechanism, not a substitute for backup.
+
+Leaf pages have common type 4 and payload marker \code{MSBL} at 64, version at 68, count at 72, previous/next leaf at 76/84, and entries from 96. Each entry is U16 key length, U16 value length, key bytes, then value bytes. Keys are 1--256 bytes and values 1--3584 bytes. The implementation caps a leaf at ten entries even on larger database pages.
+
+Internal pages have common type 3 and marker \code{MSBI} at 64, version at 68, positive level at 70, separator count at 72, first child at 76, and separator records from 88. A separator is U16 key length, U16 zero, U64 right child, then key bytes. The implementation permits 2--12 children, hence 1--11 separators. A separator is the first key of its right-hand child under the actual key comparator.
+
+\subsection{SQL key envelope and ordering}
+
+A SQL key starts with ASCII \code{MSK} and one version byte 2, followed by one or more typed self-delimiting components. The entire prefix and all components count toward the 256-byte limit.
+
+\begin{longtable}{p{.12\linewidth}p{.27\linewidth}p{.5\linewidth}}
+\toprule Tag & Domain & Payload after tag \\\midrule
+01 & SQL NULL & None. \\
+02 & BOOLEAN & One byte 00 or 01. \\
+03 & Integral, DECIMAL, DATE/TIME/TIMESTAMP & Signed 64-bit little-endian value/coefficient/temporal unit. \\
+04 & REAL/DOUBLE & Eight little-endian binary64 bytes. \\
+05 & Character types & Escaped UTF-8 bytes, then 00 00 terminator. \\
+06 & Binary types & Escaped raw bytes, then 00 00 terminator. \\
+\bottomrule
+\end{longtable}
+
+A zero byte in a variable payload is escaped as 00 FF; the terminator is 00 00. Empty strings are therefore representable and distinct from NULL. Catalog metadata fixes each component's declared type and decimal scale.
+
+Little-endian numbers are not lexicographically ordered. The tree comparator reads their typed numeric meaning. For example, 255 contains \code{FF 00 ...}, whereas 256 contains \code{00 01 ...}; the comparator still orders 255 before 256. There is no persisted sign-bit flip or big-endian transform. Composite keys compare component by component. NULL sorts by its low tag in an index key; SQL ORDER BY NULL positioning is a separate executor concern.
+
+\begin{lstlisting}
+INTEGER 1:   4D 53 4B 02 03 01 00 00 00 00 00 00 00
+INTEGER -1:  4D 53 4B 02 03 FF FF FF FF FF FF FF FF
+INTEGER 256: 4D 53 4B 02 03 00 01 00 00 00 00 00 00
+DOUBLE 0.1:  4D 53 4B 02 04 9A 99 99 99 99 99 B9 3F
+TEXT Nils:   4D 53 4B 02 05 4E 69 6C 73 00 00
+\end{lstlisting}
+
+Floating zero signs are preserved in persisted keys and included values, while numerical comparison treats them as equal for lookup and uniqueness. Raw B+ tree keys outside the reserved MSK family retain bytewise ordering. Leaf values are opaque to the tree's ordering; equal keys use bytewise value ordering even when a value happens to start with MSK.
+
+\subsection{Row references and covering payloads}
+
+An ordinary leaf value is twelve bytes: U32 heap page number at 0, U16 slot ID at 4, U16 slot generation at 6, and U32 table ID at 8. The slot generation detects reuse. An INCLUDE value adds ASCII \code{MSI} at offset 12, version byte 2 at 15, and one typed component per included catalog column from 16 onward. There is no repeated column-name list or count in each payload.
+
+The components use the same tags as keys, without the MSK prefix. Included binary64 values decode directly for index-only scans. The catalog order controls interpretation. A wrong version, incomplete component, extra tail bytes, or a catalog-type mismatch is corruption. Changing an INCLUDE list therefore requires proper index DDL and maintenance rather than editing a leaf payload.
+
+\sourcecode{src/minisql/storage/btree.ml}{Metadata, node capacities, typed comparison, and generation publication.}
+\sourcecode{src/minisql/executor/dml.ml}{indexValuePart, physical references, and INCLUDE encoding/decoding.}
+
+\section{Database metadata and scalable catalogs}
+\index{catalog}\index{database metadata}
+
+\path{db.meta} is paged file type 4 with file ID 1. Its logical page 0 is common type 5. At page offset 64 is U32 envelope length; the \code{MSDBM001} envelope begins at 68. For an unencrypted file, that envelope begins at physical offset 8260.
+
+The generic envelope header is 32 bytes: eight-byte magic, U16 enclosed-format version at 8, U16 kind at 10, U32 flags at 12, U32 payload length at 16, payload CRC at 20, header CRC at 24, and four reserved zero bytes at 28. The header CRC zeroes its own field. For database metadata, version is 2, kind is 1, flags are zero, and the payload is:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & Database metadata payload \\\midrule
+0 & 4 & Page size. \\
+4 & 4 & Logical WAL segment size. \\
+8/\allowbreak10/\allowbreak12/\allowbreak14/\allowbreak16 & 2 each & Database/table/index/WAL/row versions: 2,2,2,1,2. \\
+18 & 2 & Text encoding 1, UTF-8. \\
+20 & 2 & Collation 1, binary. \\
+22 & 2 & Database-name UTF-8 byte length $L$. \\
+24 & 8 & Next object ID. \\
+32 & 8 & Next transaction ID. \\
+40 & 8 & Checkpoint LSN. \\
+48 & 16 & Database UUID. \\
+64 & 16 & Reserved zero. \\
+80 & $L$ & Database-name bytes without terminator. \\
+\bottomrule
+\end{longtable}
+
+The payload length is exactly $80+L$. The codec permits a nonempty name up to 255 bytes; database creation applies stricter identifier rules first. The persisted identifiers/LSNs use U64 fields but are restricted to the supported nonnegative MiniLang scalar range, at most $2^{60}-1$. Do not infer full-U64 API capacity from physical field width alone.
+
+The bootstrap catalog uses file ID 2 and retains an independent version-1 MSCAT001 envelope. Large catalog envelopes are divided into logical page chunks with a BLB2 header: marker at 64, continuation version at 68, total envelope length at 72, chunk index at 80, page count at 88, chunk length at 96, reserved at 100, and data at 104. The reader checks global size and ordering. Catalogs are not restricted to one page or an obsolete one-MiB snapshot.
+
+Schema-history and schema-extension files retain durable SQL definitions and metadata beyond the bootstrap catalog. DDL publication uses a pending journal with before-images and file-move plans. PREPARED means recovery must restore the prior state; COMMITTED means publication succeeded and cleanup can finish. A maintenance journal uses a related protocol for table replacements. Never decide that a temporary-looking file is disposable without understanding whether it belongs to such a pending operation.
+
+\sourcecode{src/minisql/catalog/metadata.ml}{Database metadata and catalog codecs.}
+\sourcecode{src/minisql/catalog/catalog.ml}{Paged catalog continuation and security-generation handling.}
+\sourcecode{src/minisql/catalog/schema_history.ml}{DDL publication and durable schema definitions.}
+
+\section{WAL, checkpoints, and recovery boundaries}
+\index{checkpoint}\index{WAL}
+
+The WAL contains framed transaction records and complete page images. Its logical segment size does not imply a directory of individual segment files: the implementation stores consecutive records in \path{wal/wal.log}. A record has an 80-byte header:
+
+\begin{longtable}{p{.12\linewidth}p{.12\linewidth}p{.65\linewidth}}
+\toprule Offset & Bytes & WAL field \\\midrule
+0 & 8 & ASCII \code{MSQLWAL1}. \\
+8 & 2 & Version 1. \\
+10 & 2 & Header size 80. \\
+12 & 2 & Record type. \\
+14 & 2 & Flags. \\
+16 & 4 & Complete record length. \\
+20 & 4 & Payload length. \\
+24 & 8 & LSN. \\
+32 & 8 & Transaction ID. \\
+40 & 8 & File ID. \\
+48 & 8 & Page number. \\
+56 & 8 & Page LSN. \\
+64 & 4 & Payload CRC-32C. \\
+68 & 4 & Header CRC-32C with this field zeroed. \\
+72 & 8 & Zero for plaintext; \code{TDE1WAL1} for encrypted payload. \\
+\bottomrule
+\end{longtable}
+
+Types 1--4 are transaction begin, page image, commit, and abort; 5/6 reserve checkpoint begin/end. A page-image payload has the matching complete page identity and LSN. Encrypted payloads add a nonce/ciphertext/tag representation. The unchanged WAL framing version cannot make old-format page images valid in a new-format database.
+
+WAL ordering and flushing determine which acknowledged transactions can be recovered. Recovery uses committed page images and refuses inconsistent middle-of-log corruption; an incomplete terminal record is a different case from arbitrary damage in an otherwise committed prefix. The engine's native recovery tests exercise these boundaries. Storage hardware and the operating system must still honor the requested flush semantics.
+
+Checkpoint metadata is a 512-byte file with two 256-byte slots. Each slot has MSQLCKP1 magic, version/size, generation at 16, checkpoint LSN at 24, redo-start LSN at 32, WAL record count at 40, database UUID at 48, and CRC at 64. The highest valid generation wins. Checkpointing changes the redo starting point; it is not a backup and does not replace the database's data files.
+
+The 32-byte \path{wal/wal.log.durable} marker contains MSWDL001, version/size, a durable prefix LSN at 16, and CRC at 24. It is atomically replaced after WAL flush succeeds. It supports replication's view of a durable prefix; local WAL recovery correctness does not depend on treating that marker as a commit record.
+
+Index state, DDL journals, maintenance journals, schema metadata, and WAL each have specific recovery paths. An index can be rebuilt from authoritative rows; a lost authoritative table cannot be reconstructed from an arbitrary current index set. Restore a verified backup plus the matching supported archive history when data files are irrecoverable.
+
+\sourcecode{src/minisql/transaction/wal.ml}{Record framing, durable-prefix publication, and encrypted payload markers.}
+\sourcecode{src/minisql/transaction/recovery.ml}{Committed-page recovery and corruption handling.}
+\sourcecode{src/minisql/transaction/checkpoint.ml}{Redundant checkpoint metadata.}
+
+\section{Inspection discipline and remaining format references}
+
+Work on an offline copy, identify the database generation first, and validate wrappers before following offsets. A robust parser should check lengths before allocation; identity, checksum, and reserved fields before interpreting payloads; and cycle/sequence bounds before traversing chains. It should preserve corruption diagnostics instead of silently skipping bytes until another magic string appears.
+
+The repository keeps detailed, separately versioned specifications for additional persisted structures. Use these alongside the current code when implementing specialist inspection tools:
+
+\begin{longtable}{p{.44\linewidth}p{.47\linewidth}}
+\toprule Specification under \path{docs/formats/} & Scope \\\midrule
+\path{protected-envelope-v1.md} & Generic metadata envelope and checksums. \\
+\path{catalog-v1.md}, \path{catalog-bootstrap-v1.md} & Catalog records and bootstrap representation. \\
+\path{schema-history-v1.md}, \path{schema-extensions-v1.md} & Schema versions, constraints, views, sequences, triggers, and routines. \\
+\path{ddl-journal-v1.md}, \path{maintenance-journal-v1.md} & Atomic publication/replacement recovery. \\
+\path{statistics-v1.md} & Statistics-family representation and versioned extensions. \\
+\path{security-catalog-v1.md}, \path{audit-log-v1.md} & Authorization metadata and audit chain. \\
+\path{encryption-envelope-v1.md} & Encrypted pages, WAL, metadata, and key-related envelope rules. \\
+\path{backup-manifest-v1.md}, \path{wal-archive-v1.md} & Backup/archive identity, manifest, and replay boundaries. \\
+\path{ha-fencing-records-v1.md} & Epoch and lease fencing state. \\
+\path{sort-spill-v1.md} & Validated temporary run files. \\
+\path{wire-protocol-v1.md}, \path{secure-transport-v1.md} & Network framing and authenticated transport. \\
+\bottomrule
+\end{longtable}
+
+A filename ending in v1 can describe a retained format family with newer enclosed records; inspect its explicit version tables. The old row/table/index v1 documents are historical references, not the layouts accepted by this development tree.

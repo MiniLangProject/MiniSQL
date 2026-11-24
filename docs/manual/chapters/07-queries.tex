@@ -1,0 +1,476 @@
+\chapter{Querying data: from a single table to recursive reports}
+\label{sql:queries}
+\index{SELECT}\index{WHERE}\index{JOIN}\index{GROUP BY}\index{HAVING}\index{ORDER BY}\index{LIMIT}\index{OFFSET}\index{DISTINCT}\index{UNION}\index{INTERSECT}\index{EXCEPT}\index{CTE}\index{WITH RECURSIVE}\index{subqueries}\index{NOT EXISTS}
+
+A useful query starts with a question stated at the correct level: one row per customer, one row per order, or one row per product group. Many SQL mistakes are really mistakes about that level. A join can multiply rows, a GROUP BY can collapse them, and a window function can calculate across a group while preserving individual rows. This chapter develops those operations in that order.
+
+\section{The complete SELECT structure}
+
+\begin{lstlisting}[language=SQL]
+[WITH [RECURSIVE] cte_definition [, ...]]
+SELECT [DISTINCT] select_item [, ...]
+[FROM source [AS alias]
+   { , source [AS alias]
+   | [INNER] JOIN source [AS alias] ON condition
+   | {LEFT | RIGHT | FULL} [OUTER] JOIN source [AS alias]
+       ON condition
+   | CROSS JOIN source [AS alias] } ...]
+[WHERE condition]
+[GROUP BY expression [, ...]]
+[HAVING condition]
+[{UNION | INTERSECT | EXCEPT} [ALL] SELECT ...] ...
+[ORDER BY expression [ASC | DESC] [NULLS FIRST | NULLS LAST]
+          [, ...]]
+[LIMIT integer]
+[OFFSET integer [ROW | ROWS]]
+[FETCH {FIRST | NEXT} integer {ROW | ROWS} ONLY];
+\end{lstlisting}
+
+LIMIT and FETCH are alternatives and cannot be combined. OFFSET precedes FETCH and follows LIMIT in this grammar. A source is a table, a view, a CTE, or a parenthesized query with a required alias. There is no SELECT ALL keyword in the implemented grammar: omit DISTINCT for ordinary duplicate-preserving output.
+
+The clause order written in SQL is fixed. A helpful logical reading order is: choose sources and joins, filter rows with WHERE, form groups, filter groups with HAVING, produce output expressions, apply duplicate/set rules, order the result, and finally select the requested slice. The optimizer may execute physical operations differently when that preserves the result.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseSelectCore, parseSelect, parseTableSource, and parseWithSelect define the SELECT grammar.}
+
+\section{Projection, aliases, and DISTINCT}
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name, city
+FROM customers;
+
+SELECT product_id, name, stock * 2 AS double_stock
+FROM products;
+
+SELECT DISTINCT city FROM customers ORDER BY city;
+\end{lstlisting}
+
+Projection chooses output columns and computes expressions. AS gives a stable output name. For a quick inspection, \code{SELECT *} expands every source column; for application code, an explicit list avoids accidental changes to result shape when columns are added. \code{c.*} expands only the columns of the named source or alias.
+
+DISTINCT removes duplicate complete output rows, not duplicates of just the first column. Two rows with the same city but different customer identifiers remain distinct if both fields are selected. NULLs compare as equal for duplicate elimination, even though ordinary \code{NULL = NULL} is unknown in a predicate.
+
+\begin{lstlisting}[language=SQL]
+SELECT DISTINCT customer_id, city FROM customers;
+\end{lstlisting}
+
+This is not a list of unique cities because the identifier is part of the output row. Determine which fact should be unique before adding DISTINCT. Using DISTINCT to conceal an incorrectly multiplied join usually hides the real issue and can discard legitimate data.
+
+\sourcecode{src/minisql/sql/binder.ml}{SELECT item expansion and output-name resolution determine projection shape.}
+\sourcecode{src/minisql/executor/projection.ml}{distinct and sameValue define output-row deduplication, including NULL handling.}
+
+\section{Filtering and Boolean composition}
+
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name, stock
+FROM products
+WHERE stock > 0 AND stock < 10
+ORDER BY stock, product_id;
+\end{lstlisting}
+
+WHERE is applied to individual input rows and accepts only a Boolean expression. A column alias created by the SELECT list is not generally available in WHERE. Repeat the underlying expression, or place the projection in a derived table and filter the named output there.
+
+\begin{lstlisting}[language=SQL]
+SELECT p.product_id, p.double_stock
+FROM (
+    SELECT product_id, stock * 2 AS double_stock
+    FROM products
+) AS p
+WHERE p.double_stock >= 20;
+\end{lstlisting}
+
+Parenthesize mixed AND/OR conditions to communicate the intended grouping. NULL-sensitive expressions require particular care: \code{city <> 'Berlin'} excludes rows with unknown city, while \code{city <> 'Berlin' OR city IS NULL} includes them. Neither formulation is universally correct; choose the one that matches the question.
+
+\section{Sorting and pagination}
+\label{sql:ordering}
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name, city
+FROM customers
+ORDER BY city ASC NULLS LAST, name ASC, customer_id ASC;
+\end{lstlisting}
+
+ASC is the default direction. Without an explicit NULLS option, NULL sorts last for ascending order and first for descending order. An explicit NULLS clause makes the contract visible to a reader. Text order uses bytewise, case-sensitive comparison rather than a locale's dictionary rules.
+
+ORDER BY can refer to an unambiguous SELECT alias. It can also use an expression over the source in a simple query. In a compound query with set operations, the order expression must match an output expression. Do not use positional shorthand such as ORDER BY 1: the binder treats the integer as a constant expression, not as a request for the first result column. GROUP BY likewise expects actual expressions, not positional shorthand or SELECT aliases.
+
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name, stock
+FROM products
+ORDER BY stock DESC, product_id
+LIMIT 10 OFFSET 20;
+
+SELECT product_id, name, stock
+FROM products
+ORDER BY stock DESC, product_id
+OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY;
+\end{lstlisting}
+
+Both forms skip the first 20 ordered rows and return at most 10. The count and offset are integer syntax values, not arbitrary expressions or parameter placeholders. Use nonnegative values. LIMIT 0 produces no rows. FETCH requires an explicit count and ONLY; WITH TIES and PERCENT are not implemented.
+
+A deterministic page order should include a unique tie-breaker. If several products have the same stock count and the order contains no unique key, their relative order is not guaranteed. Offset pagination can also shift when another transaction inserts or removes earlier rows. For a growing key-ordered list, keyset pagination often provides a clearer continuation rule:
+
+\begin{lstlisting}[language=SQL]
+SELECT product_id, name
+FROM products
+WHERE product_id > 100
+ORDER BY product_id
+LIMIT 20;
+\end{lstlisting}
+
+The application remembers the final product identifier from the previous page. This example assumes the ordering key is stable and that the required semantics are ``continue after this key.'' A consistent report across multiple requests still needs an appropriate transaction or application snapshot strategy.
+
+\sourcecode{src/minisql/executor/sort.ml}{compareNullable defines default NULL placement.}
+\sourcecode{src/minisql/sql/binder.ml}{bindSelect resolves ORDER BY aliases and checks compound-query ordering.}
+\sourcecode{src/tests/m36_predicates_fetch.ml}{Tests verify OFFSET/FETCH and reject mixed LIMIT/FETCH.}
+
+\section{Joins: combine related rows}
+\label{sql:joins}
+
+\subsection{Inner join}
+
+\begin{lstlisting}[language=SQL]
+SELECT o.order_id, c.name, o.order_status
+FROM orders AS o
+INNER JOIN customers AS c ON c.customer_id = o.customer_id
+ORDER BY o.order_id;
+\end{lstlisting}
+
+An inner join returns matching combinations. If one customer has three orders, that customer's name appears in three result rows. That is correct for a report with one row per order. The same multiplication would be wrong if you intended one row per customer and then counted customers with COUNT(*).
+
+JOIN without INNER means INNER JOIN. Non-cross joins require ON in this grammar. NATURAL JOIN and JOIN USING are not supported. Qualify identically named columns and keep join conditions separate from additional row filters for readability.
+
+\subsection{Left, right, and full outer joins}
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name, o.order_id
+FROM customers AS c
+LEFT JOIN orders AS o ON o.customer_id = c.customer_id
+ORDER BY c.customer_id, o.order_id;
+\end{lstlisting}
+
+A left join retains every left row. When there is no matching order, the order columns are NULL. RIGHT JOIN retains every right row; FULL JOIN retains unmatched rows from either side. The OUTER keyword is optional. A matching pair appears once for each matching combination, just as in an inner join.
+
+The location of a filter matters:
+
+\begin{lstlisting}[language=SQL]
+-- Keep every customer, attach only paid orders.
+SELECT c.customer_id, o.order_id
+FROM customers AS c
+LEFT JOIN orders AS o
+  ON o.customer_id = c.customer_id AND o.order_status = 'paid';
+\end{lstlisting}
+
+Moving the paid-order test to WHERE would remove the NULL-extended rows and therefore omit customers with no paid order. Decide whether a condition defines a match or filters the final joined row. This distinction is often the key to correct outer joins.
+
+\subsection{Cross joins and comma-separated sources}
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, p.product_id
+FROM customers AS c CROSS JOIN products AS p;
+\end{lstlisting}
+
+A cross join forms all combinations. Ten customers and twenty products produce two hundred rows. Use it when combinations are the purpose, such as constructing a small planning grid. A missing join condition in a larger query can cause unexpectedly large intermediate results.
+
+Comma-separated sources are also supported:
+
+\begin{lstlisting}[language=SQL]
+SELECT c.name, o.order_id
+FROM customers AS c, orders AS o
+WHERE o.customer_id = c.customer_id;
+\end{lstlisting}
+
+The parser begins with a cartesian product and the binder can promote suitable equality predicates into the costed join path. Explicit JOIN remains easier to review because it makes the relationship visible. Do not rely on another engine's subtle precedence rules when mixing comma lists and explicit joins; write one clear explicit join structure.
+
+\subsection{Self joins and join limitations}
+
+A table can be joined to itself with different aliases. Each alias is a separate logical source. For example, an employee table with an integer manager identifier can be joined to itself to show employee and manager names. The two sources must be distinguishable even though they read the same physical table.
+
+The current binder rejects subqueries inside ON predicates. Use a derived table or CTE to calculate the required source before joining. There is no LATERAL, APPLY, or directly correlated FROM subquery. Outer joins retain SQL order in the optimizer, whereas eligible inner equijoins may be reordered. Query correctness must not depend on a specific physical join algorithm.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseJoinClause and parseSelectCore accept explicit and comma join forms.}
+\sourcecode{src/minisql/sql/binder.ml}{promoteCrossJoinEqualities, source resolution, and join-condition checks define binding.}
+\sourcecode{src/tests/m16_relational_engine.ml}{Inner joins, comma joins, aliases, and aggregate joins are exercised together.}
+\sourcecode{src/tests/m37_outer_joins.ml}{RIGHT and FULL joins are checked for matched and NULL-extended rows.}
+
+\section{Grouping and aggregate reports}
+\label{sql:grouping}
+
+GROUP BY changes the output level from rows to groups. Every output expression must be grouped or computed from aggregates, or be an expression whose components satisfy those rules. MiniSQL does not infer arbitrary functional dependencies to permit an unrelated selected column merely because another selected column is a primary key.
+
+\begin{lstlisting}[language=SQL]
+SELECT o.order_status, COUNT(*) AS number_of_orders
+FROM orders AS o
+GROUP BY o.order_status
+ORDER BY o.order_status;
+\end{lstlisting}
+
+This produces one row per distinct status. WHERE filters input rows before grouping. HAVING filters the resulting groups:
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, COUNT(*) AS number_of_orders
+FROM orders
+WHERE order_status = 'paid'
+GROUP BY customer_id
+HAVING COUNT(*) >= 2
+ORDER BY number_of_orders DESC, customer_id;
+\end{lstlisting}
+
+The query asks for customers with at least two paid orders. Moving the paid-state filter into HAVING would change the grouping logic or be invalid. A HAVING clause requires grouping or an aggregate. Nested aggregates such as SUM(COUNT(*)) are not accepted at one query level; calculate the first aggregate in a derived table and aggregate its output separately.
+
+\subsection{COUNT(*) versus COUNT(column)}
+
+COUNT(*) counts rows, including a NULL-extended row produced by an outer join. COUNT(expression) counts only non-NULL expression values. To count matching orders while retaining customers without orders, count the non-nullable key on the order side:
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name, COUNT(o.order_id) AS order_count
+FROM customers AS c
+LEFT JOIN orders AS o ON o.customer_id = c.customer_id
+GROUP BY c.customer_id, c.name
+ORDER BY c.customer_id;
+\end{lstlisting}
+
+Customers with no orders get zero. COUNT(*) would count their one NULL-extended row and return one, which answers a different question.
+
+An aggregate query without GROUP BY produces a single summary row even when the input is empty. COUNT returns zero; SUM, AVG, MIN, MAX, BOOL\_AND, BOOL\_OR, and STRING\_AGG return NULL when no non-NULL values contribute. Use COALESCE when the application's display contract requires a default, while retaining awareness that ``no data'' and numeric zero are different facts.
+
+\begin{lstlisting}[language=SQL]
+SELECT COUNT(*) AS product_count,
+       COALESCE(SUM(stock), 0) AS stock_units
+FROM products;
+\end{lstlisting}
+
+The complete aggregate reference is in Chapter~\ref{sql:advanced}. DECIMAL aggregates share the current scale limitations of ordinary DECIMAL arithmetic. Examples here deliberately aggregate integer quantities.
+
+\subsection{Aggregate before joining when needed}
+
+If you join orders to order items and then count orders, each order appears once per item. Aggregate at the order level first when the report needs one row per order, or count distinct order identifiers where that is truly the intended measure. A derived table makes the level explicit:
+
+\begin{lstlisting}[language=SQL]
+SELECT o.order_id, c.name, q.units
+FROM orders AS o
+JOIN customers AS c ON c.customer_id = o.customer_id
+JOIN (
+    SELECT order_id, SUM(quantity) AS units
+    FROM order_items
+    GROUP BY order_id
+) AS q ON q.order_id = o.order_id
+ORDER BY o.order_id;
+\end{lstlisting}
+
+The inner query returns one row per order with its item-unit sum. The outer query then attaches descriptive data. GROUPING SETS, ROLLUP, CUBE, FILTER aggregate clauses, and ordered-set aggregates are not part of the current grammar.
+
+\sourcecode{src/minisql/sql/binder.ml}{groupedExpressionSafe and bindSelect validate grouped output, HAVING, and aggregate nesting.}
+\sourcecode{src/minisql/executor/aggregate.ml}{aggregateValue and streaming accumulator finalization define empty-input and NULL behavior.}
+
+\section{Set operations}
+
+UNION, INTERSECT, and EXCEPT combine the rows from complete SELECT queries. Every branch must return the same number of columns with compatible types. Matching is positional. Output names come from the first query.
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id FROM customers WHERE city = 'Berlin'
+UNION
+SELECT customer_id FROM orders WHERE order_status = 'paid'
+ORDER BY customer_id;
+\end{lstlisting}
+
+This returns each qualifying customer identifier once. UNION ALL keeps all occurrences. INTERSECT keeps rows present in both inputs. EXCEPT keeps rows in the left input that are absent from the right. The default is distinct behavior; write ALL to preserve multiplicities.
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Operation & Duplicate rule \\
+\midrule
+\endhead
+UNION & One copy of each distinct row from either input. \\
+UNION ALL & All left and right occurrences. \\
+INTERSECT & One copy of each row present in both inputs. \\
+INTERSECT ALL & Each row appears the minimum of its left and right occurrence counts. \\
+EXCEPT & One copy of each distinct left row not present on the right. \\
+EXCEPT ALL & Right occurrences cancel left occurrences one for one; remaining left occurrences survive. \\
+\bottomrule
+\end{longtable}
+
+The parser stores compound operations in their written sequence and the executor applies them from left to right. Do not assume that INTERSECT has a different precedence, as it does in some SQL systems. Use a derived table to group a subexpression intentionally. Individual branches do not accept their own trailing ORDER BY/LIMIT at the top compound level; put a branch inside a derived table if it needs its own limited subquery. The final ORDER BY and slice apply to the combined result.
+
+NULLs are treated as equal for row deduplication and matching in set operations. This is separate from the three-valued meaning of an equality predicate. Avoid mixing types whose runtime comparisons are known to be incomplete, such as temporal values or incompatible DECIMAL scales.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseSelect accumulates compound operations and the final ordering/slice.}
+\sourcecode{src/minisql/executor/aggregate.ml}{setOperation implements distinct and ALL multiplicity rules.}
+
+\Needspace{9\baselineskip}
+\section{Subqueries and derived tables}
+\label{sql:subqueries}
+
+\subsection{A scalar subquery returns one value}
+
+\begin{lstlisting}[language=SQL]
+SELECT (SELECT name FROM products WHERE product_id = 1)
+       AS selected_product;
+\end{lstlisting}
+
+A scalar subquery must return exactly one column. Zero rows produces NULL; more than one row is an error. If several rows are possible, decide whether the application wants an aggregate, an explicit ordered limit, or a different relationship. Adding LIMIT 1 without a meaningful ORDER BY hides the ambiguity rather than resolving it.
+
+\subsection{EXISTS and NOT EXISTS}
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name
+FROM customers AS c
+WHERE EXISTS (
+    SELECT o.order_id
+    FROM orders AS o
+    WHERE o.customer_id = c.customer_id
+);
+\end{lstlisting}
+
+EXISTS asks whether any row is produced, not what that row's values are. It returns a non-NULL Boolean. The corresponding NOT EXISTS syntax expresses absence in SQL, but the current native implementation has a verified defect for correlated NOT EXISTS. Positive correlated EXISTS and scalar correlated COUNT were checked successfully; do not infer that their success covers the negated form.
+
+\warning{Correlated NOT EXISTS currently fails}{With the checked native Linux build, a qualified correlated NOT EXISTS query fails with runtime error 1306, ``Struct has no member kind,'' both with and without ORDER BY. Use a left join and test the non-nullable key on the joined side for NULL to express the anti-join.}
+
+\begin{lstlisting}[language=SQL]
+SELECT c.customer_id, c.name
+FROM customers AS c
+LEFT JOIN orders AS o ON o.customer_id = c.customer_id
+WHERE o.order_id IS NULL
+ORDER BY c.customer_id;
+\end{lstlisting}
+
+This returns customers without orders. Test a column that is guaranteed non-NULL for a real match; testing an ordinary nullable column could incorrectly classify a matched row as absent.
+
+The reference to \code{c.customer\_id} in the earlier EXISTS example is correlated: it refers to the current outer row. Outer references must be explicitly qualified. The implementation supports these subqueries in non-grouped projection, filtering, and ordering expressions. It rejects subqueries in join conditions and queries that mix outer aggregate/window processing with subquery expressions. The present check is conservative and can reject even a non-correlated subquery at that outer aggregate/window level.
+
+\subsection{IN and NOT IN subqueries}
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name
+FROM customers
+WHERE customer_id IN (
+    SELECT customer_id FROM orders WHERE order_status = 'paid'
+);
+\end{lstlisting}
+
+The subquery must return one compatible column. Duplicates do not change membership. NULLs do matter, particularly for NOT IN: a nonmatching outer value and an inner NULL produce unknown. Filter NULLs from the subquery when appropriate, or use the left anti-join shown above. Avoid the verified correlated NOT EXISTS failure in this revision.
+
+\subsection{Derived tables have a required alias}
+
+\begin{lstlisting}[language=SQL]
+SELECT totals.customer_id, totals.order_count
+FROM (
+    SELECT customer_id, COUNT(*) AS order_count
+    FROM orders
+    GROUP BY customer_id
+) AS totals
+WHERE totals.order_count >= 2;
+\end{lstlisting}
+
+The inner result becomes a source with named columns. Give calculated outputs explicit aliases so the outer query has simple names to use. A derived table is scoped to this statement and does not create a persistent table. It is not automatically correlated to the sources beside it; there is no LATERAL syntax.
+
+\sourcecode{src/minisql/sql/binder.ml}{bindSubqueryExpression, maskOuterSelect, and bindSelect enforce subquery shape and context limits.}
+\sourcecode{src/tests/m43_views_subqueries.ml}{Tests cover zero/one/multiple-row scalar results and NULL-sensitive membership.}
+\sourcecode{src/tests/m16_relational_engine.ml}{Correlated scalar, EXISTS, IN, alias shadowing, and derived-source behavior are exercised.}
+
+\section{Common table expressions}
+\label{sql:cte}
+
+A common table expression, or CTE, gives a query-local name to an intermediate result. It can make a multi-step transformation readable without creating persistent objects.
+
+\begin{lstlisting}[language=SQL]
+WITH paid_orders AS (
+    SELECT order_id, customer_id
+    FROM orders
+    WHERE order_status = 'paid'
+), customer_totals AS (
+    SELECT customer_id, COUNT(*) AS paid_count
+    FROM paid_orders
+    GROUP BY customer_id
+)
+SELECT c.name, t.paid_count
+FROM customer_totals AS t
+JOIN customers AS c ON c.customer_id = t.customer_id
+ORDER BY t.paid_count DESC, c.customer_id;
+\end{lstlisting}
+
+CTEs are visible in declaration order: a later CTE can reference an earlier one. The final query can reference all of them. An optional column-name list can explicitly name the result columns. A CTE name must not duplicate another visible CTE or shadow a real table in the current binder. Choose descriptive, distinct names.
+
+WITH introduces a SELECT in this grammar, not arbitrary DML. It does not create a transaction boundary or a durable temporary table. Do not depend on an undocumented materialization hint; MATERIALIZED and NOT MATERIALIZED are not implemented syntax.
+
+\section{Recursive CTEs}
+
+A recursive CTE has an anchor that supplies initial rows and one recursive term that finds the next rows. The recursive term receives the current iteration's delta. Recursion ends when no new rows are produced or a guard reports excessive iteration.
+
+\begin{lstlisting}[language=SQL]
+WITH RECURSIVE numbers(n) AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1 FROM numbers WHERE n < 5
+)
+SELECT n FROM numbers ORDER BY n;
+\end{lstlisting}
+
+The result is 1, 2, 3, 4, 5. The anchor supplies 1. Each iteration adds one while the current value is below 5. UNION ALL preserves every generated row, so termination depends on the recursive term eventually returning no rows.
+
+UNION instead of UNION ALL removes rows already discovered and reaches a deduplicated fixpoint. This is useful for a graph reachability query whose state is a stable node identifier. It does not automatically make every recursive query safe: if each iteration adds a changing depth column, previously visited nodes may still be distinct output rows.
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE graph_edge (from_node INTEGER, to_node INTEGER);
+INSERT INTO graph_edge(from_node, to_node)
+VALUES (1, 2), (2, 3), (3, 1), (2, 4);
+
+WITH RECURSIVE reachable(node) AS (
+    SELECT 1 AS node
+    UNION
+    SELECT e.to_node
+    FROM graph_edge AS e
+    JOIN reachable AS r ON e.from_node = r.node
+)
+SELECT node FROM reachable ORDER BY node;
+\end{lstlisting}
+
+The intended reachable set is 1, 2, 3, 4 despite the cycle. The recursive form must consist of an anchor and exactly one UNION or UNION ALL recursive term with the same output width and compatible types. Explicit mutual recursion is not supported. A 10,000-iteration guard diagnoses a still-active recursion; result and resource limits can stop a query sooner. Always reason about termination before executing a recursive statement on a large graph.
+
+\sourcecode{src/minisql/sql/binder.ml}{Recursive CTE binding creates a typed working-table reference from the anchor.}
+\sourcecode{src/minisql/executor/executor.ml}{evaluateRecursiveQuery implements delta iterations, distinct fixpoints, and the 10,000-iteration guard.}
+\sourcecode{src/tests/m44_cte_windows.ml}{Tests verify chained CTEs, recursive numbers, cycle deduplication, and recursive views after reopen.}
+
+\section{Window calculations: keep the rows}
+
+A grouped query usually collapses several source rows into one group row. A window query retains the source rows and attaches a calculation over a related partition. Use a window when a report needs both a detail row and its group context.
+
+\begin{lstlisting}[language=SQL]
+SELECT order_id, customer_id,
+       ROW_NUMBER() OVER (
+           PARTITION BY customer_id ORDER BY order_id
+       ) AS customer_order_number,
+       COUNT(*) OVER (PARTITION BY customer_id) AS customer_orders
+FROM orders
+ORDER BY customer_id, order_id;
+\end{lstlisting}
+
+PARTITION BY groups rows for the calculation. ORDER BY inside OVER establishes order within a partition; it does not establish the final output order. The outer ORDER BY does that separately. Without PARTITION BY, the entire filtered input is one partition.
+
+\warning{Windows use whole partitions}{All supported aggregate windows calculate over the complete partition, even when OVER contains ORDER BY. They do not become running totals. LAST\_VALUE means the last row of the complete ordered partition. Explicit ROWS, RANGE, GROUPS, frame bounds, named WINDOW clauses, and QUALIFY are not implemented.}
+
+Window functions must be top-level SELECT or ORDER BY expressions. They cannot be embedded directly in arithmetic, CASE, or another function at the same query level, and cannot appear in WHERE or HAVING. Grouped aggregation and windows cannot be mixed at the same SELECT level. Put one stage in a derived table or CTE, then apply the next stage outside it:
+
+\begin{lstlisting}[language=SQL]
+WITH numbered_orders AS (
+    SELECT order_id, customer_id,
+           ROW_NUMBER() OVER (
+               PARTITION BY customer_id ORDER BY order_id DESC
+           ) AS position
+    FROM orders
+)
+SELECT order_id, customer_id
+FROM numbered_orders
+WHERE position = 1
+ORDER BY customer_id;
+\end{lstlisting}
+
+This finds the highest order identifier for each customer under the stated ordering. It does not imply that identifier order is the same as creation time. The complete ranking, navigation, and aggregate-window function reference follows in Chapter~\ref{sql:advanced}.
+
+\section{Reason about a result before tuning it}
+
+For each query, write down the intended row level and how NULLs should behave. Check join cardinalities using small data with a matching row, an unmatched row, and more than one match. For aggregation, test an empty group/input and a NULL value. For pagination, include ties. For recursion, include a cycle. Those cases reveal semantic mistakes much more effectively than a large happy-path dataset.
+
+Only after the result is correct should you inspect EXPLAIN, refresh statistics, and consider indexes. A faster plan for the wrong join or a missing WHERE condition is still wrong. The performance chapter explains the available physical operators and the difference between estimated choices and observed execution counters.
+
+\section{Practice report}
+
+Build a report with one row per customer containing the number of orders and the number of item units across those orders. Keep customers with no orders. Explain why joining all four tutorial tables and immediately applying COUNT(*) is not a correct order count. Use a CTE or derived table to calculate each quantity at the right level, then join the summaries. Finally, show only the first ten customers in a deterministic order and explain what would change if the list were paged while other sessions inserted orders.

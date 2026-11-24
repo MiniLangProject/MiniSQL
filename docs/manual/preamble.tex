@@ -1,0 +1,71 @@
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\ifdefined\pdfmapfile\pdfmapfile{+lm.map}\fi
+\usepackage{microtype}
+\usepackage[a4paper,inner=24mm,outer=23mm,top=24mm,bottom=25mm,headheight=15pt,headsep=8mm]{geometry}
+\usepackage{graphicx,xcolor,booktabs,longtable,array,tabularx,multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{listings,upquote}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec,fancyhdr,needspace}
+\usepackage{makeidx}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{url}
+\definecolor{Navy}{HTML}{142B45}
+\definecolor{Teal}{HTML}{087F8C}
+\definecolor{Ink}{HTML}{213547}
+\definecolor{Muted}{HTML}{56687A}
+\definecolor{Pale}{HTML}{EFF5F8}
+\definecolor{CodeBg}{HTML}{F4F7FA}
+\definecolor{Rule}{HTML}{CCD8E3}
+\definecolor{Amber}{HTML}{A85E06}
+\definecolor{AmberBg}{HTML}{FFF5E5}
+\hypersetup{colorlinks=true,linkcolor=Teal,urlcolor=Teal,citecolor=Teal,
+  pdftitle={MiniSQL User Manual},pdfauthor={MiniLangProject},
+  pdfsubject={Implementation-based English user manual; storage format 2},
+  pdfkeywords={MiniSQL, SQL, administration, MiniLang, storage format 2},
+  bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=1}
+\urlstyle{tt}
+\setlength{\emergencystretch}{3em}
+\setlength{\parskip}{.35em}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.16}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{1}
+\setlist{nosep,topsep=4pt,itemsep=3pt,leftmargin=1.6em}
+\titleformat{\chapter}[display]{\sffamily\bfseries\color{Navy}\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000}{\color{Teal}\large \MakeUppercase{\chaptertitlename} \thechapter}{8pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-8pt}{25pt}
+\titleformat{\section}{\Large\sffamily\bfseries\color{Navy}}{\thesection}{.7em}{}
+\titleformat{\subsection}{\large\sffamily\bfseries\color{Teal}}{\thesubsection}{.7em}{}
+\titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{Navy}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{20pt}{7pt}
+\titlespacing*{\subsection}{0pt}{14pt}{5pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{Navy}\textbf{MiniSQL}\enspace /\enspace User Manual}
+\fancyhead[R]{\sffamily\footnotesize\color{Muted}Storage format 2}
+\fancyfoot[L]{\sffamily\footnotesize\color{Muted}Implementation edition\enspace\SourceShort}
+\fancyfoot[R]{\sffamily\color{Navy}\thepage}
+\renewcommand{\headrulewidth}{.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[L]{\sffamily\footnotesize\color{Muted}MiniSQL / User Manual}\fancyfoot[R]{\sffamily\color{Navy}\thepage}\renewcommand{\headrulewidth}{0pt}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\tip}[2]{\begin{tcolorbox}[enhanced,colback=Pale,colframe=Teal,boxrule=.4pt,leftrule=2.5pt,arc=1mm,title={#1},fonttitle=\sffamily\bfseries,coltitle=Navy,colbacktitle=Pale,attach title to upper={\par\smallskip},before skip=9pt,after skip=9pt]#2\end{tcolorbox}}
+\newcommand{\warning}[2]{\begin{tcolorbox}[enhanced,colback=AmberBg,colframe=Amber,boxrule=.4pt,leftrule=2.5pt,arc=1mm,title={#1},fonttitle=\sffamily\bfseries,coltitle=Amber,colbacktitle=AmberBg,attach title to upper={\par\smallskip},before skip=9pt,after skip=9pt]#2\end{tcolorbox}}
+\newcommand{\sourcecode}[2]{\par\smallskip{\footnotesize\color{Muted}\textbf{Implementation evidence:} \href{\RepositoryURL/blob/\SourceCommit/#1}{\nolinkurl{#1}}. #2\par}\smallskip}
+\newcommand{\learning}[1]{\tip{What you will learn}{#1}}
+\lstdefinestyle{manual}{basicstyle=\ttfamily\footnotesize,keywordstyle=\color{Teal}\bfseries,commentstyle=\color{Muted}\itshape,stringstyle=\color{Amber},backgroundcolor=\color{CodeBg},rulecolor=\color{Rule},frame=single,framerule=.4pt,framesep=7pt,xleftmargin=8pt,xrightmargin=8pt,breaklines=true,breakatwhitespace=false,columns=fullflexible,keepspaces=true,showstringspaces=false,tabsize=2,aboveskip=11pt,belowskip=9pt,upquote=true,captionpos=b}
+\lstset{style=manual}
+\lstdefinelanguage{json}{morestring=[b]",morekeywords={true,false,null},sensitive=true}
+\lstdefinelanguage{PowerShell}{morekeywords={param,if,else,foreach,in,try,catch,finally,throw,function,return},morecomment=[l]{\#},morestring=[b]",morestring=[b]'}
+\tikzset{box/.style={draw=Rule,fill=Pale,rounded corners=2pt,align=center,font=\sffamily\small,inner sep=7pt},strong/.style={box,draw=Teal,fill=Teal!9},arrow/.style={-{Stealth[length=2.5mm]},thick,draw=Teal},smalllabel/.style={font=\sffamily\scriptsize,color=Muted,align=center}}
+\makeindex
+
+% Keep short executable examples from starting at the bottom of a page.
+\BeforeBeginEnvironment{lstlisting}{\Needspace{8\baselineskip}}

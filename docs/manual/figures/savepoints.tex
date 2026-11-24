@@ -1,0 +1,16 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=11mm and 11mm]
+\node[box,text width=32mm] (initial) {Initial state\\stock = 12};
+\node[strong,text width=32mm,right=of initial] (first) {First update\\stock = 11};
+\node[box,text width=32mm,right=of first] (second) {Second update\\stock = 9};
+\node[strong,text width=32mm,below=of first] (save) {Named savepoint\\remembers 11};
+\node[box,text width=32mm,below=of initial] (rolled) {Full rollback\\stock = 12};
+\draw[arrow] (initial) -- node[smalllabel,above] {BEGIN, update} (first);
+\draw[arrow] (first) -- node[smalllabel,above] {update again} (second);
+\draw[arrow] (first) -- node[smalllabel,right] {SAVEPOINT} (save);
+\draw[arrow] (second.south) |- node[smalllabel,pos=.75,below] {ROLLBACK TO} (save.east);
+\draw[arrow] (save) -- node[smalllabel,above] {ROLLBACK} (rolled);
+\end{tikzpicture}
+\caption{The tutorial's reversible stock experiment. Rolling back to a savepoint leaves the transaction active; a full rollback ends the transaction and restores its initial state.}
+\label{fig:savepoints}
+\end{figure}

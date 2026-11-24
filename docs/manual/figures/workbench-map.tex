@@ -1,0 +1,20 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[x=1mm,y=1mm]
+\draw[draw=Rule,fill=white,rounded corners=2pt] (0,0) rectangle (150,91);
+\fill[Navy] (0,81) rectangle (150,91);
+\node[font=\sffamily\small,text=white,anchor=west] at (4,86) {MiniSQL Workbench \quad [conceptual layout]};
+\fill[Pale] (0,70) rectangle (150,81);
+\node[font=\sffamily\scriptsize,anchor=west] at (4,75.5) {Current / F5\quad Run script\quad Explain\quad BEGIN\quad COMMIT\quad ROLLBACK};
+\fill[Teal!8] (2,10) rectangle (42,68);
+\node[font=\sffamily\small,align=left,anchor=north west,text width=35mm] at (5,65) {\textbf{Sidebar}\\[2mm]Objects\\Bookmarks\\History\\[4mm]\textbf{Objects}\\customers\\products\\orders\\order\_items};
+\draw[Rule] (45,38) rectangle (148,68);
+\node[font=\sffamily\small,anchor=north west] at (48,65) {\textbf{SQL worksheets / Object Details}};
+\node[font=\ttfamily\small,align=left,anchor=north west] at (49,56) {SELECT name, stock\\FROM products\\ORDER BY product\_id;};
+\draw[Rule] (45,10) rectangle (148,35);
+\node[font=\sffamily\small,anchor=north west] at (48,32) {\textbf{Result tabs and native grid}};
+\node[font=\sffamily\scriptsize,align=left,anchor=north west] at (49,24) {Columns, rows and server messages\\Export CSV / close result / clear results};
+\node[smalllabel,anchor=west] at (4,5) {One connected session; multiple worksheets share its transaction state};
+\end{tikzpicture}
+\caption{A navigation map of Workbench concepts. This is an explanatory drawing, not a screenshot or a pixel-exact representation of the Windows interface.}
+\label{fig:workbench-map}
+\end{figure}

@@ -1,0 +1,477 @@
+\chapter{Users, privileges, transport security, and encryption}
+\label{ops:security}
+
+\section{Understand the separate security boundaries}
+
+MiniSQL has several complementary controls. Database authentication identifies
+a user. Authorization decides which SQL operations that user can perform.
+Encrypted transport protects traffic between a client and listener. Encryption
+at rest protects selected persisted database artifacts when copied without
+their external key. Operating-system permissions protect the files, keys,
+process, and administrative launchers. Enabling one of these controls does
+not implicitly enable the others.
+
+A trusted-local server intentionally bypasses database authorization. It
+binds to loopback, but another process running locally may still connect.
+Use that mode only when local access is the intended administrative boundary.
+For remotely reachable deployments, select native TLS, authenticate clients,
+grant the minimum useful privileges, and protect the server's host and keys.
+
+\begin{longtable}{p{.29\linewidth}p{.64\linewidth}}
+\toprule
+Control & What it does, and what remains outside its scope \\
+\midrule
+\endhead
+User/password authentication & Establishes the database principal; this implementation then activates MiniSQL protected framing. Native TLS additionally provides certificate-based server identity. \\
+Roles and grants & Restrict supported database/table operations. They do not
+stop an operating-system account from reading database files it can access. \\
+Native TLS & Authenticates the transport endpoint according to the selected
+trust policy and encrypts traffic. It does not encrypt stored log files. \\
+MiniSQL TDE & Encrypts supported paged files, WAL records, and temporary spill
+records. It does not cover all filesystem metadata, text logs, or memory. \\
+Encrypted backup & Authenticates and encrypts captured backup files with a
+separate key. It cannot help if the key is lost or stored alongside the stolen
+backup. \\
+OS ACLs and volume encryption & Protect the installation and additional
+artifacts. They do not replace application-level privilege design. \\
+\bottomrule
+\end{longtable}
+
+\section{Bootstrap the administrator}
+\index{administrator}\index{passwords}
+
+A newly created database has built-in \code{admin} and \code{public}
+principals. The administrator is an enabled built-in superuser. The public
+role is not a login account; its membership is implicit for ordinary users.
+The administrator must have a usable password before password-authenticated
+connections are useful.
+
+Stop the server and set the initial password locally:
+
+\begin{lstlisting}
+minisqld.exe --set-admin-password C:\MiniSQL-Data\db_ACTUAL_ID
+\end{lstlisting}
+
+The program prompts twice with echo disabled. On Linux use
+\path{minisqld --set-admin-password /srv/minisql/db_ACTUAL_ID}.
+The same local mechanism resets an existing user's password:
+
+\begin{lstlisting}
+minisqld.exe --set-user-password C:\MiniSQL-Data\db_ACTUAL_ID analyst
+\end{lstlisting}
+
+These commands open the database directly and require its storage lock.
+Stop the server before using them. They are a local administrative recovery
+mechanism, not a network password-reset endpoint. The caller also needs access
+to the current encryption key when TDE is enabled.
+
+Passwords contain 12 to 1024 UTF-8 bytes. Count bytes rather than assuming
+that every visible character is one byte. New credentials use a 16-byte salt
+and PBKDF2-HMAC-SHA-256 with 600,000 iterations, then persist the SCRAM-style
+StoredKey/ServerKey pair rather than the salted password-equivalent secret.
+The challenge/response transcript uses fresh nonces. Unknown and disabled
+accounts use fake database-bound material and share the authentication-failure
+response. Historical verifier records are upgraded when their password is
+changed.
+
+These implementation properties do not make the password exchange a PAKE.
+Use TLS for remote traffic. Prompt-based commands avoid placing the password
+in the operating system's process argument list, and mutable client secret
+buffers are wiped after use. A password typed as a SQL literal can still be
+recorded by an enabled SQL binlog or client history.
+
+\sourcecode{src/apps/minisqld/main.ml}{setUserPassword and prompt-based local administration.}
+\sourcecode{src/minisql/common/uuid.ml}{Password derivation, verifier material, and secret handling.}
+\sourcecode{src/minisql/catalog/catalog.ml}{Built-in principals and stored credentials.}
+
+\section{Create users and reusable roles}
+\index{users}\index{roles}\index{CREATE USER}\index{CREATE ROLE}
+
+The following demonstration uses a deliberately visible example password.
+Replace it with a unique secret in a real installation, and decide beforehand
+whether SQL history or statement logging is enabled.
+
+\begin{lstlisting}[language=SQL]
+CREATE ROLE reporting;
+CREATE USER analyst WITH PASSWORD 'Replace-this-example-2026!';
+GRANT CONNECT ON DATABASE TO analyst;
+GRANT SELECT ON TABLE customers TO reporting;
+GRANT SELECT ON TABLE orders TO reporting;
+GRANT SELECT ON TABLE order_items TO reporting;
+GRANT reporting TO analyst;
+\end{lstlisting}
+
+The role groups permissions by job. A second reporting user can receive the
+same role without duplicating every table grant. Creating a user does not
+automatically grant \code{CONNECT}. A correct password without the required
+connection privilege is not enough. Likewise, table SELECT grants do not
+implicitly grant database creation or maintenance.
+
+Connect as the new user and test both an allowed SELECT and a deliberately
+disallowed change on a disposable row. Testing the negative case helps detect
+an accidentally broad grant, especially one inherited through \code{public}
+or another role.
+
+\subsection{Complete principal-management forms}
+
+\begin{lstlisting}[language=SQL]
+CREATE USER user_name WITH PASSWORD 'example-password';
+CREATE ROLE role_name;
+ALTER USER user_name WITH PASSWORD 'new_password';
+ALTER USER user_name ENABLE;
+ALTER USER user_name DISABLE;
+DROP USER [IF EXISTS] user_name;
+DROP ROLE [IF EXISTS] role_name;
+\end{lstlisting}
+
+Creating and dropping principals, and enabling or disabling accounts, require
+database administration. A user may change its own password. The built-in
+administrator cannot be disabled, and built-in principals are protected from
+ordinary removal. Role-membership cycles are rejected. Public membership is
+implicit and must not be assigned as an ordinary explicit role edge.
+
+All these statements are autocommit-only. Do not put account setup in a
+\code{BEGIN}/\code{COMMIT} block expecting transactional rollback of the
+security catalog.
+
+\sourcecode{src/minisql/sql/parser.ml}{parseCreatePrincipal, parseAlter, and principal DROP forms.}
+\sourcecode{src/minisql/executor/executor.ml}{executeCreatePrincipal, executeAlterUser, and executeDropPrincipal.}
+
+\section{The exact privilege model}
+\index{privileges}\index{GRANT}
+
+\begin{longtable}{p{.25\linewidth}p{.68\linewidth}}
+\toprule
+Scope / privilege & Meaning in the implementation \\
+\midrule
+\endhead
+Database: \code{CONNECT} & Allows an authenticated user to establish access
+to the database. \\
+Database: \code{CREATE} & Permits table creation and supported schema/view/
+sequence/procedure definition operations. Some object-specific operations
+use this privilege as documented below. \\
+Database: \code{MAINTAIN} & Permits ANALYZE, VACUUM, and REINDEX. \\
+Database: \code{ADMIN} & Permits security administration, operational status,
+process inspection, administrative cancellation, and shutdown. \\
+Table: \code{SELECT} & Reads table data; required for DESCRIBE and
+SHOW INDEXES on that table. \\
+Table: \code{INSERT} & Inserts data. INSERT SELECT also requires read access
+to its source tables. \\
+Table: \code{UPDATE} & Updates table data. \\
+Table: \code{DELETE} & Deletes data and authorizes TRUNCATE. \\
+Table: \code{REFERENCES} & A recognized table privilege in the security
+catalog. Do not infer complete SQL-standard referential authorization from
+its presence; validate the concrete schema workflow. \\
+Table: \code{INDEX} & Creates or drops explicit indexes on the table. \\
+Table: \code{ALTER} & Alters the table and permits trigger creation on it,
+subject to body authorization. \\
+Table: \code{DROP} & Drops the table. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=SQL]
+GRANT privilege [, privilege ...] ON DATABASE
+  TO principal [WITH GRANT OPTION];
+GRANT privilege [, privilege ...] ON [TABLE] table_name
+  TO principal [WITH GRANT OPTION];
+GRANT ALL [PRIVILEGES] ON DATABASE TO principal;
+GRANT ALL [PRIVILEGES] ON TABLE table_name TO principal;
+GRANT role_name TO principal [WITH ADMIN OPTION];
+\end{lstlisting}
+
+\code{ON DATABASE} means the currently opened database and does not take a
+database name. \code{ALL} expands to the implemented privileges for the
+selected scope. Table privileges cannot be granted as database privileges,
+and database privileges cannot be granted as table privileges. The parser
+accepts one grantee per statement, so grant to multiple users with separate
+statements.
+
+\code{WITH GRANT OPTION} permits delegation of an object privilege.
+\code{WITH ADMIN OPTION} permits delegation of a role membership. They
+are not interchangeable. Database administrators can manage these grants;
+other users need the appropriate delegation right. A role can contain other
+roles as long as the membership graph remains acyclic.
+
+Grants to \code{public} affect every user through implicit membership. A
+convenient public read grant can therefore defeat an intended per-user
+restriction. Review this role alongside direct grants and nested memberships.
+
+\subsection{Views, procedures, triggers, and metadata}
+
+Views are authorized through their underlying query sources. They are not
+documented as a security-definer mechanism that lets a caller bypass base-table
+permissions. Creating a view requires \code{CREATE} and authorization of its
+query. Calling a procedure runs its stored body through ordinary statement
+authorization; there is no separate implemented SQL \code{EXECUTE}
+privilege to grant on a procedure. Creating a trigger requires \code{ALTER}
+on its target and authorization of its body. Dropping or altering a trigger
+uses database \code{CREATE} in the present dispatcher.
+
+\code{SHOW TABLES} and virtual \code{information\_schema} queries are not
+a promise of privilege-filtered object-name secrecy. In contrast,
+\code{DESCRIBE} and \code{SHOW INDEXES} require SELECT on their target
+table. Design authorization around supported operations, and test metadata
+visibility if hiding object names is a requirement.
+
+\sourcecode{src/minisql/executor/executor.ml}{privilegeCode, allPrivilegeCodes, authorizeStatement, authorizeDefinitionStatement, and authorizeNamedSource.}
+
+\section{Revoke privileges and delegated memberships}
+\index{REVOKE}
+
+\begin{lstlisting}[language=SQL]
+REVOKE privilege [, privilege ...] ON DATABASE
+  FROM principal [RESTRICT | CASCADE];
+REVOKE privilege [, privilege ...] ON [TABLE] table_name
+  FROM principal [RESTRICT | CASCADE];
+REVOKE role_name FROM principal [RESTRICT | CASCADE];
+\end{lstlisting}
+
+The default behavior is restrictive. If another grant depends on the
+delegated right, a restrictive revoke reports the dependency instead of
+silently deleting a wider chain. \code{CASCADE} removes affected dependent
+grants as well. There is no separate \code{REVOKE GRANT OPTION FOR}
+grammar in the current parser.
+
+For example, if Alice received SELECT with grant option and granted it to
+Bob, revoking Alice's privilege with RESTRICT can be blocked by that chain.
+Use CASCADE only when removing the downstream authority is the intended
+administrative action. A user may still retain a privilege through a different
+role or grant path, so test the effective permission after revocation.
+
+Disabling an account is useful for preventing new authentication, but do not
+assume it is equivalent to terminating every existing client session. Inspect
+active sessions and close or drain them according to the operation being
+performed. The public SQL surface has no general-purpose \code{KILL}
+statement.
+
+\sourcecode{src/minisql/catalog/catalog.ml}{Grant graph, role-cycle checks, and cascading revoke behavior.}
+\sourcecode{src/tests/m30_audit_grants.ml}{Delegation and RESTRICT/CASCADE cases.}
+
+\section{Use native TLS for interoperable encrypted connections}
+\index{TLS}
+
+\subsection{Certificate references and listener setup}
+
+Windows accepts a certificate-store reference or a PFX path. The PFX password,
+when needed, comes from \code{MINISQL\_TLS\_PFX\_PASSWORD}, not a
+password command-line argument. Linux accepts a PEM certificate path and
+private-key path separated by a vertical bar; quote the entire reference so
+the shell does not interpret the bar as a pipe.
+
+\begin{lstlisting}
+# Windows: certificate/private key in a PFX file
+minisqld.exe --serve-tls C:\MiniSQL-Data\db_ACTUAL_ID `
+  0.0.0.0 7432 32 "pfx:C:\MiniSQL-TLS\server.pfx"
+
+# Windows: certificate store reference
+minisqld.exe --serve-tls C:\MiniSQL-Data\db_ACTUAL_ID `
+  0.0.0.0 7432 32 "store:ACTUAL_CERTIFICATE_THUMBPRINT"
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+minisqld --serve-tls /srv/minisql/db_ACTUAL_ID \
+  0.0.0.0 7432 32 \
+  'pem:/etc/minisql/server.pem|/etc/minisql/server-key.pem'
+\end{lstlisting}
+
+\code{0.0.0.0} listens on all IPv4 interfaces; choose a narrower address
+where appropriate. The certificate must identify the name clients expect,
+and the process must be able to read the private key. The fixed policy is
+TLS 1.3, \code{TLS\_AES\_256\_GCM\_SHA384}, and \code{X25519}.
+The configuration is validated against these names rather than offering an
+arbitrary cipher-selection interface.
+
+\begin{lstlisting}
+minisql.exe --tls-shell 192.0.2.20 7432 db.example.test admin
+\end{lstlisting}
+
+The address selects the route; \code{db.example.test} is the expected
+server identity. The client prompts for the database password after selecting
+the TLS connection parameters. Replace documentation addresses and names with
+the actual installation values.
+
+\subsection{Trust and pinning}
+\index{certificate pinning}
+
+The native client's system-trust mode validates the X.509 chain and expected
+server identity, along with certificate validity and purpose. A pin is the
+SHA-256 digest of the leaf certificate. Obtain it through a trusted channel;
+copying a digest from an unauthenticated connection defeats the reason for
+checking it.
+
+\begin{lstlisting}
+minisql.exe --tls-pin-shell 192.0.2.20 7432 db.example.test `
+  ACTUAL_64_HEX_SHA256_PIN admin
+\end{lstlisting}
+
+The native pinned path supports deliberately self-signed certificates while
+retaining its native identity/validity checks. Driver options are not
+identical: Python's \code{trust\_server\_certificate=True} with a required
+pin, and JDBC's corresponding trust-server-certificate option, use pin-only
+trust rather than the full normal chain/hostname validation path. Consult the
+connector chapter before copying a native-client trust assumption into those
+drivers. Normal driver TLS with an additional pin preserves the normal trust
+checks.
+
+Pinning also affects certificate renewal: a new leaf certificate has a new
+digest even if it has the same hostname. Plan the trusted distribution of
+updated pins. Do not silently disable verification as a routine response to
+a certificate mismatch.
+
+\sourcecode{src/minisql/platform/tls_policy.ml}{Fixed TLS policy and trust settings.}
+\sourcecode{src/minisql/platform/tls_schannel.ml}{Windows native certificate handling.}
+\sourcecode{src/minisql/platform/tls_openssl.ml}{Linux native TLS handling.}
+\sourcecode{src/apps/minisql/main.ml}{TLS and pinned-TLS command argument order.}
+
+\section{The MiniSQL-specific secure transport}
+
+The \code{--serve-secure} and \code{--secure-*} families use MiniSQL's
+authenticated encrypted framing. Protected frames carry an eight-byte
+little-endian sequence number, ciphertext, and a 16-byte GCM tag. Associated
+data binds message metadata and sequence information. This transport is not
+TLS and has no X.509 certificate workflow. A normal TLS client cannot speak
+to it by merely setting a TLS flag.
+
+Use the mode explicitly when integrating an existing MiniSQL-specific secure
+client. Prefer native TLS for the documented Python/JDBC TLS paths and
+standards-based certificate operations. The positional authenticated loopback
+mode uses the same protected frames after successful authentication, but fixes
+the network address to loopback. Native TLS connections also complete database
+authentication and enable this protocol protection inside the TLS channel.
+Thus TLS adds a certificate-based transport boundary; it is not another name
+for the MiniSQL frame format.
+
+\sourcecode{docs/formats/secure-transport-v1.md}{Protected-frame structure.}
+\sourcecode{src/minisql/server/server.ml}{Distinct authenticated, secure, and TLS listener APIs.}
+
+\section{Enable encryption at rest}
+\index{TDE}\index{encryption at rest}
+
+MiniSQL's TDE uses a randomly generated database encryption key (DEK).
+An external 32-byte key-encryption key (KEK) wraps that DEK with AES-256-GCM.
+The database stores the wrapped envelope and provider identity in
+\path{encryption.meta}; the external raw key file remains outside the
+database tree.
+
+Create the key directory first and protect it with OS permissions. Generate a
+new key file, stop the database, and enable encryption:
+
+\begin{lstlisting}
+minisqld.exe --generate-encryption-key D:\MiniSQL-Keys\primary.key
+minisqld.exe --enable-encryption D:\MiniSQL-Data\db_ACTUAL_ID `
+  D:\MiniSQL-Keys\primary.key
+minisql-check.exe D:\MiniSQL-Data\db_ACTUAL_ID
+\end{lstlisting}
+
+The key-generation destination must not already exist. The file contains
+exactly 32 random bytes, not a human-readable password or a 64-character hex
+string. The supplied path becomes the provider identifier stored in the
+envelope; prefer an absolute path. Changing the process working directory
+must not make a relative key reference point somewhere else.
+
+Enabling TDE opens and closes the database, then reacquires its exclusive
+process-visible lock before converting files. If a server wins that race,
+the conversion fails rather than modifying an actively owned database. Each
+paged file publishes its encryption feature only after the replacement is
+durable, allowing the operation to resume across mixed plaintext/encrypted
+files after an interruption.
+
+Each encrypted page uses an independent nonce and authenticated data binding
+it to the database identity, file identity, and page number. WAL and temporary
+spill protection use separate nonce/AAD domains. This reduces the ability to
+substitute a valid ciphertext from an unrelated page or file.
+
+\warning{Coverage is artifact-specific}{TDE does not turn every byte in the
+database directory into ciphertext. Text logs, schema/history side files,
+audit-related artifacts, path names, deleted remnants, dumps, and filesystem
+metadata require their own protection. Keep full-disk/volume encryption and
+OS permissions in the deployment design. There is no current command that
+disables TDE in place.}
+
+\sourcecode{src/minisql/tools/encryption.ml}{generateKeyFile, enable, and the explicit file-conversion list.}
+\sourcecode{src/minisql/security/key_provider.ml}{Raw-file provider, DEK envelopes, and path identity.}
+
+\subsection{Rotate the external wrapping key}
+
+Generate a different key file and rewrap the existing DEK:
+
+\begin{lstlisting}
+minisqld.exe --generate-encryption-key D:\MiniSQL-Keys\primary-next.key
+minisqld.exe --rotate-encryption-key D:\MiniSQL-Data\db_ACTUAL_ID `
+  D:\MiniSQL-Keys\primary-next.key
+\end{lstlisting}
+
+Rotation atomically replaces the envelope; it does not rewrite every data
+page because the DEK remains the same. The implementation permits this
+rewrap online. Keep the previous wrapping key until the new arrangement has
+been checked and a restore drill has succeeded. Older backups may still
+depend on a previous key, so key retirement must follow backup retention,
+not only the current live database state.
+
+The present provider is a raw-file provider. The tagged provider interface is
+designed for additional providers, but the current executable does not
+silently gain an HSM, OS keystore, or cloud KMS integration from that design.
+Loss of the KEK and all usable independent backup keys means the encrypted
+data cannot be recovered by resetting the SQL administrator password.
+
+\subsection{Backups and migration need separate encryption decisions}
+
+Use \code{backup-encrypted} with an independent backup key when a backup must
+be confidential as a whole. The ordinary backup command copies the
+authoritative artifacts, including a TDE envelope when present, but does not
+encrypt every otherwise plaintext side file. An encrypted backup rewraps the
+DEK for the backup provider and authenticates the captured files.
+
+The page-size \code{--rewrite} migration creates a new database identity and
+new files. Its copy routine does not carry over \path{encryption.meta} or
+automatically enable TDE on the target. Enable and verify TDE on the new
+database before treating it as having the source's at-rest protection. Also
+create a new replication base after such a rewrite.
+
+\sourcecode{src/minisql/tools/backup.ml}{runOpenEncrypted and restoreEncrypted.}
+\sourcecode{src/minisql/tools/migrate.ml}{copyDatabaseState and target creation.}
+
+\section{Audit records, ordinary logs, and SQL binlogs}
+\index{audit}\index{binlog}
+
+Audit records form a chained diagnostic history with anchors and a database
+audit key. Administrative and security events use this path. Keep the audit
+key, anchors, and log together in the supported backup/recovery workflow;
+selectively deleting them breaks their evidentiary relationship.
+
+Ordinary operational logs describe process activity, errors, and slow-query
+summaries. The optional SQL binlog records full valid UTF-8 statements before
+parsing/execution, even if the statement later fails. It is independent of the
+ordinary severity threshold. A binlog write failure rejects the SQL before
+execution, avoiding an unnoticed logging gap in an enabled binlog.
+
+The three channels serve different purposes. A SQL binlog is not the physical
+write-ahead log used for crash recovery, and it is not a complete logical
+backup format. It can contain password literals, personal information, and
+application secrets. Limit access and retention accordingly. The slow-query
+record intentionally reports session, duration, row/byte counts, and success
+state without including the full SQL literal payload.
+
+\sourcecode{src/minisql/common/diagnostics.ml}{Audit records and verification.}
+\sourcecode{src/minisql/common/logger.ml}{Ordinary logging and independent SQL statement capture.}
+
+\section{An operational account design}
+
+For a small application, create separate roles for read-only reporting,
+application data changes, schema deployment, and maintenance. Give a reporting
+role SELECT on only the required tables. Give an application writer INSERT,
+UPDATE, and DELETE only where needed. Give schema deployment the actual
+CREATE/ALTER/INDEX/DROP rights it uses. Give maintenance MAINTAIN. Reserve
+ADMIN for accounts that truly need security administration, monitoring,
+cancellation, or shutdown.
+
+Current operational views require ADMIN, so a monitoring account with only
+MAINTAIN cannot scrape SHOW STATUS. Treat that as an explicit privilege tradeoff
+when configuring the exporter. Avoid sharing one administrator password among
+all application instances simply to bypass permission setup.
+
+Document the role graph and test it after schema changes. A newly created
+table does not inherit a guessed application policy from its name. Revisit
+views and procedures when their source tables or bodies change, and recreate
+the replication base after security-catalog changes because the current WAL
+shipping workflow is based on an archived schema/security snapshot.

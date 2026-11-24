@@ -1,0 +1,509 @@
+\chapter{Clients, Workbench, and Application Integration}
+\label{adv:clients}
+
+\section{Choose the interface for the task}
+
+A MiniSQL server process exposes one database at one endpoint. A client connects to that endpoint; it does not select an unrelated database with a \code{USE} statement. Database names in a Python DSN, JDBC URL, or Workbench alias are labels. To use a second database, start or connect to its server endpoint. This distinction explains why changing a catalog label does not change the data you see.
+
+\begin{longtable}{p{.23\linewidth}p{.68\linewidth}}
+\toprule Interface & Appropriate use \\\midrule
+Native console & Interactive SQL, small UTF-8 scripts, connectivity checks, and operator workflows on Windows or Linux. \\
+Windows Workbench & Exploring objects, editing worksheets, inspecting results, staged data editing, and schema design. \\
+Python connector & Import/export programs, repeatable analysis, teaching examples, and application services. Python 3.10 or newer is required. \\
+JDBC driver & Java applications and tools that accept a JDBC driver. Java 11 or newer is required. \\
+MiniLang modules & In-process use of the same engine or native client facilities. This is a source integration, not a separately versioned C ABI. \\
+\bottomrule
+\end{longtable}
+
+Every interface ultimately uses the same SQL engine, but their transaction defaults and result representations differ. Learn the connector's behavior before moving a script from the shell into an application.
+\sourcecode{src/apps/minisql/main.ml}{Native client entry points.}
+\sourcecode{clients/python/minisql/dbapi.py}{Python connection and transaction behavior.}
+\sourcecode{clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java}{JDBC connection and statement handlers.}
+
+\section{The native console}
+\index{console}\index{shell}\index{scripts}
+\subsection{Connect, query, or run a script}
+
+The executable is \path{build/bin/minisql.exe} on Windows and \path{build/bin-linux/minisql} on Linux. The examples below use the Linux name; use the Windows executable path in PowerShell. Native client commands return exit status 0 on success, 1 for operational or SQL failure, and 2 for invalid command-line usage.
+
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisql --ping 7432
+./build/bin-linux/minisql --query 7432 "SHOW TABLES;"
+./build/bin-linux/minisql --shell 7432
+./build/bin-linux/minisql --script 7432 docs/manual/examples/01-create-shop.sql
+\end{lstlisting}
+
+The trusted forms connect to loopback. A successful ping prints \code{PONG}. Query mode formats one response and closes its connection; separate query invocations therefore do not share a transaction, prepared statement, or session state. Shell mode and script mode keep a connection open across their statements.
+
+The complete connection families are listed below. Replace \code{ACTION} with \code{ping}, \code{query}, \code{shell}, or \code{script}. Query takes an additional SQL argument; script takes an additional filename. Ping and shell have no trailing argument.
+
+\begin{longtable}{p{.25\linewidth}p{.66\linewidth}}
+\toprule Family & Argument order after the executable \\\midrule
+Trusted loopback & \path{--ACTION <port> [sql-or-file]} \\
+Password prompt, loopback & \path{--auth-ACTION-prompt <port> <user> [sql-or-file]} \\
+Password-authenticated protected framing & \path{--secure-ACTION <address> <port> <user> [sql-or-file]} \\
+Native TLS & \path{--tls-ACTION <address> <port> <server-name> <user> [sql-or-file]} \\
+Native TLS with leaf pin & \path{--tls-pin-ACTION <address> <port> <server-name> <sha256-pin> <user> [sql-or-file]} \\
+Version & \path{--version} \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=bash]
+./build/bin-linux/minisql --auth-shell-prompt 7432 analyst
+./build/bin-linux/minisql --tls-shell \
+  db.example.test 7443 db.example.test analyst
+\end{lstlisting}
+
+The authenticated modes prompt for the password. All authenticated connections enable MiniSQL protected framing after authentication, including authenticated loopback and TLS-wrapped sessions. The \code{secure} family is MiniSQL's authenticated encrypted framing; the \code{tls} family explicitly negotiates native TLS. These names are not interchangeable. The client and listener must agree on the transport. A SHA-256 pin in the native client identifies the exact DER leaf certificate; obtain it through a trusted administrative channel.
+
+\subsection{Work efficiently in the shell}
+
+Statements may span lines. The prompt changes from \code{minisql>} to \code{...>} while an unfinished SQL fragment is buffered. A semicolon outside a string, quoted identifier, or comment ends a statement. Backslash commands are client commands and are not sent as SQL.
+
+\begin{longtable}{p{.28\linewidth}p{.63\linewidth}}
+\toprule Command & Effect \\\midrule
+\path{\help} & Display the shell command list. \\
+\path{\q}, \path{\quit} & Close the session when no SQL fragment is pending. \\
+\path{\g} & Execute the current multiline buffer without requiring a final semicolon. \\
+\path{\reset} & Discard the current unfinished buffer. \\
+\path{\source <file>} & Run a UTF-8 SQL script in the same session. \\
+\path{\tables} & Execute \code{SHOW TABLES}. \\
+\path{\describe <table>} & Execute \code{DESCRIBE table}. \\
+\path{\indexes <table>} & Execute \code{SHOW INDEXES FROM table}. \\
+\path{\ping} & Perform a protocol liveness check. \\
+\bottomrule
+\end{longtable}
+
+Use SQL directly for names that need quoting rather than relying on the restricted identifier parser in a metadata shortcut. Most backslash commands are recognized only when the SQL buffer is empty. If a forgotten quote or incomplete statement prevents \path{\q} from behaving as expected, enter \path{\reset} first.
+
+\begin{lstlisting}[language=SQL]
+SELECT customer_id, name
+FROM customers
+WHERE active = TRUE
+ORDER BY customer_id;
+\end{lstlisting}
+
+\subsection{Script semantics and limits}
+
+A script is scanned with the same quote-aware and comment-aware logic as interactive input. The final SQL statement need not end with a semicolon. Statements execute in order, and processing stops at the first error. Success prints \code{MiniSQL script completed statements=N}. The script reader currently accepts at most 1 MiB of file content; this limit is separate from the protocol's larger frame limit. Split large imports into smaller scripts or use connector batches.
+
+Running a script does not make its statements one transaction. Add \code{BEGIN} and \code{COMMIT} around related DML when atomicity is required. Keep schema changes separate from the DML transaction, and understand what already committed before retrying a partly completed script. A script file contains SQL only; \path{\source} is an interactive shell command rather than an SQL include directive.
+
+\sourcecode{src/minisql/client/console.ml}{scanSqlBatch, executeStatements, runScript, printShellHelp, and runShell.}
+
+\section{The Windows Workbench}
+\index{Workbench}\index{GUI}
+\input{figures/workbench-map}
+\subsection{Create a connection alias}
+
+Launch \path{build/bin/minisql-admin.exe}. The first-run \emph{Local MiniSQL} alias points to trusted loopback on port 7432. Use trusted local mode only with a matching trusted listener. To connect to an authenticated listener, clear trusted mode, enter the endpoint and user, and provide the password when connecting. For TLS, enable \emph{Native TLS 1.3 / X.509}, enter the expected certificate name, and optionally enter the leaf fingerprint.
+
+Aliases store endpoint, database label, username, transport settings, and optional pin. They do not store passwords. The normal location is \path{%APPDATA%/MiniSQL/workbench-profiles.json}; \code{MINISQL\_ADMIN\_PROFILE\_PATH} overrides it. The adjacent persisted window state restores a valid previous position and size. A failed connection displays an actionable dialog and returns to the connection manager so settings can be corrected.
+
+\begin{lstlisting}
+build\bin\minisql-admin.exe --connect-local 7432 shop
+build\bin\minisql-admin.exe --connect 127.0.0.1 7432 analyst shop
+build\bin\minisql-admin.exe --connect-tls db.example.test 7443 db.example.test analyst shop
+\end{lstlisting}
+
+The TLS shortcut accepts an optional SHA-256 pin after the database label. Do not include a password in a shortcut or alias file.
+
+\subsection{Understand the workspace}
+
+The sidebar contains \emph{Objects}, \emph{Bookmarks}, and \emph{History}. The object tree comes from the connected database's metadata. Bookmarks insert useful SQL templates. History retains the newest 100 worksheet batches and provides a search filter. Account statements containing passwords are redacted from history and worksheet/result state.
+
+The main workspace contains SQL worksheets and object-detail pages. Each worksheet has independent text. Results are kept in bounded tabs, with up to 32 recent result tabs. The result view includes column headers, rows, elapsed time, success status, and server messages. Closing a result tab affects that result only. \emph{Clear results} removes all result tabs.
+
+\begin{longtable}{p{.3\linewidth}p{.61\linewidth}}
+\toprule Action & Meaning \\\midrule
+Current / F5 & Run the selection, or the statement containing the caret when nothing is selected. \\
+Run script / \mbox{Ctrl+}\allowbreak\mbox{Shift+Enter} & Run all statements in the worksheet in source order. \\
+Explain & Explain exactly one statement in the current/selection scope. \\
++ SQL / Ctrl+N & Create a worksheet. \\
+Close SQL / Ctrl+W & Close a worksheet; nonempty text requires confirmation. A fresh blank worksheet replaces the last closed one. \\
+Export CSV / Ctrl+E & Save the active result with CSV quote escaping. \\
+BEGIN, COMMIT, ROLLBACK & Send the corresponding SQL transaction command. \\
+Stop & Stop the active worker and disconnect this session. Reconnect before further work. \\
+\bottomrule
+\end{longtable}
+
+The application uses a background native worker for execution and metadata loading. Controls that would concurrently access session state are disabled until the worker publishes its result. A responsive window is not evidence that the database statement has completed: check the status and result tab.
+
+\warning{Workbench Stop is a disconnect}{The current Workbench does not use the newer cooperative cancellation facility exposed by Python and JDBC. Its Stop path aborts the connection to avoid reusing an interrupted response stream. Any uncommitted work needs to be assessed after reconnection. Do not interpret Stop as confirmation that a previously acknowledged commit was undone.}
+
+\subsection{Inspect and edit table data}
+
+Select a table and choose \emph{Open object}. The detail pages show Summary, Columns, Indexes, Data, Row Count, and reconstructed DDL. The Data page normally loads 100 rows per page; the underlying browse API permits page sizes from 1 to 1000. Column headers toggle sorting. The filter accepts one \code{WHERE} predicate and rejects statement terminators or comment openers.
+
+\emph{Add row}, \emph{Copy row}, and \emph{Edit row} open a field editor. A double-click starts editing at the selected cell. Use \code{<NULL>} for SQL NULL. Insert fields can use \code{<DEFAULT>} for defaults or identity values. Text is escaped as SQL; numeric and Boolean inputs are checked before staging.
+
+Edits are staged locally. This gives a deliberate review sequence:
+
+\begin{enumerate}
+\item Browse and filter to the intended rows.
+\item Stage inserts, updates, or deletions. Pending rows are visibly marked.
+\item Inspect \emph{SQL preview}; this is the exact SQL the Workbench plans to send.
+\item Choose \emph{Apply changes} to execute the batch, or \emph{Revert} to discard local changes.
+\end{enumerate}
+
+Apply uses a transaction, or a savepoint when appropriate, and rolls the batch back on failure. Updates and deletes require a usable primary key or unique index so that a generated predicate can identify one row. If the table lacks such a key, define one with a meaningful business invariant or use an explicitly reviewed SQL statement. While edits are pending, paging, filtering, and sorting are disabled to keep staged row identities stable.
+
+Copy places a header and selected rows on the clipboard as escaped tab-separated Unicode text. Paste requires a matching header and stages at most 1000 inserts. This is useful for controlled small edits; connector imports are better for larger data sets and explicit type conversion.
+
+\subsection{Use the schema designer}
+
+\emph{Schema} supports create/drop/rename table, add/drop/rename column, create/drop index, and add/drop constraint operations. It quotes identifier components, validates definition fields, and displays either generated DDL or a validation error. \emph{Insert into SQL} opens the generated statement in a new worksheet without executing it. \emph{Execute DDL} asks for explicit confirmation, executes the statement, and refreshes metadata after success.
+
+The designer cannot make an engine restriction disappear. For example, a requested column drop can still be rejected because data or dependencies make it unsupported. Read the exact DDL and engine diagnostic. The reconstructed DDL page is useful for understanding an object; use the documented backup tools for a restorable physical database copy.
+
+\sourcecode{src/minisql/admin/fullclient.ml}{Profiles, result/history bounds, browse/edit SQL generation, staged batches, and schema designer.}
+\sourcecode{src/minisql/admin/win32_client.ml}{Native controls, execution workers, keyboard actions, and Stop behavior.}
+\sourcecode{src/apps/minisql_admin/main.ml}{Workbench command-line dispatch.}
+
+\section{Python DB-API integration}
+\index{Python}\index{DB-API}
+\subsection{Install and open a connection}
+
+Install the source package from the repository root:
+
+\begin{lstlisting}[language=bash]
+python -m pip install ./clients/python
+\end{lstlisting}
+
+The distribution name is \code{minisql-connector}, while the import name is \code{minisql}. The package declares \code{cryptography>=41}; password authentication uses it for authenticated encryption. TLS uses Python's \code{ssl} module. The module reports \code{apilevel='2.0'}, \code{paramstyle='qmark'}, and \code{threadsafety=1}: threads can share the module, but should use separate connections.
+
+\begin{lstlisting}[language=Python]
+import minisql
+
+connection = minisql.connect(
+    host="127.0.0.1", port=7432, database="shop"
+)
+try:
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT customer_id, name FROM customers "
+                "WHERE active = ? ORDER BY customer_id",
+                (True,),
+            )
+            for customer_id, name in cursor:
+                print(int(customer_id), name)
+finally:
+    connection.close()
+\end{lstlisting}
+
+The explicit \code{int} conversion is intentional: ordinary network results contain strings or \code{None}, not automatically typed Python numbers. The connection context manager commits on normal exit and rolls back if an exception escapes. It does \emph{not} close the connection. A cursor context manager does close its cursor.
+
+\subsection{Connection options}
+
+\begin{longtable}{p{.28\linewidth}p{.63\linewidth}}
+\toprule Keyword & Default and meaning \\\midrule
+\code{host}, \code{port} & \code{127.0.0.1}, 7432. Port must be 1--65535. \\
+\code{database} & \code{main}; a nonempty client label, not a server-side database switch. \\
+\code{user}, \code{password} & No user selects trusted mode; password defaults to empty. Supply actual credentials for authenticated listeners. \\
+\code{tls} & \code{False}; enable TLS 1.3. \\
+\code{server\_name} & Host; certificate name and TLS SNI name. \\
+\code{pin\_sha256} & None; exactly 32 bytes written as 64 hexadecimal digits. Colons and hyphens may separate digits. \\
+\code{trust\_\allowbreak server\_\allowbreak certificate} & \code{False}; pin-only trust. Requires a valid pin and TLS. \\
+\code{ca\_file} & None; private CA bundle for ordinary certificate validation. Requires TLS. \\
+\code{connect\_timeout} & 10 seconds; 0--3600, with 0 selecting blocking I/O. \\
+\code{socket\_timeout} & 30 seconds; 0--3600, with 0 selecting blocking I/O. \\
+\code{autocommit} & \code{False}; lazy explicit transactions are the default. \\
+\code{isolation\_level} & \code{SERIALIZABLE}; also accepts \code{READ COMMITTED}. \\
+\bottomrule
+\end{longtable}
+
+The DSN form is \path{minisql://host:port/database}. It can contain URL-encoded user/password information and the supported query options, but keyword credentials are easier to keep out of logs. Non-\code{None} keyword arguments override DSN values. Unknown DSN options are rejected.
+
+\begin{lstlisting}[language=Python]
+import os
+import minisql
+
+connection = minisql.connect(
+    "minisql://db.example.test:7443/shop",
+    user="application",
+    password=os.environ["MINISQL_PASSWORD"],
+    tls=True,
+    server_name="db.example.test",
+    ca_file="deployment-ca.pem",
+)
+\end{lstlisting}
+
+Normal TLS validates the trust chain and hostname; an optional pin adds an exact leaf check. Pin-only trust is different: \code{trust\_server\_certificate=True} disables Python's ordinary chain and hostname validation and relies on the supplied exact leaf digest, TLS 1.3, and the required cipher. It must be an intentional deployment choice. Native Workbench pinning has a stricter validation policy; do not assume the two implementations have identical certificate checks. Python's pin option accepts hexadecimal digits with separators, not the native client's \code{sha256:} prefix.
+
+\subsection{Parameters and values}
+
+Use \code{?} placeholders for values. They cannot stand for table names, column names, or SQL keywords. The scanner ignores markers inside strings, quoted identifiers, and comments. Parameter counts must match. Do not build SQL by concatenating user-supplied values.
+
+\begin{lstlisting}[language=Python]
+from decimal import Decimal
+
+with connection.cursor() as cursor:
+    cursor.execute(
+        "INSERT INTO products(product_id,name,price,stock) "
+        "VALUES (?,?,?,?)",
+        (106, "Field notebook", Decimal("12.50"), 20),
+    )
+connection.commit()
+\end{lstlisting}
+
+\begin{longtable}{p{.29\linewidth}p{.62\linewidth}}
+\toprule Python value & Binding behavior \\\midrule
+\code{None} & SQL NULL. \\
+\code{bool} & TRUE or FALSE. \\
+\code{int} & Decimal integer text, checked against the destination SQL type by the server. \\
+\code{float}, \code{Decimal} & Finite numeric text. Non-finite values are rejected. Use Decimal for exact business quantities. \\
+\code{str} & A quoted SQL string with embedded apostrophes doubled. \\
+\code{datetime.date} & Epoch-day integer cast to DATE. \\
+\code{datetime.time} & Microseconds since midnight cast to TIME; timezone-aware values are rejected. \\
+\code{datetime.datetime} & Epoch microseconds cast to TIMESTAMP; timezone-aware values are rejected. \\
+\code{bytes}, \code{bytearray}, \code{memoryview} & Binding is unsupported because SQL has no binary literal. \\
+\bottomrule
+\end{longtable}
+
+The module also supplies \code{Date}, \code{Time}, \code{Timestamp}, their \code{FromTicks} constructors, and \code{Binary}. The latter creates a Python byte object; it does not add a binary transport-binding capability.
+
+Parameterized SELECT, INSERT, UPDATE, and DELETE statements use a session-local LRU cache of at most 128 server PREPARE plans. Other accepted statement forms use validated literal substitution. There is no typed binary parameter frame. Cache reuse saves preparation work but does not justify sharing one connection among simultaneous workers.
+
+\subsection{Transactions and DDL boundaries}
+
+With the default autocommit setting, the first non-DDL operation lazily sends \code{BEGIN ISOLATION LEVEL SERIALIZABLE READ WRITE}. \code{commit()} or \code{rollback()} finishes the active transaction; each is a no-op when idle. Setting \code{autocommit=True} commits an active transaction. Change \code{isolation\_level} only between transactions.
+
+The connector treats CREATE, ALTER, DROP, TRUNCATE, VACUUM, REINDEX, and ANALYZE specially: it commits an active DB-API transaction immediately before sending the operation implicitly. Thus schema or maintenance work inside a Python \code{with connection:} block can commit earlier DML. Keep schema installation and business transactions separate.
+
+\begin{lstlisting}[language=Python]
+try:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE products SET stock=stock-? "
+            "WHERE product_id=? AND stock>=?", (2, 101, 2)
+        )
+        if cursor.rowcount != 1:
+            raise ValueError("Product absent or insufficient stock")
+    connection.commit()
+except Exception:
+    connection.rollback()
+    raise
+\end{lstlisting}
+
+Avoid manually sending BEGIN/COMMIT while also relying on the connector's transaction tracking. For an administrative SQL script requiring direct session control, use autocommit mode and deliberately manage all SQL boundaries yourself.
+
+\subsection{Cursor API and streaming}
+
+\begin{longtable}{p{.29\linewidth}p{.62\linewidth}}
+\toprule Member & Current behavior \\\midrule
+\code{execute(sql, parameters)} & Execute one operation and return the cursor. \\
+\code{executemany(sql, iterable)} & Consume parameter sets incrementally; optimize compatible inserts into bounded multirow requests. \\
+\code{fetchone()} & Return one tuple, or None after exhaustion. \\
+\code{fetchmany(size)} & Return up to the requested rows; uses \code{arraysize} if omitted. \\
+\code{fetchall()} & Materialize all remaining rows in a list. \\
+Iteration & Advance through the result stream until exhausted. \\
+\code{description} & Tuple of seven-field DB-API column descriptions, using the generic STRING type; None for commands. \\
+\code{rowcount} & Affected rows for a command; -1 for a SELECT result. \\
+\code{lastrowid} & None. Use SQL RETURNING when an inserted identifier is required. \\
+\code{setinputsizes}, \code{setoutputsize} & Accepted as no-op hints. \\
+\code{callproc} & Raises NotSupportedError. SQL CALL is a separate engine statement. \\
+\code{nextset} & Returns None; multiple result sets are not exposed. \\
+\code{close()} & Drain unread continuation frames and release the cursor. \\
+\bottomrule
+\end{longtable}
+
+Only one unread result stream may own a connection. Consume or close it before another operation. Closing a cursor can involve network reads because pending frames must be drained. Fetching in chunks bounds application-held rows; \code{fetchall()} removes that benefit. Server operators may still materialize intermediate or final results, so a streaming client is not proof that the entire query uses constant memory.
+
+\begin{lstlisting}[language=Python]
+with connection.cursor() as cursor:
+    cursor.execute("SELECT product_id,name,price FROM products ORDER BY product_id")
+    while True:
+        batch = cursor.fetchmany(200)
+        if not batch:
+            break
+        for identifier, name, price in batch:
+            process_product(int(identifier), name, Decimal(price).scaleb(-2))
+\end{lstlisting}
+
+Here \code{process\_product} is an application function supplied by the reader, not a connector API. The \code{scaleb(-2)} conversion is required for the known \code{DECIMAL(10,2)} column: this implementation returns its scaled integer coefficient as text. For example, a stored 12.50 is returned as \code{1250}. Do not apply this conversion blindly to arbitrary expressions or columns with another scale.
+
+\subsection{Import and export data}
+\index{CSV}\index{import}\index{export}
+
+There is no SQL \code{COPY} or \code{LOAD DATA} command in this implementation. Use a connector to parse an interchange file, validate its values, and bind them. A CSV import can remain incremental:
+
+\begin{lstlisting}[language=Python]
+import csv
+from decimal import Decimal
+
+with open("products.csv", newline="", encoding="utf-8") as source:
+    records = csv.DictReader(source)
+    parameters = (
+        (int(row["product_id"]), row["name"],
+         Decimal(row["price"]), int(row["stock"]))
+        for row in records
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                "INSERT INTO products(product_id,name,price,stock) "
+                "VALUES (?,?,?,?)", parameters
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+\end{lstlisting}
+
+Compatible single-row INSERT operations are grouped into requests of at most 256 rows and 768 KiB of SQL. If a grouped request fails, the connector retries original entries in order; a savepoint protects an explicit transaction before this fallback. This preserves first-failure behavior, not an automatic all-file rollback. The surrounding exception handler above makes the import atomic by rolling back the whole explicit transaction. With autocommit enabled, earlier successful entries can remain committed.
+
+For export, use \code{csv.writer}, write headers from \code{cursor.description}, and iterate through the cursor. Choose and document a NULL convention in the output file. A result value equal to the text \code{NULL} is already ambiguous in protocol v1, so an export cannot recover that distinction automatically.
+
+\subsection{Errors and cancellation}
+
+Catch \code{minisql.IntegrityError} for constraint failures 9021/9022 and \code{DataError} for type mismatch 9017. Syntax, binding, object-existence, and unsupported-SQL codes map to \code{ProgrammingError}; authentication and transaction-state failures map to \code{OperationalError}. Other server failures may be the base \code{DatabaseError}. Inspect its \code{code} member and diagnostic message. Do not rely on every operational error having the same Python subclass.
+
+\code{Connection.cancel()} opens a short-lived control connection using the same connection settings and targets the session identifier learned during HELLO. It is designed to work while the query connection is blocked. Trusted-local callers can use it directly; authenticated callers need database ADMIN. Alternatively, a separate administrator connection can call \code{cancel\_session(id)} for a session shown by SHOW PROCESSLIST. Cancellation is cooperative: success means the token was set; the target observes it at a polling boundary and reports error 9035. Handle any resulting transaction failure and roll back as required before reusing it.
+
+\sourcecode{clients/python/minisql/dbapi.py}{Complete public connection/cursor API, binding, batches, and DDL classification.}
+\sourcecode{clients/python/minisql/protocol.py}{TLS policy, continuation frames, cancellation, and server-error mapping.}
+
+\section{Java and JDBC integration}
+\index{Java}\index{JDBC}
+\subsection{Build and connect}
+
+Build from the repository root with \path{clients/jdbc/build.ps1}; the JAR is \path{build/jdbc/minisql-jdbc-1.1.1.jar}. Alternatively run \code{mvn package} in \path{clients/jdbc}. The driver has no runtime dependencies and includes the JDBC service registration. With the JAR on the classpath, \code{DriverManager} finds \code{org.minilang.minisql.jdbc.MiniSqlDriver}; explicit \code{Class.forName} is optional for older frameworks.
+
+\begin{lstlisting}[language=Java]
+import java.sql.*;
+
+try (Connection connection = DriverManager.getConnection(
+        "jdbc:minisql://127.0.0.1:7432/shop")) {
+    try (PreparedStatement statement = connection.prepareStatement(
+            "SELECT product_id,name,price FROM products " +
+            "WHERE stock >= ? ORDER BY product_id")) {
+        statement.setInt(1, 1);
+        try (ResultSet rows = statement.executeQuery()) {
+            while (rows.next()) {
+                System.out.println(rows.getInt("product_id") + " " +
+                    rows.getString("name") + " " +
+                    rows.getBigDecimal("price").movePointLeft(2));
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+A URL has the form \path{jdbc:minisql://host[:port]/database[?property=value&...]}. It labels the endpoint's catalog; \code{setCatalog} refuses a different catalog. Schemas still use explicit two-part SQL names; the driver's \code{setSchema} accepts only public and does not establish a search path.
+
+\begin{longtable}{p{.3\linewidth}p{.61\linewidth}}
+\toprule Property & Default and use \\\midrule
+\code{user}, \code{password} & No user means trusted mode; prefer a Properties object for credentials. \\
+\code{tls} & false; enable TLS 1.3 with the required AES-256-GCM suite. \\
+\code{serverName} & URL host; SNI and ordinary endpoint validation name. \\
+\code{pinSha256} & None; 64 hexadecimal digits, optionally separated with colons or hyphens. \\
+\code{trustServerCertificate} & false; pin-only trust, requiring a valid leaf pin. \\
+\code{connectTimeoutMs} & 10000; TCP connection timeout, zero for platform default. \\
+\code{socketTimeoutMs} & 30000; socket read timeout, zero disables it. \\
+\bottomrule
+\end{longtable}
+
+URL query properties override values from the Properties object, unlike Python's keyword-over-DSN rule. Ordinary TLS validates the chain through the JVM trust store and performs endpoint-name validation. Adding a pin also checks the exact leaf digest. Pin-only mode disables ordinary trust and endpoint-name checks and relies on the exact pinned leaf; provision and rotate that pin deliberately.
+
+\subsection{Transaction behavior}
+
+JDBC defaults to autocommit true. To start a business transaction, choose isolation and any read-only setting first, then call \code{setAutoCommit(false)}. This immediately sends BEGIN. \code{commit()} and \code{rollback()} complete the current transaction and immediately begin the next while autocommit remains disabled. Enabling autocommit commits an active transaction. Closing the connection attempts to roll back outstanding work.
+
+\begin{lstlisting}[language=Java]
+connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+connection.setAutoCommit(false);
+try (PreparedStatement change = connection.prepareStatement(
+        "UPDATE products SET stock=stock-? " +
+        "WHERE product_id=? AND stock>=?")) {
+    change.setInt(1, 2);
+    change.setInt(2, 101);
+    change.setInt(3, 2);
+    if (change.executeUpdate() != 1) {
+        throw new SQLException("Insufficient stock");
+    }
+    connection.commit();
+} catch (SQLException failure) {
+    connection.rollback();
+    throw failure;
+} finally {
+    connection.setAutoCommit(true);
+}
+\end{lstlisting}
+
+READ COMMITTED and SERIALIZABLE are the implemented isolation levels. Isolation changes are refused while autocommit is disabled. The read-only flag influences a subsequently opened explicit transaction; it is not a substitute for database privileges or standby mode.
+
+Unlike the Python connector, the current JDBC execute path does not proactively commit before DDL. Run schema installation and autocommit-only maintenance with autocommit true. Do not infer automatic schema-transaction rewriting from broad JDBC metadata capability flags. JDBC savepoint objects are unsupported; SQL savepoint statements belong to the engine, but mixing manual transaction boundaries with driver-managed state requires care.
+
+\subsection{Statements, batches, and results}
+
+Prepared parameters are numbered from 1. Implemented setters include NULL, Boolean, integral and floating numbers, BigDecimal, String/NString, Date, Time, Timestamp, and supported Object values. The explicit temporal setters convert to the engine's integer temporal units; use them rather than assuming every Java object representation will cast correctly. \code{setBytes} is unsupported. Server PREPARE is attempted lazily; an unsupported statement or older-server failure uses safe quoted-literal substitution unless the error is a connection failure.
+
+Use \code{addBatch} and \code{executeBatch} for repeated statements. Compatible inserts are coalesced up to 256 rows and 768 KiB, with one update count per original entry. A failed coalesced request is retried in order, using an internal savepoint in an explicit transaction. A batch exception can therefore contain prior successful counts; decide explicitly whether to roll back the encompassing transaction.
+
+Results are forward-only and read-only. \code{next()} advances; getters accept either a one-based index or label. Numeric getters parse the returned text, temporal getters parse temporal representations, and \code{getBytes} decodes the server's hexadecimal rendering. Use \code{wasNull()} after a primitive getter, because zero/false alone cannot identify SQL NULL. Closing a ResultSet drains outstanding frames. A connection can own only one unread result stream.
+
+At this revision JDBC date and timestamp getters have a pre-1970 edge case: their decoder treats any text containing a hyphen as a formatted date. A negative numeric epoch value such as \code{-1} therefore selects the wrong parser and fails. Read the known numeric representation with \code{getString} or \code{getLong} and convert the documented epoch units explicitly in application code. This boundary was established by source review of \code{dateValue} and \code{timestampValue}, not a new Java runtime test.
+
+Ordinary \code{ResultSetMetaData} reports VARCHAR/String, unknown nullability, and generic sizes. \code{ParameterMetaData} reports parameter count and conservative VARCHAR types. Catalog metadata obtains declared types through DESCRIBE; it is a different source of information. Live \code{getTables}, \code{getColumns}, and \code{getIndexInfo} are available. Other discovery methods can return conservative or empty results; an IDE's empty schema browser is not proof that the engine lacks the SQL object.
+
+\begin{longtable}{p{.34\linewidth}p{.57\linewidth}}
+\toprule JDBC operation & Current boundary \\\midrule
+\code{setFetchSize} & Stores a hint; does not negotiate new server frame sizes. \\
+\code{setMaxRows} & Limits rows exposed by the ResultSet; use SQL LIMIT to express a server-side query bound. \\
+\code{setQueryTimeout} & Only zero is accepted. A nonzero per-statement timeout is unsupported. \\
+\code{setNetworkTimeout} & Changes socket read timeout; this is not a server query deadline. \\
+\code{Statement.cancel} & Separate control connection and cooperative cancellation; authenticated users need ADMIN. \\
+\code{getGeneratedKeys} & No generated keys are supplied. Use SQL RETURNING and a result-reading execution method. \\
+\code{CallableStatement} & Unsupported; ordinary SQL CALL is a separate route. \\
+Scrollable/updatable ResultSet & Unsupported. \\
+XA, two-phase commit, JDBC Savepoint & Unsupported. \\
+\bottomrule
+\end{longtable}
+
+\sourcecode{clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java}{Actual JDBC transaction, timeout, metadata, setter/getter, and batching behavior.}
+\sourcecode{clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java}{Transport, TLS validation, streaming, and administrative cancellation.}
+
+\section{The result-format limitation shared by network clients}
+\index{wire protocol!result representation}
+\label{adv:wire-null}
+
+Protocol v1 transmits cells as UTF-8 text without declared SQL type information or a per-cell NULL bitmap. The text token \code{NULL} represents SQL NULL. Consequently, a stored text value containing exactly those four characters is indistinguishable from SQL NULL in a generic network result. Python maps the token to None; JDBC treats it as NULL. This is a protocol limitation, not a storage-format limitation: the row codec stores NULL separately and the in-process engine retains typed values.
+
+For an application that must distinguish nullable text precisely, project an explicit null indicator alongside a non-ambiguous representation and interpret the pair. For example, \code{CASE WHEN note IS NULL THEN 1 ELSE 0 END AS note\_is\_null} preserves the distinction in a separate column. If the original text can itself be \code{NULL}, the application must preserve or reconstruct it using that indicator, rather than discarding the corresponding raw value without context. A deliberate encoded export format is another option. Do not advertise generic SELECT/export round-tripping of every nullable text value without handling this case.
+
+Numeric results also require application conversion. In this revision DECIMAL output is the scaled coefficient, not formatted decimal text: \code{DECIMAL(10,2)} 3.30 is returned as \code{330}. For a direct column of known scale 2, use \code{Decimal(raw).scaleb(-2)} or \code{getBigDecimal(...).movePointLeft(2)}. Generic expression results do not carry their scale, and current decimal arithmetic has additional limitations described in Section~\ref{sql:decimal-caveat}. Do not infer correct financial calculations merely because input and storage are exact. Binary values are rendered as \code{0x} followed by hexadecimal digits; supported result decoders can decode them, but that does not imply binary parameter binding is supported.
+
+\section{MiniLang source integration}
+\index{embedded integration}\index{MiniLang}
+
+The native client module offers \code{openLoopback}, authenticated/TLS open functions, \code{query}, \code{beginQuery}, \code{nextQueryBatch}, \code{ping}, \code{cancelSession}, \code{close}, and \code{abort}. \code{query} appends continuation batches into one result. For bounded client buffering, use a query cursor and consume batches. Call cancellation on a separate administrative connection while the target owns an unread response.
+
+For in-process applications, \code{minisql.executor.executor.open(databasePath)} opens an engine and its managed database; \code{executeSql(engine, sqlText)} returns an array of statement results; \code{close(engine)} releases owned resources. \code{attach(managedDatabase)} attaches a session to an existing managed database. These interfaces are demonstrated in the repository's native tests.
+
+\begin{lstlisting}
+import minisql.executor.executor as executor
+
+function main(args)
+  if len(args) != 1 then return 2 end if
+  engine = executor.open(args[0])
+  result = try(executor.executeSql(engine,
+    "SELECT customer_id, name FROM customers ORDER BY customer_id"))
+  if typeof(result) == "error" then
+    ignored = try(executor.close(engine))
+    print result.message
+    return 1
+  end if
+  for each row in result[0].rows
+    print row[1].value
+  end for
+  executor.close(engine)
+  return 0
+end function
+\end{lstlisting}
+
+This example uses the database path printed by initialization. Run it against an exclusively available database; it is not a way to bypass a running server's database lock. Engine results contain typed SQL values with a NULL flag. Source integration must obey the same database ownership, locking, durability, and cleanup rules as the daemon. There is no separately published stable binary embedding ABI, ODBC driver, or HTTP SQL endpoint in this tree.
+
+\sourcecode{src/minisql/client/client.ml}{Public native client functions and streaming cursors.}
+\sourcecode{src/minisql/executor/executor.ml}{open, attach, executeSql, close, and typed QueryResult.}
+\sourcecode{src/tests/m15_sql_engine.ml}{Working in-process engine usage.}
