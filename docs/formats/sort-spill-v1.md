@@ -1,5 +1,9 @@
 # External sort spill v1
 
+The current storage-v2 engine retains this spill container version and encodes
+its contained rows with [row format 2](row-v2.md). This is not a legacy-row
+compatibility path; spill files are temporary process-local work products.
+
 Temporary M46 sort runs use magic `MSSPILL1` and version 1. The fixed 16-byte
 header contains the magic, version, projected-value count, order-value count,
 and a reserved zero field. Each row is encoded with the existing row codec and

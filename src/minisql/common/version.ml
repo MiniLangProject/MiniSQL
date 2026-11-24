@@ -5,6 +5,8 @@ package minisql.common.version
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
+import minisql.common.format_version as format_version
+
 /// Central product, wire-protocol, and database-format identity. Persisted and
 
 const PRODUCT_NAME = "MiniSQL"
@@ -17,7 +19,7 @@ const REVISION = "M48-M50R3"
 /// Defines the wire protocol version constant used by the minisql common version module.
 const WIRE_PROTOCOL_VERSION = 1
 /// Defines the database format version constant used by the minisql common version module.
-const DATABASE_FORMAT_VERSION = 1
+const DATABASE_FORMAT_VERSION = format_version.DATABASE
 
 /// Performs the product name operation for this module.
 /// Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.

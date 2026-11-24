@@ -1,5 +1,10 @@
 # Page format v1
 
+Storage generation 2 retains this 64-byte header. Its payload contracts are
+versioned separately; page type 6 identifies the
+[user-table metadata page](table-file-v2.md). Header version 1 alone does not
+identify a legacy database or make new payloads compatible with older readers.
+
 All fields are little-endian. Header size is 64 bytes.
 
 | Offset | Size | Field |

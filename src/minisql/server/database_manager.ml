@@ -20,6 +20,7 @@ import minisql.platform.file as file_api
 import minisql.platform.clock as clock
 import minisql.platform.lock as file_lock
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.btree as btree
 import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.checkpoint as checkpoint
@@ -611,7 +612,7 @@ function acquireTableReadHandle(database, path)
   if not cache.guard.acquire() then return fail(CLOSED_HANDLE, "acquireTableReadHandle", "registry guard is unavailable") end if
   entry = cache.tables.get(path)
   if entry is void then
-    tableFile = try(paged_file.openReadOnlyManaged(path))
+    tableFile = try(table_header.openReadOnlyManaged(path))
     if typeof(tableFile) == "error" then cache.guard.release(); return tableFile end if
     entry = CachedReadHandle(path, tableFile, false)
     cache.tables.set(path, entry)
@@ -996,7 +997,7 @@ function openInternal(path, allowStandby, checkpointWalBytes, bufferPoolBytes, q
   recoveryTargets = []
   recoveryTargetIds = hashmap.HashMap.new()
   for each table in catalogHandle.catalog.tables
-    tableFile = try(paged_file.open(catalog.tableFilePath(path, table.tableId)))
+    tableFile = try(table_header.open(catalog.tableFilePath(path, table.tableId)))
     if typeof(tableFile) == "error" then
       closeRecoveryFiles(recoveryFiles)
       checkpoint.close(checkpointFile)

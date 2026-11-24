@@ -3,6 +3,8 @@
 // Licensed under the Apache License, Version 2.0; see the LICENSE file for details.
 
 import minisql.catalog.catalog as catalog
+import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.common.uuid as uuid
 import minisql.config.loader as loader
 import minisql.platform.file as file_api
@@ -61,6 +63,10 @@ function main(args)
   testkit.record(state, table.columns[0].columnId != table.columns[1].columnId, "column ids unique")
   tablePath = catalog.tableFilePath(first.path, table.tableId)
   testkit.record(state, file_api.fileExists(tablePath), "one physical file created per table")
+  physicalTable = table_header.openReadOnly(tablePath)
+  testkit.equal(state, physicalTable.pageCount, 1, "new catalog table reserves immutable header page zero")
+  testkit.record(state, table_header.validate(physicalTable), "catalog table identity header validates")
+  paged_file.close(physicalTable)
   tx1 = catalog.allocateTransactionId(first)
   tx2 = catalog.allocateTransactionId(first)
   testkit.equal(state, tx1, 1, "first transaction id")

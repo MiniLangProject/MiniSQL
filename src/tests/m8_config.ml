@@ -34,6 +34,11 @@ function main(args)
   testkit.equal(state, config.databaseDefaults.pageSize, 4096, "page default")
   testkit.equal(state, config.databaseDefaults.checksumAlgorithm, "crc32c", "checksum default")
   testkit.equal(state, config.databaseDefaults.textEncoding, "utf-8", "encoding default")
+  testkit.equal(state, config.databaseDefaults.databaseFormatVersion, 2, "database format v2")
+  testkit.equal(state, config.databaseDefaults.tableFileFormatVersion, 2, "table format v2")
+  testkit.equal(state, config.databaseDefaults.indexFileFormatVersion, 2, "index format v2")
+  testkit.equal(state, config.databaseDefaults.rowFormatVersion, 2, "row format v2")
+  testkit.equal(state, config.databaseDefaults.walFormatVersion, 1, "unchanged WAL framing")
   testkit.equal(state, config.runtime.logLevel, "info", "logger threshold")
   testkit.equal(state, config.server.maxResultBytes, 268435456, "aggregate result byte limit")
   testkit.equal(state, config.runtime.processMemoryBytes, 2147483648, "managed heap ceiling")
@@ -50,6 +55,19 @@ function main(args)
   testkit.record(state, model.isMiniSqlConfig(config), "config exact type predicate")
   testkit.record(state, model.isDatabaseDefaults(config.databaseDefaults), "database defaults exact type predicate")
   testkit.record(state, validation.validate(config), "valid config")
+  config.databaseDefaults.databaseFormatVersion = 1
+  testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "legacy database defaults rejected")
+  config.databaseDefaults.databaseFormatVersion = 2
+  config.databaseDefaults.tableFileFormatVersion = 1
+  testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "legacy table defaults rejected")
+  config.databaseDefaults.tableFileFormatVersion = 2
+  config.databaseDefaults.indexFileFormatVersion = 1
+  testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "legacy index defaults rejected")
+  config.databaseDefaults.indexFileFormatVersion = 2
+  config.databaseDefaults.rowFormatVersion = 1
+  testkit.errorCode(state, try(validation.validate(config)), validation.INVALID_CONFIGURATION, "legacy row defaults rejected")
+  config.databaseDefaults.rowFormatVersion = 2
+  testkit.record(state, validation.validate(config), "v2 defaults restored")
   testkit.errorCode(state, try(validation.validate([])), validation.INVALID_CONFIGURATION, "wrong config struct rejected")
 
   writeText(invalidPath, "{\"configVersion\":1,\"paths\":")

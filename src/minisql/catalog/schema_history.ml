@@ -16,6 +16,7 @@ import minisql.storage.btree as btree
 import minisql.storage.checksum as checksum
 import minisql.storage.heap_file as heap_file
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.superblock as superblock
 
 /// Durable schema/constraint sidecar and transactional DDL journal.
@@ -2127,7 +2128,7 @@ function createPlannedFiles(transaction, prepared)
   for each plan in prepared.createFiles
     deleteIfExists(plan.temporaryPath)
     if plan.fileKind == superblock.FILE_TYPE_TABLE then
-      file = paged_file.create(plan.temporaryPath, transaction.database.metadata.pageSize, superblock.FILE_TYPE_TABLE, plan.fileId, transaction.database.metadata.databaseId)
+      file = table_header.create(plan.temporaryPath, transaction.database.metadata.pageSize, plan.fileId, transaction.database.metadata.databaseId)
       paged_file.close(file)
     else
       tree = btree.create(plan.temporaryPath, transaction.database.metadata.pageSize, plan.fileId, transaction.database.metadata.databaseId, plan.unique)

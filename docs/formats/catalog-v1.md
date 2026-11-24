@@ -1,5 +1,10 @@
 # Database metadata and catalog envelope v1
 
+> Historical M8 note. The database envelope now uses version 2; see
+> [database metadata v2](database-meta-v2.md). The separate catalog envelope
+> remains version 1 and uses scalable continuation pages as described in that
+> document. Its retained version does not permit opening format-1 databases.
+
 M8 stores `db.meta` and `catalog/catalog.tbl` as MiniSQL paged files. Page 0 contains a
 protected envelope.
 

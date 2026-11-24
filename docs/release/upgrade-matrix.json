@@ -1,15 +1,31 @@
 {
   "matrixVersion": 1,
   "targetVersion": "1.1.1",
-  "databaseFormatVersion": 1,
+  "developmentState": "unreleased-storage-v2",
+  "databaseFormatVersion": 2,
+  "formatVersions": {
+    "database": 2,
+    "table": 2,
+    "index": 2,
+    "row": 2,
+    "overflow": 2,
+    "wal": 1,
+    "page": 1,
+    "superblock": 1,
+    "protectedEnvelopeStructure": 1,
+    "wire": 1
+  },
   "entries": [
-    {"source": "M8-M20", "open": true, "automaticAdditions": ["security catalog", "audit metadata", "durable WAL marker"]},
-    {"source": "M21-M31", "open": true, "automaticAdditions": ["durable WAL marker", "schema extensions when needed"]},
-    {"source": "M32-M47", "open": true, "automaticAdditions": ["durable WAL marker"]},
-    {"source": "1.0.0", "open": true, "automaticAdditions": []},
-    {"source": "1.1.0", "open": true, "automaticAdditions": []},
-    {"source": "1.1.1", "open": true, "automaticAdditions": []}
+    {"source": "M8-M20", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "M21-M31", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "M32-M50", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "1.0.0", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "1.1.0", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "1.1.1 (earlier format-1 build)", "sourceDatabaseFormatVersion": 1, "open": false, "automaticAdditions": []},
+    {"source": "1.1.1 (current unreleased storage-v2 build)", "sourceDatabaseFormatVersion": 2, "open": true, "automaticAdditions": []}
   ],
-  "pageSizeChange": "offline rewrite only",
-  "downgrade": "not supported after use of newer logical features"
+  "automaticStorageUpgrade": false,
+  "legacyDatabaseImport": "not implemented",
+  "pageSizeChange": "offline rewrite between supported storage-v2 databases only",
+  "downgrade": "storage-v2 databases cannot be opened by storage-v1 binaries"
 }

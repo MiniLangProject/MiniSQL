@@ -1,5 +1,9 @@
 # Index file format v1 envelope
 
+> Archived format-1 notes. See [SQL index keys and values v2](index-file-v2.md)
+> and [B+ tree v2](btree-v2.md) for the current implementation. Legacy index
+> metadata and v1 SQL-key/INCLUDE representations are unsupported.
+
 Page zero contains:
 
 - index magic and index-file format version

@@ -7,6 +7,7 @@ import minisql.platform.file as file_api
 import minisql.storage.overflow as overflow
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.row_codec as rows
 import minisql.storage.superblock as superblock
 import tests.support.testkit as testkit
@@ -54,7 +55,9 @@ function main(args)
   cleanup(path)
   state = testkit.create()
   testkit.errorCode(state, try(overflow.createPointer(1, 0, 4294967296, 1, 0)), overflow.INVALID_ARGUMENT, "pointer length must fit U32")
-  file = paged_file.create(path, 4096, superblock.FILE_TYPE_TABLE, 123, databaseId())
+  file = table_header.create(path, 4096, 123, databaseId())
+  tableHeader = paged_file.readPage(file, 0)
+  testkit.equal(state, page.verify(tableHeader).pageType, page.TYPE_TABLE_META, "page zero is the table identity header")
   capacity = overflow.chunkCapacity(file)
   lengths = [0, 1, capacity - 1, capacity, capacity + 1, capacity * 3 + 17, 262144]
   pointers = []
@@ -65,6 +68,7 @@ function main(args)
     pointers = pointers + [pointer]
     expected = expected + [value]
     testkit.equal(state, hex(overflow.read(file, pointer)), hex(value), "overflow roundtrip " + lengths[index])
+    if lengths[index] > 0 then testkit.record(state, pointer.firstPage >= table_header.FIRST_DATA_PAGE, "overflow starts after the table header") end if
   end for
   testkit.record(state, file.pageCount > 60, "large value spans many pages")
 
@@ -114,7 +118,7 @@ function main(args)
 
   durablePointer = pointers[6]
   paged_file.close(file)
-  reopened = paged_file.open(path)
+  reopened = table_header.open(path)
   testkit.equal(state, hex(overflow.read(reopened, durablePointer)), hex(expected[6]), "large value survives reopen")
   freed = overflow.free(reopened, durablePointer)
   testkit.record(state, freed > 60, "large chain freed")
@@ -123,7 +127,11 @@ function main(args)
   reusedPointer = overflow.write(reopened, 1200, makeValue(capacity * 2, 111))
   testkit.equal(state, reopened.pageCount, pageCountBeforeReuse, "free overflow pages are reused before file growth")
   testkit.equal(state, hex(overflow.read(reopened, reusedPointer)), hex(makeValue(capacity * 2, 111)), "reused overflow pages remain correct")
+  testkit.equal(state, hex(paged_file.readPage(reopened, 0)), hex(tableHeader), "allocation freeing and reuse preserve table header bytes")
   paged_file.close(reopened)
+  headerChecked = table_header.open(path)
+  testkit.equal(state, hex(paged_file.readPage(headerChecked, 0)), hex(tableHeader), "table identity survives final reopen")
+  paged_file.close(headerChecked)
   cleanup(path)
   return testkit.finish(state, "MiniSQL M10 overflow tests: SUCCESS", "MiniSQL M10 overflow tests: FAIL")
 end function

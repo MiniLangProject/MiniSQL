@@ -6,8 +6,10 @@ package minisql.storage.row_codec
 // Licensed under the Apache License, Version 2.0; see the LICENSE file.
 
 import minisql.common.endian as endian
+import minisql.common.float_codec as float_codec
+import minisql.common.format_version as format_version
 
-/// Row format v1. SQL NULL is represented by SqlNull rather than MiniLang void,
+/// Row format v2 uses aligned fields and finite IEEE-754 binary64 values.
 
 const INVALID_ARGUMENT = 9001
 /// Defines the unsupported format constant used by the minisql storage row codec module.
@@ -18,11 +20,13 @@ const CORRUPT_DATA = 9004
 const TYPE_MISMATCH = 9017
 
 /// Defines the format version constant used by the minisql storage row codec module.
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = format_version.ROW
 /// Defines the header size constant used by the minisql storage row codec module.
 const HEADER_SIZE = 16
 /// Defines the directory entry size constant used by the minisql storage row codec module.
 const DIRECTORY_ENTRY_SIZE = 8
+/// Rows and the column directory begin on eight-byte boundaries.
+const ROW_ALIGNMENT = 8
 
 /// Defines the type boolean constant used by the minisql storage row codec module.
 const TYPE_BOOLEAN = 1
@@ -136,6 +140,43 @@ function bytesEqual(left, right)
   for index = 0 to len(left) - 1
     if left[index] != right[index] then return false end if
   end for
+  return true
+end function
+
+/// Rounds an offset upward to its natural power-of-two alignment.
+/// @param offset Non-negative byte offset.
+/// @param alignment Required alignment in bytes.
+function alignOffset(offset, alignment)
+  remainder = offset % alignment
+  if remainder == 0 then return offset end if
+  return offset + alignment - remainder
+end function
+
+/// Returns the physical alignment for a stored column, including external pointers.
+/// NULL owns no storage and therefore adds no alignment padding.
+/// @param typeCode Physical column type.
+/// @param flags Column directory flags.
+function valueAlignment(typeCode, flags)
+  if flags == FLAG_NULL then return 1 end if
+  if flags == FLAG_EXTERNAL then return 8 end if
+  if typeCode == TYPE_SMALLINT then return 2 end if
+  if typeCode == TYPE_INTEGER or typeCode == TYPE_DATE then return 4 end if
+  if typeCode == TYPE_BIGINT or typeCode == TYPE_REAL or typeCode == TYPE_DOUBLE or typeCode == TYPE_DECIMAL or typeCode == TYPE_TIME or typeCode == TYPE_TIMESTAMP then return 8 end if
+  return 1
+end function
+
+/// Rejects nonzero bytes in a bounded, half-open alignment-padding range.
+/// @param encoded Encoded row bytes.
+/// @param first First padding byte.
+/// @param ending Offset immediately after the padding.
+/// @param operation Decoder operation used in diagnostics.
+function validatePadding(encoded, first, ending, operation)
+  if first < 0 or ending < first or ending > len(encoded) then return fail(CORRUPT_DATA, operation, "padding exceeds row") end if
+  if ending > first then
+    for offset = first to ending - 1
+      if encoded[offset] != 0 then return fail(CORRUPT_DATA, operation, "non-zero alignment padding") end if
+    end for
+  end if
   return true
 end function
 
@@ -269,9 +310,7 @@ function encodeScalar(spec, value)
   end if
   if spec.typeCode == TYPE_REAL or spec.typeCode == TYPE_DOUBLE then
     if typeof(value) != "float" and typeof(value) != "int" then return fail(TYPE_MISMATCH, "encodeScalar", "floating type requires number") end if
-    // MiniLang currently has no stable float-bit cast. Format v1 therefore uses
-    // a canonical UTF-8 numeric rendering and validates it on decode.
-    return bytes("" + value)
+    return float_codec.encodeFloat64LE(value)
   end if
   if isTextType(spec.typeCode) then return encodeText(spec, value) end if
   if isBinaryType(spec.typeCode) then return encodeBinary(spec, value) end if
@@ -322,11 +361,8 @@ function decodeScalar(spec, encoded)
     return endian.readI64LE(encoded, 0)
   end if
   if spec.typeCode == TYPE_REAL or spec.typeCode == TYPE_DOUBLE then
-    text = decode(encoded)
-    if typeof(text) != "string" then return fail(CORRUPT_DATA, "decodeScalar", "floating rendering is not UTF-8") end if
-    value = toNumber(text)
-    if typeof(value) != "float" and typeof(value) != "int" then return fail(CORRUPT_DATA, "decodeScalar", "invalid floating rendering") end if
-    return value
+    if len(encoded) != 8 then return fail(CORRUPT_DATA, "decodeScalar", "invalid binary64 length") end if
+    return float_codec.decodeFloat64LE(encoded, 0)
   end if
   if isTextType(spec.typeCode) then return decodeText(spec, encoded) end if
   if isBinaryType(spec.typeCode) then return decodeBinary(spec, encoded) end if
@@ -342,10 +378,11 @@ function encode(rowSchema, values)
   if typeof(values) != "array" or len(values) != len(rowSchema.columns) then return fail(INVALID_ARGUMENT, "encode", "value count does not match schema") end if
   count = len(values)
   nullBytes = (count + 7) >> 3
-  directoryOffset = HEADER_SIZE + nullBytes
+  directoryOffset = alignOffset(HEADER_SIZE + nullBytes, ROW_ALIGNMENT)
   dataOffset = directoryOffset + count * DIRECTORY_ENTRY_SIZE
   encodedValues = []
   flags = []
+  valueOffsets = []
   total = dataOffset
 
   for index = 0 to count - 1
@@ -355,21 +392,27 @@ function encode(rowSchema, values)
       if not spec.nullable then return fail(TYPE_MISMATCH, "encode", "NULL in NOT NULL column " + index) end if
       encodedValues = encodedValues + [bytes()]
       flags = flags + [FLAG_NULL]
+      valueOffsets = valueOffsets + [total]
     else if value is ExternalValue then
       if not isExternalType(spec.typeCode) then return fail(TYPE_MISMATCH, "encode", "external value only allowed for TEXT/BLOB") end if
       if typeof(value.encodedPointer) != "bytes" or len(value.encodedPointer) == 0 then return fail(TYPE_MISMATCH, "encode", "external pointer must be non-empty bytes") end if
       encodedValues = encodedValues + [bytes(value.encodedPointer)]
       flags = flags + [FLAG_EXTERNAL]
+      total = alignOffset(total, valueAlignment(spec.typeCode, FLAG_EXTERNAL))
+      valueOffsets = valueOffsets + [total]
       total = total + len(value.encodedPointer)
     else
       if value is void then return fail(TYPE_MISMATCH, "encode", "MiniLang void is not SQL NULL; use nullValue()") end if
       encoded = encodeScalar(spec, value)
       encodedValues = encodedValues + [encoded]
       flags = flags + [0]
+      total = alignOffset(total, valueAlignment(spec.typeCode, 0))
+      valueOffsets = valueOffsets + [total]
       total = total + len(encoded)
     end if
   end for
-  if total > 65535 then return fail(INVALID_ARGUMENT, "encode", "encoded row exceeds 65535 bytes") end if
+  total = alignOffset(total, ROW_ALIGNMENT)
+  if total > 65535 then return fail(INVALID_ARGUMENT, "encode", "aligned row exceeds 65535 bytes") end if
 
   output = bytes(total, 0)
   copyBytes(output, 0, magicBytes(), 0, 4)
@@ -379,19 +422,17 @@ function encode(rowSchema, values)
   endian.writeU16LE(output, 10, nullBytes)
   endian.writeU16LE(output, 12, directoryOffset)
   endian.writeU16LE(output, 14, 0)
-  cursor = dataOffset
   for index = 0 to count - 1
     entryOffset = directoryOffset + index * DIRECTORY_ENTRY_SIZE
     endian.writeU16LE(output, entryOffset, rowSchema.columns[index].typeCode)
     endian.writeU16LE(output, entryOffset + 2, flags[index])
-    endian.writeU16LE(output, entryOffset + 4, cursor)
+    endian.writeU16LE(output, entryOffset + 4, valueOffsets[index])
     endian.writeU16LE(output, entryOffset + 6, len(encodedValues[index]))
     if (flags[index] & FLAG_NULL) != 0 then
       bitmapByte = HEADER_SIZE + (index >> 3)
       output[bitmapByte] = output[bitmapByte] | (1 << (index % 8))
     else
-      if len(encodedValues[index]) > 0 then copyBytes(output, cursor, encodedValues[index], 0, len(encodedValues[index])) end if
-      cursor = cursor + len(encodedValues[index])
+      if len(encodedValues[index]) > 0 then copyBytes(output, valueOffsets[index], encodedValues[index], 0, len(encodedValues[index])) end if
     end if
   end for
   return output
@@ -410,60 +451,7 @@ end function
 /// @param rowSchema rowSchema value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 function decodeRow(rowSchema, encoded)
-  if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, "decodeRow", "rowSchema must be RowSchema") end if
-  if typeof(encoded) != "bytes" or len(encoded) < HEADER_SIZE then return fail(CORRUPT_DATA, "decodeRow", "row is shorter than header") end if
-  if not bytesEqual(slice(encoded, 0, 4), magicBytes()) then return fail(UNSUPPORTED_FORMAT, "decodeRow", "row magic mismatch") end if
-  if endian.readU16LE(encoded, 4) != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decodeRow", "row format mismatch") end if
-  schemaVersion = endian.readU16LE(encoded, 6)
-  count = endian.readU16LE(encoded, 8)
-  nullBytes = endian.readU16LE(encoded, 10)
-  directoryOffset = endian.readU16LE(encoded, 12)
-  if endian.readU16LE(encoded, 14) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeRow", "reserved row field is non-zero") end if
-  if schemaVersion != rowSchema.version then return fail(UNSUPPORTED_FORMAT, "decodeRow", "schema version does not match decoder") end if
-  if count != len(rowSchema.columns) or nullBytes != ((count + 7) >> 3) or directoryOffset != HEADER_SIZE + nullBytes then return fail(CORRUPT_DATA, "decodeRow", "row shape does not match schema") end if
-  dataStart = directoryOffset + count * DIRECTORY_ENTRY_SIZE
-  if dataStart > len(encoded) then return fail(CORRUPT_DATA, "decodeRow", "directory exceeds row") end if
-
-  // Bits beyond the final column are reserved and must stay zero.
-  if count % 8 != 0 then
-    lastMask = 0
-    for bit = count % 8 to 7
-      lastMask = lastMask | (1 << bit)
-    end for
-    if (encoded[HEADER_SIZE + nullBytes - 1] & lastMask) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeRow", "reserved NULL-bitmap bits are non-zero") end if
-  end if
-
-  values = []
-  cursor = dataStart
-  for index = 0 to count - 1
-    spec = rowSchema.columns[index]
-    entryOffset = directoryOffset + index * DIRECTORY_ENTRY_SIZE
-    typeCode = endian.readU16LE(encoded, entryOffset)
-    entryFlags = endian.readU16LE(encoded, entryOffset + 2)
-    valueOffset = endian.readU16LE(encoded, entryOffset + 4)
-    valueLength = endian.readU16LE(encoded, entryOffset + 6)
-    if typeCode != spec.typeCode or (entryFlags != 0 and entryFlags != FLAG_NULL and entryFlags != FLAG_EXTERNAL) then return fail(CORRUPT_DATA, "decodeRow", "invalid directory entry") end if
-    bitmapNull = (encoded[HEADER_SIZE + (index >> 3)] & (1 << (index % 8))) != 0
-    if ((entryFlags & FLAG_NULL) != 0) != bitmapNull then return fail(CORRUPT_DATA, "decodeRow", "NULL bitmap disagrees with directory") end if
-    if valueOffset != cursor then return fail(CORRUPT_DATA, "decodeRow", "non-canonical value offset") end if
-
-    if bitmapNull then
-      if valueLength != 0 or not spec.nullable then return fail(CORRUPT_DATA, "decodeRow", "invalid NULL value") end if
-      values = values + [nullValue()]
-    else
-      if valueOffset < dataStart or valueOffset > len(encoded) or valueLength > len(encoded) - valueOffset then return fail(CORRUPT_DATA, "decodeRow", "value range exceeds row") end if
-      valueBytes = slice(encoded, valueOffset, valueLength)
-      if (entryFlags & FLAG_EXTERNAL) != 0 then
-        if not isExternalType(spec.typeCode) or valueLength == 0 then return fail(CORRUPT_DATA, "decodeRow", "invalid external LOB pointer") end if
-        values = values + [ExternalValue(valueBytes)]
-      else
-        values = values + [decodeScalar(spec, valueBytes)]
-      end if
-      cursor = cursor + valueLength
-    end if
-  end for
-  if cursor != len(encoded) then return fail(CORRUPT_DATA, "decodeRow", "trailing or unreachable row bytes") end if
-  return RowData(schemaVersion, values)
+  return decodeAligned(rowSchema, encoded, false)
 end function
 
 /// Decodes the compatible.
@@ -471,25 +459,39 @@ end function
 /// @param rowSchema rowSchema value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 function decodeCompatible(rowSchema, encoded)
-  if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, "decodeCompatible", "rowSchema must be RowSchema") end if
-  if typeof(encoded) != "bytes" or len(encoded) < HEADER_SIZE then return fail(CORRUPT_DATA, "decodeCompatible", "row is shorter than header") end if
-  if not bytesEqual(slice(encoded, 0, 4), magicBytes()) then return fail(UNSUPPORTED_FORMAT, "decodeCompatible", "row magic mismatch") end if
-  if endian.readU16LE(encoded, 4) != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, "decodeCompatible", "row format mismatch") end if
+  return decodeAligned(rowSchema, encoded, true)
+end function
+
+/// Shared v2 decoder: checks canonical alignment, all padding, and schema shape.
+/// @param rowSchema Schema used to decode physical column values.
+/// @param encoded Complete row bytes, including zero tail padding.
+/// @param compatible Whether an older schema with a matching column prefix is accepted.
+function decodeAligned(rowSchema, encoded, compatible)
+  operation = "decodeRow"
+  if compatible then operation = "decodeCompatible" end if
+  if rowSchema is not RowSchema then return fail(INVALID_ARGUMENT, operation, "rowSchema must be RowSchema") end if
+  if typeof(encoded) != "bytes" or len(encoded) < HEADER_SIZE then return fail(CORRUPT_DATA, operation, "row is shorter than header") end if
+  if not bytesEqual(slice(encoded, 0, 4), magicBytes()) then return fail(UNSUPPORTED_FORMAT, operation, "row magic mismatch") end if
+  if endian.readU16LE(encoded, 4) != FORMAT_VERSION then return fail(UNSUPPORTED_FORMAT, operation, "row format mismatch") end if
+  if len(encoded) > 65535 or len(encoded) % ROW_ALIGNMENT != 0 then return fail(CORRUPT_DATA, operation, "row length is not aligned or exceeds U16") end if
   schemaVersion = endian.readU16LE(encoded, 6)
   count = endian.readU16LE(encoded, 8)
   nullBytes = endian.readU16LE(encoded, 10)
   directoryOffset = endian.readU16LE(encoded, 12)
-  if endian.readU16LE(encoded, 14) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeCompatible", "reserved row field is non-zero") end if
-  if schemaVersion <= 0 or schemaVersion > rowSchema.version then return fail(UNSUPPORTED_FORMAT, "decodeCompatible", "stored schema version is newer than decoder") end if
-  if count <= 0 or count > len(rowSchema.columns) or nullBytes != ((count + 7) >> 3) or directoryOffset != HEADER_SIZE + nullBytes then return fail(CORRUPT_DATA, "decodeCompatible", "row shape is incompatible with schema") end if
+  if endian.readU16LE(encoded, 14) != 0 then return fail(UNSUPPORTED_FORMAT, operation, "reserved row field is non-zero") end if
+  if schemaVersion <= 0 or schemaVersion > rowSchema.version then return fail(UNSUPPORTED_FORMAT, operation, "stored schema version is newer than decoder") end if
+  if not compatible and schemaVersion != rowSchema.version then return fail(UNSUPPORTED_FORMAT, operation, "schema version does not match decoder") end if
+  if count <= 0 or count > len(rowSchema.columns) or nullBytes != ((count + 7) >> 3) or directoryOffset != alignOffset(HEADER_SIZE + nullBytes, ROW_ALIGNMENT) then return fail(CORRUPT_DATA, operation, "row shape is incompatible with schema") end if
+  if not compatible and count != len(rowSchema.columns) then return fail(CORRUPT_DATA, operation, "row column count does not match schema") end if
   dataStart = directoryOffset + count * DIRECTORY_ENTRY_SIZE
-  if dataStart > len(encoded) then return fail(CORRUPT_DATA, "decodeCompatible", "directory exceeds row") end if
+  if dataStart > len(encoded) then return fail(CORRUPT_DATA, operation, "directory exceeds row") end if
+  validatePadding(encoded, HEADER_SIZE + nullBytes, directoryOffset, operation)
   if count % 8 != 0 then
     lastMask = 0
     for bit = count % 8 to 7
       lastMask = lastMask | (1 << bit)
     end for
-    if (encoded[HEADER_SIZE + nullBytes - 1] & lastMask) != 0 then return fail(UNSUPPORTED_FORMAT, "decodeCompatible", "reserved NULL-bitmap bits are non-zero") end if
+    if (encoded[HEADER_SIZE + nullBytes - 1] & lastMask) != 0 then return fail(UNSUPPORTED_FORMAT, operation, "reserved NULL-bitmap bits are non-zero") end if
   end if
   output = []
   cursor = dataStart
@@ -500,18 +502,21 @@ function decodeCompatible(rowSchema, encoded)
     entryFlags = endian.readU16LE(encoded, entryOffset + 2)
     valueOffset = endian.readU16LE(encoded, entryOffset + 4)
     valueLength = endian.readU16LE(encoded, entryOffset + 6)
-    if typeCode != spec.typeCode or (entryFlags != 0 and entryFlags != FLAG_NULL and entryFlags != FLAG_EXTERNAL) then return fail(CORRUPT_DATA, "decodeCompatible", "invalid directory entry") end if
+    if typeCode != spec.typeCode or (entryFlags != 0 and entryFlags != FLAG_NULL and entryFlags != FLAG_EXTERNAL) then return fail(CORRUPT_DATA, operation, "invalid directory entry") end if
     bitmapNull = (encoded[HEADER_SIZE + (index >> 3)] & (1 << (index % 8))) != 0
-    if ((entryFlags & FLAG_NULL) != 0) != bitmapNull then return fail(CORRUPT_DATA, "decodeCompatible", "NULL bitmap disagrees with directory") end if
-    if valueOffset != cursor then return fail(CORRUPT_DATA, "decodeCompatible", "non-canonical value offset") end if
+    if ((entryFlags & FLAG_NULL) != 0) != bitmapNull then return fail(CORRUPT_DATA, operation, "NULL bitmap disagrees with directory") end if
+    alignedCursor = alignOffset(cursor, valueAlignment(typeCode, entryFlags))
+    if valueOffset != alignedCursor then return fail(CORRUPT_DATA, operation, "non-canonical aligned value offset") end if
+    validatePadding(encoded, cursor, alignedCursor, operation)
+    cursor = alignedCursor
     if bitmapNull then
-      if valueLength != 0 or not spec.nullable then return fail(CORRUPT_DATA, "decodeCompatible", "invalid NULL value") end if
+      if valueLength != 0 or not spec.nullable then return fail(CORRUPT_DATA, operation, "invalid NULL value") end if
       output = output + [nullValue()]
     else
-      if valueOffset < dataStart or valueOffset > len(encoded) or valueLength > len(encoded) - valueOffset then return fail(CORRUPT_DATA, "decodeCompatible", "value range exceeds row") end if
+      if valueOffset < dataStart or valueOffset > len(encoded) or valueLength > len(encoded) - valueOffset then return fail(CORRUPT_DATA, operation, "value range exceeds row") end if
       valueBytes = slice(encoded, valueOffset, valueLength)
       if (entryFlags & FLAG_EXTERNAL) != 0 then
-        if not isExternalType(spec.typeCode) or valueLength == 0 then return fail(CORRUPT_DATA, "decodeCompatible", "invalid external LOB pointer") end if
+        if not isExternalType(spec.typeCode) or valueLength == 0 then return fail(CORRUPT_DATA, operation, "invalid external LOB pointer") end if
         output = output + [ExternalValue(valueBytes)]
       else
         output = output + [decodeScalar(spec, valueBytes)]
@@ -519,7 +524,8 @@ function decodeCompatible(rowSchema, encoded)
       cursor = cursor + valueLength
     end if
   end for
-  if cursor != len(encoded) then return fail(CORRUPT_DATA, "decodeCompatible", "trailing or unreachable row bytes") end if
+  if alignOffset(cursor, ROW_ALIGNMENT) != len(encoded) then return fail(CORRUPT_DATA, operation, "non-canonical row tail length") end if
+  validatePadding(encoded, cursor, len(encoded), operation)
   return RowData(schemaVersion, output)
 end function
 

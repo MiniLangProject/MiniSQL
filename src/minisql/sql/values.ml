@@ -7,6 +7,7 @@ package minisql.sql.values
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
 import minisql.common.endian as endian
+import minisql.common.float_codec as float_codec
 import minisql.sql.ast as ast
 import minisql.sql.types as types
 import minisql.storage.row_codec as row_codec
@@ -233,7 +234,7 @@ function floatingNumberFromText(textValue)
   end if
 
   direct = toNumber(textValue)
-  if typeof(direct) == "float" or typeof(direct) == "int" then return direct end if
+  if typeof(direct) == "float" or typeof(direct) == "int" then return floatingSignedZero(textValue, direct) end if
 
   raw = bytes(textValue)
   startOffset = 0
@@ -268,7 +269,7 @@ function floatingNumberFromText(textValue)
   if typeof(mantissa) != "float" and typeof(mantissa) != "int" then
     return fail(BINDING_ERROR, "floatingNumberFromText", "invalid floating mantissa")
   end if
-  if exponentOffset < 0 then return mantissa end if
+  if exponentOffset < 0 then return floatingSignedZero(textValue, mantissa) end if
 
   exponentIndex = exponentOffset + 1
   exponentNegative = false
@@ -289,7 +290,8 @@ function floatingNumberFromText(textValue)
     exponentIndex = exponentIndex + 1
   end while
 
-  result = mantissa + 0.0
+  result = mantissa
+  if typeof(result) != "float" then result = result + 0.0 end if
   scaleIndex = 0
   while scaleIndex < exponentMagnitude
     if exponentNegative then
@@ -304,7 +306,22 @@ function floatingNumberFromText(textValue)
   // comparison is unequal to itself, which gives us a portable finite check.
   finiteProbe = result - result
   if finiteProbe != finiteProbe then return fail(BINDING_ERROR, "floatingNumberFromText", "floating literal exceeds the finite DOUBLE range") end if
-  return result
+  return floatingSignedZero(textValue, result)
+end function
+
+/// Restores the explicit sign of parsed zero: the runtime's decimal parser
+/// canonicalizes zero before SQL receives it. This also covers underflow.
+/// @param textValue Validated source spelling of the numeric value.
+/// @param number Parsed finite numeric value.
+function floatingSignedZero(textValue, number)
+  if number != 0 then return number end if
+  raw = bytes(textValue)
+  cursor = 0
+  while cursor < len(raw) and raw[cursor] <= 32
+    cursor = cursor + 1
+  end while
+  if cursor < len(raw) and raw[cursor] == 45 then return float_codec.nativeCopySign(0.0, -1.0) end if
+  return number
 end function
 
 /// Implements literal float for this module.
@@ -698,6 +715,9 @@ function convert(value, target)
   end if
   if target.kind == types.SqlTypeKind.Real or target.kind == types.SqlTypeKind.Double then
     number = asNumber(value)
+    // Adding +0.0 to an existing -0.0 changes its IEEE-754 sign. Preserve
+    // floating inputs exactly; only integral inputs need numeric promotion.
+    if typeof(number) == "float" then return of(target.kind, number) end if
     return of(target.kind, number + 0.0)
   end if
   if types.isTextKind(target.kind) then
@@ -755,7 +775,7 @@ function cast(value, target)
     if target.kind == types.SqlTypeKind.Decimal then return of(target.kind, decimalWordsFromText(value.value, target.precision, target.scale)) end if
     if target.kind == types.SqlTypeKind.Real or target.kind == types.SqlTypeKind.Double then
       parsed = floatingNumberFromText(value.value)
-      return convert(of(types.SqlTypeKind.Double, parsed + 0.0), target)
+      return convert(of(types.SqlTypeKind.Double, parsed), target)
     end if
     parsedInteger = literalInteger(value.value)
     return convert(parsedInteger, target)

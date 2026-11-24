@@ -12,6 +12,7 @@ import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
 import minisql.storage.slotted_page as slotted
 import minisql.storage.superblock as superblock
+import minisql.storage.table_header as table_header
 import std.ds.list as list
 
 /// Heap-file storage built on stable slotted pages. External RowId values contain
@@ -230,7 +231,8 @@ function decodePageDirectory(file, encoded)
   heapPageCount = decodeDirectoryNative(endian.readU64LE(payload, 48), "decodePageDirectory", "heapPageCount")
   if heapPageCount != (len(payload) - PAGE_DIRECTORY_HEADER_BYTES) >> 3 then return fail(CORRUPT_DATA, "decodePageDirectory", "heap page count does not match payload") end if
   pages = array(heapPageCount)
-  previous = -1
+  if indexedPageCount < table_header.FIRST_DATA_PAGE then return fail(CORRUPT_DATA, "decodePageDirectory", "table header page is not included in the source frontier") end if
+  previous = table_header.FIRST_DATA_PAGE - 1
   if heapPageCount > 0 then
     for index = 0 to heapPageCount - 1
       pageNumber = decodeDirectoryNative(endian.readU64LE(payload, PAGE_DIRECTORY_HEADER_BYTES + index * 8), "decodePageDirectory", "pageNumber")
@@ -263,8 +265,10 @@ end function
 function classifyHeapPages(file, startPage, prefix)
   output = list.List.new()
   for each pageNumber in prefix
+    if pageNumber < table_header.FIRST_DATA_PAGE then return fail(CORRUPT_DATA, "classifyHeapPages", "table header page cannot contain heap rows") end if
     output.add(pageNumber)
   end for
+  if startPage < table_header.FIRST_DATA_PAGE then startPage = table_header.FIRST_DATA_PAGE end if
   if startPage < file.pageCount then
     for pageNumber = startPage to file.pageCount - 1
       pageBytes = paged_file.readPage(file, pageNumber)
@@ -285,7 +289,7 @@ end function
 /// @param file file value consumed by this operation.
 function synchronized rebuildHeapPageNumbers(file)
   directory = loadPageDirectory(file)
-  startPage = 0
+  startPage = table_header.FIRST_DATA_PAGE
   prefix = []
   exact = false
   if directory is HeapPageDirectory then
@@ -341,7 +345,7 @@ end function
 /// @param slotId Identifier of slot.
 /// @param generation generation value consumed by this operation.
 function rowId(pageNumber, slotId, generation)
-  if typeof(pageNumber) != "int" or pageNumber < 0 or pageNumber > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "rowId", "pageNumber must be non-negative") end if
+  if typeof(pageNumber) != "int" or pageNumber < table_header.FIRST_DATA_PAGE or pageNumber > endian.MAX_MINILANG_INT then return fail(INVALID_ARGUMENT, "rowId", "pageNumber must identify a table data page") end if
   if typeof(slotId) != "int" or slotId < 0 or slotId > 65535 then return fail(INVALID_ARGUMENT, "rowId", "slotId must fit U16") end if
   if typeof(generation) != "int" or generation <= 0 or generation > 65535 then return fail(INVALID_ARGUMENT, "rowId", "generation must be a positive U16") end if
   return RowId(pageNumber, slotId, generation)
@@ -403,7 +407,7 @@ end function
 /// @param fileId Identifier of file.
 /// @param databaseId Identifier of database.
 function create(path, pageSize, fileId, databaseId)
-  file = paged_file.create(path, pageSize, superblock.FILE_TYPE_TABLE, fileId, databaseId)
+  file = table_header.create(path, pageSize, fileId, databaseId)
   return HeapFile(file, -1, false)
 end function
 
@@ -412,7 +416,7 @@ end function
 /// durable slot reuse without repeating it for every row in a batch.
 /// @param file file value consumed by this operation.
 function initialInsertionPage(file)
-  if file.pageCount == 0 then return -1 end if
+  if file.pageCount == table_header.FIRST_DATA_PAGE then return -1 end if
   lastHeapPage = -1
   heapPages = heapPageNumbers(file)
   for each pageNumber in heapPages
@@ -433,8 +437,7 @@ end function
 /// Inputs: `path`. Returns the produced value or propagates a structured error from validation or delegated operations.
 /// @param path Path of the file or directory used by the operation.
 function open(path)
-  file = paged_file.open(path)
-  if file.fileType != superblock.FILE_TYPE_TABLE then paged_file.close(file); return fail(CORRUPT_DATA, "open", "file is not a table") end if
+  file = table_header.open(path)
   hint = try(initialInsertionPage(file))
   if typeof(hint) == "error" then paged_file.close(file); return hint end if
   return HeapFile(file, hint, false)
@@ -517,7 +520,7 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   if slotFlags != slotted.SLOT_FLAG_LIVE and slotFlags != slotted.SLOT_FLAG_MOVED then return fail(INVALID_ARGUMENT, "insertWithFlags", "heap insertion requires live or moved state") end if
 
   attemptedHint = -1
-  if heap.insertionPageHint >= 0 and heap.insertionPageHint < heap.pagedFile.pageCount then
+  if heap.insertionPageHint >= table_header.FIRST_DATA_PAGE and heap.insertionPageHint < heap.pagedFile.pageCount then
     attemptedHint = heap.insertionPageHint
     pageBytes = try(paged_file.readPage(heap.pagedFile, attemptedHint))
     header = try(page.verify(pageBytes))
@@ -541,7 +544,7 @@ function insertWithFlags(heap, recordBytes, slotFlags)
   // A reopened heap may point at an old reusable slot that is too small for
   // this row. Try the append frontier once before allocating another page.
   lastPage = heap.pagedFile.pageCount - 1
-  if lastPage >= 0 and lastPage != attemptedHint then
+  if lastPage >= table_header.FIRST_DATA_PAGE and lastPage != attemptedHint then
     pageBytes = try(paged_file.readPage(heap.pagedFile, lastPage))
     header = try(page.verify(pageBytes))
     if header.pageType == page.TYPE_HEAP then
@@ -668,7 +671,7 @@ end function
 function scan(heap)
   validateOpen(heap, "scan")
   rows = []
-  if heap.pagedFile.pageCount == 0 then return rows end if
+  if heap.pagedFile.pageCount == table_header.FIRST_DATA_PAGE then return rows end if
   heapPages = heapPageNumbers(heap.pagedFile)
   for each pageNumber in heapPages
     pageBytes = paged_file.readPage(heap.pagedFile, pageNumber)

@@ -1,5 +1,9 @@
 # Row format v1
 
+> Archived format-1 specification. Current rows use aligned fields and binary
+> floating-point values described in [row v2](row-v2.md). Version-1 records are
+> rejected, including their former decimal-text floating representation.
+
 All fixed-width fields are little-endian.
 
 | Offset | Size | Field |

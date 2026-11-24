@@ -504,6 +504,24 @@
       "package": "minisql.tools.encryption",
       "component": "tools.encryption",
       "targetMilestone": "M79"
+    },
+    {
+      "path": "src/minisql/common/format_version.ml",
+      "package": "minisql.common.format_version",
+      "component": "common.format_version",
+      "targetMilestone": "StorageV2"
+    },
+    {
+      "path": "src/minisql/common/float_codec.ml",
+      "package": "minisql.common.float_codec",
+      "component": "common.float_codec",
+      "targetMilestone": "StorageV2"
+    },
+    {
+      "path": "src/minisql/storage/table_header.ml",
+      "package": "minisql.storage.table_header",
+      "component": "storage.table_header",
+      "targetMilestone": "StorageV2"
     }
   ]
 }

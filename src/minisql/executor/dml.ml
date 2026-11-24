@@ -11,6 +11,7 @@ import minisql.catalog.catalog as catalog
 import minisql.catalog.metadata as metadata
 import minisql.catalog.schema_history as schema_history
 import minisql.common.endian as endian
+import minisql.common.float_codec as float_codec
 import minisql.platform.file as file_api
 import minisql.executor.scan as scan
 import minisql.server.database_manager as database_manager
@@ -25,6 +26,7 @@ import minisql.storage.heap_file as heap_file
 import minisql.storage.overflow as overflow
 import minisql.storage.page as page
 import minisql.storage.paged_file as paged_file
+import minisql.storage.table_header as table_header
 import minisql.storage.row_codec as row_codec
 import minisql.storage.slotted_page as slotted_page
 import minisql.transaction.checkpoint as checkpoint
@@ -284,7 +286,7 @@ function stageInsertWithCursor(pageTransaction, file, table, encodedRow, cursor)
   if cursor is not InsertCursor then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "cursor must be InsertCursor") end if
   if typeof(encodedRow) != "bytes" or len(encodedRow) == 0 then return fail(INVALID_ARGUMENT, "stageInsertWithCursor", "encoded row must be non-empty bytes") end if
   startPage = cursor.pageNumber
-  if startPage < 0 then startPage = 0 end if
+  if startPage < table_header.FIRST_DATA_PAGE then startPage = table_header.FIRST_DATA_PAGE end if
   // The cursor normally names the current heap page, so try it before loading
   // or extending the persistent directory. Overflow writes may have grown the
   // physical file since the prior row while this page still has free space.
@@ -789,7 +791,7 @@ function insertBatchWithoutConflict(database, sessionId, bound, pageTransaction,
   returnedRows = []
   if len(bound.returning) > 0 then returnedRows = array(len(preparedRows)) end if
   rowSchema = scan.schemaForTable(bound.table)
-  cursorStart = 0
+  cursorStart = table_header.FIRST_DATA_PAGE
   allocationBatch = 1
   // Reserve heap pages in one durable allocation once a statement is large
   // enough to amortize the metadata barrier. A 32-row floor also benefits wide
@@ -797,7 +799,7 @@ function insertBatchWithoutConflict(database, sessionId, bound, pageTransaction,
   if len(preparedRows) >= 32 then
     allocationBatch = 256
     cursorStart = file.pageCount - 1
-    if cursorStart < 0 then cursorStart = 0 end if
+    if cursorStart < table_header.FIRST_DATA_PAGE then cursorStart = table_header.FIRST_DATA_PAGE end if
   end if
   insertCursor = InsertCursor(cursorStart, allocationBatch, len(preparedRows))
   if len(preparedRows) > 0 then
@@ -1058,7 +1060,7 @@ function insert(database, sessionId, bound, pageTransaction)
   if not binder.isBoundInsert(bound) then return fail(INVALID_ARGUMENT, "insert", "bound must be BoundInsert") end if
   transaction.requireActive(pageTransaction, "executor.dml.insert")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "insert", "transaction is read-only") end if
-  file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
+  file = table_header.open(catalog.tableFilePath(database.path, bound.table.tableId))
   result = try(insertInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
@@ -1123,7 +1125,7 @@ function update(database, sessionId, bound, pageTransaction)
   if not binder.isBoundUpdate(bound) then return fail(INVALID_ARGUMENT, "update", "bound must be BoundUpdate") end if
   transaction.requireActive(pageTransaction, "executor.dml.update")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "update", "transaction is read-only") end if
-  file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
+  file = table_header.open(catalog.tableFilePath(database.path, bound.table.tableId))
   result = try(updateInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
@@ -1169,7 +1171,7 @@ function delete(database, sessionId, bound, pageTransaction)
   if not binder.isBoundDelete(bound) then return fail(INVALID_ARGUMENT, "delete", "bound must be BoundDelete") end if
   transaction.requireActive(pageTransaction, "executor.dml.delete")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "delete", "transaction is read-only") end if
-  file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
+  file = table_header.open(catalog.tableFilePath(database.path, bound.table.tableId))
   result = try(deleteInner(database, sessionId, bound, pageTransaction, file))
   closeResult = try(paged_file.close(file))
   if typeof(result) == "error" then return result end if
@@ -1189,7 +1191,7 @@ function truncate(database, sessionId, bound, pageTransaction)
   if not binder.isBoundTruncate(bound) then return fail(INVALID_ARGUMENT, "truncate", "bound must be BoundTruncate") end if
   transaction.requireActive(pageTransaction, "executor.dml.truncate")
   if pageTransaction.readOnly then return fail(READ_ONLY_VIOLATION, "truncate", "transaction is read-only") end if
-  file = paged_file.open(catalog.tableFilePath(database.path, bound.table.tableId))
+  file = table_header.open(catalog.tableFilePath(database.path, bound.table.tableId))
   rows = try(scan.scanUsingControlled(database, sessionId, bound.table, pageTransaction, file))
   if typeof(rows) == "error" then paged_file.close(file); return rows end if
   checked = true
@@ -1221,7 +1223,7 @@ end function
 /// @param fileId Identifier of file.
 function fileForChange(database, fileId)
   for each table in database.catalogHandle.catalog.tables
-    if table.tableId == fileId then return paged_file.open(catalog.tableFilePath(database.path, table.tableId)) end if
+    if table.tableId == fileId then return table_header.open(catalog.tableFilePath(database.path, table.tableId)) end if
   end for
   return fail(OBJECT_NOT_FOUND, "fileForChange", "committed page refers to unknown table")
 end function
@@ -1358,12 +1360,11 @@ function escapedKeyBytes(source)
   return output + bytes([0, 0])
 end function
 
-/// Implements index key part for this module.
-/// Returns the computed value or operation status.
-/// Any side effects are limited to the explicitly invoked dependencies.
-/// @param value Value consumed or transformed by the operation.
-function indexKeyPart(value)
-  if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "indexKeyPart", "value must be SqlValue") end if
+/// Encodes one typed index component with plain little-endian numeric payloads.
+/// INCLUDE values preserve binary64 signed zero exactly like stored rows.
+/// @param value SQL value consumed by the operation.
+function indexValuePart(value)
+  if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "indexValuePart", "value must be SqlValue") end if
   if value.isNull then return bytes([1]) end if
   if value.typeKind == types.SqlTypeKind.Boolean then
     byteValue = 0
@@ -1374,16 +1375,24 @@ function indexKeyPart(value)
     words = values.asInt64(value)
     output = bytes(9, 0)
     output[0] = 3
-    endian.writeU32BE(output, 1, words.high ^ 2147483648)
-    endian.writeU32BE(output, 5, words.low)
+    endian.writeI64LE(output, 1, words)
     return output
   end if
   if value.typeKind == types.SqlTypeKind.Real or value.typeKind == types.SqlTypeKind.Double then
-    return bytes([4]) + escapedKeyBytes(bytes("" + value.value))
+    return bytes([4]) + float_codec.encodeFloat64LE(value.value)
   end if
   if types.isTextKind(value.typeKind) then return bytes([5]) + escapedKeyBytes(bytes(value.value)) end if
   if types.isBinaryKind(value.typeKind) then return bytes([6]) + escapedKeyBytes(value.value) end if
-  return fail(TYPE_MISMATCH, "indexKeyPart", "unsupported index key type")
+  return fail(TYPE_MISMATCH, "indexValuePart", "unsupported index value type")
+end function
+
+/// Preserves the stored value's binary64 representation for index-only reads.
+/// The B+ tree comparator equates zero signs; only ephemeral constraint hash
+/// keys canonicalize zero, because byte hashing has no numeric comparator.
+/// @param value SQL key component.
+function indexKeyPart(value)
+  if not values.isSqlValue(value) then return fail(INVALID_ARGUMENT, "indexKeyPart", "value must be SqlValue") end if
+  return indexValuePart(value)
 end function
 
 /// Encodes index key using the supplied inputs.
@@ -1393,7 +1402,7 @@ end function
 /// @param keyValues keyValues value consumed by this operation.
 function encodeIndexKey(keyValues)
   if typeof(keyValues) != "array" or len(keyValues) == 0 then return fail(INVALID_ARGUMENT, "encodeIndexKey", "keyValues must be non-empty") end if
-  output = bytes([127])
+  output = btree.sqlKeyPrefix()
   for each value in keyValues
     output = appendKeyBytes(output, indexKeyPart(value))
     if len(output) > btree.MAX_KEY_BYTES then return fail(INVALID_ARGUMENT, "encodeIndexKey", "encoded key exceeds B+ tree limit") end if
@@ -1407,7 +1416,7 @@ end function
 /// @param keyValues keyValues value consumed by this operation.
 function encodeConstraintHashKey(keyValues)
   if typeof(keyValues) != "array" or len(keyValues) == 0 then return fail(INVALID_ARGUMENT, "encodeConstraintHashKey", "keyValues must be non-empty") end if
-  output = bytes([127])
+  output = btree.sqlKeyPrefix()
   for each value in keyValues
     normalized = value
     if (value.typeKind == types.SqlTypeKind.Real or value.typeKind == types.SqlTypeKind.Double) and value.value == 0 then normalized = values.of(value.typeKind, 0.0) end if
@@ -1439,8 +1448,7 @@ end function
 /// @param tableId Identifier of table.
 /// @param encoded encoded value consumed by this operation.
 function decodeRowReference(tableId, encoded)
-  // The stable 12-byte reference is the prefix of both legacy leaf values and
-  // v1 covering values, so older indexes remain readable without migration.
+  // Both ordinary and covering values start with the physical row reference.
   if typeof(tableId) != "int" or typeof(encoded) != "bytes" or len(encoded) < 12 then return fail(CORRUPT_DATA, "decodeRowReference", "invalid index row reference") end if
   if endian.readU32LE(encoded, 8) != tableId then return fail(CORRUPT_DATA, "decodeRowReference", "index row reference belongs to another table") end if
   return scan.RowReference(endian.readU32LE(encoded, 0), endian.readU16LE(encoded, 4), endian.readU16LE(encoded, 6))
@@ -1448,16 +1456,16 @@ end function
 
 /// Validates the leaf-value shape before a heap-backed scan consumes only its
 /// row-reference prefix. Full payload decoding remains exclusive to index-only
-/// scans, while ordinary legacy values still require an exact 12-byte length.
+/// scans, while values without INCLUDE require an exact 12-byte length.
 /// @param constraint constraint value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 function validateIndexEntryValueShape(constraint, encoded)
   if typeof(encoded) != "bytes" then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "index leaf value must be bytes") end if
   if len(constraint.referenceColumns) == 0 then
-    if len(encoded) != 12 then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "legacy index leaf value has trailing bytes") end if
+    if len(encoded) != 12 then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "ordinary index leaf value has trailing bytes") end if
     return true
   end if
-  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != 1 then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "invalid INCLUDE payload header") end if
+  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != btree.FORMAT_VERSION then return fail(CORRUPT_DATA, "validateIndexEntryValueShape", "invalid INCLUDE payload header") end if
   return true
 end function
 
@@ -1485,9 +1493,8 @@ function decodeEscapedKeyBytes(encoded, startOffset)
   return fail(CORRUPT_DATA, "decodeEscapedKeyBytes", "missing component terminator")
 end function
 
-/// Decodes one self-delimiting typed value shared by ordered keys and INCLUDE
-/// payloads. Floating-point key text is not reversible and deliberately returns
-/// void, which makes execution fall back to a heap-backed index scan.
+/// Decodes one self-delimiting v2 value shared by SQL keys and INCLUDE payloads.
+/// Binary64 values are decoded directly without a text conversion or fallback.
 /// @param column column value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 /// @param cursor cursor value consumed by this operation.
@@ -1500,42 +1507,50 @@ function decodeIndexPart(column, encoded, cursor, operation)
   if tag == 1 then
     decodedValue = values.nullValue(column.typeCode)
   else if tag == 2 then
+    if column.typeCode != types.SqlTypeKind.Boolean then return fail(CORRUPT_DATA, operation, "Boolean index tag disagrees with catalog") end if
     if cursor >= len(encoded) or (encoded[cursor] != 0 and encoded[cursor] != 1) then return fail(CORRUPT_DATA, operation, "invalid Boolean index value") end if
     decodedValue = values.of(column.typeCode, encoded[cursor] == 1)
     cursor = cursor + 1
   else if tag == 3 then
+    if not types.isIntegralKind(column.typeCode) and column.typeCode != types.SqlTypeKind.Decimal and column.typeCode != types.SqlTypeKind.Date and column.typeCode != types.SqlTypeKind.Time and column.typeCode != types.SqlTypeKind.Timestamp then return fail(CORRUPT_DATA, operation, "integral index tag disagrees with catalog") end if
     if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, operation, "truncated integral index value") end if
-    words = endian.makeInt64(endian.readU32BE(encoded, cursor) ^ 2147483648, endian.readU32BE(encoded, cursor + 4))
+    words = endian.readI64LE(encoded, cursor)
     cursor = cursor + 8
     if column.typeCode == types.SqlTypeKind.SmallInt or column.typeCode == types.SqlTypeKind.Integer or column.typeCode == types.SqlTypeKind.Date then
       decodedValue = values.of(column.typeCode, endian.int64ToInt(words))
     else
       decodedValue = values.of(column.typeCode, words)
     end if
+  else if tag == 4 then
+    if column.typeCode != types.SqlTypeKind.Real and column.typeCode != types.SqlTypeKind.Double then return fail(CORRUPT_DATA, operation, "floating index tag disagrees with catalog") end if
+    if cursor > len(encoded) - 8 then return fail(CORRUPT_DATA, operation, "truncated floating index value") end if
+    decodedValue = values.of(column.typeCode, float_codec.decodeFloat64LE(encoded, cursor))
+    cursor = cursor + 8
   else if tag == 5 or tag == 6 then
+    if (tag == 5 and not types.isTextKind(column.typeCode)) or (tag == 6 and not types.isBinaryKind(column.typeCode)) then return fail(CORRUPT_DATA, operation, "byte index tag disagrees with catalog") end if
     escaped = decodeEscapedKeyBytes(encoded, cursor)
     cursor = escaped[1]
     if tag == 5 then decodedValue = values.of(column.typeCode, decode(escaped[0])) else decodedValue = values.of(column.typeCode, escaped[0]) end if
   else
-    return void
+    return fail(CORRUPT_DATA, operation, "unknown typed index value tag")
   end if
   return [decodedValue, cursor]
 end function
 
 /// Reconstructs table-typed SQL values from an index key. Non-key positions are
 /// typed NULL placeholders and are safe because the optimizer proves they are
-/// not referenced before selecting an index-only plan. Floating encodings retain
-/// their textual ordering representation and therefore conservatively fall back.
+/// not referenced before selecting an index-only plan.
 /// @param table table value consumed by this operation.
 /// @param constraint constraint value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 function decodeCoveredIndexKey(table, constraint, encoded)
-  if typeof(encoded) != "bytes" or len(encoded) == 0 or encoded[0] != 127 then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid index key prefix") end if
+  if typeof(encoded) != "bytes" or not btree.isSqlKey(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "invalid index key prefix") end if
+  btree.validateKey(encoded)
   output = []
   for each column in table.columns
     output = output + [values.nullValue(column.typeCode)]
   end for
-  cursor = 1
+  cursor = 4
   for each columnName in constraint.columns
     columnIndex = binder.findColumnIndex(table, columnName)
     if columnIndex < 0 or cursor >= len(encoded) then return fail(CORRUPT_DATA, "decodeCoveredIndexKey", "index key shape does not match catalog") end if
@@ -1550,7 +1565,7 @@ function decodeCoveredIndexKey(table, constraint, encoded)
 end function
 
 /// Encodes a leaf value as a stable row-reference prefix followed, when needed,
-/// by the MSI v1 marker and self-delimiting typed INCLUDE values.
+/// by the MSI v2 marker and self-delimiting typed INCLUDE values.
 /// @param table table value consumed by this operation.
 /// @param constraint constraint value consumed by this operation.
 /// @param rowValues rowValues value consumed by this operation.
@@ -1558,26 +1573,24 @@ end function
 function encodeIndexEntryValue(table, constraint, rowValues, reference)
   output = encodeRowReference(table.tableId, reference)
   if len(constraint.referenceColumns) == 0 then return output end if
-  output = output + bytes([77, 83, 73, 1])
+  output = output + bytes([77, 83, 73, btree.FORMAT_VERSION])
   for each columnName in constraint.referenceColumns
     columnIndex = binder.findColumnIndex(table, columnName)
     if columnIndex < 0 then return fail(CORRUPT_DATA, "encodeIndexEntryValue", "index INCLUDE references missing column") end if
-    output = output + indexKeyPart(rowValues[columnIndex])
+    output = output + indexValuePart(rowValues[columnIndex])
     if len(output) > btree.MAX_VALUE_BYTES then return fail(INVALID_ARGUMENT, "encodeIndexEntryValue", "encoded INCLUDE payload exceeds one B+ tree leaf entry") end if
   end for
   return output
 end function
 
-/// Merges a validated MSI v1 payload into the table-width row reconstructed
-/// from the key. Missing legacy payloads return void and trigger a safe fallback.
+/// Merges a validated MSI v2 payload into the table-width reconstructed row.
 /// @param table table value consumed by this operation.
 /// @param constraint constraint value consumed by this operation.
 /// @param encoded encoded value consumed by this operation.
 /// @param output Output collection or buffer populated by the operation.
 function decodeIncludedIndexValues(table, constraint, encoded, output)
   if len(constraint.referenceColumns) == 0 then return output end if
-  if len(encoded) == 12 then return void end if
-  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != 1 then return fail(CORRUPT_DATA, "decodeIncludedIndexValues", "invalid INCLUDE payload header") end if
+  if len(encoded) < 16 or encoded[12] != 77 or encoded[13] != 83 or encoded[14] != 73 or encoded[15] != btree.FORMAT_VERSION then return fail(CORRUPT_DATA, "decodeIncludedIndexValues", "invalid INCLUDE payload header") end if
   cursor = 16
   for each columnName in constraint.referenceColumns
     columnIndex = binder.findColumnIndex(table, columnName)
@@ -2096,7 +2109,6 @@ function namedRangeIndexRows(database, table, columnIndex, literalValue, operato
   if constraint is void then return void end if
   converted = values.convert(literalValue, types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
-  if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
   key = encodeIndexKey([converted])
   lower = void
   upper = void
@@ -2294,7 +2306,6 @@ function namedExpressionIndexRows(database, table, expression, pageTransaction, 
   if operatorValue != "=" and operatorValue != "<" and operatorValue != "<=" and operatorValue != ">" and operatorValue != ">=" then return void end if
   converted = values.convert(found[2], keyExpression.typeInfo)
   if converted.isNull then return [] end if
-  if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
   encodedKey = encodeIndexKey([converted])
   indexLease = openReadOnlyIndex(database, constraint, "expressionIndexRows")
   tree = readOnlyIndexTree(indexLease)
@@ -2360,14 +2371,12 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
     encodedKey = encodeIndexKey(keyValues)
     indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
     tree = readOnlyIndexTree(indexLease)
-    foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
+    // Equality must retain the stored keys. A search literal may compare equal
+    // without having identical bits, notably +0.0 versus a persisted -0.0.
+    entries = try(btree.rangeWithContext(tree, encodedKey, true, encodedKey, true, 0, readOnlyIndexContext(indexLease)))
     closeResult = try(closeReadOnlyIndex(indexLease))
-    if typeof(foundValues) == "error" then return foundValues end if
+    if typeof(entries) == "error" then return entries end if
     if typeof(closeResult) == "error" then return closeResult end if
-    entries = []
-    for each rowValue in foundValues
-      entries = entries + [btree.entry(encodedKey, rowValue)]
-    end for
     return entries
   end if
 
@@ -2378,21 +2387,12 @@ function plannedCoveredIndexEntries(database, table, expression, constraint)
   if operatorValue != "=" and operatorValue != "<" and operatorValue != "<=" and operatorValue != ">" and operatorValue != ">=" then return void end if
   converted = values.convert(found[2], types.fromColumn(table.columns[columnIndex]))
   if converted.isNull then return [] end if
-  if converted.typeKind == types.SqlTypeKind.Real or converted.typeKind == types.SqlTypeKind.Double then return void end if
   encodedKey = encodeIndexKey([converted])
   indexLease = openReadOnlyIndex(database, constraint, "plannedCoveredIndexEntries")
   tree = readOnlyIndexTree(indexLease)
   entries = void
   if operatorValue == "=" then
-    foundValues = try(btree.findWithContext(tree, encodedKey, readOnlyIndexContext(indexLease)))
-    if typeof(foundValues) != "error" then
-      entries = []
-      for each rowValue in foundValues
-        entries = entries + [btree.entry(encodedKey, rowValue)]
-      end for
-    else
-      entries = foundValues
-    end if
+    entries = try(btree.rangeWithContext(tree, encodedKey, true, encodedKey, true, 0, readOnlyIndexContext(indexLease)))
   else
     lower = void
     upper = void
