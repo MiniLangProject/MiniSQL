@@ -20,16 +20,27 @@ procedure, runs the native checker before backup and after restore, starts
 the restored database, compares counts and a joined aggregate, and verifies
 a writable transaction followed by rollback.
 
-The stored-procedure update has separate verification at the current
-implementation: 11 native Linux test cases, including 127 general runtime
-assertions and 21 focused edge assertions; five Windows cross-compilation
-cases; 14 Python unit tests; 16 existing and 25 procedure-specific JDBC checks;
-and 17 live-server checks that include 14 JDBC checks. Windows images were
-validated as PE32+ AMD64 but were not executed. The final RETURNING accounting
-change was verified by a targeted native M45 rerun and a Windows edge rebuild.
-The exact incremental evidence is
-\path{docs/acceptance/stored-procedures-2026-11-25.json}. Historical tutorial
-records have not been relabeled as new executions at the procedure revision.
+The initial stored-procedure language expansion retains its separate evidence
+at revision \texttt{139eb3c}. The subsequent five-package expansion at this
+edition's implementation passes 12 focused native Linux cases, including
+127 runtime, 21 edge, 154 security/metadata and 105 final parity assertions.
+The complete focused run included 100 parity assertions; a later targeted
+105-assertion run verifies the final character-set/collation SQLSTATE correction.
+Native protocol and authenticated-protocol regressions also pass. Six routine
+test programs cross-compile to PE32+ AMD64, and the final parity program is
+rebuilt separately after that correction. Windows server, console and
+Workbench entry points also cross-compile with validated PE32+ AMD64 images.
+No Windows executable was run.
+
+Connector checks pass 18 Python unit tests, 16 general JDBC checks and
+77 procedure-specific JDBC checks. Java execution uses Java 21 with
+source/target 11 compilation; it is not Java 11 runtime acceptance. A freshly
+rebuilt native server passes 33 top-level connector checks, one of which runs
+the 25-check JDBC live suite. These two live counts are not additive.
+The complete incremental evidence, source hashes and final application-build
+results are in \path{docs/acceptance/stored-procedures-2026-11-25.json}.
+Historical tutorial and initial procedure records have not been relabeled as
+new executions at the current revision.
 
 \begin{longtable}{p{.29\linewidth}p{.63\linewidth}}
 \caption{Documentation validation and its limits}\\
@@ -37,7 +48,7 @@ records have not been relabeled as new executions at the procedure revision.
 Teaching setup & Four tables and 19 data rows loaded through the native script client. Counts are 4 customers, 5 products, 4 orders and 6 order items.\\
 Queries & Filtering, sorting, NULL counts, joins, grouped totals, outer-join anti-matching, CTEs, recursion, windows, working subquery shapes and expected results.\\
 Changes & Insert/update/delete with RETURNING, savepoint rollback, full rollback, duplicate-key rejection, missing-parent rejection and CHECK rejection.\\
-Known limitations & Decimal scaling/presentation, temporal comparison, CURRENT\_TIMESTAMP, NULLIF, text NULL ambiguity, unsupported DELETE CASCADE, orphan-producing parent-key updates, correlated NOT EXISTS, identity reuse and sequence materialization.\\
+Known limitations & Decimal scaling/presentation, temporal comparison, CURRENT\_TIMESTAMP, NULLIF, legacy text NULL ambiguity, unsupported DELETE CASCADE, orphan-producing parent-key updates, correlated NOT EXISTS, identity reuse and per-row sequence materialization.\\
 Operational recipe & Clean stop, native checker, offline backup, restore to a new path, checker on the restored copy, restarted SQL and reversible write.\\
 Source review & Parser/binder/executor, command entrypoints, config, security, drivers, Workbench, planner, storage, recovery and replication implementations.\\
 Not a claim of execution & This work did not run the full Windows acceptance suite, Windows Workbench, all TLS certificate scenarios, long-duration soak, every replication failure scenario or every SQL combination. Those descriptions are source-reviewed and linked to relevant tests.\\\bottomrule
@@ -75,8 +86,12 @@ output under \path{build/} while comparing a new revision; replace the
 committed evidence only as part of a reviewed documentation update.
 
 \section{Selected observed edge cases}
-The table below summarizes the focused probes. Read the corresponding
-language and operations chapters for explanations and practical workarounds.
+The table below preserves the tutorial-baseline probes. Read the corresponding
+language and operations chapters for current explanations and practical
+workarounds. In the present procedure expansion, negotiated results-v2 fixes
+the literal-NULL ambiguity, and cursor admission no longer evaluates NEXTVAL
+once during a probe and again during fallback. Those new regression results
+are recorded separately; the historical observations below are unchanged.
 
 \begin{longtable}{p{.45\linewidth}p{.47\linewidth}}
 \caption{Recorded tutorial-baseline boundary cases reviewed for this edition}\\

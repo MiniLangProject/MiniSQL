@@ -82,10 +82,14 @@ checks**, plus the separate backup/restore/check/reopen recipe, passed. Those
 historical records remain in [`validation.json`](validation.json) and
 [`recovery-validation.json`](recovery-validation.json).
 
-The procedure update has separate [current verification evidence](../acceptance/STORED_PROCEDURES_2026-11-25.md):
-11 native Linux cases, five Windows compilation cases, Python/JDBC unit checks,
-and a rebuilt-server connector fixture. The older tutorial records have not
-been relabeled as new executions against the procedure commit.
+The procedure updates have separate [verification evidence](../acceptance/STORED_PROCEDURES_2026-11-25.md):
+the initial language expansion remains recorded at `139eb3c`, followed by a
+five-package parity expansion with 12 native Linux cases, six Windows
+cross-compilation cases, targeted follow-up regressions, Python/JDBC unit
+checks and a rebuilt-server connector fixture. The older tutorial and initial
+procedure records have not been relabeled as new executions against the
+current implementation. Windows compilation does not establish Windows
+runtime acceptance.
 
 Some checks intentionally confirm a documented limitation. A passing test of
 incorrect DECIMAL arithmetic or a rejected query means the book describes the

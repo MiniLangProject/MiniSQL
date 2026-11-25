@@ -183,6 +183,17 @@ This setting is not a total-process ceiling. Parser objects, unsupported materia
 
 Result rows are transmitted in bounded continuation frames, normally at most 512 rows and targeting roughly 1 MiB. The protocol's defensive payload ceiling is 16 MiB; one unsplittable row must still fit. Server max-result-row/byte controls can reject a statement even when its operators stayed within their spill budgets. Client-side fetch size does not override these server bounds.
 
+Eligible simple SELECTs inside CALL emit bounded 128-row execution batches
+without retaining completed result sets. Blocking queries, unproved expression
+dependencies and dynamic SQL use the ordinary materializing path. The embedded
+executeSql API still returns complete QueryResult objects. Direct Python/JDBC
+CALL consumers can fetch incrementally; callproc and CallableStatement instead
+consume completion to obtain OUT values and spool preceding results to
+temporary files for later traversal. Temporary disk capacity and the lifetime
+of an unread result therefore remain relevant even when row residency is
+bounded. A transport failure stops evaluation and closes its cursor and read
+lease; a SQL handler cannot resume work after a failed consumer.
+
 Three independent questions must therefore be answered:
 
 \begin{enumerate}
@@ -202,12 +213,30 @@ DDL, ANALYZE, VACUUM, and REINDEX invalidate planning context across attached se
 
 Cache counters describe implementation activity; they are not guarantees that every part of a query bypassed parsing, binding, authorization, or storage checks. Prepared statements also do not freeze data or isolation behavior.
 
+Each engine also retains at most 64 parsed procedure definitions. This cache
+is separate from query plans and is keyed by durable procedure identity,
+complete canonical SQL and persisted execution context. ALTER, replacement
+and drop/recreate therefore invalidate the matching program. Argument values,
+local scopes and privilege decisions are never cached: each CALL checks its
+caller and definer again, so a warm cache does not postpone REVOKE.
+
 \section{Concurrency and application design}
 \index{concurrency}\index{readers/writer gate}
 
 \input{figures/read-write-gate}
 
-Each connection occupies a worker in the bounded native connection pool. Network handling, framing, and independent read-only plans can proceed in parallel. Every database has a writer-prioritized readers/writer execution gate: ordinary read-only SELECT, EXPLAIN, and metadata can be shared, while ordinary mutations, maintenance, and session-state operations are conservatively exclusive. The NEXTVAL materialization path has classification gaps: cursor probing and EXPLAIN can consume sequence values before the normal checks. Do not treat sequence-bearing queries as a proven read-only or exclusive boundary; see the sequence and transaction chapters.
+Each connection occupies a worker in the bounded native connection pool.
+Network handling, framing and independent read-only plans can proceed in
+parallel. Every database has a writer-prioritized readers/writer execution
+gate: ordinary read-only SELECT, EXPLAIN and metadata can be shared, while
+ordinary mutations, maintenance and session-state operations are conservatively
+exclusive. CALL can share the reader gate only after its complete known body
+and callee tree have been proved free of database writes. This proof inspects
+expressions and handlers; READS SQL DATA and NO SQL are descriptions, not
+authorization to bypass it. Dynamic SQL, sequence mutation, views/subqueries
+with unproved dependencies and other unknown operations use the exclusive
+path. The separate read-only transaction setting still has the documented
+sequence limitation; it is not a general protection against NEXTVAL.
 
 There is one active physical writer per database. Raising maxConnections admits more sessions; it does not create multiple physical writers. When a writer waits, new readers stop entering so it will not starve. Existing readers still need to complete. Long queries, slow result consumers, and long logical transactions can therefore affect other work even when the machine has idle CPU capacity.
 

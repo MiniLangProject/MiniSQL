@@ -39,6 +39,140 @@ The successful `HELLO` command message includes the backward-compatible field
 identifier as the target of an administrative cancellation request. Older
 clients may continue treating the complete message as informational text.
 
+## Response payload
+
+The fixed response prefix is 24 bytes. All integers are little endian. A string
+field is a U32 UTF-8 byte length followed by exactly that many bytes.
+
+| Offset | Size | Field |
+|---:|---:|---|
+| 0 | 2 | status: command `1`, rows `2`, error `3` |
+| 2 | 2 | reserved, zero |
+| 4 | 4 | column count |
+| 8 | 4 | row count |
+| 12 | 4 | affected-row count |
+| 16 | 4 | numeric error code; zero on success |
+| 20 | 4 | metadata trailer byte length; zero for unextended responses |
+
+The prefix is followed by the command string, message string, one string per
+column name, and row-major cell strings. Optional negotiated metadata follows
+the last cell. Legacy responses have no trailer and retain a zero at offset 20.
+Legacy SQL NULL cells use the text token `NULL`, which is indistinguishable from
+a text value containing those four characters.
+
+## Negotiated structured results (`results-v2`)
+
+This extension retains protocol version 1 and the existing message types. A
+client requests it with the exact HELLO payload
+`MiniSQL/1; capabilities=results-v2`. A supporting server includes
+`; capabilities=results-v2` in its HELLO acknowledgement. Only after that
+acknowledgement may the client set bit `0x00000008` (`FLAG_METADATA`) on query
+requests. Each extended response repeats that bit and includes the trailer
+described below. The bit is independent of authentication, continuation, and
+result-start flags; CRC-32C covers the complete extended payload as usual.
+
+The server rejects use of the metadata request flag before negotiation. An old
+HELLO payload does not opt in, and an older server that does not advertise the
+capability receives ordinary query flags. Unextended response encoding remains
+byte-for-byte compatible. The connection's negotiated capability does not
+force trailers onto requests without the flag, including authentication and
+administrative control exchanges.
+
+### Metadata trailer layout
+
+The U32 value at response offset 20 is the complete trailer length. The trailer
+starts immediately after the last ordinary response field and ends exactly at
+the end of the payload. Fields occur in this order:
+
+| Field | Representation |
+|---|---|
+| Magic | four bytes, ASCII `MDV1` |
+| SQLSTATE | string field containing exactly five uppercase ASCII letters or digits |
+| Warning count | U32 |
+| Warnings | repeated: SQLSTATE string, U32 numeric code, message string |
+| NULL bitmap length | U32, exactly `ceil(rowCount * columnCount / 8)` |
+| NULL bitmap | that many bytes, row-major cells, least-significant bit first |
+| Column type count | U32, exactly equal to column count |
+| Column types | one U16 native type kind per column |
+| Output parameter count | U32 |
+| Output parameters | repeated: U32 ordinal, name string, U16 type kind, U16 null flag, value string |
+
+SQLSTATE is `00000` for successful responses; native and application errors carry
+their mapped or explicitly raised state. Unclassified errors use `HY000`.
+The original numeric error code remains at prefix offset 16. A warning entry
+contains its own SQLSTATE, code, and message; the terminal command or error frame
+contains retained nonfatal records from SQLSTATE classes `01` and `02`. The
+retained diagnostic area is subject to the session's `max_error_count`;
+`@@warning_count` and `@@error_count` expose the server's total condition and error
+counts, not the trailer's filtered and retained list length.
+
+A set NULL bit is authoritative even if the ordinary cell string differs. A
+clear bit with the cell string `NULL` represents those literal text characters.
+Padding bits in the final bitmap byte are unused. Decoders validate every field
+length, the exact bitmap and type-count shapes, SQLSTATE syntax, type-kind range,
+output null flags, and the absence of trailing bytes. Warning and output entry
+counts are limited to 65,535; the full frame remains subject to the 16 MiB limit.
+
+Native type kinds are:
+
+| Kind | Type | Kind | Type |
+|---:|---|---:|---|
+| 0 | unknown | 9 | VARCHAR |
+| 1 | BOOLEAN | 10 | TEXT |
+| 2 | SMALLINT | 11 | BINARY |
+| 3 | INTEGER | 12 | VARBINARY |
+| 4 | BIGINT | 13 | BLOB |
+| 5 | REAL | 14 | DATE |
+| 6 | DOUBLE | 15 | TIME |
+| 7 | DECIMAL | 16 | TIMESTAMP |
+| 8 | CHAR | | |
+
+Ordinary row type information is derived from available values and can be
+unknown for empty results or all-NULL columns. It does not carry declared
+precision, scale, length, or collation. In particular, generic DECIMAL result
+rows retain their existing text representation without a scale descriptor.
+Clients use catalog queries when they need declared routine parameter metadata.
+
+The successful outer CALL's terminal command includes only OUT and INOUT
+parameters. Ordinals are one-based positions among **all** declared parameters,
+including IN parameters. An output null flag is either zero or one; a null
+output uses an empty value string. Non-null output values use their declared
+native kind. Integer output strings represent the complete signed integer,
+including 64-bit values. Decimal output strings have their declared decimal
+point and scale applied, for example internal `725` at scale 2 becomes `7.25`.
+Binary outputs use the existing `0x` hexadecimal rendering; clients decode
+native kinds 11–13 to bytes. Temporal output values retain MiniSQL's native
+text representation and clients apply the corresponding temporal conversion.
+Nested CALLs contribute their row results but do not publish separate output
+snapshots. Failed calls do not publish successful output parameters.
+
+### Streaming, output retrieval, and client storage
+
+Simple SELECTs executed inside CALL stream through the same bounded batch
+mechanism as direct SELECTs. A completed result's final batch still has
+`FLAG_MORE` because another result or the terminal CALL status follows. A sink
+or transport failure stops further routine execution and bypasses SQL condition
+handlers. Blocking operators can still materialize their own result before
+emitting batches. Server result limits apply across the entire CALL, not
+independently to each SELECT.
+
+Python `execute("CALL ...")` and JDBC `Statement.execute("CALL ...")` consume the
+stream incrementally. Python `callproc()` and JDBC `CallableStatement` must reach
+the terminal CALL frame before making output parameters available, so they
+store intervening frames in private temporary spools. Python spills after one
+MiB; JDBC writes frames to a temporary file with bounded IO buffers. Replay
+retains only a bounded number of frames. JDBC `KEEP_CURRENT_RESULT` uses the same
+disk-backed retention. Spools are removed on exhaustion or close. This bounds
+client memory by buffered frames and parameter values; it does not bound the
+disk space needed for a complete retained result or the memory used by blocking
+SQL operators inside the server.
+
+Negotiated clients use the terminal output snapshot without a subsequent SQL
+SELECT or cleanup query, preserving the CALL's diagnostics. Older servers keep
+the legacy session-variable output lookup. Binary input binding, complete
+result-column metadata, and MySQL's native wire protocol are not provided by
+this extension.
+
 ## Administrative cancellation extension
 
 Message type `9` (`CANCEL`) carries exactly one little-endian U32 target session

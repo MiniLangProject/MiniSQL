@@ -10,7 +10,7 @@ import unittest
 
 from minisql import dbapi
 from minisql.protocol import (
-    BufferedQuery, FLAG_MORE, FLAG_RESULT_START, Message, Protocol, Response,
+    BufferedQuery, Condition, OutputParameter, ResultSpool, FLAG_METADATA, FLAG_MORE, FLAG_RESULT_START, Message, Protocol, Response,
     STATUS_COMMAND, STATUS_ROWS, STATUS_ERROR, TYPE_QUERY, TYPE_RESPONSE, TYPE_ERROR,
 )
 
@@ -34,8 +34,26 @@ def payload(response):
         return struct.pack("<I", len(data)) + data
     header = struct.pack("<HHIIIII", response.status, 0, len(response.columns), len(response.rows),
                          response.affected_rows, response.error_code, 0)
-    return header + field(response.command) + field(response.message) + b"".join(
-        field(value) for value in (*response.columns, *(value for row in response.rows for value in row)))
+    base = bytearray(header + field(response.command) + field(response.message) + b"".join(
+        field("NULL" if value is None else value) for value in (*response.columns, *(value for row in response.rows for value in row))))
+    if response.extended:
+        extra = bytearray(b"MDV1" + field(response.sqlstate) + struct.pack("<I", len(response.warnings)))
+        for warning in response.warnings:
+            extra += field(warning.sqlstate) + struct.pack("<I", warning.code) + field(warning.message)
+        bitmap = bytearray((len(response.rows) * len(response.columns) + 7) // 8)
+        for index, value in enumerate(value for row in response.rows for value in row):
+            if value is None:
+                bitmap[index // 8] |= 1 << (index % 8)
+        extra += struct.pack("<I", len(bitmap)) + bitmap + struct.pack("<I", len(response.column_types))
+        for kind in response.column_types:
+            extra += struct.pack("<H", kind)
+        extra += struct.pack("<I", len(response.outputs))
+        for output in response.outputs:
+            extra += struct.pack("<I", output.ordinal) + field(output.name)
+            extra += struct.pack("<HH", output.type_kind, output.value is None) + field(output.value or "")
+        struct.pack_into("<I", base, 20, len(extra))
+        base += extra
+    return bytes(base)
 
 
 class FakeConnection:
@@ -122,6 +140,64 @@ class RoutineConnectorTest(unittest.TestCase):
         cursor = dbapi.Cursor(FakeConnection([]))
         with self.assertRaises(dbapi.ProgrammingError):
             cursor.callproc("p(); DROP TABLE t", ())
+
+    def test_structured_metadata_distinguishes_null_and_preserves_conditions(self):
+        """Checks exact NULLs, type kinds, output ordinals, and warning fields on the wire."""
+        response = Response(STATUS_ROWS, "SELECT", ("text", "null", "int"), (("NULL", None, "42"),), 1, "", 0,
+                            True, "00000", (Condition("01000", 1642, "careful"),), (10, 10, 3),
+                            (OutputParameter(2, "amount", 7, "7.25"), OutputParameter(3, "missing", 10, None)), True)
+        decoded = Protocol._decode_response(Message(TYPE_RESPONSE, FLAG_METADATA | FLAG_RESULT_START, 1, payload(response)))
+        self.assertEqual(decoded, response)
+        corrupted = bytearray(payload(response))
+        struct.pack_into("<I", corrupted, 20, len(corrupted))
+        with self.assertRaises(dbapi.OperationalError):
+            Protocol._decode_response(Message(TYPE_RESPONSE, FLAG_METADATA, 1, bytes(corrupted)))
+
+    def test_sqlstate_prevents_application_errno_category_collisions(self):
+        """Uses SQLSTATE as the primary error class when application numbers overlap native ones."""
+        response = Response(STATUS_ERROR, "ERROR", (), (), 0, "application failure", 9022,
+                            False, "45000", (), (), (), True)
+        error = Protocol._server_error(response)
+        self.assertIs(type(error), dbapi.DatabaseError)
+        self.assertEqual((error.code, error.sqlstate), (9022, "45000"))
+        integrity = Response(STATUS_ERROR, "ERROR", (), (), 0, "constraint failure", 60001,
+                             False, "23000", (), (), (), True)
+        self.assertIsInstance(Protocol._server_error(integrity), dbapi.IntegrityError)
+
+    def test_spool_spills_and_replays_metadata_without_retaining_all_rows(self):
+        """Crosses the one-MiB spill threshold and verifies cleanup plus complete data replay."""
+        spool = ResultSpool()
+        for index in range(400):
+            frame = Response(STATUS_ROWS, "SELECT", ("value",), (("x" * 4096,),), 1, "", 0,
+                             index == 0, "00000", (), (10,), (), True)
+            spool.append(frame)
+        spool.append(command())
+        self.assertTrue(spool._file._rolled)
+        query = spool.finish()
+        count = 0
+        while (frame := query.next_frame()) is not None:
+            self.assertEqual(frame.rows[0][0], "x" * 4096)
+            count += len(frame.rows)
+        self.assertEqual(count, 400)
+        self.assertTrue(query.next_result())
+        query.close()
+        self.assertTrue(query._file.closed)
+        spool.close()
+
+    def test_callproc_v2_uses_typed_terminal_outputs_and_preserves_warnings(self):
+        """Avoids metadata/output/cleanup SQL after a negotiated CALL and retains quoted case."""
+        finish = Response(STATUS_COMMAND, "CALL", (), (), 0, "QuotedName", 0, True, "00000",
+                          (Condition("01000", 1642, "careful"),), (),
+                          (OutputParameter(2, "answer", 3, "42"), OutputParameter(3, "text", 10, "NULL")), True)
+        conn = FakeConnection([[rows(7, start=True), finish]])
+        conn.extended_results = True
+        cursor = dbapi.Cursor(conn)
+        self.assertEqual(cursor.callproc('"QuotedName"', (5, None, None)), (5, 42, "NULL"))
+        self.assertEqual(cursor.messages[0][1].sqlstate, "01000")
+        self.assertEqual(cursor.fetchall(), [("7",)])
+        self.assertEqual(len(conn.commands), 2)
+        self.assertIn('CALL "QuotedName"(', conn.commands[1])
+        cursor.close()
 
     def test_protocol_boundary_flag_and_drain_preserve_alignment(self):
         """Verifies real socket framing and reuse after a partially consumed CALL."""

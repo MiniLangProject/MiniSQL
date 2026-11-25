@@ -151,19 +151,50 @@ before the connection is reused. Protocol v1 is ordered and not multiplexed,
 so only one cursor may have an unread result on a connection. Use one connection
 per concurrent worker or a normal Python connection pool.
 
-## Protocol-v1 limitations
+## Structured results and stored procedures
 
-Protocol v1 represents result cells as UTF-8 text without a SQL type or null
-bitmap. Rows therefore contain strings and `None`; the wire token `NULL` is
-interpreted as SQL NULL and cannot be distinguished from stored text containing
-exactly `NULL`. Cursor descriptions conservatively use `minisql.STRING`.
+Current clients and servers negotiate the optional `results-v2` extension within
+protocol version 1. Ordinary rows keep the compatible string/`None` API, with an
+exact null bitmap that distinguishes SQL NULL from the string `"NULL"`. Cursor
+descriptions expose `minisql.NUMBER`, `BINARY`, `DATETIME`, or `STRING` from the
+native column type kind when available. Empty results and expressions whose
+type is unknown retain conservative metadata; ordinary row metadata does not
+carry declared precision, scale, or character set.
 
-Python `bytes` results can be decoded by applications from MiniSQL's `0x...`
-rendering, but binary parameter binding is unavailable because SQL v1 has no
-binary literal. Scrollable cursors and two-phase commit are not implemented.
-Stored procedures support streaming `execute("CALL ...")` / `nextset()` and
-buffered `callproc()` with IN/OUT/INOUT arguments. See the
-[stored procedure examples](../../clients/python/README.md#stored-procedures).
+`execute("CALL ...")` and `nextset()` consume results as the procedure runs.
+Simple SELECTs stream in bounded batches; blocking SQL operators can still
+materialize their own results. `callproc()` supports IN/OUT/INOUT arguments and
+returns a tuple with typed output values: `bool`, `int`, `float`, `Decimal`,
+`bytes`, temporal values, `str`, or `None`. Decimal output values preserve their
+declared scale. Quoted procedure identifiers preserve case, and CALL statements
+participate in the connection's prepared-plan cache.
+
+`callproc()` consumes the CALL before returning its output tuple and retains
+result sets in a temporary spool that spills to disk after one MiB. Exhausting
+or closing the cursor removes that spool. Negotiated output values arrive in
+the final CALL response without another SQL query. Private argument variables
+are reused until the connection closes, bounded by the largest parameter list
+used on that connection. This preserves the CALL's warning and error area.
+
+Exceptions expose `.code` and `.sqlstate`; structured SQLSTATE determines the
+DB-API exception subclass. `cursor.messages` and `connection.messages` expose
+warning objects with the same diagnostic fields after the terminal frame is
+consumed. See the [stored procedure examples](../../clients/python/README.md#stored-procedures).
+
+## Compatibility and remaining limits
+
+Older servers retain the unextended protocol-v1 representation: ordinary rows
+and procedure output lookups use text, the `NULL` token is ambiguous, and cursor
+descriptions use `minisql.STRING`. Legacy `callproc()` performs a compatibility
+output SELECT and variable cleanup. New servers preserve that payload format
+for clients that do not negotiate the extension.
+
+Ordinary binary query results use MiniSQL's `0x...` rendering; negotiated
+procedure outputs are converted to `bytes`. Binary parameter binding remains
+unavailable because the SQL grammar has no binary literal. Scrollable cursors
+and two-phase commit are not implemented. Generic DECIMAL result rows retain the
+existing text representation without declared scale; typed procedure output
+parameters do carry their normalized decimal value.
 
 ## Validation
 

@@ -86,9 +86,10 @@ standard. In particular, the current implementation has verified limitations
 in scaled-decimal arithmetic and presentation, date/time comparison,
 \code{CURRENT\_TIMESTAMP}, \code{NULLIF} with a null argument, and referential
 actions. Updating a referenced parent key can leave an orphaned child;
-therefore the teaching database treats keys as immutable. Protocol-v1 result
-cells are text and cannot distinguish SQL NULL from the literal string
-\code{'NULL'} in the general result path. These are operationally meaningful
+therefore the teaching database treats keys as immutable. Legacy protocol-v1
+result cells cannot distinguish SQL NULL from the literal string
+\code{'NULL'}; peers negotiating the results-v2 extension carry an exact NULL
+bitmap and type-kind metadata. These are operationally meaningful
 limitations, not exercises for the reader to discover accidentally.
 
 Historical full Windows acceptance is separate from the focused native Linux

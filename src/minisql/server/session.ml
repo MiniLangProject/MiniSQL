@@ -77,6 +77,26 @@ struct Session
   statementStartedAt
   /// Complete encoded response bytes accumulated by the tracked statement.
   statementResultBytes
+  /// True only after the peer explicitly negotiates structured results-v2 metadata.
+  extendedResults
+end struct
+
+/// State owned by one synchronously streamed CALL while its executor runs.
+struct RoutineStream
+  /// Server session owning accounting, diagnostics, and resource limits.
+  session
+  /// Original request, including negotiated metadata flag and request identifier.
+  request
+  /// Connection receiving frames with transport backpressure.
+  connection
+  /// Number of row frames already sent; prevents unsafe whole-CALL retries.
+  frames
+  /// Accumulated emitted row count across all result sets.
+  rows
+  /// True when the latest logical row result has completed successfully.
+  resultComplete
+  /// True after an I/O failure makes a terminal response unsafe.
+  transportFailed
 end struct
 
 /// Performs the fail operation for the minisql server session module.
@@ -109,7 +129,7 @@ function createSession(engine, secure, authenticated)
   registered = try(database_manager.registerSessionPeer(engine.database, executor.sessionIdentifier(engine), "embedded", false, authenticated))
   if typeof(registered) == "error" then return registered end if
   now = clock.monotonicMilliseconds()
-  return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now, false, 0, 0)
+  return Session(engine, false, false, secure, authenticated, void, 0, void, void, 0, void, void, false, now, now, false, 0, 0, false)
 end function
 
 /// Opens open for the minisql server session module.
@@ -245,9 +265,12 @@ end function
 /// @param response response value consumed by this operation.
 function responseMessage(request, response)
   payload = messages.encodeResponse(response)
+  flags = 0
+  if (request.flags & constants.FLAG_METADATA) != 0 then payload = messages.encodeResponseExtended(response); flags = constants.FLAG_METADATA end if
   kind = constants.TYPE_RESPONSE
   if response.status == constants.STATUS_ERROR then kind = constants.TYPE_ERROR end if
-  return messages.create(kind, 0, request.requestId, payload)
+  if response.resultStart then flags = flags | constants.FLAG_RESULT_START end if
+  return messages.create(kind, flags, request.requestId, payload)
 end function
 
 /// Encodes bounded result batches and marks every non-final frame for the client.
@@ -261,11 +284,42 @@ function responseMessages(request, responses)
     kind = constants.TYPE_RESPONSE
     if responses[index].status == constants.STATUS_ERROR then kind = constants.TYPE_ERROR end if
     flags = 0
-    if index < len(responses) - 1 then flags = constants.FLAG_MORE end if
+    if (request.flags & constants.FLAG_METADATA) != 0 then payload = messages.encodeResponseExtended(responses[index]); flags = constants.FLAG_METADATA end if
+    if index < len(responses) - 1 then flags = flags | constants.FLAG_MORE end if
     if responses[index].resultStart then flags = flags | constants.FLAG_RESULT_START end if
     output = output + [messages.create(kind, flags, request.requestId, payload)]
   end for
   return output
+end function
+
+/// Adds structured conditions and committed CALL outputs to a terminal response.
+function statementMetadata(session, response, nativeError)
+  extra = messages.normalizedMetadata(response)
+  if nativeError is not void then
+    diagnostic = executor.statementDiagnostic(session.engine, nativeError)
+    extra.sqlState = diagnostic.sqlstate
+  end if
+  for each warning in executor.statementWarnings(session.engine)
+    extra.warnings = extra.warnings + [messages.Condition(warning.sqlstate, warning.errno, warning.message)]
+  end for
+  if nativeError is void and response.status == constants.STATUS_COMMAND and response.command == "CALL" then
+    for each output in executor.routineOutputParameters(session.engine)
+      value = output[2]
+      text = ""
+      scale = 0
+      if len(output) > 3 then scale = output[3] end if
+      if not value.isNull then text = formatter.outputValueText(value, scale) end if
+      extra.outputs = extra.outputs + [messages.OutputParameter(output[0], output[1], value.typeKind, value.isNull, text)]
+    end for
+  end if
+  response.metadata = extra
+  return response
+end function
+
+/// Builds an SQL error without overloading native retry codes with SQLSTATE data.
+function sqlErrorResponse(session, nativeError, replaceArea = false)
+  executor.recordStatementError(session.engine, nativeError, replaceArea)
+  return statementMetadata(session, messages.errorResponse(nativeError.code, nativeError.message), nativeError)
 end function
 
 /// Implements authentication error for this module.
@@ -535,7 +589,7 @@ function handleQuery(session, request)
   end if
   ignoredLog = logger.debug("minisql.server.session.handleQuery", "received SQL statement session=" + sessionId + " bytes=" + len(request.payload))
   parsed = try(parser.parseSql(sqlText))
-  if typeof(parsed) == "error" then ignoredLog = logger.warning("minisql.server.session.handleQuery", "SQL parse failed session=" + sessionId + " code=" + parsed.code); finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
+  if typeof(parsed) == "error" then ignoredLog = logger.warning("minisql.server.session.handleQuery", "SQL parse failed session=" + sessionId + " code=" + parsed.code); finishTrackedStatement(session, false, 0); return responseMessage(request, sqlErrorResponse(session, parsed, true)) end if
   if len(parsed) != 1 then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   return executeParsedQuery(session, request, parsed[0])
 end function
@@ -562,13 +616,13 @@ function executeParsedQuery(session, request, statement)
   result = try(executor.executeStatement(session.engine, statement))
   if typeof(result) == "error" then
     completed = executor.failedRoutineResults(session.engine)
-    retryableLock = result.code == 9007 and len(completed) == 0 and not executor.isApplicationError(session.engine, result.code)
+    retryableLock = result.code == 9007 and len(completed) == 0 and not executor.isApplicationError(session.engine, result.code) and not executor.routineStarted(session.engine)
     if retryableLock then
       ignoredLog = logger.debug("minisql.server.session.handleQuery", "SQL waiting for logical lock session=" + sessionId)
     else
       ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message)
     end if
-    failure = messages.errorResponse(result.code, result.message)
+    failure = sqlErrorResponse(session, result)
     if result.code == 9007 and not retryableLock then
       ignoredWait = try(database_manager.cancelLockWait(session.engine.database, sessionId))
     end if
@@ -599,6 +653,7 @@ function executeParsedQuery(session, request, statement)
   end if
   converted = try(formatter.responsesFromResult(result))
   if typeof(converted) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
+  converted[len(converted) - 1] = statementMetadata(session, converted[len(converted) - 1], void)
   ignoredLog = logger.info("minisql.server.session.handleQuery", "SQL completed session=" + sessionId + " command=" + converted[0].command + " rows=" + result.affectedRows + " frames=" + len(converted))
   framed = responseMessages(request, converted)
   for each frame in framed
@@ -609,6 +664,80 @@ function executeParsedQuery(session, request, statement)
   finishTrackedStatement(session, true, result.affectedRows)
   if len(framed) == 1 then return framed[0] end if
   return framed
+end function
+
+/// Writes one routine batch immediately; a void batch marks a completed result.
+/// Errors propagate to the executor so no further routine statements can run.
+function streamRoutineResult(context, result, resultStart)
+  if result is void then context.resultComplete = true; return true end if
+  if resultStart then context.resultComplete = false end if
+  context.rows = context.rows + resultRowCount(result)
+  session = context.session
+  if context.rows > database_manager.maxResultRows(session.engine.database) then return fail(9037, "streamRoutineResult", "result exceeds configured maxResultRows") end if
+  responses = formatter.responsesFromResult(result)
+  first = true
+  for each response in responses
+    response.resultStart = first and resultStart
+    frame = responseMessage(context.request, response)
+    frame.flags = frame.flags | constants.FLAG_MORE
+    if len(frame.payload) > database_manager.maxFrameBytes(session.engine.database) then return fail(INVALID_ARGUMENT, "streamRoutineResult", "response exceeds configured maxFrameBytes") end if
+    session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
+    if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then return fail(9037, "streamRoutineResult", "result exceeds configured maxResultBytes") end if
+    sent = try(protocol_connection.sendMessage(context.connection, frame))
+    if typeof(sent) == "error" then context.transportFailed = true; return sent end if
+    context.frames = context.frames + 1
+    first = false
+  end for
+  return true
+end function
+
+/// Executes CALL/EXECUTE with bounded row callbacks and a final command/error.
+/// Ordinary statements retain their existing response contract through this fallback.
+function executeParsedQueryStreaming(session, request, statement, connection)
+  context = RoutineStream(session, request, connection, 0, 0, true, false)
+  result = try(executor.executeStatementStreaming(session.engine, statement, streamRoutineResult, context))
+  if typeof(result) == "error" then
+    application = executor.isApplicationError(session.engine, result.code)
+    retryableLock = result.code == 9007 and not application and context.frames == 0 and not executor.routineStarted(session.engine)
+    if result.code == 9007 and not retryableLock then ignoredWait = try(database_manager.cancelLockWait(session.engine.database, executor.sessionIdentifier(session.engine))) end if
+    response = sqlErrorResponse(session, result)
+    if not retryableLock then finishTrackedStatementWithCode(session, false, context.rows, result.code) end if
+    if context.transportFailed then return result end if
+    if context.frames == 0 then return responseMessage(request, response) end if
+    response.resultStart = context.resultComplete
+    frame = responseMessage(request, response)
+    sent = try(protocol_connection.sendMessage(connection, frame))
+    if result.code == 9031 and not application then ignoredAbort = try(abortForConcurrency(session)) end if
+    if typeof(sent) == "error" then return sent end if
+    return []
+  end if
+  remainingRows = resultRowCount(result)
+  if context.rows + remainingRows > database_manager.maxResultRows(session.engine.database) then
+    failure = error(9037, "result exceeds configured maxResultRows")
+    finishTrackedStatementWithCode(session, false, context.rows, failure.code)
+    response = sqlErrorResponse(session, failure)
+    response.resultStart = context.frames > 0
+    return responseMessage(request, response)
+  end if
+  responses = formatter.responsesFromResult(result)
+  if context.frames > 0 then responses[0].resultStart = true end if
+  responses[len(responses) - 1] = statementMetadata(session, responses[len(responses) - 1], void)
+  frames = responseMessages(request, responses)
+  for each frame in frames
+    if len(frame.payload) > database_manager.maxFrameBytes(session.engine.database) then finishTrackedStatementWithCode(session, false, context.rows, INVALID_ARGUMENT); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "response exceeds configured maxFrameBytes")) end if
+    session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
+    if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then finishTrackedStatementWithCode(session, false, context.rows, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultBytes")) end if
+  end for
+  finishTrackedStatement(session, true, result.affectedRows)
+  if context.frames == 0 then
+    if len(frames) == 1 then return frames[0] end if
+    return frames
+  end if
+  for each frame in frames
+    sent = try(protocol_connection.sendMessage(connection, frame))
+    if typeof(sent) == "error" then return sent end if
+  end for
+  return []
 end function
 
 /// Streams an eligible non-blocking SELECT directly to one connection. One
@@ -631,11 +760,11 @@ function handleQueryStreaming(session, request, connection)
     return responseMessage(request, messages.errorResponse(IO_FAILURE, "SQL binlog persistence failed; statement was not executed"))
   end if
   parsed = try(parser.parseSql(sqlText))
-  if typeof(parsed) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
+  if typeof(parsed) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, sqlErrorResponse(session, parsed, true)) end if
   if len(parsed) != 1 then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   cursor = try(executor.openSelectCursor(session.engine, parsed[0]))
-  if typeof(cursor) == "error" then if cursor.code != 9007 or executor.isApplicationError(session.engine, cursor.code) then finishTrackedStatementWithCode(session, false, 0, cursor.code) end if; return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
-  if cursor is void then return executeParsedQuery(session, request, parsed[0]) end if
+  if typeof(cursor) == "error" then if cursor.code != 9007 or executor.isApplicationError(session.engine, cursor.code) then finishTrackedStatementWithCode(session, false, 0, cursor.code) end if; return responseMessage(request, sqlErrorResponse(session, cursor, true)) end if
+  if cursor is void then return executeParsedQueryStreaming(session, request, parsed[0], connection) end if
 
   pending = void
   frameCount = 0
@@ -645,11 +774,11 @@ function handleQueryStreaming(session, request, connection)
     if typeof(batch) == "error" then
       executor.closeSelectCursor(cursor)
       if pending is not void then
-        pending.flags = constants.FLAG_MORE
+        pending.flags = pending.flags | constants.FLAG_MORE
         sentPending = try(protocol_connection.sendMessage(connection, pending))
         if typeof(sentPending) == "error" then return sentPending end if
       end if
-      failure = responseMessage(request, messages.errorResponse(batch.code, batch.message))
+      failure = responseMessage(request, sqlErrorResponse(session, batch))
       sentFailure = try(protocol_connection.sendMessage(connection, failure))
       finishTrackedStatementWithCode(session, false, rowCount, batch.code)
       if typeof(sentFailure) == "error" then return sentFailure end if
@@ -666,7 +795,7 @@ function handleQueryStreaming(session, request, connection)
       session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
       if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then executor.closeSelectCursor(cursor); finishTrackedStatementWithCode(session, false, rowCount, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultBytes")) end if
       if pending is not void then
-        pending.flags = constants.FLAG_MORE
+        pending.flags = pending.flags | constants.FLAG_MORE
         sent = try(protocol_connection.sendMessage(connection, pending))
         if typeof(sent) == "error" then executor.closeSelectCursor(cursor); return sent end if
         frameCount = frameCount + 1
@@ -675,6 +804,9 @@ function handleQueryStreaming(session, request, connection)
     end for
   end while
   if pending is void then pending = responseMessage(request, messages.rowResponse(cursor.bound.itemNames, [])) end if
+  finalResponse = messages.decodeResponse(pending.payload)
+  finalResponse = statementMetadata(session, finalResponse, void)
+  pending = responseMessage(request, finalResponse)
   sentFinal = try(protocol_connection.sendMessage(connection, pending))
   if typeof(sentFinal) == "error" then return sentFinal end if
   frameCount = frameCount + 1
@@ -690,6 +822,7 @@ end function
 /// @param connection connection value consumed by this operation.
 function handleToConnection(session, request, connection)
   validateOpen(session, "handleToConnection")
+  if messages.isMessage(request) and (request.flags & constants.FLAG_METADATA) != 0 and not session.extendedResults then request.flags = request.flags & (~constants.FLAG_METADATA); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "results-v2 must be negotiated before use")) end if
   if messages.isMessage(request) and request.messageType == constants.TYPE_QUERY then return handleQueryStreaming(session, request, connection) end if
   return handle(session, request)
 end function
@@ -710,6 +843,8 @@ function handleUnlocked(session, request)
     // The semicolon-delimited suffix is backward compatible: legacy clients
     // treat the HELLO message as informational text.
     message = "MiniSQL protocol 1; session=" + executor.sessionIdentifier(session.engine)
+    session.extendedResults = decode(request.payload) == "MiniSQL/1; capabilities=results-v2"
+    if session.extendedResults then message = message + "; capabilities=results-v2" end if
     if session.secure and not session.authenticated then message = message + "; authentication required" end if
     return responseMessage(request, messages.commandResponse("HELLO", 0, message))
   end if

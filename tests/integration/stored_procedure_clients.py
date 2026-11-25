@@ -24,6 +24,7 @@ args = parser.parse_args()
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'clients/python'))
 import minisql
+from minisql.protocol import Message, Protocol, TYPE_HELLO
 
 binary = args.server.resolve()
 workspace = tempfile.TemporaryDirectory(prefix="minisql-routine-clients-")
@@ -64,6 +65,20 @@ try:
             time.sleep(.05)
     connection=minisql.connect(f'minisql://127.0.0.1:{port}/main',autocommit=True,socket_timeout=15)
     cursor=connection.cursor()
+    check(connection._protocol.extended_results, 'results-v2 is negotiated explicitly')
+    legacy = Protocol(socket.create_connection(('127.0.0.1', port), timeout=5))
+    legacy_id = legacy._next_id()
+    legacy._write(Message(TYPE_HELLO, 0, legacy_id, b'MiniSQL/1'))
+    legacy_hello = legacy._decode_response(legacy._read_expected(legacy_id))
+    check('capabilities=' not in legacy_hello.message, 'legacy HELLO does not activate metadata')
+    legacy_query = legacy.query("SELECT 'NULL', NULL")
+    check(not legacy_query.first.extended and legacy_query.first.rows == (('NULL', 'NULL'),),
+          'legacy peer receives unchanged text payload without trailer')
+    legacy_query.close()
+    legacy.close()
+    cursor.execute("SELECT 'NULL' AS literal_value, NULL AS missing_value, 42 AS number_value")
+    check(cursor.fetchone() == ('NULL', None, '42'), 'literal NULL and SQL NULL remain distinct')
+    check(cursor.description[2][1] == int, 'negotiated result description exposes numeric type')
     cursor.execute('CREATE TABLE routine_wire (id INT PRIMARY KEY)')
     cursor.execute('INSERT INTO routine_wire VALUES '+','.join('('+str(i)+')' for i in range(600)))
     cursor.execute('''CREATE PROCEDURE wire(IN p INT, OUT total INT, INOUT accumulator INT)
@@ -84,7 +99,7 @@ try:
     check(cursor.fetchone()==('600','15'),'OUT and INOUT copied to session variables')
     cursor.close();cursor=connection.cursor()
     updated=cursor.callproc('wire',(5,None,10))
-    check(updated==(5,'600','15'),'Python callproc preserves IN and returns OUT/INOUT')
+    check(updated==(5,600,15),'Python callproc preserves IN and returns typed OUT/INOUT')
     groups=consume(cursor)
     check([len(x) for x in groups]==[600,1,0],'callproc retains all results after output lookup')
     cursor.execute('''CREATE PROCEDURE handled(OUT code INT)
@@ -95,13 +110,51 @@ try:
         SELECT code AS code;
       END''')
     out=cursor.callproc('handled',(None,))
-    check(out==('42',),'condition handler OUT value exposed through callproc')
+    check(out==(42,),'condition handler OUT value exposed through callproc')
     check(consume(cursor)==[[('42',)]],'handled error still returns procedure result')
+    cursor.execute('''CREATE PROCEDURE "PythonMixed"(IN "input" INT, OUT "text_out" TEXT, OUT "null_out" TEXT, OUT "numeric_out" DECIMAL(12,2))
+      BEGIN
+        SET text_out = 'NULL', null_out = NULL, numeric_out = input + 0.25;
+        SELECT 'NULL' AS text_value, NULL AS null_value;
+        SIGNAL SQLSTATE '01000' SET MYSQL_ERRNO = 1642, MESSAGE_TEXT = 'python warning';
+      END''')
+    typed=cursor.callproc('"PythonMixed"', (7, None, None, None))
+    from decimal import Decimal
+    check(typed == (7, 'NULL', None, Decimal('7.25')), f'quoted callproc returns typed and exact-null outputs: {typed!r}')
+    check(cursor.messages and cursor.messages[-1][1].sqlstate == '01000' and cursor.messages[-1][1].code == 1642,
+          'Python cursor exposes structured warning code and SQLSTATE')
+    check(connection.messages and connection.messages[-1][1].sqlstate == '01000', 'connection retains CALL warnings after output retrieval')
+    check(consume(cursor) == [[('NULL', None)]], 'spooled results preserve exact NULL metadata')
+    cursor.execute('SELECT @@warning_count')
+    check(cursor.fetchone() == ('1',), 'callproc does not execute SQL after CALL diagnostics')
+    cursor.execute("CREATE PROCEDURE binary_outputs(OUT varying VARCHAR(4) CHARACTER SET binary, OUT fixed CHAR(4) CHARACTER SET binary) BEGIN SET varying = 'AB', fixed = 'AB'; END")
+    check(cursor.callproc('binary_outputs', (None, None)) == (b'AB', b'AB\x00\x00'),
+          'binary-charset outputs retain bytes and fixed-width zero padding')
+    consume(cursor)
+    cursor.execute('CREATE PROCEDURE cached_input(IN input INT) SELECT input AS value')
+    cursor.execute('CALL cached_input(?)', (11,))
+    check(consume(cursor) == [[('11',)]], 'prepared CALL cache executes bound input')
+    plans=len(connection._plans)
+    cursor.execute('CALL cached_input(?)', (12,))
+    check(consume(cursor) == [[('12',)]] and len(connection._plans) == plans, 'prepared CALL cache reuses its plan')
+    cursor.execute('CREATE SEQUENCE routine_wire_seq START WITH 1')
+    cursor.execute("CREATE PROCEDURE sequence_once() SELECT NEXTVAL('routine_wire_seq') AS value")
+    cursor.execute('CALL sequence_once()')
+    check(consume(cursor) == [[('1',)]], 'CALL streaming probe does not execute NEXTVAL twice')
+    try:
+        cursor.execute('SELECT nonexistent_column FROM routine_wire')
+    except minisql.ProgrammingError as error:
+        check(error.sqlstate == '42S22', 'native cursor binding error exposes its exact SQLSTATE')
+    else:
+        raise AssertionError('missing column did not raise')
+    cursor.execute('SHOW ERRORS')
+    diagnosed=cursor.fetchall()
+    check(diagnosed and diagnosed[0][0] == 'Error', 'direct cursor error remains visible through SHOW ERRORS')
     cursor.execute("CREATE PROCEDURE broken() SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'deliberate live error'")
     try:
         cursor.execute('CALL broken()')
     except minisql.DatabaseError as error:
-        check('deliberate live error' in str(error),'unhandled SIGNAL becomes connector exception')
+        check('deliberate live error' in str(error) and error.sqlstate == '45000','unhandled SIGNAL exposes structured SQLSTATE')
     else: raise AssertionError('SIGNAL not raised')
     cursor.execute('SELECT 99')
     check(cursor.fetchone()==('99',),'connection remains aligned after procedure error')

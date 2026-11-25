@@ -28,6 +28,8 @@ const FLAG_SECURE = 1
 const FLAG_MORE = 2
 /// Marks the first frame of a separate result in one CALL response stream.
 const FLAG_RESULT_START = 4
+/// Opt-in results-v2 metadata trailer on one request/response, negotiated by HELLO.
+const FLAG_METADATA = 8
 /// Defines the secure overhead bytes constant used by the minisql protocol constants module.
 const SECURE_OVERHEAD_BYTES = 24
 /// Defines the max secure plaintext bytes constant used by the minisql protocol constants module.

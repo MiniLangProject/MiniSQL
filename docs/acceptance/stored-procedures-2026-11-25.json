@@ -352,5 +352,429 @@
     }
   },
   "implementationCommit": "139eb3c096fe4db9640f730aa8722647485dac29",
-  "implementationTree": "5ed592e6f162d3ff77d15bb77b851e645b4b7c40"
+  "implementationTree": "5ed592e6f162d3ff77d15bb77b851e645b4b7c40",
+  "parityExpansion": {
+    "status": "PASS",
+    "sourceBaseline": "ec87e27ca0c923d5f10ffa1e2bc08592070dd8fc",
+    "sourceState": "Verified working-tree changes; the published implementation commit is recorded after creation.",
+    "packages": [
+      {
+        "number": 1,
+        "scope": "Routine authorization and structured diagnostics",
+        "implemented": [
+          "SHOW_ROUTINE, SET_ANY_DEFINER, database SELECT and separate routine/source visibility",
+          "Mandatory CREATE ROUTINE, definer EXECUTE and session-local automatic_sp_privileges",
+          "Bounded warning/error retention, SHOW diagnostics, SQLSTATE mapping and negotiated connector condition fields"
+        ]
+      },
+      {
+        "number": 2,
+        "scope": "SQL and JDBC metadata and parameter binding",
+        "implemented": [
+          "Complete ROUTINES/PARAMETERS and SHOW CREATE/STATUS layouts",
+          "Captured mode/character context and actual creation/alteration metadata",
+          "JDBC procedure discovery, callable parameter metadata, named and positional binding, typed outputs, retained results and IN-only batches"
+        ]
+      },
+      {
+        "number": 3,
+        "scope": "CALL in trigger context",
+        "implemented": [
+          "Compound trigger programs and nested procedure calls share the invoking page transaction",
+          "Inherited restrictions on result sets, dynamic SQL, transaction boundaries and invoking-table mutation",
+          "Isolated trigger savepoint names, qualified OLD/NEW and terminal deadlock teardown"
+        ]
+      },
+      {
+        "number": 4,
+        "scope": "MySQL-style behavior details",
+        "implemented": [
+          "Final-statement CALL affected rows, statement rollback inside an explicit CALL transaction and no started-CALL replay",
+          "Authorized routine DDL implicit commits after permission preflight",
+          "Zero-argument CALL without parentheses, character attributes, captured strictness, Unicode character bounds and binary byte assignment"
+        ]
+      },
+      {
+        "number": 5,
+        "scope": "Streaming, parsed-definition reuse and concurrent readers",
+        "implemented": [
+          "Bounded simple-query CALL batches, explicit result boundaries and terminal stream cleanup",
+          "Disk-backed connector result spools for output-returning convenience calls",
+          "64-entry immutable definition cache with durable-identity/context invalidation",
+          "Conservative reachable-body and expression proof before shared read-only CALL admission"
+        ]
+      }
+    ],
+    "compiler": {
+      "name": "MiniLangCompilerPy",
+      "version": "1.3.10",
+      "commit": "8e64c9cfda92199b68ac5d3974fea445f12f6c39"
+    },
+    "nativeGate": {
+      "target": "linux-x64",
+      "status": "PASS",
+      "caseCount": 12,
+      "evidence": "build/routines/gates/20261125T071351Z-bug7i3td/results.json",
+      "cases": [
+        {
+          "case": "m12_sql_frontend",
+          "status": "PASS",
+          "seconds": 4.188
+        },
+        {
+          "case": "m15_sql_engine",
+          "status": "PASS",
+          "seconds": 60.007
+        },
+        {
+          "case": "m22_prepared_statements",
+          "status": "PASS",
+          "seconds": 60.086
+        },
+        {
+          "case": "m33_sql_batch",
+          "status": "PASS",
+          "seconds": 64.807
+        },
+        {
+          "case": "m37_outer_joins",
+          "status": "PASS",
+          "seconds": 65.358
+        },
+        {
+          "case": "m45_sequences_generated_triggers",
+          "status": "PASS",
+          "seconds": 60.614
+        },
+        {
+          "case": "routine_security",
+          "status": "PASS",
+          "seconds": 62.124
+        },
+        {
+          "case": "routines_client",
+          "status": "PASS",
+          "seconds": 62.856
+        },
+        {
+          "case": "stored_procedure_edges",
+          "status": "PASS",
+          "seconds": 57.162
+        },
+        {
+          "case": "stored_procedure_parity",
+          "status": "PASS",
+          "seconds": 67.939
+        },
+        {
+          "case": "stored_procedure_parser",
+          "status": "PASS",
+          "seconds": 4.289
+        },
+        {
+          "case": "stored_procedure_runtime",
+          "status": "PASS",
+          "seconds": 58.682
+        }
+      ],
+      "assertions": {
+        "stored_procedure_runtime": 127,
+        "stored_procedure_edges": 21,
+        "routine_security": 154,
+        "stored_procedure_parity": 105
+      },
+      "supplementalRuns": [
+        {
+          "evidence": "build/routines/gates/20261125T071930Z-0z09bmru/results.json",
+          "status": "PASS",
+          "case": "stored_procedure_parity",
+          "assertions": 105,
+          "note": "The full gate passed the 100-assertion parity suite. A subsequent SQLSTATE correction for unsupported character set/collation errors added five assertions; this final 105-assertion run supersedes that case only. Other successful cases retain their actual full-gate provenance."
+        }
+      ]
+    },
+    "wireRegression": {
+      "status": "PASS",
+      "evidence": "build/routines-v2/native-wire-regressions/results.json",
+      "target": "linux-x64",
+      "cases": [
+        {
+          "case": "m18_protocol",
+          "status": "PASS",
+          "seconds": 1.972,
+          "initialInvocation": {
+            "status": "FAIL",
+            "reason": "Required loopback port omitted by supplemental runner; no source change."
+          },
+          "rerunSeconds": 0.043,
+          "runLog": "m18_protocol/run-port.log"
+        },
+        {
+          "case": "m21_auth_protocol",
+          "status": "PASS",
+          "seconds": 64.558
+        }
+      ]
+    },
+    "windowsCompileGate": {
+      "target": "windows-x64",
+      "compileOnly": true,
+      "status": "PASS",
+      "caseCount": 6,
+      "evidence": "build/routines/gates/20261125T071456Z-g2fb1dvg/results.json",
+      "cases": [
+        {
+          "case": "routine_security",
+          "status": "COMPILE_PASS",
+          "seconds": 62.944,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        },
+        {
+          "case": "routines_client",
+          "status": "COMPILE_PASS",
+          "seconds": 67.518,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        },
+        {
+          "case": "stored_procedure_edges",
+          "status": "COMPILE_PASS",
+          "seconds": 59.55,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        },
+        {
+          "case": "stored_procedure_parity",
+          "status": "COMPILE_PASS",
+          "seconds": 59.998,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        },
+        {
+          "case": "stored_procedure_parser",
+          "status": "COMPILE_PASS",
+          "seconds": 4.292,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        },
+        {
+          "case": "stored_procedure_runtime",
+          "status": "COMPILE_PASS",
+          "seconds": 55.145,
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        }
+      ],
+      "supplementalRuns": [
+        {
+          "evidence": "build/routines/gates/20261125T072032Z-pxfobd5l/results.json",
+          "status": "COMPILE_PASS",
+          "case": "stored_procedure_parity",
+          "assertionsInSource": 105,
+          "note": "Recompiled after the final SQLSTATE correction. PE32+ AMD64 validation only; no Windows executable was run.",
+          "imageValidation": {
+            "format": "PE32+",
+            "machine": "AMD64",
+            "executed": false
+          }
+        }
+      ],
+      "applicationCompiles": {
+        "evidence": "build/routines-v2/windows-apps/appresults.json",
+        "target": "windows-x64",
+        "compileOnly": true,
+        "executed": false,
+        "compiler": "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy/mlc_win64.py",
+        "status": "PASS",
+        "cases": [
+          {
+            "name": "minisqld",
+            "source": "src/apps/minisqld/main.ml",
+            "sourceSha256": "a3713fd4d4cfa4ae6102c2b0289fe445359f539e4ca049993f3c8f2e45005e30",
+            "started": "2026-11-25T07:23:00.708616+00:00",
+            "seconds": 69.54,
+            "status": "PASS",
+            "returncode": 0,
+            "validPE64": true,
+            "machine": 34404,
+            "executable": "build/routines-v2/windows-apps/minisqld.exe",
+            "log": "build/routines-v2/windows-apps/minisqld.compile.log",
+            "command": [
+              "python",
+              "-B",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy/mlc_win64.py",
+              "src/apps/minisqld/main.ml",
+              "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines-v2/windows-apps/minisqld.exe",
+              "--target",
+              "windows-x64",
+              "-I",
+              "src",
+              "-I",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy"
+            ]
+          },
+          {
+            "name": "minisql",
+            "source": "src/apps/minisql/main.ml",
+            "sourceSha256": "7659020181f8db68f5f68d558b04f648dd2a4bc70687625e7817a4072b2896d1",
+            "started": "2026-11-25T07:24:10.247428+00:00",
+            "seconds": 64.55,
+            "status": "PASS",
+            "returncode": 0,
+            "validPE64": true,
+            "machine": 34404,
+            "executable": "build/routines-v2/windows-apps/minisql.exe",
+            "log": "build/routines-v2/windows-apps/minisql.compile.log",
+            "command": [
+              "python",
+              "-B",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy/mlc_win64.py",
+              "src/apps/minisql/main.ml",
+              "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines-v2/windows-apps/minisql.exe",
+              "--target",
+              "windows-x64",
+              "-I",
+              "src",
+              "-I",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy"
+            ]
+          },
+          {
+            "name": "minisql_admin",
+            "source": "src/apps/minisql_admin/main.ml",
+            "sourceSha256": "7401bcc196d3192e4121a14d43a0cd934e2a60d3cbc6f256bedf8bd9024eff46",
+            "started": "2026-11-25T07:25:14.799151+00:00",
+            "seconds": 78.09,
+            "status": "PASS",
+            "returncode": 0,
+            "validPE64": true,
+            "machine": 34404,
+            "executable": "build/routines-v2/windows-apps/minisql_admin.exe",
+            "log": "build/routines-v2/windows-apps/minisql_admin.compile.log",
+            "command": [
+              "python",
+              "-B",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy/mlc_win64.py",
+              "src/apps/minisql_admin/main.ml",
+              "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines-v2/windows-apps/minisql_admin.exe",
+              "--target",
+              "windows-x64",
+              "-I",
+              "src",
+              "-I",
+              "/workspace/scratch/e7930f5f2cb7/MiniLangCompilerPy"
+            ]
+          }
+        ]
+      },
+      "note": "No Windows runtime or GUI interaction is claimed."
+    },
+    "clients": {
+      "status": "PASS",
+      "pythonUnit": {
+        "tests": 18,
+        "evidence": "build/routines-v2/python-unit.log"
+      },
+      "jdbcUnit": {
+        "checks": 16,
+        "evidence": "build/routines-v2/jdbc-driver.log"
+      },
+      "jdbcRoutines": {
+        "checks": 77,
+        "evidence": "build/routines-v2/jdbc-routine.log"
+      },
+      "javaCompilation": {
+        "runtime": "OpenJDK 21",
+        "sourceTarget": "11",
+        "evidence": "build/routines-v2/jdbc-compile.log",
+        "note": "Compiled with the Java 21 jdk.compiler module using -source 11 -target 11. Java 11 runtime execution was not performed."
+      },
+      "nativeServerIntegration": {
+        "checks": 33,
+        "includedJdbcChecks": 25,
+        "evidence": "build/routines-v2/live.log",
+        "serverCompileEvidence": "build/routines-v2/minisqld.compile.log",
+        "note": "The 33 top-level checks include one aggregate JDBC check, whose live suite contains 25 checks; these counts are not additive. The server was rebuilt after the final binary-charset and SQLSTATE changes.",
+        "coverage": [
+          "Explicit results-v2 negotiation and unchanged legacy v1 payloads",
+          "Exact SQL NULL versus literal NULL, native type descriptions and typed decimal/binary outputs",
+          "600-row result framing, equal-schema and empty result boundaries, output copyback and spool replay",
+          "SQLSTATE/warnings, diagnostic preservation, prepared CALL cache reuse and quoted names",
+          "Sequence probe evaluated once, exact cursor errors and connection reuse after terminal or deferred errors",
+          "Application error numbers 9007/9031 do not trigger native retry or unrelated transaction rollback",
+          "JDBC named outputs, routine metadata, parameter metadata, temporal values, warnings and multi-results"
+        ]
+      }
+    },
+    "manual": {
+      "status": "PENDING_PUBLISHED_SOURCE_PIN_AND_PDF_BUILD",
+      "historicalManualRetainedInTopLevelRecord": true
+    },
+    "reviewedSourceSha256": {
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java": "9860eeca1f5702ee53b3d3dcab6d1cd6946af80a285afdfc2bfa944a9d731d79",
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java": "4f19cbdc34ccc8926d9373a16a76f002ee16c9d8b8da2af06aff7535ea191d14",
+      "clients/jdbc/src/test/java/org/minilang/minisql/jdbc/RoutineLiveTest.java": "edfc8d3b363bce5a90b12103427a5d19329ef16e450c362e987770422886717d",
+      "clients/jdbc/src/test/java/org/minilang/minisql/jdbc/RoutineTest.java": "b1868fb2e2905dec6f8f47fdd1f71ec08477060737a37cd9880bb6a863ab50f0",
+      "clients/python/minisql/dbapi.py": "d2944ce4ed39bf479b695055e2ea3e0c8703a574227757525ab8807501e1dceb",
+      "clients/python/minisql/errors.py": "585294fecdecbe31e16144462a4180a1cd7705dd46c3c048964657aac7e9893b",
+      "clients/python/minisql/protocol.py": "2b38a488df2c3b6bcba69616d51259a5c8e03d1f063f73647c905fe6cabf995f",
+      "clients/python/tests/test_routines.py": "8be91a9675c4e88b664bae97b9f7a135861e0fbd6e2cc2e77c2f0e4d1289943d",
+      "src/minisql/catalog/catalog.ml": "f6c623b795b4282f43ade0791f386985411dfcb2cde1a7eb1ef113bf95014e4f",
+      "src/minisql/catalog/metadata.ml": "befe006ef309dc7ffb2a378bf762b9ff5e84f3896a37440ef52991d8959f73ec",
+      "src/minisql/catalog/schema_history.ml": "dcf9ef7ae0752b4afaab1b316a40fa1e26d7e8cf11a5a11b189a66153827697d",
+      "src/minisql/client/client.ml": "02537806460c45e40085df1d0851380db8475ecaa00264fe6aaba6219f4f19fa",
+      "src/minisql/client/formatter.ml": "a4c31a9afedfcc50d0d1526a8eca684dc5e3408bedc2213b3b5951d7a7439225",
+      "src/minisql/executor/executor.ml": "659d9881d98b6dadf21d5edc64d0593d4a1d9cb6bf98bb5a57cc1bb13140b0f1",
+      "src/minisql/executor/routine_state.ml": "f5de4b3f3ffb96664735e93864b40b3937177663760970e6dbdc5f6c405af2ea",
+      "src/minisql/protocol/constants.ml": "63ca94e053e79ed678e09cc04b73d94ecf0432089b5aa67db3c9a05987f3a3fe",
+      "src/minisql/protocol/messages.ml": "3fc313f39fccf01a754a3d05288ab5674755dbfc290b4b10b1a95287130f1f8b",
+      "src/minisql/server/listener.ml": "ebd2fa11921905b37499117fd7a54fe0ed0149851644daee752f351d6502d333",
+      "src/minisql/server/session.ml": "090ef9e793f939125a602f717e234c2a151456508c6f61d9fd737f091fab079e",
+      "src/minisql/sql/ast.ml": "e4890d8cfc92865105a89c29c7bdbdbcef3b4356d9991ca1b8e843928ad9d0f1",
+      "src/minisql/sql/binder.ml": "12ce86e72d95549b7484eff76b7344a81a756077da0086590661115a11973139",
+      "src/minisql/sql/dialect.ml": "931f7e2ab151c67be19cdf97863496456464791c858dba5305448ed68284a70b",
+      "src/minisql/sql/parser.ml": "2803fd180e69b1a43aba649cbb7fe0004ee12a98252926769d45a41459265f74",
+      "src/minisql/sql/types.ml": "5a1b543dee84dad3dbf74d958a3a584378f645d880e76635fed07c2ffb82fb21",
+      "src/tests/m74_workbench.ml": "4192012ff67339612f1c572928dd6c6b33bd9e793b993e8a5efc5ec4fdc50424",
+      "src/tests/routine_security.ml": "d5eec94f0efaa65c217ac7904ed8a863aa08923365a9842400524ed9f49bd962",
+      "src/tests/routines_client.ml": "689cf13cfd067e0a46549a6b6050ec24749bca2074c38578c50b61656416a27b",
+      "src/tests/stored_procedure_parity.ml": "08fdd6b66d5379f190465a62dd753bc97d032ede5073945a218a3f1a4eadb5e8",
+      "src/tests/stored_procedure_parser.ml": "64e4efe48ea6d90dc35ea7ae7425f38f74f93427db076f0115455d13465e80c8",
+      "tests/integration/stored_procedure_clients.py": "b47d9be79cd8f3681113e6b803484b1a3907f63352a764305d0e20b10394599b",
+      "tests/run_all_tests.py": "2cc567bb052b41f5818d0f73f74679e20a07b8126efe2296ef51c961124214e9",
+      "tests/run_routines.py": "51a4bed833ed82fc79753d8239125bcaf2502ff9005976dba4006124088e5027"
+    },
+    "scopeLimits": [
+      "The complete 106-phase Windows release matrix, Windows GUI execution, full TLS matrices, crash injection, replication and soak workloads were not executed for this change.",
+      "Supported routine sql_mode effects cover strict/non-strict character assignment; general SQL expressions, table coercion, DECIMAL arithmetic and the broader type/collation catalog retain MiniSQL boundaries.",
+      "Simple proven-safe SELECT shapes stream; blocking operators and unproved shapes may materialize. Only conservatively proven read-only CALL trees share the reader gate.",
+      "Trigger OLD/NEW fields remain read-only; existing BEFORE timing, event classification and other general trigger limitations remain documented.",
+      "Results-v2 extends MiniSQL protocol version 1. MySQL wire-protocol, server, replication and full connector-standard equivalence are not claimed."
+    ],
+    "staticGate": {
+      "status": "PASS",
+      "phases": 4,
+      "command": "python -B tests/run_all_tests.py --static-only",
+      "evidence": "build/routines-v2/static-final.log"
+    }
+  }
 }

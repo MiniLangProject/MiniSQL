@@ -227,12 +227,22 @@ is available only to trusted sessions. It must not be mixed with DML. \\
 SELECT after staged DDL & Rejected: the executor does not query a partly
 staged schema. Commit the DDL first. \\
 Authenticated table/index DDL & Autocommit only. \\
-Schema, view, trigger, sequence, and procedure DDL & Autocommit only. \\
+Schema, view, trigger, and sequence DDL & Autocommit only. \\
+CREATE, ALTER, and DROP PROCEDURE & Implicitly commits an active transaction
+after successful authorization and before changing the definition. \\
 Users, roles, GRANT, and REVOKE & Autocommit only. \\
 ANALYZE, VACUUM, REINDEX & Autocommit maintenance operations. \\
 Savepoints for schema changes & Unsupported. \\
 \bottomrule
 \end{longtable}
+
+Procedure DDL has a deliberate commit boundary. An authorized definition
+error, such as creating an already existing procedure without IF NOT EXISTS,
+can therefore occur after earlier writes have committed. A denied creation,
+replacement, or definer change leaves those writes rollbackable. Do not use
+ROLLBACK after a successful procedure definition change as a way to undo the
+preceding transaction. This rule is specific to procedure DDL; the other
+schema and security operations in the table retain their own rules.
 
 For application migrations, the clearest workflow is therefore to execute
 schema changes as explicit migration steps outside a DML transaction, verify

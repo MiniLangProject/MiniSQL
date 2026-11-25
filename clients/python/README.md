@@ -60,13 +60,41 @@ updated = cursor.callproc("calculate_total", (100, None))
 print("total:", updated[1])
 ```
 
-`callproc()` buffers all procedure results so it can fetch output parameters
-before returning. Use explicit `SET @name = ...`, `CALL ...(@name)`, and a later
-`SELECT @name` with `execute()` when streaming large results matters. As with
-other protocol-v1 values, OUT/INOUT parameter outputs arrive as text (or `None` for SQL
-NULL); the protocol's historical text/null representation is unchanged.
+`callproc()` consumes the CALL before returning output parameters. It retains
+results in a private temporary spool, spilling to disk after one MiB instead of
+keeping the complete result in memory. Closing or exhausting the cursor removes
+the spool. Use `execute("CALL ...")` and `nextset()` when results should be read as
+the procedure runs. Simple procedure SELECTs stream in bounded batches; blocking
+SQL operators may still materialize their own result.
+
+Current clients and servers negotiate the optional `results-v2` extension while
+retaining protocol version 1. OUT/INOUT values then use Python `bool`, `int`,
+`float`, `Decimal`, `bytes`, `date`, `time`, `datetime`, `str`, or `None` according
+to their declared type. Decimal outputs preserve their declared scale, and the
+literal text `"NULL"` is distinct from SQL NULL. Ordinary result rows retain the
+compatible string/`None` API; cursor descriptions expose NUMBER, BINARY,
+DATETIME, or STRING when type information is available.
+
+`callproc()` accepts quoted identifiers such as `"MyProcedure"` and
+`schema.\`MyProcedure\`` and preserves their case. Negotiated calls receive output
+values in their final response without a follow-up SQL query. Private session
+variables are reused per connection until it closes; their count is bounded by
+the largest parameter list used on that connection. CALL statements participate
+in the session-local prepared-plan cache.
+
+An older server still works through the legacy protocol path, with textual
+OUT/INOUT values and the historical ambiguous `NULL` token. That path performs
+the compatibility output lookup and cleanup queries.
 `nextset()` discards unread rows of the current result only. Closing a cursor
 drains all remaining results before allowing connection reuse.
+
+Errors expose `.code` and `.sqlstate`. With structured diagnostics, the DB-API
+exception subclass follows SQLSTATE, so an application error number cannot be
+mistaken for a native integrity error merely because the numbers overlap.
+`cursor.messages` and `connection.messages` expose `(minisql.Warning, warning)`
+pairs; each warning contains `.code` and `.sqlstate`. The warning list becomes
+available when its terminal response is consumed. Internal output retrieval does
+not overwrite the CALL's server diagnostics.
 
 `DELIMITER` belongs to MiniSQL console/GUI script input; pass a complete
 `CREATE PROCEDURE ... BEGIN ... END` SQL string directly to `execute()` without

@@ -7,6 +7,12 @@
 class Warning(Exception):
     """Reports a non-fatal database warning."""
 
+    def __init__(self, message: str, code: int | None = None, sqlstate: str | None = None) -> None:
+        """Retains structured warning information without parsing localized message text."""
+        super().__init__(message)
+        self.code = code
+        self.sqlstate = sqlstate
+
 
 class Error(Exception):
     """Base class for all connector errors."""
@@ -19,10 +25,11 @@ class InterfaceError(Error):
 class DatabaseError(Error):
     """Base class for errors returned by MiniSQL."""
 
-    def __init__(self, message: str, code: int | None = None) -> None:
+    def __init__(self, message: str, code: int | None = None, sqlstate: str | None = None) -> None:
         """Stores the human-readable message and stable MiniSQL error code."""
         super().__init__(message)
         self.code = code
+        self.sqlstate = sqlstate
 
 
 class DataError(DatabaseError):

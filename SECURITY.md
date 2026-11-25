@@ -36,3 +36,17 @@ Include, where possible:
   permissions, and parameterize dynamic SQL values. Procedure grants and definer
   identities use durable IDs so dropping and recreating a name cannot adopt its
   predecessor's authority. See `docs/sql/stored-procedures.md`.
+
+## Routine source and definer privileges
+
+Procedure execution does not grant access to its SQL source. EXECUTE,
+ALTER ROUTINE and CREATE ROUTINE allow scoped metadata inspection; definition
+columns remain NULL unless the effective user is the durable definer, an
+administrator, or holds SHOW_ROUTINE/database SELECT. Prefer SHOW_ROUTINE when
+an inspection role needs definitions without general table access.
+
+Definer-context calls require EXECUTE for both caller and definer. Creating a
+procedure requires CREATE ROUTINE; migrate author roles that previously relied
+on generic CREATE. Grant SET_ANY_DEFINER only to trusted authors who may select
+other ordinary users' security contexts. This privilege does not allow selecting
+a superuser without administration. Review `GRANT ALL ON DATABASE` accordingly.

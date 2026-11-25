@@ -149,6 +149,10 @@ struct TypeName
   precision
   /// Stores the scale associated with this value.
   scale
+  /// Explicit character set for routine character parameters/locals; empty means inherited.
+  characterSet
+  /// Explicit collation for routine character parameters/locals; empty means inherited.
+  collation
 end struct
 
 /// Groups the literal expression state and preserves the field relationships documented below.
@@ -1010,7 +1014,7 @@ end function
 /// @param precision precision value consumed by this operation.
 /// @param scale scale value consumed by this operation.
 function typeName(name, length, precision, scale)
-  return TypeName(name, length, precision, scale)
+  return TypeName(name, length, precision, scale, "", "")
 end function
 
 /// Implements null literal for this module.
@@ -1895,11 +1899,14 @@ function formatTypeName(value)
   if value is not TypeName then return error(9001, "sql.ast.formatTypeName: value must be TypeName") end if
   output = value.name
   if value.name == "DECIMAL" or value.name == "NUMERIC" then
-    if value.precision > 0 then return output + "(" + value.precision + ", " + value.scale + ")" end if
-    return output
+    if value.precision > 0 then output = output + "(" + value.precision + ", " + value.scale + ")" end if
+  else if value.length > 0 then
+    output = output + "(" + value.length + ")"
+  else if (value.name == "TIME" or value.name == "TIMESTAMP") and value.precision > 0 then
+    output = output + "(" + value.precision + ")"
   end if
-  if value.length > 0 then return output + "(" + value.length + ")" end if
-  if (value.name == "TIME" or value.name == "TIMESTAMP") and value.precision > 0 then return output + "(" + value.precision + ")" end if
+  if value.characterSet != "" then output = output + " CHARACTER SET " + formatIdentifier(value.characterSet) end if
+  if value.collation != "" then output = output + " COLLATE " + formatIdentifier(value.collation) end if
   return output
 end function
 
@@ -2332,6 +2339,13 @@ function formatRoutineStatement(statement)
   if kind == "PREPARE_DYNAMIC" then return "PREPARE " + formatIdentifier(statement.name) + " FROM " + formatExpression(statement.expressions[0]) end if
   if kind == "ALTER_PROCEDURE" then return "ALTER PROCEDURE " + formatObjectName(statement.name) + formatRoutineCharacteristics(statement.options) end if
   if kind == "SHOW_CREATE_PROCEDURE" then return "SHOW CREATE PROCEDURE " + formatObjectName(statement.name) end if
+  if kind == "SHOW_WARNINGS" or kind == "SHOW_ERRORS" then
+    output = "SHOW "
+    if statement.name == "COUNT" then output = output + "COUNT(*) " end if
+    if kind == "SHOW_WARNINGS" then output = output + "WARNINGS" else output = output + "ERRORS" end if
+    if statement.options[1] >= 0 then output = output + " LIMIT " + statement.options[0] + ", " + statement.options[1] end if
+    return output
+  end if
   if kind == "SHOW_PROCEDURE_STATUS" then
     output = "SHOW PROCEDURE STATUS"
     if len(statement.expressions) > 0 then output = output + " " + statement.name + " " + formatExpression(statement.expressions[0]) end if

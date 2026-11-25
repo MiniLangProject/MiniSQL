@@ -1911,7 +1911,7 @@ def run_schema_and_routines(compiler: Path, verbose: bool) -> None:
     command = [sys.executable, str(ROOT / "tests/run_routines.py"),
                "--compiler", str(compiler), "--target", "windows-x64"]
     for name in ("m45_sequences_generated_triggers", "stored_procedure_parser",
-                 "stored_procedure_runtime", "stored_procedure_edges",
+                 "stored_procedure_runtime", "stored_procedure_edges", "stored_procedure_parity",
                  "routines_client", "routine_security"):
         command.extend(["--case", name])
     result = base.run_command(command, log_name="routines.run.log", verbose=verbose, timeout=3600.0)

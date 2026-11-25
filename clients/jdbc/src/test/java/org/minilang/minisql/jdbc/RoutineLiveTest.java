@@ -7,11 +7,13 @@ package org.minilang.minisql.jdbc;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
 
-/** Exercises procedure streaming and positional outputs against a live MiniSQL server. */
+/** Exercises routine streaming, metadata, typed outputs, warnings and batching against MiniSQL. */
 public final class RoutineLiveTest {
     public static void main(String[] args) throws Exception {
         Class.forName("org.minilang.minisql.jdbc.MiniSqlDriver");
@@ -84,6 +86,64 @@ public final class RoutineLiveTest {
                 try (ResultSet rows = statement.executeQuery("SELECT 100")) {
                     if (!rows.next() || rows.getInt(1) != 100) throw new AssertionError("alignment after partial-result error");
                 }
+                checks++;
+            }
+            try (Statement definitions = connection.createStatement()) {
+                definitions.execute("CREATE OR REPLACE PROCEDURE \"JdbcMixed\"(IN p_count INT, OUT p_text VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, INOUT p_total INT, OUT p_amount DECIMAL(8,2)) BEGIN SET p_text = 'NULL'; SET p_total = p_total + p_count; SET p_amount = CAST('7.25' AS DECIMAL(8,2)); SELECT 'NULL' AS literal_text, NULL AS null_text, p_total AS total; SIGNAL SQLSTATE '01000' SET MESSAGE_TEXT = 'JDBC warning'; END");
+                definitions.execute("CREATE TABLE IF NOT EXISTS jdbc_batch_log(v INTEGER)");
+                definitions.execute("DELETE FROM jdbc_batch_log");
+                definitions.execute("CREATE OR REPLACE PROCEDURE jdbc_batch_add(IN p_value INT) BEGIN IF p_value < 0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'negative batch value', MYSQL_ERRNO = 30177; END IF; INSERT INTO jdbc_batch_log(v) VALUES(p_value); END");
+            }
+            try (CallableStatement call = connection.prepareCall("{call \"JdbcMixed\"(?, ?, ?, ?)}")) {
+                call.setInt("p_count", 3); call.registerOutParameter("p_text", Types.VARCHAR);
+                call.setInt("p_total", 5); call.registerOutParameter("p_total", Types.INTEGER);
+                call.registerOutParameter("p_amount", Types.DECIMAL);
+                ParameterMetaData metadata = call.getParameterMetaData();
+                if (metadata.getParameterMode(3) != ParameterMetaData.parameterModeInOut || metadata.getPrecision(2) != 20
+                        || metadata.getScale(4) != 2) throw new AssertionError("native routine parameter metadata");
+                checks++;
+                if (!call.execute() || !"NULL".equals(call.getString("p_text")) || call.wasNull()
+                        || !Integer.valueOf(8).equals(call.getObject("p_total"))
+                        || !new java.math.BigDecimal("7.25").equals(call.getBigDecimal("p_amount"))) throw new AssertionError("typed named outputs");
+                checks++;
+                if (call.getWarnings() == null || !"01000".equals(call.getWarnings().getSQLState())) throw new AssertionError("native structured warning");
+                checks++;
+                ResultSet retained = call.getResultSet();
+                if (call.getMoreResults(Statement.KEEP_CURRENT_RESULT)) throw new AssertionError("expected final CALL status");
+                if (!retained.next() || !"NULL".equals(retained.getString("literal_text")) || retained.wasNull()
+                        || retained.getString("null_text") != null || !retained.wasNull()
+                        || retained.getMetaData().getColumnType(3) != Types.INTEGER) throw new AssertionError("retained typed NULL metadata");
+                checks++;
+                call.getMoreResults(Statement.CLOSE_ALL_RESULTS);
+                if (!retained.isClosed()) throw new AssertionError("kept native result closes");
+                checks++;
+                try (Statement diagnostics = connection.createStatement(); ResultSet count = diagnostics.executeQuery("SELECT @@warning_count")) {
+                    if (!count.next() || count.getInt(1) < 1) throw new AssertionError("CALL diagnostics survive output retrieval");
+                }
+                checks++;
+            }
+            try (ResultSet procedures = connection.getMetaData().getProcedures(null, "public", "JdbcMixed")) {
+                if (!procedures.next() || !"JdbcMixed".equals(procedures.getString("PROCEDURE_NAME"))) throw new AssertionError("native JDBC procedure discovery");
+                checks++;
+            }
+            try (ResultSet columns = connection.getMetaData().getProcedureColumns(null, "public", "JdbcMixed", "p\\_text")) {
+                if (!columns.next() || columns.getInt("DATA_TYPE") != Types.VARCHAR || columns.getInt("CHAR_OCTET_LENGTH") != 80) throw new AssertionError("native JDBC procedure columns");
+                checks++;
+            }
+            try (CallableStatement batch = connection.prepareCall("CALL jdbc_batch_add(?)")) {
+                batch.setInt(1, 10); batch.addBatch(); batch.setInt(1, 20); batch.addBatch();
+                if (!java.util.Arrays.equals(batch.executeBatch(), new int[] {1, 1})) throw new AssertionError("native callable batch counts");
+                checks++;
+                batch.setInt(1, 30); batch.addBatch(); batch.setInt(1, -1); batch.addBatch();
+                boolean failed = false;
+                try { batch.executeBatch(); } catch (BatchUpdateException expected) {
+                    failed = expected.getErrorCode() == 30177 && java.util.Arrays.equals(expected.getUpdateCounts(), new int[] {1});
+                }
+                if (!failed) throw new AssertionError("native callable batch partial-success error");
+                checks++;
+            }
+            try (Statement rows = connection.createStatement(); ResultSet count = rows.executeQuery("SELECT COUNT(*) FROM jdbc_batch_log")) {
+                if (!count.next() || count.getInt(1) != 3) throw new AssertionError("native callable batch successful rows preserved");
                 checks++;
             }
         }

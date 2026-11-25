@@ -244,6 +244,7 @@ $Cases = @(
   [pscustomobject]@{ Name = "Stored-procedure parser"; Source = "stored_procedure_parser.ml"; Output = "routine-parser"; Args = @() },
   [pscustomobject]@{ Name = "Stored-procedure runtime"; Source = "stored_procedure_runtime.ml"; Output = "routine-runtime"; Args = @("$LinuxDataRoot/routine-runtime") },
   [pscustomobject]@{ Name = "Stored-procedure edge cases"; Source = "stored_procedure_edges.ml"; Output = "routine-edges"; Args = @("$LinuxDataRoot/routine-edges") },
+  [pscustomobject]@{ Name = "Stored-procedure parity"; Source = "stored_procedure_parity.ml"; Output = "routine-parity"; Args = @("$LinuxDataRoot/routine-parity") },
   [pscustomobject]@{ Name = "Stored-procedure clients"; Source = "routines_client.ml"; Output = "routine-client"; Args = @() },
   [pscustomobject]@{ Name = "Stored-procedure security"; Source = "routine_security.ml"; Output = "routine-security"; Args = @("$LinuxDataRoot/routine-security") },
   [pscustomobject]@{ Name = "M45 schema-extension compatibility"; Source = "m45_sequences_generated_triggers.ml"; Output = "m45-schema"; Args = @("$LinuxDataRoot/m45-schema") },

@@ -33,7 +33,7 @@ DECIMAL 3.30 displays as 330 & The formatter emits its scaled coefficient. Apply
 DECIMAL arithmetic/comparison surprises & Exact input/storage does not imply correct scale-aware operations in this revision. See Section~\ref{sql:decimal-caveat}; use tested integer units or application decimal arithmetic. \\
 DATE/TIME/TIMESTAMP comparison fails & Temporal storage and conversions exist, but current scalar comparison is incomplete. Use the SQL chapter's documented integer-unit alternative where comparisons are required. \\
 CURRENT\_TIMESTAMP is zero & This implementation returns epoch zero; provide an application timestamp instead of relying on a real-time default. \\
-Text equal to NULL becomes a null in the connector & Wire v1 has no NULL bitmap and uses the token NULL. Project an explicit null indicator when the distinction matters; see Section~\ref{adv:wire-null}. \\
+Text equal to NULL becomes a null in the connector & The connection is using legacy wire-v1 encoding. Updated peers negotiate results-v2 with an exact NULL bitmap; when a legacy peer is required, project an explicit null indicator. See Section~\ref{adv:wire-null}. \\
 Correlated NOT EXISTS reports runtime error 1306 & A current executor defect produces a missing-struct-member diagnostic. A suitably equivalent LEFT JOIN with a non-nullable joined-key IS NULL test is the documented workaround; ordinary EXISTS and IN subquery support should not be confused with this defect. \\
 NULLIF with a NULL second operand is surprising & Current evaluator behavior differs from ordinary SQL expectations in this case; consult the function reference and avoid relying on the unsupported semantic edge. \\
 A parent-key UPDATE leaves an orphan child & Incoming foreign-key checks/actions are incomplete. Keep referenced keys immutable and validate existing relationships explicitly. \\
@@ -127,22 +127,22 @@ Subqueries & Scalar, EXISTS, IN, and NOT IN; correlation requires qualified oute
 CTEs & Nonrecursive and recursive anchor plus one UNION/UNION ALL recursive term; no mutual recursion; 10000-iteration guard. \\
 Windows & Ranking, navigation, and aggregate windows over complete partitions; no explicit ROWS/RANGE/GROUPS frames or named windows. \\
 Views & Stored SELECT definitions; no materialized-view refresh system. \\
-Triggers & Row BEFORE/AFTER INSERT/UPDATE/DELETE with one supported DML body and read-only OLD/NEW; recursion depth is bounded to eight. \\
-Procedures & Typed IN/OUT/INOUT parameters, lexical blocks, control flow, cursors, handlers, diagnostics, dynamic SQL and ordered result sets; stored functions remain separate. \\
-Sequences & Persisted sequences with session current-value behavior; current evaluation can consume values before per-row execution, so do not rely on NEXTVAL in a SELECT to allocate one distinct value per output row. The cursor-probing path has gaps in read-only and exclusive classification; NEXTVAL can consume twice and can mutate inside BEGIN READ ONLY. Do not rely on those boundaries for sequence use; see the sequence and transaction chapters. Numbering is not gapless. \\
+Triggers & Row BEFORE/AFTER INSERT/UPDATE/DELETE with supported DML, CALL or compound blocks; read-only OLD/NEW; eight-level recursion guard. Callees share the invoking transaction and inherit result, dynamic-SQL and transaction-boundary restrictions. \\
+Procedures & Typed IN/OUT/INOUT, lexical blocks, flow control, cursors, handlers, diagnostics, dynamic SQL and ordered results; captured context, separate source visibility, routine metadata and parsed-program reuse. Stored functions remain separate. \\
+Sequences & Persisted sequences with session current-value behavior. Evaluation can occur before per-row execution, so NEXTVAL in a SELECT does not promise a distinct value per output row. Sequence values are not rolled back and can still be consumed inside BEGIN READ ONLY; numbering is not gapless. \\
 Prepared statements & SQL PREPARE/EXECUTE/DEALLOCATE and connector support; no typed wire parameter-binding frame. \\
 Transactions & Explicit/autocommit, savepoints, READ COMMITTED and SERIALIZABLE, supported read-only state; no cross-database transaction or XA coordinator. \\
-Concurrency & Parallel connections and eligible independent reads; one physical writer per database. \\
+Concurrency & Parallel connections, eligible independent reads and statically proved read-only CALLs; one physical writer per database. \\
 Indexes & B+ tree normal/unique, INCLUDE, partial predicates, and single functional expression within documented restrictions. \\
 Composite access & Full-key equality; generic leftmost-prefix and composite range access are not selected by the current SQL optimizer. \\
 Planning & Costed scans/joins/aggregates/sorts, bounded inner join reorder, sampled statistics, generation-safe session cache; no optimizer hint language or unrestricted plan search. \\
 Administration & Status/process list, SHUTDOWN, cancellation, deadlines, logs/binlog, and configured resource controls. \\
-Security & Users/roles/grants, password authentication, protected framing, native TLS, audit, and at-rest encryption workflows. \\
+Security & Users/roles/grants, dedicated CREATE ROUTINE, independent caller/definer EXECUTE checks, SHOW\_ROUTINE source visibility, controlled SET\_ANY\_DEFINER, password authentication, native TLS, audit and encryption. \\
 Backup/recovery & Physical backup/restore/check, supported archive/PITR, recovery journals, and offline page-size rewrite; no format-1 conversion in the current engine. \\
 Replication/HA & Asynchronous existing-schema WAL replication, standby, fencing, and single-host reference controller; no distributed consensus or synchronous quorum commit. \\
 Import/export & SQL scripts, connector programs, Workbench CSV output and clipboard staging; no SQL COPY/LOAD DATA command. \\
 Drivers & Python DB-API and Java JDBC; no ODBC or separate HTTP SQL service. \\
-Results & Text protocol with string/NULL ambiguity and conservative type metadata; in-process results retain SQL value types. \\
+Results & Negotiated results-v2 adds exact NULL indicators, type kinds, SQLSTATE, warnings and OUT snapshots. Legacy results retain text/NULL ambiguity; complete expression precision/scale and typed binary input binding are not provided. \\
 \bottomrule
 \end{longtable}
 
@@ -167,6 +167,7 @@ Protocol result frame & At most 1024 columns and normally at most 512 rows; byte
 Native script file & At most 1048576 bytes read by --script or shell source. \\
 Execution scan batch & 128 rows in supported engine batch paths. \\
 Optimizer plan cache & 64 entries per session. \\
+Parsed procedure cache & 64 immutable definitions per engine session. \\
 Python prepared-plan cache & 128 entries per connection. \\
 Connector insert coalescing & 256 rows and 768 KiB SQL per combined request. \\
 ANALYZE sample & At most 8192 uniformly spaced rows; exact population count. \\
@@ -174,6 +175,9 @@ Join-order dynamic search & Up to eight eligible connected inner-equijoin source
 Eligible hash partition workers & Up to four native workers. \\
 Recursive CTE guard & 10000 iterations. \\
 Trigger recursion guard & Eight nested trigger executions. \\
+Procedure recursion setting & 0--255; default 0 disables recursive calls. \\
+Active procedure frames & Hard limit 256, including nonrecursive call chains. \\
+Retained statement conditions & max\_error\_count defaults to 64; range 0--65535. Total warning/error counts remain available beyond this retention bound. \\
 Heap forwarding resolution & At most 64 links, with cycle rejection. \\
 Workbench history/results & 100 history items and 32 result tabs. \\
 Workbench browse/paste & Default page 100; browse maximum 1000; paste at most 1000 inserts. \\

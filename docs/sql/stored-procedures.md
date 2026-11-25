@@ -36,7 +36,7 @@ SELECT @inserted;
 `DELIMITER` is a console/script-reader command. It keeps semicolons inside a
 definition together. An application sending a complete SQL string directly to
 the server sends `CREATE PROCEDURE ... BEGIN ... END` without delimiter commands.
-Use `()` even when a procedure has no parameters.
+For a procedure with no parameters, `CALL name` and `CALL name()` are equivalent.
 
 ```sql
 CREATE [OR REPLACE] [DEFINER = account]
@@ -106,12 +106,51 @@ fails. The client receives the error when it reaches that point in the result
 stream. Consuming an earlier result is not evidence that the whole procedure
 completed or that output parameters were published.
 
-MiniSQL's final `CALL` status reports the accumulated affected-row count of
-successfully executed DML across the call, including nested calls and DML with
-`RETURNING`. SELECT result rows do not contribute to this mutation count.
-Inside the procedure, `GET DIAGNOSTICS ... ROW_COUNT` describes the most recent
-statement. This is MiniSQL's execution-status contract; complete equivalence
-with MySQL's CALL status and `ROW_COUNT` behavior is not claimed.
+The final `CALL` status reports the affected-row count of the last executed
+statement, including the final statement in a nested call. It does not sum all
+mutations. A final result-producing SELECT has diagnostics `ROW_COUNT = -1` and
+normalizes the nonnegative protocol affected-row count to zero. For example,
+an UPDATE affecting ten rows followed by an UPDATE affecting three reports
+three; a final SET reports zero. `ROW_COUNT()` and `GET DIAGNOSTICS ... ROW_COUNT`
+retain the SQL diagnostic value.
+
+### Captured execution context and character declarations
+
+CREATE records the supported `sql_mode`, `character_set_client`,
+`collation_connection` and database collation. CALL evaluates and converts input
+arguments in the caller's SQL mode, installs the routine's saved context for
+its body, then restores the caller on success and failure. Parameter character
+declarations are bound to their creation-time defaults. ALTER refreshes the SQL
+mode without changing the original character context.
+
+```sql
+SET sql_mode = 'STRICT_TRANS_TABLES';
+CREATE PROCEDURE echo_text(IN p_text VARCHAR(40)
+                          CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+                          OUT p_result VARCHAR(40))
+BEGIN
+  DECLARE v_text VARCHAR(40) CHARACTER SET utf8mb4;
+  SET v_text = p_text, p_result = v_text;
+END;
+```
+
+The supported mode values are the empty mode, `STRICT_TRANS_TABLES`,
+`STRICT_ALL_TABLES`, or their combination. Routine character assignments count
+Unicode characters; strict mode rejects truncation, while the empty mode
+truncates at a character boundary and emits a warning. Numeric/storage
+conversion continues to use MiniSQL's checked SQL type rules. This is not an
+implementation of every MySQL mode or of MySQL's table-conversion rules.
+
+Supported character attributes are `utf8mb4`/`utf8mb4_bin`,
+`utf8`/`utf8_bin` and `binary`/`binary`. The utf8 declaration rejects characters
+requiring a four-byte encoding. Comparison remains binary; unsupported
+collations and incompatible charset/collation pairs are rejected when the
+definition is created. Arbitrary linguistic collations are not silently treated
+as binary. `CHAR`, `VARCHAR` and `TEXT` with `CHARACTER SET binary` become
+`BINARY`, `VARBINARY` and `BLOB`: lengths and truncation use raw bytes, fixed
+`BINARY` values receive zero padding, and no partial UTF-8 prefix is decoded as
+text. `@@sql_mode`, `@@character_set_client` and `@@collation_connection`
+expose the active context; `@@database_collation` is read-only.
 
 ## Blocks, local variables, and control flow
 
@@ -260,8 +299,10 @@ GET CURRENT DIAGNOSTICS CONDITION 1
 SQLSTATE class `00` represents success and cannot be signaled. The usual
 application-exception state is `45000`. A signal can also refer to a named
 SQLSTATE condition. `MYSQL_ERRNO` must be an integer from 1 through 65535;
-`MESSAGE_TEXT` accepts at most 128 UTF-8 bytes. Information items cannot be
-`NULL`.
+`MESSAGE_TEXT` accepts at most 128 Unicode characters. The other textual
+condition items accept at most 64 characters. Information items cannot be
+`NULL`. Error diagnostics have `ROW_COUNT = -1`; warning/not-found signals have
+zero. Standard/user-defined class origins are distinguished in diagnostic items.
 
 `RESIGNAL` requires an active handler. Bare `RESIGNAL` and `RESIGNAL SET ...`
 preserve the original condition values except for explicitly replaced items.
@@ -280,6 +321,37 @@ Uncaught exceptions leave the procedure. Ordinary warnings continue. A normal
 no-data condition continues when no handler exists; an explicitly signaled
 no-data condition exits. MiniSQL maps its own engine errors into routine
 conditions; this does not promise every MySQL server error number or message.
+
+### Warning chains and client diagnostics
+
+```sql
+CALL procedure_with_warnings();
+SHOW WARNINGS;
+SHOW WARNINGS LIMIT 10 OFFSET 5;
+SHOW COUNT(*) WARNINGS;
+SHOW ERRORS;
+SHOW COUNT(*) ERRORS;
+```
+
+Nonfatal routine warnings are retained in encounter order for the public CALL,
+including warnings before a later successful statement. SHOW commands and GET
+DIAGNOSTICS are observational. `SELECT @@warning_count` or `@@error_count`
+returns the previous total and, as an ordinary SELECT, replaces the old list
+after reading it. The next nondiagnostic statement starts a new list. Syntax
+errors and native execution errors are included in SHOW ERRORS.
+
+`max_error_count` bounds retained condition records (default 64, range
+0..65535). Warning/error totals continue counting when the retained list is
+full or the limit is zero; LIMIT controls display only. These settings are
+connection-local in MiniSQL.
+
+The optional `results-v2` protocol capability carries SQLSTATE separately from
+the message, a warning chain, exact NULL information and output parameter
+snapshots. JDBC exposes SQLWarning chains and Python exposes condition records
+and exception SQLSTATE. Legacy native numeric error codes remain stable;
+routine `MYSQL_ERRNO` diagnostics provide the mapped SQL condition number.
+An application-supplied MYSQL_ERRNO never becomes an internal retry or
+transaction-abort instruction merely because the numbers coincide.
 
 ## Dynamic SQL and recursion
 
@@ -324,8 +396,25 @@ Procedures use the caller's transaction context. They may execute
 Within a routine, `BEGIN` starts a lexical block, not a transaction. A call is
 not automatically one all-or-nothing transaction, and an `EXIT` handler is not
 an automatic rollback. Make the intended transaction boundary explicit.
-Procedure definition changes and security DCL retain their autocommit-only
-requirements.
+CREATE/ALTER/DROP PROCEDURE perform an implicit commit before the definition
+change once authorization has succeeded. Consequently, an authorized DDL
+statement that later fails definition validation can still have committed
+preceding work. A denied DDL operation does not commit it. Security DCL retains
+its autocommit-only requirement.
+
+Inside an explicit transaction, each procedure DML statement has its own
+rollback checkpoint. A duplicate-key or ordinary SQL condition rolls back that
+statement's partial changes; previously successful statements remain available
+for the caller to commit or roll back, and the failed CALL does not itself
+poison the transaction. A native deadlock victim aborts the complete
+transaction. Storage/transport failures retain the conservative failed
+transaction policy. Autocommit procedures can already have durable side effects
+when a later statement fails.
+
+Once argument/body evaluation has begun, a native lock conflict is returned
+without automatically replaying the whole CALL. This prevents duplicated
+session changes or committed operations. Admission failures before execution
+remain eligible for the server's normal lock-wait policy.
 
 Unqualified object names are resolved in the procedure's schema while it runs;
 the caller's context is restored afterward. `USE` inside a procedure is not
@@ -341,14 +430,32 @@ REVOKE EXECUTE ON PROCEDURE public.total_items FROM report_reader;
 ```
 
 `EXECUTE` and `ALTER ROUTINE` can apply to an individual procedure or every
-procedure in the current database. `CREATE ROUTINE` is database-scoped. Role
-membership and `WITH GRANT OPTION` use the ordinary security-catalog rules.
-The older database `CREATE` privilege also permits procedure creation for
-compatibility. Creation grants the author `EXECUTE` and `ALTER ROUTINE`, without
-`GRANT OPTION`. Permission to execute the procedure is distinct from permission to perform its
-body's operations. A definer routine uses its definer for those operations;
-an invoker routine uses the caller. A nonadministrative author cannot select
-an unrelated privileged definer.
+procedure in the current database. `CREATE ROUTINE` is database-scoped and is
+required for procedure creation; the older generic `CREATE` permission no
+longer suffices. Migrate existing author roles with `GRANT CREATE ROUTINE ON
+DATABASE TO role_name`.
+
+Creation normally grants the author EXECUTE and ALTER ROUTINE, without GRANT
+OPTION. An administrator can disable these automatic grants for subsequent
+creations in its session using `SET automatic_sp_privileges = 0`. This does not
+revoke existing grants. Permission to execute a procedure is distinct from
+permission to perform its body operations. A definer routine requires EXECUTE
+for both its caller and its persisted definer, and uses the definer's body
+permissions. An invoker routine uses the caller's permissions.
+
+`SET_ANY_DEFINER ON DATABASE` permits an author to select another existing
+ordinary user as definer. Selecting a superuser requires administration, and
+missing or disabled accounts remain errors. Roles and WITH GRANT OPTION use the
+ordinary MiniSQL security catalog. The current database is the grant boundary;
+this does not introduce MySQL's server-global account namespace or role
+activation settings.
+
+`SHOW_ROUTINE ON DATABASE` permits reading routine definitions without granting
+CALL or table access. Database SELECT permits reading both routine definitions
+and all tables in that database. EXECUTE, ALTER ROUTINE and CREATE ROUTINE
+permit scoped metadata inspection but leave the definition column NULL unless
+the user independently has definition-reading authority or is the durable
+definer. These rules apply equally to SHOW CREATE and INFORMATION_SCHEMA.
 
 Procedure grants use durable object identifiers, not names. Dropping and then
 creating a same-named procedure allocates a new identifier; old grants do not
@@ -373,12 +480,108 @@ FROM information_schema.parameters
 ORDER BY specific_schema, specific_name, ordinal_position;
 ```
 
-`ROUTINES` also contains `routine_type` and `routine_definition`. Parameter
-ordinals start at one. Length, precision, and scale report the stored declaration
-attributes and are `NULL` when no such attribute is recorded.
-Routine SHOW commands and routine/parameter metadata require administrative
-or applicable routine privileges. Other metadata relations retain their own
-visibility policies; this is not a general object-name secrecy guarantee.
+ROUTINES and PARAMETERS expose all 31 and 16 MySQL column names respectively,
+in MySQL column order. Routine return-type fields are empty or NULL because
+procedures do not have a function return type. Parameter ordinals start at one.
+SHOW CREATE has six fields, including SQL mode and creation-time character
+settings. SHOW STATUS has eleven fields, including Created and Modified.
+
+New definitions persist their actual UTC creation/modification times and the
+supported SQL mode, client character set, connection collation and database
+collation. ALTER retains the original creation time and character settings,
+updates the modification time and captures its current SQL mode. Unknown
+historical values in older definitions remain SQL NULL. ROUTINES timestamps
+have MiniSQL's TIMESTAMP type and epoch-microsecond value representation; SHOW
+renders readable UTC calendar timestamps with six fractional digits.
+
+Parameter metadata is derived from the concrete MiniSQL type. An INTEGER has
+numeric precision 10 and scale 0 even without explicit type arguments; a
+VARCHAR has character lengths and NULL numeric precision/scale. For supported
+character sets, octet length reflects the maximum bytes per character.
+DATETIME_PRECISION describes TIME/TIMESTAMP fractional precision.
+DTD_IDENTIFIER describes the complete base type, including declared length or
+precision. CHAR, VARCHAR and TEXT declared with CHARACTER SET binary have the
+effective BINARY, VARBINARY and BLOB types in both DATA_TYPE and DTD_IDENTIFIER;
+their length is measured in bytes and character-set/collation fields are NULL.
+Unbounded MiniSQL TEXT/BLOB declarations have NULL maximum lengths;
+BOOLEAN remains MiniSQL's native Boolean type, not a MySQL TINYINT alias.
+
+Other metadata relations retain their own visibility policies; routine source
+protection is not a general object-name secrecy guarantee. The full column
+layouts and persisted context representation are described in
+[`schema-extensions-v1.md`](../formats/schema-extensions-v1.md).
+
+## Calling procedures from triggers
+
+Triggers can contain CALL or compound procedural blocks with declarations,
+control flow and handlers. OLD/NEW expressions are visible in the trigger
+frame, so they can be passed as input arguments. Trigger locals and session
+variables can receive OUT/INOUT values.
+
+```sql
+CREATE TRIGGER audit_item AFTER INSERT ON procedure_items
+FOR EACH ROW
+BEGIN
+  DECLARE v_written INTEGER;
+  CALL write_item_audit(NEW.id, NEW.amount, v_written);
+  SET @last_audit_rows = v_written;
+END;
+```
+
+The entire callee chain participates in the invoking statement's private page
+transaction. A failure rolls back the invoking autocommit statement together
+with its trigger writes, and an explicit outer rollback also removes those
+writes. The trigger context prohibits client result sets, dynamic SQL, explicit
+or implicit transaction boundaries, and modification of a table already used
+by the invoking trigger chain. Restrictions are checked before each prohibited
+operation, including operations in nested procedures. SELECT INTO and cursor
+queries do not expose result sets and remain permitted.
+
+Trigger entry creates an isolated savepoint level. Savepoints created by the
+caller are inaccessible to the trigger and its callees; trigger-local savepoints
+are discarded when the trigger exits, restoring the caller's original level.
+A native deadlock aborts the owning transaction and cannot be caught to continue
+trigger execution against a detached transaction.
+
+OLD/NEW remain read-only under MiniSQL's existing row-trigger implementation;
+this work does not add writable BEFORE-trigger NEW fields. Existing DML trigger
+syntax and its supported forms are retained.
+
+## Streaming, parsed-program reuse and concurrent readers
+
+The network executor emits eligible simple SELECTs from a CALL in bounded
+128-row batches as they execute. It does not retain earlier completed result
+sets. Empty sets, successive sets with the same columns, nested calls and a
+final CALL completion remain distinct. A failed batch is a fetch failure;
+an error in a later routine statement is the next logical result. A broken
+consumer aborts further evaluation, closes its scan/read lease, and cannot be
+swallowed by a SQL condition handler.
+
+Blocking/unsupported query shapes retain the engine's normal materializing
+operator path. The embedded `executeSql` API intentionally still returns a
+complete in-memory QueryResult. Native streaming callers can use
+`executeStatementStreaming(engine, statement, sink, context)`; the sink receives
+`(context, QueryResult, resultStart)` and a `(context, void, false)` end marker.
+
+Python callproc and JDBC CallableStatement must consume completion to return
+OUT values immediately. They use bounded temporary-file spooling to retain
+earlier results for nextset/getMoreResults, and read OUT snapshots from the
+negotiated terminal frame. Direct execute/CALL consumers can read incrementally.
+Legacy peers use the documented compatibility output-parameter path.
+
+Each engine keeps at most 64 immutable parsed routine definitions. The key
+includes durable object identity, canonical source and persisted context;
+ALTER, replacement and drop/recreate cannot reuse stale programs. Cache hits
+never cache permission decisions, argument values, lexical frames or definer
+identity checks. Revocation is effective immediately.
+
+The executor proves read-only bodies before admitting CALL through its shared
+reader gate. It recursively inspects called procedures and expressions and
+rejects sequence mutation, dynamic SQL and unknown dependencies from that
+proof. Descriptive READS SQL DATA/NO SQL characteristics do not override the
+body. Unproved cases, including expanded-view/subquery dependencies, use the
+exclusive path. Independently authenticated read-only CALLs can overlap;
+mutations retain the single-writer database contract.
 
 ## Compatibility boundaries and sources
 
@@ -387,15 +590,15 @@ functions, package routines, routine overloading, default/named arguments,
 `UNDO` handlers, cursor output parameters, or a MySQL Event Scheduler. MySQL
 8.4 itself does not provide several of those extensions. General MySQL SQL
 syntax, all MySQL data types/collations, host-qualified account matching,
-binary-log replication, server `sql_mode`, and MySQL wire-protocol compatibility
-remain separate concerns. MySQL's `warning_count` and `max_error_count` system
-variables are not implemented; routine current/stacked diagnostics expose the
-conditions maintained by MiniSQL's execution engine.
+binary-log replication, the complete server-wide SQL-mode/charset system and
+MySQL wire-protocol compatibility remain separate concerns. The supported
+routine context and warning settings are defined above; unimplemented modes
+and collations are rejected explicitly.
 
 Implementation: `src/minisql/sql/{parser,ast,binder}.ml`,
 `src/minisql/executor/{executor,routine_state}.ml`,
 `src/minisql/catalog/{metadata,catalog,schema_history}.ml`, and the
-client/protocol/session modules. The native parser, runtime, edge, client,
+client/protocol/session modules. The native parser, runtime, edge, parity, client,
 security, and legacy regression gate runs through `test.ps1 -Routines`.
 Its internal runner also accepts `--compiler`, `--target`, and `--compile-only`
 when used by CI.
@@ -408,4 +611,8 @@ The semantic reference is the official MySQL 8.4 manual:
 - [Cursors](https://dev.mysql.com/doc/refman/8.4/en/cursors.html)
 - [SELECT INTO](https://dev.mysql.com/doc/refman/8.4/en/select-into.html)
 - [Diagnostics](https://dev.mysql.com/doc/refman/8.4/en/diagnostics-area.html)
+- [SHOW WARNINGS](https://dev.mysql.com/doc/refman/8.4/en/show-warnings.html)
+- [CALL status](https://dev.mysql.com/doc/refman/8.4/en/call.html)
+- [Trigger restrictions](https://dev.mysql.com/doc/refman/8.4/en/trigger-syntax.html)
+- [InnoDB error handling](https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html)
 - [Stored-program restrictions](https://dev.mysql.com/doc/refman/8.4/en/stored-program-restrictions.html)

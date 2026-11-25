@@ -5,13 +5,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import hashlib
 import hmac
+import json
+import re
 import socket
 import ssl
 import struct
 import threading
+import tempfile
 from typing import Final
 
 from .errors import (
@@ -22,6 +25,7 @@ from .errors import (
     InternalError,
     OperationalError,
     ProgrammingError,
+    NotSupportedError,
 )
 
 
@@ -43,6 +47,7 @@ STATUS_ERROR: Final = 3
 FLAG_SECURE: Final = 1
 FLAG_MORE: Final = 2
 FLAG_RESULT_START: Final = 4
+FLAG_METADATA: Final = 8
 HEADER_BYTES: Final = 32
 MAX_PAYLOAD: Final = 16 * 1024 * 1024
 TLS_CIPHER: Final = "TLS_AES_256_GCM_SHA384"
@@ -82,17 +87,41 @@ class Message:
 
 
 @dataclass(frozen=True)
+class Condition:
+    """Structured SQL warning independent of the human-readable diagnostic text."""
+
+    sqlstate: str
+    code: int
+    message: str
+
+
+@dataclass(frozen=True)
+class OutputParameter:
+    """Successful outer CALL output at its one-based declaration ordinal."""
+
+    ordinal: int
+    name: str
+    type_kind: int
+    value: str | None
+
+
+@dataclass(frozen=True)
 class Response:
     """One decoded command or bounded row response frame."""
 
     status: int
     command: str
     columns: tuple[str, ...]
-    rows: tuple[tuple[str, ...], ...]
+    rows: tuple[tuple[str | None, ...], ...]
     affected_rows: int
     message: str
     error_code: int
     result_start: bool = False
+    sqlstate: str = ""
+    warnings: tuple[Condition, ...] = ()
+    column_types: tuple[int, ...] = ()
+    outputs: tuple[OutputParameter, ...] = ()
+    extended: bool = False
 
 
 class Query:
@@ -108,6 +137,7 @@ class Query:
         self._closed = False
         self._pending_result: Response | None = None
         self._result_ended = False
+        self.warnings = list(first.warnings)
 
     def next_frame(self) -> Response | None:
         """Returns the next batch of the current result, stopping at its boundary."""
@@ -120,6 +150,7 @@ class Query:
             self._result_ended = True
             return None
         response = self._protocol._continuation(self)
+        self.warnings.extend(response.warnings)
         if response.result_start:
             self._pending_result = response
             self._result_ended = True
@@ -175,6 +206,107 @@ class BufferedQuery(Query):
         return response
 
 
+class ResultSpool:
+    """Stores bounded frames in a private temporary file instead of retaining a CALL in RAM."""
+
+    def __init__(self) -> None:
+        """Creates storage that spills after one MiB and is removed when its owner closes."""
+        self._file = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+        self._count = 0
+
+    def append(self, response: Response) -> None:
+        """Serializes one bounded response without executable object deserialization."""
+        if self._file is None:
+            raise InterfaceError("Result spool is closed")
+        payload = json.dumps(asdict(response), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        self._file.write(struct.pack("<I", len(payload)))
+        self._file.write(payload)
+        self._count += 1
+
+    def finish(self) -> Query:
+        """Transfers storage ownership to a forward-only replay query."""
+        if self._file is None or not self._count:
+            raise InternalError("Cannot replay an empty result spool")
+        self._file.seek(0)
+        query = SpoolQuery(self._file, self._count)
+        self._file = None
+        return query
+
+    def close(self) -> None:
+        """Closes incomplete storage, deleting any temporary spill file."""
+        if getattr(self, "_file", None) is not None:
+            self._file.close()
+            self._file = None
+
+    def __del__(self) -> None:
+        """Reclaims abandoned storage without executing database operations."""
+        self.close()
+
+
+class SpoolQuery(Query):
+    """Replays a completed CALL while keeping at most one bounded frame in memory."""
+
+    def __init__(self, file, count: int) -> None:
+        """Takes exclusive ownership of a validated local frame spool."""
+        self._file = file
+        self._remaining = count
+        try:
+            first = self._read()
+        except BaseException:
+            self._file.close()
+            raise
+        super().__init__(self, 0, first, self._remaining > 0)
+
+    def _read(self) -> Response:
+        """Reads one safe JSON frame with an explicit length bound."""
+        header = self._file.read(4)
+        if len(header) != 4:
+            raise InternalError("Truncated result spool")
+        length, = struct.unpack("<I", header)
+        # JSON escaping can expand a valid maximum-size wire frame sixfold.
+        if length > MAX_PAYLOAD * 6 + 65536:
+            raise InternalError("Invalid result spool frame length")
+        payload = self._file.read(length)
+        if len(payload) != length:
+            raise InternalError("Truncated result spool frame")
+        data = json.loads(payload)
+        data["columns"] = tuple(data["columns"])
+        data["rows"] = tuple(tuple(row) for row in data["rows"])
+        data["warnings"] = tuple(Condition(**value) for value in data["warnings"])
+        data["column_types"] = tuple(data["column_types"])
+        data["outputs"] = tuple(OutputParameter(**value) for value in data["outputs"])
+        self._remaining -= 1
+        return Response(**data)
+
+    def _continuation(self, query: Query) -> Response:
+        """Supplies local continuation frames using the live stream's boundary rules."""
+        response = self._read()
+        query.more = self._remaining > 0
+        return response
+
+    def next_result(self) -> bool:
+        """Releases the temporary file at exhaustion or a deferred terminal error."""
+        try:
+            available = super().next_result()
+            if not available:
+                self._file.close()
+            return available
+        except BaseException:
+            self._file.close()
+            raise
+
+    def close(self) -> None:
+        """Drains local results and always removes temporary storage."""
+        try:
+            super().close()
+        finally:
+            self._file.close()
+
+    def __del__(self) -> None:
+        """Reclaims an abandoned cursor's local storage without network side effects."""
+        self._file.close()
+
+
 class Protocol:
     """Serial MiniSQL v1 connection with optional TLS and secure framing."""
 
@@ -191,6 +323,8 @@ class Protocol:
         self._closed = False
         self._active_query: Query | None = None
         self.session_id: int | None = None
+        self.extended_results = False
+        self.warnings: list[Condition] = []
 
     @classmethod
     def open(
@@ -266,7 +400,7 @@ class Protocol:
     def _hello(self) -> None:
         """Negotiates MiniSQL protocol version 1 before other messages."""
         request_id = self._next_id()
-        self._write(Message(TYPE_HELLO, 0, request_id, b"MiniSQL/1"))
+        self._write(Message(TYPE_HELLO, 0, request_id, b"MiniSQL/1; capabilities=results-v2"))
         message = self._read_expected(request_id)
         response = self._decode_response(message)
         if (
@@ -275,6 +409,7 @@ class Protocol:
             or response.command != "HELLO"
         ):
             raise OperationalError("MiniSQL HELLO handshake was rejected")
+        self.extended_results = "; capabilities=results-v2" in response.message
         for field in response.message.split(";"):
             field = field.strip()
             if not field.startswith("session="):
@@ -356,12 +491,14 @@ class Protocol:
                 raise InterfaceError("Consume or close the active MiniSQL cursor first")
             try:
                 request_id = self._next_id()
-                self._write(Message(TYPE_QUERY, 0, request_id, sql.encode("utf-8")))
+                self._write(Message(TYPE_QUERY, FLAG_METADATA if self.extended_results else 0, request_id, sql.encode("utf-8")))
                 message = self._read_expected(request_id)
                 first = self._decode_response(message)
+                self.warnings = list(first.warnings)
                 if message.message_type == TYPE_ERROR or first.status == STATUS_ERROR:
                     raise self._server_error(first)
                 query = Query(self, request_id, first, bool(message.flags & FLAG_MORE))
+                self.warnings = query.warnings
                 if query.more:
                     self._active_query = query
                 return query
@@ -420,6 +557,7 @@ class Protocol:
                     # A completed routine SELECT survives a later error. Defer
                     # that separate terminal result until the caller advances.
                     if not response.result_start or query.more:
+                        query.warnings.extend(response.warnings)
                         query.more = False
                         raise self._server_error(response)
                 return response
@@ -525,10 +663,10 @@ class Protocol:
         payload = memoryview(message.payload)
         if len(payload) < 24:
             raise OperationalError("MiniSQL returned a truncated response")
-        status, reserved, column_count, row_count, affected, error_code, trailing = struct.unpack_from(
+        status, reserved, column_count, row_count, affected, error_code, metadata_length = struct.unpack_from(
             "<HHIIIII", payload
         )
-        if reserved or trailing or column_count > 1024 or row_count > 512:
+        if reserved or status not in (1, 2, 3) or metadata_length > len(payload) - 24 or column_count > 1024 or row_count > 512:
             raise OperationalError("MiniSQL returned invalid response counts")
         offset = 24
 
@@ -552,9 +690,61 @@ class Protocol:
         text = field()
         columns = tuple(field() for _ in range(column_count))
         rows = tuple(tuple(field() for _ in range(column_count)) for _ in range(row_count))
-        if offset != len(payload):
+        if offset != len(payload) - metadata_length:
             raise OperationalError("MiniSQL returned trailing response bytes")
-        return Response(status, command, columns, rows, affected, text, error_code, bool(message.flags & FLAG_RESULT_START))
+        state = ""
+        warnings: list[Condition] = []
+        types: tuple[int, ...] = ()
+        outputs: list[OutputParameter] = []
+
+        def number(format: str = "<I", maximum: int = MAX_PAYLOAD) -> int:
+            """Reads one bounded numeric metadata field before allocation or iteration."""
+            nonlocal offset
+            size = struct.calcsize(format)
+            if offset + size > len(payload):
+                raise OperationalError("MiniSQL returned truncated metadata")
+            value, = struct.unpack_from(format, payload, offset)
+            offset += size
+            if value > maximum:
+                raise OperationalError("MiniSQL returned invalid metadata count")
+            return value
+
+        def sqlstate() -> str:
+            """Validates exactly five uppercase ASCII SQLSTATE characters."""
+            value = field()
+            if re.fullmatch(r"[0-9A-Z]{5}", value) is None:
+                raise OperationalError("MiniSQL returned invalid SQLSTATE")
+            return value
+
+        if metadata_length:
+            if bytes(payload[offset:offset + 4]) != b"MDV1":
+                raise OperationalError("MiniSQL returned unsupported metadata")
+            offset += 4
+            state = sqlstate()
+            for _ in range(number(maximum=65535)):
+                warning_state, code = sqlstate(), number(maximum=0xFFFFFFFF)
+                warnings.append(Condition(warning_state, code, field()))
+            bitmap_length = number()
+            if bitmap_length != (column_count * row_count + 7) // 8 or offset + bitmap_length > len(payload):
+                raise OperationalError("MiniSQL returned invalid NULL bitmap")
+            bitmap = payload[offset:offset + bitmap_length]
+            offset += bitmap_length
+            rows = tuple(tuple(None if bitmap[(r * column_count + c) // 8] & (1 << ((r * column_count + c) % 8)) else value
+                               for c, value in enumerate(row)) for r, row in enumerate(rows))
+            type_count = number(maximum=1024)
+            if type_count != column_count:
+                raise OperationalError("MiniSQL returned invalid column type count")
+            types = tuple(number("<H", 16) for _ in range(type_count))
+            for _ in range(number(maximum=65535)):
+                ordinal, name = number(maximum=65535), field()
+                if ordinal == 0:
+                    raise OperationalError("MiniSQL returned invalid output ordinal")
+                kind, is_null, value = number("<H", 16), number("<H", 1), field()
+                outputs.append(OutputParameter(ordinal, name, kind, None if is_null else value))
+        if offset != len(payload):
+            raise OperationalError("MiniSQL returned trailing metadata bytes")
+        return Response(status, command, columns, rows, affected, text, error_code,
+                        bool(message.flags & FLAG_RESULT_START), state, tuple(warnings), types, tuple(outputs), bool(metadata_length))
 
     def _read_exact(self, length: int) -> bytes:
         """Accumulates exactly *length* bytes across arbitrary TCP fragments."""
@@ -571,6 +761,20 @@ class Protocol:
     @staticmethod
     def _server_error(response: Response) -> DatabaseError:
         """Maps stable MiniSQL error codes onto the PEP 249 hierarchy."""
+        state = response.sqlstate
+        if not state:
+            match = re.match(r"SQLSTATE ([0-9A-Z]{5}): ", response.message)
+            if match:
+                state = match.group(1)
+        if state and state != "00000":
+            category = state[:2]
+            kind = DatabaseError
+            if category == "23": kind = IntegrityError
+            elif category == "22": kind = DataError
+            elif category in {"42", "37", "2A"}: kind = ProgrammingError
+            elif category in {"08", "40", "53", "54", "57", "58"} or state in {"HYT00", "HYT01", "70100"}: kind = OperationalError
+            elif category == "0A": kind = NotSupportedError
+            return kind(response.message, response.error_code, state)
         if response.error_code in {9021, 9022}:
             return IntegrityError(response.message, response.error_code)
         if response.error_code == 9017:

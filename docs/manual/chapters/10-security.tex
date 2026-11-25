@@ -148,12 +148,16 @@ Scope / privilege & Meaning in the implementation \\
 Database: \code{CONNECT} & Allows an authenticated user to establish access
 to the database. \\
 Database: \code{CREATE} & Permits table creation and supported schema/view/
-sequence definition operations. It also retains compatibility permission
-for procedure creation; CREATE ROUTINE is the narrower procedure-specific grant. \\
+sequence definition operations. Procedure creation requires CREATE ROUTINE. \\
 Database: \code{MAINTAIN} & Permits ANALYZE, VACUUM, and REINDEX. \\
 Database: \code{ADMIN} & Permits security administration, operational status,
 process inspection, administrative cancellation, and shutdown. \\
 Database: \code{CREATE ROUTINE} & Creates stored procedures. \\
+Database: \code{SHOW\_ROUTINE} & Reveals routine source definitions as well as metadata. \\
+Database: \code{SET\_ANY\_DEFINER} & Permits selecting another existing ordinary
+user as definer; choosing an administrator still requires ADMIN. \\
+Database: \code{SELECT} & Reads database tables and reveals routine source
+definitions, subject to the ordinary supported object rules. \\
 Database/procedure: \code{EXECUTE} & Calls every procedure in the database,
 or one named procedure. \\
 Database/procedure: \code{ALTER ROUTINE} & Alters, replaces, or drops every
@@ -183,6 +187,8 @@ GRANT EXECUTE ON PROCEDURE procedure_name
   TO principal [WITH GRANT OPTION];
 GRANT ALTER ROUTINE ON PROCEDURE procedure_name TO principal;
 GRANT CREATE ROUTINE ON DATABASE TO principal;
+GRANT SHOW_ROUTINE ON DATABASE TO principal;
+GRANT SET_ANY_DEFINER ON DATABASE TO principal;
 GRANT ALL [PRIVILEGES] ON DATABASE TO principal;
 GRANT ALL [PRIVILEGES] ON TABLE table_name TO principal;
 GRANT role_name TO principal [WITH ADMIN OPTION];
@@ -190,8 +196,9 @@ GRANT role_name TO principal [WITH ADMIN OPTION];
 
 \code{ON DATABASE} means the currently opened database and does not take a
 database name. \code{ALL} expands to the implemented privileges for the
-selected scope. Table privileges cannot be granted as database privileges,
-and database privileges cannot be granted as table privileges. The parser
+selected scope. Only privileges implemented for that scope are accepted;
+SELECT, EXECUTE and ALTER ROUTINE have the documented database-wide forms.
+The parser
 accepts one grantee per statement, so grant to multiple users with separate
 statements.
 
@@ -214,9 +221,17 @@ query. Calling a procedure requires \code{EXECUTE} on that procedure or on the
 current database. New MySQL-style definitions default to \code{SQL SECURITY
 DEFINER}: statements in the body run with the persisted definer identity.
 \code{SQL SECURITY INVOKER} uses the caller instead. Earlier AS definitions
-retain an INVOKER default. An author cannot select an unrelated privileged
-definer without administrative permission. Definition creation automatically
-grants the creator EXECUTE and ALTER ROUTINE, without GRANT OPTION.
+retain an INVOKER default. The definer must also hold EXECUTE when its routine
+is called; merely owning the definition does not bypass that check.
+SET\_ANY\_DEFINER permits selecting another existing ordinary account.
+Selecting an administrator as definer requires administrative permission.
+
+With the default \code{automatic\_sp\_privileges = 1}, creation grants the
+creator EXECUTE and ALTER ROUTINE without GRANT OPTION. An administrator may
+set \code{SET SESSION automatic\_sp\_privileges = 0} to suppress these automatic
+grants for later creations in that connection. This is MiniSQL's session
+setting, not MySQL's server-global configuration mechanism. If automatic
+grants are disabled, grant the required EXECUTE privilege explicitly.
 
 A procedure's durable identifier anchors its grants. Dropping and recreating
 the same name allocates a fresh identifier, so old grants cannot authorize the
@@ -229,13 +244,23 @@ Creating a trigger requires \code{ALTER}
 on its target and authorization of its body. Dropping or altering a trigger
 uses database \code{CREATE} in the present dispatcher.
 
-Procedure SHOW commands and routine/parameter metadata are restricted to
-administrators and principals with routine privileges. Other
+Routine existence and parameter metadata are visible to administrators,
+the definer, and principals with the relevant routine or source-reading
+privileges. Reading the definition itself requires the definer identity,
+ADMIN, SHOW\_ROUTINE or database SELECT. EXECUTE, CREATE ROUTINE and ALTER
+ROUTINE alone do not reveal its source: SHOW CREATE and ROUTINES return a
+NULL source field where the metadata is visible but source access is absent.
+Other
 \code{SHOW TABLES} and virtual \code{information\_schema} queries are not
 a general promise of privilege-filtered object-name secrecy. In contrast,
 \code{DESCRIBE} and \code{SHOW INDEXES} require SELECT on their target
 table. Design authorization around supported operations, and test metadata
 visibility if hiding object names is a requirement.
+
+Procedure CREATE, ALTER and DROP validate authorization before their implicit
+transaction commit. A denied definition change therefore cannot commit a
+caller's pending DML. An authorized operation may still fail later semantic
+validation after that commit; follow the transaction chapter's boundary rules.
 
 \sourcecode{src/minisql/executor/executor.ml}{privilegeCode, allPrivilegeCodes, authorizeStatement, authorizeDefinitionStatement, and authorizeNamedSource.}
 

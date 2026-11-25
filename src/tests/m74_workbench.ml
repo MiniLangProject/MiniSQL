@@ -59,7 +59,7 @@ function main(args)
   spacedSecret = "CREATE USER alice WITH /* policy */\r\n PASSWORD 'never-store-this';"
   redacted = fullclient.historySql(spacedSecret)
   testkit.record(state, fullclient.textContains(redacted, "redacted") and not fullclient.textContains(redacted, "never-store-this"), "DCL redaction tolerates comments and whitespace")
-  malformed = messages.Response(constants.STATUS_ROWS, "DESCRIBE", ["ordinal"], [["0"]], 0, "", 0)
+  malformed = messages.Response(constants.STATUS_ROWS, "DESCRIBE", ["ordinal"], [["0"]], 0, "", 0, false, void)
   testkit.record(state, fullclient.textContains(fullclient.ddlFromDescribe("example", malformed), "Invalid DESCRIBE response"), "malformed metadata cannot crash DDL rendering")
 
   columnGrid = fullclient.DetailGrid(

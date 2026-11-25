@@ -151,12 +151,12 @@ and 4 customers. \code{COUNT(city)} counts non-null city values;
 \code{IS NULL}, not \code{= NULL}. The language chapter develops the
 three-valued logic behind this distinction.
 
-\warning{NULL in the current text protocol}{The native console displays SQL
-NULL as \code{NULL}. Protocol version 1 also uses that text for an actual
-string containing the four characters \code{NULL}. The general Python/JDBC
-result path consequently cannot distinguish them. Do not choose that literal
-string as a special missing-data marker. This limitation is separate from
-the engine's internal typed null representation.}
+\warning{NULL and legacy result encoding}{The native console displays SQL
+NULL as \code{NULL}. Legacy protocol-v1 results also use that text for an
+actual string containing the four characters \code{NULL}. Updated Python/JDBC
+peers negotiate results-v2 and distinguish the two using its NULL bitmap;
+legacy peers retain the ambiguity. Do not choose that literal string as a
+special missing-data marker. The engine retains typed nulls internally.}
 
 \section{Join related tables}
 \begin{lstlisting}[language=SQL]

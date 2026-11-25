@@ -8,11 +8,18 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -44,7 +51,7 @@ final class MiniSqlProtocol implements AutoCloseable {
     static final int TYPE_CANCEL = 9;
     static final int TYPE_RESPONSE = 100, TYPE_PONG = 101, TYPE_ERROR = 102;
     static final int STATUS_COMMAND = 1, STATUS_ROWS = 2, STATUS_ERROR = 3;
-    static final int FLAG_SECURE = 1, FLAG_MORE = 2, FLAG_RESULT_START = 4;
+    static final int FLAG_SECURE = 1, FLAG_MORE = 2, FLAG_RESULT_START = 4, FLAG_METADATA = 8;
     private static final int HEADER_BYTES = 32, MAX_PAYLOAD = 16 * 1024 * 1024;
 
     private final MiniSqlUrl configuration;
@@ -60,6 +67,8 @@ final class MiniSqlProtocol implements AutoCloseable {
     private boolean closed;
     private Query activeQuery;
     private volatile int sessionId;
+    private boolean extendedResults;
+    private List<Condition> lastWarnings = new ArrayList<>();
 
     private MiniSqlProtocol(MiniSqlUrl configuration, Socket socket) throws IOException {
         this.configuration = configuration;
@@ -121,14 +130,21 @@ final class MiniSqlProtocol implements AutoCloseable {
 
     private void hello() throws Exception {
         int requestId = nextId();
-        write(new Message(TYPE_HELLO, 0, requestId, "MiniSQL/1".getBytes(StandardCharsets.UTF_8)));
+        write(new Message(TYPE_HELLO, 0, requestId, "MiniSQL/1; capabilities=results-v2".getBytes(StandardCharsets.UTF_8)));
         Message message = readExpected(requestId);
         Response response = decodeResponse(message);
         if (message.type != TYPE_RESPONSE || response.status != STATUS_COMMAND || !"HELLO".equals(response.command)) {
             throw connectionError("MiniSQL HELLO handshake was rejected", null);
         }
         sessionId = parseSessionId(response.message);
+        extendedResults = response.message.contains("; capabilities=results-v2");
     }
+
+    /** Reports whether the server negotiated exact NULLs, output values, and diagnostics. */
+    boolean extendedResults() { return extendedResults; }
+
+    /** Returns the live warning list associated with the latest query. */
+    List<Condition> warnings() { return lastWarnings; }
 
     /** Extracts the optional backward-compatible session identifier from HELLO. */
     static int parseSessionId(String message) {
@@ -206,11 +222,13 @@ final class MiniSqlProtocol implements AutoCloseable {
         }
         try {
             int id = nextId();
-            write(new Message(TYPE_QUERY, 0, id, sql.getBytes(StandardCharsets.UTF_8)));
+            write(new Message(TYPE_QUERY, extendedResults ? FLAG_METADATA : 0, id, sql.getBytes(StandardCharsets.UTF_8)));
             Message message = readExpected(id);
             Response first = decodeResponse(message);
+            lastWarnings = new ArrayList<>(first.warnings);
             if (message.type == TYPE_ERROR || first.status == STATUS_ERROR) throw serverError(first);
             Query query = new Query(this, id, first, (message.flags & FLAG_MORE) != 0);
+            lastWarnings = query.warnings;
             if (query.more) activeQuery = query;
             return query;
         } catch (SQLException exception) {
@@ -284,6 +302,7 @@ final class MiniSqlProtocol implements AutoCloseable {
                 // A terminal routine condition belongs to the next result;
                 // completed SELECT rows must remain readable before it.
                 if (!response.resultStart || query.more) {
+                    query.warnings.addAll(response.warnings);
                     query.more = false;
                     throw serverError(response);
                 }
@@ -372,7 +391,9 @@ final class MiniSqlProtocol implements AutoCloseable {
             int status = Short.toUnsignedInt(source.getShort());
             if (source.getShort() != 0) throw new IOException("Invalid reserved field");
             int columnCount = source.getInt(), rowCount = source.getInt(), affected = source.getInt(), error = source.getInt();
-            if (source.getInt() != 0 || columnCount < 0 || columnCount > 1024 || rowCount < 0 || rowCount > 512) {
+            int metadataLength = source.getInt();
+            if (status < 1 || status > 3 || metadataLength < 0 || metadataLength > source.remaining()
+                    || columnCount < 0 || columnCount > 1024 || rowCount < 0 || rowCount > 512) {
                 throw new IOException("Invalid response counts");
             }
             String command = field(source), text = field(source);
@@ -384,8 +405,50 @@ final class MiniSqlProtocol implements AutoCloseable {
                 for (int column = 0; column < columnCount; column++) values[column] = field(source);
                 rows.add(values);
             }
-            if (source.hasRemaining()) throw new IOException("Trailing response bytes");
-            return new Response(status, command, columns, rows, affected, text, error, (message.flags & FLAG_RESULT_START) != 0);
+            if (source.remaining() != metadataLength) throw new IOException("Trailing response bytes");
+            String state = "";
+            List<Condition> warnings = new ArrayList<>();
+            List<Integer> types = new ArrayList<>();
+            List<OutputParameter> outputs = new ArrayList<>();
+            if (metadataLength > 0) {
+                if (source.remaining() < 4 || source.getInt() != 0x3156444d) throw new IOException("Invalid metadata version");
+                state = field(source);
+                if (!validState(state)) throw new IOException("Invalid SQLSTATE");
+                int warningCount = count(source, 65535);
+                for (int index = 0; index < warningCount; index++) {
+                    String warningState = field(source);
+                    if (!validState(warningState) || source.remaining() < 4) throw new IOException("Invalid warning");
+                    int code = source.getInt();
+                    warnings.add(new Condition(warningState, code, field(source)));
+                }
+                int bitmapLength = count(source, MAX_PAYLOAD);
+                if (bitmapLength != (columnCount * rowCount + 7) / 8 || bitmapLength > source.remaining()) throw new IOException("Invalid NULL bitmap");
+                byte[] bitmap = new byte[bitmapLength]; source.get(bitmap);
+                int position = 0;
+                for (String[] row : rows) for (int column = 0; column < row.length; column++, position++) {
+                    if ((bitmap[position >>> 3] & (1 << (position & 7))) != 0) row[column] = null;
+                }
+                int typeCount = count(source, 1024);
+                if (typeCount != columnCount || source.remaining() < typeCount * 2) throw new IOException("Invalid column types");
+                for (int index = 0; index < typeCount; index++) {
+                    int type = Short.toUnsignedInt(source.getShort());
+                    if (type > 16) throw new IOException("Invalid column type");
+                    types.add(type);
+                }
+                int outputCount = count(source, 65535);
+                for (int index = 0; index < outputCount; index++) {
+                    int ordinal = count(source, 65535);
+                    String name = field(source);
+                    if (ordinal < 1 || source.remaining() < 4) throw new IOException("Invalid output parameter");
+                    int type = Short.toUnsignedInt(source.getShort()), nullFlag = Short.toUnsignedInt(source.getShort());
+                    if (type > 16 || nullFlag > 1) throw new IOException("Invalid output type");
+                    String value = field(source);
+                    outputs.add(new OutputParameter(ordinal, name, type, nullFlag == 1 ? null : value));
+                }
+            }
+            if (source.hasRemaining()) throw new IOException("Trailing metadata bytes");
+            return new Response(status, command, columns, rows, affected, text, error,
+                    (message.flags & FLAG_RESULT_START) != 0, state, warnings, types, outputs, metadataLength > 0);
         } catch (Exception exception) {
             if (exception instanceof SQLException) throw (SQLException) exception;
             throw connectionError("Invalid MiniSQL response", exception);
@@ -398,7 +461,73 @@ final class MiniSqlProtocol implements AutoCloseable {
         if (length < 0 || length > source.remaining()) throw new IOException("Invalid response field length");
         byte[] bytes = new byte[length];
         source.get(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        return StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
+    }
+
+    /** Reads a defensive unsigned count before allocating or iterating. */
+    private static int count(ByteBuffer source, int maximum) throws IOException {
+        if (source.remaining() < 4) throw new IOException("Truncated metadata count");
+        int value = source.getInt();
+        if (value < 0 || value > maximum) throw new IOException("Invalid metadata count");
+        return value;
+    }
+
+    private static boolean validState(String state) { return state != null && state.matches("[0-9A-Z]{5}"); }
+
+    /** Encodes the same validated response layout used by spools and protocol test peers. */
+    static byte[] encodeResponse(Response response) throws SQLException {
+        try {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            byte[] header = little(24).putShort((short) response.status).putShort((short) 0)
+                    .putInt(response.columns.size()).putInt(response.rows.size()).putInt(response.affectedRows)
+                    .putInt(response.errorCode).putInt(0).array();
+            body.write(header); writeField(body, response.command); writeField(body, response.message);
+            for (String column : response.columns) writeField(body, column);
+            for (String[] row : response.rows) {
+                if (row.length != response.columns.size()) throw new IOException("Inconsistent response row");
+                for (String value : row) writeField(body, value == null ? "NULL" : value);
+            }
+            if (response.extended) {
+                ByteArrayOutputStream extra = new ByteArrayOutputStream();
+                extra.write(new byte[] {'M', 'D', 'V', '1'});
+                String state = validState(response.sqlState) ? response.sqlState : response.status == STATUS_ERROR ? "HY000" : "00000";
+                writeField(extra, state); writeInt(extra, response.warnings.size());
+                for (Condition warning : response.warnings) {
+                    writeField(extra, warning.sqlState); writeInt(extra, warning.code); writeField(extra, warning.message);
+                }
+                byte[] bitmap = new byte[(response.rows.size() * response.columns.size() + 7) / 8];
+                int position = 0;
+                for (String[] row : response.rows) for (String value : row) {
+                    if (value == null) bitmap[position >>> 3] |= 1 << (position & 7);
+                    position++;
+                }
+                writeInt(extra, bitmap.length); extra.write(bitmap);
+                writeInt(extra, response.columns.size());
+                for (int index = 0; index < response.columns.size(); index++) {
+                    int type = index < response.columnTypes.size() ? response.columnTypes.get(index) : 0;
+                    extra.write(little(2).putShort((short) type).array());
+                }
+                writeInt(extra, response.outputs.size());
+                for (OutputParameter output : response.outputs) {
+                    writeInt(extra, output.ordinal); writeField(extra, output.name);
+                    extra.write(little(4).putShort((short) output.typeKind).putShort((short) (output.value == null ? 1 : 0)).array());
+                    writeField(extra, output.value == null ? "" : output.value);
+                }
+                byte[] base = body.toByteArray();
+                wrap(base).putInt(20, extra.size());
+                body.reset(); body.write(base); body.write(extra.toByteArray());
+            }
+            if (body.size() > MAX_PAYLOAD) throw new IOException("Response exceeds frame limit");
+            return body.toByteArray();
+        } catch (IOException exception) {
+            throw recoverable("Cannot encode MiniSQL response", exception);
+        }
+    }
+
+    private static void writeInt(ByteArrayOutputStream output, int value) throws IOException { output.write(little(4).putInt(value).array()); }
+    private static void writeField(ByteArrayOutputStream output, String text) throws IOException {
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        writeInt(output, bytes.length); output.write(bytes);
     }
 
     private static byte[] authValue(byte[] verifier, byte[] nonce, String user, String label, String prefix) throws Exception {
@@ -487,9 +616,9 @@ final class MiniSqlProtocol implements AutoCloseable {
     private static void wipe(byte[]... values) { for (byte[] value : values) if (value != null) Arrays.fill(value, (byte) 0); }
     /** Preserves a validated SIGNAL SQLSTATE while retaining the legacy fallback for native errors. */
     private static SQLException serverError(Response response) {
-        String state = "42000";
+        String state = response.extended && validState(response.sqlState) && !"00000".equals(response.sqlState) ? response.sqlState : "42000";
         int start = "SQLSTATE ".length();
-        if (response.message.length() >= start + 7 && response.message.startsWith("SQLSTATE ")
+        if (!response.extended && response.message.length() >= start + 7 && response.message.startsWith("SQLSTATE ")
                 && response.message.startsWith(": ", start + 5)) {
             String candidate = response.message.substring(start, start + 5);
             if (candidate.matches("[0-9A-Z]{5}")) state = candidate;
@@ -533,10 +662,12 @@ final class MiniSqlProtocol implements AutoCloseable {
         final int requestId;
         Response first;
         boolean more;
+        final List<Condition> warnings;
         private boolean firstPending = true, resultEnded, closed;
         private Response pendingResult;
         Query(MiniSqlProtocol protocol, int requestId, Response first, boolean more) {
             this.protocol = protocol; this.requestId = requestId; this.first = first; this.more = more;
+            this.warnings = new ArrayList<>(first.warnings);
         }
         /** Returns batches only from the current result, retaining the next boundary. */
         Response nextFrame() throws SQLException {
@@ -544,6 +675,7 @@ final class MiniSqlProtocol implements AutoCloseable {
             if (firstPending) { firstPending = false; return first; }
             if (!more) { resultEnded = true; return null; }
             Response next = readContinuation();
+            warnings.addAll(next.warnings);
             if (next.resultStart) { pendingResult = next; resultEnded = true; return null; }
             if (next.status != first.status || !next.columns.equals(first.columns)) {
                 throw new SQLException("MiniSQL continuation result schema changed without a boundary", "08S01");
@@ -584,6 +716,117 @@ final class MiniSqlProtocol implements AutoCloseable {
         }
     }
 
+    /** Ordered SQL condition delivered independently of a human-readable exception prefix. */
+    static final class Condition {
+        final String sqlState, message;
+        final int code;
+        Condition(String sqlState, int code, String message) {
+            this.sqlState = sqlState; this.code = code; this.message = message;
+        }
+    }
+
+    /** Final successful CALL output at its one-based declaration ordinal. */
+    static final class OutputParameter {
+        final int ordinal, typeKind;
+        final String name, value;
+        OutputParameter(int ordinal, String name, int typeKind, String value) {
+            this.ordinal = ordinal; this.name = name; this.typeKind = typeKind; this.value = value;
+        }
+    }
+
+    /** Bounded-memory result storage used when output parameters require draining a CALL. */
+    static final class ResultSpool implements AutoCloseable {
+        private Path path;
+        private DataOutputStream output;
+        private int count;
+        ResultSpool() throws SQLException {
+            try {
+                path = Files.createTempFile("minisql-results-", ".spool");
+                output = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(path), 65536));
+            } catch (IOException exception) { close(); throw recoverable("Cannot create result spool", exception); }
+        }
+        /** Writes one already bounded protocol frame without retaining earlier rows. */
+        void append(Response response) throws SQLException {
+            if (output == null) throw new SQLException("Result spool is closed", "HY010");
+            byte[] payload = encodeResponse(response);
+            try {
+                output.writeInt((response.resultStart ? FLAG_RESULT_START : 0) | (response.extended ? FLAG_METADATA : 0));
+                output.writeInt(payload.length); output.write(payload); count++;
+            } catch (IOException exception) { close(); throw recoverable("Cannot write result spool", exception); }
+        }
+        /** Preserves completed results before surfacing a terminal condition during replay. */
+        void appendError(SQLException exception) throws SQLException {
+            String state = validState(exception.getSQLState()) ? exception.getSQLState() : "HY000";
+            append(new Response(STATUS_ERROR, "ERROR", Collections.emptyList(), Collections.emptyList(), 0,
+                    exception.getMessage(), exception.getErrorCode(), true, state, Collections.emptyList(),
+                    Collections.emptyList(), Collections.emptyList(), true));
+        }
+        /** Transfers exclusive file ownership to the forward-only replay query. */
+        Query finish() throws SQLException {
+            if (output == null || count == 0) { close(); throw new SQLException("Cannot replay an empty result spool", "HY010"); }
+            try { output.close(); output = null; }
+            catch (IOException exception) { close(); throw recoverable("Cannot finish result spool", exception); }
+            Path completed = path;
+            Query query = new SpoolQuery(new SpoolReader(completed, count));
+            path = null;
+            return query;
+        }
+        @Override public void close() {
+            if (output != null) { try { output.close(); } catch (IOException ignored) { } output = null; }
+            if (path != null) { try { Files.deleteIfExists(path); } catch (IOException ignored) { } path = null; }
+        }
+    }
+
+    /** Owns one protected temporary file and validates every replayed frame. */
+    private static final class SpoolReader implements AutoCloseable {
+        private final Path path;
+        private DataInputStream input;
+        private int remaining;
+        private final Response first;
+        SpoolReader(Path path, int count) throws SQLException {
+            this.path = path; this.remaining = count;
+            try {
+                input = new DataInputStream(new BufferedInputStream(Files.newInputStream(path), 65536));
+                first = read();
+            } catch (IOException exception) { close(); throw recoverable("Cannot open result spool", exception); }
+            catch (SQLException exception) { close(); throw exception; }
+        }
+        Response read() throws SQLException {
+            try {
+                if (remaining <= 0 || input == null) throw new IOException("Result spool exhausted");
+                int flags = input.readInt(), length = input.readInt();
+                if (length < 24 || length > MAX_PAYLOAD) throw new IOException("Invalid spool frame length");
+                byte[] payload = new byte[length]; input.readFully(payload); remaining--;
+                return decodeResponse(new Message(TYPE_RESPONSE, flags, 0, payload));
+            } catch (IOException exception) { close(); throw recoverable("Cannot read result spool", exception); }
+        }
+        @Override public void close() {
+            if (input != null) { try { input.close(); } catch (IOException ignored) { } input = null; }
+            try { Files.deleteIfExists(path); } catch (IOException ignored) { }
+        }
+    }
+
+    /** Replays a CALL or retained result with a constant number of in-memory frames. */
+    private static final class SpoolQuery extends Query {
+        private final SpoolReader reader;
+        SpoolQuery(SpoolReader reader) {
+            super(null, 0, reader.first, reader.remaining > 0); this.reader = reader;
+        }
+        @Override Response readContinuation() throws SQLException {
+            Response response = reader.read(); more = reader.remaining > 0; return response;
+        }
+        @Override boolean nextResult() throws SQLException {
+            try {
+                boolean available = super.nextResult();
+                if (!available) reader.close();
+                return available;
+            } catch (SQLException exception) { reader.close(); throw exception; }
+        }
+        @Override public void close() throws SQLException {
+            try { super.close(); } finally { reader.close(); }
+        }
+    }
+
     /** Decoded response frame. Values are text because protocol v1 carries no type or null bitmap. */
     static final class Response {
         final int status, affectedRows, errorCode;
@@ -591,15 +834,33 @@ final class MiniSqlProtocol implements AutoCloseable {
         final List<String> columns;
         final List<String[]> rows;
         final boolean resultStart;
+        final String sqlState;
+        final List<Condition> warnings;
+        final List<Integer> columnTypes;
+        final List<OutputParameter> outputs;
+        final boolean extended;
         Response(int status, String command, List<String> columns, List<String[]> rows,
                  int affectedRows, String message, int errorCode) {
             this(status, command, columns, rows, affectedRows, message, errorCode, false);
         }
         Response(int status, String command, List<String> columns, List<String[]> rows,
                  int affectedRows, String message, int errorCode, boolean resultStart) {
+            this(status, command, columns, rows, affectedRows, message, errorCode, resultStart, "",
+                    Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), false);
+        }
+        Response(int status, String command, List<String> columns, List<String[]> rows,
+                 int affectedRows, String message, int errorCode, boolean resultStart, String sqlState,
+                 List<Condition> warnings, List<Integer> columnTypes, List<OutputParameter> outputs, boolean extended) {
             this.status = status; this.command = command; this.columns = columns; this.rows = rows;
             this.affectedRows = affectedRows; this.message = message; this.errorCode = errorCode;
             this.resultStart = resultStart;
+            this.sqlState = sqlState; this.warnings = warnings; this.columnTypes = columnTypes;
+            this.outputs = outputs; this.extended = extended;
+        }
+        /** Retains metadata while detaching unread rows of a kept JDBC result. */
+        Response withRows(List<String[]> replacement) {
+            return new Response(status, command, columns, replacement, affectedRows, message, errorCode,
+                    resultStart, sqlState, warnings, columnTypes, outputs, extended);
         }
     }
 

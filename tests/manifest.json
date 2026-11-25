@@ -750,6 +750,7 @@
     "src/tests/storage_v2_rows.ml",
     "src/tests/storage_v2_table.ml",
     "src/tests/stored_procedure_edges.ml",
+    "src/tests/stored_procedure_parity.ml",
     "src/tests/stored_procedure_parser.ml",
     "src/tests/stored_procedure_runtime.ml",
     "src/tests/support/testkit.ml",

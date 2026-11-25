@@ -300,6 +300,25 @@ function parseTypeName(state)
   return ast.typeName(name, length, precision, scale)
 end function
 
+/// Retains explicit character attributes on routine declarations for validation
+/// against the stored routine context; ordinary column/CAST grammar stays intact.
+function parseRoutineTypeName(state)
+  result = parseTypeName(state)
+  while checkKeyword(state, "CHARACTER") or checkKeyword(state, "COLLATE")
+    if result.name != "CHAR" and result.name != "VARCHAR" and result.name != "TEXT" then return fail(state, "character attributes require a character data type") end if
+    if matchKeyword(state, "CHARACTER") then
+      expectKeyword(state, "SET")
+      if result.characterSet != "" then return fail(state, "duplicate CHARACTER SET attribute") end if
+      result.characterSet = dialect.asciiLower(parseIdentifierName(state, "character set name"))
+    else
+      expectKeyword(state, "COLLATE")
+      if result.collation != "" then return fail(state, "duplicate COLLATE attribute") end if
+      result.collation = dialect.asciiLower(parseIdentifierName(state, "collation name"))
+    end if
+  end while
+  return result
+end function
+
 /// Parses referential action using the supplied inputs.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
@@ -547,7 +566,7 @@ end function
 function privilegeName(state)
   value = current(state)
   if value.kind != token.TokenKind.Keyword then return fail(state, "expected privilege name") end if
-  allowed = value.text == "CONNECT" or value.text == "CREATE" or value.text == "MAINTAIN" or value.text == "ADMIN" or value.text == "SELECT" or value.text == "INSERT" or value.text == "UPDATE" or value.text == "DELETE" or value.text == "REFERENCES" or value.text == "INDEX" or value.text == "ALTER" or value.text == "DROP" or value.text == "EXECUTE"
+  allowed = value.text == "CONNECT" or value.text == "CREATE" or value.text == "MAINTAIN" or value.text == "ADMIN" or value.text == "SELECT" or value.text == "INSERT" or value.text == "UPDATE" or value.text == "DELETE" or value.text == "REFERENCES" or value.text == "INDEX" or value.text == "ALTER" or value.text == "DROP" or value.text == "EXECUTE" or value.text == "SHOW_ROUTINE" or value.text == "SET_ANY_DEFINER"
   if not allowed then return fail(state, "unsupported privilege " + value.text) end if
   advance(state)
   if (value.text == "CREATE" or value.text == "ALTER") and matchKeyword(state, "ROUTINE") then return value.text + " ROUTINE" end if
@@ -812,7 +831,7 @@ function parseRoutineDeclare(state)
   while matchKind(state, token.TokenKind.Comma)
     node.names = node.names + [parseIdentifierName(state, "declared variable name")]
   end while
-  node.options = [parseTypeName(state)]
+  node.options = [parseRoutineTypeName(state)]
   if matchKeyword(state, "DEFAULT") then node.expressions = [parseExpression(state, 0)] end if
   return node
 end function
@@ -1095,7 +1114,7 @@ function parseCreateProcedure(state, replace)
       for each existing in parameters
         if existing.name == parameterName then return fail(state, "duplicate procedure parameter " + parameterName) end if
       end for
-      parameters = parameters + [ast.ProcedureParameter(parameterName, parseTypeName(state), mode)]
+      parameters = parameters + [ast.ProcedureParameter(parameterName, parseRoutineTypeName(state), mode)]
       if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
     end while
   end if
@@ -1174,8 +1193,8 @@ function parseCreateTrigger(state)
   expectKeyword(state, "ON")
   tableName = parseObjectName(state, "trigger table")
   if matchKeyword(state, "FOR") then expectKeyword(state, "EACH"); expectKeyword(state, "ROW") end if
-  body = parseStatement(state)
-  if not (ast.isInsertStatement(body) or ast.isUpdateStatement(body) or ast.isDeleteStatement(body)) then return fail(state, "trigger body must be one INSERT, UPDATE or DELETE statement") end if
+  body = parseRoutineStatement(state)
+  if not (ast.isInsertStatement(body) or ast.isUpdateStatement(body) or ast.isDeleteStatement(body) or ast.isCallStatement(body) or ast.isRoutineStatement(body)) then return fail(state, "trigger body must be INSERT, UPDATE, DELETE, CALL or a stored-program statement") end if
   return ast.CreateTriggerStatement(name, timing, eventType, tableName, targetColumn, body, ifNotExists)
 end function
 
@@ -1385,6 +1404,35 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseShow(state)
+  countOnly = false
+  if matchKeyword(state, "COUNT") then
+    expectKind(state, token.TokenKind.LeftParen, "'(' after COUNT")
+    expectKind(state, token.TokenKind.Star, "'*' in SHOW COUNT(*)")
+    expectKind(state, token.TokenKind.RightParen, "')' after COUNT(*)")
+    countOnly = true
+  end if
+  if checkKeyword(state, "WARNINGS") or checkKeyword(state, "ERRORS") then
+    node = routineNode("SHOW_" + advance(state).text, "")
+    if countOnly then node.name = "COUNT" end if
+    offset = 0
+    count = -1
+    if matchKeyword(state, "LIMIT") then
+      if countOnly then return fail(state, "SHOW COUNT(*) does not allow LIMIT") end if
+      count = parseIntegerValue(state, "diagnostic row count")
+      if count < 0 then return fail(state, "diagnostic row count must not be negative") end if
+      if matchKind(state, token.TokenKind.Comma) then
+        offset = count
+        count = parseIntegerValue(state, "diagnostic row count")
+        if count < 0 then return fail(state, "diagnostic row count must not be negative") end if
+      else if matchKeyword(state, "OFFSET") then
+        offset = parseIntegerValue(state, "diagnostic offset")
+        if offset < 0 then return fail(state, "diagnostic offset must not be negative") end if
+      end if
+    end if
+    node.options = [offset, count]
+    return node
+  end if
+  if countOnly then return fail(state, "SHOW COUNT(*) requires WARNINGS or ERRORS") end if
   if matchKeyword(state, "CREATE") then expectKeyword(state, "PROCEDURE"); return routineNode("SHOW_CREATE_PROCEDURE", parseObjectName(state, "procedure name")) end if
   if matchKeyword(state, "PROCEDURE") then
     expectKeyword(state, "STATUS")
@@ -1405,7 +1453,7 @@ function parseShow(state)
     if not matchKeyword(state, "FROM") then expectKeyword(state, "ON") end if
     return ast.ShowIndexesStatement(parseObjectName(state, "table name"))
   end if
-  return fail(state, "expected TABLES, STATUS, PROCESSLIST, or INDEXES after SHOW")
+  return fail(state, "expected TABLES, STATUS, PROCESSLIST, INDEXES, PROCEDURE, WARNINGS or ERRORS after SHOW")
 end function
 
 /// Parses describe using the supplied inputs.
@@ -1849,12 +1897,12 @@ function parseExecutePrepared(state)
   return ast.ExecutePreparedStatement(name, arguments)
 end function
 
-/// Parses CALL with positional constant argument expressions.
+/// Parses CALL with positional arguments, allowing omitted parentheses for zero arguments.
 /// @param state Mutable state inspected or updated by the operation.
 function parseCall(state)
   name = parseObjectName(state, "procedure name")
-  expectKind(state, token.TokenKind.LeftParen, "'('")
   arguments = []
+  if not matchKind(state, token.TokenKind.LeftParen) then return ast.CallStatement(name, arguments) end if
   if not checkKind(state, token.TokenKind.RightParen) then
     arguments = [parseExpression(state, 0)]
     while matchKind(state, token.TokenKind.Comma)

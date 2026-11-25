@@ -57,11 +57,27 @@ uses object ID zero; a procedure grant uses its positive persisted
 | EXECUTE | 20 | Database or procedure |
 | ALTER ROUTINE | 21 | Database or procedure |
 | CREATE ROUTINE | 22 | Database only |
+| SHOW_ROUTINE | 23 | Database only |
+| SET_ANY_DEFINER | 24 | Database only |
+| SELECT | 10 | Database or table |
 
 Database EXECUTE/ALTER ROUTINE grants include each procedure, including grants
 inherited through roles. GRANT OPTION is checked independently of execution or
-alteration authority. CREATE ROUTINE is invalid on one procedure. These codes
-are never accepted as table privileges.
+alteration authority. CREATE ROUTINE, SHOW_ROUTINE, and SET_ANY_DEFINER are
+invalid on one procedure and are never accepted as table privileges. A database
+SELECT grant covers all table reads and routine definitions in that database;
+it does not authorize procedure execution. SHOW_ROUTINE exposes definitions
+without granting table reads or procedure execution. SET_ANY_DEFINER authorizes
+selection of another existing ordinary user as definer; selecting a superuser
+still requires database administration. None of these checks bypass GRANT OPTION.
+
+Routine metadata visibility and definition visibility are evaluated separately.
+EXECUTE, ALTER ROUTINE, or database CREATE ROUTINE permit metadata inspection,
+but the definition remains SQL NULL unless the principal is the durable definer,
+is an administrator, or holds SHOW_ROUTINE/database SELECT. A definer-context
+CALL separately requires EXECUTE from both caller and definer. Generic database
+CREATE no longer authorizes procedure creation: existing author roles need an
+explicit CREATE ROUTINE grant.
 
 The updated reader accepts older snapshots. Older binaries do not understand
 the new object/privilege codes and reject snapshots containing them; do not

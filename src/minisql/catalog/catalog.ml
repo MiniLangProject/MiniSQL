@@ -1333,6 +1333,13 @@ function hasPrivilege(database, principalId, objectType, objectId, privilege, re
   if isSuperuser(database, principalId) then return true end if
   effective = effectivePrincipalIds(database, principalId)
   for each grant in database.security.grants
+    // A database SELECT grant includes every table in this database. It also
+    // serves as the database-wide definition-reading privilege for routines.
+    if objectType == metadata.OBJECT_TABLE and privilege == metadata.PRIVILEGE_SELECT then
+      if containsId(effective, grant.granteeId) and grant.objectType == metadata.OBJECT_DATABASE and grant.objectId == 0 and grant.privilege == metadata.PRIVILEGE_SELECT then
+        if not requireGrantOption or grant.grantOption then return true end if
+      end if
+    end if
     // Database-level routine permissions include every persisted procedure.
     // A grant without GRANT OPTION must not authorize delegation, even when
     // it is inherited through a role or through the database-wide scope.

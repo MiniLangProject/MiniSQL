@@ -21,6 +21,8 @@ New full routine definitions store canonical `CREATE PROCEDURE` text in
 |---:|---|
 | 0 | `__minisql_routine_metadata_v2__` |
 | 1 | Decimal text of the durable definer principal ID |
+| 2, when present | `__minisql_routine_context_v1__` |
+| 3 onward | Alternating attribute-name/value strings |
 
 The canonical SQL includes typed parameter directions, characteristics, and the
 complete body. The principal ID is authoritative for definer execution; a
@@ -29,6 +31,44 @@ body-only procedure records, including typed parameter metadata, remain readable
 and retain invoker security semantics. Replacing a definition writes the new
 representation. The sidecar envelope version remains `1` because the framing
 does not change; old executors cannot execute the new tagged program records.
+
+## Routine execution context suffix
+
+The optional context suffix retains the existing view-record framing and V2
+identity prefix. Keys must be unique, and only these keys are accepted:
+
+| Attribute | Representation and lifetime |
+|---|---|
+| `created` | Decimal UTC Unix epoch microseconds captured from the real clock at first creation. |
+| `last_altered` | Decimal UTC Unix epoch microseconds captured at successful CREATE/ALTER/OR REPLACE. |
+| `sql_mode` | Validated SQL mode captured by CREATE or ALTER; the empty string is a valid mode. |
+| `character_set_client` | Supported client character set in effect at CREATE/OR REPLACE. |
+| `collation_connection` | Supported connection collation in effect at CREATE/OR REPLACE. |
+| `database_collation` | Supported database default collation in effect at CREATE/OR REPLACE. |
+
+The executor restores captured execution context around CALL. ALTER preserves
+known creation time and original character settings while updating modification
+time and SQL mode. OR REPLACE preserves the existing object's identity and any
+known original creation time, and captures the new definition's context.
+
+Legacy records without the suffix remain readable. Their unknown timestamps
+and context attributes are not reconstructed from unrelated catalog generations
+or the current clock: INFORMATION_SCHEMA and SHOW report SQL NULL. ALTER of a
+legacy record records its modification time and SQL mode, while retaining NULL
+for unavailable original history. At execution, missing context uses the
+explicit legacy fallback supplied by the executor.
+
+An unknown suffix marker, unsupported or duplicate key, odd number of key/value
+strings, or malformed timestamp is a corruption error. Timestamps use the same
+epoch-microsecond representation as the TIMESTAMP SQL type; SHOW formats them
+as UTC calendar timestamps with six fractional digits. The current platform
+clock has millisecond resolution, so its final three stored fractional digits
+are zero.
+
+Existing V2 readers can decode the string-array framing but do not enforce this
+execution-context contract. Downgrading after creating context-bearing routines
+is unsupported, even if an older binary happens to accept the record. Security
+snapshots containing the new privileges also require the updated decoder.
 
 ## Identifier lifetime
 

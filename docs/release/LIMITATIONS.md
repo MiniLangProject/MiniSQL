@@ -2,19 +2,22 @@
 
 * Windows x64 PE and Linux x64 ELF are native targets. The graphical Workbench
   remains Windows-only.
-* The portable Java 11+ JDBC driver implements core connections, statements,
-  prepared statements, transactions, forward-only results, and catalog
-  metadata. Protocol v1 carries result cells as text without SQL type or NULL
-  metadata, so ordinary result metadata is conservative, the text token `NULL`
-  is ambiguous, and `setBytes` is unavailable until the SQL grammar gains a
-  binary literal or the wire protocol gains typed parameter binding. Callable
-  statements, generated keys, scrollable/updatable results, XA, and JDBC
-  savepoint objects are not implemented in driver 1.0.
-* The Python 3.10+ DB-API connector exposes forward-only string/`None` rows,
-  because protocol v1 has no SQL type or null bitmap. Text containing exactly
-  `NULL` is ambiguous, binary parameter binding is unavailable, and one
-  connection can own only one unread result stream. Stored procedures, multiple
-  result sets, scrollable cursors, and two-phase commit are not implemented.
+* The portable Java 11+ JDBC driver implements connections, statements,
+  prepared/callable statements, transactions, forward-only results, multiple
+  result sets and routine metadata. The negotiated results-v2 extension carries
+  exact NULL indicators, SQL type kinds, SQLSTATE, warnings and final routine
+  OUT values. It does not provide typed input binding or complete expression
+  precision/scale metadata. Binary parameter binding, generated keys,
+  scrollable/updatable results, XA and JDBC savepoint objects remain outside
+  this driver contract. See `clients/jdbc/README.md` for callable argument,
+  result-retention and batch behavior.
+* The Python 3.10+ DB-API connector supports CALL, callproc and nextset. Ordinary
+  rows remain strings/`None`; results-v2 distinguishes SQL NULL from the literal
+  text `NULL`. Legacy peers retain the ambiguous protocol-v1 text encoding.
+  Direct CALL results can stream; callproc consumes completion to obtain OUT
+  values and retains prior results in a temporary-file spool. One connection
+  can own only one unread network result stream. Binary input binding,
+  scrollable cursors and two-phase commit are not implemented.
 * Linux offline tools, TLS, and bounded concurrent server/client operation pass
   the portable acceptance gate. The original `EAGAIN`/`EWOULDBLOCK` multi-client
   failure is retained as historical evidence in
@@ -90,22 +93,38 @@
   configurable search path or cross-database catalog qualifier.
 * Window functions operate on the complete partition. Explicit `ROWS`, `RANGE`,
   `GROUPS`, frame bounds and named windows are not implemented.
-* Trigger bodies contain one supported DML statement and
-  have no procedural control language. `OLD`/`NEW` are read-only, trigger
-  recursion is bounded, and body `RETURNING`, `ON CONFLICT`, and `INSERT ...
-  SELECT` forms are rejected rather than partially persisted.
+* Trigger bodies support the existing DML forms, CALL and compound procedural
+  blocks. The complete callee chain shares the invoking statement's private
+  page transaction. Client result sets, dynamic SQL, transaction boundaries and
+  modification of an active triggering table are rejected in that context.
+  Trigger savepoints use an isolated level; caller savepoints are inaccessible
+  until the trigger returns. `OLD`/`NEW` remain read-only and trigger recursion
+  is bounded. Direct persisted DML trigger bodies still reject `RETURNING`,
+  `ON CONFLICT` and `INSERT ... SELECT` forms.
 * Stored procedures support typed IN/OUT/INOUT parameters, compound blocks,
   control flow, cursors, handlers, diagnostics, dynamic SQL and result sets.
-  Their statements still use MiniSQL SQL and type semantics; stored functions,
-  the full MySQL server dialect/collation system, Event Scheduler, and MySQL
-  replication/protocol compatibility are not implied. See
+  Their statements still use MiniSQL SQL and type semantics. Captured routine
+  context supports empty/strict SQL modes and the supported UTF-8/binary
+  character sets with binary collations; unsupported modes and collations are
+  rejected. Creation/alteration times and execution context are persisted for
+  new definitions, while unknown legacy metadata remains NULL. Source visibility
+  is separate from EXECUTE permission. The account model retains MiniSQL's
+  transitive roles and does not implement MySQL host-qualified accounts or
+  active/default role selection. Stored functions, the full MySQL server
+  dialect/collation system, Event Scheduler and MySQL replication/protocol
+  compatibility are not implied. See
   `docs/sql/stored-procedures.md` for the procedural contract.
 * `MERGE` accepts one source table and one action per matched/not-matched branch;
   conditional branches, multiple matched clauses and a query source are not yet
   implemented.
 * DCL is autocommit-only.
+* Authorized CREATE/ALTER/DROP PROCEDURE implicitly commits an active explicit
+  transaction before the definition change. A privilege rejection does not
+  publish earlier writes. Other object DDL retains its documented transaction
+  rules; procedure DDL does not make every schema operation transactional.
 * Connections, framing, SQL parsing and read-only query plans are threaded.
-  Multiple reads can execute against one database simultaneously; mutations,
+  Multiple reads, including statically proven read-only CALLs, can execute
+  against one database simultaneously; mutations,
   maintenance, sequence consumption and session-state changes are serialized by
   a writer-prioritized per-database gate. There is still only one active physical
   writer per database. Long-running readers can delay a waiting writer until the

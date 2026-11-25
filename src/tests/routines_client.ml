@@ -71,10 +71,38 @@ function multipleResultCases(state)
   return true
 end function
 
+/// Round-trips opt-in metadata without changing the legacy payload or NULL token.
+function structuredResultCases(state)
+  result = executor.rowResult(["literal", "missing", "count"], [[values.text("NULL"), values.nullValue(10), values.integer(42)]])
+  response = formatter.responseFromResult(result)
+  response.metadata.warnings = [messages.Condition("01000", 1642, "careful")]
+  response.metadata.outputs = [messages.OutputParameter(2, "text_out", 10, false, "NULL"), messages.OutputParameter(3, "empty_out", 10, true, "")]
+  legacy = messages.decodeResponse(messages.encodeResponse(response))
+  testkit.record(state, legacy.metadata is void, "unnegotiated payload carries no trailer")
+  testkit.equal(state, legacy.rows[0][0], "NULL", "legacy literal token unchanged")
+  decoded = messages.decodeResponse(messages.encodeResponseExtended(response))
+  testkit.record(state, not messages.isNullCell(decoded, 0, 0), "literal NULL is non-null with metadata")
+  testkit.record(state, messages.isNullCell(decoded, 0, 1), "SQL NULL has an explicit bit")
+  testkit.equal(state, decoded.metadata.columnTypes[2], 3, "integer type survives")
+  testkit.equal(state, decoded.metadata.warnings[0].sqlState, "01000", "warning SQLSTATE survives")
+  testkit.equal(state, decoded.metadata.outputs[0].value, "NULL", "output literal NULL survives")
+  testkit.record(state, decoded.metadata.outputs[1].isNull, "output SQL NULL survives")
+  joined = messages.appendRows(decoded, messages.decodeResponse(messages.encodeResponseExtended(response)))
+  testkit.record(state, messages.isNullCell(joined, 1, 1), "NULL bitmap appends across partial bytes")
+  testkit.record(state, not messages.isNullCell(joined, 1, 0), "NULL bitmap does not mark adjacent text")
+  request = messages.query(20, "CALL p()")
+  request.flags = constants.FLAG_METADATA
+  frame = session.responseMessage(request, response)
+  testkit.equal(state, frame.flags, constants.FLAG_METADATA, "structured response marks capability flag")
+  testkit.equal(state, messages.decodeResponse(frame.payload).metadata.outputs[0].ordinal, 2, "final output declaration ordinal survives")
+  return true
+end function
+
 /// Runs client-side stored procedure regression checks.
 function main(args)
   state = testkit.create()
   delimiterCases(state)
   multipleResultCases(state)
+  structuredResultCases(state)
   return testkit.finish(state, "MiniSQL stored procedure client tests: SUCCESS", "MiniSQL stored procedure client tests: FAIL")
 end function

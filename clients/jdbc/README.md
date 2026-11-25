@@ -46,8 +46,10 @@ while (rows || statement.getUpdateCount() != -1) {
 ```
 
 `Connection.prepareCall()` accepts `{call schema.procedure(?, ...)}` and direct
-`CALL schema.procedure(?, ...)` syntax. Bind IN parameters with the ordinary
-setters, register positional OUT parameters, and do both for INOUT parameters:
+CALL syntax, including quoted names and mixtures of parameter markers and SQL
+argument expressions. Bind IN parameters with ordinary setters, register OUT
+parameters, and do both for INOUT parameters. Parameter names and numeric JDBC
+marker positions are supported:
 
 ```java
 try (CallableStatement call = connection.prepareCall("{call calculate_total(?, ?)}")) {
@@ -58,14 +60,30 @@ try (CallableStatement call = connection.prepareCall("{call calculate_total(?, ?
 }
 ```
 
-`CallableStatement` buffers procedure results before reading output session
-variables. Its result sets remain available through `getResultSet()` and
-`getMoreResults()`. For large results, use ordinary streaming `Statement` calls
-with explicit session variables and retrieve OUT values after draining the
-CALL. Positional bindings and common scalar output getters are supported;
-named parameter bindings, function-return call escapes, callable batches, and
-`KEEP_CURRENT_RESULT` are explicitly unsupported. The existing protocol-v1 text
-and SQL NULL representation remains unchanged.
+`CallableStatement` consumes a CALL before publishing output parameters and
+retains its results in a private temporary-file spool. Replay keeps a bounded
+number of frames in memory. Closing or exhausting results removes their files.
+For incremental results as the procedure executes, use ordinary `Statement`
+CALLs. Simple procedure SELECTs stream in bounded batches; blocking SQL operators
+may still materialize their own result.
+
+Current peers negotiate the optional `results-v2` extension. Its final CALL
+response carries typed OUT/INOUT values, including exact SQL NULL and decimal
+scale, without a subsequent output SELECT. Private session variables are reused
+per connection until it closes, bounded by its largest CALL parameter list.
+`getObject()` uses the registered output type, and typed scalar getters remain
+available. Older servers retain the compatible text output lookup path.
+
+`DatabaseMetaData.getProcedures()` and `getProcedureColumns()` expose live
+routine metadata. Callable `getParameterMetaData()` reports declared parameter
+modes, types, length, precision, and scale. Named setters, output registration,
+and getters use these parameter definitions.
+
+`getMoreResults(Statement.KEEP_CURRENT_RESULT)` retains the previous result in a
+bounded-memory disk spool while advancing. Callable batches support IN-only
+procedures and report partial update counts on failure. OUT/INOUT registration
+is rejected for batches; a result-producing batch entry is an error. Function
+return call escapes remain outside the stored-procedure API.
 
 Closing a statement drains every remaining result. Closing its current
 `ResultSet` discards only that result, allowing `getMoreResults()` to advance.
@@ -73,5 +91,9 @@ Closing a statement drains every remaining result. Closing its current
 `SQLException.getSQLState()` and their requested `MYSQL_ERRNO` through
 `getErrorCode()`. A condition raised after a completed SELECT is reported by
 `getMoreResults()` after that SELECT remains readable.
+Negotiated responses carry SQLSTATE directly, including native errors, and
+expose SQLWarning chains on the connection, statement, and result set. Exact NULL
+bits distinguish SQL NULL from a stored `"NULL"` string. Ordinary result type
+metadata uses the supplied native type kind; unknown types remain conservative.
 `DELIMITER` is a console/GUI command; JDBC submits a complete compound
 `CREATE PROCEDURE` statement directly without it.

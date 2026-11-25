@@ -123,24 +123,54 @@ URL query properties take precedence over a supplied `Properties` object.
   database `ADMIN`. Servers predating the cancellable session field report the
   feature as unsupported instead of pretending cancellation succeeded.
 
-## Protocol-v1 limitations
+## Structured results and stored procedures
 
-MiniSQL protocol v1 represents every result cell as UTF-8 text and does not
-carry a per-column SQL type or a null bitmap. Consequently ordinary query
-`ResultSetMetaData` conservatively reports `VARCHAR`, typed getters parse the
-text on request, and the wire token `NULL` is interpreted as SQL NULL. A stored
-text value containing exactly `NULL` cannot currently be distinguished from a
-null value. Catalog metadata still reports declared SQL types because it is
-built from `DESCRIBE`.
+Current peers negotiate `results-v2` within protocol version 1. The extension
+distinguishes SQL NULL from the text `"NULL"`, supplies native column type kinds,
+and carries SQLSTATE and warning diagnostics directly. Typed getters continue
+to parse row values on request. `ResultSetMetaData` uses known native type kinds;
+unknown or empty-result types remain conservative. The row extension does not
+include declared precision, scale, or character set. Catalog and routine
+metadata instead report declared types from the live catalog.
+
+`DatabaseMetaData.getProcedures()` and `getProcedureColumns()` expose procedures
+and their parameter definitions. Callable `getParameterMetaData()` reports
+declared modes, types, lengths, precision, and scale. `prepareCall()` accepts
+direct CALL and JDBC call escapes, quoted identifiers, and mixtures of markers
+and SQL expressions. Parameter setters, OUT registration, and getters support
+both JDBC marker positions and declared names.
+
+Callable statements consume the CALL before exposing its output values and
+retain results in a private temporary-file spool with bounded replay buffers.
+Current servers include typed OUT/INOUT values in the final response, preserving
+SQL NULL and decimal scale without a follow-up SELECT. Private argument variables
+are reused per connection, bounded by the largest CALL parameter list. Ordinary
+`Statement` CALLs stream as the procedure runs; blocking SQL operators may still
+materialize their own result. `getMoreResults(KEEP_CURRENT_RESULT)` retains the
+previous result in a disk spool. Exhausting or closing results removes their
+temporary files.
+
+Callable batches support IN-only procedures and return partial update counts on
+failure. OUT/INOUT registration is rejected for batches, and a result-producing
+batch entry is an error. Connection, statement, and result-set warning chains
+retain the CALL's warnings; server errors expose SQLSTATE and their numeric code.
+See the [procedure examples](../../clients/jdbc/README.md#stored-procedures).
+
+## Compatibility and remaining limits
+
+Peers that do not negotiate `results-v2` retain the original text payload, the
+ambiguous `NULL` token, conservative ordinary-query metadata, and the legacy
+procedure-output lookup. New clients fall back automatically when an older
+server does not advertise the extension.
 
 The SQL grammar currently has no binary literal, so prepared statements cannot
 safely implement `setBytes`; that method reports
 `SQLFeatureNotSupportedException`. Binary query results remain readable through
 `getBytes` because the server renders them as `0x` followed by hexadecimal
-digits. Generated keys, scrollable/updatable result sets, XA, and JDBC savepoint
-objects remain unavailable. Positional `CallableStatement` calls, scalar OUT
-getters, and multiple results with `getMoreResults()` are supported. See the
-[procedure examples and precise limits](../../clients/jdbc/README.md#stored-procedures).
+digits. Generic DECIMAL rows still lack declared scale in their wire metadata;
+typed routine outputs preserve that scale in their normalized value. Generated
+keys, scrollable/updatable result sets, XA, JDBC savepoint objects, and function
+return call escapes remain unavailable.
 
 ## Validation
 

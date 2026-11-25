@@ -19,16 +19,42 @@ New MySQL-style procedure definitions default to `SQL SECURITY DEFINER`.
 Explicit `SQL SECURITY INVOKER`, and legacy `AS` definitions without an explicit
 security characteristic, use the caller's authority. Both forms require the
 caller to have applicable `EXECUTE` permission for newly created definitions.
+A definer-context call additionally requires the definer to hold EXECUTE on the
+procedure; the creator and definer can be different accounts.
 The body is authorized using the selected effective principal, which is restored
 after normal or exceptional return. A missing or disabled definer fails closed.
 
 `CREATE ROUTINE` applies to the database. `EXECUTE` and `ALTER ROUTINE` apply
-either to a named procedure or to all procedures in the database. The existing
-database `CREATE` privilege retains procedure-creation permission for
-compatibility. Creators automatically receive procedure `EXECUTE` and
-`ALTER ROUTINE` without `GRANT OPTION`. Roles and explicit delegation work through
-the existing security catalog. Selecting an unrelated definer requires security
-administration; host-qualified MySQL account matching is not added.
+either to a named procedure or to all procedures in the database. Generic
+`CREATE` no longer permits procedure creation. Existing author roles must be
+migrated with an explicit grant:
+
+```sql
+GRANT CREATE ROUTINE ON DATABASE TO procedure_author;
+GRANT SHOW_ROUTINE ON DATABASE TO routine_inspector;
+```
+
+Creators receive procedure EXECUTE and ALTER ROUTINE without GRANT OPTION when
+`automatic_sp_privileges` is enabled. This administrative session setting is
+true by default and controls subsequent creations in that session; it does not
+remove previously granted privileges. A false value leaves the creator without
+implicit execution or alteration authority.
+
+Definition visibility is independent of execution. EXECUTE, ALTER ROUTINE and
+CREATE ROUTINE expose the relevant metadata, while `routine_definition` and
+SHOW CREATE's definition column remain SQL NULL. The durable definer,
+administrators, and accounts with SHOW_ROUTINE or database SELECT may read the
+source. SHOW_ROUTINE grants neither CALL nor table access. Database SELECT also
+grants SELECT on all tables in that database and should be used only when that
+broader access is intended.
+
+Selecting another existing ordinary user as definer requires SET_ANY_DEFINER or
+administration. SET_ANY_DEFINER alone cannot choose a superuser. Missing or
+disabled accounts are rejected; MiniSQL does not create orphan definers. Roles
+and delegation use the existing security catalog, including transitive role
+membership. MySQL host-qualified account matching, separate active/default role
+sets, and the SYSTEM_USER/ALLOW_NONEXISTENT_DEFINER administration model are not
+introduced by these routine privileges.
 
 Review definer bodies and dynamic SQL before granting execution to less
 privileged callers. Keep untrusted values in bound parameters. Procedure output

@@ -63,6 +63,8 @@ struct Scope
   handlers
   /// Suppresses this scope's handlers while one of them is active.
   handling
+  /// OLD/NEW fields resolve only through their qualifier, never as bare locals.
+  qualifiedOnly
 end struct
 
 /// Each invocation owns independent scopes and output collection.
@@ -73,7 +75,7 @@ struct Frame
   scopes
   /// Ordered QueryResult values emitted by SELECT or nested CALL.
   results
-  /// Total rows affected by completed data-changing statements.
+  /// Last statement's affected row count, normalized for CALL completion.
   affectedRows
   /// Default schema inherited from the procedure's qualified name.
   schema
@@ -127,6 +129,56 @@ struct Session
   outgoingSignal
   /// Results completed before an unhandled error, retained for ordered network delivery.
   failedResults
+  /// Bounded conditions from the last public statement, in encounter order.
+  warnings
+  /// Total conditions, including those beyond maxErrorCount.
+  warningCount
+  /// Total error-class conditions in the last public statement.
+  errorCount
+  /// Maximum retained condition records; totals remain exact when zero.
+  maxErrorCount
+  /// SQL mode captured by CREATE and temporarily restored for each invocation.
+  sqlMode
+  /// Connection character set recorded in stored routine metadata.
+  characterSetClient
+  /// Supported binary comparison collation recorded at creation.
+  collationConnection
+  /// Database default used for unqualified routine character declarations.
+  databaseCollation
+  /// Controls automatic EXECUTE/ALTER ROUTINE grants to a routine creator.
+  automaticSpPrivileges
+  /// Bounded cache of parsed routine definitions; entries own no invocation state.
+  definitionCache
+  /// Counts actual stored-definition parses for cache observability and tests.
+  definitionParses
+  /// Synchronous result consumer installed only for the current public statement.
+  sink
+  /// Opaque caller-owned context passed to the streaming consumer.
+  sinkContext
+  /// A failed transport consumer cannot be caught by a SQL condition handler.
+  streamFailure
+  /// Successful outer CALL output snapshots [ordinal, name, SqlValue].
+  outputParameters
+  /// True while a statically verified read-only CALL owns the shared gate.
+  readOnlyExecution
+  /// Active triggering table identities, used to reject self-modification.
+  triggerTables
+  /// A CALL has begun evaluation, so automatic whole-statement retries are unsafe.
+  callStarted
+  /// Prevents executor and wire decoration from counting the same terminal error twice.
+  publicErrorRecorded
+end struct
+
+/// A cache entry is keyed by durable identity, full definition and metadata bytes.
+struct CachedDefinition
+  /// Stable procedure object identity, never reused after DROP.
+  id
+  /// Exact canonical SQL text, including the entire body.
+  sql
+  /// Exact persisted metadata representation, including captured context.
+  metadata
+  /// Parsed immutable CreateProcedureStatement.
+  definition
 end struct
 
 /// Explicit control flow keeps cleanup independent of MiniLang error propagation.
@@ -144,7 +196,7 @@ end function
 
 /// Allocates isolated state for one engine connection.
 function create()
-  return Session([], [], clearDiagnostic(0), [], false, 0, 1, 0, false, [])
+  return Session([], [], clearDiagnostic(0), [], false, 0, 1, 0, false, [], [], 0, 0, 64, "STRICT_TRANS_TABLES", "utf8mb4", "utf8mb4_bin", "utf8mb4_bin", true, [], 0, void, void, false, [], false, [], false, false)
 end function
 
 /// Returns the currently executing procedure, or void outside a CALL.
@@ -155,7 +207,7 @@ end function
 
 /// Returns a fresh lexical scope with a stable EXIT destination.
 function scope(session, label)
-  result = Scope(session.nextScopeId, label, [], [], [], [], false)
+  result = Scope(session.nextScopeId, label, [], [], [], [], false, false)
   session.nextScopeId = session.nextScopeId + 1
   return result
 end function
@@ -177,7 +229,7 @@ function findLocal(frame, name, qualifier)
   index = len(frame.scopes) - 1
   while index >= 0
     currentScope = frame.scopes[index]
-    if qualifier is void or qualifier == currentScope.label then
+    if (qualifier is void and not currentScope.qualifiedOnly) or qualifier == currentScope.label then
       for each variable in currentScope.variables
         if variable.name == name then return variable end if
       end for
@@ -203,6 +255,51 @@ end function
 /// Resolves the supported system recursion setting in all accepted spellings.
 function isRecursionName(name)
   return name == "max_sp_recursion_depth" or name == "@@max_sp_recursion_depth" or name == "@@session.max_sp_recursion_depth"
+end function
+
+/// Normalizes supported unqualified and @@session/global system-variable names.
+function systemName(name)
+  if typeof(name) != "string" then return "" end if
+  value = name
+  if string_api.startsWith(value, "@@session.") then value = decode(slice(bytes(value), 10, len(bytes(value)) - 10))
+  else if string_api.startsWith(value, "@@global.") then value = decode(slice(bytes(value), 9, len(bytes(value)) - 9))
+  else if string_api.startsWith(value, "@@") then value = decode(slice(bytes(value), 2, len(bytes(value)) - 2))
+  end if
+  if value == "max_sp_recursion_depth" or value == "warning_count" or value == "error_count" or value == "max_error_count" or value == "sql_mode" or value == "character_set_client" or value == "collation_connection" or value == "database_collation" or value == "automatic_sp_privileges" then return value end if
+  return ""
+end function
+
+/// Retains conditions without allowing an unbounded warning-producing loop.
+function rememberCondition(session, diagnostic)
+  session.warningCount = session.warningCount + 1
+  className = decode(slice(bytes(diagnostic.sqlstate), 0, 2))
+  if className != "00" and className != "01" and className != "02" then session.errorCount = session.errorCount + 1 end if
+  if len(session.warnings) < session.maxErrorCount then session.warnings = session.warnings + [diagnostic] end if
+  return true
+end function
+
+/// Counts Unicode scalar encodings, not UTF-8 bytes, for SQL character limits.
+function characterLength(textValue)
+  count = 0
+  for each code in bytes(textValue)
+    if code < 128 or code >= 192 then count = count + 1 end if
+  end for
+  return count
+end function
+
+/// Takes a valid UTF-8 prefix without cutting through a multibyte character.
+function characterPrefix(textValue, count)
+  raw = bytes(textValue)
+  characters = 0
+  position = 0
+  while position < len(raw)
+    if raw[position] < 128 or raw[position] >= 192 then
+      if characters >= count then break end if
+      characters = characters + 1
+    end if
+    position = position + 1
+  end while
+  return decode(slice(raw, 0, position))
 end function
 
 /// Finds a cursor in its closest enclosing scope.
@@ -274,11 +371,25 @@ function fromError(nativeError)
   code = nativeError.code
   sqlstate = "HY000"
   mysqlCode = code
+  if code == 1115 or code == 1253 then sqlstate = "42000" end if
   if code == 9019 then sqlstate = "42000"; mysqlCode = 1064 end if
-  if code == 9020 then sqlstate = "42S22"; mysqlCode = 1054 end if
-  if code == 9017 then sqlstate = "22003"; mysqlCode = 1264 end if
+  if code == 9020 then
+    sqlstate = "42S22"; mysqlCode = 1054
+    if string_api.contains(nativeError.message, "unknown table") then sqlstate = "42S02"; mysqlCode = 1146 end if
+    if string_api.contains(nativeError.message, "ambiguous") then sqlstate = "23000"; mysqlCode = 1052 end if
+  end if
+  if code == 9017 then
+    sqlstate = "22003"; mysqlCode = 1264
+    if string_api.contains(nativeError.message, "length") then sqlstate = "22001"; mysqlCode = 1406 end if
+    if string_api.contains(nativeError.message, "requires") or string_api.contains(nativeError.message, "invalid") then sqlstate = "22007"; mysqlCode = 1366 end if
+    if string_api.contains(nativeError.message, "division") or string_api.contains(nativeError.message, "zero") then sqlstate = "22012"; mysqlCode = 1365 end if
+  end if
   if code == 9022 then sqlstate = "23000"; mysqlCode = 1062 end if
-  if code == 9014 then sqlstate = "42S02"; mysqlCode = 1146 end if
+  if code == 9014 then
+    sqlstate = "42S02"; mysqlCode = 1146
+    if string_api.contains(nativeError.message, "unknown column") or string_api.contains(nativeError.message, "unknown qualified column") or string_api.contains(nativeError.message, "column not found") then sqlstate = "42S22"; mysqlCode = 1054 end if
+    if string_api.contains(nativeError.message, "index not found") then sqlstate = "42000"; mysqlCode = 1091 end if
+  end if
   if code == 9021 then
     sqlstate = "23000"
     mysqlCode = 1062
@@ -287,14 +398,26 @@ function fromError(nativeError)
     if string_api.contains(nativeError.message, "CHECK") then sqlstate = "HY000"; mysqlCode = 3819 end if
   end if
   if code == 9029 then sqlstate = "42000"; mysqlCode = 1142 end if
+  if code == 9007 or code == 9032 then sqlstate = "HY000"; mysqlCode = 1205 end if
+  if code == 9031 and string_api.contains(nativeError.message, "transaction.lock_manager.") then sqlstate = "40001"; mysqlCode = 1213 end if
+  if code == 9011 then sqlstate = "25000" end if
+  if code == 9012 then sqlstate = "25006"; mysqlCode = 1792 end if
+  if code == 9013 then sqlstate = "42S01"; mysqlCode = 1050 end if
+  if code == 9025 then sqlstate = "0A000"; mysqlCode = 1235 end if
+  if code == 9027 or code == 9028 then sqlstate = "28000"; mysqlCode = 1045 end if
+  if code == 9026 or code == 9034 then sqlstate = "08S01" end if
+  if code == 9037 then sqlstate = "HY001" end if
   if code == 9035 then sqlstate = "70100"; mysqlCode = 1317 end if
   if code == 9036 then sqlstate = "HY000"; mysqlCode = 3024 end if
-  return Diagnostic(sqlstate, mysqlCode, nativeError.message, [], 0, 1, false, nativeError, [], 0)
+  return Diagnostic(sqlstate, mysqlCode, nativeError.message, [], -1, 1, false, nativeError, [], 0)
 end function
 
 /// Raises one explicit SQL condition; the interpreter consumes pending exactly once.
 function raise(session, sqlstate, errno, message, signaled)
-  session.diagnostic = Diagnostic(sqlstate, errno, message, [], 0, 1, signaled, void, [], session.steps)
+  rowCount = -1
+  className = decode(slice(bytes(sqlstate), 0, 2))
+  if className == "01" or className == "02" then rowCount = 0 end if
+  session.diagnostic = Diagnostic(sqlstate, errno, message, [], rowCount, 1, signaled, void, [], session.steps)
   session.pending = true
   return error(errno, "SQLSTATE " + sqlstate + ": " + message)
 end function
@@ -309,7 +432,12 @@ function diagnosticValue(diagnostic, name)
   for each item in diagnostic.items
     if item[0] == name then return item[1] end if
   end for
-  if name == "CLASS_ORIGIN" or name == "SUBCLASS_ORIGIN" then return values.text("ISO 9075") end if
+  if name == "CLASS_ORIGIN" or name == "SUBCLASS_ORIGIN" then
+    code = bytes(diagnostic.sqlstate)[0]
+    if code >= 48 and code <= 52 then return values.text("ISO 9075") end if
+    if code >= 65 and code <= 72 then return values.text("ISO 9075") end if
+    return values.text("MySQL")
+  end if
   return values.text("")
 end function
 
@@ -328,7 +456,7 @@ function validateNode(statement, frame, labels)
       end for
       labels = labels + [[statement.name, "BLOCK"]]
     end if
-    frame.scopes = frame.scopes + [Scope(0, statement.name, [], [], [], [], false)]
+    frame.scopes = frame.scopes + [Scope(0, statement.name, [], [], [], [], false, false)]
     for each child in statement.body
       validateNode(child, frame, labels)
     end for
@@ -413,7 +541,7 @@ function validateNode(statement, frame, labels)
   end if
   if kind == "SET" or kind == "FETCH" or kind == "SELECT_INTO" or kind == "GET_DIAGNOSTICS" then
     for each name in statement.names
-      if not isSessionName(name) and not isRecursionName(name) and findQualifiedLocal(frame, name) is void then return error(1327, "Undeclared variable " + name) end if
+      if not isSessionName(name) and systemName(name) == "" and findQualifiedLocal(frame, name) is void then return error(1327, "Undeclared variable " + name) end if
     end for
   end if
   return true
@@ -421,7 +549,7 @@ end function
 
 /// Validates parameter types and the complete lexical structure without executing defaults or SQL.
 function validateDefinition(definition)
-  parameterScope = Scope(0, definition.name, [], [], [], [], false)
+  parameterScope = Scope(0, definition.name, [], [], [], [], false, false)
   for each parameter in definition.parameters
     for each existing in parameterScope.variables
       if existing.name == parameter.name then return error(1330, "Duplicate parameter " + parameter.name) end if

@@ -27,7 +27,7 @@ from .errors import (
     ProgrammingError,
     Warning,
 )
-from .protocol import BufferedQuery, Protocol, Query, Response, STATUS_ROWS
+from .protocol import BufferedQuery, OutputParameter, Protocol, Query, Response, ResultSpool, STATUS_ROWS
 
 
 MAX_PREPARED_PLANS = 128
@@ -53,6 +53,70 @@ BINARY = DBAPITypeObject(bytes, bytearray, memoryview)
 NUMBER = DBAPITypeObject(int, float, Decimal)
 DATETIME = DBAPITypeObject(_datetime.date, _datetime.time, _datetime.datetime)
 ROWID = DBAPITypeObject(int)
+
+
+def _description_type(kind: int) -> DBAPITypeObject:
+    """Maps negotiated native SQL kinds to the portable DB-API type categories."""
+    if 1 <= kind <= 7:
+        return NUMBER
+    if 11 <= kind <= 13:
+        return BINARY
+    if 14 <= kind <= 16:
+        return DATETIME
+    return STRING
+
+
+def _procedure_parts(name: str) -> tuple[str, ...]:
+    """Parses a quoted or unquoted one/two-part identifier without accepting SQL syntax."""
+    if not isinstance(name, str):
+        raise ProgrammingError("Procedure name must be text")
+    token = r'(?:[A-Za-z_][A-Za-z0-9_$]*|"(?:[^"]|"")+"|`(?:[^`]|``)+`)'
+    match = re.fullmatch(rf'\s*({token})(?:\s*\.\s*({token}))?\s*', name)
+    if match is None or "\x00" in name:
+        raise ProgrammingError("Procedure name must be an identifier or schema.identifier")
+    parts = []
+    for part in match.groups():
+        if part is not None:
+            if part[0] in {'"', '`'}:
+                part = part[1:-1].replace(part[0] * 2, part[0])
+            else:
+                part = part.lower()
+            parts.append(part)
+    return tuple(parts)
+
+
+def _output_value(parameter: OutputParameter) -> Any:
+    """Converts a typed CALL output while preserving literal NULL text exactly."""
+    value, kind = parameter.value, parameter.type_kind
+    if value is None:
+        return None
+    try:
+        if kind == 1:
+            return value.upper() in {"TRUE", "1"}
+        if 2 <= kind <= 4:
+            if value.startswith("0x") and ":" in value:
+                high, low = (int(part) for part in value[2:].split(":", 1))
+                number = (high << 32) | low
+                return number - (1 << 64) if number >= 1 << 63 else number
+            return int(value)
+        if kind in {5, 6}:
+            return float(value)
+        if kind == 7:
+            return Decimal(value)
+        if 11 <= kind <= 13:
+            return bytes.fromhex(value[2:] if value.startswith("0x") else value)
+        if kind == 14:
+            return _EPOCH + _datetime.timedelta(days=int(value)) if re.fullmatch(r"-?\d+", value) else _datetime.date.fromisoformat(value)
+        if kind == 15:
+            if re.fullmatch(r"\d+", value):
+                total = int(value)
+                return _datetime.time(total // 3_600_000_000, total // 60_000_000 % 60, total // 1_000_000 % 60, total % 1_000_000)
+            return _datetime.time.fromisoformat(value)
+        if kind == 16:
+            return _datetime.datetime(1970, 1, 1) + _datetime.timedelta(microseconds=int(value)) if re.fullmatch(r"-?\d+", value) else _datetime.datetime.fromisoformat(value)
+        return value
+    except (ValueError, OverflowError) as exc:
+        raise DataError("Invalid typed procedure output", sqlstate="22003") from exc
 
 
 def Date(year: int, month: int, day: int) -> _datetime.date:
@@ -290,6 +354,12 @@ class Connection:
         self._plan_namespace = secrets.token_hex(6)
         self._next_plan = 0
         self._next_savepoint = 0
+        self._procedure_namespace = secrets.token_hex(6)
+
+    @property
+    def messages(self) -> list[tuple[type[Warning], Warning]]:
+        """Returns structured warnings from the latest statement using the DB-API extension."""
+        return [(Warning, Warning(item.message, item.code, item.sqlstate)) for item in self._protocol.warnings]
 
     @property
     def autocommit(self) -> bool:
@@ -411,10 +481,11 @@ class Connection:
 
     def _statement_sql(self, operation: str, parameters: Sequence[Any] | None) -> str:
         """Returns direct SQL or a cached server-side EXECUTE command."""
-        if parameters is None:
+        is_call = _first_keyword(operation) == "CALL"
+        if parameters is None and not (is_call and getattr(self._protocol, "extended_results", False)):
             return operation
-        literals = _parameter_literals(operation, parameters)
-        if literals and _first_keyword(operation) in {"SELECT", "INSERT", "UPDATE", "DELETE"}:
+        literals = [] if parameters is None else _parameter_literals(operation, parameters)
+        if (literals or is_call) and _first_keyword(operation) in {"SELECT", "INSERT", "UPDATE", "DELETE", "CALL"}:
             name = self._plans.get(operation)
             if name is None:
                 self._next_plan += 1
@@ -424,7 +495,7 @@ class Connection:
                 self._evict_plan_if_needed()
             else:
                 self._plans.move_to_end(operation)
-            return f"EXECUTE {name} USING {','.join(literals)}"
+            return f"EXECUTE {name}" + (f" USING {','.join(literals)}" if literals else "")
         return _bound_sql(operation, parameters)
 
     def _evict_plan_if_needed(self) -> None:
@@ -471,7 +542,13 @@ class Cursor(Iterator[tuple[Any, ...]]):
         self._frame: Response | None = None
         self._frame_row = 0
         self._closed = False
-        self._procedure_namespace = secrets.token_hex(6)
+        self._procedure_namespace = getattr(connection, "_procedure_namespace", secrets.token_hex(6))
+        self._warnings = []
+
+    @property
+    def messages(self) -> list[tuple[type[Warning], Warning]]:
+        """Returns warnings owned by this cursor even after other statements execute."""
+        return [(Warning, Warning(item.message, item.code, item.sqlstate)) for item in self._warnings]
 
     def execute(self, operation: str, parameters: Sequence[Any] | None = None) -> Cursor:
         """Executes one operation and retains a lazy row stream when present."""
@@ -492,6 +569,7 @@ class Cursor(Iterator[tuple[Any, ...]]):
         sql = self.connection._statement_sql(operation, parameters)
         query = self.connection._protocol.query(sql)
         self._query = query
+        self._warnings = query.warnings
         self._select_result(query.first)
         return self
 
@@ -502,7 +580,8 @@ class Cursor(Iterator[tuple[Any, ...]]):
         self._frame = None
         self._frame_row = 0
         if first.status == STATUS_ROWS:
-            self.description = tuple((name, STRING, None, None, None, None, None) for name in first.columns)
+            self.description = tuple((name, _description_type(first.column_types[index] if index < len(first.column_types) else 0), None, None, None, None, None)
+                                     for index, name in enumerate(first.columns))
         else:
             self.description = None
             self.rowcount = first.affected_rows
@@ -602,7 +681,7 @@ class Cursor(Iterator[tuple[Any, ...]]):
             self._frame_row = 0
         raw = self._frame.rows[self._frame_row]
         self._frame_row += 1
-        return tuple(None if value == "NULL" else value for value in raw)
+        return tuple(value if self._frame.extended else None if value == "NULL" else value for value in raw)
 
     def fetchmany(self, size: int | None = None) -> list[tuple[Any, ...]]:
         """Returns at most *size* rows, defaulting to ``arraysize``."""
@@ -637,24 +716,23 @@ class Cursor(Iterator[tuple[Any, ...]]):
     def callproc(self, procname: str, parameters: Sequence[Any] | None = None) -> tuple[Any, ...]:
         """Calls a procedure, returns IN/OUT values, and retains its result sets.
 
-        This method buffers CALL results to fetch the output session variables
-        before returning. Use execute("CALL ...") and nextset() for streaming.
-        IN arguments retain their Python values. Protocol v1 OUT/INOUT values
-        are returned as text (or None for SQL NULL).
+        Results spill to a private temporary file before returning OUT values;
+        execute("CALL ...") remains incremental. Negotiated outputs are typed;
+        legacy servers retain their text/None representation.
         """
         self._ensure_open()
-        if not isinstance(procname, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?", procname):
-            raise ProgrammingError("Procedure name must be an identifier or schema.identifier")
+        parts = _procedure_parts(procname)
+        quoted_name = ".".join('"' + part.replace('"', '""') + '"' for part in parts)
         arguments = () if parameters is None else parameters
         if isinstance(arguments, (str, bytes, bytearray)) or not isinstance(arguments, Sequence):
             raise ProgrammingError("Procedure parameters must be a sequence")
         literals = [_literal(value) for value in arguments]
+        extended = getattr(self.connection._protocol, "extended_results", False)
         parameter_modes: list[str] = []
         names = [f"@py_call_{self._procedure_namespace}_{index}" for index in range(len(literals))]
         self._close_result()
         self.connection._begin_if_needed()
-        if names:
-            parts = procname.lower().split(".")
+        if names and not extended:
             schema, routine_name = parts if len(parts) == 2 else ("public", parts[0])
             metadata = self.connection._protocol.query(
                 "SELECT parameter_mode FROM information_schema.parameters WHERE specific_schema = "
@@ -665,37 +743,45 @@ class Cursor(Iterator[tuple[Any, ...]]):
                     parameter_modes.extend(row[0] for row in frame.rows)
             finally:
                 metadata.close()
+        if names:
             self.connection._raw_command("SET " + ",".join(f"{name} = {literal}" for name, literal in zip(names, literals)))
-        quoted_name = ".".join('"' + part + '"' for part in procname.lower().split("."))
-        frames: list[Response] = []
+        spool = ResultSpool()
+        outputs = list(arguments)
+        call_warnings = []
         completed = False
         try:
             self.execute(f"CALL {quoted_name}({','.join(names)})")
             assert self._query is not None
             while True:
                 while (frame := self._query.next_frame()) is not None:
-                    frames.append(frame)
+                    spool.append(frame)
+                    if extended:
+                        for parameter in frame.outputs:
+                            if parameter.ordinal < 1 or parameter.ordinal > len(outputs):
+                                raise InternalError("Procedure output ordinal is invalid")
+                            outputs[parameter.ordinal - 1] = _output_value(parameter)
                 if not self._query.next_result():
                     break
+            call_warnings = list(self._query.warnings)
             self._close_result()
-            outputs: tuple[Any, ...] = ()
-            if names:
+            if names and not extended:
                 query = self.connection._protocol.query("SELECT " + ",".join(names))
                 try:
                     if len(query.first.rows) != 1:
                         raise InternalError("Procedure output parameter query returned an invalid row count")
                     raw_outputs = query.first.rows[0]
-                    outputs = tuple(
+                    outputs = list(
                         arguments[index] if index < len(parameter_modes) and parameter_modes[index] == "IN"
                         else None if value == "NULL" else value
                         for index, value in enumerate(raw_outputs)
                     )
                 finally:
                     query.close()
-            self._query = BufferedQuery(frames)
+            self._query = spool.finish()
+            self._warnings = call_warnings
             self._select_result(self._query.first)
             completed = True
-            return outputs
+            return tuple(outputs)
         except BaseException:
             try:
                 self._close_result()
@@ -703,14 +789,17 @@ class Cursor(Iterator[tuple[Any, ...]]):
                 pass
             raise
         finally:
-            # CALL has already drained before local replay is installed; cleanup
-            # does not discard any procedure result retained by the cursor.
-            if names:
+            spool.close()
+            # New peers reuse private session variables without executing SQL
+            # after CALL, preserving warning_count and its diagnostic area.
+            if names and not extended:
                 try:
                     self.connection._raw_command("SET " + ",".join(f"{name} = NULL" for name in names))
                 except DatabaseError:
                     if completed:
                         raise
+            if completed:
+                self.connection._protocol.warnings = call_warnings
 
     def nextset(self) -> bool | None:
         """Discards unread rows and advances to another CALL result, if present."""

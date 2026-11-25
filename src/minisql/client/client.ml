@@ -11,6 +11,7 @@ import minisql.common.version as version
 import minisql.protocol.connection as connection
 import minisql.protocol.constants as constants
 import minisql.protocol.messages as messages
+import std.string as string_api
 
 /// Defines the invalid argument constant used by the minisql client client module.
 const INVALID_ARGUMENT = 9001
@@ -35,6 +36,8 @@ struct Client
   username
   /// Forward-only query cursor currently owning the protocol response stream.
   activeQuery
+  /// True after the peer acknowledges exact NULL/type/condition metadata.
+  extendedResults
 end struct
 
 /// Owns one request's continuation frames. Only the current batch is exposed,
@@ -147,7 +150,7 @@ end function
 function helloHandshake(client, operation)
   bounded = try(connection.setTimeouts(client.connection, HANDSHAKE_TIMEOUT_MS, HANDSHAKE_TIMEOUT_MS))
   if typeof(bounded) == "error" then return bounded end if
-  response = try(request(client, messages.hello(client.nextRequestId)))
+  response = try(request(client, messages.helloExtended(client.nextRequestId)))
   restored = try(connection.setTimeouts(client.connection, 0, 0))
   if typeof(response) == "error" then return response end if
   if typeof(restored) == "error" then return restored end if
@@ -155,6 +158,7 @@ function helloHandshake(client, operation)
   helloResponse = try(messages.decodeResponse(response.payload))
   if typeof(helloResponse) == "error" then return helloResponse end if
   if helloResponse.status != constants.STATUS_COMMAND or helloResponse.command != "HELLO" then return fail(INVALID_ARGUMENT, operation, "HELLO handshake was rejected") end if
+  client.extendedResults = string_api.contains(helloResponse.message, "; capabilities=results-v2")
   return true
 end function
 
@@ -176,7 +180,7 @@ end function
 /// @param port port value consumed by this operation.
 function openLoopback(port)
   connectionValue = connection.connectLoopback(port)
-  client = Client(connectionValue, 1, false, true, "trusted-local", void)
+  client = Client(connectionValue, 1, false, true, "trusted-local", void, false)
   handshake = try(helloHandshake(client, "openLoopback"))
   if typeof(handshake) == "error" then return closeFailedOpen(client, handshake) end if
   return client
@@ -204,7 +208,7 @@ end function
 /// @param operation operation value consumed by this operation.
 function openAuthenticatedConnection(connectionValue, username, passwordBytes, operation)
   if typeof(username) != "string" or len(bytes(username)) == 0 or len(bytes(username)) > 128 then return fail(INVALID_ARGUMENT, operation, "username is invalid") end if
-  client = Client(connectionValue, 1, false, false, username, void)
+  client = Client(connectionValue, 1, false, false, username, void, false)
   handshake = try(helloHandshake(client, operation))
   if typeof(handshake) == "error" then return closeFailedOpen(client, handshake) end if
 
@@ -402,8 +406,7 @@ function query(client, sqlText)
       combined = decoded
     else
       if combined.status != constants.STATUS_ROWS or decoded.status != constants.STATUS_ROWS or not sameColumns(combined.columns, decoded.columns) then return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "query", "inconsistent result batch")) end if
-      combined.rows = combined.rows + decoded.rows
-      combined.affectedRows = combined.affectedRows + decoded.affectedRows
+      combined = messages.appendRows(combined, decoded)
     end if
   end while
   if len(results) == 0 then return combined end if
@@ -421,7 +424,9 @@ function beginQuery(client, sqlText)
   if typeof(sqlText) != "string" then return fail(INVALID_ARGUMENT, "beginQuery", "sqlText must be string") end if
   if client.activeQuery is not void then return fail(INVALID_ARGUMENT, "beginQuery", "another query cursor is active") end if
   requestId = client.nextRequestId
-  sent = try(connection.sendMessage(client.connection, messages.query(requestId, sqlText)))
+  queryRequest = messages.query(requestId, sqlText)
+  if client.extendedResults then queryRequest.flags = constants.FLAG_METADATA end if
+  sent = try(connection.sendMessage(client.connection, queryRequest))
   if typeof(sent) == "error" then return sent end if
   cursor = QueryCursor(client, requestId, void, false)
   client.activeQuery = cursor

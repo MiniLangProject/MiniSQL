@@ -500,6 +500,10 @@ const PRIVILEGE_EXECUTE = 20
 const PRIVILEGE_ALTER_ROUTINE = 21
 /// Permits creation of procedures in a database; never applies to one procedure.
 const PRIVILEGE_CREATE_ROUTINE = 22
+/// Permits reading every routine definition without authorizing execution.
+const PRIVILEGE_SHOW_ROUTINE = 23
+/// Permits selecting another existing user as a routine's security definer.
+const PRIVILEGE_SET_ANY_DEFINER = 24
 
 /// Defines the principal header bytes constant used by the minisql catalog metadata module.
 const PRINCIPAL_HEADER_BYTES = 24
@@ -699,7 +703,7 @@ end function
 /// @param privilege privilege value consumed by this operation.
 function validPrivilege(objectType, privilege)
   if objectType == OBJECT_DATABASE then
-    return privilege == PRIVILEGE_CONNECT or privilege == PRIVILEGE_CREATE or privilege == PRIVILEGE_MAINTAIN or privilege == PRIVILEGE_ADMIN or privilege == PRIVILEGE_EXECUTE or privilege == PRIVILEGE_ALTER_ROUTINE or privilege == PRIVILEGE_CREATE_ROUTINE
+    return privilege == PRIVILEGE_CONNECT or privilege == PRIVILEGE_CREATE or privilege == PRIVILEGE_MAINTAIN or privilege == PRIVILEGE_ADMIN or privilege == PRIVILEGE_SELECT or privilege == PRIVILEGE_EXECUTE or privilege == PRIVILEGE_ALTER_ROUTINE or privilege == PRIVILEGE_CREATE_ROUTINE or privilege == PRIVILEGE_SHOW_ROUTINE or privilege == PRIVILEGE_SET_ANY_DEFINER
   end if
   if objectType == OBJECT_TABLE then
     return privilege == PRIVILEGE_SELECT or privilege == PRIVILEGE_INSERT or privilege == PRIVILEGE_UPDATE or privilege == PRIVILEGE_DELETE or privilege == PRIVILEGE_REFERENCES or privilege == PRIVILEGE_INDEX or privilege == PRIVILEGE_ALTER or privilege == PRIVILEGE_DROP or privilege == PRIVILEGE_OWNER

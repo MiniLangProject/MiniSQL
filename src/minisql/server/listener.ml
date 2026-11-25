@@ -312,7 +312,7 @@ function processRequest(slot, request, lockWaitMs)
   // Only native lock failures may retry a request or abort its transaction.
   applicationCondition = executor.isApplicationError(slot.activeSession.engine, code)
   completedResults = typeof(response) == "array" and len(response) > 1
-  if code == 9007 and not applicationCondition and not completedResults then
+  if code == 9007 and not applicationCondition and not completedResults and not executor.routineStarted(slot.activeSession.engine) then
     now = clock.monotonicMilliseconds()
     if slot.pendingRequest is void then
       slot.pendingRequest = request

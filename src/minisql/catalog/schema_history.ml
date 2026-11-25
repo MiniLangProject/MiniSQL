@@ -18,6 +18,7 @@ import minisql.storage.heap_file as heap_file
 import minisql.storage.paged_file as paged_file
 import minisql.storage.table_header as table_header
 import minisql.storage.superblock as superblock
+import std.time as time_api
 
 /// Durable schema/constraint sidecar and transactional DDL journal.
 
@@ -111,6 +112,109 @@ const TRIGGER_DELETE = 3
 const SCHEMA_MARKER_PREFIX = "__minisql_schema__"
 /// Defines the procedure marker prefix constant used by the minisql catalog schema history module.
 const PROCEDURE_MARKER_PREFIX = "__minisql_procedure__"
+/// Marks canonical procedure SQL and the durable definer identity.
+const PROCEDURE_METADATA_V2 = "__minisql_routine_metadata_v2__"
+/// Tags optional creation-time execution context following the V2 identity.
+const PROCEDURE_CONTEXT_V1 = "__minisql_routine_context_v1__"
+
+/// Validates the optional routine attributes without inventing legacy values.
+/// Keys are unique and timestamps are nonnegative decimal UTC epoch microseconds.
+/// @param attributes Flat key/value string pairs following the context marker.
+/// @param code Error classification for caller input or corrupt persisted data.
+function validateRoutineAttributes(attributes, code)
+  if typeof(attributes) != "array" or len(attributes) % 2 != 0 then return fail(code, "routineAttributes", "invalid routine context pairs") end if
+  keys = []
+  index = 0
+  while index < len(attributes)
+    key = attributes[index]
+    value = attributes[index + 1]
+    if typeof(key) != "string" or typeof(value) != "string" then return fail(code, "routineAttributes", "routine context values must be strings") end if
+    if key != "created" and key != "last_altered" and key != "sql_mode" and key != "character_set_client" and key != "collation_connection" and key != "database_collation" then return fail(code, "routineAttributes", "unknown routine context attribute " + key) end if
+    for each existing in keys
+      if existing == key then return fail(code, "routineAttributes", "duplicate routine context attribute " + key) end if
+    end for
+    keys = keys + [key]
+    if key == "created" or key == "last_altered" then
+      raw = bytes(value)
+      if len(raw) == 0 then return fail(code, "routineAttributes", "empty routine timestamp") end if
+      for each digit in raw
+        if digit < 48 or digit > 57 then return fail(code, "routineAttributes", "invalid routine timestamp") end if
+      end for
+      number = toNumber(value)
+      if typeof(number) != "int" or number < 0 or number > endian.MAX_MINILANG_INT then return fail(code, "routineAttributes", "routine timestamp is out of range") end if
+    end if
+    index = index + 2
+  end while
+  return true
+end function
+
+/// Encodes attributes after the unchanged canonical-SQL/definer prefix.
+/// Existing V2 readers retain the same identity and ignore the added suffix.
+/// @param definerId Durable identifier of the existing security principal.
+/// @param attributes Validated flat key/value pairs; absent keys remain unknown.
+function routineMetadata(definerId, attributes)
+  if typeof(definerId) != "int" or definerId <= 0 then return fail(INVALID_ARGUMENT, "routineMetadata", "definer identity must be positive") end if
+  validateRoutineAttributes(attributes, INVALID_ARGUMENT)
+  return [PROCEDURE_METADATA_V2, "" + definerId, PROCEDURE_CONTEXT_V1] + attributes
+end function
+
+/// Reads the optional context suffix, preserving older records without context.
+/// @param procedure Persisted procedure ViewDefinition, or void for a new object.
+function routineAttributes(procedure)
+  if procedure is void then return [] end if
+  fields = procedure.columnNames
+  if len(fields) < 3 or fields[0] != PROCEDURE_METADATA_V2 then return [] end if
+  if fields[2] != PROCEDURE_CONTEXT_V1 then return fail(CORRUPT_DATA, "routineAttributes", "unsupported routine context marker") end if
+  attributes = []
+  if len(fields) > 3 then
+    for index = 3 to len(fields) - 1
+      attributes = attributes + [fields[index]]
+    end for
+  end if
+  validateRoutineAttributes(attributes, CORRUPT_DATA)
+  return attributes
+end function
+
+/// Returns one known persisted attribute, or void when legacy context is absent.
+/// @param procedure Persisted procedure ViewDefinition or void.
+/// @param key Exact lower-case attribute name.
+function routineAttribute(procedure, key)
+  attributes = routineAttributes(procedure)
+  index = 0
+  while index < len(attributes)
+    if attributes[index] == key then return attributes[index + 1] end if
+    index = index + 2
+  end while
+  return void
+end function
+
+/// Captures an actual UTC wall-clock time in storage-compatible microseconds.
+/// Clock failure aborts DDL instead of persisting a fabricated creation time.
+function routineNowMicros()
+  milliseconds = time_api.datetime.nowUnixMillisUtc()
+  if typeof(milliseconds) != "int" or milliseconds < 0 then return fail(IO_FAILURE, "routineNowMicros", "UTC clock is unavailable") end if
+  return "" + milliseconds * 1000
+end function
+
+/// Formats a persisted timestamp for human-readable SHOW output in UTC.
+/// @param timestamp Decimal epoch microseconds previously validated by the reader.
+function routineTimestampText(timestamp)
+  if timestamp is void then return void end if
+  validateRoutineAttributes(["created", timestamp], CORRUPT_DATA)
+  raw = bytes(timestamp)
+  milliseconds = 0
+  suffix = timestamp
+  if len(raw) > 3 then
+    milliseconds = toNumber(decode(slice(raw, 0, len(raw) - 3)))
+    suffix = decode(slice(raw, len(raw) - 3, 3))
+  end if
+  while len(suffix) < 3
+    suffix = "0" + suffix
+  end while
+  dateTime = time_api.datetime.fromUnixMillis(milliseconds)
+  if dateTime is void then return fail(CORRUPT_DATA, "routineTimestampText", "routine timestamp cannot be represented") end if
+  return time_api.datetime.toString(dateTime) + suffix
+end function
 
 /// Defines the column rule record used by this module.
 struct ColumnRule

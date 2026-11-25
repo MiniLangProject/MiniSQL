@@ -23,6 +23,7 @@ CASES = {
     "stored_procedure_parser": [],
     "stored_procedure_runtime": ["{data}"],
     "stored_procedure_edges": ["{data}"],
+    "stored_procedure_parity": ["{data}"],
     "routines_client": [],
     "routine_security": ["{data}"],
     "m12_sql_frontend": [],

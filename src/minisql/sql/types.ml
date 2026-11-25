@@ -67,6 +67,10 @@ struct SqlType
   scale
   /// Indicates whether the nullable condition is active.
   nullable
+  /// Explicit routine character set; empty preserves the database default.
+  characterSet
+  /// Explicit routine collation; only implemented binary comparisons are accepted.
+  collation
 end struct
 
 /// Performs the fail operation for the minisql sql types module.
@@ -117,7 +121,7 @@ function create(kind, length, precision, scale, nullable)
     if precision <= 0 or precision > 18 or scale > precision then return fail(INVALID_ARGUMENT, "create", "DECIMAL requires 1<=precision<=18 and 0<=scale<=precision") end if
   end if
   if (kind == SqlTypeKind.Time or kind == SqlTypeKind.Timestamp) and precision > 6 then return fail(INVALID_ARGUMENT, "create", "time precision must be 0..6") end if
-  return SqlType(kind, length, precision, scale, nullable)
+  return SqlType(kind, length, precision, scale, nullable, "", "")
 end function
 
 /// Implements with nullable for this module.
@@ -128,7 +132,10 @@ end function
 /// @param nullable nullable value consumed by this operation.
 function withNullable(value, nullable)
   if value is not SqlType then return fail(INVALID_ARGUMENT, "withNullable", "value must be SqlType") end if
-  return create(value.kind, value.length, value.precision, value.scale, nullable)
+  result = create(value.kind, value.length, value.precision, value.scale, nullable)
+  result.characterSet = value.characterSet
+  result.collation = value.collation
+  return result
 end function
 
 /// Implements kind name for this module.
@@ -193,7 +200,28 @@ function fromTypeName(typeName, nullable)
     if length == 0 then return fail(BINDING_ERROR, "fromTypeName", kindName(kind) + " requires a length") end if
   end if
   if kind == SqlTypeKind.Decimal and precision == 0 then precision = 18 end if
-  return create(kind, length, precision, scale, nullable)
+  result = create(kind, length, precision, scale, nullable)
+  result.characterSet = typeName.characterSet
+  result.collation = typeName.collation
+  if result.characterSet != "" or result.collation != "" then
+    if not isTextKind(kind) then return fail(BINDING_ERROR, "fromTypeName", "CHARACTER SET/COLLATE requires a character type") end if
+    if result.characterSet != "" and result.characterSet != "utf8mb4" and result.characterSet != "utf8" and result.characterSet != "binary" then return error(1115, "Unsupported character set " + result.characterSet) end if
+    if result.collation != "" and result.collation != "utf8mb4_bin" and result.collation != "utf8_bin" and result.collation != "binary" then return error(1273, "Unsupported collation " + result.collation) end if
+    if result.characterSet == "" then
+      if result.collation == "utf8_bin" then result.characterSet = "utf8" else if result.collation == "binary" then result.characterSet = "binary" else result.characterSet = "utf8mb4" end if
+    end if
+    expected = result.characterSet + "_bin"
+    if result.characterSet == "binary" then expected = "binary" end if
+    if result.collation != "" and result.collation != expected then return error(1253, "COLLATION does not match CHARACTER SET") end if
+    result.collation = expected
+    // CHARACTER SET binary denotes a byte string, not UTF-8 text with byte limits.
+    if result.characterSet == "binary" then
+      if kind == SqlTypeKind.Char then result.kind = SqlTypeKind.Binary end if
+      if kind == SqlTypeKind.VarChar then result.kind = SqlTypeKind.VarBinary end if
+      if kind == SqlTypeKind.Text then result.kind = SqlTypeKind.Blob end if
+    end if
+  end if
+  return result
 end function
 
 /// Implements from column for this module.

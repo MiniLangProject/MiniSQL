@@ -241,7 +241,8 @@ that exposes the difference and a practical design response.
 \item \code{NULLIF(5,NULL)} returning null in this implementation.
 \item Automatic identities using the current maximum row value rather than
 an independent durable sequence allocator.
-\item Text \code{'NULL'} and SQL NULL being ambiguous in protocol-v1 results.
+\item Text \code{'NULL'} and SQL NULL being ambiguous in legacy protocol-v1
+results, while peers negotiating results-v2 preserve the distinction.
 \end{itemize}
 The worked probe results in the validation appendix are the answer key.
 An expert answer states the boundary precisely. For example, binary64 row

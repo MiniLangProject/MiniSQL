@@ -38,6 +38,7 @@ import minisql.storage.table_header as table_header
 import minisql.storage.buffer_pool as buffer_pool
 import minisql.transaction.transaction as transaction
 import std.ds.list as list
+import std.string as string_api
 
 /// SQL execution facade. M16 extends the accepted M15 scan/filter/projection
 
@@ -223,6 +224,8 @@ struct SelectCursor
   emitted
   /// True after resources have been released.
   closed
+  /// False when a stored procedure already owns the physical execution gate.
+  ownsGate
 end struct
 
 /// Per-session query memory policy and last-statement diagnostics. Operators use
@@ -398,10 +401,14 @@ end function
 /// Starts one top-level cooperative token after global memory admission.
 /// @param engine engine value consumed by this operation.
 function beginQueryControl(engine)
-  engine.routineSession.outgoingSignal = false
-  engine.routineSession.failedResults = []
   validateOpen(engine, "beginQueryControl")
   if engine.queryControl.active then return true end if
+  engine.routineSession.outgoingSignal = false
+  engine.routineSession.failedResults = []
+  engine.routineSession.outputParameters = []
+  engine.routineSession.callStarted = false
+  engine.routineSession.publicErrorRecorded = false
+  engine.routineSession.streamFailure = false
   admitted = try(database_manager.admitStatement(engine.database))
   if typeof(admitted) == "error" then return admitted end if
   resetQueryMemory(engine)
@@ -1774,18 +1781,61 @@ end function
 /// @param pageTransaction pageTransaction value consumed by this operation.
 function executeTriggerBody(engine, trigger, sourceTable, oldRow, newRow, pageTransaction)
   if engine.triggerDepth >= 8 then return fail(CONSTRAINT_VIOLATION, "executeTriggerBody", "maximum trigger recursion depth exceeded") end if
-  parsed = parser.parseSql(trigger.expressionSql)
+  parsed = parser.parseSql("CREATE PROCEDURE __trigger_body__() " + trigger.expressionSql)
   if len(parsed) != 1 then return fail(CORRUPT_DATA, "executeTriggerBody", "trigger body must contain exactly one statement") end if
-  replaced = replaceTriggerStatement(parsed[0], sourceTable, oldRow, newRow)
-  authorized = authorizeStatement(engine, replaced)
-  materialized = materializeDmlStatement(engine, replaced, pageTransaction)
-  bound = bind(materialized, engine)
-  materializeInsertSelect(engine, bound, pageTransaction)
+  session = engine.routineSession
+  scopes = []
+  for each pair in [["old", oldRow], ["new", newRow]]
+    owner = routine_state.scope(session, pair[0])
+    owner.qualifiedOnly = true
+    if pair[1] is not void and len(sourceTable.columns) > 0 then
+      for index = 0 to len(sourceTable.columns) - 1
+        owner.variables = owner.variables + [routine_state.Variable(sourceTable.columns[index].name, types.fromColumn(sourceTable.columns[index]), pair[1][index])]
+      end for
+    end if
+    scopes = scopes + [owner]
+  end for
+  scopes = scopes + [routine_state.scope(session, "")]
+  frame = routine_state.Frame("__trigger_" + trigger.triggerId, scopes, [], 0, splitObjectName(sourceTable.name)[0], [])
+  originalExplicit = engine.explicitTransaction
+  originalMode = engine.transactionMode
+  originalPages = engine.pageTransaction
+  originalFailed = engine.failed
+  originalDiagnostic = session.diagnostic
+  originalSavepoints = pageTransaction.savepoints
+  pageTransaction.savepoints = []
+  // Trigger callees participate in the exact same private page transaction.
+  // Temporarily exposing it as explicit prevents accidental nested autocommits.
+  engine.explicitTransaction = true
+  engine.transactionMode = MODE_DML
+  engine.pageTransaction = pageTransaction
+  session.frames = session.frames + [frame]
+  session.triggerTables = session.triggerTables + [sourceTable.tableId]
   engine.triggerDepth = engine.triggerDepth + 1
-  result = try(runBoundDml(engine, bound, pageTransaction))
-  if typeof(result) != "error" then result = try(fireTriggers(engine, bound, result, pageTransaction)) end if
+  flow = try(routineRun(engine, frame, parsed[0].body))
   engine.triggerDepth = engine.triggerDepth - 1
-  return result
+  session.triggerTables = routine_state.prefix(session.triggerTables, len(session.triggerTables) - 1)
+  session.frames = routine_state.prefix(session.frames, len(session.frames) - 1)
+  if pageTransaction.state == transaction.TransactionState.Aborted then
+    resetTransaction(engine)
+  else
+    pageTransaction.savepoints = originalSavepoints
+    engine.explicitTransaction = originalExplicit
+    engine.transactionMode = originalMode
+    engine.pageTransaction = originalPages
+    engine.failed = originalFailed
+  end if
+  if typeof(flow) == "error" then return flow end if
+  if flow.kind == "ERROR" then
+    session.diagnostic = flow.target
+    session.pending = true
+    session.outgoingSignal = flow.target.signaled
+    if flow.target.nativeError is not void then return flow.target.nativeError end if
+    return error(flow.target.errno, "SQLSTATE " + flow.target.sqlstate + ": " + flow.target.message)
+  end if
+  if flow.kind != "NORMAL" then return routine_state.raise(session, "42000", 1308, "Unresolved trigger control-flow label", false) end if
+  session.diagnostic = originalDiagnostic
+  return true
 end function
 
 /// Implements fire triggers for this module.
@@ -1837,6 +1887,19 @@ function persistedProgramBodySupported(statement)
     return statement.sourceQuery is void and statement.conflictAction == ast.CONFLICT_NONE and len(statement.returning) == 0
   end if
   if ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) then return len(statement.returning) == 0 end if
+  if ast.isCallStatement(statement) then return true end if
+  if ast.isSavepointStatement(statement) or ast.isRollbackToStatement(statement) or ast.isReleaseSavepointStatement(statement) then return true end if
+  if ast.isRoutineStatement(statement) then
+    if statement.kind == "PREPARE_DYNAMIC" or statement.kind == "ALTER_PROCEDURE" or statement.kind == "SHOW_CREATE_PROCEDURE" or statement.kind == "SHOW_PROCEDURE_STATUS" or statement.kind == "SHOW_WARNINGS" or statement.kind == "SHOW_ERRORS" then return false end if
+    if statement.kind == "SELECT_INTO" or statement.kind == "CURSOR" then return true end if
+    for each child in statement.body
+      if not persistedProgramBodySupported(child) then return false end if
+    end for
+    for each child in statement.alternate
+      if not persistedProgramBodySupported(child) then return false end if
+    end for
+    return true
+  end if
   return false
 end function
 
@@ -1851,7 +1914,9 @@ function executeTriggerDdl(engine, statement)
   databaseId = database.metadata.databaseId
   if ast.isCreateTriggerStatement(statement) then
     requireObjectSchema(engine, statement.name, "executeTriggerDdl")
-    if not persistedProgramBodySupported(statement.body) then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "trigger body must be one VALUES INSERT, UPDATE, or DELETE without RETURNING or ON CONFLICT") end if
+    if not persistedProgramBodySupported(statement.body) then return fail(UNSUPPORTED_SQL, "executeTriggerDdl", "trigger body must use supported DML, CALL, or a compound program without result sets or dynamic SQL") end if
+    validationFrame = routine_state.Frame("", [routine_state.scope(engine.routineSession, "")], [], 0, "public", [])
+    routine_state.validateNode(statement.body, validationFrame, [])
     table = catalog.findTable(database, statement.tableName)
     if table is void then return fail(BINDING_ERROR, "executeTriggerDdl", "unknown trigger table " + statement.tableName) end if
     eventType = schema_history.TRIGGER_INSERT
@@ -2147,6 +2212,7 @@ end function
 /// @param engine engine value consumed by this operation.
 /// @param statement statement value consumed by this operation.
 function executeDml(engine, statement)
+  routineCheckTriggerTarget(engine, statement.tableName)
   if engine.explicitTransaction then
     pageTransaction = ensureExplicitDml(engine)
     materializedStatement = materializeDmlStatement(engine, statement, pageTransaction)
@@ -2167,7 +2233,7 @@ function executeDml(engine, statement)
   result = try(runBoundDml(engine, bound, pageTransaction))
   if typeof(result) == "error" then transaction.rollback(pageTransaction); return result end if
   triggered = try(fireTriggers(engine, bound, result, pageTransaction))
-  if typeof(triggered) == "error" then transaction.rollback(pageTransaction); return triggered end if
+  if typeof(triggered) == "error" then ignoredRollback = try(transaction.rollback(pageTransaction)); return triggered end if
   committed = try(commitPageTransaction(engine, pageTransaction, bound, result))
   if typeof(committed) == "error" then return committed end if
   if (binder.isBoundInsert(bound) or binder.isBoundUpdate(bound) or binder.isBoundDelete(bound)) and len(bound.returning) > 0 then return returningResult(bound, result) end if
@@ -2403,21 +2469,12 @@ function informationSchemaRows(engine, relationKind)
     for each procedure in state.views
       if schema_history.isProcedureMarkerName(procedure.name) and routineVisible(engine, procedure) then
         if relationKind == binder.INFORMATION_ROUTINES then
-          rows = rows + [routineInformationRow(procedure)]
+          rows = rows + [routineInformationRow(engine, procedure)]
         else
           definition = routineDefinition(procedure)
-          parts = splitObjectName(definition.name)
           if len(definition.parameters) > 0 then
             for index = 0 to len(definition.parameters) - 1
-              parameter = definition.parameters[index]
-              typeName = parameter.typeName
-              if typeName is void then typeName = ast.typeName("TEXT", 0, 0, 0) end if
-              lengthValue = values.nullValue(types.SqlTypeKind.Integer)
-              precisionValue = values.nullValue(types.SqlTypeKind.Integer)
-              scaleValue = values.nullValue(types.SqlTypeKind.Integer)
-              if typeName.length > 0 then lengthValue = values.integer(typeName.length) end if
-              if typeName.precision > 0 then precisionValue = values.integer(typeName.precision); scaleValue = values.integer(typeName.scale) end if
-              rows = rows + [[values.text(parts[0]), values.text(parts[1]), values.integer(index + 1), values.text(parameter.mode), values.text(parameter.name), values.text(typeName.name), lengthValue, precisionValue, scaleValue]]
+              rows = rows + [routineParameterInformationRow(procedure, definition, definition.parameters[index], index + 1)]
             end for
           end if
         end if
@@ -3407,9 +3464,16 @@ function closeSelectCursor(cursor)
   if typeof(closedReader) == "error" then firstError = closedReader end if
   finishedRead = try(database_manager.finishStatement(cursor.engine.database, cursor.readLease))
   if typeof(finishedRead) == "error" and firstError is void then firstError = finishedRead end if
-  leftGate = try(database_manager.leaveReadExecution(cursor.engine.database))
+  leftGate = true
+  if cursor.ownsGate then leftGate = try(database_manager.leaveReadExecution(cursor.engine.database)) end if
   if typeof(leftGate) == "error" and firstError is void then firstError = leftGate end if
   if firstError is not void then return firstError end if
+  return true
+end function
+
+/// Releases only a gate acquired by the cursor, never its enclosing CALL gate.
+function leaveSelectAdmission(engine, ownsGate)
+  if ownsGate then return database_manager.leaveReadExecution(engine.database) end if
   return true
 end function
 
@@ -3418,49 +3482,55 @@ end function
 /// ordinary executor without changing SQL semantics.
 /// @param engine engine value consumed by this operation.
 /// @param statement statement value consumed by this operation.
-function openSelectCursor(engine, statement)
+function openSelectCursor(engine, statement, ownsGate = true)
   validateOpen(engine, "openSelectCursor")
   polled = try(pollQueryControl(engine, "openSelectCursor"))
   if typeof(polled) == "error" then return polled end if
   if not ast.isSelectStatement(statement) then return void end if
+  if not routineCursorProbeSafe(statement) then return void end if
   statement = routineRewriteSelect(statement, engine, void)
   engine.activePlanKey = ""
   resetQueryMemory(engine)
   if engine.explicitTransaction and engine.failed then return fail(TRANSACTION_STATE, "openSelectCursor", "transaction is failed; ROLLBACK required") end if
   if engine.explicitTransaction and engine.transactionMode == MODE_DDL then return fail(UNSUPPORTED_SQL, "openSelectCursor", "SELECT after staged DDL is not supported") end if
-  entered = try(database_manager.enterReadExecutionControlled(engine.database, engine.sessionId))
+  entered = true
+  if ownsGate then entered = try(database_manager.enterReadExecutionControlled(engine.database, engine.sessionId)) end if
   if typeof(entered) == "error" then return entered end if
   dirtyIndexes = try(dml.indexesNeedRepair(engine.database))
-  if typeof(dirtyIndexes) == "error" then database_manager.leaveReadExecution(engine.database); return dirtyIndexes end if
-  if dirtyIndexes then database_manager.leaveReadExecution(engine.database); return void end if
+  if typeof(dirtyIndexes) == "error" then leaveSelectAdmission(engine, ownsGate); return dirtyIndexes end if
+  if dirtyIndexes then leaveSelectAdmission(engine, ownsGate); return void end if
+  safe = try(routineReadOnlyNode(engine, statement, "public", []))
+  if typeof(safe) == "error" then leaveSelectAdmission(engine, ownsGate); return safe end if
+  if not safe then leaveSelectAdmission(engine, ownsGate); return void end if
   authorized = try(authorizeStatement(engine, statement))
-  if typeof(authorized) == "error" then database_manager.leaveReadExecution(engine.database); return authorized end if
+  if typeof(authorized) == "error" then leaveSelectAdmission(engine, ownsGate); return authorized end if
   readLease = try(database_manager.acquireStatementRead(engine.database, engine.sessionId, statementIsolation(engine)))
-  if typeof(readLease) == "error" then database_manager.leaveReadExecution(engine.database); return readLease end if
+  if typeof(readLease) == "error" then leaveSelectAdmission(engine, ownsGate); return readLease end if
   pageTransaction = void
   if engine.explicitTransaction and engine.transactionMode == MODE_DML then pageTransaction = engine.pageTransaction end if
   materialized = try(materializeSelectStatement(engine, statement, pageTransaction))
-  if typeof(materialized) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return materialized end if
+  if typeof(materialized) == "error" then database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return materialized end if
   bound = try(binder.bindSelect(materialized, engine.database.catalogHandle))
-  if typeof(bound) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return bound end if
+  if typeof(bound) == "error" then database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return bound end if
   optimized = try(optimizedPlanFor(engine, bound))
-  if typeof(optimized) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return optimized end if
+  if typeof(optimized) == "error" then database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return optimized end if
   if not simpleBatchEligible(bound, optimized.execution) then
     database_manager.finishStatement(engine.database, readLease)
-    database_manager.leaveReadExecution(engine.database)
+    leaveSelectAdmission(engine, ownsGate)
     return void
   end if
   requiredColumns = selectRequiredColumns(bound)
   mask = void
   if requiredColumns is not void then mask = requiredColumns[0] end if
   reader = try(scan.openCachedWithSchema(engine.database.path, bound.sources[0].table, pageTransaction, engine.database.readCache, database_manager.schemaSnapshot(engine.database)))
-  if typeof(reader) == "error" then database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return reader end if
+  if typeof(reader) == "error" then database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return reader end if
   controlledReader = try(scan.setExecutionControl(reader, engine.database, engine.sessionId))
-  if typeof(controlledReader) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return controlledReader end if
+  if typeof(controlledReader) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return controlledReader end if
   scanCursor = try(scan.openCursor(reader, mask))
-  if typeof(scanCursor) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); database_manager.leaveReadExecution(engine.database); return scanCursor end if
+  if typeof(scanCursor) == "error" then scan.close(reader); database_manager.finishStatement(engine.database, readLease); leaveSelectAdmission(engine, ownsGate); return scanCursor end if
   engine.routineSession.diagnostic = routine_state.clearDiagnostic(-1)
-  return SelectCursor(engine, bound, optimized.execution.wherePredicate, reader, scanCursor, readLease, 0, 0, false)
+  if ownsGate then clearStatementWarnings(engine) end if
+  return SelectCursor(engine, bound, optimized.execution.wherePredicate, reader, scanCursor, readLease, 0, 0, false, ownsGate)
 end function
 
 /// Produces at most maximumRows projected rows while retaining no earlier batch.
@@ -4383,6 +4453,9 @@ function privilegeCode(name, objectType)
     if name == "CREATE" then return metadata.PRIVILEGE_CREATE end if
     if name == "MAINTAIN" then return metadata.PRIVILEGE_MAINTAIN end if
     if name == "ADMIN" then return metadata.PRIVILEGE_ADMIN end if
+    if name == "SELECT" then return metadata.PRIVILEGE_SELECT end if
+    if name == "SHOW_ROUTINE" then return metadata.PRIVILEGE_SHOW_ROUTINE end if
+    if name == "SET_ANY_DEFINER" then return metadata.PRIVILEGE_SET_ANY_DEFINER end if
     return fail(INVALID_ARGUMENT, "privilegeCode", "invalid database privilege " + name)
   end if
   if name == "SELECT" then return metadata.PRIVILEGE_SELECT end if
@@ -4402,7 +4475,7 @@ end function
 /// @param objectType objectType value consumed by this operation.
 function allPrivilegeCodes(objectType)
   if objectType == metadata.OBJECT_PROCEDURE then return [metadata.PRIVILEGE_EXECUTE, metadata.PRIVILEGE_ALTER_ROUTINE] end if
-  if objectType == metadata.OBJECT_DATABASE then return [metadata.PRIVILEGE_CONNECT, metadata.PRIVILEGE_CREATE, metadata.PRIVILEGE_MAINTAIN, metadata.PRIVILEGE_ADMIN, metadata.PRIVILEGE_EXECUTE, metadata.PRIVILEGE_ALTER_ROUTINE, metadata.PRIVILEGE_CREATE_ROUTINE] end if
+  if objectType == metadata.OBJECT_DATABASE then return [metadata.PRIVILEGE_CONNECT, metadata.PRIVILEGE_CREATE, metadata.PRIVILEGE_MAINTAIN, metadata.PRIVILEGE_ADMIN, metadata.PRIVILEGE_EXECUTE, metadata.PRIVILEGE_ALTER_ROUTINE, metadata.PRIVILEGE_CREATE_ROUTINE, metadata.PRIVILEGE_SELECT, metadata.PRIVILEGE_SHOW_ROUTINE, metadata.PRIVILEGE_SET_ANY_DEFINER] end if
   return [metadata.PRIVILEGE_SELECT, metadata.PRIVILEGE_INSERT, metadata.PRIVILEGE_UPDATE, metadata.PRIVILEGE_DELETE, metadata.PRIVILEGE_REFERENCES, metadata.PRIVILEGE_INDEX, metadata.PRIVILEGE_ALTER, metadata.PRIVILEGE_DROP]
 end function
 
@@ -4869,6 +4942,8 @@ end function
 /// Returns true as soon as any nested expression advances a sequence.
 /// @param statement statement value consumed by this operation.
 function selectUsesNextval(statement)
+  if ast.isExpression(statement.limit) and expressionUsesNextval(statement.limit) then return true end if
+  if ast.isExpression(statement.offset) and expressionUsesNextval(statement.offset) then return true end if
   for each item in statement.items
     if expressionUsesNextval(item.expression) then return true end if
   end for
@@ -4907,12 +4982,28 @@ end function
 /// NEXTVAL. Transaction-control/session-only statements are handled separately.
 /// @param statement statement value consumed by this operation.
 function statementUsesWriteLock(statement)
-  if ast.isRoutineStatement(statement) then return statement.kind != "SHOW_CREATE_PROCEDURE" and statement.kind != "SHOW_PROCEDURE_STATUS" and statement.kind != "GET_DIAGNOSTICS" end if
+  if ast.isRoutineStatement(statement) then return statement.kind != "SHOW_CREATE_PROCEDURE" and statement.kind != "SHOW_PROCEDURE_STATUS" and statement.kind != "GET_DIAGNOSTICS" and statement.kind != "SHOW_WARNINGS" and statement.kind != "SHOW_ERRORS" end if
   if ast.isSelectStatement(statement) and selectUsesNextval(statement) then return true end if
   if ast.isCallStatement(statement) then return true end if
   if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) or ast.isMergeStatement(statement) or ast.isTruncateStatement(statement) then return true end if
   if ast.isCreateTableStatement(statement) or ast.isCreateIndexStatement(statement) or ast.isDropIndexStatement(statement) or ast.isDropTableStatement(statement) or ast.isAlterTableStatement(statement) or ast.isCreateSchemaStatement(statement) or ast.isDropSchemaStatement(statement) or ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) or ast.isCreateViewStatement(statement) or ast.isDropViewStatement(statement) or ast.isCreateSequenceStatement(statement) or ast.isDropSequenceStatement(statement) or ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) then return true end if
   if ast.isDclStatement(statement) or ast.isAnalyzeStatement(statement) or ast.isVacuumStatement(statement) or ast.isReindexStatement(statement) then return true end if
+  return false
+end function
+
+/// An analyzed read-only CALL needs no logical writer lease or write fence.
+function statementRequiresWrite(engine, statement)
+  if ast.isCallStatement(statement) and engine.routineSession.readOnlyExecution then return false end if
+  return statementUsesWriteLock(statement)
+end function
+
+/// Recognizes a public CALL even when the client used a prepared wrapper.
+function statementCallsRoutine(engine, statement)
+  if ast.isCallStatement(statement) then return true end if
+  if ast.isExecutePreparedStatement(statement) then
+    index = findPreparedIndex(engine, statement.name)
+    if index >= 0 then return ast.isCallStatement(engine.preparedStatements[index].statement) end if
+  end if
   return false
 end function
 
@@ -5043,7 +5134,7 @@ function executeStatementCore(engine, statement)
   end if
   resetQueryMemory(engine)
   if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
-  if database_manager.isStandby(engine.database) and statementUsesWriteLock(statement) then
+  if database_manager.isStandby(engine.database) and statementRequiresWrite(engine, statement) then
     return fail(database_manager.STANDBY_NOT_PROMOTED, "executeStatement", "standby is read-only until promotion")
   end if
   authorized = try(authorizeStatement(engine, statement))
@@ -5051,7 +5142,7 @@ function executeStatementCore(engine, statement)
     ignoredAudit = appendAuditOutcome(engine, statement, false, "authorization error " + authorized.code)
     return authorized
   end if
-  if statementUsesWriteLock(statement) then
+  if statementRequiresWrite(engine, statement) then
     fenced = try(database_manager.validateWriteFence(engine.database))
     if typeof(fenced) == "error" then
       ignoredAudit = appendAuditOutcome(engine, statement, false, "write fence error " + fenced.code)
@@ -5067,7 +5158,7 @@ function executeStatementCore(engine, statement)
       ignoredAudit = appendAuditOutcome(engine, statement, false, "read lock error " + readLease.code)
       return readLease
     end if
-  else if statementUsesWriteLock(statement) then
+  else if statementRequiresWrite(engine, statement) then
     acquired = try(database_manager.acquireWrite(engine.database, engine.sessionId))
     if typeof(acquired) == "error" then
       ignoredAudit = appendAuditOutcome(engine, statement, false, "write lock error " + acquired.code)
@@ -5087,7 +5178,10 @@ function executeStatementCore(engine, statement)
   end if
   if typeof(result) == "error" then
     if writeLease and not engine.explicitTransaction then ignoredRelease = try(database_manager.releaseLocks(engine.database, engine.sessionId)) end if
-    if not ast.isRollbackStatement(statement) then markExplicitFailure(engine) end if
+    if not ast.isRollbackStatement(statement) then
+      preserve = statementCallsRoutine(engine, statement) and routineErrorPreservesTransaction(engine, result)
+      if not preserve then markExplicitFailure(engine) end if
+    end if
     ignoredAudit = appendAuditOutcome(engine, statement, false, "execution error " + result.code)
     return result
   end if
@@ -5096,7 +5190,7 @@ function executeStatementCore(engine, statement)
     invalidatePlanningContext(engine)
   end if
   ignoredAudit = appendAuditOutcome(engine, statement, true, result.command)
-  if not ast.isCallStatement(statement) and not ast.isRoutineStatement(statement) then
+  if not statementCallsRoutine(engine, statement) and not ast.isRoutineStatement(statement) then
     rowCount = result.affectedRows
     if result.kind == RESULT_ROWS then rowCount = -1 end if
     engine.routineSession.diagnostic = routine_state.clearDiagnostic(rowCount)
@@ -5118,15 +5212,27 @@ function executeStatementControlled(engine, statement)
   engine.routineSession.pending = false
   engine.routineSession.outgoingSignal = false
   engine.routineSession.failedResults = []
+  engine.routineSession.outputParameters = []
+  engine.routineSession.streamFailure = false
+  engine.routineSession.callStarted = false
+  engine.routineSession.publicErrorRecorded = false
   validateOpen(engine, "executeStatement")
   polled = try(pollQueryControl(engine, "executeStatement"))
   if typeof(polled) == "error" then return polled end if
   if not ast.isStatement(statement) then return fail(INVALID_ARGUMENT, "executeStatement", "statement must be SQL AST") end if
+  classified = statement
+  classifiedSchema = "public"
   readExecution = statementUsesReadLock(statement)
   if ast.isExecutePreparedStatement(statement) then
     preparedIndex = findPreparedIndex(engine, statement.name)
-    if preparedIndex >= 0 then readExecution = statementUsesReadLock(engine.preparedStatements[preparedIndex].statement) end if
+    if preparedIndex >= 0 then
+      classified = engine.preparedStatements[preparedIndex].statement
+      classifiedSchema = engine.preparedStatements[preparedIndex].schemaName
+      readExecution = statementUsesReadLock(classified)
+    end if
   end if
+  routineCandidate = ast.isCallStatement(classified)
+  if routineCandidate then readExecution = true end if
   repairIndexes = false
   if readExecution then
     entered = try(database_manager.enterReadExecutionControlled(engine.database, engine.sessionId))
@@ -5151,6 +5257,25 @@ function executeStatementControlled(engine, statement)
     entered = try(database_manager.enterExecutionControlled(engine.database, engine.sessionId))
     if typeof(entered) == "error" then return entered end if
   end if
+  // Routine lookup and recursive analysis happen under the shared catalog gate.
+  // A writer may change a definition while we upgrade, but only the exclusive
+  // path follows that upgrade, so no stale proof can execute writes as a reader.
+  if routineCandidate and readExecution then
+    pure = try(routineReadOnlyNode(engine, classified, classifiedSchema, []))
+    if typeof(pure) == "error" then database_manager.leaveReadExecution(engine.database); return pure end if
+    if ast.isExecutePreparedStatement(statement) then
+      for each argument in statement.arguments
+        if not routineReadOnlyExpression(argument) then pure = false end if
+      end for
+    end if
+    if not pure then
+      database_manager.leaveReadExecution(engine.database)
+      upgraded = try(database_manager.enterExecutionControlled(engine.database, engine.sessionId))
+      if typeof(upgraded) == "error" then return upgraded end if
+      readExecution = false
+    end if
+  end if
+  engine.routineSession.readOnlyExecution = routineCandidate and readExecution
   result = void
   if repairIndexes then
     repaired = try(dml.ensureIndexes(engine.database))
@@ -5173,6 +5298,7 @@ function executeStatementControlled(engine, statement)
   else
     released = try(database_manager.leaveExecution(engine.database))
   end if
+  engine.routineSession.readOnlyExecution = false
   if typeof(released) == "error" then return released end if
   polledAfter = try(pollQueryControl(engine, "executeStatement"))
   if typeof(polledAfter) == "error" then return polledAfter end if
@@ -5191,9 +5317,35 @@ function executeStatement(engine, statement)
     startedControl = try(beginQueryControl(engine))
     if typeof(startedControl) == "error" then return startedControl end if
   end if
+  preserveWarnings = ast.isSelectStatement(statement) or (ast.isRoutineStatement(statement) and (statement.kind == "SHOW_WARNINGS" or statement.kind == "SHOW_ERRORS" or statement.kind == "GET_DIAGNOSTICS"))
+  if not preserveWarnings then
+    engine.routineSession.warnings = []
+    engine.routineSession.warningCount = 0
+    engine.routineSession.errorCount = 0
+  end if
   result = try(executeStatementControlled(engine, statement))
+  // SELECT can read the previous warning count, but is not a diagnostic command:
+  // its completed outcome replaces that old list, unlike SHOW/GET DIAGNOSTICS.
+  if ast.isSelectStatement(statement) then clearStatementWarnings(engine) end if
+  if typeof(result) == "error" then
+    recordStatementError(engine, result)
+  end if
   if ownsControl then finishQueryControl(engine) end if
   if typeof(result) != "error" then engine.routineSession.outgoingSignal = false end if
+  return result
+end function
+
+/// Installs one synchronous result consumer; every exit restores the prior owner.
+/// The returned value is the final CALL status. Row batches are sent only once.
+function executeStatementStreaming(engine, statement, sink, context)
+  session = engine.routineSession
+  previousSink = session.sink
+  previousContext = session.sinkContext
+  session.sink = sink
+  session.sinkContext = context
+  result = try(executeStatement(engine, statement))
+  session.sink = previousSink
+  session.sinkContext = previousContext
   return result
 end function
 
@@ -5204,7 +5356,11 @@ end function
 /// @param sqlText sqlText value consumed by this operation.
 function executeSql(engine, sqlText)
   validateOpen(engine, "executeSql")
-  statements = parser.parseSql(sqlText)
+  statements = try(parser.parseSql(sqlText))
+  if typeof(statements) == "error" then
+    recordStatementError(engine, statements, true)
+    return statements
+  end if
   results = []
   for each statement in statements
     engine.activePlanKey = ""
@@ -5555,6 +5711,152 @@ function routineDefinition(procedure)
   return ast.CreateProcedureStatement(schema_history.procedureObjectName(procedure.name), parameters, parsed[0], false, [["SQL SECURITY", "INVOKER"]], false)
 end function
 
+/// Reuses immutable parsed programs while identity, source and persisted context match.
+/// No authorization decision or mutable frame is cached, so REVOKE remains immediate.
+function routineDefinitionCached(engine, procedure)
+  session = engine.routineSession
+  metadataKey = ""
+  for each item in procedure.columnNames
+    metadataKey = metadataKey + len(bytes(item)) + ":" + item
+  end for
+  for each entry in session.definitionCache
+    if entry.id == procedure.viewId and entry.sql == procedure.sqlText and entry.metadata == metadataKey then return entry.definition end if
+  end for
+  definition = routineDefinition(procedure)
+  retained = []
+  for each entry in session.definitionCache
+    if entry.id != procedure.viewId then retained = retained + [entry] end if
+  end for
+  if len(retained) >= PLAN_CACHE_CAPACITY then
+    retained = routine_state.prefix(retained, PLAN_CACHE_CAPACITY - 1)
+  end if
+  session.definitionCache = [routine_state.CachedDefinition(procedure.viewId, procedure.sqlText, metadataKey, definition)] + retained
+  session.definitionParses = session.definitionParses + 1
+  return definition
+end function
+
+/// Proves a procedure tree cannot write database state; characteristics are advisory.
+/// Unknown/dynamic SQL and sequence mutation fall back to exclusive execution.
+function routineReadOnlyNode(engine, statement, schema, visited)
+  if ast.isCallStatement(statement) then
+    for each argument in statement.arguments
+      if not routineReadOnlyExpression(argument) then return false end if
+    end for
+    name = statement.name
+    if splitObjectName(name)[1] == name and schema != "public" then name = schema + "." + name end if
+    state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
+    procedure = schema_history.findProcedure(state, routineCanonicalName(name))
+    if procedure is void then return false end if
+    for each id in visited
+      if id == procedure.viewId then return true end if
+    end for
+    definition = routineDefinitionCached(engine, procedure)
+    return routineReadOnlyNode(engine, definition.body, splitObjectName(definition.name)[0], visited + [procedure.viewId])
+  end if
+  if ast.isRoutineStatement(statement) then
+    kind = statement.kind
+    if kind == "PREPARE_DYNAMIC" or kind == "ALTER_PROCEDURE" then return false end if
+    if kind != "BLOCK" and kind != "DECLARE" and kind != "CONDITION" and kind != "CURSOR" and kind != "HANDLER" and kind != "SET" and kind != "IF" and kind != "CASE" and kind != "WHILE" and kind != "REPEAT" and kind != "LOOP" and kind != "LEAVE" and kind != "ITERATE" and kind != "OPEN" and kind != "FETCH" and kind != "CLOSE" and kind != "SELECT_INTO" and kind != "SIGNAL" and kind != "RESIGNAL" and kind != "GET_DIAGNOSTICS" and kind != "SHOW_WARNINGS" and kind != "SHOW_ERRORS" and kind != "SHOW_CREATE_PROCEDURE" and kind != "SHOW_PROCEDURE_STATUS" then return false end if
+    for each expression in statement.expressions
+      if not routineReadOnlyExpression(expression) then return false end if
+    end for
+    if kind == "CASE" and len(statement.options) > 1 and not routineReadOnlyExpression(statement.options[1]) then return false end if
+    for each child in statement.body
+      if not routineReadOnlyNode(engine, child, schema, visited) then return false end if
+    end for
+    for each child in statement.alternate
+      if not routineReadOnlyNode(engine, child, schema, visited) then return false end if
+    end for
+    return true
+  end if
+  if ast.isSelectStatement(statement) then
+    if selectUsesNextval(statement) then return false end if
+    if ast.isExpression(statement.limit) and not routineReadOnlyExpression(statement.limit) then return false end if
+    if ast.isExpression(statement.offset) and not routineReadOnlyExpression(statement.offset) then return false end if
+    if len(statement.ctes) > 0 then return false end if
+    for each item in statement.items
+      if not routineReadOnlyExpression(item.expression) then return false end if
+    end for
+    if not routineReadOnlyExpression(statement.whereExpression) or not routineReadOnlyExpression(statement.havingExpression) then return false end if
+    for each item in statement.orderBy
+      if not routineReadOnlyExpression(item.expression) then return false end if
+    end for
+    for each expression in statement.groupBy
+      if not routineReadOnlyExpression(expression) then return false end if
+    end for
+    for each operation in statement.setOperations
+      if not routineReadOnlyNode(engine, operation.query, schema, visited) then return false end if
+    end for
+    // Views can hide a sequence expression. Their expansion stays on the writer
+    // path until the generic view planner can prove its complete dependency tree.
+    if statement.tableName is not void then
+      tableName = statement.tableName
+      if typeof(tableName) != "string" then return false end if
+      if splitObjectName(tableName)[1] == tableName and schema != "public" then tableName = schema + "." + tableName end if
+      if catalog.findTable(engine.database.catalogHandle, tableName) is void and splitObjectName(tableName)[0] != "information_schema" then return false end if
+    end if
+    for each joined in statement.joins
+      joinedName = joined.tableName
+      if typeof(joinedName) != "string" then return false end if
+      if splitObjectName(joinedName)[1] == joinedName and schema != "public" then joinedName = schema + "." + joinedName end if
+      if catalog.findTable(engine.database.catalogHandle, joinedName) is void then return false end if
+      if not routineReadOnlyExpression(joined.condition) then return false end if
+    end for
+    return true
+  end if
+  return ast.isMetadataStatement(statement)
+end function
+
+/// Rejects effectful/unsupported cursor probes before any expression is evaluated.
+/// Falling back must never execute a sequence expression a second time.
+function routineCursorProbeSafe(statement)
+  if statement.tableName is void or statement.distinct or len(statement.ctes) > 0 or len(statement.joins) > 0 or len(statement.setOperations) > 0 or len(statement.groupBy) > 0 or len(statement.orderBy) > 0 or statement.havingExpression is not void then return false end if
+  if selectUsesNextval(statement) then return false end if
+  if ast.isExpression(statement.limit) and not routineReadOnlyExpression(statement.limit) then return false end if
+  if ast.isExpression(statement.offset) and not routineReadOnlyExpression(statement.offset) then return false end if
+  for each item in statement.items
+    if not routineReadOnlyExpression(item.expression) then return false end if
+  end for
+  return routineReadOnlyExpression(statement.whereExpression)
+end function
+
+/// Subqueries are conservatively excluded until their expanded view dependencies
+/// can be proven under the same gate; ordinary scalar trees remain eligible.
+function routineReadOnlyExpression(expression)
+  if expression is void then return true end if
+  if expressionUsesNextval(expression) then return false end if
+  if ast.isSubqueryExpression(expression) or ast.isExistsExpression(expression) or ast.isInSubqueryExpression(expression) then return false end if
+  if ast.isUnaryExpression(expression) or ast.isIsNullExpression(expression) or ast.isCastExpression(expression) or ast.isTruthTestExpression(expression) then return routineReadOnlyExpression(expression.operand) end if
+  if ast.isBinaryExpression(expression) then return routineReadOnlyExpression(expression.left) and routineReadOnlyExpression(expression.right) end if
+  if ast.isCaseExpression(expression) then
+    for each branch in expression.branches
+      if not routineReadOnlyExpression(branch.condition) or not routineReadOnlyExpression(branch.result) then return false end if
+    end for
+    return routineReadOnlyExpression(expression.elseExpression)
+  end if
+  if ast.isInExpression(expression) then
+    if not routineReadOnlyExpression(expression.operand) then return false end if
+    for each value in expression.values
+      if not routineReadOnlyExpression(value) then return false end if
+    end for
+  end if
+  if ast.isBetweenExpression(expression) then return routineReadOnlyExpression(expression.operand) and routineReadOnlyExpression(expression.lower) and routineReadOnlyExpression(expression.upper) end if
+  if ast.isFunctionExpression(expression) or ast.isWindowExpression(expression) then
+    for each argument in expression.arguments
+      if not routineReadOnlyExpression(argument) then return false end if
+    end for
+    if ast.isWindowExpression(expression) then
+      for each value in expression.partitionBy
+        if not routineReadOnlyExpression(value) then return false end if
+      end for
+      for each value in expression.orderBy
+        if not routineReadOnlyExpression(value.expression) then return false end if
+      end for
+    end if
+  end if
+  return true
+end function
+
 /// Returns a durable definer identity rather than resolving a potentially reused user name.
 function routineDefinerId(procedure)
   if len(procedure.columnNames) >= 2 and procedure.columnNames[0] == PROCEDURE_METADATA_V2 then return toNumber(procedure.columnNames[1]) end if
@@ -5565,7 +5867,17 @@ end function
 function routineReadVariable(engine, frame, name)
   session = engine.routineSession
   if routine_state.isRecursionName(name) then return values.integer(session.maxRecursionDepth) end if
+  system = routine_state.systemName(name)
+  if system == "warning_count" then return values.integer(session.warningCount) end if
+  if system == "error_count" then return values.integer(session.errorCount) end if
+  if system == "max_error_count" then return values.integer(session.maxErrorCount) end if
+  if system == "sql_mode" then return values.text(session.sqlMode) end if
+  if system == "character_set_client" then return values.text(session.characterSetClient) end if
+  if system == "collation_connection" then return values.text(session.collationConnection) end if
+  if system == "database_collation" then return values.text(session.databaseCollation) end if
+  if system == "automatic_sp_privileges" then return values.boolean(session.automaticSpPrivileges) end if
   if routine_state.isSessionName(name) then
+    if len(bytes(name)) > 1 and bytes(name)[1] == 64 then return routine_state.raise(session, "HY000", 1193, "Unknown system variable: " + name, false) end if
     variable = routine_state.findSessionVariable(session, name)
     if variable is void then return values.nullValue(types.SqlTypeKind.Text) end if
     return variable.value
@@ -5579,9 +5891,58 @@ function routineReadVariable(engine, frame, name)
 end function
 
 /// Coerces routine assignments using the declared SQL type, including MySQL boolean integers.
-function routineConvert(value, typeInfo)
+function routineConvert(engine, value, typeInfo)
   if typeInfo is void then return value end if
+  if types.isTextKind(typeInfo.kind) and (typeInfo.characterSet == "binary" or (typeInfo.characterSet == "" and engine.routineSession.databaseCollation == "binary")) then
+    typeInfo = types.withNullable(typeInfo, typeInfo.nullable)
+    if typeInfo.kind == types.SqlTypeKind.Char then typeInfo.kind = types.SqlTypeKind.Binary end if
+    if typeInfo.kind == types.SqlTypeKind.VarChar then typeInfo.kind = types.SqlTypeKind.VarBinary end if
+    if typeInfo.kind == types.SqlTypeKind.Text then typeInfo.kind = types.SqlTypeKind.Blob end if
+  end if
   if not value.isNull then
+    if types.isTextKind(typeInfo.kind) then
+      if typeof(value.value) != "string" then value = values.cast(value, types.create(types.SqlTypeKind.Text, 0, 0, 0, true)) end if
+      output = value.value
+      charset = typeInfo.characterSet
+      if charset == "" then
+        charset = "utf8mb4"
+        if engine.routineSession.databaseCollation == "utf8_bin" then charset = "utf8" end if
+      end if
+      if charset == "utf8" then
+        for each code in bytes(output)
+          if code >= 240 then return routine_state.raise(engine.routineSession, "22021", 1366, "Character is outside the utf8 three-byte repertoire", false) end if
+        end for
+      end if
+      length = routine_state.characterLength(output)
+      if typeInfo.length > 0 and length > typeInfo.length then
+        if routineStrictMode(engine.routineSession.sqlMode) then return routine_state.raise(engine.routineSession, "22001", 1406, "Data too long for routine character variable", false) end if
+        output = routine_state.characterPrefix(output, typeInfo.length)
+        routineAssignmentWarning(engine, "01000", 1265, "Data truncated for routine character variable")
+      end if
+      return values.of(typeInfo.kind, output)
+    end if
+    if types.isBinaryKind(typeInfo.kind) then
+      output = value.value
+      if typeof(output) != "bytes" then
+        if typeof(output) != "string" then value = values.cast(value, types.create(types.SqlTypeKind.Text, 0, 0, 0, true)) end if
+        output = bytes(value.value)
+      end if
+      if typeInfo.length > 0 and len(output) > typeInfo.length then
+        if routineStrictMode(engine.routineSession.sqlMode) then return routine_state.raise(engine.routineSession, "22001", 1406, "Data too long for routine binary variable", false) end if
+        output = slice(output, 0, typeInfo.length)
+        routineAssignmentWarning(engine, "01000", 1265, "Data truncated for routine binary variable")
+      end if
+      if typeInfo.kind == types.SqlTypeKind.Binary and len(output) < typeInfo.length then
+        padded = bytes(typeInfo.length)
+        if len(output) > 0 then
+          for index = 0 to len(output) - 1
+            padded[index] = output[index]
+          end for
+        end if
+        output = padded
+      end if
+      return values.of(typeInfo.kind, output)
+    end if
     if (typeInfo.kind == types.SqlTypeKind.Integer or typeInfo.kind == types.SqlTypeKind.SmallInt or typeInfo.kind == types.SqlTypeKind.BigInt) and typeof(value.value) == "bool" then
       number = 0
       if value.value then number = 1 end if
@@ -5593,8 +5954,38 @@ function routineConvert(value, typeInfo)
   return values.convert(value, typeInfo)
 end function
 
+/// Applies the subset of SQL modes for which the engine implements semantics.
+function routineStrictMode(mode)
+  return string_api.contains(mode, "STRICT_TRANS_TABLES") or string_api.contains(mode, "STRICT_ALL_TABLES")
+end function
+
+/// Records successful lossy assignment as a catchable warning after assignment.
+function routineAssignmentWarning(engine, state, number, message)
+  session = engine.routineSession
+  preceding = []
+  if session.pending and session.diagnostic.number > 0 then preceding = session.diagnostic.preceding + [session.diagnostic] end if
+  session.diagnostic = routine_state.Diagnostic(state, number, message, [], 0, len(preceding) + 1, false, void, preceding, session.steps)
+  session.pending = true
+  return true
+end function
+
+/// Retains all conditions raised by successful parameter conversion outside a body.
+function routineFlushAssignmentWarnings(engine)
+  session = engine.routineSession
+  if not session.pending then return true end if
+  className = decode(slice(bytes(session.diagnostic.sqlstate), 0, 2))
+  if className != "01" then return true end if
+  for each preceding in session.diagnostic.preceding
+    routine_state.rememberCondition(session, preceding)
+  end for
+  routine_state.rememberCondition(session, session.diagnostic)
+  session.pending = false
+  return true
+end function
+
 /// Validates assignment targets before executing a CALL with output parameters.
 function routineRequireTarget(engine, frame, name)
+  if engine.triggerDepth > 0 and (string_api.startsWith(name, "old.") or string_api.startsWith(name, "new.")) then return routine_state.raise(engine.routineSession, "HY000", 1362, "OLD and NEW rows are read-only in MiniSQL triggers", false) end if
   if routine_state.isSessionName(name) then
     if len(bytes(name)) > 1 and bytes(name)[1] == 64 then return routine_state.raise(engine.routineSession, "42000", 1414, "System variables cannot receive OUT parameters", false) end if
     return true
@@ -5609,11 +6000,58 @@ end function
 /// Assigns through an existing lexical variable or creates a connection-local user variable.
 function routineAssign(engine, frame, name, value)
   session = engine.routineSession
+  if not routine_state.isSessionName(name) then
+    local = routine_state.findQualifiedLocal(frame, name)
+    if local is not void then
+      routineRequireTarget(engine, frame, name)
+      local.value = routineConvert(engine, value, local.typeInfo)
+      return true
+    end if
+  end if
   if routine_state.isRecursionName(name) then
     number = values.asNumber(value)
     if typeof(number) != "int" or number < 0 or number > 255 then return routine_state.raise(session, "42000", 1231, "max_sp_recursion_depth must be between 0 and 255", false) end if
     session.maxRecursionDepth = number
     return true
+  end if
+  system = routine_state.systemName(name)
+  if system != "" then
+    if system == "warning_count" or system == "error_count" or system == "database_collation" then return routine_state.raise(session, "HY000", 1238, "System variable is read-only: " + system, false) end if
+    if system == "max_error_count" then
+      count = values.asNumber(value)
+      if typeof(count) != "int" or count < 0 or count > 65535 then return routine_state.raise(session, "42000", 1231, "max_error_count must be between 0 and 65535", false) end if
+      session.maxErrorCount = count
+      return true
+    end if
+    if system == "automatic_sp_privileges" then
+      if not engine.trusted and not hasDatabaseAdmin(engine) then return permissionFailure("set", "automatic_sp_privileges requires database administration") end if
+      session.automaticSpPrivileges = routineTruth(value)
+      return true
+    end if
+    if value.isNull or typeof(value.value) != "string" then return routine_state.raise(session, "42000", 1231, "System setting requires text: " + system, false) end if
+    if system == "sql_mode" then
+      mode = ""
+      for each item in string_api.split(values.upperAscii(value.value), ",")
+        normalized = string_api.trim(item)
+        if normalized != "" and normalized != "STRICT_TRANS_TABLES" and normalized != "STRICT_ALL_TABLES" then return routine_state.raise(session, "42000", 1231, "Unsupported sql_mode: " + normalized, false) end if
+        if normalized != "" then
+          if mode != "" then mode = mode + "," end if
+          mode = mode + normalized
+        end if
+      end for
+      session.sqlMode = mode
+      return true
+    end if
+    if system == "character_set_client" then
+      if value.value != "utf8mb4" and value.value != "utf8" and value.value != "binary" then return routine_state.raise(session, "42000", 1115, "Unsupported character set", false) end if
+      session.characterSetClient = value.value
+      return true
+    end if
+    if system == "collation_connection" then
+      if value.value != "utf8mb4_bin" and value.value != "utf8_bin" and value.value != "binary" then return routine_state.raise(session, "HY000", 1273, "Unsupported collation", false) end if
+      session.collationConnection = value.value
+      return true
+    end if
   end if
   if routine_state.isSessionName(name) then
     if len(bytes(name)) > 1 and bytes(name)[1] == 64 then return routine_state.raise(session, "HY000", 1193, "Unknown system variable: " + name, false) end if
@@ -5630,7 +6068,7 @@ function routineAssign(engine, frame, name, value)
   qualifier = void
   if parts[1] != name then qualifier = parts[0] end if
   variable = routine_state.findLocal(frame, parts[1], qualifier)
-  variable.value = routineConvert(value, variable.typeInfo)
+  variable.value = routineConvert(engine, value, variable.typeInfo)
   return true
 end function
 
@@ -5664,8 +6102,18 @@ function routineRun(engine, frame, statement)
   polled = try(pollQueryControl(engine, "storedProcedure"))
   if typeof(polled) == "error" then return routine_state.Flow("ERROR", routine_state.fromError(polled)) end if
   result = try(routineExecuteNode(engine, frame, statement))
-  if typeof(result) != "error" then return result end if
   session = engine.routineSession
+  if session.streamFailure then
+    if typeof(result) == "error" then return routine_state.Flow("ERROR", routine_state.fromError(result)) end if
+    return routine_state.Flow("ERROR", session.diagnostic)
+  end if
+  if typeof(result) != "error" then
+    if session.pending then
+      session.pending = false
+      return routineHandle(engine, frame, session.diagnostic)
+    end if
+    return result
+  end if
   diagnostic = session.diagnostic
   if not session.pending then diagnostic = routine_state.fromError(result); diagnostic.serial = session.steps end if
   session.pending = false
@@ -5717,7 +6165,13 @@ function routineHandle(engine, frame, diagnostic)
     end while
   end if
   className = decode(slice(bytes(diagnostic.sqlstate), 0, 2))
-  if className == "01" or (className == "02" and not diagnostic.signaled) then return routineNormal() end if
+  if className == "01" or (className == "02" and not diagnostic.signaled) then
+    for each preceding in diagnostic.preceding
+      routine_state.rememberCondition(session, preceding)
+    end for
+    routine_state.rememberCondition(session, diagnostic)
+    return routineNormal()
+  end if
   return routine_state.Flow("ERROR", diagnostic)
 end function
 
@@ -5730,7 +6184,7 @@ function routineDeclare(engine, frame, statement)
       if existing.name == name then return routine_state.raise(engine.routineSession, "42000", 1331, "Duplicate variable: " + name, false) end if
     end for
     value = values.nullValue(typeInfo.kind)
-    if len(statement.expressions) > 0 then value = routineConvert(routineValue(engine, frame, statement.expressions[0]), typeInfo) end if
+    if len(statement.expressions) > 0 then value = routineConvert(engine, routineValue(engine, frame, statement.expressions[0]), typeInfo) end if
     currentScope.variables = currentScope.variables + [routine_state.Variable(name, typeInfo, value)]
   end for
   return routineNormal()
@@ -5777,7 +6231,16 @@ end function
 
 /// Executes SQL under the CALL's physical gate, with statement rollback for handled DML errors.
 function routineSql(engine, frame, statement)
+  if engine.triggerDepth > 0 then routineCheckTriggerStatement(engine, statement) end if
   rewritten = routineRewriteStatement(statement, engine, frame)
+  if engine.routineSession.sink is not void and ast.isSelectStatement(rewritten) then
+    streamed = routineStreamSelect(engine, rewritten)
+    if streamed then
+      frame.affectedRows = 0
+      engine.routineSession.diagnostic = routine_state.clearDiagnostic(-1)
+      return routineNormal()
+    end if
+  end if
   checkpoint = ""
   transactionStatement = rewritten
   if ast.isExecutePreparedStatement(rewritten) then
@@ -5789,7 +6252,22 @@ function routineSql(engine, frame, statement)
     checkpoint = "__routine_" + engine.routineSession.nextScopeId + "_" + engine.routineSession.steps
     transaction.savepoint(pageTransaction, checkpoint)
   end if
+  wasFailed = engine.failed
   result = try(executeStatementCore(engine, rewritten))
+  if typeof(result) == "error" and result.code == TRANSACTION_STATE and not wasFailed and (ast.isSavepointStatement(rewritten) or ast.isRollbackToStatement(rewritten) or ast.isReleaseSavepointStatement(rewritten)) then
+    // A missing/inaccessible savepoint changes no pages. A handler can continue
+    // in its own level without accidentally poisoning the outer transaction.
+    engine.failed = false
+    if engine.transactionMode == MODE_DML and engine.pageTransaction is not void then engine.pageTransaction.state = transaction.TransactionState.Active end if
+  end if
+  if typeof(result) == "error" and result.code == 9031 and not engine.routineSession.pending and string_api.contains(result.message, "transaction.lock_manager.") then
+    // InnoDB-style deadlock victims lose the complete transaction, even when a
+    // stored handler catches the condition and continues with a new transaction.
+    aborted = try(abortForConcurrency(engine))
+    if typeof(aborted) == "error" then return aborted end if
+    if engine.triggerDepth > 0 then engine.routineSession.streamFailure = true end if
+    checkpoint = ""
+  end if
   if len(checkpoint) > 0 then
     if typeof(result) == "error" then
       restored = try(transaction.rollbackToSavepoint(engine.pageTransaction, checkpoint))
@@ -5801,9 +6279,9 @@ function routineSql(engine, frame, statement)
   end if
   if typeof(result) == "error" then return result end if
   if result.kind == RESULT_ROWS then
-    frame.results = frame.results + [result]
+    routineEmitResult(engine, frame, result)
     if result.command == "INSERT" or result.command == "UPDATE" or result.command == "DELETE" or result.command == "MERGE" then
-      frame.affectedRows = frame.affectedRows + result.affectedRows
+      frame.affectedRows = result.affectedRows
       engine.routineSession.diagnostic = routine_state.clearDiagnostic(result.affectedRows)
     else
       engine.routineSession.diagnostic = routine_state.clearDiagnostic(-1)
@@ -5812,12 +6290,88 @@ function routineSql(engine, frame, statement)
     for each child in result.rows
       if child.kind == RESULT_ROWS then frame.results = frame.results + [child] end if
     end for
-    frame.affectedRows = frame.affectedRows + result.affectedRows
+    frame.affectedRows = result.affectedRows
   else
-    frame.affectedRows = frame.affectedRows + result.affectedRows
+    frame.affectedRows = result.affectedRows
     engine.routineSession.diagnostic = routine_state.clearDiagnostic(result.affectedRows)
   end if
   return routineNormal()
+end function
+
+/// Enforces inherited trigger restrictions before any prohibited statement executes.
+function routineCheckTriggerStatement(engine, statement)
+  session = engine.routineSession
+  if ast.isSelectStatement(statement) or ast.isExplainStatement(statement) or ast.isMetadataStatement(statement) then return routine_state.raise(session, "0A000", 1415, "A trigger cannot return a result set", false) end if
+  if ast.isRoutineStatement(statement) and (statement.kind == "SHOW_WARNINGS" or statement.kind == "SHOW_ERRORS" or statement.kind == "SHOW_CREATE_PROCEDURE" or statement.kind == "SHOW_PROCEDURE_STATUS") then return routine_state.raise(session, "0A000", 1415, "A trigger cannot return a result set", false) end if
+  if ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement) then
+    if len(statement.returning) > 0 then return routine_state.raise(session, "0A000", 1415, "A trigger cannot return a result set", false) end if
+    routineCheckTriggerTarget(engine, statement.tableName)
+    return true
+  end if
+  if ast.isMergeStatement(statement) then routineCheckTriggerTarget(engine, statement.targetTable); return true end if
+  if ast.isPrepareStatement(statement) or ast.isExecutePreparedStatement(statement) or ast.isDeallocateStatement(statement) then return routine_state.raise(session, "0A000", 1336, "Dynamic SQL is not allowed in a trigger", false) end if
+  if ast.isSavepointStatement(statement) or ast.isRollbackToStatement(statement) or ast.isReleaseSavepointStatement(statement) then return true end if
+  return routine_state.raise(session, "2F003", 1422, "Explicit or implicit transaction boundaries are not allowed in a trigger", false)
+end function
+
+/// Rejects changes to every table whose active row trigger led to this statement.
+function routineCheckTriggerTarget(engine, name)
+  if engine.triggerDepth == 0 then return true end if
+  table = catalog.findTable(engine.database.catalogHandle, name)
+  if table is void then return true end if
+  for each tableId in engine.routineSession.triggerTables
+    if table.tableId == tableId then return routine_state.raise(engine.routineSession, "HY000", 1442, "Cannot modify a table already used by the invoking statement", false) end if
+  end for
+  return true
+end function
+
+/// A transport error terminates evaluation and cannot be swallowed by SQL handlers.
+function routineSendBatch(engine, result, resultStart)
+  session = engine.routineSession
+  sink = session.sink
+  sent = try(sink(session.sinkContext, result, resultStart))
+  if typeof(sent) == "error" then
+    session.streamFailure = true
+    session.diagnostic = routine_state.fromError(sent)
+    return sent
+  end if
+  return true
+end function
+
+/// Emits a complete materialized result only when its blocking operator has finished.
+function routineEmitResult(engine, frame, result)
+  if engine.routineSession.sink is void then frame.results = frame.results + [result]; return true end if
+  routineSendBatch(engine, result, true)
+  routineSendBatch(engine, void, false)
+  return true
+end function
+
+/// Streams an eligible SELECT with bounded resident rows while the CALL owns its gate.
+function routineStreamSelect(engine, statement)
+  cursor = openSelectCursor(engine, statement, false)
+  if cursor is void then return false end if
+  first = true
+  failure = void
+  while true
+    batch = try(nextSelectBatch(cursor, EXECUTION_BATCH_ROWS))
+    if typeof(batch) == "error" then failure = batch; break end if
+    if batch is void then
+      if first then
+        empty = rowResult(cursor.bound.itemNames, [])
+        sentEmpty = try(routineSendBatch(engine, empty, true))
+        if typeof(sentEmpty) == "error" then failure = sentEmpty end if
+      end if
+      break
+    end if
+    sent = try(routineSendBatch(engine, batch, first))
+    if typeof(sent) == "error" then failure = sent; break end if
+    first = false
+  end while
+  closed = try(closeSelectCursor(cursor))
+  if failure is not void then return failure end if
+  if typeof(closed) == "error" then return closed end if
+  routineSendBatch(engine, void, false)
+  return true
 end function
 
 /// Assigns one SELECT/FETCH row only after target count and conversions all succeed.
@@ -5832,7 +6386,7 @@ function routineAssignRow(engine, frame, names, row)
       if parts[1] != names[index] then qualifier = parts[0] end if
       variable = routine_state.findLocal(frame, parts[1], qualifier)
       value = row[index]
-      if variable is not void then value = routineConvert(value, variable.typeInfo) end if
+      if variable is not void then value = routineConvert(engine, value, variable.typeInfo) end if
       converted = converted + [value]
     end for
   end if
@@ -5848,7 +6402,12 @@ end function
 function routineSelect(engine, frame, query)
   rewritten = routineRewriteSelect(query, engine, frame)
   authorizeStatement(engine, rewritten)
-  return executeSelect(engine, rewritten)
+  lease = database_manager.acquireStatementRead(engine.database, engine.sessionId, statementIsolation(engine))
+  result = try(executeSelect(engine, rewritten))
+  released = try(database_manager.finishStatement(engine.database, lease))
+  if typeof(result) == "error" then return result end if
+  if typeof(released) == "error" then return released end if
+  return result
 end function
 
 /// Raises SIGNAL/RESIGNAL while preserving the stacked condition and optional information fields.
@@ -5887,13 +6446,17 @@ function routineSignal(engine, frame, statement)
         if typeof(number) != "int" or number < 1 or number > 65535 then return routine_state.raise(session, "42000", 1231, "MYSQL_ERRNO must be between 1 and 65535", false) end if
         diagnostic.errno = number
       else if name == "MESSAGE_TEXT" then
-        if typeof(value.value) != "string" or len(bytes(value.value)) > 128 then return routine_state.raise(session, "42000", 1648, "MESSAGE_TEXT must be at most 128 bytes", false) end if
+        if typeof(value.value) != "string" or routine_state.characterLength(value.value) > 128 then return routine_state.raise(session, "42000", 1648, "MESSAGE_TEXT must be at most 128 characters", false) end if
         diagnostic.message = value.value
       else
+        if typeof(value.value) != "string" or routine_state.characterLength(value.value) > 64 then return routine_state.raise(session, "42000", 1648, "SIGNAL condition items must be at most 64 characters", false) end if
         diagnostic.items = diagnostic.items + [[name, value]]
       end if
     end for
   end if
+  diagnostic.rowCount = -1
+  conditionClass = decode(slice(bytes(diagnostic.sqlstate), 0, 2))
+  if conditionClass == "01" or conditionClass == "02" then diagnostic.rowCount = 0 end if
   session.diagnostic = diagnostic
   session.pending = true
   return error(diagnostic.errno, "SQLSTATE " + diagnostic.sqlstate + ": " + diagnostic.message)
@@ -5922,6 +6485,7 @@ end function
 
 /// SQL PREPARE has session lifetime and never captures a routine's local frame.
 function routinePrepare(engine, frame, statement)
+  if engine.triggerDepth > 0 then return routine_state.raise(engine.routineSession, "0A000", 1336, "Dynamic SQL is not allowed in a trigger", false) end if
   existing = findPreparedIndex(engine, statement.name)
   if existing >= 0 then executeDeallocate(engine, ast.DeallocateStatement(statement.name)) end if
   source = routineValue(engine, frame, statement.expressions[0])
@@ -5951,6 +6515,7 @@ function routineExecuteNode(engine, frame, statement)
     return routineSql(engine, frame, statement)
   end if
   kind = statement.kind
+  if kind == "SHOW_WARNINGS" or kind == "SHOW_ERRORS" or kind == "SHOW_CREATE_PROCEDURE" or kind == "SHOW_PROCEDURE_STATUS" or kind == "ALTER_PROCEDURE" then return routineSql(engine, frame, statement) end if
   if kind == "BLOCK" then return routineBlock(engine, frame, statement) end if
   if kind == "DECLARE" then return routineDeclare(engine, frame, statement) end if
   if kind == "SET" then
@@ -5959,7 +6524,7 @@ function routineExecuteNode(engine, frame, statement)
         routineAssign(engine, frame, statement.names[index], routineValue(engine, frame, statement.expressions[index]))
       end for
     end if
-    engine.routineSession.diagnostic = routine_state.clearDiagnostic(0)
+    if not engine.routineSession.pending then engine.routineSession.diagnostic = routine_state.clearDiagnostic(0) end if
     return routineNormal()
   end if
   if kind == "IF" or kind == "CASE" then
@@ -6056,12 +6621,61 @@ function routineExecuteNode(engine, frame, statement)
   return fail(UNSUPPORTED_SQL, "routine", "unsupported procedural statement " + kind)
 end function
 
-/// Verifies routine DDL permissions using the existing CREATE compatibility grant.
+/// Retrieves persisted execution context while leaving legacy fallback policy explicit.
+/// @param procedure Persisted routine record.
+/// @param key One of the documented lower-case context attribute names.
+/// @param fallback Value used only when the old record has no such attribute.
+function routineStoredContext(procedure, key, fallback)
+  value = schema_history.routineAttribute(procedure, key)
+  if value is void then return fallback end if
+  return value
+end function
+
+/// Captures DDL timestamps and execution context without reconstructing unknown history.
+/// ALTER preserves creation-time character settings, but records its current SQL mode.
+/// @param engine Active execution context used by the definition statement.
+/// @param definerId Durable identity retained through ALTER/OR REPLACE.
+/// @param existing Prior definition, or void for a first creation.
+/// @param altering True for ALTER characteristics; false for CREATE/OR REPLACE.
+function routinePersistedMetadata(engine, definerId, existing, altering)
+  now = schema_history.routineNowMicros()
+  created = schema_history.routineAttribute(existing, "created")
+  if existing is void then created = now end if
+  attributes = []
+  if created is not void then attributes = attributes + ["created", created] end if
+  attributes = attributes + ["last_altered", now, "sql_mode", engine.routineSession.sqlMode]
+  if altering then
+    for each key in ["character_set_client", "collation_connection", "database_collation"]
+      value = schema_history.routineAttribute(existing, key)
+      if value is not void then attributes = attributes + [key, value] end if
+    end for
+  else
+    attributes = attributes + ["character_set_client", engine.routineSession.characterSetClient, "collation_connection", engine.routineSession.collationConnection, "database_collation", engine.routineSession.databaseCollation]
+  end if
+  return schema_history.routineMetadata(definerId, attributes)
+end function
+
+/// Requires the dedicated routine privilege; generic CREATE does not authorize programs.
+/// @param engine Authenticated security context for the DDL statement.
+/// @param statement CREATE, ALTER, or DROP PROCEDURE syntax tree.
 function routineAuthorizeDdl(engine, statement)
-  if engine.trusted then return true end if
+  if engine.trusted or hasDatabaseAdmin(engine) then return true end if
   if ast.isCreateProcedureStatement(statement) then
-    if hasDatabaseAdmin(engine) or catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE, false) or catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE_ROUTINE, false) then return true end if
-    return permissionFailure("createRoutine", "CREATE ROUTINE privilege is required")
+    requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE_ROUTINE, "createRoutine")
+    if statement.replace then
+      existing = routineFind(engine, statement.name)
+      if existing is not void then requirePrivilege(engine, metadata.OBJECT_PROCEDURE, existing.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, "replaceProcedure") end if
+    end if
+    requested = routine_state.characteristic(statement.characteristics, "DEFINER", "CURRENT_USER")
+    if requested != "CURRENT_USER" then
+      definer = catalog.findPrincipal(engine.database.catalogHandle, requested)
+      if definer is void or not definer.enabled or definer.principalKind != metadata.PRINCIPAL_USER then return routine_state.raise(engine.routineSession, "HY000", 1449, "Definer account does not exist or is disabled", false) end if
+      if definer.principalId != engine.principalId then
+        requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_SET_ANY_DEFINER, "setRoutineDefiner")
+        if definer.superuser then return permissionFailure("setRoutineDefiner", "administration is required to select a superuser definer") end if
+      end if
+    end if
+    return true
   end if
   procedure = routineFind(engine, statement.name)
   if procedure is void and ast.isDropProcedureStatement(statement) and statement.ifExists then return true end if
@@ -6069,10 +6683,14 @@ function routineAuthorizeDdl(engine, statement)
   return requirePrivilege(engine, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, "alterRoutine")
 end function
 
-/// Persists canonical CREATE text and security identity while retaining legacy readers.
+/// Persists canonical SQL, immutable identity, timestamps and supported execution context.
+/// @param engine Open database engine; authorized routine DDL commits an active transaction.
+/// @param statement Parsed CREATE, ALTER, or DROP PROCEDURE statement.
 function executeRoutineDdl(engine, statement)
-  if engine.explicitTransaction then return fail(UNSUPPORTED_SQL, "routineDdl", "routine DDL is autocommit-only") end if
   routineAuthorizeDdl(engine, statement)
+  // Authorization must precede the implicit commit: a rejected privilege
+  // check cannot publish unrelated changes made by the same session.
+  if engine.explicitTransaction then commitExplicit(engine) end if
   name = routineCanonicalName(routineObjectName(statement.name, routine_state.currentFrame(engine.routineSession)))
   databaseId = engine.database.catalogHandle.metadata.databaseId
   state = schema_history.loadOrCreate(engine.database.path, databaseId)
@@ -6094,14 +6712,15 @@ function executeRoutineDdl(engine, statement)
       principal = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, definerId)
       definition.characteristics = routine_state.putCharacteristic(definition.characteristics, "DEFINER", principal.name)
     end if
-    schema_history.putProcedure(engine.database.path, databaseId, name, ast.formatStatement(definition), [PROCEDURE_METADATA_V2, "" + definerId], true)
+    context = routinePersistedMetadata(engine, definerId, existing, true)
+    schema_history.putProcedure(engine.database.path, databaseId, name, ast.formatStatement(definition), context, true)
     return commandResult("ALTER PROCEDURE", 0, name)
   end if
   requireObjectSchema(engine, name, "createProcedure")
   if existing is not void then
     if statement.ifNotExists then return commandResult("CREATE PROCEDURE", 0, "Procedure already exists: " + name) end if
     if not statement.replace then return routine_state.raise(engine.routineSession, "42000", 1304, "Procedure already exists: " + name, false) end if
-    requirePrivilege(engine, metadata.OBJECT_PROCEDURE, existing.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, "replaceProcedure")
+    if not hasDatabaseAdmin(engine) then requirePrivilege(engine, metadata.OBJECT_PROCEDURE, existing.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, "replaceProcedure") end if
   end if
   routine_state.validateDefinition(statement)
   creator = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, engine.principalId)
@@ -6110,15 +6729,19 @@ function executeRoutineDdl(engine, statement)
   if requested != "CURRENT_USER" then
     definer = catalog.findPrincipal(engine.database.catalogHandle, requested)
     if definer is void or not definer.enabled or definer.principalKind != metadata.PRINCIPAL_USER then return routine_state.raise(engine.routineSession, "HY000", 1449, "Definer account does not exist or is disabled", false) end if
-    if definer.principalId != engine.principalId then requireSecurityAdmin(engine, "setRoutineDefiner") end if
+    if definer.principalId != engine.principalId and not hasDatabaseAdmin(engine) then
+      requirePrivilege(engine, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_SET_ANY_DEFINER, "setRoutineDefiner")
+      if definer.superuser then return permissionFailure("setRoutineDefiner", "administration is required to select a superuser definer") end if
+    end if
   end if
   if definer is void then return fail(AUTHENTICATION_REQUIRED, "createProcedure", "creator principal is missing") end if
   characteristics = routine_state.putCharacteristic(statement.characteristics, "DEFINER", definer.name)
   definition = ast.CreateProcedureStatement(name, statement.parameters, statement.body, false, characteristics, false)
   canonicalSql = ast.formatStatement(definition)
   checkedDefinition = parser.parseSql(canonicalSql)
-  saved = schema_history.putProcedure(engine.database.path, databaseId, name, canonicalSql, [PROCEDURE_METADATA_V2, "" + definer.principalId], statement.replace)
-  if creator is not void then catalog.grantPrivileges(engine.database.catalogHandle, creator.name, creator.principalId, metadata.OBJECT_PROCEDURE, saved.viewId, [metadata.PRIVILEGE_EXECUTE, metadata.PRIVILEGE_ALTER_ROUTINE], false) end if
+  context = routinePersistedMetadata(engine, definer.principalId, existing, false)
+  saved = schema_history.putProcedure(engine.database.path, databaseId, name, canonicalSql, context, statement.replace)
+  if creator is not void and engine.routineSession.automaticSpPrivileges then catalog.grantPrivileges(engine.database.catalogHandle, creator.name, creator.principalId, metadata.OBJECT_PROCEDURE, saved.viewId, [metadata.PRIVILEGE_EXECUTE, metadata.PRIVILEGE_ALTER_ROUTINE], false) end if
   return commandResult("CREATE PROCEDURE", 0, name)
 end function
 
@@ -6128,7 +6751,7 @@ function executeRoutineCall(engine, statement)
   caller = routine_state.currentFrame(session)
   procedure = routineFind(engine, statement.name)
   if procedure is void then return routine_state.raise(session, "42000", 1305, "Procedure does not exist: " + statement.name, false) end if
-  definition = routineDefinition(procedure)
+  definition = routineDefinitionCached(engine, procedure)
   if len(procedure.columnNames) > 0 and procedure.columnNames[0] == PROCEDURE_METADATA_V2 then requirePrivilege(engine, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_EXECUTE, "call") end if
   if len(definition.parameters) != len(statement.arguments) then return routine_state.raise(session, "42000", 1318, "Incorrect number of arguments for " + definition.name, false) end if
   recursiveDepth = 0
@@ -6136,13 +6759,22 @@ function executeRoutineCall(engine, statement)
     if active.name == definition.name then recursiveDepth = recursiveDepth + 1 end if
   end for
   if recursiveDepth > session.maxRecursionDepth or len(session.frames) >= 256 then return routine_state.raise(session, "HY000", 1456, "Recursive limit exceeded for procedure " + definition.name, false) end if
+  session.callStarted = true
   parameterScope = routine_state.scope(session, splitObjectName(definition.name)[1])
   destinations = []
   if len(definition.parameters) > 0 then
     for index = 0 to len(definition.parameters) - 1
       parameter = definition.parameters[index]
       typeInfo = void
-      if parameter.typeName is not void then typeInfo = types.fromTypeName(parameter.typeName, true) end if
+      if parameter.typeName is not void then
+        typeInfo = types.fromTypeName(parameter.typeName, true)
+        if types.isTextKind(typeInfo.kind) and typeInfo.characterSet == "" then
+          typeInfo.collation = routineStoredContext(procedure, "database_collation", session.databaseCollation)
+          typeInfo.characterSet = "utf8mb4"
+          if typeInfo.collation == "utf8_bin" then typeInfo.characterSet = "utf8" end if
+          if typeInfo.collation == "binary" then typeInfo.characterSet = "binary" end if
+        end if
+      end if
       argument = statement.arguments[index]
       destination = ""
       if parameter.mode == "OUT" or parameter.mode == "INOUT" then
@@ -6153,26 +6785,46 @@ function executeRoutineCall(engine, statement)
       end if
       value = values.nullValue(types.SqlTypeKind.Text)
       if typeInfo is not void then value = values.nullValue(typeInfo.kind) end if
-      if parameter.mode != "OUT" then value = routineConvert(routineValue(engine, caller, argument), typeInfo) end if
+      if parameter.mode != "OUT" then value = routineConvert(engine, routineValue(engine, caller, argument), typeInfo) end if
       parameterScope.variables = parameterScope.variables + [routine_state.Variable(parameter.name, typeInfo, value)]
       destinations = destinations + [destination]
     end for
   end if
   originalPrincipal = engine.principalId
+  routineFlushAssignmentWarnings(engine)
   originalTrusted = engine.trusted
+  originalMode = session.sqlMode
+  originalCharset = session.characterSetClient
+  originalCollation = session.collationConnection
+  originalDatabaseCollation = session.databaseCollation
+  // Corrupt persisted context must fail before acquiring a definer's authority.
+  storedMode = routineStoredContext(procedure, "sql_mode", originalMode)
+  storedCharset = routineStoredContext(procedure, "character_set_client", originalCharset)
+  storedCollation = routineStoredContext(procedure, "collation_connection", originalCollation)
+  storedDatabaseCollation = routineStoredContext(procedure, "database_collation", originalDatabaseCollation)
   security = routine_state.characteristic(definition.characteristics, "SQL SECURITY", "DEFINER")
   if security == "DEFINER" then
     definer = catalog.findPrincipalByIdInState(engine.database.catalogHandle.security, routineDefinerId(procedure))
     if definer is void or not definer.enabled then return routine_state.raise(session, "HY000", 1449, "Stored procedure definer no longer exists or is disabled", false) end if
+    if not catalog.hasPrivilege(databaseHandle(engine), definer.principalId, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_EXECUTE, false) then return permissionFailure("call", "EXECUTE privilege is required for the stored procedure definer") end if
     engine.principalId = definer.principalId
     engine.trusted = false
   end if
+  session.sqlMode = storedMode
+  session.characterSetClient = storedCharset
+  session.collationConnection = storedCollation
+  session.databaseCollation = storedDatabaseCollation
+  session.diagnostic = routine_state.clearDiagnostic(0)
   frame = routine_state.Frame(definition.name, [parameterScope], [], 0, splitObjectName(definition.name)[0], [])
   session.frames = session.frames + [frame]
   flow = try(routineRun(engine, frame, definition.body))
   session.frames = routine_state.prefix(session.frames, len(session.frames) - 1)
   engine.principalId = originalPrincipal
   engine.trusted = originalTrusted
+  session.sqlMode = originalMode
+  session.characterSetClient = originalCharset
+  session.collationConnection = originalCollation
+  session.databaseCollation = originalDatabaseCollation
   if typeof(flow) == "error" then return flow end if
   if flow.kind == "ERROR" then
     session.diagnostic = flow.target
@@ -6196,7 +6848,7 @@ function executeRoutineCall(engine, statement)
         qualifier = void
         if parts[1] != destinations[index] then qualifier = parts[0] end if
         target = routine_state.findLocal(caller, parts[1], qualifier)
-        if target is not void then value = routineConvert(value, target.typeInfo) end if
+        if target is not void then value = routineConvert(engine, value, target.typeInfo) end if
       end if
       outputValues = outputValues + [value]
     end for
@@ -6206,62 +6858,193 @@ function executeRoutineCall(engine, statement)
       if len(destinations[index]) > 0 then routineAssign(engine, caller, destinations[index], outputValues[index]) end if
     end for
   end if
+  if caller is void then
+    routineFlushAssignmentWarnings(engine)
+    session.outputParameters = []
+    if len(destinations) > 0 then
+      for index = 0 to len(destinations) - 1
+        if len(destinations[index]) > 0 then
+          scale = 0
+          if parameterScope.variables[index].typeInfo is not void then scale = parameterScope.variables[index].typeInfo.scale end if
+          session.outputParameters = session.outputParameters + [[index + 1, definition.parameters[index].name, outputValues[index], scale]]
+        end if
+      end for
+    end if
+  end if
+  frame.affectedRows = session.diagnostic.rowCount
+  if frame.affectedRows < 0 then frame.affectedRows = 0 end if
   status = commandResult("CALL", frame.affectedRows, definition.name)
   if len(frame.results) == 0 then return status end if
   return QueryResult(RESULT_MULTIPLE, "CALL", [], frame.results + [status], frame.affectedRows, definition.name)
 end function
 
-/// Exposes one routine's persisted attributes in INFORMATION_SCHEMA column order.
-function routineInformationRow(procedure)
+/// Converts an optional persisted string to SQL NULL without inventing legacy context.
+/// @param value Native string or void from the durable routine metadata reader.
+function routineMetadataText(value)
+  if value is void then return values.nullValue(types.SqlTypeKind.Text) end if
+  return values.text(value)
+end function
+
+/// Exposes an actual UTC timestamp using MiniSQL's epoch-microsecond SQL representation.
+/// @param procedure Persisted routine record.
+/// @param key The created or last_altered attribute name.
+function routineMetadataTimestamp(procedure, key)
+  value = schema_history.routineAttribute(procedure, key)
+  if value is void then return values.nullValue(types.SqlTypeKind.Timestamp) end if
+  return values.of(types.SqlTypeKind.Timestamp, endian.int64FromInt(toNumber(value)))
+end function
+
+/// Separates definition-reading privileges from the ability to invoke or alter a routine.
+/// @param engine Effective authenticated principal used for this metadata query.
+/// @param procedure Persisted procedure identified by durable object and definer IDs.
+function routineDefinitionVisible(engine, procedure)
+  if engine.trusted or hasDatabaseAdmin(engine) then return true end if
+  if routineDefinerId(procedure) == engine.principalId then return true end if
+  database = databaseHandle(engine)
+  return catalog.hasPrivilege(database, engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_SHOW_ROUTINE, false) or catalog.hasPrivilege(database, engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_SELECT, false)
+end function
+
+/// Allows scoped routine metadata without implicitly revealing the routine body.
+/// @param engine Effective authenticated principal used for this metadata query.
+/// @param procedure Persisted procedure to inspect.
+function routineVisible(engine, procedure)
+  if routineDefinitionVisible(engine, procedure) then return true end if
+  database = databaseHandle(engine)
+  return catalog.hasPrivilege(database, engine.principalId, metadata.OBJECT_DATABASE, 0, metadata.PRIVILEGE_CREATE_ROUTINE, false) or catalog.hasPrivilege(database, engine.principalId, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_EXECUTE, false) or catalog.hasPrivilege(database, engine.principalId, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, false)
+end function
+
+/// Exposes all ROUTINES columns in MySQL order; function-only attributes remain NULL/empty.
+/// @param engine Effective authenticated principal for definition visibility.
+/// @param procedure Persisted routine record with optional historical execution context.
+function routineInformationRow(engine, procedure)
   definition = routineDefinition(procedure)
   parts = splitObjectName(definition.name)
   characteristics = definition.characteristics
-  return [values.text(parts[0]), values.text(parts[1]), values.text("PROCEDURE"), values.text(ast.formatStatement(definition.body)), values.text(routine_state.characteristic(characteristics, "SQL SECURITY", "DEFINER")), values.text(routine_state.characteristic(characteristics, "DEFINER", "")), values.text(routine_state.characteristic(characteristics, "DETERMINISTIC", "NO")), values.text(routine_state.characteristic(characteristics, "SQL DATA ACCESS", "CONTAINS SQL")), values.text(routine_state.characteristic(characteristics, "COMMENT", ""))]
+  source = values.nullValue(types.SqlTypeKind.Text)
+  if routineDefinitionVisible(engine, procedure) then source = values.text(ast.formatStatement(definition.body)) end if
+  absentNumber = values.nullValue(types.SqlTypeKind.Integer)
+  absentText = values.nullValue(types.SqlTypeKind.Text)
+  row = [values.text(parts[1]), values.text("def"), values.text(parts[0]), values.text(parts[1]), values.text("PROCEDURE"), values.text("")]
+  row = row + [absentNumber, absentNumber, absentNumber, absentNumber, absentNumber, absentText, absentText, values.text("")]
+  row = row + [values.text("SQL"), source, absentText, values.text("SQL"), values.text("SQL")]
+  row = row + [values.text(routine_state.characteristic(characteristics, "DETERMINISTIC", "NO")), values.text(routine_state.characteristic(characteristics, "SQL DATA ACCESS", "CONTAINS SQL")), absentText]
+  row = row + [values.text(routine_state.characteristic(characteristics, "SQL SECURITY", "DEFINER")), routineMetadataTimestamp(procedure, "created"), routineMetadataTimestamp(procedure, "last_altered")]
+  row = row + [routineMetadataText(schema_history.routineAttribute(procedure, "sql_mode")), values.text(routine_state.characteristic(characteristics, "COMMENT", "")), values.text(routine_state.characteristic(characteristics, "DEFINER", ""))]
+  return row + [routineMetadataText(schema_history.routineAttribute(procedure, "character_set_client")), routineMetadataText(schema_history.routineAttribute(procedure, "collation_connection")), routineMetadataText(schema_history.routineAttribute(procedure, "database_collation"))]
 end function
 
-/// Restricts routine source/metadata visibility to authorized callers and administrators.
-function routineVisible(engine, procedure)
-  if engine.trusted or hasDatabaseAdmin(engine) then return true end if
-  return catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_EXECUTE, false) or catalog.hasPrivilege(databaseHandle(engine), engine.principalId, metadata.OBJECT_PROCEDURE, procedure.viewId, metadata.PRIVILEGE_ALTER_ROUTINE, false)
+/// Derives the supported character set from a binary collation, preserving unknown history.
+/// @param collation Explicit or creation-time database collation, or void for legacy records.
+function routineMetadataCharacterSet(collation)
+  if collation == "utf8mb4_bin" then return "utf8mb4" end if
+  if collation == "utf8_bin" or collation == "utf8mb3_bin" then return "utf8" end if
+  if collation == "binary" then return "binary" end if
+  return void
 end function
 
-/// Implements SHOW CREATE/STATUS without treating source text as executable SQL.
+/// Returns a parameter's complete type metadata, using its type family rather than syntax slots.
+/// @param procedure Persisted routine supplying creation-time default collation.
+/// @param definition Parsed CREATE PROCEDURE syntax tree.
+/// @param parameter One typed parameter declaration, including direction and text attributes.
+/// @param ordinal One-based parameter position; procedures have no return-value row.
+function routineParameterInformationRow(procedure, definition, parameter, ordinal)
+  parts = splitObjectName(definition.name)
+  typeName = parameter.typeName
+  if typeName is void then typeName = ast.typeName("TEXT", 0, 0, 0) end if
+  sqlType = types.fromTypeName(typeName, true)
+  maximum = values.nullValue(types.SqlTypeKind.Integer)
+  octets = values.nullValue(types.SqlTypeKind.Integer)
+  precision = values.nullValue(types.SqlTypeKind.Integer)
+  scale = values.nullValue(types.SqlTypeKind.Integer)
+  datePrecision = values.nullValue(types.SqlTypeKind.Integer)
+  characterSet = void
+  collation = void
+  if types.isTextKind(sqlType.kind) then
+    characterSet = typeName.characterSet
+    collation = typeName.collation
+    if len(collation) == 0 then
+      if characterSet == "utf8mb4" then collation = "utf8mb4_bin" end if
+      if characterSet == "utf8" then collation = "utf8_bin" end if
+      if characterSet == "binary" then collation = "binary" end if
+      if len(collation) == 0 then collation = schema_history.routineAttribute(procedure, "database_collation") end if
+    end if
+    if len(characterSet) == 0 then characterSet = routineMetadataCharacterSet(collation) end if
+    if sqlType.length > 0 then
+      maximum = values.integer(sqlType.length)
+      width = 0
+      if characterSet == "utf8mb4" then width = 4 end if
+      if characterSet == "utf8" then width = 3 end if
+      if characterSet == "binary" then width = 1 end if
+      if width > 0 then octets = values.integer(sqlType.length * width) end if
+    end if
+  else if types.isBinaryKind(sqlType.kind) then
+    if sqlType.length > 0 then maximum = values.integer(sqlType.length); octets = values.integer(sqlType.length) end if
+  else if sqlType.kind == types.SqlTypeKind.Boolean then
+    precision = values.integer(1)
+    scale = values.integer(0)
+  else if types.isIntegralKind(sqlType.kind) then
+    digits = 19
+    if sqlType.kind == types.SqlTypeKind.SmallInt then digits = 5 end if
+    if sqlType.kind == types.SqlTypeKind.Integer then digits = 10 end if
+    precision = values.integer(digits)
+    scale = values.integer(0)
+  else if sqlType.kind == types.SqlTypeKind.Decimal then
+    precision = values.integer(sqlType.precision)
+    scale = values.integer(sqlType.scale)
+  else if sqlType.kind == types.SqlTypeKind.Real then
+    precision = values.integer(12)
+  else if sqlType.kind == types.SqlTypeKind.Double then
+    precision = values.integer(22)
+  else if sqlType.kind == types.SqlTypeKind.Time or sqlType.kind == types.SqlTypeKind.Timestamp then
+    datePrecision = values.integer(sqlType.precision)
+  end if
+  baseType = ast.typeName(typeName.name, typeName.length, typeName.precision, typeName.scale)
+  if types.isBinaryKind(sqlType.kind) then baseType.name = types.kindName(sqlType.kind); baseType.length = sqlType.length end if
+  if sqlType.kind == types.SqlTypeKind.Decimal then baseType.precision = sqlType.precision; baseType.scale = sqlType.scale end if
+  row = [values.text("def"), values.text(parts[0]), values.text(parts[1]), values.integer(ordinal), values.text(parameter.mode), values.text(parameter.name), values.text(types.kindName(sqlType.kind))]
+  return row + [maximum, octets, precision, scale, datePrecision, routineMetadataText(characterSet), routineMetadataText(collation), values.text(ast.formatTypeName(baseType)), values.text("PROCEDURE")]
+end function
+
+/// Implements complete SHOW CREATE/STATUS layouts with independent source access checks.
+/// @param engine Effective authenticated context for metadata and source visibility.
+/// @param statement SHOW CREATE PROCEDURE or SHOW PROCEDURE STATUS syntax tree.
 function routineShow(engine, statement)
   rows = []
-  columns = []
   if statement.kind == "SHOW_CREATE_PROCEDURE" then
     procedure = routineFind(engine, statement.name)
     if procedure is void then return routine_state.raise(engine.routineSession, "42000", 1305, "Procedure does not exist", false) end if
     if not routineVisible(engine, procedure) then return permissionFailure("showCreateProcedure", "routine privileges are required") end if
     definition = routineDefinition(procedure)
-    for each name in ["Procedure", "Create Procedure"]
-      columns = columns + [name]
-    end for
-    return rowResult(columns, [[values.text(definition.name), values.text(ast.formatStatement(definition))]])
+    source = values.nullValue(types.SqlTypeKind.Text)
+    if routineDefinitionVisible(engine, procedure) then source = values.text(ast.formatStatement(definition)) end if
+    columns = ["Procedure", "sql_mode", "Create Procedure", "character_set_client", "collation_connection", "Database Collation"]
+    row = [values.text(splitObjectName(definition.name)[1]), routineMetadataText(schema_history.routineAttribute(procedure, "sql_mode")), source]
+    row = row + [routineMetadataText(schema_history.routineAttribute(procedure, "character_set_client")), routineMetadataText(schema_history.routineAttribute(procedure, "collation_connection")), routineMetadataText(schema_history.routineAttribute(procedure, "database_collation"))]
+    return rowResult(columns, [row])
   end if
+  columns = ["Db", "Name", "Type", "Definer", "Modified", "Created", "Security_type", "Comment", "character_set_client", "collation_connection", "Database Collation"]
+  filterNames = ["db", "name", "type", "definer", "modified", "created", "security_type", "comment", "character_set_client", "collation_connection", "database collation"]
   state = schema_history.loadOrCreate(engine.database.path, engine.database.catalogHandle.metadata.databaseId)
-  for each name in ["Db", "Name", "Type", "Definer", "Security_type", "Comment"]
-    columns = columns + [name]
-  end for
   for each procedure in state.views
     if schema_history.isProcedureMarkerName(procedure.name) and routineVisible(engine, procedure) then
-      information = routineInformationRow(procedure)
+      information = routineInformationRow(engine, procedure)
+      modified = routineMetadataText(schema_history.routineTimestampText(schema_history.routineAttribute(procedure, "last_altered")))
+      created = routineMetadataText(schema_history.routineTimestampText(schema_history.routineAttribute(procedure, "created")))
+      row = [information[2], information[3], information[4], information[27], modified, created, information[22], information[26], information[28], information[29], information[30]]
       include = true
       if statement.name == "LIKE" then
-        predicate = ast.binaryExpression("LIKE", ast.typedLiteralExpression(information[1]), statement.expressions[0])
+        predicate = ast.binaryExpression("LIKE", ast.typedLiteralExpression(row[1]), statement.expressions[0])
         include = routineTruth(routineValue(engine, void, predicate))
       end if
       if statement.name == "WHERE" then
         filterScope = routine_state.scope(engine.routineSession, "")
-        filterNames = ["db", "name", "type", "definer", "security_type", "comment"]
-        filterValues = [information[0], information[1], information[2], information[5], information[4], information[8]]
-        for index = 0 to 5
-          filterScope.variables = filterScope.variables + [routine_state.Variable(filterNames[index], void, filterValues[index])]
+        for index = 0 to len(filterNames) - 1
+          filterScope.variables = filterScope.variables + [routine_state.Variable(filterNames[index], void, row[index])]
         end for
         filterFrame = routine_state.Frame("", [filterScope], [], 0, "public", [])
         include = routineTruth(routineValue(engine, filterFrame, statement.expressions[0]))
       end if
-      if include then rows = rows + [[information[0], information[1], information[2], information[5], information[4], information[8]]] end if
+      if include then rows = rows + [row] end if
     end if
   end for
   return rowResult(columns, rows)
@@ -6271,6 +7054,7 @@ end function
 function executeRoutineStatement(engine, statement)
   if statement.kind == "ALTER_PROCEDURE" then return executeRoutineDdl(engine, statement) end if
   if statement.kind == "SHOW_CREATE_PROCEDURE" or statement.kind == "SHOW_PROCEDURE_STATUS" then return routineShow(engine, statement) end if
+  if statement.kind == "SHOW_WARNINGS" or statement.kind == "SHOW_ERRORS" then return routineShowWarnings(engine, statement) end if
   if statement.kind != "SET" and statement.kind != "SELECT_INTO" and statement.kind != "SIGNAL" and statement.kind != "RESIGNAL" and statement.kind != "GET_DIAGNOSTICS" and statement.kind != "PREPARE_DYNAMIC" then return fail(UNSUPPORTED_SQL, "routine", "statement is only allowed inside a procedure") end if
   frame = routine_state.Frame("", [routine_state.scope(engine.routineSession, "")], [], 0, "public", [])
   flow = routineRun(engine, frame, statement)
@@ -6293,4 +7077,99 @@ end function
 /// The protocol sends these in order followed by the original error response.
 function failedRoutineResults(engine)
   return engine.routineSession.failedResults
+end function
+
+/// Exposes a structured condition while keeping legacy native error codes intact.
+function statementDiagnostic(engine, nativeError)
+  diagnostic = engine.routineSession.diagnostic
+  if nativeError is void then return diagnostic end if
+  if diagnostic.number > 0 then
+    if diagnostic.nativeError is not void then
+      if diagnostic.nativeError.code == nativeError.code and diagnostic.nativeError.message == nativeError.message then return diagnostic end if
+    else if diagnostic.errno == nativeError.code and nativeError.message == "SQLSTATE " + diagnostic.sqlstate + ": " + diagnostic.message then
+      return diagnostic
+    end if
+  end if
+  return routine_state.fromError(nativeError)
+end function
+
+/// Returns only nonfatal warning/not-found records for connector warning chains.
+function statementWarnings(engine)
+  output = []
+  for each diagnostic in engine.routineSession.warnings
+    className = decode(slice(bytes(diagnostic.sqlstate), 0, 2))
+    if className == "01" or className == "02" then output = output + [diagnostic] end if
+  end for
+  return output
+end function
+
+/// Replaces the public warning list after a nondiagnostic query has captured variables.
+function clearStatementWarnings(engine)
+  engine.routineSession.warnings = []
+  engine.routineSession.warningCount = 0
+  engine.routineSession.errorCount = 0
+  engine.routineSession.publicErrorRecorded = false
+  return true
+end function
+
+/// Shares terminal error accounting across parsing, cursor and normal execution paths.
+/// replaceArea is used for errors raised before a public statement can be executed.
+function recordStatementError(engine, nativeError, replaceArea = false)
+  if replaceArea then clearStatementWarnings(engine) end if
+  diagnostic = statementDiagnostic(engine, nativeError)
+  engine.routineSession.diagnostic = diagnostic
+  if not engine.routineSession.publicErrorRecorded then
+    routine_state.rememberCondition(engine.routineSession, diagnostic)
+    engine.routineSession.publicErrorRecorded = true
+  end if
+  return diagnostic
+end function
+
+/// Captured output values are detached from lexical frames and retain SQL NULL/type.
+function routineOutputParameters(engine)
+  return engine.routineSession.outputParameters
+end function
+
+/// Whole CALL retries are permitted only before argument/body evaluation starts.
+function routineStarted(engine)
+  return engine.routineSession.callStarted
+end function
+
+/// SHOW diagnostics is observational: LIMIT/count do not clear the retained area.
+function routineShowWarnings(engine, statement)
+  session = engine.routineSession
+  errorsOnly = statement.kind == "SHOW_ERRORS"
+  if statement.name == "COUNT" then
+    name = "@@session.warning_count"
+    count = session.warningCount
+    if errorsOnly then name = "@@session.error_count"; count = session.errorCount end if
+    return rowResult([name], [[values.integer(count)]])
+  end if
+  offset = statement.options[0]
+  limit = statement.options[1]
+  matched = 0
+  rows = []
+  for each diagnostic in session.warnings
+    className = decode(slice(bytes(diagnostic.sqlstate), 0, 2))
+    isError = className != "00" and className != "01" and className != "02"
+    if not errorsOnly or isError then
+      if matched >= offset and (limit < 0 or len(rows) < limit) then
+        level = "Warning"
+        if isError then level = "Error" end if
+        rows = rows + [[values.text(level), values.integer(diagnostic.errno), values.text(diagnostic.message)]]
+      end if
+      matched = matched + 1
+    end if
+  end for
+  return rowResult(["Level", "Code", "Message"], rows)
+end function
+
+/// Ordinary routine SQL conditions leave prior successful transaction statements usable.
+/// Storage/transport failures retain the conservative failed-transaction contract.
+function routineErrorPreservesTransaction(engine, nativeError)
+  if engine.routineSession.streamFailure then return false end if
+  if engine.routineSession.outgoingSignal then return true end if
+  code = nativeError.code
+  if code < 9000 then return true end if
+  return code == 9007 or code == 9013 or code == 9014 or code == 9016 or code == 9017 or code == 9019 or code == 9020 or code == 9021 or code == 9022 or code == 9025 or code == 9029 or code == 9032 or code == 9035 or code == 9036
 end function

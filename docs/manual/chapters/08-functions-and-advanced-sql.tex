@@ -354,7 +354,7 @@ EXECUTE adjust_stock USING 5, 1;
 DEALLOCATE adjust_stock;
 \end{lstlisting}
 
-The template can include supported RETURNING or conflict clauses of its inner statement. The legacy PREPARE AS form does not support DDL, MERGE, TRUNCATE, CALL, or a sequence of statements as one prepared body. The MySQL-style PREPARE FROM form accepts a string literal or session variable holding one dynamic SQL statement; it is described with stored procedures below. A WITH query is represented internally as a SELECT and follows the same query restrictions.
+The template can include supported RETURNING or conflict clauses of its inner statement. Both PREPARE AS and the MySQL-style PREPARE FROM form accept one supported ordinary SQL statement, including DML, table DDL and CALL. PREPARE FROM takes a string literal or session variable; PREPARE AS takes the SQL body directly. Stored-program control flow, procedure/trigger definitions and nested PREPARE, EXECUTE or DEALLOCATE are excluded. SET and SELECT INTO destinations in a prepared body must be session variables. A WITH query remains subject to the ordinary query restrictions.
 
 Preparation is not a complete execution-time validation or a guarantee that schema changes can never invalidate the statement. The implementation records a planning generation and rebinds/replans as required; a removed column can still make a later EXECUTE fail. Parameter values are inserted into typed expression processing and the resulting statement is checked against the then-current schema and privileges.
 
@@ -416,13 +416,14 @@ CREATE TRIGGER [IF NOT EXISTS] trigger_name
 {INSERT | UPDATE [OF column_name] | DELETE}
 ON table_name
 [FOR EACH ROW]
-single_dml_statement;
+{single_dml_statement | CALL procedure_name(arguments)
+ | BEGIN routine_statements END};
 
 ALTER TRIGGER trigger_name {ENABLE | DISABLE};
 DROP TRIGGER [IF EXISTS] trigger_name;
 \end{lstlisting}
 
-Triggers attach a supported DML body to row changes. FOR EACH ROW is optional syntax, but the implementation is row-oriented; there is no statement-trigger mode. UPDATE OF accepts one column. It selects updates that assign that column, not only updates whose resulting value differs from its old value.
+Triggers attach a supported DML or stored-program body to row changes. FOR EACH ROW is optional syntax, but the implementation is row-oriented; there is no statement-trigger mode. UPDATE OF accepts one column. It selects updates that assign that column, not only updates whose resulting value differs from its old value.
 
 \begin{lstlisting}[language=SQL]
 CREATE TABLE trigger_subject (
@@ -453,9 +454,25 @@ The log contains subject 1 with old quantity 10 and new quantity 12. OLD and NEW
 
 \warning{BEFORE does not mean before the base mutation here}{The checked executor first performs the base DML and its row validation, then invokes fireTriggers with the completed old/new images. It runs the BEFORE-labelled trigger group before the AFTER-labelled group. Consequently a BEFORE trigger is not a conventional pre-insert/pre-constraint hook and cannot repair an invalid row before validation. Use it only with this documented ordering behavior; the AFTER audit example is the clearer general pattern.}
 
-The body is exactly one VALUES-based INSERT, UPDATE, or DELETE. It cannot contain RETURNING, ON CONFLICT, INSERT SELECT, a block of statements, IF/LOOP, a subquery, or a window function. There is no WHEN trigger condition, INSTEAD OF trigger, or multiple-event trigger declaration. Put a supported row filter in an UPDATE/DELETE body when that expresses the required effect.
+The body may call a procedure or use a compound block with local variables,
+branches, loops, handlers and supported data changes. OUT/INOUT destinations
+may be trigger locals or session variables; OLD and NEW remain read-only.
+The restrictions also follow nested procedure calls: a trigger cannot return
+result sets, execute dynamic SQL, or perform an explicit or implicit transaction
+boundary. Ordinary SELECT results and DML RETURNING are therefore rejected;
+SELECT INTO can assign a local result. Changes to a table already used by an
+active invoking trigger statement are rejected. There is no WHEN trigger
+condition, INSTEAD OF trigger, or multiple-event trigger declaration.
 
-Trigger bodies run in the same page transaction and are authorized using the invoking session. A failure rolls back an implicit DML transaction; explicit transaction error handling should follow the transaction chapter. Recursive trigger invocation is bounded at depth eight. Design triggers so their effect terminates naturally instead of relying on the depth guard. In particular, writing back to the same table can fire another trigger repeatedly.
+Trigger bodies run in the same page transaction and are authorized using the
+invoking session; a called SQL SECURITY DEFINER procedure applies its own
+definer rules within that transaction. A failure rolls back an implicit DML
+transaction; explicit transaction error handling should follow the transaction
+chapter. Trigger savepoints have a separate name scope: the trigger cannot
+release or roll back to a caller's savepoint, and its local savepoints disappear
+on return. Recursive trigger invocation is bounded at depth eight. Changes to
+an already active invoking table are rejected before a recursion cycle can
+silently alter that table again.
 
 TRUNCATE is not mapped to the INSERT/UPDATE/DELETE trigger-event code and does not fire these row DELETE triggers. Use DELETE if a workflow specifically depends on delete-trigger side effects. Likewise, do not assume that UPSERT invokes a conventional pair of INSERT and UPDATE trigger families: its bound statement remains INSERT in the current trigger-event classifier. Validate trigger behavior for each conflict path before using it for authoritative auditing.
 
@@ -484,16 +501,20 @@ PROCEDURE [IF NOT EXISTS] [schema.]procedure_name(
 [characteristic ...]
 routine_statement;
 
-CALL procedure_name(argument [, ...]);
+CALL procedure_name[(argument [, ...])];
 ALTER PROCEDURE procedure_name characteristic ...;
 DROP PROCEDURE [IF EXISTS] procedure_name;
 \end{lstlisting}
 
 The body can be one supported SQL statement or a compound \code{BEGIN ... END}
-block. Empty parameter lists still use parentheses. \code{OR REPLACE} is a
+block. CREATE still requires parameter-list parentheses; a zero-argument CALL
+may omit them. \code{OR REPLACE} is a
 MiniSQL extension and cannot be combined with \code{IF NOT EXISTS}.
 \code{ALTER PROCEDURE} changes characteristics; replacing the body or parameter
-list requires a new definition. Definition changes remain autocommit-only.
+list requires a new definition. Authorized CREATE, ALTER and DROP PROCEDURE
+implicitly commit an active transaction before changing the definition;
+permission checks happen before this commit. These statements do not form
+part of an atomic DML-and-definition transaction.
 
 \begin{lstlisting}[language=SQL]
 DELIMITER $$
@@ -554,6 +575,45 @@ and named conditions first, cursors next, and handlers last. Variables are
 initialized on entry to the block; session variables and prepared statements
 have the longer connection lifetime.
 
+\subsection{Creation context and character declarations}
+
+CREATE records the routine's SQL mode, client character set, connection
+collation, database collation, and creation/alteration times. Calling the
+routine restores its captured execution context for that invocation and
+restores the caller's context afterward. Later session-setting changes do not
+silently change an existing definition's assignment rules.
+
+Routine character parameters and locals accept explicit attributes:
+\begin{lstlisting}[language=SQL]
+CREATE PROCEDURE echo_text(
+  IN p_text VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  OUT p_copy VARCHAR(20) CHARACTER SET utf8mb4
+)
+BEGIN
+  DECLARE v_text VARCHAR(20) COLLATE utf8mb4_bin;
+  SET v_text = p_text;
+  SET p_copy = v_text;
+END;
+\end{lstlisting}
+
+The supported sets are utf8mb4, utf8 and binary, with utf8mb4\_bin, utf8\_bin
+and binary collations. Unsupported or incompatible combinations are rejected.
+utf8 uses the three-byte Unicode repertoire; utf8mb4 also permits four-byte
+characters. Character declarations count Unicode characters, while binary
+declarations use byte limits. CHARACTER SET binary maps CHAR, VARCHAR and
+TEXT declarations to BINARY, VARBINARY and BLOB respectively. These values
+remain bytes even when truncation ends within a multibyte character; BINARY(n)
+uses zero-byte padding to its declared length. The general SQL engine remains on its existing
+type and comparison model; these declarations do not supply MySQL's complete
+collation catalog or wire encodings.
+
+\code{SET SESSION sql\_mode = ''} selects non-strict routine character
+assignment: an overlong value is truncated with a warning. The supported
+strict modes, STRICT\_TRANS\_TABLES and STRICT\_ALL\_TABLES, reject that
+assignment. STRICT\_TRANS\_TABLES is the initial mode. Other mode names are
+rejected, and the two accepted strict modes do not emulate every MySQL SQL-mode
+effect on expressions, parsing, dates or ordinary table statements.
+
 \subsection{Control flow and labels}
 
 \begin{longtable}{p{.22\linewidth}p{.70\linewidth}}
@@ -596,12 +656,14 @@ must consume every result before reusing the connection. SQL CALL through an
 ordinary execute API does not imply support for every connector's specialized
 stored-procedure convenience interface.
 
-MiniSQL's final CALL status accumulates affected rows from successful DML
-throughout the call, including nested calls and DML with RETURNING. SELECT
-result rows do not contribute to that mutation count. Inside the routine,
-GET DIAGNOSTICS ROW\_COUNT describes the most recent statement. These are
-MiniSQL execution-status rules; full MySQL CALL-status and ROW\_COUNT
-equivalence is not claimed.
+The final CALL status uses the most recent statement's affected-row value,
+rather than adding every earlier mutation in the procedure. A result-producing
+SELECT has diagnostic ROW\_COUNT -1 and contributes zero to the nonnegative
+CALL completion count; SELECT INTO and FETCH report their own row count.
+DML with RETURNING still reports its mutation count. Inside the routine,
+GET DIAGNOSTICS ROW\_COUNT and the ROW\_COUNT() expression inspect the current
+statement diagnostic area. Consuming an earlier result does not establish the
+final CALL count.
 
 \begin{lstlisting}[language=SQL]
 DECLARE v_done INTEGER DEFAULT 0;
@@ -646,7 +708,7 @@ over SQLSTATE and SQLSTATE over a condition class. A handler's own errors are
 not caught by itself or sibling handlers in the declaring block.
 
 SIGNAL creates a condition. MYSQL\_ERRNO must be an integer from 1 through
-65535, MESSAGE\_TEXT is limited to 128 UTF-8 bytes, and information items cannot
+65535, MESSAGE\_TEXT is limited to 128 Unicode characters, and information items cannot
 be NULL. RESIGNAL requires an active handler. Bare RESIGNAL and RESIGNAL SET
 preserve original values except for explicitly replaced items. RESIGNAL
 SQLSTATE starts the error-number/message defaults for the new state class,
@@ -661,9 +723,26 @@ Uncaught exceptions terminate the procedure; warnings continue. Normal no-data
 conditions continue without a handler, whereas explicitly signaled no-data
 conditions exit. MiniSQL's engine errors are mapped to procedure conditions;
 this is not a guarantee of every MySQL server's numeric error and exact wording.
-The MySQL system variables \code{warning\_count}, \code{max\_error\_count}, and
-\code{sql\_mode} are not implemented. Diagnostics describe the conditions
-maintained by MiniSQL's execution engine.
+The session keeps both condition totals and a bounded list of retained
+conditions. The default \code{max\_error\_count} is 64; values from 0 through
+65535 are accepted. Setting it to zero retains no condition rows while totals
+remain available. \code{warning\_count} counts all recorded conditions and
+\code{error\_count} counts the error classes. These counts are read-only.
+
+\begin{lstlisting}[language=SQL]
+SHOW WARNINGS LIMIT 10;
+SHOW ERRORS LIMIT 2 OFFSET 1;
+SHOW COUNT(*) WARNINGS;
+SHOW COUNT(*) ERRORS;
+SELECT @@warning_count, @@error_count;
+SET SESSION max_error_count = 128;
+\end{lstlisting}
+
+SHOW WARNINGS/ERRORS returns Level, Code and Message; LIMIT also accepts
+the offset,count spelling. SHOW and SHOW COUNT are observational diagnostics
+and leave the stored list intact. SELECT of the count variables reads the
+preceding totals, then establishes the diagnostic state for that new SELECT.
+This distinction matters when inspecting several counts after one failed CALL.
 
 \subsection{Dynamic SQL, recursion, and transaction context}
 
@@ -702,9 +781,15 @@ New MySQL-style definitions default to SQL SECURITY DEFINER. SQL SECURITY
 INVOKER uses the caller's effective privileges. The earlier AS spelling defaults
 to INVOKER for compatibility unless security is explicit. The definer identity
 is persisted, and unrelated privileged definers require administrative
-permission. Database CREATE ROUTINE permits creation; EXECUTE and ALTER ROUTINE
+permission or SET\_ANY\_DEFINER. Database CREATE ROUTINE permits creation; EXECUTE and ALTER ROUTINE
 can apply to one procedure or the whole database. See Chapter~\ref{ops:security}
 for grants and role inheritance.
+
+The definer must still hold EXECUTE on a SQL SECURITY DEFINER routine.
+Routine existence and parameter metadata can be visible without exposing
+the body: EXECUTE, CREATE ROUTINE and ALTER ROUTINE are not source-reading
+privileges. The definer, an administrator, a principal with SHOW\_ROUTINE,
+or one with database SELECT can read the definition.
 
 LANGUAGE SQL, COMMENT, [NOT] DETERMINISTIC, and the CONTAINS SQL/NO SQL/READS SQL
 DATA/MODIFIES SQL DATA characteristics are persisted. Determinism and data-access
@@ -725,16 +810,47 @@ FROM information_schema.parameters
 ORDER BY specific_schema, specific_name, ordinal_position;
 \end{lstlisting}
 
-ROUTINES also includes routine\_type and routine\_definition. Parameter ordinals
-start at one; irrelevant length/precision/scale fields are NULL. The detailed
+ROUTINES exposes the complete 31-column routine metadata layout, including
+creation/alteration times, captured SQL mode and character context. PARAMETERS
+has 16 columns, including character/octet lengths, numeric precision/scale,
+datetime precision, character attributes and DTD\_IDENTIFIER. Parameter ordinals
+start at one; irrelevant dimensions are NULL. SHOW CREATE has six columns and
+SHOW PROCEDURE STATUS has eleven. The ability to see a routine and its parameter
+metadata is separate from permission to read its definition; a visible source
+field can therefore be NULL. The detailed
 standalone reference is \path{docs/sql/stored-procedures.md}. Stored functions,
 MySQL's complete type/collation and sql\_mode behavior, host-qualified account
 matching, and MySQL replication remain separate features.
 
+\subsection{Execution resources}
+
+Each session retains at most 64 parsed procedure definitions. The cache key
+includes the durable object identity, canonical SQL and captured metadata;
+ALTER, replacement, drop/recreate and context changes cannot reuse a stale
+definition. Invocation locals, parameter values and authorization decisions
+are evaluated separately for every call.
+
+Supported simple SELECT results stream from the executor in bounded batches.
+Nested calls preserve ordered result boundaries, including empty sets.
+Sorting, grouping and other blocking or unsupported cursor shapes still use
+the ordinary engine's materializing operators. A transport failure terminates
+the call and releases its cursor resources; a SQL handler cannot make a broken
+output stream safe to continue.
+
+The executor admits concurrent CALLs through its shared reader gate only after
+proving the complete reachable body read-only. It checks nested calls, actual
+arguments and expression dependencies, and treats dynamic SQL, sequence
+effects and unproved dependencies conservatively. READS SQL DATA and NO SQL
+declarations alone do not establish that proof. Calls with possible writes
+retain the engine's exclusive execution path. There is no automatic replay
+after a call has begun to evaluate arguments or run its body.
+
 \sourcecode{src/minisql/sql/parser.ml}{Procedure grammar, block declarations, characteristics, and invocation syntax.}
 \sourcecode{src/minisql/executor/executor.ml}{Procedure execution, nested frames, result propagation, conditions, and authorization.}
+\sourcecode{src/minisql/executor/routine_state.ml}{Session settings, bounded condition retention, creation context, and definition-cache state.}
 \sourcecode{src/minisql/catalog/schema_history.ml}{Durable definitions and monotonically allocated extension identifiers.}
 \sourcecode{src/tests/routine_security.ml}{Security-codec, inherited grants, reopen, drop/recreate identity, and cleanup regression tests.}
+\sourcecode{src/tests/stored_procedure_parity.ml}{Warning retention, creation context, trigger restrictions, transaction recovery, bounded streaming, cache invalidation and concurrent-reader regression tests.}
 
 \Needspace{30\baselineskip}
 \section{Choosing the right reusable mechanism}

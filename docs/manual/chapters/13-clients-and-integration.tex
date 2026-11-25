@@ -267,7 +267,11 @@ connection.commit()
 
 The module also supplies \code{Date}, \code{Time}, \code{Timestamp}, their \code{FromTicks} constructors, and \code{Binary}. The latter creates a Python byte object; it does not add a binary transport-binding capability.
 
-Parameterized SELECT, INSERT, UPDATE, and DELETE statements use a session-local LRU cache of at most 128 server PREPARE plans. Other accepted statement forms use validated literal substitution. There is no typed binary parameter frame. Cache reuse saves preparation work but does not justify sharing one connection among simultaneous workers.
+Parameterized SELECT, INSERT, UPDATE, DELETE and CALL statements use a
+session-local LRU cache of at most 128 server PREPARE plans. Other accepted
+statement forms use validated literal substitution. There is no typed binary
+parameter frame. Cache reuse saves preparation work but does not justify
+sharing one connection among simultaneous workers.
 
 \subsection{Transactions and DDL boundaries}
 
@@ -302,11 +306,11 @@ Avoid manually sending BEGIN/COMMIT while also relying on the connector's transa
 \code{fetchmany(size)} & Return up to the requested rows; uses \code{arraysize} if omitted. \\
 \code{fetchall()} & Materialize all remaining rows in a list. \\
 Iteration & Advance through the result stream until exhausted. \\
-\code{description} & Tuple of seven-field DB-API column descriptions, using the generic STRING type; None for commands. \\
+\code{description} & Seven-field DB-API column descriptions; negotiated result type families when available, generic STRING otherwise. None for commands. \\
 \code{rowcount} & Affected rows for a command; -1 for a SELECT result. \\
 \code{lastrowid} & None. Use SQL RETURNING when an inserted identifier is required. \\
 \code{setinputsizes}, \code{setoutputsize} & Accepted as no-op hints. \\
-\code{callproc(name, parameters)} & Return IN values and updated OUT/INOUT values as a tuple; buffer the procedure's results for subsequent fetching. \\
+\code{callproc(name, parameters)} & Return IN values and updated OUT/INOUT values as a tuple; spool result frames to a temporary file for subsequent fetching. \\
 \code{nextset()} & Discard unread rows of the current result and advance; return None when no further result exists. \\
 \code{close()} & Drain every remaining result and release the cursor. \\
 \bottomrule
@@ -330,19 +334,30 @@ Here \code{process\_product} is an application function supplied by the reader, 
 \subsection{Stored procedure calls}
 
 For the \code{sum\_to} procedure defined in Chapter~8, supply a placeholder for
-its OUT argument. The original Python IN value is preserved; protocol output
-values are text, or None for SQL NULL:
+its OUT argument. The original Python IN value is preserved. With a current
+server, negotiated OUT and INOUT values retain their SQL type:
 
 \begin{lstlisting}[language=Python]
 with connection.cursor() as cursor:
     returned = cursor.callproc("sum_to", (5, None))
-    assert returned == (5, "15")
+    assert returned == (5, 15)
 \end{lstlisting}
 
-\code{callproc} buffers every procedure result so it can read output variables
-before returning. For large result sets, use \code{execute("CALL ...")}, consume
-the current result when \code{description} is not None, and repeat with
-\code{nextset()}. Distinct SELECTs remain distinct even when their columns match.
+\code{callproc} drains the call before returning its outputs and spools result
+frames, spilling to a private temporary file after 1 MiB. Fetching then replays
+the stored frames with bounded memory; closing the cursor releases them.
+This avoids retaining every row in RAM,
+but still requires disk space and waits for the complete call. For immediate
+incremental consumption, use \code{execute("CALL ...")}, consume the current
+result when \code{description} is not None, and repeat with \code{nextset()}.
+Distinct SELECTs remain distinct even when their columns match. A later error
+in this streaming form is raised when advancing to its result boundary.
+
+Typed outputs include Boolean, integer, float, Decimal, text, bytes, date,
+time and datetime values; SQL NULL becomes None while literal text NULL stays
+text. An older server without the negotiated extension retains text/None output
+values, so the example's OUT value would be \code{"15"} in that fallback mode.
+Quoted and schema-qualified procedure identifiers are accepted.
 When using explicit output session variables, query them after consuming every
 CALL result. Submit complete compound CREATE definitions to \code{execute};
 the client-only \code{DELIMITER} directive is omitted from API SQL strings.
@@ -377,11 +392,28 @@ with open("products.csv", newline="", encoding="utf-8") as source:
 
 Compatible single-row INSERT operations are grouped into requests of at most 256 rows and 768 KiB of SQL. If a grouped request fails, the connector retries original entries in order; a savepoint protects an explicit transaction before this fallback. This preserves first-failure behavior, not an automatic all-file rollback. The surrounding exception handler above makes the import atomic by rolling back the whole explicit transaction. With autocommit enabled, earlier successful entries can remain committed.
 
-For export, use \code{csv.writer}, write headers from \code{cursor.description}, and iterate through the cursor. Choose and document a NULL convention in the output file. A result value equal to the text \code{NULL} is already ambiguous in protocol v1, so an export cannot recover that distinction automatically.
+For export, use \code{csv.writer}, write headers from \code{cursor.description},
+and iterate through the cursor. Choose and document a NULL convention in the
+output file. Current peers negotiate an exact per-cell NULL bitmap; older
+peers using the legacy result format still conflate SQL NULL and literal text
+\code{NULL}. Account for the negotiated format before promising exact export
+round-tripping.
 
 \subsection{Errors and cancellation}
 
-Catch \code{minisql.IntegrityError} for constraint failures 9021/9022 and \code{DataError} for type mismatch 9017. Syntax, binding, object-existence, and unsupported-SQL codes map to \code{ProgrammingError}; authentication and transaction-state failures map to \code{OperationalError}. Other server failures may be the base \code{DatabaseError}. Inspect its \code{code} member and diagnostic message. Do not rely on every operational error having the same Python subclass.
+Negotiated errors expose \code{code}, \code{sqlstate} and the message without
+requiring message parsing. SQLSTATE class 23 maps to \code{IntegrityError},
+22 to \code{DataError}, 42 to \code{ProgrammingError}, and 0A to
+\code{NotSupportedError}; connection and transaction-retry classes use
+\code{OperationalError}. Other states may use the base \code{DatabaseError}.
+For legacy peers the connector retains its native-code fallback, including
+constraint errors 9021/9022 and type mismatch 9017. Do not rely on every
+operational failure having the same Python subclass.
+
+\code{cursor.messages} and \code{connection.messages} expose the DB-API warning
+extension as pairs of Warning class and Warning instance. Each warning retains
+its SQLSTATE, code and message. Cursor warnings remain associated with that
+cursor even if another statement is subsequently executed on the connection.
 
 \code{Connection.cancel()} opens a short-lived control connection using the same connection settings and targets the session identifier learned during HELLO. It is designed to work while the query connection is blocked. Trusted-local callers can use it directly; authenticated callers need database ADMIN. Alternatively, a separate administrator connection can call \code{cancel\_session(id)} for a session shown by SHOW PROCESSLIST. Cancellation is cooperative: success means the token was set; the target observes it at a polling boundary and reports error 9035. Handle any resulting transaction failure and roll back as required before reusing it.
 
@@ -470,28 +502,47 @@ Results are forward-only and read-only. \code{next()} advances; getters accept e
 \code{Statement.execute("CALL ...")} exposes the ordered procedure results,
 including the final update count. Continue until both \code{getMoreResults()}
 returns false and \code{getUpdateCount()} returns -1. For output parameters,
-\code{prepareCall} supports positional \code{CALL ...} and \code{\{call ...\}}
-forms. Bind IN values with ordinary setters, register OUT positions, and do both
-for INOUT parameters:
+\code{prepareCall} supports \code{CALL ...} and \code{\{call ...\}} forms,
+including quoted identifiers, mixed literal/placeholder arguments and
+zero-argument calls without parentheses. Bind IN values with ordinary setters,
+register OUT positions, and do both for INOUT parameters. Parameter names from
+the routine's catalog declaration can also be used:
 
 \begin{lstlisting}[language=Java]
 try (CallableStatement call = connection.prepareCall("{call sum_to(?, ?)}")) {
-    call.setInt(1, 5);
-    call.registerOutParameter(2, java.sql.Types.INTEGER);
+    call.setInt("p_limit", 5);
+    call.registerOutParameter("p_sum", java.sql.Types.INTEGER);
     call.execute();
-    System.out.println(call.getInt(2)); // 15
+    System.out.println(call.getInt("p_sum")); // 15
 }
 \end{lstlisting}
 
-Callable statements buffer results before retrieving outputs; those results
-remain available through \code{getResultSet()} and \code{getMoreResults()}.
-Use ordinary streaming statements and explicit output session variables for
-large results. Named bindings, function-return call escapes, callable batches,
-and \code{KEEP\_CURRENT\_RESULT} are unsupported.
+Callable statements drain results to a private temporary file before exposing
+outputs; those results remain available through \code{getResultSet()} and
+\code{getMoreResults()}. Memory use is bounded by result frames, while required
+temporary disk space grows with the call's results. Ordinary statements can
+consume CALL results as they arrive. \code{KEEP\_CURRENT\_RESULT} detaches the
+remaining rows of the current result for independent replay; close retained
+results, use CLOSE\_ALL\_RESULTS or close the statement to release them.
 
-At this revision JDBC date and timestamp getters have a pre-1970 edge case: their decoder treats any text containing a hyphen as a formatted date. A negative numeric epoch value such as \code{-1} therefore selects the wrong parser and fails. Read the known numeric representation with \code{getString} or \code{getLong} and convert the documented epoch units explicitly in application code. This boundary was established by source review of \code{dateValue} and \code{timestampValue}, not a new Java runtime test.
+Callable batches accept procedures with IN parameters only. They preserve
+individual update counts; a failure raises BatchUpdateException with the
+completed prefix. OUT/INOUT batches and function-return call escapes remain
+unsupported. Numeric date, time and timestamp output getters use the engine's
+documented epoch units, including negative date/timestamp values.
 
-Ordinary \code{ResultSetMetaData} reports VARCHAR/String, unknown nullability, and generic sizes. \code{ParameterMetaData} reports parameter count and conservative VARCHAR types. Catalog metadata obtains declared types through DESCRIBE; it is a different source of information. Live \code{getTables}, \code{getColumns}, and \code{getIndexInfo} are available. Other discovery methods can return conservative or empty results; an IDE's empty schema browser is not proof that the engine lacks the SQL object.
+Negotiated \code{ResultSetMetaData} reports available native SQL type families;
+sizes and nullability may remain conservative. Ordinary prepared statements
+retain conservative parameter metadata. CallableStatement
+\code{getParameterMetaData()} uses the declared routine modes, types, precision
+and scale. \code{getProcedures()} and \code{getProcedureColumns()} expose visible
+routine catalog information with the standard JDBC column layouts and pattern
+filters. Existing \code{getTables}, \code{getColumns} and \code{getIndexInfo}
+remain available. Metadata visibility follows the server's authorization rules.
+
+Errors retain SQLSTATE and the server error code. Connection, Statement and
+ResultSet expose SQLWarning chains through \code{getWarnings()} and allow
+\code{clearWarnings()}; warning inspection does not require parsing error text.
 
 \begin{longtable}{p{.34\linewidth}p{.57\linewidth}}
 \toprule JDBC operation & Current boundary \\\midrule
@@ -501,7 +552,7 @@ Ordinary \code{ResultSetMetaData} reports VARCHAR/String, unknown nullability, a
 \code{setNetworkTimeout} & Changes socket read timeout; this is not a server query deadline. \\
 \code{Statement.cancel} & Separate control connection and cooperative cancellation; authenticated users need ADMIN. \\
 \code{getGeneratedKeys} & No generated keys are supplied. Use SQL RETURNING and a result-reading execution method. \\
-\code{CallableStatement} & Positional IN/OUT/INOUT with buffered results; named bindings and function-return escapes are unsupported. \\
+\code{CallableStatement} & Positional/named IN/OUT/INOUT, typed outputs, disk-spooled results and IN-only batches. No function-return escape. \\
 Scrollable/updatable ResultSet & Unsupported. \\
 XA, two-phase commit, JDBC Savepoint & Unsupported. \\
 \bottomrule
@@ -510,15 +561,36 @@ XA, two-phase commit, JDBC Savepoint & Unsupported. \\
 \sourcecode{clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java}{Actual JDBC transaction, timeout, metadata, setter/getter, and batching behavior.}
 \sourcecode{clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java}{Transport, TLS validation, streaming, and administrative cancellation.}
 
-\section{The result-format limitation shared by network clients}
+\section{Negotiated result metadata and legacy compatibility}
 \index{wire protocol!result representation}
 \label{adv:wire-null}
 
-Protocol v1 transmits cells as UTF-8 text without declared SQL type information or a per-cell NULL bitmap. The text token \code{NULL} represents SQL NULL. Consequently, a stored text value containing exactly those four characters is indistinguishable from SQL NULL in a generic network result. Python maps the token to None; JDBC treats it as NULL. This is a protocol limitation, not a storage-format limitation: the row codec stores NULL separately and the in-process engine retains typed values.
+Current native, Python and JDBC clients negotiate \code{results-v2} during
+HELLO. The protocol remains version 1 with the existing frame structure;
+negotiated responses append metadata for SQLSTATE, warnings, per-cell NULL
+bits, result type families and completed CALL output parameters. An older
+client or server keeps the legacy layout. The extension is not the MySQL wire
+protocol.
 
-For an application that must distinguish nullable text precisely, project an explicit null indicator alongside a non-ambiguous representation and interpret the pair. For example, \code{CASE WHEN note IS NULL THEN 1 ELSE 0 END AS note\_is\_null} preserves the distinction in a separate column. If the original text can itself be \code{NULL}, the application must preserve or reconstruct it using that indicator, rather than discarding the corresponding raw value without context. A deliberate encoded export format is another option. Do not advertise generic SELECT/export round-tripping of every nullable text value without handling this case.
+With the extension, SQL NULL and literal text \code{NULL} remain distinct.
+Generic row values still use the existing textual representation; type-family
+metadata alone does not supply every column size, expression scale or collation.
+Without the extension the legacy token \code{NULL} is ambiguous. For such peers,
+project an explicit indicator such as
+\code{CASE WHEN note IS NULL THEN 1 ELSE 0 END AS note\_is\_null}
+and interpret it together with the returned text.
 
-Numeric results also require application conversion. In this revision DECIMAL output is the scaled coefficient, not formatted decimal text: \code{DECIMAL(10,2)} 3.30 is returned as \code{330}. For a direct column of known scale 2, use \code{Decimal(raw).scaleb(-2)} or \code{getBigDecimal(...).movePointLeft(2)}. Generic expression results do not carry their scale, and current decimal arithmetic has additional limitations described in Section~\ref{sql:decimal-caveat}. Do not infer correct financial calculations merely because input and storage are exact. Binary values are rendered as \code{0x} followed by hexadecimal digits; supported result decoders can decode them, but that does not imply binary parameter binding is supported.
+Ordinary DECIMAL row output still exposes the scaled coefficient:
+\code{DECIMAL(10,2)} 3.30 is returned as \code{330}. For a direct column of known
+scale 2, use \code{Decimal(raw).scaleb(-2)} or
+\code{getBigDecimal(...).movePointLeft(2)}. Negotiated procedure OUT/INOUT
+snapshots carry normalized decimal text and produce Decimal/BigDecimal values;
+do not apply that extra rescaling to typed outputs. Generic decimal arithmetic
+retains the separate limitations in Section~\ref{sql:decimal-caveat}. Binary
+results use \code{0x} plus hexadecimal digits and typed procedure outputs decode
+to bytes; this does not add binary input-parameter binding.
+
+\sourcecode{docs/formats/wire-protocol-v1.md}{Capability negotiation, metadata trailers and compatibility with legacy peers.}
 
 \section{MiniLang source integration}
 \index{embedded integration}\index{MiniLang}
