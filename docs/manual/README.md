@@ -9,9 +9,10 @@ editable LaTeX and a compiled PDF.
 
 ## Implementation identity
 
-This edition uses source revision
-[`9bedab0c9de307d0435d3abfb3eab98a2f6d42a5`](https://github.com/MiniLangProject/MiniSQL/commit/9bedab0c9de307d0435d3abfb3eab98a2f6d42a5)
-as its baseline and incorporates the November 25 stored-procedure update.
+This edition describes source revision
+[`139eb3c096fe4db9640f730aa8722647485dac29`](https://github.com/MiniLangProject/MiniSQL/commit/139eb3c096fe4db9640f730aa8722647485dac29),
+including the November 25 stored-procedure implementation. Source links in the
+PDF resolve to this exact implementation commit.
 The application banner is **1.1.1**, the current development **storage format
 is 2**, and the **wire protocol remains 1**. Format-1 databases are rejected;
 the page-size migration tool is not a format-1 converter.
@@ -74,11 +75,17 @@ Use `--bin-dir build/bin` for Windows. The example runner requires `minisqld`
 and `minisql`; the recovery runner also requires `minisql-check` and
 `minisql-backup`. The in-repository Python connector is loaded automatically.
 
-The recorded Linux verification uses MiniLangCompilerPy 1.3.10 at commit
-`8e64c9cfda92199b68ac5d3974fea445f12f6c39`. All **four SQL scripts and 53
-focused checks** pass. The separate offline backup/restore/check/reopen recipe
-also passes. See [`validation.json`](validation.json) and
+The original tutorial/recovery verification used source baseline `9bedab0`
+and MiniLangCompilerPy 1.3.10 at commit
+`8e64c9cfda92199b68ac5d3974fea445f12f6c39`. Its **four SQL scripts and 53 focused
+checks**, plus the separate backup/restore/check/reopen recipe, passed. Those
+historical records remain in [`validation.json`](validation.json) and
 [`recovery-validation.json`](recovery-validation.json).
+
+The procedure update has separate [current verification evidence](../acceptance/STORED_PROCEDURES_2026-11-25.md):
+11 native Linux cases, five Windows compilation cases, Python/JDBC unit checks,
+and a rebuilt-server connector fixture. The older tutorial records have not
+been relabeled as new executions against the procedure commit.
 
 Some checks intentionally confirm a documented limitation. A passing test of
 incorrect DECIMAL arithmetic or a rejected query means the book describes the

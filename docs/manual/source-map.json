@@ -1,5 +1,5 @@
 {
-  "source_baseline": "9bedab0c9de307d0435d3abfb3eab98a2f6d42a5",
+  "source_baseline": "139eb3c096fe4db9640f730aa8722647485dac29",
   "chapters": {
     "00-about.tex": [
       "src/minisql/common/format_version.ml"

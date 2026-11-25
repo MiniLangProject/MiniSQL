@@ -144,7 +144,7 @@
   },
   "manual": {
     "status": "PASS",
-    "pages": 193,
+    "pages": 192,
     "overfullBoxes": 0,
     "unresolvedReferences": 0,
     "audit": {
@@ -154,13 +154,17 @@
     },
     "visuallyReviewedPdfPages": [
       1,
-      87,
-      143,
-      146
+      86,
+      88,
+      142,
+      145,
+      185
     ],
     "pdf": "docs/manual/minisql-user-manual.pdf",
-    "sha256": "fa33afa5ba36411ab7d7d29b4aad75f76a8215b360bba63b071bd6266a59a33c",
-    "sourcePinPending": true
+    "sha256": "16a5aae36605783cdf12deef52ca5f2cacbb7c92116d23bee98e5ac0ad68c248",
+    "sourceCommit": "139eb3c096fe4db9640f730aa8722647485dac29",
+    "sourceLinksValidated": 254,
+    "sourcePathsValidatedAtCommit": 115
   },
   "scopeLimits": [
     "The complete 106-phase Windows release matrix was not executed for this change.",
@@ -346,5 +350,7 @@
       "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java": "f064021b8eb18a637dfbbee1b9fa8266d13683dca9c2493b99d81ebebc815459",
       "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java": "17a1d9f3f49609c4d42091b38e909c195fb85198dff99d704870fd3eaa2adc3c"
     }
-  }
+  },
+  "implementationCommit": "139eb3c096fe4db9640f730aa8722647485dac29",
+  "implementationTree": "5ed592e6f162d3ff77d15bb77b851e645b4b7c40"
 }

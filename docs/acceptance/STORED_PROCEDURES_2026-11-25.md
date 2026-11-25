@@ -6,6 +6,9 @@ MiniLangCompilerPy 1.3.10, compiler commit
 language and the affected SQL, persistence, authorization, and client framing
 paths. Machine-readable results and the exact incremental provenance are in
 [stored-procedures-2026-11-25.json](stored-procedures-2026-11-25.json).
+The implementation is committed as
+[`139eb3c096fe4db9640f730aa8722647485dac29`](https://github.com/MiniLangProject/MiniSQL/commit/139eb3c096fe4db9640f730aa8722647485dac29).
+The manual's immutable source links are pinned to that code revision.
 
 ## Native coverage
 
@@ -105,10 +108,12 @@ one-launcher checks remain enforced.
 
 The SQL reference, security and durable-format documentation, client reference,
 and manual describe the expanded behavior. The manual source audit passes for
-32 TeX files, 115 cited source files, and 50 labels. The complete **193-page PDF**
+32 TeX files, 115 cited source files, and 50 labels. The complete **192-page PDF**
 was rebuilt with zero overfull boxes and no unresolved references. Its cover,
-procedure syntax/example page, Python callproc page, and JDBC callable example
-page were rendered and visually inspected.
+procedure syntax/example and diagnostics pages, Python callproc page, JDBC
+callable example page, and evidence appendix were rendered and visually inspected.
+All 254 embedded repository source links use the exact implementation revision;
+the 115 cited source paths are present in that commit.
 
 ## Scope of the result
 
