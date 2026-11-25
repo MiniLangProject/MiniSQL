@@ -204,15 +204,16 @@ function readQuotedIdentifier(state)
   startOffset = state.index
   startLine = state.line
   startColumn = state.column
+  quote = current(state)
   advance(state)
   output = bytes(len(state.raw) - state.index, 0)
   outputLength = 0
   closed = false
   while current(state) >= 0
     value = current(state)
-    if value == 34 then
-      if peek(state, 1) == 34 then
-        output[outputLength] = 34
+    if value == quote then
+      if peek(state, 1) == quote then
+        output[outputLength] = quote
         outputLength = outputLength + 1
         advance(state)
         advance(state)
@@ -308,6 +309,26 @@ function readNumber(state)
   return true
 end function
 
+/// Reads a session variable as one token, retaining @ for expression resolution.
+/// A bare @ before an account-host string is returned separately for DEFINER.
+function readUserVariable(state)
+  startOffset = state.index
+  startLine = state.line
+  startColumn = state.column
+  advance(state)
+  prefix = "@"
+  if current(state) == 64 then advance(state); prefix = "@@" end if
+  if not isIdentifierPart(current(state)) then
+    return token.create(token.TokenKind.At, "@", void, startOffset, startLine, startColumn, false)
+  end if
+  nameStart = state.index
+  while isIdentifierPart(current(state)) or current(state) == 46
+    advance(state)
+  end while
+  name = prefix + dialect.asciiLower(rawText(state, nameStart, state.index))
+  return token.create(token.TokenKind.UserVariable, name, name, startOffset, startLine, startColumn, false)
+end function
+
 /// Implements symbol token for this module.
 /// Returns the computed value or operation status.
 /// Any side effects are limited to the explicitly invoked dependencies.
@@ -318,12 +339,15 @@ function symbolToken(state)
   startColumn = state.column
   first = current(state)
   second = peek(state, 1)
+  if first == 58 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.Assign, ":=", void, startOffset, startLine, startColumn, false) end if
+  if first == 64 then return readUserVariable(state) end if
   if first == 60 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.LessEqual, "<=", void, startOffset, startLine, startColumn, false) end if
   if first == 62 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.GreaterEqual, ">=", void, startOffset, startLine, startColumn, false) end if
   if first == 60 and second == 62 then advance(state); advance(state); return token.create(token.TokenKind.NotEqual, "<>", void, startOffset, startLine, startColumn, false) end if
   if first == 33 and second == 61 then advance(state); advance(state); return token.create(token.TokenKind.NotEqual, "!=", void, startOffset, startLine, startColumn, false) end if
   if first == 124 and second == 124 then advance(state); advance(state); return token.create(token.TokenKind.Concat, "||", void, startOffset, startLine, startColumn, false) end if
   advance(state)
+  if first == 58 then return token.create(token.TokenKind.Colon, ":", void, startOffset, startLine, startColumn, false) end if
   if first == 44 then return token.create(token.TokenKind.Comma, ",", void, startOffset, startLine, startColumn, false) end if
   if first == 46 then return token.create(token.TokenKind.Dot, ".", void, startOffset, startLine, startColumn, false) end if
   if first == 42 then return token.create(token.TokenKind.Star, "*", void, startOffset, startLine, startColumn, false) end if
@@ -356,7 +380,7 @@ function tokenizeSql(source)
     value = current(state)
     if isIdentifierStart(value) then
       readIdentifier(state)
-    else if value == 34 then
+    else if value == 34 or value == 96 then
       readQuotedIdentifier(state)
     else if value == 39 then
       readString(state)

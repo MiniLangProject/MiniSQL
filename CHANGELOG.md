@@ -6,6 +6,16 @@ and repair-candidate log from development is preserved in
 
 ## Unreleased
 
+- extend stored procedures with MySQL-style `CREATE PROCEDURE`, `IN`/`OUT`/`INOUT`,
+  lexical variables and blocks, conditionals, labeled loops, cursors, handlers,
+  `SIGNAL`/`RESIGNAL`, diagnostics, session variables and dynamic SQL;
+- persist procedure characteristics and definer identities, enforce routine
+  privileges through users and roles, expose routine and parameter metadata,
+  and preserve the existing single-statement `AS` syntax;
+- deliver multiple procedure result sets through the native, Python and JDBC
+  clients, with client `DELIMITER` support and a native regression gate through
+  `test.ps1 -Routines`; the procedure language targets MySQL semantics while
+  retaining MiniSQL's underlying SQL, data types and transaction rules;
 - introduced incompatible database/storage format 2; new binaries reject
   format-1 databases instead of attempting an implicit conversion;
 - store REAL and DOUBLE as exact eight-byte IEEE-754 binary64 little-endian

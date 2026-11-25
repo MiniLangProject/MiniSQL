@@ -3,10 +3,11 @@
 
 Requires a normal TeX Live or MiKTeX installation with the packages used in
 preamble.tex. No shell escape, network download, or generated raster art is
-required. Auxiliary files remain in docs/manual/build.
+required. Auxiliary files remain in the repository's ignored build/manual.
 """
 # Copyright 2026 MiniLangProject contributors
 # SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0; see the LICENSE file.
 from __future__ import annotations
 
 import argparse
@@ -20,14 +21,15 @@ STEM = "minisql-user-manual"
 
 
 def main() -> int:
+    """Builds and indexes the manual, rejects broken references, and copies the final PDF."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=MANUAL / f"{STEM}.pdf")
     args = parser.parse_args()
     for executable in ("pdflatex", "makeindex"):
         if shutil.which(executable) is None:
             parser.error(f"{executable} is missing; install TeX Live or MiKTeX")
-    build = MANUAL / "build"
-    build.mkdir(exist_ok=True)
+    build = MANUAL.parents[1] / "build" / "manual"
+    build.mkdir(parents=True, exist_ok=True)
     command = ["pdflatex", "-interaction=nonstopmode", "-halt-on-error",
                "-file-line-error", f"-output-directory={build}", f"{STEM}.tex"]
     for run in range(4):

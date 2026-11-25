@@ -55,6 +55,13 @@ end function
 /// @param result Result object populated or inspected by the operation.
 function responseFromResult(result)
   if not executor.isQueryResult(result) then return fail("responseFromResult", "result must be QueryResult") end if
+  if result.kind == executor.RESULT_MULTIPLE then
+    children = []
+    for each child in result.rows
+      children = children + [responseFromResult(child)]
+    end for
+    return messages.multipleResponse(children)
+  end if
   if result.kind == executor.RESULT_COMMAND then return messages.commandResponse(result.command, result.affectedRows, result.message) end if
   if result.kind != executor.RESULT_ROWS then return fail("responseFromResult", "unknown result kind") end if
   rows = array(len(result.rows))
@@ -78,6 +85,17 @@ end function
 /// @param result Result object populated or inspected by the operation.
 function responsesFromResult(result)
   if not executor.isQueryResult(result) then return fail("responsesFromResult", "result must be QueryResult") end if
+  if result.kind == executor.RESULT_MULTIPLE then
+    output = list.List.new()
+    for each child in result.rows
+      batches = responsesFromResult(child)
+      if len(batches) > 0 then batches[0].resultStart = true end if
+      for each batch in batches
+        output.add(batch)
+      end for
+    end for
+    return output.toArray()
+  end if
   if result.kind == executor.RESULT_COMMAND then return [messages.commandResponse(result.command, result.affectedRows, result.message)] end if
   if result.kind != executor.RESULT_ROWS then return fail("responsesFromResult", "unknown result kind") end if
   responses = list.List.new()
@@ -111,6 +129,16 @@ end function
 /// @param response response value consumed by this operation.
 function formatResponse(response)
   if not messages.isResponse(response) then return fail("formatResponse", "response must be Response") end if
+  if response.status == constants.STATUS_MULTIPLE then
+    sections = string_builder.StringBuilder.withCapacity(256)
+    index = 0
+    for each child in response.rows
+      if index > 0 then sections.appendString("\n\n") end if
+      sections.appendString(formatResponse(child))
+      index = index + 1
+    end for
+    return sections.toString()
+  end if
   if response.status == constants.STATUS_ERROR then return "ERROR " + response.errorCode + ": " + response.message end if
   if response.status == constants.STATUS_COMMAND then return response.command + " " + response.affectedRows + " " + response.message end if
   builder = string_builder.StringBuilder.withCapacity(256)

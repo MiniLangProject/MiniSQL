@@ -44,7 +44,7 @@ final class MiniSqlProtocol implements AutoCloseable {
     static final int TYPE_CANCEL = 9;
     static final int TYPE_RESPONSE = 100, TYPE_PONG = 101, TYPE_ERROR = 102;
     static final int STATUS_COMMAND = 1, STATUS_ROWS = 2, STATUS_ERROR = 3;
-    static final int FLAG_SECURE = 1, FLAG_MORE = 2;
+    static final int FLAG_SECURE = 1, FLAG_MORE = 2, FLAG_RESULT_START = 4;
     private static final int HEADER_BYTES = 32, MAX_PAYLOAD = 16 * 1024 * 1024;
 
     private final MiniSqlUrl configuration;
@@ -277,9 +277,17 @@ final class MiniSqlProtocol implements AutoCloseable {
         try {
             Message message = readExpected(query.requestId);
             Response response = decodeResponse(message);
-            if (message.type == TYPE_ERROR || response.status == STATUS_ERROR) throw serverError(response);
             query.more = (message.flags & FLAG_MORE) != 0;
             if (!query.more) activeQuery = null;
+            if (message.type == TYPE_ERROR || response.status == STATUS_ERROR) {
+                activeQuery = null;
+                // A terminal routine condition belongs to the next result;
+                // completed SELECT rows must remain readable before it.
+                if (!response.resultStart || query.more) {
+                    query.more = false;
+                    throw serverError(response);
+                }
+            }
             return response;
         } catch (SQLException exception) {
             throw exception;
@@ -377,7 +385,7 @@ final class MiniSqlProtocol implements AutoCloseable {
                 rows.add(values);
             }
             if (source.hasRemaining()) throw new IOException("Trailing response bytes");
-            return new Response(status, command, columns, rows, affected, text, error);
+            return new Response(status, command, columns, rows, affected, text, error, (message.flags & FLAG_RESULT_START) != 0);
         } catch (Exception exception) {
             if (exception instanceof SQLException) throw (SQLException) exception;
             throw connectionError("Invalid MiniSQL response", exception);
@@ -477,7 +485,17 @@ final class MiniSqlProtocol implements AutoCloseable {
     private static ByteBuffer little(int size) { return ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN); }
     private static ByteBuffer wrap(byte[] bytes) { return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN); }
     private static void wipe(byte[]... values) { for (byte[] value : values) if (value != null) Arrays.fill(value, (byte) 0); }
-    private static SQLException serverError(Response response) { return new SQLException(response.message, "42000", response.errorCode); }
+    /** Preserves a validated SIGNAL SQLSTATE while retaining the legacy fallback for native errors. */
+    private static SQLException serverError(Response response) {
+        String state = "42000";
+        int start = "SQLSTATE ".length();
+        if (response.message.length() >= start + 7 && response.message.startsWith("SQLSTATE ")
+                && response.message.startsWith(": ", start + 5)) {
+            String candidate = response.message.substring(start, start + 5);
+            if (candidate.matches("[0-9A-Z]{5}")) state = candidate;
+        }
+        return new SQLException(response.message, state, response.errorCode);
+    }
     private static SQLNonTransientConnectionException connectionError(String message, Throwable cause) {
         return new SQLNonTransientConnectionException(message, "08001", cause);
     }
@@ -509,21 +527,61 @@ final class MiniSqlProtocol implements AutoCloseable {
         wipe(sendKey, receiveKey);
     }
 
-    /** A logical response whose continuation frames remain on the socket until consumed or drained. */
+    /** One request with separately consumable result sets and bounded continuation frames. */
     static class Query implements AutoCloseable {
         final MiniSqlProtocol protocol;
         final int requestId;
-        final Response first;
+        Response first;
         boolean more;
-        private boolean firstPending = true;
+        private boolean firstPending = true, resultEnded, closed;
+        private Response pendingResult;
         Query(MiniSqlProtocol protocol, int requestId, Response first, boolean more) {
             this.protocol = protocol; this.requestId = requestId; this.first = first; this.more = more;
         }
+        /** Returns batches only from the current result, retaining the next boundary. */
         Response nextFrame() throws SQLException {
+            if (closed || resultEnded) return null;
             if (firstPending) { firstPending = false; return first; }
-            return more ? protocol.continuation(this) : null;
+            if (!more) { resultEnded = true; return null; }
+            Response next = readContinuation();
+            if (next.resultStart) { pendingResult = next; resultEnded = true; return null; }
+            if (next.status != first.status || !next.columns.equals(first.columns)) {
+                throw new SQLException("MiniSQL continuation result schema changed without a boundary", "08S01");
+            }
+            return next;
         }
-        @Override public void close() throws SQLException { while (nextFrame() != null) { /* Drain before connection reuse. */ } }
+        /** Allows an in-memory CALL replay to preserve exactly the same boundary semantics. */
+        Response readContinuation() throws SQLException { return protocol.continuation(this); }
+        /** Discards unread rows of one result without discarding later CALL results. */
+        void finishResult() throws SQLException { while (nextFrame() != null) { } }
+        /** Advances to another row set or command result from the same request. */
+        boolean nextResult() throws SQLException {
+            if (closed) return false;
+            finishResult();
+            if (pendingResult == null) { closed = true; return false; }
+            first = pendingResult; pendingResult = null; firstPending = true; resultEnded = false;
+            if (first.status == STATUS_ERROR) { closed = true; throw serverError(first); }
+            return true;
+        }
+        @Override public void close() throws SQLException {
+            do { finishResult(); } while (nextResult());
+            closed = true;
+        }
+    }
+
+    /** Buffered procedure results retained while JDBC output parameters are fetched. */
+    static final class BufferedQuery extends Query {
+        private final List<Response> frames;
+        private int index = 1;
+        BufferedQuery(List<Response> frames) {
+            super(null, 0, frames.get(0), frames.size() > 1);
+            this.frames = frames;
+        }
+        @Override Response readContinuation() {
+            Response response = frames.get(index++);
+            more = index < frames.size();
+            return response;
+        }
     }
 
     /** Decoded response frame. Values are text because protocol v1 carries no type or null bitmap. */
@@ -532,10 +590,16 @@ final class MiniSqlProtocol implements AutoCloseable {
         final String command, message;
         final List<String> columns;
         final List<String[]> rows;
+        final boolean resultStart;
         Response(int status, String command, List<String> columns, List<String[]> rows,
                  int affectedRows, String message, int errorCode) {
+            this(status, command, columns, rows, affectedRows, message, errorCode, false);
+        }
+        Response(int status, String command, List<String> columns, List<String[]> rows,
+                 int affectedRows, String message, int errorCode, boolean resultStart) {
             this.status = status; this.command = command; this.columns = columns; this.rows = rows;
             this.affectedRows = affectedRows; this.message = message; this.errorCode = errorCode;
+            this.resultStart = resultStart;
         }
     }
 

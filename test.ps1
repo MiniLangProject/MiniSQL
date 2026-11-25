@@ -20,6 +20,10 @@ Selects the existing complete Windows suite or the portable Linux x64 suite.
 Runs repository and source-contract checks without compiling native targets.
 .PARAMETER StorageV2
 Runs the focused storage-v2 binary-layout and compatibility regression gate.
+.PARAMETER Routines
+Runs the focused stored-procedure and SQL/client regression gate.
+.PARAMETER CompileOnly
+Compiles focused Routines or StorageV2 tests without running the target images.
 .PARAMETER KeepArtifacts
 Preserves intermediate acceptance files for diagnosis.
 .PARAMETER VerboseOutput
@@ -32,6 +36,8 @@ param(
   [string]$Target = "windows-x64",
   [switch]$StaticOnly,
   [switch]$StorageV2,
+  [switch]$Routines,
+  [switch]$CompileOnly,
   [switch]$KeepArtifacts,
   [switch]$VerboseOutput
 )
@@ -39,11 +45,28 @@ param(
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+if ($Routines -and $StorageV2) {
+  throw "Select either -Routines or -StorageV2."
+}
+if ($CompileOnly -and ($StaticOnly -or (-not $Routines -and -not $StorageV2))) {
+  throw "-CompileOnly requires -Routines or -StorageV2 without -StaticOnly."
+}
+if ($Routines -and -not $StaticOnly) {
+  $RoutineArguments = @((Join-Path $Root "tests/run_routines.py"), "--target", $Target)
+  if (-not [string]::IsNullOrWhiteSpace($Compiler)) {
+    $RoutineArguments += @("--compiler", $Compiler)
+  }
+  if ($CompileOnly) { $RoutineArguments += "--compile-only" }
+  & $Python @RoutineArguments
+  exit $LASTEXITCODE
+}
+
 if ($StorageV2 -and -not $StaticOnly) {
   $StorageArguments = @((Join-Path $Root "tests/run_storage_v2.py"), "--target", $Target)
   if (-not [string]::IsNullOrWhiteSpace($Compiler)) {
     $StorageArguments += @("--compiler", $Compiler)
   }
+  if ($CompileOnly) { $StorageArguments += "--compile-only" }
   & $Python @StorageArguments
   exit $LASTEXITCODE
 }

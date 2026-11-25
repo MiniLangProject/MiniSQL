@@ -862,11 +862,13 @@ function executeSql(state, sqlText)
   for each statement in statements
     response = try(client.query(state.remoteClient, statement))
     if typeof(response) == "error" then return response end if
-    responses = responses + [response]
-    if response.status == constants.STATUS_ERROR then success = false end if
-    if response.status == constants.STATUS_COMMAND then commandCount = commandCount + 1 end if
-    if response.status == constants.STATUS_ROWS then rowCount = len(response.rows) end if
-    lines = lines + [renderResponse(response)]
+    for each item in messages.individualResponses(response)
+      responses = responses + [item]
+      if item.status == constants.STATUS_ERROR then success = false end if
+      if item.status == constants.STATUS_COMMAND then commandCount = commandCount + 1 end if
+      if item.status == constants.STATUS_ROWS then rowCount = len(item.rows) end if
+      lines = lines + [renderResponse(item)]
+    end for
   end for
   elapsed = clock.monotonicMilliseconds() - started
   view = QueryView(len(statements), commandCount, rowCount, success, lineJoin(lines))
@@ -875,6 +877,21 @@ function executeSql(state, sqlText)
   state.queryText = historySql(text)
   state.queryView = view
   ignoredTab = addResultTab(state, text, view, responses, elapsed)
+  rowSets = 0
+  for each item in responses
+    if item.status == constants.STATUS_ROWS then rowSets = rowSets + 1 end if
+  end for
+  if rowSets > 1 then
+    resultNumber = 0
+    for each item in responses
+      if item.status == constants.STATUS_ROWS then
+        resultNumber = resultNumber + 1
+        itemView = QueryView(1, 0, len(item.rows), true, renderResponse(item))
+        resultTab = addResultTab(state, text, itemView, [item], elapsed)
+        resultTab.title = "Result " + resultNumber
+      end if
+    end for
+  end if
   if success then state.statusText = "Completed " + len(statements) + " statement(s), " + rowCount + " row(s) in " + elapsed + " ms" else state.statusText = "SQL completed with an error in " + elapsed + " ms" end if
   return view
 end function

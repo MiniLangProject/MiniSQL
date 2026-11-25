@@ -2,6 +2,7 @@
 """Check the manual's source citations, local inputs and labels; write source map."""
 # Copyright 2026 MiniLangProject contributors
 # SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0; see the LICENSE file.
 from __future__ import annotations
 
 import json
@@ -13,6 +14,7 @@ REPO = MANUAL.parents[1]
 
 
 def main() -> int:
+    """Validates source citations and navigation before writing the chapter source map."""
     errors = []
     chapters = {}
     labels = {}

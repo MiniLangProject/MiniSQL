@@ -12,6 +12,7 @@ import minisql.common.uuid as uuid
 import minisql.common.endian as endian
 import minisql.platform.file as file_api
 import minisql.protocol.constants as constants
+import minisql.protocol.messages as messages
 import std.console as console_api
 
 /// Defines the invalid argument constant used by the minisql client console module.
@@ -41,6 +42,8 @@ struct SqlBatch
   statements
   /// Trailing text that does not yet form a complete statement.
   remainder
+  /// Delimiter active after consuming client DELIMITER directives in this batch.
+  delimiter
 end struct
 
 #if TARGET_OS == "windows"
@@ -437,36 +440,62 @@ function appendSqlFragment(statements, source, startOffset, endOffset, hasToken)
   return statements + [text]
 end function
 
-/// Split complete SQL statements without treating semicolons inside quoted
-/// strings, quoted identifiers or comments as terminators. When finalInput is
-/// false, an incomplete suffix is returned for the interactive continuation
-/// prompt. When finalInput is true, a final statement may omit its semicolon.
-/// Scans SQL batch using the supplied inputs.
-/// Requires arguments that satisfy the validation performed below.
-/// Returns the computed value or operation status.
-/// Any side effects are limited to the explicitly invoked dependencies.
-/// @param text Text consumed by the operation.
-/// @param finalInput finalInput value consumed by this operation.
-function scanSqlBatch(text, finalInput)
+/// Returns whether source contains the exact byte sequence at offset.
+function sqlBytesMatch(source, offset, expected)
+  if offset + len(expected) > len(source) then return false end if
+  for index = 0 to len(expected) - 1
+    if source[offset + index] != expected[index] then return false end if
+  end for
+  return true
+end function
+
+/// Recognizes a client DELIMITER directive only at a line start with no pending SQL.
+function delimiterDirectiveAt(source, offset)
+  expected = bytes("DELIMITER")
+  if offset + len(expected) >= len(source) then return false end if
+  for index = 0 to len(expected) - 1
+    value = source[offset + index]
+    if value >= 97 and value <= 122 then value = value - 32 end if
+    if value != expected[index] then return false end if
+  end for
+  return isWhitespaceByte(source[offset + len(expected)])
+end function
+
+/// Restricts delimiters to a short unambiguous token; quotes and backslashes are SQL syntax.
+function validateSqlDelimiter(delimiter)
+  if typeof(delimiter) != "string" then return fail(INVALID_ARGUMENT, "delimiter", "delimiter must be text") end if
+  data = bytes(delimiter)
+  if len(data) == 0 or len(data) > 32 then return fail(INVALID_ARGUMENT, "delimiter", "delimiter must contain 1 to 32 bytes") end if
+  for each value in data
+    if isWhitespaceByte(value) or value == 0 or value == 39 or value == 34 or value == 96 or value == 92 then return fail(INVALID_ARGUMENT, "delimiter", "delimiter cannot contain whitespace, quotes or backslashes") end if
+  end for
+  return true
+end function
+
+/// Splits script statements while retaining quoted strings, comments, and compound bodies.
+/// DELIMITER is consumed here and never sent to the server. The returned delimiter
+/// must be passed to the next incremental scan so an interactive session retains it.
+function scanSqlBatchWithDelimiter(text, finalInput, delimiter)
   if typeof(text) != "string" or typeof(finalInput) != "bool" then return fail(INVALID_ARGUMENT, "scanSqlBatch", "invalid arguments") end if
+  validateSqlDelimiter(delimiter)
   source = bytes(text)
+  delimiterBytes = bytes(delimiter)
   statements = []
   startOffset = 0
   index = 0
-  mode = 0 // 0 normal, 1 string, 2 quoted identifier, 3 SQL line comment, 4 block comment, 5 shell hash comment
+  mode = 0 // normal, string, double-quoted identifier, line comment, block comment, shell comment, backtick identifier
   hasToken = false
   lineStart = true
   while index < len(source)
     value = source[index]
     nextValue = -1
     if index + 1 < len(source) then nextValue = source[index + 1] end if
-    if mode == 1 then
-      if value == 39 then
-        if nextValue == 39 then index = index + 1 else mode = 0 end if
-      end if
-    else if mode == 2 then
-      if value == 34 then
-        if nextValue == 34 then index = index + 1 else mode = 0 end if
+    if mode == 1 or mode == 2 or mode == 6 then
+      quote = 39
+      if mode == 2 then quote = 34 end if
+      if mode == 6 then quote = 96 end if
+      if value == quote then
+        if nextValue == quote then index = index + 1 else mode = 0 end if
       end if
     else if mode == 3 then
       if value == 10 or value == 13 then mode = 0; lineStart = true end if
@@ -479,12 +508,40 @@ function scanSqlBatch(text, finalInput)
     else if mode == 4 then
       if value == 42 and nextValue == 47 then mode = 0; index = index + 1 end if
     else
-      if value == 39 then
+      if lineStart and not hasToken and delimiterDirectiveAt(source, index) then
+        endOffset = index + 9
+        while endOffset < len(source) and source[endOffset] != 10 and source[endOffset] != 13
+          endOffset = endOffset + 1
+        end while
+        if endOffset == len(source) and not finalInput then break end if
+        delimiter = trimAscii(rawText(source, index + 9, endOffset - index - 9))
+        validateSqlDelimiter(delimiter)
+        delimiterBytes = bytes(delimiter)
+        index = endOffset
+        startOffset = endOffset
+        lineStart = true
+        continue
+      else if sqlBytesMatch(source, index, delimiterBytes) then
+        endOffset = index
+        // Preserve the historical semicolon in ordinary statement text. Custom
+        // delimiters must be removed because they are not part of the SQL grammar.
+        if delimiter == ";" then endOffset = index + 1 end if
+        statements = appendSqlFragment(statements, source, startOffset, endOffset, hasToken)
+        index = index + len(delimiterBytes)
+        startOffset = index
+        hasToken = false
+        lineStart = true
+        continue
+      else if value == 39 then
         mode = 1
         hasToken = true
         lineStart = false
       else if value == 34 then
         mode = 2
+        hasToken = true
+        lineStart = false
+      else if value == 96 then
+        mode = 6
         hasToken = true
         lineStart = false
       else if value == 45 and nextValue == 45 then
@@ -495,11 +552,6 @@ function scanSqlBatch(text, finalInput)
         index = index + 1
       else if value == 35 and lineStart then
         mode = 5
-      else if value == 59 then
-        statements = appendSqlFragment(statements, source, startOffset, index + 1, hasToken)
-        startOffset = index + 1
-        hasToken = false
-        lineStart = true
       else if value == 10 or value == 13 then
         lineStart = true
       else if not isWhitespaceByte(value) then
@@ -511,7 +563,7 @@ function scanSqlBatch(text, finalInput)
   end while
 
   if finalInput and mode == 1 then return fail(INVALID_ARGUMENT, "scanSqlBatch", "unterminated SQL string literal") end if
-  if finalInput and mode == 2 then return fail(INVALID_ARGUMENT, "scanSqlBatch", "unterminated quoted identifier") end if
+  if finalInput and (mode == 2 or mode == 6) then return fail(INVALID_ARGUMENT, "scanSqlBatch", "unterminated quoted identifier") end if
   if finalInput and mode == 4 then return fail(INVALID_ARGUMENT, "scanSqlBatch", "unterminated block comment") end if
 
   remainder = ""
@@ -519,10 +571,15 @@ function scanSqlBatch(text, finalInput)
   if finalInput then
     if hasToken and len(remainder) > 0 then statements = statements + [remainder] end if
     remainder = ""
-  else if not hasToken then
+  else if not hasToken and index >= len(source) then
     remainder = ""
   end if
-  return SqlBatch(statements, remainder)
+  return SqlBatch(statements, remainder, delimiter)
+end function
+
+/// Splits a complete standalone script using the conventional initial delimiter.
+function scanSqlBatch(text, finalInput)
+  return scanSqlBatchWithDelimiter(text, finalInput, ";")
 end function
 
 /// Implements split SQL statements for this module.
@@ -559,7 +616,9 @@ function executeStatements(activeClient, statements)
     if typeof(response) == "error" then failure = response; response = void; gc_collect(); return failure end if
     printed = try(printQueryResponse(response))
     if typeof(printed) == "error" then failure = printed; response = void; printed = void; gc_collect(); return failure end if
-    if response.status == constants.STATUS_ERROR then failure = fail(response.errorCode, "executeStatements", response.message); response = void; printed = void; gc_collect(); return failure end if
+    for each part in messages.individualResponses(response)
+      if part.status == constants.STATUS_ERROR then failure = fail(part.errorCode, "executeStatements", part.message); response = void; printed = void; gc_collect(); return failure end if
+    end for
     executed = executed + 1
     // Script and interactive sessions are intentionally long-lived. Reclaim
     // protocol frames, decoded rows, and formatter buffers after each complete
@@ -694,6 +753,7 @@ function runShell(activeClient, prompt)
   if typeof(prompt) != "string" then return fail(INVALID_ARGUMENT, "runShell", "prompt must be string") end if
   print "MiniSQL interactive client. Type \\help for help and \\q to quit."
   buffer = ""
+  delimiter = ";"
   while true
     activePrompt = prompt
     if len(buffer) > 0 then activePrompt = "...> " end if
@@ -704,8 +764,9 @@ function runShell(activeClient, prompt)
 
     if line == "\\reset" then buffer = ""; continue end if
     if line == "\\g" then
-      batch = try(scanSqlBatch(buffer, true))
+      batch = try(scanSqlBatchWithDelimiter(buffer, true, delimiter))
       if typeof(batch) == "error" then print "ERROR " + batch.code + ": " + batch.message else ignored = try(executeStatements(activeClient, batch.statements)) end if
+      if typeof(batch) != "error" then delimiter = batch.delimiter end if
       buffer = ""
       continue
     end if
@@ -728,16 +789,17 @@ function runShell(activeClient, prompt)
     end if
 
     buffer = buffer + sourceLine + "\n"
-    batch = try(scanSqlBatch(buffer, false))
+    batch = try(scanSqlBatchWithDelimiter(buffer, false, delimiter))
     if typeof(batch) == "error" then print "ERROR " + batch.code + ": " + batch.message; buffer = ""; continue end if
     if len(batch.statements) > 0 then
       executed = try(executeStatements(activeClient, batch.statements))
       if typeof(executed) == "error" then print "ERROR " + executed.code + ": " + executed.message end if
     end if
     buffer = batch.remainder
+    delimiter = batch.delimiter
   end while
   if len(buffer) > 0 then
-    batch = try(scanSqlBatch(buffer, true))
+    batch = try(scanSqlBatchWithDelimiter(buffer, true, delimiter))
     if typeof(batch) == "error" then return batch end if
     executeStatements(activeClient, batch.statements)
   end if

@@ -42,6 +42,7 @@ STATUS_ROWS: Final = 2
 STATUS_ERROR: Final = 3
 FLAG_SECURE: Final = 1
 FLAG_MORE: Final = 2
+FLAG_RESULT_START: Final = 4
 HEADER_BYTES: Final = 32
 MAX_PAYLOAD: Final = 16 * 1024 * 1024
 TLS_CIPHER: Final = "TLS_AES_256_GCM_SHA384"
@@ -91,6 +92,7 @@ class Response:
     affected_rows: int
     message: str
     error_code: int
+    result_start: bool = False
 
 
 class Query:
@@ -104,24 +106,73 @@ class Query:
         self.more = more
         self._first_pending = True
         self._closed = False
+        self._pending_result: Response | None = None
+        self._result_ended = False
 
     def next_frame(self) -> Response | None:
-        """Returns the next bounded response frame, or ``None`` at EOF."""
-        if self._closed:
+        """Returns the next batch of the current result, stopping at its boundary."""
+        if self._closed or self._result_ended:
             return None
         if self._first_pending:
             self._first_pending = False
             return self.first
         if not self.more:
-            self._closed = True
+            self._result_ended = True
             return None
-        return self._protocol._continuation(self)
+        response = self._protocol._continuation(self)
+        if response.result_start:
+            self._pending_result = response
+            self._result_ended = True
+            return None
+        if response.status != self.first.status or response.columns != self.first.columns:
+            raise InternalError("MiniSQL continuation schema changed without a result boundary")
+        return response
 
-    def close(self) -> None:
-        """Drains unread continuation frames so the connection can be reused."""
+    def next_result(self) -> bool:
+        """Discards unread rows and advances to the next separate CALL result."""
+        if self._closed:
+            return False
         while self.next_frame() is not None:
             pass
+        if self._pending_result is None:
+            self._closed = True
+            return False
+        self.first = self._pending_result
+        self._pending_result = None
+        if self.first.status == STATUS_ERROR:
+            self._closed = True
+            raise Protocol._server_error(self.first)
+        self._first_pending = True
+        self._result_ended = False
+        return True
+
+    def close(self) -> None:
+        """Drains every result so the connection remains usable after early close."""
+        while True:
+            while self.next_frame() is not None:
+                pass
+            if not self.next_result():
+                break
         self._closed = True
+
+
+class BufferedQuery(Query):
+    """Replays a drained CALL while its output parameters are fetched separately."""
+
+    def __init__(self, frames: list[Response]) -> None:
+        """Retains all CALL frames; used only by the deliberately buffered callproc API."""
+        if not frames:
+            raise InternalError("Cannot buffer an empty MiniSQL result stream")
+        self._frames = iter(frames[1:])
+        self._remaining = len(frames) - 1
+        super().__init__(self, 0, frames[0], self._remaining > 0)
+
+    def _continuation(self, query: Query) -> Response:
+        """Supplies a local continuation using the same result-boundary rules."""
+        response = next(self._frames)
+        self._remaining -= 1
+        query.more = self._remaining > 0
+        return response
 
 
 class Protocol:
@@ -361,12 +412,16 @@ class Protocol:
             try:
                 message = self._read_expected(query.request_id)
                 response = self._decode_response(message)
-                if message.message_type == TYPE_ERROR or response.status == STATUS_ERROR:
-                    self._active_query = None
-                    raise self._server_error(response)
                 query.more = bool(message.flags & FLAG_MORE)
                 if not query.more:
                     self._active_query = None
+                if message.message_type == TYPE_ERROR or response.status == STATUS_ERROR:
+                    self._active_query = None
+                    # A completed routine SELECT survives a later error. Defer
+                    # that separate terminal result until the caller advances.
+                    if not response.result_start or query.more:
+                        query.more = False
+                        raise self._server_error(response)
                 return response
             except DatabaseError:
                 raise
@@ -499,7 +554,7 @@ class Protocol:
         rows = tuple(tuple(field() for _ in range(column_count)) for _ in range(row_count))
         if offset != len(payload):
             raise OperationalError("MiniSQL returned trailing response bytes")
-        return Response(status, command, columns, rows, affected, text, error_code)
+        return Response(status, command, columns, rows, affected, text, error_code, bool(message.flags & FLAG_RESULT_START))
 
     def _read_exact(self, length: int) -> bytes:
         """Accumulates exactly *length* bytes across arbitrary TCP fragments."""

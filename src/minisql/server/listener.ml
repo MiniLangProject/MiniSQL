@@ -10,6 +10,7 @@ import std.threading as threading
 import std.concurrent.thread_pool as thread_pool
 import minisql.platform.file as file_api
 import minisql.common.logger as logger
+import minisql.executor.executor as executor
 import minisql.platform.network as network
 #if TARGET_OS == "windows"
 import minisql.platform.tls_schannel as tls_schannel
@@ -237,7 +238,7 @@ end function
 function responseErrorCode(response)
   if typeof(response) == "array" then
     if len(response) == 0 then return 0 end if
-    response = response[0]
+    response = response[len(response) - 1]
   end if
   if response.messageType != constants.TYPE_ERROR then return 0 end if
   decoded = try(messages.decodeResponse(response.payload))
@@ -307,7 +308,11 @@ function processRequest(slot, request, lockWaitMs)
   response = try(session.handleToConnection(slot.activeSession, request, slot.client))
   if typeof(response) == "error" then return response end if
   code = responseErrorCode(response)
-  if code == 9007 then
+  // MYSQL_ERRNO is application-controlled and may equal an internal lock code.
+  // Only native lock failures may retry a request or abort its transaction.
+  applicationCondition = executor.isApplicationError(slot.activeSession.engine, code)
+  completedResults = typeof(response) == "array" and len(response) > 1
+  if code == 9007 and not applicationCondition and not completedResults then
     now = clock.monotonicMilliseconds()
     if slot.pendingRequest is void then
       slot.pendingRequest = request
@@ -318,7 +323,7 @@ function processRequest(slot, request, lockWaitMs)
     slot.pendingRequest = void
     return errorMessageFor(request, 9032, "lock wait timeout; transaction rolled back")
   end if
-  if code == 9031 then session.abortForConcurrency(slot.activeSession) end if
+  if code == 9031 and not applicationCondition then session.abortForConcurrency(slot.activeSession) end if
   slot.pendingRequest = void
   return response
 end function

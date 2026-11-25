@@ -429,7 +429,7 @@ ORDER BY ordinal_position;
 
 DESCRIBE returns ordinal, column name, data type, nullable flag, default SQL, and identity flag. SHOW INDEXES returns index name, kind, uniqueness, key columns, included columns, and predicate. INFORMATION\_SCHEMA provides relational metadata that can be filtered, joined, and consumed by applications.
 
-Available virtual relations are \code{schemata}, \code{tables}, \code{columns}, \code{table\_constraints}, \code{views}, and \code{routines}. There is no promise that MiniSQL implements the entire SQL-standard INFORMATION\_SCHEMA. Discover the available columns with a small query before copying metadata SQL from another engine.
+Available virtual relations are \code{schemata}, \code{tables}, \code{columns}, \code{table\_constraints}, \code{views}, \code{routines}, and \code{parameters}. There is no promise that MiniSQL implements the entire SQL-standard INFORMATION\_SCHEMA. Discover the available columns with a small query before copying metadata SQL from another engine.
 
 \begin{lstlisting}[language=SQL]
 DROP TABLE [IF EXISTS] table_name;

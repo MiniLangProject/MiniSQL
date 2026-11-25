@@ -87,6 +87,8 @@ const INFORMATION_TABLE_CONSTRAINTS = 4
 const INFORMATION_VIEWS = 5
 /// Defines the information routines constant used by the minisql sql binder module.
 const INFORMATION_ROUTINES = 6
+/// Identifies the ordered, typed parameter metadata for stored procedures.
+const INFORMATION_PARAMETERS = 7
 
 /// Groups the bound join state and preserves the field relationships documented below.
 struct BoundJoin
@@ -667,6 +669,22 @@ function informationSchemaTable(name)
     columns = appendInformationColumn(columns, "routine_name", types.SqlTypeKind.Text, false)
     columns = appendInformationColumn(columns, "routine_type", types.SqlTypeKind.Text, false)
     columns = appendInformationColumn(columns, "routine_definition", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "security_type", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "definer", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "is_deterministic", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "sql_data_access", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "routine_comment", types.SqlTypeKind.Text, false)
+  else if name == "information_schema.parameters" then
+    relationKind = INFORMATION_PARAMETERS
+    columns = appendInformationColumn(columns, "specific_schema", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "specific_name", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "ordinal_position", types.SqlTypeKind.Integer, false)
+    columns = appendInformationColumn(columns, "parameter_mode", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "parameter_name", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "data_type", types.SqlTypeKind.Text, false)
+    columns = appendInformationColumn(columns, "character_maximum_length", types.SqlTypeKind.Integer, true)
+    columns = appendInformationColumn(columns, "numeric_precision", types.SqlTypeKind.Integer, true)
+    columns = appendInformationColumn(columns, "numeric_scale", types.SqlTypeKind.Integer, true)
   end if
   if relationKind == 0 then return void end if
   return [metadata.createTable(0, name, 1, columns), BoundInformationSchemaSource(relationKind)]

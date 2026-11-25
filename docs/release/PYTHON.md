@@ -160,8 +160,10 @@ exactly `NULL`. Cursor descriptions conservatively use `minisql.STRING`.
 
 Python `bytes` results can be decoded by applications from MiniSQL's `0x...`
 rendering, but binary parameter binding is unavailable because SQL v1 has no
-binary literal. Stored procedures, multiple result sets, scrollable cursors,
-and two-phase commit are not implemented.
+binary literal. Scrollable cursors and two-phase commit are not implemented.
+Stored procedures support streaming `execute("CALL ...")` / `nextset()` and
+buffered `callproc()` with IN/OUT/INOUT arguments. See the
+[stored procedure examples](../../clients/python/README.md#stored-procedures).
 
 ## Validation
 

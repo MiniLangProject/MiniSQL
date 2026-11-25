@@ -90,10 +90,16 @@
   configurable search path or cross-database catalog qualifier.
 * Window functions operate on the complete partition. Explicit `ROWS`, `RANGE`,
   `GROUPS`, frame bounds and named windows are not implemented.
-* Trigger and stored-procedure bodies contain one supported DML statement and
+* Trigger bodies contain one supported DML statement and
   have no procedural control language. `OLD`/`NEW` are read-only, trigger
   recursion is bounded, and body `RETURNING`, `ON CONFLICT`, and `INSERT ...
   SELECT` forms are rejected rather than partially persisted.
+* Stored procedures support typed IN/OUT/INOUT parameters, compound blocks,
+  control flow, cursors, handlers, diagnostics, dynamic SQL and result sets.
+  Their statements still use MiniSQL SQL and type semantics; stored functions,
+  the full MySQL server dialect/collation system, Event Scheduler, and MySQL
+  replication/protocol compatibility are not implied. See
+  `docs/sql/stored-procedures.md` for the procedural contract.
 * `MERGE` accepts one source table and one action per matched/not-matched branch;
   conditional branches, multiple matched clauses and a query source are not yet
   implemented.

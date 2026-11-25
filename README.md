@@ -62,6 +62,16 @@ same five new format tests are included in the cumulative row/storage phase.
 The [storage-v2 validation report](docs/acceptance/STORAGE_V2_2026-11-24.md)
 records the focused native results and the platform limits of this development check.
 
+The expanded [stored-procedure language](docs/sql/stored-procedures.md) targets
+MySQL's procedure features within MiniSQL's SQL and transaction model. Run
+`./test.ps1 -Routines -Target linux-x64` or
+`./test.ps1 -Routines -Target windows-x64` on the corresponding host; add
+`-CompileOnly` for a cross-target compilation check. The focused gate covers
+parsing, execution, persistence, security, result framing and legacy SQL/client
+regressions. The new routine cases also run in the cumulative M45 phase.
+The [stored-procedure verification report](docs/acceptance/STORED_PROCEDURES_2026-11-25.md)
+records native coverage, Windows compilation, and the limits of those checks.
+
 > MiniSQL is an independently developed database engine. Version 1.0 has a
 > substantial project-specific test suite, but it has not received an
 > independent security or production audit. Validate it against your own
@@ -88,8 +98,11 @@ Persisted database and wire formats remain shared across both targets.
   consistency checking, and offline page-size migration;
 - DDL, DML, and DCL with schemas, `INFORMATION_SCHEMA`, constraints, roles,
   grants, prepared statements, views, recursive CTEs, correlated subqueries,
-  window functions, `MERGE`, triggers, typed single-statement procedures,
+  window functions, `MERGE`, triggers, stored procedures,
   sequences, and generated columns;
+- MySQL-style stored procedures with `IN`/`OUT`/`INOUT`, lexical blocks,
+  conditionals, loops, cursors, handlers, diagnostics, dynamic SQL, multiple
+  results, and durable definer/invoker security with routine privileges;
 - joins (including aliased comma-separated `FROM` lists), aggregates, set operations,
   sampled optimizer statistics, transitive constant propagation, predicate
   pushdown, constant folding, projection pruning, costed index/sequential scans,

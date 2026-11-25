@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-25",
+  "feature": "MySQL-style stored procedures",
+  "sourceBaseline": "976996364895f2423ef61f19b547074f2e3b8dc0",
+  "compiler": {
+    "name": "MiniLangCompilerPy",
+    "version": "1.3.10",
+    "commit": "8e64c9cfda92199b68ac5d3974fea445f12f6c39"
+  },
+  "nativeGate": {
+    "target": "linux-x64",
+    "status": "PASS",
+    "caseCount": 11,
+    "executionStrategy": "Incremental native verification: successful independent cases retained; compile failures and updated parser/M45 cases recompiled and executed after fixes.",
+    "runs": [
+      {
+        "evidence": "build/routines/gates/20261125T001932Z-lds7yus_/results.json",
+        "status": "FAIL",
+        "note": "An out-of-scope variable in new diagnostics prevented seven compilations; the M45 test used a BIGINT wrapper assertion for INTEGER RETURNING. Both were corrected."
+      },
+      {
+        "evidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "status": "PASS",
+        "cases": 9
+      }
+    ],
+    "cases": [
+      {
+        "case": "m12_sql_frontend",
+        "status": "PASS",
+        "seconds": 4.251,
+        "source": "src/tests/m12_sql_frontend.ml",
+        "runEvidence": "build/routines/gates/20261125T001932Z-lds7yus_/results.json",
+        "nativeOutput": "MiniSQL M12 SQL front-end tests: SUCCESS"
+      },
+      {
+        "case": "m15_sql_engine",
+        "status": "PASS",
+        "seconds": 43.893,
+        "source": "src/tests/m15_sql_engine.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL M15 SQL engine tests: SUCCESS"
+      },
+      {
+        "case": "m22_prepared_statements",
+        "status": "PASS",
+        "seconds": 46.369,
+        "source": "src/tests/m22_prepared_statements.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL M22 prepared statement tests: SUCCESS"
+      },
+      {
+        "case": "m33_sql_batch",
+        "status": "PASS",
+        "seconds": 48.542,
+        "source": "src/tests/m33_sql_batch.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL M33 SQL-aware client input tests: SUCCESS"
+      },
+      {
+        "case": "m37_outer_joins",
+        "status": "PASS",
+        "seconds": 51.726,
+        "source": "src/tests/m37_outer_joins.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL M37 outer join tests: SUCCESS"
+      },
+      {
+        "case": "m45_sequences_generated_triggers",
+        "status": "PASS",
+        "seconds": 44.256,
+        "source": "src/tests/m45_sequences_generated_triggers.ml",
+        "runEvidence": "build/routines/gates/20261125T003441Z-x59m0ykj/results.json",
+        "priorRunEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL M45 sequence generated trigger tests: SUCCESS",
+        "sourceSha256": "ffe8e5f1e1a8efb3f880fca657ae13321bf401696fd601379806fdcd3df7185a",
+        "note": "Final targeted regression after fixing DML RETURNING CALL totals and per-statement diagnostics; also verifies SELECT-only calls keep zero affected rows."
+      },
+      {
+        "case": "routine_security",
+        "status": "PASS",
+        "seconds": 22.523,
+        "source": "src/tests/routine_security.ml",
+        "runEvidence": "build/routines/gates/20261125T001932Z-lds7yus_/results.json",
+        "nativeOutput": "MiniSQL routine security tests: SUCCESS"
+      },
+      {
+        "case": "routines_client",
+        "status": "PASS",
+        "seconds": 48.488,
+        "source": "src/tests/routines_client.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL stored procedure client tests: SUCCESS"
+      },
+      {
+        "case": "stored_procedure_edges",
+        "status": "PASS",
+        "source": "src/tests/stored_procedure_edges.ml",
+        "runEvidence": "build/routines-live/stored-procedure-edges-complete.run.log",
+        "nativeOutput": "Stored procedure edge assertions: 21\nMiniSQL stored procedure edge tests: SUCCESS",
+        "priorRunEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "assertions": 21,
+        "note": "Final expanded seven-group edge test executed independently after the focused runner had passed the earlier17-assertion version.",
+        "sourceSha256": "c81ae7be65a9f16860367700dd9eb1dd45e608519fc0ef72b087309b3cb4e127"
+      },
+      {
+        "case": "stored_procedure_parser",
+        "status": "PASS",
+        "seconds": 3.641,
+        "source": "src/tests/stored_procedure_parser.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "MiniSQL stored procedure parser tests: SUCCESS"
+      },
+      {
+        "case": "stored_procedure_runtime",
+        "status": "PASS",
+        "seconds": 46.703,
+        "source": "src/tests/stored_procedure_runtime.ml",
+        "runEvidence": "build/routines/gates/20261125T002243Z-289gqlhl/results.json",
+        "nativeOutput": "Stored procedure runtime assertions: 127\nMiniSQL stored procedure runtime tests: SUCCESS"
+      }
+    ],
+    "supplementalRuns": [
+      {
+        "case": "stored_procedure_edges",
+        "status": "PASS",
+        "assertions": 21,
+        "evidence": "build/routines-live/stored-procedure-edges-complete.run.log",
+        "format": "ELF"
+      },
+      {
+        "case": "m45_sequences_generated_triggers",
+        "status": "PASS",
+        "evidence": "build/routines/gates/20261125T003441Z-x59m0ykj/results.json",
+        "format": "ELF"
+      }
+    ]
+  },
+  "staticGate": {
+    "status": "PASS",
+    "phases": 4,
+    "command": "python -B tests/run_all_tests.py --static-only"
+  },
+  "manual": {
+    "status": "PASS",
+    "pages": 193,
+    "overfullBoxes": 0,
+    "unresolvedReferences": 0,
+    "audit": {
+      "texFiles": 32,
+      "sourceFiles": 115,
+      "labels": 50
+    },
+    "visuallyReviewedPdfPages": [
+      1,
+      87,
+      143,
+      146
+    ],
+    "pdf": "docs/manual/minisql-user-manual.pdf",
+    "sha256": "fa33afa5ba36411ab7d7d29b4aad75f76a8215b360bba63b071bd6266a59a33c",
+    "sourcePinPending": true
+  },
+  "scopeLimits": [
+    "The complete 106-phase Windows release matrix was not executed for this change.",
+    "Native Linux focused tests do not certify Windows Workbench interaction, full TLS matrices, crash injection, replication or soak workloads.",
+    "MySQL procedure-language behavior is targeted within MiniSQL SQL/type/transaction semantics; MySQL server or wire-protocol equivalence is not claimed."
+  ],
+  "reviewedCoreSha256": {
+    "src/minisql/executor/executor.ml": "8a87c6b3d0c0d950517cb56ecb1226baab4158c4e2975185350fff6ed264d149",
+    "src/minisql/executor/routine_state.ml": "21404a85c4bfebaf085bd2b17d4ef801545e5009fd4ba40cd6c855c8294a339e"
+  },
+  "windowsCompileGate": {
+    "target": "windows-x64",
+    "compileOnly": true,
+    "status": "PASS",
+    "caseCount": 5,
+    "cases": [
+      {
+        "case": "routine_security",
+        "status": "COMPILE_PASS",
+        "seconds": 21.472,
+        "evidence": "build/routines/gates/20261125T002221Z-i425ib_l/results.json"
+      },
+      {
+        "case": "routines_client",
+        "status": "COMPILE_PASS",
+        "seconds": 51.23,
+        "evidence": "build/routines/gates/20261125T002221Z-i425ib_l/results.json"
+      },
+      {
+        "case": "stored_procedure_edges",
+        "status": "COMPILE_PASS",
+        "seconds": 47.059,
+        "evidence": "build/routines/gates/20261125T003658Z-et8tm0f3/results.json"
+      },
+      {
+        "case": "stored_procedure_parser",
+        "status": "COMPILE_PASS",
+        "seconds": 3.822,
+        "evidence": "build/routines/gates/20261125T002221Z-i425ib_l/results.json"
+      },
+      {
+        "case": "stored_procedure_runtime",
+        "status": "COMPILE_PASS",
+        "seconds": 44.672,
+        "evidence": "build/routines/gates/20261125T002221Z-i425ib_l/results.json"
+      }
+    ],
+    "frozenCoreValidation": {
+      "status": "PASS",
+      "sourceHashesBefore": {
+        "src/minisql/executor/executor.ml": "8a87c6b3d0c0d950517cb56ecb1226baab4158c4e2975185350fff6ed264d149",
+        "src/minisql/executor/routine_state.ml": "21404a85c4bfebaf085bd2b17d4ef801545e5009fd4ba40cd6c855c8294a339e",
+        "src/tests/stored_procedure_edges.ml": "c81ae7be65a9f16860367700dd9eb1dd45e608519fc0ef72b087309b3cb4e127"
+      },
+      "sourceHashesAfter": {
+        "src/minisql/executor/executor.ml": "8a87c6b3d0c0d950517cb56ecb1226baab4158c4e2975185350fff6ed264d149",
+        "src/minisql/executor/routine_state.ml": "21404a85c4bfebaf085bd2b17d4ef801545e5009fd4ba40cd6c855c8294a339e",
+        "src/tests/stored_procedure_edges.ml": "c81ae7be65a9f16860367700dd9eb1dd45e608519fc0ef72b087309b3cb4e127"
+      },
+      "sourceHashesUnchanged": {
+        "src/minisql/executor/executor.ml": "8a87c6b3d0c0d950517cb56ecb1226baab4158c4e2975185350fff6ed264d149",
+        "src/minisql/executor/routine_state.ml": "21404a85c4bfebaf085bd2b17d4ef801545e5009fd4ba40cd6c855c8294a339e",
+        "src/tests/stored_procedure_edges.ml": "c81ae7be65a9f16860367700dd9eb1dd45e608519fc0ef72b087309b3cb4e127"
+      },
+      "executable": "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines/gates/20261125T003658Z-et8tm0f3/stored_procedure_edges/stored_procedure_edges.exe",
+      "peValidation": {
+        "status": "VALID",
+        "format": "PE32+",
+        "machine": "AMD64",
+        "subsystem": "console",
+        "entryPointRva": 4096,
+        "sections": [
+          ".text",
+          ".rdata",
+          ".data",
+          ".bss",
+          ".idata"
+        ],
+        "bytes": 39357952,
+        "sha256": "9b02b173171782044a3748743a58b63a3cc71de7b3dc499cc60c463dccc13ab7"
+      }
+    },
+    "applicationCompiles": {
+      "evidence": "build/routines/windows-apps/results.json",
+      "applications": [
+        {
+          "entrypoint": "src/apps/minisql_admin/main.ml",
+          "executable": "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines/windows-apps/minisql-admin.exe",
+          "status": "COMPILE_PASS",
+          "seconds": 57.583,
+          "exitCode": 0
+        },
+        {
+          "entrypoint": "src/apps/minisql/main.ml",
+          "executable": "/workspace/scratch/dafda0c2db0b/MiniSQL/build/routines/windows-apps/minisql.exe",
+          "status": "COMPILE_PASS",
+          "seconds": 47.715,
+          "exitCode": 0
+        }
+      ],
+      "sourcesChangedDuringBuild": [
+        "src/minisql/client/console.ml",
+        "src/minisql/client/client.ml"
+      ],
+      "peValidation": [
+        {
+          "name": "minisql-admin",
+          "status": "VALID",
+          "format": "PE32+",
+          "machine": "AMD64",
+          "subsystem": "console (matches existing build.ps1)",
+          "entryPointRva": 4096,
+          "sections": [
+            ".text",
+            ".rdata",
+            ".data",
+            ".bss",
+            ".idata"
+          ],
+          "bytes": 48862720,
+          "sha256": "e8dd0301f11d60ff3a4fa440d2ed7b02bb0dc90302078980277884aa729a029d"
+        },
+        {
+          "name": "minisql",
+          "status": "VALID",
+          "format": "PE32+",
+          "machine": "AMD64",
+          "subsystem": "console (matches existing build.ps1)",
+          "entryPointRva": 4096,
+          "sections": [
+            ".text",
+            ".rdata",
+            ".data",
+            ".bss",
+            ".idata"
+          ],
+          "bytes": 42561024,
+          "sha256": "d304248ac2901e5e071a8bbeabcbd8a1447d542f6567326ffca748a15270dda4"
+        }
+      ]
+    },
+    "note": "No Windows execution. The frozen-core edge image was rebuilt after final runtime changes; application GUI-specific modules stayed unchanged, but shared client error-flow code changed during their builds and is separately covered by the final native/live client checks."
+  },
+  "clients": {
+    "status": "PASS",
+    "pythonUnit": {
+      "tests": 14,
+      "evidence": "build/routines-live/python-final.log"
+    },
+    "jdbcUnit": {
+      "checks": 16,
+      "evidence": "build/routines-live/jdbc-driver-final.log"
+    },
+    "jdbcRoutines": {
+      "checks": 25,
+      "evidence": "build/routines-live/jdbc-routine-final.log"
+    },
+    "nativeServerIntegration": {
+      "checks": 17,
+      "includedJdbcChecks": 14,
+      "evidence": "build/routines-live/clients-verified.run.log",
+      "serverCompileEvidence": "build/routines-live/minisqld-verified.compile.log",
+      "coverage": [
+        "600-row continuation frames",
+        "successive same-schema SELECT results",
+        "empty results",
+        "OUT/INOUT copyback",
+        "Python callproc and JDBC CallableStatement",
+        "partial results preceding SIGNAL with deferred nextset/getMoreResults error",
+        "connection reuse after procedure errors",
+        "MYSQL_ERRNO 9007 is not retried as a native lock conflict",
+        "MYSQL_ERRNO 9031 is not treated as native transaction rollback",
+        "JDBC exposes the supplied SIGNAL SQLSTATE 45000"
+      ]
+    },
+    "finalSourceSha256": {
+      "src/minisql/server/listener.ml": "00151af9c968923fd8dc51ad55ce232f9444201dedc366bb1ea2fdcab92456dd",
+      "src/minisql/server/session.ml": "f5c7749983f57e216e1ae0a9d621aaad69ff5c25ddbb77d627cd435fef0bff9f",
+      "src/minisql/client/client.ml": "eae511140b2713a5e8e4bafbbb6a8e0de7ebcde34625c6ade08a27055decc389",
+      "src/minisql/client/console.ml": "d66a9e6ba085dec0cd2c1efac0e41cb66ddb7ae85b0b241e750b32adf70e47b4",
+      "clients/python/minisql/dbapi.py": "4efc86538ad4420f12e6f15e858cf9a3706c52d7388bcd00696e8939bebba1e5",
+      "clients/python/minisql/protocol.py": "a87d1ec8997790772c299870ca7b7ac5274e52d28241574b34e2b9d6d46e1a95",
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java": "f064021b8eb18a637dfbbee1b9fa8266d13683dca9c2493b99d81ebebc815459",
+      "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java": "17a1d9f3f49609c4d42091b38e909c195fb85198dff99d704870fd3eaa2adc3c"
+    }
+  }
+}

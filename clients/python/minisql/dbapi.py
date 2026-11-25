@@ -27,7 +27,7 @@ from .errors import (
     ProgrammingError,
     Warning,
 )
-from .protocol import Protocol, Query, Response, STATUS_ROWS
+from .protocol import BufferedQuery, Protocol, Query, Response, STATUS_ROWS
 
 
 MAX_PREPARED_PLANS = 128
@@ -471,6 +471,7 @@ class Cursor(Iterator[tuple[Any, ...]]):
         self._frame: Response | None = None
         self._frame_row = 0
         self._closed = False
+        self._procedure_namespace = secrets.token_hex(6)
 
     def execute(self, operation: str, parameters: Sequence[Any] | None = None) -> Cursor:
         """Executes one operation and retains a lazy row stream when present."""
@@ -490,17 +491,21 @@ class Cursor(Iterator[tuple[Any, ...]]):
             self.connection._begin_if_needed()
         sql = self.connection._statement_sql(operation, parameters)
         query = self.connection._protocol.query(sql)
-        first = query.first
+        self._query = query
+        self._select_result(query.first)
+        return self
+
+    def _select_result(self, first: Response) -> None:
+        """Resets cursor metadata for one separate row or command result."""
         self.rowcount = -1
         self.lastrowid = None
+        self._frame = None
+        self._frame_row = 0
         if first.status == STATUS_ROWS:
-            self._query = query
             self.description = tuple((name, STRING, None, None, None, None, None) for name in first.columns)
         else:
-            query.close()
             self.description = None
             self.rowcount = first.affected_rows
-        return self
 
     def executemany(self, operation: str, seq_of_parameters: Iterable[Sequence[Any]]) -> Cursor:
         """Executes a bounded stream of parameter sets and coalesces safe INSERT batches."""
@@ -587,7 +592,6 @@ class Cursor(Iterator[tuple[Any, ...]]):
         while self._frame is None or self._frame_row >= len(self._frame.rows):
             frame = self._query.next_frame()
             if frame is None:
-                self._query = None
                 self._frame = None
                 return None
             expected = tuple(item[0] for item in self.description or ())
@@ -630,13 +634,96 @@ class Cursor(Iterator[tuple[Any, ...]]):
         """Accepts the optional PEP 249 output hint as a no-op."""
         return None
 
-    def callproc(self, procname: str, parameters: Sequence[Any] | None = None) -> None:
-        """Reports that protocol-v1 stored procedure calls are unavailable."""
-        raise NotSupportedError("MiniSQL stored procedures are not supported")
+    def callproc(self, procname: str, parameters: Sequence[Any] | None = None) -> tuple[Any, ...]:
+        """Calls a procedure, returns IN/OUT values, and retains its result sets.
 
-    def nextset(self) -> None:
-        """Returns ``None`` because MiniSQL queries have one result set."""
-        return None
+        This method buffers CALL results to fetch the output session variables
+        before returning. Use execute("CALL ...") and nextset() for streaming.
+        IN arguments retain their Python values. Protocol v1 OUT/INOUT values
+        are returned as text (or None for SQL NULL).
+        """
+        self._ensure_open()
+        if not isinstance(procname, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?", procname):
+            raise ProgrammingError("Procedure name must be an identifier or schema.identifier")
+        arguments = () if parameters is None else parameters
+        if isinstance(arguments, (str, bytes, bytearray)) or not isinstance(arguments, Sequence):
+            raise ProgrammingError("Procedure parameters must be a sequence")
+        literals = [_literal(value) for value in arguments]
+        parameter_modes: list[str] = []
+        names = [f"@py_call_{self._procedure_namespace}_{index}" for index in range(len(literals))]
+        self._close_result()
+        self.connection._begin_if_needed()
+        if names:
+            parts = procname.lower().split(".")
+            schema, routine_name = parts if len(parts) == 2 else ("public", parts[0])
+            metadata = self.connection._protocol.query(
+                "SELECT parameter_mode FROM information_schema.parameters WHERE specific_schema = "
+                + _literal(schema) + " AND specific_name = " + _literal(routine_name) + " ORDER BY ordinal_position"
+            )
+            try:
+                while (frame := metadata.next_frame()) is not None:
+                    parameter_modes.extend(row[0] for row in frame.rows)
+            finally:
+                metadata.close()
+            self.connection._raw_command("SET " + ",".join(f"{name} = {literal}" for name, literal in zip(names, literals)))
+        quoted_name = ".".join('"' + part + '"' for part in procname.lower().split("."))
+        frames: list[Response] = []
+        completed = False
+        try:
+            self.execute(f"CALL {quoted_name}({','.join(names)})")
+            assert self._query is not None
+            while True:
+                while (frame := self._query.next_frame()) is not None:
+                    frames.append(frame)
+                if not self._query.next_result():
+                    break
+            self._close_result()
+            outputs: tuple[Any, ...] = ()
+            if names:
+                query = self.connection._protocol.query("SELECT " + ",".join(names))
+                try:
+                    if len(query.first.rows) != 1:
+                        raise InternalError("Procedure output parameter query returned an invalid row count")
+                    raw_outputs = query.first.rows[0]
+                    outputs = tuple(
+                        arguments[index] if index < len(parameter_modes) and parameter_modes[index] == "IN"
+                        else None if value == "NULL" else value
+                        for index, value in enumerate(raw_outputs)
+                    )
+                finally:
+                    query.close()
+            self._query = BufferedQuery(frames)
+            self._select_result(self._query.first)
+            completed = True
+            return outputs
+        except BaseException:
+            try:
+                self._close_result()
+            except DatabaseError:
+                pass
+            raise
+        finally:
+            # CALL has already drained before local replay is installed; cleanup
+            # does not discard any procedure result retained by the cursor.
+            if names:
+                try:
+                    self.connection._raw_command("SET " + ",".join(f"{name} = NULL" for name in names))
+                except DatabaseError:
+                    if completed:
+                        raise
+
+    def nextset(self) -> bool | None:
+        """Discards unread rows and advances to another CALL result, if present."""
+        self._ensure_open()
+        self._frame = None
+        self._frame_row = 0
+        self.description = None
+        self.rowcount = -1
+        if self._query is None or not self._query.next_result():
+            self._query = None
+            return None
+        self._select_result(self._query.first)
+        return True
 
     def close(self) -> None:
         """Drains an unread result and permanently closes this cursor."""
@@ -690,6 +777,7 @@ def _parameter_markers(sql: str) -> list[int]:
     """Finds qmark offsets while skipping SQL literals, identifiers, and comments."""
     markers: list[int] = []
     single = quoted = line = block = False
+    identifier_quote = '"'
     index = 0
     while index < len(sql):
         current = sql[index]
@@ -707,9 +795,9 @@ def _parameter_markers(sql: str) -> list[int]:
             elif current == "'":
                 single = False
         elif quoted:
-            if current == '"' and following == '"':
+            if current == identifier_quote and following == identifier_quote:
                 index += 1
-            elif current == '"':
+            elif current == identifier_quote:
                 quoted = False
         elif current == "-" and following == "-":
             line = True
@@ -719,8 +807,9 @@ def _parameter_markers(sql: str) -> list[int]:
             index += 1
         elif current == "'":
             single = True
-        elif current == '"':
+        elif current in ('"', '`'):
             quoted = True
+            identifier_quote = current
         elif current == "?":
             markers.append(index)
         index += 1

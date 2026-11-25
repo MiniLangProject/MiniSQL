@@ -13,6 +13,34 @@ deliver that pin through an authenticated channel. Protect database files,
 audit keys, backup archives, PFX files, private keys and replication directories
 with operating-system ACLs.
 
+## Stored procedure authorization
+
+New MySQL-style procedure definitions default to `SQL SECURITY DEFINER`.
+Explicit `SQL SECURITY INVOKER`, and legacy `AS` definitions without an explicit
+security characteristic, use the caller's authority. Both forms require the
+caller to have applicable `EXECUTE` permission for newly created definitions.
+The body is authorized using the selected effective principal, which is restored
+after normal or exceptional return. A missing or disabled definer fails closed.
+
+`CREATE ROUTINE` applies to the database. `EXECUTE` and `ALTER ROUTINE` apply
+either to a named procedure or to all procedures in the database. The existing
+database `CREATE` privilege retains procedure-creation permission for
+compatibility. Creators automatically receive procedure `EXECUTE` and
+`ALTER ROUTINE` without `GRANT OPTION`. Roles and explicit delegation work through
+the existing security catalog. Selecting an unrelated definer requires security
+administration; host-qualified MySQL account matching is not added.
+
+Review definer bodies and dynamic SQL before granting execution to less
+privileged callers. Keep untrusted values in bound parameters. Procedure output
+parameters are copied back only on successful completion, but a failing call is
+not automatically a transaction rollback; transaction boundaries must be explicit.
+
+Procedure grants reference the durable extension object ID. Drop/recreate gives
+the replacement a new ID, and cleanup removes the old grants. Definers likewise
+use persisted principal IDs rather than resolving a potentially reused user name.
+Interrupted cleanup therefore cannot transfer an old procedure grant to a new
+object. Restore schema and security snapshots together using supported tools.
+
 ## Encryption at rest and key management
 
 Use BitLocker on Windows or LUKS/dm-crypt on Linux in addition to MiniSQL TDE.

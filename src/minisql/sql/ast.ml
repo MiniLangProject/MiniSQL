@@ -6,6 +6,8 @@ package minisql.sql.ast
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0; see LICENSE for details.
 
+import minisql.sql.dialect as dialect
+
 /// Syntax tree for the MiniSQL SQL front end. The AST contains no catalog
 
 const EXPR_LITERAL = 1
@@ -105,6 +107,8 @@ const ALTER_USER_DISABLE = 3
 const DCL_OBJECT_DATABASE = 1
 /// Defines the dcl object table constant used by the minisql sql ast module.
 const DCL_OBJECT_TABLE = 2
+/// Identifies a durable stored procedure privilege target.
+const DCL_OBJECT_PROCEDURE = 3
 
 /// Defines the alter table add column constant used by the minisql sql ast module.
 const ALTER_TABLE_ADD_COLUMN = 1
@@ -589,24 +593,50 @@ struct AlterTriggerStatement
   enabled
 end struct
 
-/// Defines one named stored-procedure input parameter.
+/// Represents one procedural statement without weakening ordinary SQL AST types.
+/// The kind determines the contracts of its remaining fields; nested statements
+/// always live in body/alternate and expressions remain ordinary SQL AST nodes.
+struct RoutineStatement
+  /// Uppercase procedural operation (BLOCK, DECLARE, IF, SET, and so on).
+  kind
+  /// Label, cursor, condition, procedure name, or handler action when applicable.
+  name
+  /// Ordered variable targets or diagnostic item names.
+  names
+  /// Ordered SQL expression operands.
+  expressions
+  /// Ordered nested statements or branch BLOCK nodes.
+  body
+  /// ELSE branch statements, when present.
+  alternate
+  /// Kind-specific type, condition, or characteristic metadata.
+  options
+end struct
+
+/// Defines one named stored-procedure parameter and its passing direction.
 struct ProcedureParameter
   /// Stores the parameter name used in the procedure body.
   name
   /// Stores its declared SQL type.
   typeName
+  /// IN, OUT, or INOUT; omitted SQL directions become IN.
+  mode
 end struct
 
-/// Represents a persisted single-statement stored procedure.
+/// Represents a persisted procedure with a single SQL or compound body.
 struct CreateProcedureStatement
   /// Stores the qualified procedure name.
   name
   /// Contains ordered input parameters.
   parameters
-  /// Stores the procedure's DML body.
+  /// Stores the procedure's SQL or procedural body.
   body
   /// Indicates CREATE OR REPLACE behavior.
   replace
+  /// Ordered [name, value] characteristic pairs explicitly supplied by the user.
+  characteristics
+  /// Allows creation to succeed when the procedure already exists.
+  ifNotExists
 end struct
 
 /// Represents removal of a stored procedure.
@@ -1485,6 +1515,11 @@ end function
 
 /// Returns whether the supplied statement creates a stored procedure.
 /// @param value Value consumed or transformed by the operation.
+function isRoutineStatement(value)
+  return value is RoutineStatement
+end function
+
+/// Returns whether this statement creates a durable stored procedure.
 function isCreateProcedureStatement(value)
   return value is CreateProcedureStatement
 end function
@@ -1778,7 +1813,7 @@ end function
 /// Does not modify its inputs.
 /// @param value Value consumed or transformed by the operation.
 function isStatement(value)
-  return value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateSchemaStatement or value is DropSchemaStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTriggerStatement or value is CreateProcedureStatement or value is DropProcedureStatement or value is CallStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is MergeStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or value is ShutdownStatement or isMetadataStatement(value) or isDclStatement(value)
+  return value is RoutineStatement or value is CreateTableStatement or value is CreateIndexStatement or value is DropIndexStatement or value is DropTableStatement or value is CreateSchemaStatement or value is DropSchemaStatement or value is CreateViewStatement or value is DropViewStatement or value is CreateSequenceStatement or value is DropSequenceStatement or value is CreateTriggerStatement or value is DropTriggerStatement or value is AlterTriggerStatement or value is CreateProcedureStatement or value is DropProcedureStatement or value is CallStatement or value is AlterTableStatement or value is InsertStatement or value is UpdateStatement or value is DeleteStatement or value is MergeStatement or value is TruncateStatement or value is SelectStatement or value is BeginStatement or value is CommitStatement or value is RollbackStatement or value is SavepointStatement or value is RollbackToStatement or value is ReleaseSavepointStatement or value is AnalyzeStatement or value is ExplainStatement or value is PrepareStatement or value is ExecutePreparedStatement or value is DeallocateStatement or value is VacuumStatement or value is ReindexStatement or value is ShutdownStatement or isMetadataStatement(value) or isDclStatement(value)
 end function
 
 /// Implements expression kind for this module.
@@ -1808,6 +1843,47 @@ function quoteString(value)
     end for
   end if
   return output + "'"
+end function
+
+/// Quotes identifiers only when needed to preserve their spelling or grammar.
+function formatIdentifier(name)
+  raw = bytes(name)
+  if len(raw) > 0 and raw[0] == 64 then return name end if
+  safe = len(raw) > 0 and name == dialect.asciiLower(name)
+  if dialect.isKeyword(name) and not dialect.isNonReservedIdentifierKeyword(name) then safe = false end if
+  for each item in raw
+    if not ((item >= 97 and item <= 122) or (item >= 48 and item <= 57) or item == 95 or item == 36) then safe = false end if
+  end for
+  if len(raw) > 0 and raw[0] >= 48 and raw[0] <= 57 then safe = false end if
+  if safe then return name end if
+  output = "\""
+  for each item in raw
+    if item == 34 then output = output + "\"\"" else output = output + decode(bytes([item])) end if
+  end for
+  return output + "\""
+end function
+
+/// Serializes the canonical dotted representation of a qualified object/variable.
+function formatObjectName(name)
+  raw = bytes(name)
+  if len(raw) == 0 then return formatIdentifier(name) end if
+  if len(raw) > 0 and raw[0] == 64 then return name end if
+  for index = 0 to len(raw) - 1
+    if raw[index] == 46 then return formatIdentifier(decode(slice(raw, 0, index))) + "." + formatIdentifier(decode(slice(raw, index + 1, len(raw) - index - 1))) end if
+  end for
+  return formatIdentifier(name)
+end function
+
+/// Formats comma-separated identifiers, preserving quoted variable/object names.
+function formatIdentifierList(names)
+  output = ""
+  first = true
+  for each name in names
+    if not first then output = output + ", " end if
+    output = output + formatObjectName(name)
+    first = false
+  end for
+  return output
 end function
 
 /// Formats type name using the supplied inputs.
@@ -1934,11 +2010,12 @@ function formatExpression(expression)
   end if
   if expression is ColumnExpression then
     if expression.qualifier is void or len(expression.qualifier) == 0 then return expression.name end if
-    return expression.qualifier + "." + expression.name
+    if expression.qualifier == "old" or expression.qualifier == "new" then return expression.qualifier + "." + formatIdentifier(expression.name) end if
+    return formatIdentifier(expression.qualifier) + "." + formatIdentifier(expression.name)
   end if
   if expression is StarExpression then
     if expression.qualifier is void or len(expression.qualifier) == 0 then return "*" end if
-    return expression.qualifier + ".*"
+    return formatIdentifier(expression.qualifier) + ".*"
   end if
   if expression is FunctionExpression then return formatFunction(expression) end if
   if expression is ParameterExpression then return "?" end if
@@ -2023,7 +2100,7 @@ end function
 /// @param item item value consumed by this operation.
 function formatSelectItem(item)
   output = formatExpression(item.expression)
-  if item.alias is not void then output = output + " AS " + item.alias end if
+  if item.alias is not void then output = output + " AS " + formatIdentifier(item.alias) end if
   return output
 end function
 
@@ -2058,12 +2135,12 @@ function formatSelect(statement)
     for index = 0 to len(statement.ctes) - 1
       if index > 0 then output = output + ", " end if
       cte = statement.ctes[index]
-      output = output + cte.name
+      output = output + formatObjectName(cte.name)
       if len(cte.columnNames) > 0 then
         output = output + " ("
         for columnIndex = 0 to len(cte.columnNames) - 1
           if columnIndex > 0 then output = output + ", " end if
-          output = output + cte.columnNames[columnIndex]
+          output = output + formatObjectName(cte.columnNames[columnIndex])
         end for
         output = output + ")"
       end if
@@ -2078,12 +2155,12 @@ function formatSelect(statement)
     output = output + formatSelectItem(statement.items[index])
   end for
   if statement.tableName is not void then
-    output = output + " FROM " + statement.tableName
-    if statement.tableAlias is not void then output = output + " AS " + statement.tableAlias end if
+    output = output + " FROM " + formatObjectName(statement.tableName)
+    if statement.tableAlias is not void then output = output + " AS " + formatObjectName(statement.tableAlias) end if
     for each join in statement.joins
       if join.joinType == JOIN_LEFT then output = output + " LEFT JOIN " else if join.joinType == JOIN_RIGHT then output = output + " RIGHT JOIN " else if join.joinType == JOIN_FULL then output = output + " FULL JOIN " else if join.joinType == JOIN_CROSS then output = output + " CROSS JOIN " else output = output + " INNER JOIN " end if
-      output = output + join.tableName
-      if join.tableAlias is not void then output = output + " AS " + join.tableAlias end if
+      output = output + formatObjectName(join.tableName)
+      if join.tableAlias is not void then output = output + " AS " + formatObjectName(join.tableAlias) end if
       if join.condition is not void then output = output + " ON " + formatExpression(join.condition) end if
     end for
   end if
@@ -2108,9 +2185,281 @@ function formatSelect(statement)
       output = output + formatOrderItem(statement.orderBy[index])
     end for
   end if
-  if statement.limit >= 0 then output = output + " LIMIT " + statement.limit end if
-  if statement.offset > 0 then output = output + " OFFSET " + statement.offset end if
+  if typeof(statement.limit) != "int" then output = output + " LIMIT " + formatExpression(statement.limit) else if statement.limit >= 0 then output = output + " LIMIT " + statement.limit end if
+  if typeof(statement.offset) != "int" then output = output + " OFFSET " + formatExpression(statement.offset) else if statement.offset > 0 then output = output + " OFFSET " + statement.offset end if
   return output
+end function
+
+/// Joins strings in source order without depending on a host string library.
+function joinSqlNames(names)
+  output = ""
+  if len(names) > 0 then
+    for index = 0 to len(names) - 1
+      if index > 0 then output = output + ", " end if
+      output = output + names[index]
+    end for
+  end if
+  return output
+end function
+
+/// Formats ordered expression operands used by CALL, EXECUTE and VALUES.
+function formatExpressionList(items)
+  output = ""
+  if len(items) > 0 then
+    for index = 0 to len(items) - 1
+      if index > 0 then output = output + ", " end if
+      output = output + formatExpression(items[index])
+    end for
+  end if
+  return output
+end function
+
+/// Formats a nested statement sequence with its required inner semicolons.
+function formatRoutineBody(statements)
+  output = ""
+  for each statement in statements
+    output = output + formatStatement(statement) + "; "
+  end for
+  return output
+end function
+
+/// Reconstructs SQLSTATE, numeric, named, or class condition syntax.
+function formatRoutineCondition(condition)
+  if condition[0] == "SQLSTATE" then return "SQLSTATE " + quoteString(condition[1]) end if
+  if condition[0] == "NAME" then return formatIdentifier(condition[1]) end if
+  return condition[1]
+end function
+
+/// Serializes persisted routine characteristics, excluding the CREATE prefix definer.
+function formatRoutineCharacteristics(characteristics)
+  output = ""
+  for each item in characteristics
+    if item[0] == "COMMENT" then output = output + " COMMENT " + quoteString(item[1])
+    else if item[0] == "DETERMINISTIC" then
+      if item[1] == "YES" then output = output + " DETERMINISTIC" else output = output + " NOT DETERMINISTIC" end if
+    else if item[0] == "SQL DATA ACCESS" then output = output + " " + item[1]
+    else if item[0] == "SQL SECURITY" then output = output + " SQL SECURITY " + item[1]
+    else if item[0] == "LANGUAGE" then output = output + " LANGUAGE " + item[1]
+    end if
+  end for
+  return output
+end function
+
+/// Serializes procedural nodes into SQL that recreates identical control flow.
+function formatRoutineStatement(statement)
+  kind = statement.kind
+  label = ""
+  if statement.name != "" then label = formatIdentifier(statement.name) + ": " end if
+  if kind == "BLOCK" then return label + "BEGIN " + formatRoutineBody(statement.body) + "END" end if
+  if kind == "DECLARE" then
+    output = "DECLARE " + formatIdentifierList(statement.names) + " " + formatTypeName(statement.options[0])
+    if len(statement.expressions) > 0 then output = output + " DEFAULT " + formatExpression(statement.expressions[0]) end if
+    return output
+  end if
+  if kind == "CONDITION" then return "DECLARE " + formatIdentifier(statement.name) + " CONDITION FOR " + formatRoutineCondition(statement.options) end if
+  if kind == "CURSOR" then return "DECLARE " + formatIdentifier(statement.name) + " CURSOR FOR " + formatStatement(statement.body[0]) end if
+  if kind == "HANDLER" then
+    output = "DECLARE " + statement.name + " HANDLER FOR "
+    if len(statement.options) > 0 then
+      for index = 0 to len(statement.options) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatRoutineCondition(statement.options[index])
+      end for
+    end if
+    return output + " " + formatStatement(statement.body[0])
+  end if
+  if kind == "SET" then
+    output = "SET "
+    if len(statement.names) > 0 then
+      for index = 0 to len(statement.names) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatObjectName(statement.names[index]) + " = " + formatExpression(statement.expressions[index])
+      end for
+    end if
+    return output
+  end if
+  if kind == "IF" then
+    output = ""
+    if len(statement.expressions) > 0 then
+      for index = 0 to len(statement.expressions) - 1
+        if index == 0 then output = output + "IF " else output = output + "ELSEIF " end if
+        output = output + formatExpression(statement.expressions[index]) + " THEN " + formatRoutineBody(statement.body[index].body)
+      end for
+    end if
+    if len(statement.alternate) > 0 then output = output + "ELSE " + formatRoutineBody(statement.alternate) end if
+    return output + "END IF"
+  end if
+  if kind == "CASE" then
+    output = "CASE "
+    if statement.options[1] is not void then output = output + formatExpression(statement.options[1]) + " " end if
+    if len(statement.expressions) > 0 then
+      for index = 0 to len(statement.expressions) - 1
+        output = output + "WHEN " + formatExpression(statement.expressions[index]) + " THEN " + formatRoutineBody(statement.body[index].body)
+      end for
+    end if
+    if statement.options[0] then output = output + "ELSE " + formatRoutineBody(statement.alternate) end if
+    return output + "END CASE"
+  end if
+  if kind == "WHILE" then return label + "WHILE " + formatExpression(statement.expressions[0]) + " DO " + formatRoutineBody(statement.body) + "END WHILE" end if
+  if kind == "REPEAT" then return label + "REPEAT " + formatRoutineBody(statement.body) + "UNTIL " + formatExpression(statement.expressions[0]) + " END REPEAT" end if
+  if kind == "LOOP" then return label + "LOOP " + formatRoutineBody(statement.body) + "END LOOP" end if
+  if kind == "LEAVE" or kind == "ITERATE" or kind == "OPEN" or kind == "CLOSE" then return kind + " " + formatIdentifier(statement.name) end if
+  if kind == "FETCH" then return "FETCH " + formatIdentifier(statement.name) + " INTO " + formatIdentifierList(statement.names) end if
+  if kind == "SELECT_INTO" then return formatStatement(statement.body[0]) + " INTO " + formatIdentifierList(statement.names) end if
+  if kind == "SIGNAL" or kind == "RESIGNAL" then
+    output = kind
+    if len(statement.options) > 0 then output = output + " " + formatRoutineCondition(statement.options) end if
+    if len(statement.names) > 0 then output = output + " SET " end if
+    if len(statement.names) > 0 then
+      for index = 0 to len(statement.names) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + statement.names[index] + " = " + formatExpression(statement.expressions[index])
+      end for
+    end if
+    return output
+  end if
+  if kind == "GET_DIAGNOSTICS" then
+    output = "GET " + statement.name + " DIAGNOSTICS "
+    if len(statement.expressions) > 0 then output = output + "CONDITION " + formatExpression(statement.expressions[0]) + " " end if
+    if len(statement.names) > 0 then
+      for index = 0 to len(statement.names) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatObjectName(statement.names[index]) + " = " + statement.options[index]
+      end for
+    end if
+    return output
+  end if
+  if kind == "PREPARE_DYNAMIC" then return "PREPARE " + formatIdentifier(statement.name) + " FROM " + formatExpression(statement.expressions[0]) end if
+  if kind == "ALTER_PROCEDURE" then return "ALTER PROCEDURE " + formatObjectName(statement.name) + formatRoutineCharacteristics(statement.options) end if
+  if kind == "SHOW_CREATE_PROCEDURE" then return "SHOW CREATE PROCEDURE " + formatObjectName(statement.name) end if
+  if kind == "SHOW_PROCEDURE_STATUS" then
+    output = "SHOW PROCEDURE STATUS"
+    if len(statement.expressions) > 0 then output = output + " " + statement.name + " " + formatExpression(statement.expressions[0]) end if
+    return output
+  end if
+  return error(9001, "sql.ast.formatRoutineStatement: unsupported procedural kind " + kind)
+end function
+
+/// Formats UPDATE assignments without dropping any target expression.
+function formatAssignments(assignments)
+  output = ""
+  if len(assignments) > 0 then
+    for index = 0 to len(assignments) - 1
+      if index > 0 then output = output + ", " end if
+      output = output + formatIdentifier(assignments[index].column) + " = " + formatExpression(assignments[index].expression)
+    end for
+  end if
+  return output
+end function
+
+/// Preserves a DML RETURNING list in durable procedure definitions.
+function formatReturning(items)
+  if len(items) == 0 then return "" end if
+  output = " RETURNING "
+  if len(items) > 0 then
+    for index = 0 to len(items) - 1
+      if index > 0 then output = output + ", " end if
+      output = output + formatSelectItem(items[index])
+    end for
+  end if
+  return output
+end function
+
+/// Serializes every supported table-constraint variant for routine DDL bodies.
+function formatTableConstraint(constraint)
+  output = ""
+  if constraint.name is not void then output = "CONSTRAINT " + formatIdentifier(constraint.name) + " " end if
+  if constraint.kind == CONSTRAINT_PRIMARY_KEY then return output + "PRIMARY KEY (" + formatIdentifierList(constraint.columns) + ")" end if
+  if constraint.kind == CONSTRAINT_UNIQUE then return output + "UNIQUE (" + formatIdentifierList(constraint.columns) + ")" end if
+  if constraint.kind == CONSTRAINT_CHECK then return output + "CHECK (" + formatExpression(constraint.expression) + ")" end if
+  return output + "FOREIGN KEY (" + formatIdentifierList(constraint.columns) + ") REFERENCES " + formatObjectName(constraint.referencesTable) + " (" + formatIdentifierList(constraint.referencesColumns) + ") ON DELETE " + constraint.onDelete + " ON UPDATE " + constraint.onUpdate
+end function
+
+/// Retains type, constraints and generated/default expressions in column DDL.
+function formatColumnDefinition(column)
+  output = formatIdentifier(column.name) + " " + formatTypeName(column.typeName)
+  if column.identity then output = output + " GENERATED ALWAYS AS IDENTITY" end if
+  if column.generatedExpression is not void then
+    output = output + " GENERATED ALWAYS AS (" + formatExpression(column.generatedExpression) + ")"
+    if column.generatedStored then output = output + " STORED" end if
+  end if
+  if column.nullableSpecified then
+    if column.nullable then output = output + " NULL" else output = output + " NOT NULL" end if
+  end if
+  if column.primaryKey then output = output + " PRIMARY KEY" end if
+  if column.unique then output = output + " UNIQUE" end if
+  if column.defaultExpression is not void then output = output + " DEFAULT " + formatExpression(column.defaultExpression) end if
+  if column.checkExpression is not void then output = output + " CHECK (" + formatExpression(column.checkExpression) + ")" end if
+  if column.referencesTable is not void then
+    output = output + " REFERENCES " + formatObjectName(column.referencesTable) + " (" + formatIdentifierList(column.referencesColumns) + ") ON DELETE " + column.onDelete + " ON UPDATE " + column.onUpdate
+  end if
+  return output
+end function
+
+/// Serializes database, table and procedure privilege destinations.
+function formatPrivilegeTarget(statement)
+  if statement.objectType == DCL_OBJECT_DATABASE then return "DATABASE" end if
+  if statement.objectType == DCL_OBJECT_PROCEDURE then return "PROCEDURE " + statement.objectName end if
+  return "TABLE " + formatObjectName(statement.objectName)
+end function
+
+/// Formats complete DCL AST nodes used in persisted procedure bodies.
+function formatDclStatement(statement)
+  if statement is CreatePrincipalStatement then
+    if statement.principalKind == PRINCIPAL_ROLE then return "CREATE ROLE " + statement.name end if
+    return "CREATE USER " + statement.name + " WITH PASSWORD " + quoteString(statement.password)
+  end if
+  if statement is AlterUserStatement then
+    output = "ALTER USER " + statement.name
+    if statement.action == ALTER_USER_ENABLE then return output + " ENABLE" end if
+    if statement.action == ALTER_USER_DISABLE then return output + " DISABLE" end if
+    return output + " WITH PASSWORD " + quoteString(statement.password)
+  end if
+  if statement is DropPrincipalStatement then
+    output = "DROP USER "
+    if statement.principalKind == PRINCIPAL_ROLE then output = "DROP ROLE " end if
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + statement.name
+  end if
+  if statement is GrantRoleStatement then
+    output = "GRANT " + statement.roleName + " TO " + statement.memberName
+    if statement.adminOption then output = output + " WITH ADMIN OPTION" end if
+    return output
+  end if
+  if statement is RevokeRoleStatement then
+    output = "REVOKE " + statement.roleName + " FROM " + statement.memberName
+    if statement.cascade then output = output + " CASCADE" end if
+    return output
+  end if
+  if statement is GrantPrivilegeStatement then
+    output = "GRANT " + joinSqlNames(statement.privileges) + " ON " + formatPrivilegeTarget(statement) + " TO " + statement.granteeName
+    if statement.grantOption then output = output + " WITH GRANT OPTION" end if
+    return output
+  end if
+  if statement is RevokePrivilegeStatement then
+    output = "REVOKE " + joinSqlNames(statement.privileges) + " ON " + formatPrivilegeTarget(statement) + " FROM " + statement.granteeName
+    if statement.cascade then output = output + " CASCADE" end if
+    return output
+  end if
+  return error(9001, "sql.ast.formatDclStatement: unsupported DCL statement")
+end function
+
+/// Formats the table ALTER forms accepted by the parser without losing operands.
+function formatAlterTable(statement)
+  output = "ALTER TABLE " + formatObjectName(statement.tableName) + " "
+  action = statement.action
+  if action == ALTER_TABLE_ADD_COLUMN then return output + "ADD COLUMN " + formatColumnDefinition(statement.columnDefinition) end if
+  if action == ALTER_TABLE_RENAME_COLUMN then return output + "RENAME COLUMN " + formatObjectName(statement.oldName) + " TO " + formatObjectName(statement.newName) end if
+  if action == ALTER_TABLE_RENAME_TABLE then return output + "RENAME TO " + formatObjectName(statement.newName) end if
+  if action == ALTER_TABLE_ADD_CONSTRAINT then return output + "ADD " + formatTableConstraint(statement.constraint) end if
+  if action == ALTER_TABLE_DROP_CONSTRAINT then return output + "DROP CONSTRAINT " + formatObjectName(statement.constraintName) end if
+  if action == ALTER_TABLE_DROP_COLUMN then return output + "DROP COLUMN " + formatObjectName(statement.oldName) end if
+  output = output + "ALTER COLUMN " + formatObjectName(statement.oldName)
+  if action == ALTER_TABLE_SET_DEFAULT then return output + " SET DEFAULT " + formatExpression(statement.columnDefinition) end if
+  if action == ALTER_TABLE_DROP_DEFAULT then return output + " DROP DEFAULT" end if
+  if action == ALTER_TABLE_SET_NOT_NULL then return output + " SET NOT NULL" end if
+  if action == ALTER_TABLE_DROP_NOT_NULL then return output + " DROP NOT NULL" end if
+  return error(9001, "sql.ast.formatAlterTable: unsupported ALTER action")
 end function
 
 /// Formats statement using the supplied inputs.
@@ -2119,62 +2468,223 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param statement statement value consumed by this operation.
 function formatStatement(statement)
+  if statement is RoutineStatement then return formatRoutineStatement(statement) end if
+  if statement is CreateProcedureStatement then
+    output = "CREATE "
+    if statement.replace then output = output + "OR REPLACE " end if
+    for each item in statement.characteristics
+      if item[0] == "DEFINER" then
+        if item[1] == "CURRENT_USER" then output = output + "DEFINER = CURRENT_USER " else output = output + "DEFINER = " + quoteString(item[1]) + " " end if
+      end if
+    end for
+    output = output + "PROCEDURE "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    output = output + formatObjectName(statement.name) + "("
+    if len(statement.parameters) > 0 then
+      for index = 0 to len(statement.parameters) - 1
+        if index > 0 then output = output + ", " end if
+        parameter = statement.parameters[index]
+        output = output + parameter.mode + " " + formatObjectName(parameter.name) + " " + formatTypeName(parameter.typeName)
+      end for
+    end if
+    return output + ")" + formatRoutineCharacteristics(statement.characteristics) + " " + formatStatement(statement.body)
+  end if
+  if statement is DropProcedureStatement then
+    output = "DROP PROCEDURE "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + formatObjectName(statement.name)
+  end if
+  if statement is CallStatement then return "CALL " + formatObjectName(statement.name) + "(" + formatExpressionList(statement.arguments) + ")" end if
+  if statement is BeginStatement then
+    output = "START TRANSACTION ISOLATION LEVEL " + statement.isolationLevel
+    if statement.readOnly then return output + " READ ONLY" else return output + " READ WRITE" end if
+  end if
+  if statement is CommitStatement then return "COMMIT" end if
+  if statement is RollbackStatement then return "ROLLBACK" end if
+  if statement is SavepointStatement then return "SAVEPOINT " + formatObjectName(statement.name) end if
+  if statement is RollbackToStatement then return "ROLLBACK TO SAVEPOINT " + formatObjectName(statement.name) end if
+  if statement is ReleaseSavepointStatement then return "RELEASE SAVEPOINT " + formatObjectName(statement.name) end if
+  if statement is PrepareStatement then return "PREPARE " + formatObjectName(statement.name) + " AS " + formatStatement(statement.statement) end if
+  if statement is ExecutePreparedStatement then
+    output = "EXECUTE " + formatObjectName(statement.name)
+    if len(statement.arguments) > 0 then output = output + " USING " + formatExpressionList(statement.arguments) end if
+    return output
+  end if
+  if statement is DeallocateStatement then return "DEALLOCATE PREPARE " + formatObjectName(statement.name) end if
+  if isDclStatement(statement) then return formatDclStatement(statement) end if
+  if statement is CreateTableStatement then
+    output = "CREATE TABLE "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    output = output + formatObjectName(statement.name) + " ("
+    if len(statement.columns) > 0 then
+      for index = 0 to len(statement.columns) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatColumnDefinition(statement.columns[index])
+      end for
+    end if
+    for each constraint in statement.constraints
+      output = output + ", " + formatTableConstraint(constraint)
+    end for
+    return output + ")"
+  end if
+  if statement is CreateIndexStatement then
+    output = "CREATE "
+    if statement.unique then output = output + "UNIQUE " end if
+    output = output + "INDEX "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    output = output + formatObjectName(statement.name) + " ON " + formatObjectName(statement.tableName) + " (" + formatExpressionList(statement.columns) + ")"
+    if len(statement.includeColumns) > 0 then output = output + " INCLUDE (" + formatIdentifierList(statement.includeColumns) + ")" end if
+    if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
+    return output
+  end if
+  if statement is AlterTableStatement then return formatAlterTable(statement) end if
+  if statement is DropTableStatement then
+    output = "DROP TABLE "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + formatObjectName(statement.name)
+  end if
+  if statement is CreateViewStatement then
+    output = "CREATE "
+    if statement.replace then output = output + "OR REPLACE " end if
+    return output + "VIEW " + formatObjectName(statement.name) + " AS " + formatSelect(statement.query)
+  end if
+  if statement is DropViewStatement then
+    output = "DROP VIEW "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + formatObjectName(statement.name)
+  end if
+  if statement is CreateSequenceStatement then
+    output = "CREATE SEQUENCE "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    output = output + formatObjectName(statement.name) + " START WITH " + statement.startValue + " INCREMENT BY " + statement.incrementValue + " MINVALUE " + statement.minimumValue + " MAXVALUE " + statement.maximumValue
+    if statement.cycle then return output + " CYCLE" else return output + " NO CYCLE" end if
+  end if
+  if statement is DropSequenceStatement then
+    output = "DROP SEQUENCE "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + formatObjectName(statement.name)
+  end if
+  if statement is CreateTriggerStatement then
+    output = "CREATE TRIGGER "
+    if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
+    output = output + formatObjectName(statement.name) + " " + statement.timing + " " + statement.eventType
+    if statement.targetColumn != "" then output = output + " OF " + statement.targetColumn end if
+    return output + " ON " + formatObjectName(statement.tableName) + " FOR EACH ROW " + formatStatement(statement.body)
+  end if
+  if statement is DropTriggerStatement then
+    output = "DROP TRIGGER "
+    if statement.ifExists then output = output + "IF EXISTS " end if
+    return output + formatObjectName(statement.name)
+  end if
+  if statement is AlterTriggerStatement then
+    output = "ALTER TRIGGER " + formatObjectName(statement.name)
+    if statement.enabled then return output + " ENABLE" else return output + " DISABLE" end if
+  end if
+  if statement is TruncateStatement then
+    output = "TRUNCATE TABLE " + formatObjectName(statement.tableName)
+    if statement.restartIdentity then return output + " RESTART IDENTITY" else return output + " CONTINUE IDENTITY" end if
+  end if
+  if statement is AnalyzeStatement then
+    if statement.tableName is void then return "ANALYZE" else return "ANALYZE " + formatObjectName(statement.tableName) end if
+  end if
+  if statement is VacuumStatement then
+    if statement.tableName is void then return "VACUUM" else return "VACUUM " + formatObjectName(statement.tableName) end if
+  end if
+  if statement is ReindexStatement then
+    if statement.name is void then return "REINDEX" else return "REINDEX " + formatObjectName(statement.name) end if
+  end if
+  if statement is ExplainStatement then
+    if statement.analyze then return "EXPLAIN ANALYZE " + formatStatement(statement.statement) else return "EXPLAIN " + formatStatement(statement.statement) end if
+  end if
+  if statement is ShowTablesStatement then return "SHOW TABLES" end if
+  if statement is ShowStatusStatement then return "SHOW STATUS" end if
+  if statement is ShowProcesslistStatement then return "SHOW PROCESSLIST" end if
+  if statement is DescribeTableStatement then return "DESCRIBE " + formatObjectName(statement.tableName) end if
+  if statement is ShowIndexesStatement then return "SHOW INDEXES FROM " + formatObjectName(statement.tableName) end if
+  if statement is ShutdownStatement then return "SHUTDOWN" end if
   if statement is SelectStatement then return formatSelect(statement) end if
   if statement is CreateSchemaStatement then
     output = "CREATE SCHEMA "
     if statement.ifNotExists then output = output + "IF NOT EXISTS " end if
-    return output + statement.name
+    return output + formatObjectName(statement.name)
   end if
   if statement is DropSchemaStatement then
     output = "DROP SCHEMA "
     if statement.ifExists then output = output + "IF EXISTS " end if
-    return output + statement.name
+    return output + formatObjectName(statement.name)
   end if
   if statement is DropIndexStatement then
     output = "DROP INDEX "
     if statement.ifExists then output = output + "IF EXISTS " end if
-    return output + statement.name
+    return output + formatObjectName(statement.name)
   end if
   if statement is InsertStatement then
-    output = "INSERT INTO " + statement.tableName
+    output = "INSERT INTO " + formatObjectName(statement.tableName)
     if len(statement.columns) > 0 then
       output = output + " ("
-      for index = 0 to len(statement.columns) - 1
-        if index > 0 then output = output + ", " end if
-        output = output + statement.columns[index]
-      end for
+      if len(statement.columns) > 0 then
+        for index = 0 to len(statement.columns) - 1
+          if index > 0 then output = output + ", " end if
+          output = output + formatObjectName(statement.columns[index])
+        end for
+      end if
       output = output + ")"
     end if
     if statement.sourceQuery is not void then
-      return output + " " + formatSelect(statement.sourceQuery)
-    end if
-    output = output + " VALUES "
-    for rowIndex = 0 to len(statement.rows) - 1
-      if rowIndex > 0 then output = output + ", " end if
-      output = output + "("
-      for index = 0 to len(statement.rows[rowIndex]) - 1
-        if index > 0 then output = output + ", " end if
-        output = output + formatExpression(statement.rows[rowIndex][index])
+      output = output + " " + formatSelect(statement.sourceQuery)
+    else
+      output = output + " VALUES "
+      for rowIndex = 0 to len(statement.rows) - 1
+        if rowIndex > 0 then output = output + ", " end if
+        output = output + "("
+        if len(statement.rows[rowIndex]) > 0 then
+          for index = 0 to len(statement.rows[rowIndex]) - 1
+            if index > 0 then output = output + ", " end if
+            output = output + formatExpression(statement.rows[rowIndex][index])
+          end for
+        end if
+        output = output + ")"
       end for
-      output = output + ")"
-    end for
-    return output
+    end if
+    if statement.conflictAction != CONFLICT_NONE then
+      output = output + " ON CONFLICT"
+      if len(statement.conflictTarget) > 0 then output = output + " (" + formatIdentifierList(statement.conflictTarget) + ")" end if
+      if statement.conflictAction == CONFLICT_DO_NOTHING then output = output + " DO NOTHING" else output = output + " DO UPDATE SET " + formatAssignments(statement.conflictAssignments) end if
+      if statement.conflictWhere is not void then output = output + " WHERE " + formatExpression(statement.conflictWhere) end if
+    end if
+    return output + formatReturning(statement.returning)
   end if
   if statement is UpdateStatement then
-    output = "UPDATE " + statement.tableName + " SET "
-    for index = 0 to len(statement.assignments) - 1
-      if index > 0 then output = output + ", " end if
-      output = output + statement.assignments[index].column + " = " + formatExpression(statement.assignments[index].expression)
-    end for
+    output = "UPDATE " + formatObjectName(statement.tableName) + " SET "
+    if len(statement.assignments) > 0 then
+      for index = 0 to len(statement.assignments) - 1
+        if index > 0 then output = output + ", " end if
+        output = output + formatObjectName(statement.assignments[index].column) + " = " + formatExpression(statement.assignments[index].expression)
+      end for
+    end if
     if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
-    return output
+    return output + formatReturning(statement.returning)
   end if
   if statement is DeleteStatement then
-    output = "DELETE FROM " + statement.tableName
+    output = "DELETE FROM " + formatObjectName(statement.tableName)
     if statement.whereExpression is not void then output = output + " WHERE " + formatExpression(statement.whereExpression) end if
+    return output + formatReturning(statement.returning)
+  end if
+  if statement is MergeStatement then
+    output = "MERGE INTO " + formatObjectName(statement.targetTable)
+    if statement.targetAlias is not void then output = output + " AS " + formatObjectName(statement.targetAlias) end if
+    output = output + " USING " + formatObjectName(statement.sourceTable)
+    if statement.sourceAlias is not void then output = output + " AS " + formatObjectName(statement.sourceAlias) end if
+    output = output + " ON " + formatExpression(statement.condition)
+    if statement.matchedDelete then output = output + " WHEN MATCHED THEN DELETE" end if
+    if len(statement.matchedAssignments) > 0 then output = output + " WHEN MATCHED THEN UPDATE SET " + formatAssignments(statement.matchedAssignments) end if
+    if len(statement.insertValues) > 0 then
+      output = output + " WHEN NOT MATCHED THEN INSERT"
+      if len(statement.insertColumns) > 0 then output = output + " (" + formatIdentifierList(statement.insertColumns) + ")" end if
+      output = output + " VALUES (" + formatExpressionList(statement.insertValues) + ")"
+    end if
     return output
   end if
-  if statement is MergeStatement then return "MERGE INTO " + statement.targetTable + " USING " + statement.sourceTable + " ON " + formatExpression(statement.condition) end if
   return error(9001, "sql.ast.formatStatement: unsupported statement")
 end function
 

@@ -354,7 +354,7 @@ EXECUTE adjust_stock USING 5, 1;
 DEALLOCATE adjust_stock;
 \end{lstlisting}
 
-The template can include supported RETURNING or conflict clauses of its inner statement. PREPARE does not support DDL, MERGE, TRUNCATE, CALL, or a sequence of statements as one prepared body. A WITH query is represented internally as a SELECT and follows the same query restrictions.
+The template can include supported RETURNING or conflict clauses of its inner statement. The legacy PREPARE AS form does not support DDL, MERGE, TRUNCATE, CALL, or a sequence of statements as one prepared body. The MySQL-style PREPARE FROM form accepts a string literal or session variable holding one dynamic SQL statement; it is described with stored procedures below. A WITH query is represented internally as a SELECT and follows the same query restrictions.
 
 Preparation is not a complete execution-time validation or a guarantee that schema changes can never invalidate the statement. The implementation records a planning generation and rebinds/replans as required; a removed column can still make a later EXECUTE fail. Parameter values are inserted into typed expression processing and the resulting statement is checked against the then-current schema and privileges.
 
@@ -464,49 +464,277 @@ CREATE, DROP, and ENABLE/DISABLE trigger operations are autocommit-only. Disable
 \sourcecode{src/minisql/executor/executor.ml}{triggerEventCode, executeDml, fireTriggers, executeTriggerBody, persistedProgramBodySupported, and executeTriggerDdl define actual timing and body limits.}
 \sourcecode{src/tests/m45_sequences_generated_triggers.ml}{Tests cover OLD/NEW images, timing groups, enable/disable state, and trigger failure propagation; the depth bound is enforced in executeTriggerBody.}
 
-\section{Typed single-statement procedures}
+\section{Stored procedures}
 \index{procedures}\index{CREATE PROCEDURE}\index{CALL}
 \label{sql:procedures}
 
-\begin{lstlisting}[language=SQL]
-CREATE [OR REPLACE] PROCEDURE procedure_name(
-    parameter_name data_type [, ...]
-)
-AS single_dml_statement;
+A stored procedure is a persistent SQL program. It can combine typed inputs and
+outputs, local variables, branches, loops, queries, data changes, cursors, and
+condition handlers. MiniSQL follows MySQL 8.4 conventions for this procedural
+language. SQL statements inside the procedure still use MiniSQL's own SQL
+implementation, types, transactions, and account model.
 
-CALL procedure_name(value_expression [, ...]);
+\subsection{Define and call a procedure}
+
+\begin{lstlisting}[language=SQL]
+CREATE [OR REPLACE] [DEFINER = account]
+PROCEDURE [IF NOT EXISTS] [schema.]procedure_name(
+    [IN | OUT | INOUT] parameter_name data_type [, ...]
+)
+[characteristic ...]
+routine_statement;
+
+CALL procedure_name(argument [, ...]);
+ALTER PROCEDURE procedure_name characteristic ...;
 DROP PROCEDURE [IF EXISTS] procedure_name;
 \end{lstlisting}
 
-The parameter list may be empty, and a zero-parameter call still uses parentheses. Parameters are positional inputs with persisted SQL types. There are no OUT/INOUT modes, defaults, named-call arguments, overloaded signatures, return declarations, or procedural statement blocks.
+The body can be one supported SQL statement or a compound \code{BEGIN ... END}
+block. Empty parameter lists still use parentheses. \code{OR REPLACE} is a
+MiniSQL extension and cannot be combined with \code{IF NOT EXISTS}.
+\code{ALTER PROCEDURE} changes characteristics; replacing the body or parameter
+list requires a new definition. Definition changes remain autocommit-only.
 
 \begin{lstlisting}[language=SQL]
-CREATE TABLE procedure_demo (
-    id INTEGER PRIMARY KEY,
-    label VARCHAR(40) NOT NULL
-);
+DELIMITER $$
+CREATE PROCEDURE sum_to(IN p_limit INTEGER, OUT p_sum INTEGER)
+SQL SECURITY INVOKER
+COMMENT 'Sum the integers from one through the supplied bound'
+BEGIN
+  DECLARE v_n INTEGER DEFAULT 0;
+  SET p_sum = 0;
+  counting: WHILE v_n < p_limit DO
+    SET v_n = v_n + 1;
+    SET p_sum = p_sum + v_n;
+  END WHILE counting;
+END$$
+DELIMITER ;
 
-CREATE PROCEDURE add_demo_item(p_id INTEGER, p_label VARCHAR(40))
-AS INSERT INTO procedure_demo(id, label) VALUES (p_id, p_label);
-
-CALL add_demo_item(7, 'stored');
-SELECT id, label FROM procedure_demo WHERE id = 7;
+CALL sum_to(5, @sum);
+SELECT @sum;
 \end{lstlisting}
 
-The result contains id 7 and label \code{stored}. The CALL command reports the body's affected rows. Parameter count and type conversion are checked, including after the database is reopened. Use a prefix such as \code{p\_} for parameters to avoid ambiguity with unqualified column names: substitution replaces matching unqualified references with argument values.
+The result is 15. \code{DELIMITER} is a client command that keeps semicolons
+inside the definition together. Applications that send a complete definition
+through the execution API omit delimiter commands. The database persists the
+procedure, while \code{@sum} belongs to the current connection.
 
-OR REPLACE stores a new body and parameter definition under the same name. The supported body has the same persistence restrictions as a trigger: one VALUES INSERT, UPDATE, or DELETE without RETURNING or ON CONFLICT. INSERT SELECT, subqueries involving parameters, windows, multi-statement logic, SELECT result procedures, and user-defined functions are not implemented. A procedure does not own an independent nested transaction; its DML follows the caller's transaction context.
+\subsection{Parameter directions and local scope}
 
-Procedure DDL is autocommit-only. The body executes with the caller's authorization checks, not an implicit privileged definer context. The grammar supports SQL CALL, but that does not imply that every connector implements JDBC CallableStatement or Python callproc. A connector may allow a plain SQL CALL through its ordinary execute method while rejecting a specialized API.
+\begin{longtable}{p{.14\linewidth}p{.78\linewidth}}
+\toprule
+Mode & Contract \\
+\midrule
+\endhead
+\code{IN} & Default mode. The argument is evaluated and converted to the
+parameter type. Changing it inside the procedure does not change the caller. \\
+\code{OUT} & Starts as NULL. The final value is copied to the caller's writable
+destination after successful completion. \\
+\code{INOUT} & Starts with the caller's value and copies the final value back
+after successful completion. \\
+\bottomrule
+\end{longtable}
+
+Use a session variable for an output destination in ordinary SQL. Inside a
+routine, a declared local or another parameter can also be used. A literal or
+arithmetic expression is not a writable output destination. An unhandled
+exception, including a rethrown error, suppresses output-parameter copyback.
+There are no named/default arguments, overloaded signatures, or scalar stored
+function declarations in this procedure feature.
+
+\code{DECLARE v\_name INTEGER DEFAULT expression} introduces a local variable.
+Several names can share a declaration. Omitted defaults give NULL. Nested
+blocks have independent lexical scopes: an inner declaration shadows an outer
+name, and leaving the block restores visibility of the outer value. Locals and
+parameters take precedence over unqualified column names, so use distinct
+prefixes and qualified table columns.
+
+All declarations precede executable statements in the block. Declare variables
+and named conditions first, cursors next, and handlers last. Variables are
+initialized on entry to the block; session variables and prepared statements
+have the longer connection lifetime.
+
+\subsection{Control flow and labels}
+
+\begin{longtable}{p{.22\linewidth}p{.70\linewidth}}
+\toprule
+Construct & Form and purpose \\
+\midrule
+\endhead
+Conditional & \code{IF ... THEN ... ELSEIF ... ELSE ... END IF}. \\
+Statement CASE & \code{CASE expression WHEN ... THEN ... ELSE ... END CASE},
+or a searched \code{CASE WHEN condition THEN ... END CASE}. \\
+Precondition loop & \code{WHILE condition DO ... END WHILE}. \\
+Postcondition loop & \code{REPEAT ... UNTIL condition END REPEAT}. \\
+Unconditional loop & \code{LOOP ... END LOOP}. \\
+Block/loop exit & \code{LEAVE label}. An outer labeled block supplies an early
+procedure exit. \\
+Next iteration & \code{ITERATE label}; the label must refer to a loop. \\
+\bottomrule
+\end{longtable}
+
+Compound blocks and loops allow opening \code{label:} and optional matching
+closing labels. Statement CASE raises a condition when nothing matches and no
+ELSE exists; it differs from the scalar expression's implicit NULL result.
+Use \code{BEGIN END} when a branch intentionally does nothing.
+
+\subsection{SELECT INTO, result sets, and cursors}
 
 \begin{lstlisting}[language=SQL]
-SELECT routine_schema, routine_name, routine_type
-FROM information_schema.routines
-ORDER BY routine_schema, routine_name;
+SELECT amount INTO v_amount FROM items WHERE id = p_id;
+SELECT amount FROM items WHERE id = p_id INTO v_amount;
 \end{lstlisting}
 
-\sourcecode{src/minisql/sql/parser.ml}{parseCreateProcedure and parseCall define parameters and invocation syntax.}
-\sourcecode{src/minisql/executor/executor.ml}{encodeProcedureParameters, executeProcedureDdl, replaceProcedureStatement, and executeCall enforce persistent type metadata and body execution.}
+SELECT INTO requires one destination per result column. No row raises NOT FOUND
+and leaves existing destination values unchanged; more than one row is an
+error. An ordinary SELECT without INTO returns a result set. Multiple such
+queries, including nested calls, produce ordered multiple results. Earlier
+results remain observable when a later statement fails; a streaming client
+receives that error as it advances. An earlier result does not establish
+successful CALL completion or output-parameter copyback. Clients
+must consume every result before reusing the connection. SQL CALL through an
+ordinary execute API does not imply support for every connector's specialized
+stored-procedure convenience interface.
+
+MiniSQL's final CALL status accumulates affected rows from successful DML
+throughout the call, including nested calls and DML with RETURNING. SELECT
+result rows do not contribute to that mutation count. Inside the routine,
+GET DIAGNOSTICS ROW\_COUNT describes the most recent statement. These are
+MiniSQL execution-status rules; full MySQL CALL-status and ROW\_COUNT
+equivalence is not claimed.
+
+\begin{lstlisting}[language=SQL]
+DECLARE v_done INTEGER DEFAULT 0;
+DECLARE v_amount INTEGER;
+DECLARE items_cursor CURSOR FOR SELECT amount FROM items ORDER BY id;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+OPEN items_cursor;
+reading: LOOP
+  FETCH items_cursor INTO v_amount;
+  IF v_done = 1 THEN LEAVE reading; END IF;
+  SET p_total = p_total + v_amount;
+END LOOP reading;
+CLOSE items_cursor;
+\end{lstlisting}
+
+This fragment belongs inside a procedure block after the relevant tables and
+output parameter exist, with \code{p\_total} initialized before OPEN. Cursors
+are read-only and forward-only. FETCH advances by one row; exhaustion raises
+SQLSTATE 02000. SELECT INTO can raise the same condition, so use separate
+nested blocks and handlers if those operations need different behavior.
+
+\subsection{Conditions, handlers, and diagnostics}
+
+\begin{lstlisting}[language=SQL]
+DECLARE invalid_input CONDITION FOR SQLSTATE '45000';
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+  GET STACKED DIAGNOSTICS CONDITION 1
+    @last_state = RETURNED_SQLSTATE, @last_message = MESSAGE_TEXT;
+  RESIGNAL;
+END;
+
+SIGNAL invalid_input SET MESSAGE_TEXT = 'Invalid input';
+\end{lstlisting}
+
+Handlers match a numeric error code, SQLSTATE, named condition, SQLWARNING,
+NOT FOUND, or SQLEXCEPTION. CONTINUE resumes after the offending statement;
+EXIT leaves the block where the handler was declared. Neither action implies
+ROLLBACK. The nearest matching scope wins, then numeric error takes precedence
+over SQLSTATE and SQLSTATE over a condition class. A handler's own errors are
+not caught by itself or sibling handlers in the declaring block.
+
+SIGNAL creates a condition. MYSQL\_ERRNO must be an integer from 1 through
+65535, MESSAGE\_TEXT is limited to 128 UTF-8 bytes, and information items cannot
+be NULL. RESIGNAL requires an active handler. Bare RESIGNAL and RESIGNAL SET
+preserve original values except for explicitly replaced items. RESIGNAL
+SQLSTATE starts the error-number/message defaults for the new state class,
+applies explicit information items, and appends the condition to diagnostics.
+\code{GET [CURRENT | STACKED] DIAGNOSTICS} reads NUMBER/ROW\_COUNT or one
+condition's RETURNED\_SQLSTATE, MYSQL\_ERRNO, MESSAGE\_TEXT, and descriptive
+origin/object fields. STACKED retains the triggering condition while statements
+in the handler update CURRENT. SQLSTATE class 00 is successful completion and
+cannot be signaled; 45000 is the usual application-exception state.
+
+Uncaught exceptions terminate the procedure; warnings continue. Normal no-data
+conditions continue without a handler, whereas explicitly signaled no-data
+conditions exit. MiniSQL's engine errors are mapped to procedure conditions;
+this is not a guarantee of every MySQL server's numeric error and exact wording.
+The MySQL system variables \code{warning\_count}, \code{max\_error\_count}, and
+\code{sql\_mode} are not implemented. Diagnostics describe the conditions
+maintained by MiniSQL's execution engine.
+
+\subsection{Dynamic SQL, recursion, and transaction context}
+
+\begin{lstlisting}[language=SQL]
+SET @query = 'SELECT amount FROM items WHERE id = ?';
+PREPARE item_lookup FROM @query;
+SET @id = 1;
+EXECUTE item_lookup USING @id;
+DEALLOCATE PREPARE item_lookup;
+
+SET @@session.max_sp_recursion_depth = 16;
+\end{lstlisting}
+
+Dynamic PREPARE FROM accepts a SQL string literal or a session variable holding
+one statement. It cannot capture procedure locals or parameters because the
+prepared statement can survive return. Use session variables or bound values;
+question marks substitute values, never identifiers. The older PREPARE AS form
+remains available. Nested calls have separate local frames. Recursive calls
+are disabled by default; max\_sp\_recursion\_depth accepts 0 through 255.
+All active procedure frames also have a hard limit of 256, including chains of
+distinct, nonrecursive procedures. PREPARE accepts supported ordinary SQL,
+including session-variable SET and SELECT INTO with session-variable targets.
+Procedure definitions, compound program blocks, and nested PREPARE, EXECUTE,
+or DEALLOCATE commands cannot themselves be prepared.
+
+Procedures use the caller's transaction context and can issue START TRANSACTION,
+COMMIT, ROLLBACK, and supported savepoint statements. BEGIN inside the routine
+starts a lexical block. CALL does not automatically make every operation one
+atomic transaction. Define transaction boundaries and error recovery explicitly.
+Unqualified names resolve in the routine's schema and the caller's context is
+restored afterward. USE inside a procedure is not supported.
+
+\subsection{Security, characteristics, and inspection}
+
+New MySQL-style definitions default to SQL SECURITY DEFINER. SQL SECURITY
+INVOKER uses the caller's effective privileges. The earlier AS spelling defaults
+to INVOKER for compatibility unless security is explicit. The definer identity
+is persisted, and unrelated privileged definers require administrative
+permission. Database CREATE ROUTINE permits creation; EXECUTE and ALTER ROUTINE
+can apply to one procedure or the whole database. See Chapter~\ref{ops:security}
+for grants and role inheritance.
+
+LANGUAGE SQL, COMMENT, [NOT] DETERMINISTIC, and the CONTAINS SQL/NO SQL/READS SQL
+DATA/MODIFIES SQL DATA characteristics are persisted. Determinism and data-access
+characteristics describe intent; they do not replace privilege checks or a
+read-only transaction. A drop followed by recreation uses a new durable object
+identifier so old grants do not transfer silently to the new definition.
+
+\begin{lstlisting}[language=SQL]
+SHOW CREATE PROCEDURE public.sum_to;
+SHOW PROCEDURE STATUS;
+SELECT routine_schema, routine_name, security_type, definer,
+       is_deterministic, sql_data_access, routine_comment
+FROM information_schema.routines;
+SELECT specific_schema, specific_name, ordinal_position,
+       parameter_mode, parameter_name, data_type,
+       character_maximum_length, numeric_precision, numeric_scale
+FROM information_schema.parameters
+ORDER BY specific_schema, specific_name, ordinal_position;
+\end{lstlisting}
+
+ROUTINES also includes routine\_type and routine\_definition. Parameter ordinals
+start at one; irrelevant length/precision/scale fields are NULL. The detailed
+standalone reference is \path{docs/sql/stored-procedures.md}. Stored functions,
+MySQL's complete type/collation and sql\_mode behavior, host-qualified account
+matching, and MySQL replication remain separate features.
+
+\sourcecode{src/minisql/sql/parser.ml}{Procedure grammar, block declarations, characteristics, and invocation syntax.}
+\sourcecode{src/minisql/executor/executor.ml}{Procedure execution, nested frames, result propagation, conditions, and authorization.}
+\sourcecode{src/minisql/catalog/schema_history.ml}{Durable definitions and monotonically allocated extension identifiers.}
+\sourcecode{src/tests/routine_security.ml}{Security-codec, inherited grants, reopen, drop/recreate identity, and cleanup regression tests.}
 
 \Needspace{30\baselineskip}
 \section{Choosing the right reusable mechanism}
@@ -519,7 +747,7 @@ Need & Appropriate mechanism and boundary \\
 A named intermediate result in one query & A CTE or derived table. It is not persistent. \\
 A reusable read query & A view. It stores a SELECT definition and is not an updatable table. \\
 Repeated SQL with varying values & A session prepared statement or a connector's parameter API. The template is not restored after reconnect. \\
-A stored, typed DML operation & A single-statement procedure, when its limited body form is sufficient. \\
+A reusable SQL workflow & A stored procedure with typed parameters, local control flow, handlers, and result sets. \\
 A row-change side effect & A trigger, after accounting for the actual timing, conflict-path, and recursion behavior. \\
 A stored calculated column & A STORED generated column for supported row-local expressions. Avoid current DECIMAL calculation defects. \\
 A durable number allocator & A standalone sequence with explicit single-row NEXTVAL calls and a policy for gaps, bounds, and cycling. \\
@@ -529,7 +757,7 @@ A convenient table-local row number & An identity column, when MAX(existing)+1 a
 
 \section{Dialect boundaries checklist}
 
-The implemented language is substantial, but it is not a drop-in PostgreSQL, SQLite, MySQL, or SQL Server dialect. In particular, it has no CREATE DATABASE/USE SQL, general ALTER COLUMN TYPE, CTAS, temporary tables, JSON type/functions, binary literal, regex operator, full date/time library, SQL user-defined function, multi-statement procedure language, NATURAL/USING/LATERAL joins, aggregate FILTER/ROLLUP/CUBE, named or framed windows, SELECT FOR UPDATE, RETURNING on MERGE/TRUNCATE, or generic file COPY/LOAD DATA command.
+The implemented language is substantial, but it is not a drop-in PostgreSQL, SQLite, MySQL, or SQL Server dialect. In particular, it has no CREATE DATABASE/USE SQL, general ALTER COLUMN TYPE, CTAS, temporary tables, JSON type/functions, binary literal, regex operator, full date/time library, SQL user-defined function, NATURAL/USING/LATERAL joins, aggregate FILTER/ROLLUP/CUBE, named or framed windows, SELECT FOR UPDATE, RETURNING on MERGE/TRUNCATE, or generic file COPY/LOAD DATA command.
 
 Some accepted syntax also has explicit functional limits: referential cascades, parent-key update protection, DECIMAL computations, temporal comparison/current time, BEFORE trigger timing, per-row NEXTVAL expectations, and DISTINCT window aggregates. These are documented where they affect the user's decision. A parser accepting a word is not sufficient evidence that its familiar behavior is implemented.
 

@@ -7,6 +7,7 @@ share one invocation, which also works in isolated CI network namespaces.
 """
 # Copyright 2026 MiniLangProject contributors
 # SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0; see the LICENSE file.
 from __future__ import annotations
 
 import argparse
@@ -27,12 +28,14 @@ import minisql  # noqa: E402
 
 
 def free_port() -> int:
+    """Finds an available loopback port for the disposable documentation test server."""
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         return int(sock.getsockname()[1])
 
 
 def main() -> int:
+    """Runs tutorial scripts and behavior assertions against a fresh native database."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bin-dir", required=True, type=Path)
     parser.add_argument("--output", type=Path, default=MANUAL / "validation.json")
@@ -104,6 +107,7 @@ def main() -> int:
                         break
 
                 def check(name: str, sql: str, expected=None, error_contains=None) -> None:
+                    """Records query rows or an expected error without hiding other test failures."""
                     nonlocal failures
                     record = {"name": name, "sql": sql}
                     try:

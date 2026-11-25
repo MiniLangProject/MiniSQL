@@ -137,8 +137,10 @@ The SQL grammar currently has no binary literal, so prepared statements cannot
 safely implement `setBytes`; that method reports
 `SQLFeatureNotSupportedException`. Binary query results remain readable through
 `getBytes` because the server renders them as `0x` followed by hexadecimal
-digits. Callable statements, generated keys, scrollable/updatable result sets,
-XA, and JDBC savepoint objects are not implemented in driver 1.0.
+digits. Generated keys, scrollable/updatable result sets, XA, and JDBC savepoint
+objects remain unavailable. Positional `CallableStatement` calls, scalar OUT
+getters, and multiple results with `getMoreResults()` are supported. See the
+[procedure examples and precise limits](../../clients/jdbc/README.md#stored-procedures).
 
 ## Validation
 

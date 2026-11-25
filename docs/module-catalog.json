@@ -344,6 +344,12 @@
       "targetMilestone": "M15"
     },
     {
+      "path": "src/minisql/executor/routine_state.ml",
+      "package": "minisql.executor.routine_state",
+      "component": "executor.routine_state",
+      "targetMilestone": "M45"
+    },
+    {
       "path": "src/minisql/executor/scan.ml",
       "package": "minisql.executor.scan",
       "component": "executor.scan",

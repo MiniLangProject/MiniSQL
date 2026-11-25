@@ -60,6 +60,14 @@ enum TokenKind
   Concat = 22
   /// Represents the parameter variant.
   Parameter = 23
+  /// Separates a block or loop label from its statement.
+  Colon = 24
+  /// Identifies a session variable including its @ prefix.
+  UserVariable = 25
+  /// MySQL SET assignment operator :=.
+  Assign = 26
+  /// Separates an account name and host in a DEFINER.
+  At = 27
 end enum
 
 /// Groups the token state and preserves the field relationships documented below.

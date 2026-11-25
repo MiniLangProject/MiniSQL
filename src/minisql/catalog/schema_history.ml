@@ -2564,11 +2564,14 @@ function loadExtensionsInto(databasePath, state)
   return state
 end function
 
-/// Performs the next extension id operation for this module.
-/// Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+/// Allocates an extension identifier above the persisted generation high-water mark.
+/// The caller increments and persists the generation with the new definition.
+/// Dropping the highest live object must never allow its identifier to be reused:
+/// procedure grants may still refer to that identifier after interrupted cleanup.
+/// Existing larger identifiers raise the high-water mark before allocation.
 /// @param state Mutable state inspected or updated by the operation.
 function nextExtensionId(state)
-  maximum = 0
+  maximum = state.generation
   for each view in state.views
     if view.viewId > maximum then maximum = view.viewId end if
   end for
@@ -2578,6 +2581,7 @@ function nextExtensionId(state)
   for each trigger in state.triggers
     if trigger.triggerId > maximum then maximum = trigger.triggerId end if
   end for
+  state.generation = maximum
   return maximum + 1
 end function
 

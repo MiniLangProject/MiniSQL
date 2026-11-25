@@ -33,7 +33,7 @@ The executable is \path{build/bin/minisql.exe} on Windows and \path{build/bin-li
 ./build/bin-linux/minisql --script 7432 docs/manual/examples/01-create-shop.sql
 \end{lstlisting}
 
-The trusted forms connect to loopback. A successful ping prints \code{PONG}. Query mode formats one response and closes its connection; separate query invocations therefore do not share a transaction, prepared statement, or session state. Shell mode and script mode keep a connection open across their statements.
+The trusted forms connect to loopback. A successful ping prints \code{PONG}. Query mode formats the request's ordered results and closes its connection; separate query invocations therefore do not share a transaction, prepared statement, or session state. Shell mode and script mode keep a connection open across their statements.
 
 The complete connection families are listed below. Replace \code{ACTION} with \code{ping}, \code{query}, \code{shell}, or \code{script}. Query takes an additional SQL argument; script takes an additional filename. Ping and shell have no trailing argument.
 
@@ -58,7 +58,7 @@ The authenticated modes prompt for the password. All authenticated connections e
 
 \subsection{Work efficiently in the shell}
 
-Statements may span lines. The prompt changes from \code{minisql>} to \code{...>} while an unfinished SQL fragment is buffered. A semicolon outside a string, quoted identifier, or comment ends a statement. Backslash commands are client commands and are not sent as SQL.
+Statements may span lines. The prompt changes from \code{minisql>} to \code{...>} while an unfinished SQL fragment is buffered. The default terminator is a semicolon outside a string, quoted identifier, or comment. Use \code{DELIMITER \$\$} before a compound procedure definition, end the definition with \code{\$\$}, and restore \code{DELIMITER ;} afterward. The delimiter is connection-local client input state and is never sent as SQL. Backslash commands are also client commands.
 
 \begin{longtable}{p{.28\linewidth}p{.63\linewidth}}
 \toprule Command & Effect \\\midrule
@@ -87,7 +87,7 @@ ORDER BY customer_id;
 
 A script is scanned with the same quote-aware and comment-aware logic as interactive input. The final SQL statement need not end with a semicolon. Statements execute in order, and processing stops at the first error. Success prints \code{MiniSQL script completed statements=N}. The script reader currently accepts at most 1 MiB of file content; this limit is separate from the protocol's larger frame limit. Split large imports into smaller scripts or use connector batches.
 
-Running a script does not make its statements one transaction. Add \code{BEGIN} and \code{COMMIT} around related DML when atomicity is required. Keep schema changes separate from the DML transaction, and understand what already committed before retrying a partly completed script. A script file contains SQL only; \path{\source} is an interactive shell command rather than an SQL include directive.
+Running a script does not make its statements one transaction. Add \code{BEGIN} and \code{COMMIT} around related DML when atomicity is required. Keep schema changes separate from the DML transaction, and understand what already committed before retrying a partly completed script. A script contains SQL and optional \code{DELIMITER} directives; \path{\source} remains an interactive shell command rather than an SQL include directive.
 
 \sourcecode{src/minisql/client/console.ml}{scanSqlBatch, executeStatements, runScript, printShellHelp, and runShell.}
 
@@ -128,6 +128,10 @@ Stop & Stop the active worker and disconnect this session. Reconnect before furt
 \end{longtable}
 
 The application uses a background native worker for execution and metadata loading. Controls that would concurrently access session state are disabled until the worker publishes its result. A responsive window is not evidence that the database statement has completed: check the status and result tab.
+
+Workbench scripts also recognize \code{DELIMITER}. Procedure result sets retain
+separate result boundaries, even when successive SELECT statements have the same
+column names.
 
 \warning{Workbench Stop is a disconnect}{The current Workbench does not use the newer cooperative cancellation facility exposed by Python and JDBC. Its Stop path aborts the connection to avoid reusing an interrupted response stream. Any uncommitted work needs to be assessed after reconnection. Do not interpret Stop as confirmation that a previously acknowledged commit was undone.}
 
@@ -302,9 +306,9 @@ Iteration & Advance through the result stream until exhausted. \\
 \code{rowcount} & Affected rows for a command; -1 for a SELECT result. \\
 \code{lastrowid} & None. Use SQL RETURNING when an inserted identifier is required. \\
 \code{setinputsizes}, \code{setoutputsize} & Accepted as no-op hints. \\
-\code{callproc} & Raises NotSupportedError. SQL CALL is a separate engine statement. \\
-\code{nextset} & Returns None; multiple result sets are not exposed. \\
-\code{close()} & Drain unread continuation frames and release the cursor. \\
+\code{callproc(name, parameters)} & Return IN values and updated OUT/INOUT values as a tuple; buffer the procedure's results for subsequent fetching. \\
+\code{nextset()} & Discard unread rows of the current result and advance; return None when no further result exists. \\
+\code{close()} & Drain every remaining result and release the cursor. \\
 \bottomrule
 \end{longtable}
 
@@ -322,6 +326,26 @@ with connection.cursor() as cursor:
 \end{lstlisting}
 
 Here \code{process\_product} is an application function supplied by the reader, not a connector API. The \code{scaleb(-2)} conversion is required for the known \code{DECIMAL(10,2)} column: this implementation returns its scaled integer coefficient as text. For example, a stored 12.50 is returned as \code{1250}. Do not apply this conversion blindly to arbitrary expressions or columns with another scale.
+
+\subsection{Stored procedure calls}
+
+For the \code{sum\_to} procedure defined in Chapter~8, supply a placeholder for
+its OUT argument. The original Python IN value is preserved; protocol output
+values are text, or None for SQL NULL:
+
+\begin{lstlisting}[language=Python]
+with connection.cursor() as cursor:
+    returned = cursor.callproc("sum_to", (5, None))
+    assert returned == (5, "15")
+\end{lstlisting}
+
+\code{callproc} buffers every procedure result so it can read output variables
+before returning. For large result sets, use \code{execute("CALL ...")}, consume
+the current result when \code{description} is not None, and repeat with
+\code{nextset()}. Distinct SELECTs remain distinct even when their columns match.
+When using explicit output session variables, query them after consuming every
+CALL result. Submit complete compound CREATE definitions to \code{execute};
+the client-only \code{DELIMITER} directive is omitted from API SQL strings.
 
 \subsection{Import and export data}
 \index{CSV}\index{import}\index{export}
@@ -441,7 +465,29 @@ Prepared parameters are numbered from 1. Implemented setters include NULL, Boole
 
 Use \code{addBatch} and \code{executeBatch} for repeated statements. Compatible inserts are coalesced up to 256 rows and 768 KiB, with one update count per original entry. A failed coalesced request is retried in order, using an internal savepoint in an explicit transaction. A batch exception can therefore contain prior successful counts; decide explicitly whether to roll back the encompassing transaction.
 
-Results are forward-only and read-only. \code{next()} advances; getters accept either a one-based index or label. Numeric getters parse the returned text, temporal getters parse temporal representations, and \code{getBytes} decodes the server's hexadecimal rendering. Use \code{wasNull()} after a primitive getter, because zero/false alone cannot identify SQL NULL. Closing a ResultSet drains outstanding frames. A connection can own only one unread result stream.
+Results are forward-only and read-only. \code{next()} advances; getters accept either a one-based index or label. Numeric getters parse the returned text, temporal getters parse temporal representations, and \code{getBytes} decodes the server's hexadecimal rendering. Use \code{wasNull()} after a primitive getter, because zero/false alone cannot identify SQL NULL. Closing a ResultSet discards only its current result; \code{getMoreResults()} can advance to the next result. Closing the Statement drains all remaining results. A connection can own only one unread result stream.
+
+\code{Statement.execute("CALL ...")} exposes the ordered procedure results,
+including the final update count. Continue until both \code{getMoreResults()}
+returns false and \code{getUpdateCount()} returns -1. For output parameters,
+\code{prepareCall} supports positional \code{CALL ...} and \code{\{call ...\}}
+forms. Bind IN values with ordinary setters, register OUT positions, and do both
+for INOUT parameters:
+
+\begin{lstlisting}[language=Java]
+try (CallableStatement call = connection.prepareCall("{call sum_to(?, ?)}")) {
+    call.setInt(1, 5);
+    call.registerOutParameter(2, java.sql.Types.INTEGER);
+    call.execute();
+    System.out.println(call.getInt(2)); // 15
+}
+\end{lstlisting}
+
+Callable statements buffer results before retrieving outputs; those results
+remain available through \code{getResultSet()} and \code{getMoreResults()}.
+Use ordinary streaming statements and explicit output session variables for
+large results. Named bindings, function-return call escapes, callable batches,
+and \code{KEEP\_CURRENT\_RESULT} are unsupported.
 
 At this revision JDBC date and timestamp getters have a pre-1970 edge case: their decoder treats any text containing a hyphen as a formatted date. A negative numeric epoch value such as \code{-1} therefore selects the wrong parser and fails. Read the known numeric representation with \code{getString} or \code{getLong} and convert the documented epoch units explicitly in application code. This boundary was established by source review of \code{dateValue} and \code{timestampValue}, not a new Java runtime test.
 
@@ -455,7 +501,7 @@ Ordinary \code{ResultSetMetaData} reports VARCHAR/String, unknown nullability, a
 \code{setNetworkTimeout} & Changes socket read timeout; this is not a server query deadline. \\
 \code{Statement.cancel} & Separate control connection and cooperative cancellation; authenticated users need ADMIN. \\
 \code{getGeneratedKeys} & No generated keys are supplied. Use SQL RETURNING and a result-reading execution method. \\
-\code{CallableStatement} & Unsupported; ordinary SQL CALL is a separate route. \\
+\code{CallableStatement} & Positional IN/OUT/INOUT with buffered results; named bindings and function-return escapes are unsupported. \\
 Scrollable/updatable ResultSet & Unsupported. \\
 XA, two-phase commit, JDBC Savepoint & Unsupported. \\
 \bottomrule

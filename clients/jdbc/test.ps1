@@ -25,6 +25,8 @@ $tests = Get-ChildItem (Join-Path $projectRoot "src\test\java") -Recurse -Filter
 if ($LASTEXITCODE -ne 0) { throw "JDBC test compilation failed." }
 $testClasspath = $classes + [IO.Path]::PathSeparator + $testClasses
 & $javaPath -ea -cp $testClasspath org.minilang.minisql.jdbc.DriverTest
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& $javaPath -ea -cp $testClasspath org.minilang.minisql.jdbc.RoutineTest
 if ($LASTEXITCODE -ne 0) { throw "JDBC unit tests failed." }
 if ($UnitOnly) { return }
 

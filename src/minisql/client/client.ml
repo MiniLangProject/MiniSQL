@@ -385,20 +385,30 @@ function query(client, sqlText)
   cursor = try(beginQuery(client, sqlText))
   if typeof(cursor) == "error" then return cursor end if
   combined = void
+  results = []
   while true
     decoded = try(nextQueryBatch(cursor))
     if typeof(decoded) == "error" then return decoded end if
     if decoded is void then break end if
-    if decoded.status == constants.STATUS_ERROR then return decoded end if
+    if decoded.status == constants.STATUS_ERROR then
+      if combined is not void then results = results + [combined] end if
+      if len(results) == 0 then return decoded end if
+      return messages.multipleResponse(results + [decoded])
+    end if
     if combined is void then
       combined = decoded
+    else if decoded.resultStart then
+      results = results + [combined]
+      combined = decoded
     else
-      if combined.status != constants.STATUS_ROWS or decoded.status != constants.STATUS_ROWS or not sameColumns(combined.columns, decoded.columns) then return fail(INVALID_ARGUMENT, "query", "inconsistent result batch") end if
+      if combined.status != constants.STATUS_ROWS or decoded.status != constants.STATUS_ROWS or not sameColumns(combined.columns, decoded.columns) then return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "query", "inconsistent result batch")) end if
       combined.rows = combined.rows + decoded.rows
       combined.affectedRows = combined.affectedRows + decoded.affectedRows
     end if
   end while
-  return combined
+  if len(results) == 0 then return combined end if
+  if combined is not void then results = results + [combined] end if
+  return messages.multipleResponse(results)
 end function
 
 /// Sends one SQL request and transfers ownership of its response stream to a
@@ -447,7 +457,8 @@ function nextQueryBatch(cursor)
   if responseMessage.messageType != constants.TYPE_RESPONSE and responseMessage.messageType != constants.TYPE_ERROR then return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "nextQueryBatch", "unexpected response type")) end if
   decoded = try(messages.decodeResponse(responseMessage.payload))
   if typeof(decoded) == "error" then return failQueryCursor(cursor, decoded) end if
-  if cursor.columns is void then
+  decoded.resultStart = (responseMessage.flags & constants.FLAG_RESULT_START) != 0
+  if cursor.columns is void or decoded.resultStart then
     cursor.columns = decoded.columns
   else if decoded.status == constants.STATUS_ROWS and not sameColumns(cursor.columns, decoded.columns) then
     return failQueryCursor(cursor, fail(INVALID_ARGUMENT, "nextQueryBatch", "inconsistent result batch"))

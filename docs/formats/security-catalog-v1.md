@@ -32,3 +32,38 @@ compatibility. Older databases are migrated under their exclusive database lock;
 `catalog/security.v2` is published only after both scalable generations are
 durable. The envelope is no longer constrained to one page and no longer has
 the former 65,535-entry collection ceiling.
+
+## Routine privilege codes
+
+Stored-procedure support adds codes to the existing 40-byte privilege record;
+the record layout and envelope version remain unchanged.
+
+| Record offset | Width | Meaning |
+|---:|---:|---|
+| 0 | 8 | Grantee principal ID, unsigned little endian |
+| 8 | 8 | Grantor principal ID, unsigned little endian |
+| 16 | 8 | Object ID, unsigned little endian |
+| 24 | 2 | Object type, unsigned little endian |
+| 26 | 2 | Privilege code, unsigned little endian |
+| 28 | 4 | Flags; bit 0 is GRANT OPTION |
+| 32 | 8 | Reserved zero bytes |
+
+Object types are database `1`, table `2`, and procedure `3`. A database grant
+uses object ID zero; a procedure grant uses its positive persisted
+`ViewDefinition.viewId` from `schema.extensions`.
+
+| Privilege | Code | Accepted scopes |
+|---|---:|---|
+| EXECUTE | 20 | Database or procedure |
+| ALTER ROUTINE | 21 | Database or procedure |
+| CREATE ROUTINE | 22 | Database only |
+
+Database EXECUTE/ALTER ROUTINE grants include each procedure, including grants
+inherited through roles. GRANT OPTION is checked independently of execution or
+alteration authority. CREATE ROUTINE is invalid on one procedure. These codes
+are never accepted as table privileges.
+
+The updated reader accepts older snapshots. Older binaries do not understand
+the new object/privilege codes and reject snapshots containing them; do not
+downgrade an updated database after creating routine grants. Unknown codes must
+remain errors rather than silently granting or discarding authority.

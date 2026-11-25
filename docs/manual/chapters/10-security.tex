@@ -148,11 +148,16 @@ Scope / privilege & Meaning in the implementation \\
 Database: \code{CONNECT} & Allows an authenticated user to establish access
 to the database. \\
 Database: \code{CREATE} & Permits table creation and supported schema/view/
-sequence/procedure definition operations. Some object-specific operations
-use this privilege as documented below. \\
+sequence definition operations. It also retains compatibility permission
+for procedure creation; CREATE ROUTINE is the narrower procedure-specific grant. \\
 Database: \code{MAINTAIN} & Permits ANALYZE, VACUUM, and REINDEX. \\
 Database: \code{ADMIN} & Permits security administration, operational status,
 process inspection, administrative cancellation, and shutdown. \\
+Database: \code{CREATE ROUTINE} & Creates stored procedures. \\
+Database/procedure: \code{EXECUTE} & Calls every procedure in the database,
+or one named procedure. \\
+Database/procedure: \code{ALTER ROUTINE} & Alters, replaces, or drops every
+procedure in the database, or one named procedure. \\
 Table: \code{SELECT} & Reads table data; required for DESCRIBE and
 SHOW INDEXES on that table. \\
 Table: \code{INSERT} & Inserts data. INSERT SELECT also requires read access
@@ -174,6 +179,10 @@ GRANT privilege [, privilege ...] ON DATABASE
   TO principal [WITH GRANT OPTION];
 GRANT privilege [, privilege ...] ON [TABLE] table_name
   TO principal [WITH GRANT OPTION];
+GRANT EXECUTE ON PROCEDURE procedure_name
+  TO principal [WITH GRANT OPTION];
+GRANT ALTER ROUTINE ON PROCEDURE procedure_name TO principal;
+GRANT CREATE ROUTINE ON DATABASE TO principal;
 GRANT ALL [PRIVILEGES] ON DATABASE TO principal;
 GRANT ALL [PRIVILEGES] ON TABLE table_name TO principal;
 GRANT role_name TO principal [WITH ADMIN OPTION];
@@ -201,14 +210,29 @@ restriction. Review this role alongside direct grants and nested memberships.
 Views are authorized through their underlying query sources. They are not
 documented as a security-definer mechanism that lets a caller bypass base-table
 permissions. Creating a view requires \code{CREATE} and authorization of its
-query. Calling a procedure runs its stored body through ordinary statement
-authorization; there is no separate implemented SQL \code{EXECUTE}
-privilege to grant on a procedure. Creating a trigger requires \code{ALTER}
+query. Calling a procedure requires \code{EXECUTE} on that procedure or on the
+current database. New MySQL-style definitions default to \code{SQL SECURITY
+DEFINER}: statements in the body run with the persisted definer identity.
+\code{SQL SECURITY INVOKER} uses the caller instead. Earlier AS definitions
+retain an INVOKER default. An author cannot select an unrelated privileged
+definer without administrative permission. Definition creation automatically
+grants the creator EXECUTE and ALTER ROUTINE, without GRANT OPTION.
+
+A procedure's durable identifier anchors its grants. Dropping and recreating
+the same name allocates a fresh identifier, so old grants cannot authorize the
+replacement even if interrupted cleanup leaves a stale grant record. Definer
+identity also uses a persisted principal identifier; deleting and recreating
+a same-named account does not adopt its predecessor's routines. Calls fail if
+the required definer account is missing or disabled.
+
+Creating a trigger requires \code{ALTER}
 on its target and authorization of its body. Dropping or altering a trigger
 uses database \code{CREATE} in the present dispatcher.
 
+Procedure SHOW commands and routine/parameter metadata are restricted to
+administrators and principals with routine privileges. Other
 \code{SHOW TABLES} and virtual \code{information\_schema} queries are not
-a promise of privilege-filtered object-name secrecy. In contrast,
+a general promise of privilege-filtered object-name secrecy. In contrast,
 \code{DESCRIBE} and \code{SHOW INDEXES} require SELECT on their target
 table. Design authorization around supported operations, and test metadata
 visibility if hiding object names is a requirement.

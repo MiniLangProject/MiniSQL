@@ -863,9 +863,9 @@ function validateSecuritySemantics(state, databaseId, tables)
   for each grant in state.grants
     if findPrincipalByIdInState(state, grant.granteeId) is void or findPrincipalByIdInState(state, grant.grantorId) is void then return fail(CORRUPT_DATA, "validateSecuritySemantics", "privilege grant references an invalid principal") end if
     if not metadata.validPrivilege(grant.objectType, grant.privilege) then return fail(CORRUPT_DATA, "validateSecuritySemantics", "invalid privilege code") end if
-    // Grants for a dropped table are harmless tombstones until the next DCL
-    // cleanup pass. Object IDs are never reused, so they can never authorize a
-    // future table accidentally.
+    // Grants for dropped tables or procedures are harmless tombstones until
+    // the next DCL cleanup pass. Their durable IDs are never reused, so an
+    // interrupted cleanup cannot authorize a newly created object.
     key = grant.granteeId + ":" + grant.objectType + ":" + grant.objectId + ":" + grant.privilege
     for each existingKey in grantKeys
       if existingKey == key then return fail(CORRUPT_DATA, "validateSecuritySemantics", "duplicate privilege grant") end if
@@ -1333,6 +1333,14 @@ function hasPrivilege(database, principalId, objectType, objectId, privilege, re
   if isSuperuser(database, principalId) then return true end if
   effective = effectivePrincipalIds(database, principalId)
   for each grant in database.security.grants
+    // Database-level routine permissions include every persisted procedure.
+    // A grant without GRANT OPTION must not authorize delegation, even when
+    // it is inherited through a role or through the database-wide scope.
+    if objectType == metadata.OBJECT_PROCEDURE and (privilege == metadata.PRIVILEGE_EXECUTE or privilege == metadata.PRIVILEGE_ALTER_ROUTINE) then
+      if containsId(effective, grant.granteeId) and grant.objectType == metadata.OBJECT_DATABASE and grant.objectId == 0 and grant.privilege == privilege then
+        if not requireGrantOption or grant.grantOption then return true end if
+      end if
+    end if
     if containsId(effective, grant.granteeId) and grant.objectType == objectType and grant.objectId == objectId then
       if grant.privilege == privilege or (objectType == metadata.OBJECT_TABLE and grant.privilege == metadata.PRIVILEGE_OWNER) then
         if not requireGrantOption or grant.grantOption or grant.privilege == metadata.PRIVILEGE_OWNER then return true end if
@@ -1512,6 +1520,29 @@ function removeTablePrivileges(database, tableId)
   changed = false
   for each grant in candidate.grants
     if grant.objectType == metadata.OBJECT_TABLE and grant.objectId == tableId then changed = true else output = output + [grant] end if
+  end for
+  if changed then
+    candidate.grants = output
+    commitSecurityState(database, candidate)
+  end if
+  return changed
+end function
+
+/// Removes all grants for a dropped procedure from the durable security state.
+/// Call after publishing the drop. Procedure IDs are never reused, so a crash
+/// between the drop and this cleanup leaves inert grants rather than granting
+/// authority over a replacement procedure. The routine never removes grants
+/// inherited from the database or from another procedure.
+/// @param database Open writable catalog whose security snapshot is updated.
+/// @param procedureId Positive extension identifier of the dropped procedure.
+function removeProcedurePrivileges(database, procedureId)
+  validateSecurityWritable(database, "removeProcedurePrivileges")
+  if typeof(procedureId) != "int" or procedureId <= 0 then return fail(INVALID_ARGUMENT, "removeProcedurePrivileges", "procedureId must be positive") end if
+  candidate = cloneSecurityState(database.security)
+  output = []
+  changed = false
+  for each grant in candidate.grants
+    if grant.objectType == metadata.OBJECT_PROCEDURE and grant.objectId == procedureId then changed = true else output = output + [grant] end if
   end for
   if changed then
     candidate.grants = output

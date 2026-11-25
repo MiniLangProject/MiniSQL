@@ -128,7 +128,7 @@ CTEs & Nonrecursive and recursive anchor plus one UNION/UNION ALL recursive term
 Windows & Ranking, navigation, and aggregate windows over complete partitions; no explicit ROWS/RANGE/GROUPS frames or named windows. \\
 Views & Stored SELECT definitions; no materialized-view refresh system. \\
 Triggers & Row BEFORE/AFTER INSERT/UPDATE/DELETE with one supported DML body and read-only OLD/NEW; recursion depth is bounded to eight. \\
-Procedures & Typed positional input parameters and one persisted DML body; no general procedural language or user-defined functions. \\
+Procedures & Typed IN/OUT/INOUT parameters, lexical blocks, control flow, cursors, handlers, diagnostics, dynamic SQL and ordered result sets; stored functions remain separate. \\
 Sequences & Persisted sequences with session current-value behavior; current evaluation can consume values before per-row execution, so do not rely on NEXTVAL in a SELECT to allocate one distinct value per output row. The cursor-probing path has gaps in read-only and exclusive classification; NEXTVAL can consume twice and can mutate inside BEGIN READ ONLY. Do not rely on those boundaries for sequence use; see the sequence and transaction chapters. Numbering is not gapless. \\
 Prepared statements & SQL PREPARE/EXECUTE/DEALLOCATE and connector support; no typed wire parameter-binding frame. \\
 Transactions & Explicit/autocommit, savepoints, READ COMMITTED and SERIALIZABLE, supported read-only state; no cross-database transaction or XA coordinator. \\

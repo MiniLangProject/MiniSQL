@@ -26,6 +26,8 @@ const DEFAULT_RESULT_BATCH_ROWS = 512
 const FLAG_SECURE = 1
 /// Indicates that another response frame with the same request identifier follows.
 const FLAG_MORE = 2
+/// Marks the first frame of a separate result in one CALL response stream.
+const FLAG_RESULT_START = 4
 /// Defines the secure overhead bytes constant used by the minisql protocol constants module.
 const SECURE_OVERHEAD_BYTES = 24
 /// Defines the max secure plaintext bytes constant used by the minisql protocol constants module.
@@ -64,6 +66,8 @@ const STATUS_COMMAND = 1
 const STATUS_ROWS = 2
 /// Defines the status error constant used by the minisql protocol constants module.
 const STATUS_ERROR = 3
+/// Client-only aggregate status; never serialized in a protocol payload.
+const STATUS_MULTIPLE = 4
 
 /// Implements known type for this module.
 /// Returns the computed value or operation status.

@@ -9,8 +9,9 @@ editable LaTeX and a compiled PDF.
 
 ## Implementation identity
 
-This edition describes MiniSQL source revision
-[`9bedab0c9de307d0435d3abfb3eab98a2f6d42a5`](https://github.com/MiniLangProject/MiniSQL/commit/9bedab0c9de307d0435d3abfb3eab98a2f6d42a5).
+This edition uses source revision
+[`9bedab0c9de307d0435d3abfb3eab98a2f6d42a5`](https://github.com/MiniLangProject/MiniSQL/commit/9bedab0c9de307d0435d3abfb3eab98a2f6d42a5)
+as its baseline and incorporates the November 25 stored-procedure update.
 The application banner is **1.1.1**, the current development **storage format
 is 2**, and the **wire protocol remains 1**. Format-1 databases are rejected;
 the page-size migration tool is not a format-1 converter.
@@ -49,7 +50,7 @@ python3 docs/manual/tools/build_manual.py
 
 On Windows use `python` instead of `python3` if appropriate. The final PDF is
 `docs/manual/minisql-user-manual.pdf`; temporary TeX files stay under the ignored
-`docs/manual/build/` directory. No shell escape or network download is used by
+`build/manual/` directory. No shell escape or network download is used by
 the build script. An optional `--output PATH` selects another final location.
 
 ## Run and verify the examples

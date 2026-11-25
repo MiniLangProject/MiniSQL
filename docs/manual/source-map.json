@@ -87,7 +87,8 @@
       "src/tests/m22_prepared_statements.ml",
       "src/tests/m35_scalar_expressions.ml",
       "src/tests/m44_cte_windows.ml",
-      "src/tests/m45_sequences_generated_triggers.ml"
+      "src/tests/m45_sequences_generated_triggers.ml",
+      "src/tests/routine_security.ml"
     ],
     "09-transactions.tex": [
       "src/minisql/executor/executor.ml",

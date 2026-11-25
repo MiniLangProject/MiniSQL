@@ -2,6 +2,7 @@
 """Verify the manual's offline backup/restore recipe in disposable directories."""
 # Copyright 2026 MiniLangProject contributors
 # SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0; see the LICENSE file.
 from __future__ import annotations
 
 import argparse
@@ -23,6 +24,7 @@ import minisql  # noqa: E402
 
 
 def main() -> int:
+    """Checks offline backup and restore with independent native and SQL verification."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bin-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=MANUAL / "recovery-validation.json")
@@ -38,6 +40,7 @@ def main() -> int:
                 "steps": [], "passed": False}
 
     def run(label, arguments, work):
+        """Runs one bounded native operation and records complete evidence or fails."""
         result = subprocess.run(arguments, cwd=work, capture_output=True,
                                 text=True, timeout=90)
         evidence["steps"].append({"name": label, "exit_code": result.returncode,
@@ -49,6 +52,7 @@ def main() -> int:
 
     @contextmanager
     def serving(database, work, tag):
+        """Owns a temporary server and connection, closing both on success or failure."""
         with socket.socket() as socket_probe:
             socket_probe.bind(("127.0.0.1", 0))
             port = socket_probe.getsockname()[1]

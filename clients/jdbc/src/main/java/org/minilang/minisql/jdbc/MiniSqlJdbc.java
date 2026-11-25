@@ -10,6 +10,8 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.CallableStatement;
+import java.sql.SQLType;
 import java.sql.BatchUpdateException;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
@@ -111,6 +113,7 @@ final class MiniSqlJdbc {
             switch (name) {
                 case "createStatement": return statement(this, null);
                 case "prepareStatement": return statement(this, (String) args[0]);
+                case "prepareCall": return callableStatement(this, (String) args[0]);
                 case "nativeSQL": return args[0];
                 case "getAutoCommit": return autoCommit;
                 case "setAutoCommit": setAutoCommit((Boolean) args[0]); return null;
@@ -228,17 +231,38 @@ final class MiniSqlJdbc {
         return (Statement) proxy;
     }
 
+    /** Accepts JDBC procedure call escapes and direct CALL syntax with positional parameters. */
+    static String procedureCallSql(String source) throws SQLException {
+        if (source == null) throw new SQLException("Procedure call must be SQL text", "42000");
+        String sql = source.trim();
+        if (sql.startsWith("{") && sql.endsWith("}")) sql = sql.substring(1, sql.length() - 1).trim();
+        if (!sql.matches("(?is)CALL\\s+[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?\\s*\\(\\s*(?:\\?(?:\\s*,\\s*\\?)*)?\\s*\\)\\s*;?")) {
+            throw new SQLFeatureNotSupportedException("Use {call schema.procedure(?, ...)} with positional parameters", "0A000");
+        }
+        return sql;
+    }
+
+    /** Creates a positional IN/OUT CallableStatement; ordinary CALL remains streaming. */
+    private static CallableStatement callableStatement(ConnectionHandler connection, String source) throws SQLException {
+        StatementHandler handler = new StatementHandler(connection, procedureCallSql(source), true);
+        CallableStatement proxy = proxy(CallableStatement.class, handler);
+        handler.proxy = proxy;
+        return proxy;
+    }
+
     /** Implements statements, server-backed prepared statements, and bounded insert batching. */
     private static final class StatementHandler extends BaseHandler {
         private static final int MAX_COALESCED_INSERT_ROWS = 256;
         private static final int MAX_COALESCED_INSERT_BYTES = 768 * 1024;
         final ConnectionHandler connection;
         final String template;
+        final boolean callable;
         final List<Integer> markers;
         final Map<Integer, String> parameters = new LinkedHashMap<>();
         final List<String> batch = new ArrayList<>();
         Statement proxy;
         ResultSet currentResult;
+        MiniSqlProtocol.Query currentQuery;
         int updateCount = -1;
         boolean closed;
         int maxRows;
@@ -249,10 +273,18 @@ final class MiniSqlJdbc {
         boolean prepareAttempted;
         boolean serverPrepared;
         String preparedName;
+        final Map<Integer, Integer> outputTypes = new LinkedHashMap<>();
+        final Map<Integer, String> outputValues = new LinkedHashMap<>();
+        boolean outputWasNull;
+        String callVariablePrefix;
 
         StatementHandler(ConnectionHandler connection, String template) {
-            super(template == null ? "MiniSQLStatement" : "MiniSQLPreparedStatement");
-            this.connection = connection; this.template = template;
+            this(connection, template, false);
+        }
+
+        StatementHandler(ConnectionHandler connection, String template, boolean callable) {
+            super(callable ? "MiniSQLCallableStatement" : template == null ? "MiniSQLStatement" : "MiniSQLPreparedStatement");
+            this.connection = connection; this.template = template; this.callable = callable;
             this.markers = template == null ? Collections.emptyList() : parameterMarkers(template);
         }
 
@@ -261,6 +293,21 @@ final class MiniSqlJdbc {
             if (name.equals("close")) { closeStatement(); return null; }
             if (name.equals("isClosed")) return closed;
             ensureOpen();
+            if (callable && (name.equals("addBatch") || name.equals("executeBatch") || name.equals("executeLargeBatch"))) return unsupported(method);
+            if (callable && name.equals("registerOutParameter")) {
+                if (!(args[0] instanceof Integer)) return unsupported(method);
+                int index = (Integer) args[0];
+                if (index < 1 || index > markers.size()) throw new SQLException("Output parameter index out of range", "07009");
+                Object type = args[1];
+                int number = type instanceof SQLType ? ((SQLType) type).getVendorTypeNumber() : (Integer) type;
+                outputTypes.put(index, number);
+                return null;
+            }
+            if (callable && name.equals("wasNull")) return outputWasNull;
+            if (callable && outputGetter(name)) {
+                if (args.length == 0 || !(args[0] instanceof Integer)) return unsupported(method);
+                return outputValue(name, (Integer) args[0], args);
+            }
             switch (name) {
                 case "executeQuery":
                     execute(sqlArgument(args));
@@ -275,7 +322,9 @@ final class MiniSqlJdbc {
                 case "getResultSet": return currentResult;
                 case "getUpdateCount": return updateCount;
                 case "getLargeUpdateCount": return (long) updateCount;
-                case "getMoreResults": closeCurrent(); updateCount = -1; return false;
+                case "getMoreResults":
+                    if (args.length > 0 && (Integer) args[0] == Statement.KEEP_CURRENT_RESULT) return unsupported(method);
+                    return moreResults();
                 case "getConnection": return connection.proxy;
                 case "cancel": if (executing || currentResult != null) connection.protocol.cancelCurrentSession(); return null;
                 case "getWarnings": return null;
@@ -317,7 +366,10 @@ final class MiniSqlJdbc {
                 case "getParameterMetaData": return parameterMetaData(markers.size());
                 case "getMetaData": return null;
                 default:
-                    if (template != null && name.startsWith("set")) { bind(name, args); return null; }
+                    if (template != null && name.startsWith("set")) {
+                        if (args.length == 0 || !(args[0] instanceof Integer)) return unsupported(method);
+                        bind(name, args); return null;
+                    }
                     return unsupported(method);
             }
         }
@@ -326,6 +378,7 @@ final class MiniSqlJdbc {
             if (template == null) return (String) args[0];
             if (args.length != 0) throw new SQLException(
                     "SQL text cannot be supplied to an already prepared statement", "HY000");
+            if (callable) return template;
             return executablePreparedSql();
         }
 
@@ -357,16 +410,142 @@ final class MiniSqlJdbc {
 
         private boolean execute(String sql) throws SQLException {
             closeCurrent();
+            if (callable) return executeCall();
             MiniSqlProtocol.Query query;
             executing = true;
             try { query = connection.protocol.query(sql); }
             finally { executing = false; }
-            MiniSqlProtocol.Response first = query.first;
+            currentQuery = query;
+            return selectResult();
+        }
+
+        /** Publishes one result while retaining later CALL results on the owning stream. */
+        private boolean selectResult() {
+            MiniSqlProtocol.Response first = currentQuery.first;
             if (first.status == MiniSqlProtocol.STATUS_ROWS) {
-                currentResult = resultSet(this, query, maxRows); updateCount = -1; return true;
+                currentResult = resultSet(this, currentQuery, maxRows); updateCount = -1; return true;
             }
-            try { updateCount = first.affectedRows; return false; }
-            finally { query.close(); }
+            currentResult = null;
+            updateCount = first.affectedRows;
+            return false;
+        }
+
+        /** Implements JDBC's getMoreResults boundary without merging equal-column SELECTs. */
+        private boolean moreResults() throws SQLException {
+            if (currentResult != null) { currentResult.close(); currentResult = null; }
+            if (currentQuery == null || !currentQuery.nextResult()) {
+                currentQuery = null; updateCount = -1; return false;
+            }
+            return selectResult();
+        }
+
+        /** Binds session variables, buffers procedure results, and retrieves registered outputs. */
+        private boolean executeCall() throws SQLException {
+            outputValues.clear();
+            if (callVariablePrefix == null) callVariablePrefix = "@" + connection.allocatePreparedStatementName() + "_call_";
+            List<String> names = new ArrayList<>();
+            StringBuilder initialization = new StringBuilder("SET ");
+            StringBuilder cleanup = new StringBuilder("SET ");
+            for (int index = 1; index <= markers.size(); index++) {
+                if (!parameters.containsKey(index) && !outputTypes.containsKey(index)) {
+                    throw new SQLException("Unbound procedure input parameter " + index, "07001");
+                }
+                String name = callVariablePrefix + index;
+                names.add(name);
+                if (index > 1) { initialization.append(','); cleanup.append(','); }
+                initialization.append(name).append(" = ").append(parameters.getOrDefault(index, "NULL"));
+                cleanup.append(name).append(" = NULL");
+            }
+            StringBuilder call = new StringBuilder(template.length() + names.size() * 40);
+            int offset = 0;
+            for (int index = 0; index < markers.size(); index++) {
+                int marker = markers.get(index);
+                call.append(template, offset, marker).append(names.get(index)); offset = marker + 1;
+            }
+            call.append(template, offset, template.length());
+            if (!names.isEmpty()) connection.executeCommand(initialization.toString());
+            SQLException failure = null;
+            executing = true;
+            try {
+                List<MiniSqlProtocol.Response> frames = new ArrayList<>();
+                try (MiniSqlProtocol.Query query = connection.protocol.query(call.toString())) {
+                    do {
+                        MiniSqlProtocol.Response frame;
+                        while ((frame = query.nextFrame()) != null) frames.add(frame);
+                    } while (query.nextResult());
+                }
+                if (!outputTypes.isEmpty()) {
+                    StringBuilder select = new StringBuilder("SELECT ");
+                    int count = 0;
+                    for (int index : outputTypes.keySet()) {
+                        if (count++ > 0) select.append(',');
+                        select.append(names.get(index - 1));
+                    }
+                    try (MiniSqlProtocol.Query query = connection.protocol.query(select.toString())) {
+                        if (query.first.rows.size() != 1) throw new SQLException("Invalid procedure output row count", "HY000");
+                        String[] row = query.first.rows.get(0);
+                        int column = 0;
+                        for (int index : outputTypes.keySet()) outputValues.put(index, row[column++]);
+                    }
+                }
+                if (frames.isEmpty()) throw new SQLException("Procedure returned an empty response stream", "HY000");
+                currentQuery = new MiniSqlProtocol.BufferedQuery(frames);
+                return selectResult();
+            } catch (SQLException caught) {
+                failure = caught;
+                throw caught;
+            } finally {
+                executing = false;
+                if (!names.isEmpty()) {
+                    try { connection.executeCommand(cleanup.toString()); }
+                    catch (SQLException cleanupFailure) {
+                        if (failure == null) throw cleanupFailure;
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+        }
+
+        /** Recognizes only JDBC output getters, leaving statement metadata methods unchanged. */
+        private static boolean outputGetter(String name) {
+            return Arrays.asList("getString", "getNString", "getObject", "getInt", "getLong", "getShort", "getByte",
+                    "getFloat", "getDouble", "getBigDecimal", "getBoolean", "getBytes", "getDate", "getTime", "getTimestamp").contains(name);
+        }
+
+        /** Converts one registered output using the same text protocol rules as ResultSet getters. */
+        private Object outputValue(String getter, int index, Object[] args) throws SQLException {
+            if (!outputTypes.containsKey(index)) throw new SQLException("Parameter is not registered for output", "07009");
+            if (!outputValues.containsKey(index)) throw new SQLException("Procedure has not completed", "HY010");
+            String value = outputValues.get(index);
+            outputWasNull = value == null || "NULL".equals(value);
+            if (outputWasNull) value = null;
+            switch (getter) {
+                case "getString": case "getNString": return value;
+                case "getInt": return parseInt(value);
+                case "getLong": return parseLong(value);
+                case "getShort": return (short) parseInt(value);
+                case "getByte": return (byte) parseInt(value);
+                case "getFloat": return (float) parseDouble(value);
+                case "getDouble": return parseDouble(value);
+                case "getBoolean": return parseBoolean(value);
+                case "getBigDecimal": return value == null ? null : new BigDecimal(value);
+                case "getBytes": return value == null ? null : decodeBytes(value);
+                case "getDate": return value == null ? null : dateValue(value);
+                case "getTime": return value == null ? null : timeValue(value);
+                case "getTimestamp": return value == null ? null : timestampValue(value);
+                case "getObject":
+                    if (args.length < 2) return value;
+                    if (!(args[1] instanceof Class<?>)) throw new SQLFeatureNotSupportedException("Output type maps are unavailable", "0A000");
+                    Class<?> type = (Class<?>) args[1];
+                    if (value == null || type == String.class || type == Object.class) return value;
+                    if (type == Integer.class || type == int.class) return parseInt(value);
+                    if (type == Long.class || type == long.class) return parseLong(value);
+                    if (type == Double.class || type == double.class) return parseDouble(value);
+                    if (type == Boolean.class || type == boolean.class) return parseBoolean(value);
+                    if (type == BigDecimal.class) return new BigDecimal(value);
+                    throw new SQLFeatureNotSupportedException("Unsupported procedure output class " + type.getName(), "0A000");
+                default: throw new SQLFeatureNotSupportedException("Unsupported output getter " + getter, "0A000");
+            }
         }
 
         private Object executeBatch(boolean large) throws SQLException {
@@ -501,6 +680,8 @@ final class MiniSqlJdbc {
 
         private void closeCurrent() throws SQLException {
             if (currentResult != null) { currentResult.close(); currentResult = null; }
+            if (currentQuery != null) { currentQuery.close(); currentQuery = null; }
+            updateCount = -1;
         }
         private void ensureOpen() throws SQLException { connection.ensureOpen(); if (closed) throw new SQLException("Statement is closed", "07000"); }
         private static int nonNegative(int value, String name) throws SQLException { if (value < 0) throw new SQLException(name + " must be non-negative", "S1009"); return value; }
@@ -623,7 +804,7 @@ final class MiniSqlJdbc {
 
         @Override Object call(Object ignored, Method method, Object[] args) throws Throwable {
             String name = method.getName();
-            if (name.equals("close")) { if (!closed) query.close(); closed = true; return null; }
+            if (name.equals("close")) { if (!closed) query.finishResult(); closed = true; return null; }
             if (name.equals("isClosed")) return closed;
             ensureOpen();
             switch (name) {
@@ -716,7 +897,7 @@ final class MiniSqlJdbc {
             throw new SQLFeatureNotSupportedException("Cannot convert a MiniSQL value to " + requested.getName(), "0A000");
         }
         private List<String> columns() { return frame == null ? query.first.columns : frame.columns; }
-        private void close() throws SQLException { if (!closed) query.close(); closed = true; }
+        private void close() throws SQLException { if (!closed) query.finishResult(); closed = true; }
         private void ensureOpen() throws SQLException { if (closed) throw new SQLException("ResultSet is closed", "24000"); }
     }
 
@@ -784,7 +965,8 @@ final class MiniSqlJdbc {
                 case "supportsANSI92EntryLevelSQL": case "supportsColumnAliasing": case "supportsTableCorrelationNames":
                 case "supportsExpressionsInOrderBy": case "supportsOrderByUnrelated": case "supportsGroupBy":
                 case "supportsOuterJoins": case "supportsFullOuterJoins": case "supportsLimitedOuterJoins":
-                case "supportsUnion": case "supportsUnionAll": return true;
+                case "supportsUnion": case "supportsUnionAll": case "supportsStoredProcedures":
+                case "supportsMultipleResultSets": return true;
                 case "supportsTransactionIsolationLevel":
                     int level = (Integer) args[0]; return level == Connection.TRANSACTION_READ_COMMITTED || level == Connection.TRANSACTION_SERIALIZABLE;
                 case "getDefaultTransactionIsolation": return Connection.TRANSACTION_SERIALIZABLE;
@@ -914,16 +1096,17 @@ final class MiniSqlJdbc {
     static List<Integer> parameterMarkers(String sql) {
         List<Integer> result = new ArrayList<>();
         boolean single = false, quoted = false, line = false, block = false;
+        char identifierQuote = '"';
         for (int index = 0; index < sql.length(); index++) {
             char value = sql.charAt(index), next = index + 1 < sql.length() ? sql.charAt(index + 1) : 0;
             if (line) { if (value == '\n' || value == '\r') line = false; continue; }
             if (block) { if (value == '*' && next == '/') { block = false; index++; } continue; }
             if (single) { if (value == '\'' && next == '\'') index++; else if (value == '\'') single = false; continue; }
-            if (quoted) { if (value == '"' && next == '"') index++; else if (value == '"') quoted = false; continue; }
+            if (quoted) { if (value == identifierQuote && next == identifierQuote) index++; else if (value == identifierQuote) quoted = false; continue; }
             if (value == '-' && next == '-') { line = true; index++; }
             else if (value == '/' && next == '*') { block = true; index++; }
             else if (value == '\'') single = true;
-            else if (value == '"') quoted = true;
+            else if (value == '"' || value == '`') { quoted = true; identifierQuote = value; }
             else if (value == '?') result.add(index);
         }
         return result;

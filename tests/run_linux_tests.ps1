@@ -241,6 +241,12 @@ New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Linux application build failed." }
 
 $Cases = @(
+  [pscustomobject]@{ Name = "Stored-procedure parser"; Source = "stored_procedure_parser.ml"; Output = "routine-parser"; Args = @() },
+  [pscustomobject]@{ Name = "Stored-procedure runtime"; Source = "stored_procedure_runtime.ml"; Output = "routine-runtime"; Args = @("$LinuxDataRoot/routine-runtime") },
+  [pscustomobject]@{ Name = "Stored-procedure edge cases"; Source = "stored_procedure_edges.ml"; Output = "routine-edges"; Args = @("$LinuxDataRoot/routine-edges") },
+  [pscustomobject]@{ Name = "Stored-procedure clients"; Source = "routines_client.ml"; Output = "routine-client"; Args = @() },
+  [pscustomobject]@{ Name = "Stored-procedure security"; Source = "routine_security.ml"; Output = "routine-security"; Args = @("$LinuxDataRoot/routine-security") },
+  [pscustomobject]@{ Name = "M45 schema-extension compatibility"; Source = "m45_sequences_generated_triggers.ml"; Output = "m45-schema"; Args = @("$LinuxDataRoot/m45-schema") },
   [pscustomobject]@{ Name = "M3 random-access files"; Source = "m3_file.ml"; Output = "m3-file"; Args = @("$LinuxDataRoot/m3-file.bin") },
   [pscustomobject]@{ Name = "M18 loopback protocol"; Source = "m18_protocol.ml"; Output = "m18-protocol"; Args = @("17432") },
   [pscustomobject]@{ Name = "M20 deterministic workload"; Source = "m20_performance_smoke.ml"; Output = "m20-workload"; Args = @("$LinuxDataRoot/m20") },

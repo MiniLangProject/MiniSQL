@@ -465,6 +465,8 @@ const PRINCIPAL_PUBLIC_ID = 2
 const OBJECT_DATABASE = 1
 /// Defines the object table constant used by the minisql catalog metadata module.
 const OBJECT_TABLE = 2
+/// Identifies a persisted stored procedure by its extension view identifier.
+const OBJECT_PROCEDURE = 3
 
 /// Defines the privilege connect constant used by the minisql catalog metadata module.
 const PRIVILEGE_CONNECT = 1
@@ -492,6 +494,12 @@ const PRIVILEGE_ALTER = 16
 const PRIVILEGE_DROP = 17
 /// Defines the privilege owner constant used by the minisql catalog metadata module.
 const PRIVILEGE_OWNER = 18
+/// Permits execution of a procedure, or every procedure in a database.
+const PRIVILEGE_EXECUTE = 20
+/// Permits alteration or removal of a procedure, or every database procedure.
+const PRIVILEGE_ALTER_ROUTINE = 21
+/// Permits creation of procedures in a database; never applies to one procedure.
+const PRIVILEGE_CREATE_ROUTINE = 22
 
 /// Defines the principal header bytes constant used by the minisql catalog metadata module.
 const PRINCIPAL_HEADER_BYTES = 24
@@ -682,7 +690,7 @@ end function
 /// Inputs: `value`. Returns the produced value or propagates a structured error from validation or delegated operations.
 /// @param value Value consumed or transformed by the operation.
 function validObjectType(value)
-  return value == OBJECT_DATABASE or value == OBJECT_TABLE
+  return value == OBJECT_DATABASE or value == OBJECT_TABLE or value == OBJECT_PROCEDURE
 end function
 
 /// Performs the valid privilege operation for this module.
@@ -691,10 +699,13 @@ end function
 /// @param privilege privilege value consumed by this operation.
 function validPrivilege(objectType, privilege)
   if objectType == OBJECT_DATABASE then
-    return privilege == PRIVILEGE_CONNECT or privilege == PRIVILEGE_CREATE or privilege == PRIVILEGE_MAINTAIN or privilege == PRIVILEGE_ADMIN
+    return privilege == PRIVILEGE_CONNECT or privilege == PRIVILEGE_CREATE or privilege == PRIVILEGE_MAINTAIN or privilege == PRIVILEGE_ADMIN or privilege == PRIVILEGE_EXECUTE or privilege == PRIVILEGE_ALTER_ROUTINE or privilege == PRIVILEGE_CREATE_ROUTINE
   end if
   if objectType == OBJECT_TABLE then
     return privilege == PRIVILEGE_SELECT or privilege == PRIVILEGE_INSERT or privilege == PRIVILEGE_UPDATE or privilege == PRIVILEGE_DELETE or privilege == PRIVILEGE_REFERENCES or privilege == PRIVILEGE_INDEX or privilege == PRIVILEGE_ALTER or privilege == PRIVILEGE_DROP or privilege == PRIVILEGE_OWNER
+  end if
+  if objectType == OBJECT_PROCEDURE then
+    return privilege == PRIVILEGE_EXECUTE or privilege == PRIVILEGE_ALTER_ROUTINE
   end if
   return false
 end function
@@ -714,6 +725,7 @@ function createPrivilegeGrant(granteeId, grantorId, objectType, objectId, privil
   if not validObjectType(objectType) or not validPrivilege(objectType, privilege) then return fail(INVALID_ARGUMENT, "createPrivilegeGrant", "invalid privilege target") end if
   if objectType == OBJECT_DATABASE and objectId != 0 then return fail(INVALID_ARGUMENT, "createPrivilegeGrant", "database objectId must be zero") end if
   if objectType == OBJECT_TABLE and objectId <= 0 then return fail(INVALID_ARGUMENT, "createPrivilegeGrant", "table objectId must be positive") end if
+  if objectType == OBJECT_PROCEDURE and objectId <= 0 then return fail(INVALID_ARGUMENT, "createPrivilegeGrant", "procedure objectId must be positive") end if
   if typeof(grantOption) != "bool" then return fail(INVALID_ARGUMENT, "createPrivilegeGrant", "grantOption must be bool") end if
   return PrivilegeGrant(granteeId, grantorId, objectType, objectId, privilege, grantOption)
 end function

@@ -30,3 +30,9 @@ Include, where possible:
   deployment.
 - Treat the native TLS credential configuration, its certificate stores or PFX
   files, and the Python replication controller as security-sensitive assets.
+- Review stored procedures with `SQL SECURITY DEFINER` as programs that execute
+  with the definer's authority. Grant callers `EXECUTE` only for intended entry
+  points, use `SQL SECURITY INVOKER` when callers must retain ordinary body
+  permissions, and parameterize dynamic SQL values. Procedure grants and definer
+  identities use durable IDs so dropping and recreating a name cannot adopt its
+  predecessor's authority. See `docs/sql/stored-procedures.md`.

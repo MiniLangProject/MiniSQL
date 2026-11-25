@@ -516,6 +516,12 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseAlter(state)
+  if matchKeyword(state, "PROCEDURE") then
+    node = routineNode("ALTER_PROCEDURE", parseObjectName(state, "procedure name"))
+    node.options = parseRoutineCharacteristics(state)
+    if len(node.options) == 0 then return fail(state, "ALTER PROCEDURE requires a characteristic") end if
+    return node
+  end if
   if matchKeyword(state, "TABLE") then return parseAlterTable(state) end if
   if matchKeyword(state, "TRIGGER") then
     name = parseObjectName(state, "trigger name")
@@ -541,9 +547,10 @@ end function
 function privilegeName(state)
   value = current(state)
   if value.kind != token.TokenKind.Keyword then return fail(state, "expected privilege name") end if
-  allowed = value.text == "CONNECT" or value.text == "CREATE" or value.text == "MAINTAIN" or value.text == "ADMIN" or value.text == "SELECT" or value.text == "INSERT" or value.text == "UPDATE" or value.text == "DELETE" or value.text == "REFERENCES" or value.text == "INDEX" or value.text == "ALTER" or value.text == "DROP"
+  allowed = value.text == "CONNECT" or value.text == "CREATE" or value.text == "MAINTAIN" or value.text == "ADMIN" or value.text == "SELECT" or value.text == "INSERT" or value.text == "UPDATE" or value.text == "DELETE" or value.text == "REFERENCES" or value.text == "INDEX" or value.text == "ALTER" or value.text == "DROP" or value.text == "EXECUTE"
   if not allowed then return fail(state, "unsupported privilege " + value.text) end if
   advance(state)
+  if (value.text == "CREATE" or value.text == "ALTER") and matchKeyword(state, "ROUTINE") then return value.text + " ROUTINE" end if
   return value.text
 end function
 
@@ -584,6 +591,9 @@ function parseGrant(state)
   objectName = void
   if matchKeyword(state, "DATABASE") then
     objectType = ast.DCL_OBJECT_DATABASE
+  else if matchKeyword(state, "PROCEDURE") then
+    objectType = ast.DCL_OBJECT_PROCEDURE
+    objectName = parseObjectName(state, "procedure name")
   else
     ignoredTable = matchKeyword(state, "TABLE")
     objectName = parseObjectName(state, "table name")
@@ -624,6 +634,9 @@ function parseRevoke(state)
   objectName = void
   if matchKeyword(state, "DATABASE") then
     objectType = ast.DCL_OBJECT_DATABASE
+  else if matchKeyword(state, "PROCEDURE") then
+    objectType = ast.DCL_OBJECT_PROCEDURE
+    objectName = parseObjectName(state, "procedure name")
   else
     ignoredTable = matchKeyword(state, "TABLE")
     objectName = parseObjectName(state, "table name")
@@ -717,26 +730,387 @@ function parseCreateView(state, replace)
   return ast.CreateViewStatement(name, query, replace)
 end function
 
-/// Parses a stored procedure with typed positional inputs and one DML body statement.
-/// @param state Mutable state inspected or updated by the operation.
-/// @param replace replace value consumed by this operation.
+/// Builds a procedural AST node with empty optional collections.
+function routineNode(kind, name)
+  return ast.RoutineStatement(kind, name, [], [], [], [], [])
+end function
+
+/// Returns a canonical variable target, keeping session-variable @ prefixes.
+function parseRoutineTarget(state)
+  if checkKind(state, token.TokenKind.UserVariable) then return advance(state).text end if
+  name = parseIdentifierName(state, "variable name")
+  if matchKind(state, token.TokenKind.Dot) then name = name + "." + parseIdentifierName(state, "qualified variable name") end if
+  return name
+end function
+
+/// Parses a nonempty comma-separated list of writable variable names.
+function parseRoutineTargets(state)
+  names = [parseRoutineTarget(state)]
+  while matchKind(state, token.TokenKind.Comma)
+    names = names + [parseRoutineTarget(state)]
+  end while
+  return names
+end function
+
+/// Validates a SQLSTATE and retains its canonical five-character value.
+function parseSqlstate(state)
+  ignoredValue = matchKeyword(state, "VALUE")
+  value = expectKind(state, token.TokenKind.StringLiteral, "five-character SQLSTATE").value
+  raw = bytes(value)
+  if len(raw) != 5 then return fail(state, "SQLSTATE must contain five characters") end if
+  for each item in raw
+    if not ((item >= 48 and item <= 57) or (item >= 65 and item <= 90)) then return fail(state, "SQLSTATE must contain uppercase letters or digits") end if
+  end for
+  if raw[0] == 48 and raw[1] == 48 then return fail(state, "successful SQLSTATE class 00 is not a condition") end if
+  return value
+end function
+
+/// Parses a handler condition or a named/SQLSTATE signal condition.
+function parseRoutineCondition(state, handler)
+  if matchKeyword(state, "SQLSTATE") then return ["SQLSTATE", parseSqlstate(state)] end if
+  if handler and checkKind(state, token.TokenKind.IntegerLiteral) then
+    value = parseIntegerValue(state, "condition error number")
+    if value <= 0 or value > 65535 then return fail(state, "condition error number must be 1..65535") end if
+    return ["ERRNO", "" + value]
+  end if
+  if handler and matchKeyword(state, "NOT") then expectKeyword(state, "FOUND"); return ["CLASS", "NOT FOUND"] end if
+  if handler and matchKeyword(state, "SQLWARNING") then return ["CLASS", "SQLWARNING"] end if
+  if handler and matchKeyword(state, "SQLEXCEPTION") then return ["CLASS", "SQLEXCEPTION"] end if
+  return ["NAME", parseIdentifierName(state, "condition name")]
+end function
+
+/// Parses a declaration; ordering is checked by its enclosing BEGIN block.
+function parseRoutineDeclare(state)
+  if checkKeyword(state, "CONTINUE") or checkKeyword(state, "EXIT") then
+    action = advance(state).text
+    expectKeyword(state, "HANDLER")
+    expectKeyword(state, "FOR")
+    node = routineNode("HANDLER", action)
+    node.options = [parseRoutineCondition(state, true)]
+    while matchKind(state, token.TokenKind.Comma)
+      node.options = node.options + [parseRoutineCondition(state, true)]
+    end while
+    node.body = [parseRoutineStatement(state)]
+    return node
+  end if
+  name = parseIdentifierName(state, "declared name")
+  if matchKeyword(state, "CONDITION") then
+    expectKeyword(state, "FOR")
+    node = routineNode("CONDITION", name)
+    node.options = parseRoutineCondition(state, true)
+    if node.options[0] != "SQLSTATE" and node.options[0] != "ERRNO" then return fail(state, "CONDITION requires an error number or SQLSTATE") end if
+    return node
+  end if
+  if matchKeyword(state, "CURSOR") then
+    expectKeyword(state, "FOR")
+    node = routineNode("CURSOR", name)
+    if matchKeyword(state, "WITH") then node.body = [parseWithSelect(state)] else expectKeyword(state, "SELECT"); node.body = [parseSelect(state)] end if
+    return node
+  end if
+  node = routineNode("DECLARE", "")
+  node.names = [name]
+  while matchKind(state, token.TokenKind.Comma)
+    node.names = node.names + [parseIdentifierName(state, "declared variable name")]
+  end while
+  node.options = [parseTypeName(state)]
+  if matchKeyword(state, "DEFAULT") then node.expressions = [parseExpression(state, 0)] end if
+  return node
+end function
+
+/// Parses statements up to a branch/loop terminator, consuming inner semicolons.
+function parseRoutineStatements(state)
+  statements = []
+  while not atEnd(state)
+    if checkKeyword(state, "END") or checkKeyword(state, "ELSE") or checkKeyword(state, "ELSEIF") or checkKeyword(state, "WHEN") or checkKeyword(state, "UNTIL") then break end if
+    if checkKeyword(state, "DECLARE") then return fail(state, "DECLARE is permitted only at the beginning of BEGIN ... END") end if
+    statements = statements + [parseRoutineStatement(state)]
+    expectKind(state, token.TokenKind.Semicolon, "';' after routine statement")
+  end while
+  return statements
+end function
+
+/// Validates an optional closing label against the opening label.
+function parseRoutineClosingLabel(state, label)
+  if isIdentifierToken(current(state)) then
+    closing = parseIdentifierName(state, "closing label")
+    if label == "" or label != closing then return fail(state, "closing label does not match opening label") end if
+  end if
+  return true
+end function
+
+/// Parses a block with SQL declaration ordering and an optional label.
+function parseRoutineBlock(state, label)
+  node = routineNode("BLOCK", label)
+  declarationPhase = 0
+  while matchKeyword(state, "DECLARE")
+    declared = parseRoutineDeclare(state)
+    phase = 0
+    if declared.kind == "CURSOR" then phase = 1 end if
+    if declared.kind == "HANDLER" then phase = 2 end if
+    if phase < declarationPhase then return fail(state, "declare variables/conditions before cursors and cursors before handlers") end if
+    declarationPhase = phase
+    node.body = node.body + [declared]
+    expectKind(state, token.TokenKind.Semicolon, "';' after declaration")
+  end while
+  node.body = node.body + parseRoutineStatements(state)
+  expectKeyword(state, "END")
+  parseRoutineClosingLabel(state, label)
+  return node
+end function
+
+/// Parses IF and all ELSEIF/ELSE branches into parallel branch arrays.
+function parseRoutineIf(state)
+  node = routineNode("IF", "")
+  node.expressions = [parseExpression(state, 0)]
+  expectKeyword(state, "THEN")
+  branch = routineNode("BLOCK", "")
+  branch.body = parseRoutineStatements(state)
+  node.body = [branch]
+  while matchKeyword(state, "ELSEIF")
+    node.expressions = node.expressions + [parseExpression(state, 0)]
+    expectKeyword(state, "THEN")
+    branch = routineNode("BLOCK", "")
+    branch.body = parseRoutineStatements(state)
+    node.body = node.body + [branch]
+  end while
+  if matchKeyword(state, "ELSE") then node.alternate = parseRoutineStatements(state) end if
+  expectKeyword(state, "END")
+  expectKeyword(state, "IF")
+  return node
+end function
+
+/// Preserves a simple CASE selector separately so the runtime evaluates it once.
+function parseRoutineCase(state)
+  node = routineNode("CASE", "")
+  selector = void
+  if not checkKeyword(state, "WHEN") then selector = parseExpression(state, 0) end if
+  while matchKeyword(state, "WHEN")
+    node.expressions = node.expressions + [parseExpression(state, 0)]
+    expectKeyword(state, "THEN")
+    branch = routineNode("BLOCK", "")
+    branch.body = parseRoutineStatements(state)
+    node.body = node.body + [branch]
+  end while
+  if len(node.body) == 0 then return fail(state, "CASE requires at least one WHEN branch") end if
+  hasElse = matchKeyword(state, "ELSE")
+  if hasElse then node.alternate = parseRoutineStatements(state) end if
+  node.options = [hasElse, selector]
+  expectKeyword(state, "END")
+  expectKeyword(state, "CASE")
+  return node
+end function
+
+/// Parses a labeled WHILE, REPEAT, or LOOP and matching end marker.
+function parseRoutineLoop(state, kind, label)
+  node = routineNode(kind, label)
+  if kind == "WHILE" then node.expressions = [parseExpression(state, 0)]; expectKeyword(state, "DO") end if
+  node.body = parseRoutineStatements(state)
+  if kind == "REPEAT" then expectKeyword(state, "UNTIL"); node.expressions = [parseExpression(state, 0)] end if
+  expectKeyword(state, "END")
+  expectKeyword(state, kind)
+  parseRoutineClosingLabel(state, label)
+  return node
+end function
+
+/// Parses SET's left-to-right assignments, preserving local/session destinations.
+function parseRoutineSet(state)
+  sessionAssignment = matchKeyword(state, "SESSION")
+  node = routineNode("SET", "")
+  parsing = true
+  while parsing
+    target = parseRoutineTarget(state)
+    if sessionAssignment then target = "@@session." + target end if
+    node.names = node.names + [target]
+    if not matchKind(state, token.TokenKind.Assign) then expectKind(state, token.TokenKind.Equal, "'=' or ':='") end if
+    node.expressions = node.expressions + [parseExpression(state, 0)]
+    if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
+  end while
+  return node
+end function
+
+/// Returns an unquoted diagnostic identifier in canonical uppercase form.
+function parseDiagnosticItem(state)
+  value = current(state)
+  if value.kind != token.TokenKind.Identifier and value.kind != token.TokenKind.Keyword then return fail(state, "expected diagnostic item name") end if
+  advance(state)
+  return dialect.asciiUpper(value.text)
+end function
+
+/// Lists condition information names accepted by SIGNAL and GET DIAGNOSTICS.
+function isConditionInformationItem(name)
+  return name == "CLASS_ORIGIN" or name == "SUBCLASS_ORIGIN" or name == "CONSTRAINT_CATALOG" or name == "CONSTRAINT_SCHEMA" or name == "CONSTRAINT_NAME" or name == "CATALOG_NAME" or name == "SCHEMA_NAME" or name == "TABLE_NAME" or name == "COLUMN_NAME" or name == "CURSOR_NAME" or name == "MESSAGE_TEXT" or name == "MYSQL_ERRNO"
+end function
+
+/// Parses SIGNAL/RESIGNAL with optional condition-information assignments.
+function parseRoutineSignal(state, kind)
+  node = routineNode(kind, "")
+  if kind == "SIGNAL" or (not checkKeyword(state, "SET") and not checkKind(state, token.TokenKind.Semicolon) and not atEnd(state)) then node.options = parseRoutineCondition(state, false) end if
+  if matchKeyword(state, "SET") then
+    parsing = true
+    while parsing
+      item = parseDiagnosticItem(state)
+      if not isConditionInformationItem(item) then return fail(state, "unsupported SIGNAL information item " + item) end if
+      for each existing in node.names
+        if existing == item then return fail(state, "duplicate diagnostic item " + item) end if
+      end for
+      node.names = node.names + [item]
+      expectKind(state, token.TokenKind.Equal, "'='")
+      node.expressions = node.expressions + [parseExpression(state, 0)]
+      if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
+    end while
+  end if
+  return node
+end function
+
+/// Parses statement or condition diagnostics into ordered target/item pairs.
+function parseRoutineDiagnostics(state)
+  area = "CURRENT"
+  if matchKeyword(state, "STACKED") then area = "STACKED" else ignoredCurrent = matchKeyword(state, "CURRENT") end if
+  expectKeyword(state, "DIAGNOSTICS")
+  node = routineNode("GET_DIAGNOSTICS", area)
+  if matchKeyword(state, "CONDITION") then node.expressions = [parseExpression(state, 0)] end if
+  parsing = true
+  while parsing
+    node.names = node.names + [parseRoutineTarget(state)]
+    expectKind(state, token.TokenKind.Equal, "'='")
+    item = parseDiagnosticItem(state)
+    if len(node.expressions) == 0 then
+      if item != "NUMBER" and item != "ROW_COUNT" then return fail(state, "statement diagnostics require NUMBER or ROW_COUNT") end if
+    else
+      if item != "RETURNED_SQLSTATE" and not isConditionInformationItem(item) then return fail(state, "unsupported condition diagnostics item " + item) end if
+    end if
+    node.options = node.options + [item]
+    if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
+  end while
+  return node
+end function
+
+/// Parses one stored-program statement, leaving its terminator to its container.
+function parseRoutineStatement(state)
+  label = ""
+  if isIdentifierToken(current(state)) and nextIsKind(state, token.TokenKind.Colon) then
+    label = parseIdentifierName(state, "statement label")
+    expectKind(state, token.TokenKind.Colon, "':'")
+  end if
+  if matchKeyword(state, "BEGIN") then return parseRoutineBlock(state, label) end if
+  if matchKeyword(state, "WHILE") then return parseRoutineLoop(state, "WHILE", label) end if
+  if matchKeyword(state, "REPEAT") then return parseRoutineLoop(state, "REPEAT", label) end if
+  if matchKeyword(state, "LOOP") then return parseRoutineLoop(state, "LOOP", label) end if
+  if label != "" then return fail(state, "labels are permitted on BEGIN, WHILE, REPEAT or LOOP") end if
+  if matchKeyword(state, "IF") then return parseRoutineIf(state) end if
+  if matchKeyword(state, "CASE") then return parseRoutineCase(state) end if
+  if matchKeyword(state, "SET") then return parseRoutineSet(state) end if
+  if matchKeyword(state, "LEAVE") then return routineNode("LEAVE", parseIdentifierName(state, "block or loop label")) end if
+  if matchKeyword(state, "ITERATE") then return routineNode("ITERATE", parseIdentifierName(state, "loop label")) end if
+  if matchKeyword(state, "OPEN") then return routineNode("OPEN", parseIdentifierName(state, "cursor name")) end if
+  if matchKeyword(state, "CLOSE") then return routineNode("CLOSE", parseIdentifierName(state, "cursor name")) end if
+  if matchKeyword(state, "FETCH") then
+    if matchKeyword(state, "NEXT") then ignoredFrom = matchKeyword(state, "FROM") else ignoredFrom = matchKeyword(state, "FROM") end if
+    node = routineNode("FETCH", parseIdentifierName(state, "cursor name"))
+    expectKeyword(state, "INTO")
+    node.names = parseRoutineTargets(state)
+    return node
+  end if
+  if matchKeyword(state, "SIGNAL") then return parseRoutineSignal(state, "SIGNAL") end if
+  if matchKeyword(state, "RESIGNAL") then return parseRoutineSignal(state, "RESIGNAL") end if
+  if matchKeyword(state, "GET") then return parseRoutineDiagnostics(state) end if
+  if matchKeyword(state, "SELECT") then return parseSelectTargetStatement(state, false) end if
+  if matchKeyword(state, "WITH") then return parseSelectTargetStatement(state, true) end if
+  return parseStatement(state)
+end function
+
+/// Wraps only SELECTs with INTO, leaving ordinary SELECT AST contracts intact.
+function parseSelectTargetStatement(state, withClause)
+  selected = void
+  if withClause then selected = parseWithSelectTargets(state, true) else selected = parseSelectTargets(state, true) end if
+  if len(selected[1]) == 0 then return selected[0] end if
+  node = routineNode("SELECT_INTO", "")
+  node.names = selected[1]
+  node.body = [selected[0]]
+  return node
+end function
+
+/// Parses an account name, preserving host qualification without inventing users.
+function parseRoutineDefiner(state)
+  expectKind(state, token.TokenKind.Equal, "'=' after DEFINER")
+  if matchKeyword(state, "CURRENT_USER") then
+    if matchKind(state, token.TokenKind.LeftParen) then expectKind(state, token.TokenKind.RightParen, "')'") end if
+    return "CURRENT_USER"
+  end if
+  name = ""
+  if checkKind(state, token.TokenKind.StringLiteral) then name = advance(state).value else name = parsePrincipalName(state, "definer account") end if
+  if checkKind(state, token.TokenKind.UserVariable) then return name + advance(state).text end if
+  if matchKind(state, token.TokenKind.At) then
+    if checkKind(state, token.TokenKind.StringLiteral) then return name + "@" + advance(state).value end if
+    return name + "@" + parseIdentifierName(state, "definer host")
+  end if
+  return name
+end function
+
+/// Parses characteristic pairs without conflating unspecified values with defaults.
+function parseRoutineCharacteristics(state)
+  options = []
+  parsing = true
+  while parsing
+    item = void
+    if matchKeyword(state, "LANGUAGE") then expectKeyword(state, "SQL"); item = ["LANGUAGE", "SQL"]
+    else if matchKeyword(state, "DETERMINISTIC") then item = ["DETERMINISTIC", "YES"]
+    else if checkKeyword(state, "NOT") and nextIsKeyword(state, "DETERMINISTIC") then advance(state); advance(state); item = ["DETERMINISTIC", "NO"]
+    else if matchKeyword(state, "CONTAINS") then expectKeyword(state, "SQL"); item = ["SQL DATA ACCESS", "CONTAINS SQL"]
+    else if matchKeyword(state, "NO") then expectKeyword(state, "SQL"); item = ["SQL DATA ACCESS", "NO SQL"]
+    else if matchKeyword(state, "READS") then expectKeyword(state, "SQL"); expectKeyword(state, "DATA"); item = ["SQL DATA ACCESS", "READS SQL DATA"]
+    else if matchKeyword(state, "MODIFIES") then expectKeyword(state, "SQL"); expectKeyword(state, "DATA"); item = ["SQL DATA ACCESS", "MODIFIES SQL DATA"]
+    else if matchKeyword(state, "SQL") then
+      expectKeyword(state, "SECURITY")
+      security = "DEFINER"
+      if matchKeyword(state, "INVOKER") then security = "INVOKER" else expectKeyword(state, "DEFINER") end if
+      item = ["SQL SECURITY", security]
+    else if matchKeyword(state, "COMMENT") then item = ["COMMENT", expectKind(state, token.TokenKind.StringLiteral, "routine comment").value]
+    else parsing = false
+    end if
+    if item is not void then
+      for each existing in options
+        if existing[0] == item[0] then return fail(state, "duplicate routine characteristic " + item[0]) end if
+      end for
+      options = options + [item]
+    end if
+  end while
+  return options
+end function
+
+/// Parses MySQL parameter directions and a compound or single SQL routine body.
 function parseCreateProcedure(state, replace)
+  ifNotExists = false
+  if matchKeyword(state, "IF") then expectKeyword(state, "NOT"); expectKeyword(state, "EXISTS"); ifNotExists = true end if
+  if replace and ifNotExists then return fail(state, "OR REPLACE and IF NOT EXISTS cannot be combined") end if
   name = parseObjectName(state, "procedure name")
   expectKind(state, token.TokenKind.LeftParen, "'('")
   parameters = []
   if not checkKind(state, token.TokenKind.RightParen) then
     parsing = true
     while parsing
+      mode = "IN"
+      if matchKeyword(state, "OUT") then mode = "OUT" else if matchKeyword(state, "INOUT") then mode = "INOUT" else ignoredIn = matchKeyword(state, "IN") end if
       parameterName = parseIdentifierName(state, "procedure parameter")
-      parameters = parameters + [ast.ProcedureParameter(parameterName, parseTypeName(state))]
+      for each existing in parameters
+        if existing.name == parameterName then return fail(state, "duplicate procedure parameter " + parameterName) end if
+      end for
+      parameters = parameters + [ast.ProcedureParameter(parameterName, parseTypeName(state), mode)]
       if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
     end while
   end if
   expectKind(state, token.TokenKind.RightParen, "')'")
-  expectKeyword(state, "AS")
-  body = parseStatement(state)
-  if not (ast.isInsertStatement(body) or ast.isUpdateStatement(body) or ast.isDeleteStatement(body)) then return fail(state, "procedure body must be one INSERT, UPDATE or DELETE statement") end if
-  return ast.CreateProcedureStatement(name, parameters, body, replace)
+  characteristics = parseRoutineCharacteristics(state)
+  legacy = matchKeyword(state, "AS")
+  if legacy then
+    foundSecurity = false
+    for each item in characteristics
+      if item[0] == "SQL SECURITY" then foundSecurity = true end if
+    end for
+    if not foundSecurity then characteristics = characteristics + [["SQL SECURITY", "INVOKER"]] end if
+  end if
+  body = parseRoutineStatement(state)
+  return ast.CreateProcedureStatement(name, parameters, body, replace, characteristics, ifNotExists)
 end function
 
 /// Parses create sequence using the supplied inputs.
@@ -810,6 +1184,13 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseCreate(state)
+  if matchKeyword(state, "DEFINER") then
+    definer = parseRoutineDefiner(state)
+    expectKeyword(state, "PROCEDURE")
+    statement = parseCreateProcedure(state, false)
+    statement.characteristics = [["DEFINER", definer]] + statement.characteristics
+    return statement
+  end if
   if matchKeyword(state, "USER") then return parseCreatePrincipal(state, ast.PRINCIPAL_USER) end if
   if matchKeyword(state, "ROLE") then return parseCreatePrincipal(state, ast.PRINCIPAL_ROLE) end if
   if matchKeyword(state, "SCHEMA") then return parseCreateSchema(state) end if
@@ -819,6 +1200,13 @@ function parseCreate(state)
   if matchKeyword(state, "OR") then
     expectKeyword(state, "REPLACE")
     if matchKeyword(state, "VIEW") then return parseCreateView(state, true) end if
+    if matchKeyword(state, "DEFINER") then
+      definer = parseRoutineDefiner(state)
+      expectKeyword(state, "PROCEDURE")
+      statement = parseCreateProcedure(state, true)
+      statement.characteristics = [["DEFINER", definer]] + statement.characteristics
+      return statement
+    end if
     expectKeyword(state, "PROCEDURE")
     return parseCreateProcedure(state, true)
   end if
@@ -997,6 +1385,19 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseShow(state)
+  if matchKeyword(state, "CREATE") then expectKeyword(state, "PROCEDURE"); return routineNode("SHOW_CREATE_PROCEDURE", parseObjectName(state, "procedure name")) end if
+  if matchKeyword(state, "PROCEDURE") then
+    expectKeyword(state, "STATUS")
+    node = routineNode("SHOW_PROCEDURE_STATUS", "")
+    if matchKeyword(state, "LIKE") then
+      node.name = "LIKE"
+      node.expressions = [parseExpression(state, 0)]
+    else if matchKeyword(state, "WHERE") then
+      node.name = "WHERE"
+      node.expressions = [parseExpression(state, 0)]
+    end if
+    return node
+  end if
   if matchKeyword(state, "TABLES") then return ast.ShowTablesStatement(1) end if
   if matchKeyword(state, "STATUS") then return ast.ShowStatusStatement(1) end if
   if matchKeyword(state, "PROCESSLIST") then return ast.ShowProcesslistStatement(1) end if
@@ -1141,11 +1542,18 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseSelectCore(state)
+  return parseSelectCoreTargets(state, false)[0]
+end function
+
+/// Parses the SELECT core and optional procedure INTO destinations.
+function parseSelectCoreTargets(state, allowInto)
   distinct = matchKeyword(state, "DISTINCT")
   items = [parseSelectItem(state)]
   while matchKind(state, token.TokenKind.Comma)
     items = items + [parseSelectItem(state)]
   end while
+  targets = []
+  if allowInto and matchKeyword(state, "INTO") then targets = parseRoutineTargets(state) end if
   tableName = void
   tableAlias = void
   joins = []
@@ -1184,7 +1592,7 @@ function parseSelectCore(state)
   end if
   havingExpression = void
   if matchKeyword(state, "HAVING") then havingExpression = parseExpression(state, 0) end if
-  return ast.SelectStatement(distinct, items, tableName, tableAlias, joins, whereExpression, groupBy, havingExpression, [], [], -1, 0, derivedTables)
+  return [ast.SelectStatement(distinct, items, tableName, tableAlias, joins, whereExpression, groupBy, havingExpression, [], [], -1, 0, derivedTables), targets]
 end function
 
 /// Parses select using the supplied inputs.
@@ -1192,7 +1600,20 @@ end function
 /// May mutate supplied state as documented by the operation name.
 /// @param state Mutable state inspected or updated by the operation.
 function parseSelect(state)
-  statement = parseSelectCore(state)
+  return parseSelectTargets(state, false)[0]
+end function
+
+/// Retains variable/parameter LIMIT operands for session-aware execution binding.
+function parseSelectLimit(state, description)
+  if checkKind(state, token.TokenKind.IntegerLiteral) or checkKind(state, token.TokenKind.Plus) or checkKind(state, token.TokenKind.Minus) then return parseIntegerValue(state, description) end if
+  return parseExpression(state, 0)
+end function
+
+/// Parses a complete SELECT, retaining early or final INTO destinations.
+function parseSelectTargets(state, allowInto)
+  selected = parseSelectCoreTargets(state, allowInto)
+  statement = selected[0]
+  targets = selected[1]
   while checkKeyword(state, "UNION") or checkKeyword(state, "INTERSECT") or checkKeyword(state, "EXCEPT")
     operatorValue = ast.SET_UNION
     if matchKeyword(state, "UNION") then
@@ -1217,23 +1638,39 @@ function parseSelect(state)
   end if
   limit = -1
   offset = 0
-  if matchKeyword(state, "LIMIT") then limit = parseIntegerValue(state, "LIMIT") end if
+  limitSpecified = false
+  commaOffset = false
+  if matchKeyword(state, "LIMIT") then
+    limitSpecified = true
+    limit = parseSelectLimit(state, "LIMIT")
+    if matchKind(state, token.TokenKind.Comma) then
+      commaOffset = true
+      offset = limit
+      limit = parseSelectLimit(state, "LIMIT count")
+    end if
+  end if
   if matchKeyword(state, "OFFSET") then
-    offset = parseIntegerValue(state, "OFFSET")
+    if commaOffset then return fail(state, "LIMIT offset,count and OFFSET cannot be combined") end if
+    offset = parseSelectLimit(state, "OFFSET")
     if checkKeyword(state, "ROW") or checkKeyword(state, "ROWS") then advance(state) end if
   end if
   if matchKeyword(state, "FETCH") then
-    if limit >= 0 then return fail(state, "LIMIT and FETCH cannot be combined") end if
+    if limitSpecified then return fail(state, "LIMIT and FETCH cannot be combined") end if
+    limitSpecified = true
     if not matchKeyword(state, "FIRST") then expectKeyword(state, "NEXT") end if
     limit = parseIntegerValue(state, "FETCH")
     if not matchKeyword(state, "ROW") then expectKeyword(state, "ROWS") end if
     expectKeyword(state, "ONLY")
   end if
-  if limit < -1 or offset < 0 then return fail(state, "LIMIT/OFFSET/FETCH must be non-negative") end if
+  if (limitSpecified and typeof(limit) == "int" and limit < 0) or (typeof(offset) == "int" and offset < 0) then return fail(state, "LIMIT/OFFSET/FETCH must be non-negative") end if
   statement.orderBy = orderBy
   statement.limit = limit
   statement.offset = offset
-  return statement
+  if allowInto and matchKeyword(state, "INTO") then
+    if len(targets) > 0 then return fail(state, "SELECT has more than one INTO clause") end if
+    targets = parseRoutineTargets(state)
+  end if
+  return [statement, targets]
 end function
 
 /// Parses with select using the supplied inputs.
@@ -1241,6 +1678,11 @@ end function
 /// May mutate supplied state as documented by the operation name.
 /// @param state Mutable state inspected or updated by the operation.
 function parseWithSelect(state)
+  return parseWithSelectTargets(state, false)[0]
+end function
+
+/// Retains INTO targets on the outer SELECT while CTE bodies remain queries.
+function parseWithSelectTargets(state, allowInto)
   recursive = matchKeyword(state, "RECURSIVE")
   ctes = []
   parsing = true
@@ -1262,9 +1704,10 @@ function parseWithSelect(state)
     if not matchKind(state, token.TokenKind.Comma) then parsing = false end if
   end while
   expectKeyword(state, "SELECT")
-  statement = parseSelect(state)
+  selected = parseSelectTargets(state, allowInto)
+  statement = selected[0]
   statement.ctes = ctes + statement.ctes
-  return statement
+  return [statement, selected[1]]
 end function
 
 /// Parses begin using the supplied inputs.
@@ -1351,7 +1794,19 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param statement statement value consumed by this operation.
 function preparableStatement(statement)
-  return ast.isSelectStatement(statement) or ast.isInsertStatement(statement) or ast.isUpdateStatement(statement) or ast.isDeleteStatement(statement)
+  if ast.isRoutineStatement(statement) then
+    if statement.kind == "SHOW_CREATE_PROCEDURE" or statement.kind == "SHOW_PROCEDURE_STATUS" then return true end if
+    if statement.kind != "SELECT_INTO" and statement.kind != "SET" then return false end if
+    for each name in statement.names
+      if len(bytes(name)) == 0 or bytes(name)[0] != 64 then return false end if
+    end for
+    return true
+  end if
+  if ast.isPrepareStatement(statement) or ast.isExecutePreparedStatement(statement) or ast.isDeallocateStatement(statement) then return false end if
+  if ast.isCreateProcedureStatement(statement) or ast.isDropProcedureStatement(statement) then return false end if
+  if ast.isCreateTriggerStatement(statement) or ast.isDropTriggerStatement(statement) or ast.isAlterTriggerStatement(statement) then return false end if
+  if ast.isShutdownStatement(statement) then return false end if
+  return ast.isStatement(statement)
 end function
 
 /// Parses prepare using the supplied inputs.
@@ -1360,6 +1815,12 @@ end function
 /// @param state Mutable state inspected or updated by the operation.
 function parsePrepare(state)
   name = parseIdentifierName(state, "prepared statement name")
+  if matchKeyword(state, "FROM") then
+    node = routineNode("PREPARE_DYNAMIC", name)
+    if not checkKind(state, token.TokenKind.StringLiteral) and not checkKind(state, token.TokenKind.UserVariable) then return fail(state, "PREPARE FROM requires a string or session variable") end if
+    node.expressions = [parseExpression(state, 0)]
+    return node
+  end if
   expectKeyword(state, "AS")
   // Parameter ordinals are local to one prepared statement. Preserve the outer
   // parser counter so several PREPARE statements in one SQL batch all start at 0.
@@ -1368,7 +1829,7 @@ function parsePrepare(state)
   statement = parseStatement(state)
   parameterCount = state.parameterCount
   state.parameterCount = outerParameterCount
-  if not preparableStatement(statement) then return fail(state, "PREPARE supports SELECT, INSERT, UPDATE or DELETE") end if
+  if not preparableStatement(statement) then return fail(state, "PREPARE requires one supported SQL statement, without procedural control flow or local targets") end if
   return ast.PrepareStatement(name, statement, parameterCount)
 end function
 
@@ -1418,6 +1879,11 @@ end function
 /// Any side effects are limited to the explicitly invoked dependencies.
 /// @param state Mutable state inspected or updated by the operation.
 function parseStatement(state)
+  if matchKeyword(state, "SET") then return parseRoutineSet(state) end if
+  if matchKeyword(state, "SIGNAL") then return parseRoutineSignal(state, "SIGNAL") end if
+  if matchKeyword(state, "RESIGNAL") then return parseRoutineSignal(state, "RESIGNAL") end if
+  if matchKeyword(state, "GET") then return parseRoutineDiagnostics(state) end if
+  if matchKeyword(state, "START") then expectKeyword(state, "TRANSACTION"); return parseBegin(state) end if
   if matchKeyword(state, "SHUTDOWN") then return ast.ShutdownStatement(1) end if
   if matchKeyword(state, "CALL") then return parseCall(state) end if
   if matchKeyword(state, "PREPARE") then return parsePrepare(state) end if
@@ -1445,8 +1911,8 @@ function parseStatement(state)
   if matchKeyword(state, "DELETE") then return parseDelete(state) end if
   if matchKeyword(state, "MERGE") then return parseMerge(state) end if
   if matchKeyword(state, "TRUNCATE") then return parseTruncate(state) end if
-  if matchKeyword(state, "WITH") then return parseWithSelect(state) end if
-  if matchKeyword(state, "SELECT") then return parseSelect(state) end if
+  if matchKeyword(state, "WITH") then return parseSelectTargetStatement(state, true) end if
+  if matchKeyword(state, "SELECT") then return parseSelectTargetStatement(state, false) end if
   if matchKeyword(state, "BEGIN") then return parseBegin(state) end if
   if matchKeyword(state, "COMMIT") then ignored = matchKeyword(state, "TRANSACTION"); return ast.CommitStatement(true) end if
   if matchKeyword(state, "ROLLBACK") then
@@ -1559,6 +2025,7 @@ function parsePrimary(state)
     state.parameterCount = state.parameterCount + 1
     return ast.parameterExpression(index)
   end if
+  if matchKind(state, token.TokenKind.UserVariable) then return ast.columnExpression(void, value.text) end if
   if matchKind(state, token.TokenKind.IntegerLiteral) then return ast.integerLiteral(value.value) end if
   if matchKind(state, token.TokenKind.FloatLiteral) then return ast.floatLiteral(value.value) end if
   if matchKind(state, token.TokenKind.StringLiteral) then return ast.stringLiteral(value.value) end if

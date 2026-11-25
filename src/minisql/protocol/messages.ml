@@ -42,6 +42,8 @@ struct Response
   message
   /// Stores the error code associated with this value.
   errorCode
+  /// Client/server framing metadata; true at a new result boundary, not encoded in the payload.
+  resultStart
 end struct
 
 /// Performs the fail operation for the minisql protocol messages module.
@@ -237,7 +239,7 @@ end function
 /// @param affectedRows affectedRows value consumed by this operation.
 /// @param message Human-readable message associated with the operation.
 function commandResponse(command, affectedRows, message)
-  return Response(constants.STATUS_COMMAND, command, [], [], affectedRows, message, 0)
+  return Response(constants.STATUS_COMMAND, command, [], [], affectedRows, message, 0, false)
 end function
 
 /// Implements row response for this module.
@@ -246,16 +248,29 @@ end function
 /// @param columns columns value consumed by this operation.
 /// @param rows rows value consumed by this operation.
 function rowResponse(columns, rows)
-  return Response(constants.STATUS_ROWS, "SELECT", columns, rows, len(rows), "", 0)
+  return Response(constants.STATUS_ROWS, "SELECT", columns, rows, len(rows), "", 0, false)
 end function
 
-/// Creates an error for response using the supplied inputs.
-/// Returns the computed value or operation status.
-/// Any side effects are limited to the explicitly invoked dependencies.
-/// @param code code value consumed by this operation.
-/// @param message Human-readable message associated with the operation.
+/// Collects separate responses without conflating equal-schema result sets.
+/// The aggregate is client-only; its rows contain Response objects, not SQL cells.
+function multipleResponse(responses)
+  return Response(constants.STATUS_MULTIPLE, "CALL", [], responses, 0, "", 0, false)
+end function
+
+/// Returns the individual responses of one command or stored procedure call.
+function individualResponses(response)
+  if not isResponse(response) then return fail(INVALID_ARGUMENT, "individualResponses", "response must be Response") end if
+  if response.status != constants.STATUS_MULTIPLE then return [response] end if
+  output = []
+  for each child in response.rows
+    output = output + individualResponses(child)
+  end for
+  return output
+end function
+
+/// Creates a protocol error response without changing the wire payload shape.
 function errorResponse(code, message)
-  return Response(constants.STATUS_ERROR, "ERROR", [], [], 0, message, code)
+  return Response(constants.STATUS_ERROR, "ERROR", [], [], 0, message, code, false)
 end function
 
 /// Implements string bytes for this module.
@@ -404,7 +419,7 @@ function decodeResponse(source)
     end for
   end if
   if cursor != len(source) then return fail(CORRUPT_DATA, "decodeResponse", "trailing response bytes") end if
-  return Response(status, command, columns, rows, endian.readU32LE(source, 12), message, endian.readU32LE(source, 16))
+  return Response(status, command, columns, rows, endian.readU32LE(source, 12), message, endian.readU32LE(source, 16), false)
 end function
 
 /// Performs the componentName operation for the minisql protocol messages module.

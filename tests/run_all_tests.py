@@ -749,7 +749,7 @@ def validate_repository(manifest: dict[str, Any]) -> None:
         "milestone": "M50",
         "revision": REVISION,
         "version": VERSION,
-        "moduleCount": 87,
+        "moduleCount": 88,
         "acceptancePhaseCount": PHASE_COUNT,
         "userFacingTestRunner": "test.ps1",
     }
@@ -887,8 +887,8 @@ def validate_repository(manifest: dict[str, Any]) -> None:
 
     catalog_document = load_json(ROOT / "docs/module-catalog.json")
     modules = catalog_document.get("modules")
-    if not isinstance(modules, list) or len(modules) != 87:
-        raise AcceptanceFailure("Module catalog must contain exactly 87 source modules")
+    if not isinstance(modules, list) or len(modules) != 88:
+        raise AcceptanceFailure("Module catalog must contain exactly 88 source modules")
     catalog_paths: set[str] = set()
     for item in modules:
         relative = item.get("path")
@@ -1906,6 +1906,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def run_schema_and_routines(compiler: Path, verbose: bool) -> None:
+    """Runs M45 and every new routine layer inside the established schema-extension phase."""
+    command = [sys.executable, str(ROOT / "tests/run_routines.py"),
+               "--compiler", str(compiler), "--target", "windows-x64"]
+    for name in ("m45_sequences_generated_triggers", "stored_procedure_parser",
+                 "stored_procedure_runtime", "stored_procedure_edges",
+                 "routines_client", "routine_security"):
+        command.extend(["--case", name])
+    result = base.run_command(command, log_name="routines.run.log", verbose=verbose, timeout=3600.0)
+    if result.returncode != 0 or "MiniSQL stored procedure tests: SUCCESS" not in result.stdout:
+        raise AcceptanceFailure("Stored-procedure and schema-extension regression gate failed")
+
+
 def main() -> int:
     """Dispatches the selected command, translates known failures and returns a process exit status."""
     args = parse_args(); started = time.perf_counter(); phases: list[dict[str, Any]] = []
@@ -1913,7 +1926,7 @@ def main() -> int:
     try:
         manifest = load_json(MANIFEST_PATH)
         static_actions = [
-            ("repository manifest, one-launcher contract and 87-module catalog", lambda: validate_repository(manifest)),
+            ("repository manifest, one-launcher contract and 88-module catalog", lambda: validate_repository(manifest)),
             ("configuration, final M0-M50 evidence and complete 1.0 documentation", validate_config_and_docs),
             ("durable replication, hardening and release source contracts", validate_source_contracts),
             ("independent corpus, sidecar, compatibility and deterministic-release vectors", validate_reference_vectors),
@@ -2010,7 +2023,7 @@ def main() -> int:
             ("M43 AUTO_INCREMENT and exact decimal INSERT compatibility", lambda: run_simple(compiler,"src/tests/m43_auto_increment_decimal.ml","minisql-m43-auto-increment-decimal.exe","MiniSQL AUTO_INCREMENT and decimal INSERT tests: SUCCESS",args.verbose,[str(data_root('m43-compat-root'))],3000)),
             ("M43 persisted views and non-correlated subqueries", lambda: run_simple(compiler,"src/tests/m43_views_subqueries.ml","minisql-m43-views.exe","MiniSQL M43 views and subqueries: SUCCESS",args.verbose,[str(data_root('m43-root'))],3000)),
             ("M44 nonrecursive CTEs and window functions", lambda: run_simple(compiler,"src/tests/m44_cte_windows.ml","minisql-m44-cte-windows.exe","MiniSQL M44 CTE and window tests: SUCCESS",args.verbose,[str(data_root('m44-root'))],3000)),
-            ("M45 sequences, generated columns and row triggers", lambda: run_simple(compiler,"src/tests/m45_sequences_generated_triggers.ml","minisql-m45-schema-extensions.exe","MiniSQL M45 sequence generated trigger tests: SUCCESS",args.verbose,[str(data_root('m45-root'))],3600)),
+            ("M45 schema extensions and stored procedures", lambda: run_schema_and_routines(compiler,args.verbose)),
             ("M46 hash operators and external merge sort", lambda: run_simple(compiler,"src/tests/m46_optimizer_executor_v2.ml","minisql-m46-optimizer-v2.exe","MiniSQL M46 optimizer executor v2: SUCCESS",args.verbose,[str(data_root('m46-root'))],5400)),
             ("M73 native TLS 1.3/X.509, X25519 and certificate pinning", lambda: run_native_tls(compiler,args.verbose)),
             ("M47 71-module implementation smoke", lambda: run_simple(compiler,"src/tests/m47_all_modules.ml","minisql-m47-modules.exe","MiniSQL M47 module smoke test: SUCCESS (71 modules)",args.verbose,timeout=2400)),

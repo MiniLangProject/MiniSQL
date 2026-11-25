@@ -262,6 +262,7 @@ function responseMessages(request, responses)
     if responses[index].status == constants.STATUS_ERROR then kind = constants.TYPE_ERROR end if
     flags = 0
     if index < len(responses) - 1 then flags = constants.FLAG_MORE end if
+    if responses[index].resultStart then flags = flags | constants.FLAG_RESULT_START end if
     output = output + [messages.create(kind, flags, request.requestId, payload)]
   end for
   return output
@@ -539,26 +540,60 @@ function handleQuery(session, request)
   return executeParsedQuery(session, request, parsed[0])
 end function
 
-/// Executes an already parsed statement through the ordinary materializing API.
-/// Keeping this tail separate lets the network streaming path reuse parsing,
-/// authorization errors, and the exact fallback response contract.
-/// @param session session value consumed by this operation.
-/// @param request request value consumed by this operation.
-/// @param statement statement value consumed by this operation.
+/// Counts all rows exposed by a CALL, including nested result collections.
+function resultRowCount(result)
+  if result.kind == executor.RESULT_ROWS then return len(result.rows) end if
+  if result.kind != executor.RESULT_MULTIPLE then return 0 end if
+  total = 0
+  for each child in result.rows
+    total = total + resultRowCount(child)
+  end for
+  return total
+end function
+
+/// Executes a parsed statement, preserving CALL result boundaries and response limits.
+/// Shared by materialized queries and the streaming SELECT fallback.
+/// @param session Session owning the engine and resource budget.
+/// @param request Request whose identifier is repeated in every result frame.
+/// @param statement Parsed SQL statement.
 function executeParsedQuery(session, request, statement)
   sessionId = executor.sessionIdentifier(session.engine)
   // The executor centrally selects the shared-reader or exclusive-writer path.
   result = try(executor.executeStatement(session.engine, statement))
   if typeof(result) == "error" then
-    if result.code == 9007 then
+    completed = executor.failedRoutineResults(session.engine)
+    retryableLock = result.code == 9007 and len(completed) == 0 and not executor.isApplicationError(session.engine, result.code)
+    if retryableLock then
       ignoredLog = logger.debug("minisql.server.session.handleQuery", "SQL waiting for logical lock session=" + sessionId)
     else
       ignoredLog = logger.errorLog("minisql.server.session.handleQuery", "SQL execution failed session=" + sessionId + " code=" + result.code + " message=" + result.message)
     end if
-    if result.code != 9007 then finishTrackedStatementWithCode(session, false, 0, result.code) end if
-    return responseMessage(request, messages.errorResponse(result.code, result.message))
+    failure = messages.errorResponse(result.code, result.message)
+    if result.code == 9007 and not retryableLock then
+      ignoredWait = try(database_manager.cancelLockWait(session.engine.database, sessionId))
+    end if
+    if len(completed) == 0 then
+      if not retryableLock then finishTrackedStatementWithCode(session, false, 0, result.code) end if
+      return responseMessage(request, failure)
+    end if
+    // Completed SELECT results remain observable when a later routine statement
+    // fails. The error is its own terminal result, never a failed row batch.
+    partial = executor.QueryResult(executor.RESULT_MULTIPLE, "CALL", [], completed, 0, "")
+    if resultRowCount(partial) > database_manager.maxResultRows(session.engine.database) then finishTrackedStatementWithCode(session, false, 0, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultRows")) end if
+    converted = try(formatter.responsesFromResult(partial))
+    if typeof(converted) == "error" then finishTrackedStatementWithCode(session, false, 0, converted.code); return responseMessage(request, messages.errorResponse(converted.code, converted.message)) end if
+    failure.resultStart = true
+    framed = responseMessages(request, converted + [failure])
+    for each frame in framed
+      if len(frame.payload) > database_manager.maxFrameBytes(session.engine.database) then finishTrackedStatementWithCode(session, false, 0, INVALID_ARGUMENT); return responseMessage(request, messages.errorResponse(INVALID_ARGUMENT, "response exceeds configured maxFrameBytes")) end if
+      session.statementResultBytes = session.statementResultBytes + constants.HEADER_BYTES + len(frame.payload)
+      if session.statementResultBytes > database_manager.maxResultBytes(session.engine.database) then finishTrackedStatementWithCode(session, false, 0, 9037); return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultBytes")) end if
+    end for
+    finishTrackedStatementWithCode(session, false, 0, result.code)
+    return framed
   end if
-  if result.kind == executor.RESULT_ROWS and result.affectedRows > database_manager.maxResultRows(session.engine.database) then
+  resultRows = resultRowCount(result)
+  if resultRows > database_manager.maxResultRows(session.engine.database) then
     finishTrackedStatementWithCode(session, false, 0, 9037)
     return responseMessage(request, messages.errorResponse(9037, "result exceeds configured maxResultRows"))
   end if
@@ -599,7 +634,7 @@ function handleQueryStreaming(session, request, connection)
   if typeof(parsed) == "error" then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(parsed.code, parsed.message)) end if
   if len(parsed) != 1 then finishTrackedStatement(session, false, 0); return responseMessage(request, messages.errorResponse(UNSUPPORTED_SQL, "one SQL statement per request is required")) end if
   cursor = try(executor.openSelectCursor(session.engine, parsed[0]))
-  if typeof(cursor) == "error" then if cursor.code != 9007 then finishTrackedStatementWithCode(session, false, 0, cursor.code) end if; return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
+  if typeof(cursor) == "error" then if cursor.code != 9007 or executor.isApplicationError(session.engine, cursor.code) then finishTrackedStatementWithCode(session, false, 0, cursor.code) end if; return responseMessage(request, messages.errorResponse(cursor.code, cursor.message)) end if
   if cursor is void then return executeParsedQuery(session, request, parsed[0]) end if
 
   pending = void

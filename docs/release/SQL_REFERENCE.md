@@ -120,7 +120,7 @@ Two-part `schema.object` names are supported for database objects. `public` and
 `information_schema` always exist. `DROP SCHEMA` has restrictive semantics and
 rejects non-empty schemas. The virtual metadata relations are
 `information_schema.schemata`, `tables`, `columns`, `table_constraints`,
-`views`, and `routines`.
+`views`, `routines`, and `parameters`.
 
 ## Triggers and procedures
 
@@ -129,18 +129,31 @@ column]` and `DELETE`, plus durable enable/disable state. `OLD` and `NEW` are
 read-only row images. A trigger body is one `VALUES`-based `INSERT`, `UPDATE` or
 `DELETE` without `RETURNING` or `ON CONFLICT`.
 
-Stored procedures use typed positional input parameters and one persisted DML
-body:
+Stored procedures accept typed `IN`, `OUT`, and `INOUT` parameters, a single
+supported SQL statement or a compound `BEGIN ... END` body, and persisted
+characteristics such as `SQL SECURITY`, `DEFINER`, and `COMMENT`:
 
 ```sql
-CREATE [OR REPLACE] PROCEDURE name(p_id INTEGER, p_name VARCHAR(80))
-AS INSERT INTO item(id, name) VALUES (p_id, p_name);
-CALL name(1, 'example');
+CREATE PROCEDURE name(IN p_id INTEGER, OUT p_answer INTEGER)
+BEGIN
+  DECLARE increment INTEGER DEFAULT 1;
+  SET p_answer = p_id + increment;
+END;
+CALL name(1, @answer);
+SELECT @answer;
+ALTER PROCEDURE name COMMENT 'Increment the input';
 DROP PROCEDURE [IF EXISTS] name;
 ```
 
-Declared parameter types are durably stored and enforced by `CALL`. Procedure
-DDL is autocommit-only.
+Control flow includes `IF`, `CASE`, `WHILE`, `REPEAT`, `LOOP`, and labeled
+`LEAVE`/`ITERATE`. Cursors, condition handlers, `SIGNAL`/`RESIGNAL`, current and
+stacked diagnostics, `SELECT INTO`, session variables, dynamic SQL, multiple
+result sets, and bounded recursion are available. The original
+`CREATE [OR REPLACE] PROCEDURE ... AS statement` form remains supported.
+Definition changes remain autocommit-only. Console and Workbench scripts use
+`DELIMITER` around compound definitions; API callers send the complete SQL
+string directly. See the [stored-procedure reference](../sql/stored-procedures.md)
+for permissions, parameter copyback, examples, and compatibility boundaries.
 
 ## Transactions
 
