@@ -10,7 +10,7 @@ editable LaTeX and a compiled PDF.
 ## Implementation identity
 
 This edition describes source revision
-[`139eb3c096fe4db9640f730aa8722647485dac29`](https://github.com/MiniLangProject/MiniSQL/commit/139eb3c096fe4db9640f730aa8722647485dac29),
+[`ce5b0ad6884b5d053dc455474e500117bb73b19a`](https://github.com/MiniLangProject/MiniSQL/commit/ce5b0ad6884b5d053dc455474e500117bb73b19a),
 including the November 25 stored-procedure implementation. Source links in the
 PDF resolve to this exact implementation commit.
 The application banner is **1.1.1**, the current development **storage format

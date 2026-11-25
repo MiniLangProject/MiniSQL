@@ -10,6 +10,8 @@ source hashes and manual results are not relabeled as new executions.
 The follow-up implements the five previously identified packages across the
 SQL engine, persistent routine catalog, native protocol, Python connector and
 JDBC driver. It starts from `ec87e27ca0c923d5f10ffa1e2bc08592070dd8fc`.
+The implementation is published as
+[`ce5b0ad6884b5d053dc455474e500117bb73b19a`](https://github.com/MiniLangProject/MiniSQL/commit/ce5b0ad6884b5d053dc455474e500117bb73b19a).
 The machine-readable `parityExpansion` record keeps its own source hashes,
 run paths, platform scope and final publication/manual identity.
 
@@ -69,6 +71,26 @@ exact SQL NULL, preserved warning diagnostics, prepared-CALL reuse, sequence
 probe evaluation exactly once, deferred errors and connection reuse. It also
 checks that application error numbers resembling lock/deadlock codes do not
 cause CALL replay or unrelated transaction rollback.
+
+### Updated manual and immutable source references
+
+The complete **196-page manual** is rebuilt from its LaTeX sources and pinned
+to the published expansion commit. The final source audit passes for
+**32 TeX files, 117 cited source files and 50 labels**. The PDF has **zero
+overfull boxes and no unresolved references**. Its cover, procedure syntax,
+parameter/character declarations, diagnostics, security grants, Python and JDBC
+calls, negotiated protocol, execution resources and validation appendix were
+rendered and visually reviewed across 12 representative pages. A subsection
+heading was kept with its parameter table during the final pagination pass.
+All **257 embedded repository source links** target the exact implementation
+commit, and all **117 distinct cited paths** exist in that commit.
+
+The final file is `docs/manual/minisql-user-manual.pdf`.
+Its SHA-256 is
+`53d954db8f537fb5b6dda22c744cfd41bf0b3d8690d30cdad461c2fbac8e284d`.
+The earlier 192-page PDF and its hash remain recorded as historical evidence
+in the original JSON `manual` object; the new `parityExpansion.manual` object
+identifies this edition.
 
 ### Compatibility and acceptance boundaries
 

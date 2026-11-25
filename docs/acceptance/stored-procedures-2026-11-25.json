@@ -356,7 +356,7 @@
   "parityExpansion": {
     "status": "PASS",
     "sourceBaseline": "ec87e27ca0c923d5f10ffa1e2bc08592070dd8fc",
-    "sourceState": "Verified working-tree changes; the published implementation commit is recorded after creation.",
+    "sourceState": "Published implementation; runtime and connector evidence records the reviewed source hashes compiled before publication.",
     "packages": [
       {
         "number": 1,
@@ -726,8 +726,39 @@
       }
     },
     "manual": {
-      "status": "PENDING_PUBLISHED_SOURCE_PIN_AND_PDF_BUILD",
-      "historicalManualRetainedInTopLevelRecord": true
+      "status": "PASS",
+      "pages": 196,
+      "sha256": "53d954db8f537fb5b6dda22c744cfd41bf0b3d8690d30cdad461c2fbac8e284d",
+      "sourceLinksValidated": 257,
+      "sourcePathsValidatedAtCommit": 117,
+      "sourceCommit": "ce5b0ad6884b5d053dc455474e500117bb73b19a",
+      "visuallyReviewedPdfPages": [
+        1,
+        86,
+        87,
+        89,
+        104,
+        105,
+        144,
+        147,
+        148,
+        149,
+        157,
+        189
+      ],
+      "overfullBoxes": 0,
+      "unresolvedReferences": 0,
+      "audit": {
+        "status": "PASS",
+        "texFiles": 32,
+        "sourceFiles": 117,
+        "labels": 50
+      },
+      "pdf": "docs/manual/minisql-user-manual.pdf",
+      "buildEvidence": "build/manual/final-build.log",
+      "reviewEvidence": "build/manual/review/qa-metadata.json",
+      "historicalManualRetainedInTopLevelRecord": true,
+      "note": "The final PDF follows the published implementation identity. Twelve representative pages were rendered and visually checked; the final heading/table pagination fix changed only pages 86/87, which were re-rendered and rechecked. All 257 embedded source links and 117 distinct source paths were validated against the implementation commit."
     },
     "reviewedSourceSha256": {
       "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlJdbc.java": "9860eeca1f5702ee53b3d3dcab6d1cd6946af80a285afdfc2bfa944a9d731d79",
@@ -775,6 +806,8 @@
       "phases": 4,
       "command": "python -B tests/run_all_tests.py --static-only",
       "evidence": "build/routines-v2/static-final.log"
-    }
+    },
+    "implementationCommit": "ce5b0ad6884b5d053dc455474e500117bb73b19a",
+    "implementationTree": "68e090b85f47e0821b91888677d1c6f327ebc908"
   }
 }

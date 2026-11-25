@@ -1,5 +1,5 @@
 {
-  "source_baseline": "139eb3c096fe4db9640f730aa8722647485dac29",
+  "source_baseline": "ce5b0ad6884b5d053dc455474e500117bb73b19a",
   "chapters": {
     "00-about.tex": [
       "src/minisql/common/format_version.ml"
@@ -80,6 +80,7 @@
       "src/minisql/executor/aggregate.ml",
       "src/minisql/executor/executor.ml",
       "src/minisql/executor/projection.ml",
+      "src/minisql/executor/routine_state.ml",
       "src/minisql/sql/binder.ml",
       "src/minisql/sql/expressions.ml",
       "src/minisql/sql/parser.ml",
@@ -88,7 +89,8 @@
       "src/tests/m35_scalar_expressions.ml",
       "src/tests/m44_cte_windows.ml",
       "src/tests/m45_sequences_generated_triggers.ml",
-      "src/tests/routine_security.ml"
+      "src/tests/routine_security.ml",
+      "src/tests/stored_procedure_parity.ml"
     ],
     "09-transactions.tex": [
       "src/minisql/executor/executor.ml",
@@ -163,6 +165,7 @@
       "clients/jdbc/src/main/java/org/minilang/minisql/jdbc/MiniSqlProtocol.java",
       "clients/python/minisql/dbapi.py",
       "clients/python/minisql/protocol.py",
+      "docs/formats/wire-protocol-v1.md",
       "src/apps/minisql/main.ml",
       "src/apps/minisql_admin/main.ml",
       "src/minisql/admin/fullclient.ml",
