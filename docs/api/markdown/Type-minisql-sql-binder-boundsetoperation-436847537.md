@@ -12,7 +12,7 @@ struct BoundSetOperation
 Groups the bound set operation state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L106)
 
 ## Members
 
@@ -26,7 +26,7 @@ all
 Stores the all associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L110)
 
 <a id="field-field-minisql-sql-binder-boundsetoperation-operatorvalue-operatorvalue-src-minisql-sql-binder-ml-1761049690"></a>
 ### operatorValue
@@ -38,7 +38,7 @@ operatorValue
 Stores the operator associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L108)
 
 <a id="field-field-minisql-sql-binder-boundsetoperation-query-query-src-minisql-sql-binder-ml-587097842"></a>
 ### query
@@ -50,4 +50,4 @@ query
 Stores the query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L112)

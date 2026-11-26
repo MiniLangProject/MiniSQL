@@ -12,7 +12,7 @@ struct DropSchemaStatement
 Represents removal of an empty SQL object namespace.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L507)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L515)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Indicates whether a missing schema is accepted.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L519)
 
 <a id="field-field-minisql-sql-ast-dropschemastatement-name-name-src-minisql-sql-ast-ml-107194380"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the schema name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L509)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L517)

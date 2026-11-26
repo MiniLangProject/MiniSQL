@@ -12,7 +12,7 @@ struct SequenceSessionValue
 Groups the sequence session value state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L129)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L131)
 
 <a id="field-field-minisql-executor-executor-sequencesessionvalue-value-value-src-minisql-executor-executor-ml-1579297313"></a>
 ### value
@@ -38,4 +38,4 @@ value
 Stores the value associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L133)

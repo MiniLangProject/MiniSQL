@@ -16,6 +16,7 @@ Reachable from entry: **yes**
 - `minisql/common/uuid.ml` as `uuid` → [src/minisql/common/uuid.ml](File-src-minisql-common-uuid-ml-1458519464.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/protocol/constants.ml` as `constants` → [src/minisql/protocol/constants.ml](File-src-minisql-protocol-constants-ml-2117523449.md)
+- `minisql/protocol/messages.ml` as `messages` → [src/minisql/protocol/messages.ml](File-src-minisql-protocol-messages-ml-1580707356.md)
 - `std/console.ml` as `console_api` → `../MiniLangCompilerML/std/console.ml` — external dependency
 
 ## Declarations
@@ -38,7 +39,7 @@ Appends SQL fragment using the supplied inputs. Returns the computed value or op
 | `hasToken` | `dynamic` | — | hasToken value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L433)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L436)
 
 <a id="function-function-minisql-client-console-commandargument-function-commandargument-line-prefix-src-minisql-client-console-ml-1905937752"></a>
 ### commandArgument
@@ -55,7 +56,7 @@ Implements command argument for this module. Requires arguments that satisfy the
 | `prefix` | `dynamic` | — | prefix value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L596)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L655)
 
 <a id="function-function-minisql-client-console-componentname-function-componentname-src-minisql-client-console-ml-2094586446"></a>
 ### componentName
@@ -67,7 +68,7 @@ function componentName()
 Performs the componentName operation for the minisql client console module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L750)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L812)
 
 <a id="constant-constant-minisql-client-console-cp-utf8-const-cp-utf8-65001-src-minisql-client-console-ml-1512474041"></a>
 ### CP_UTF8
@@ -79,7 +80,24 @@ const CP_UTF8 = 65001
 Defines the cp utf8 constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L33)
+
+<a id="function-function-minisql-client-console-delimiterdirectiveat-function-delimiterdirectiveat-source-offset-src-minisql-client-console-ml-1109620376"></a>
+### delimiterDirectiveAt
+
+```ml
+function delimiterDirectiveAt(source, offset)
+```
+
+Recognizes a client DELIMITER directive only at a line start with no pending SQL.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `source` | `dynamic` | — |  |
+| `offset` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L453)
 
 <a id="function-function-minisql-client-console-disablequickedit-function-disablequickedit-src-minisql-client-console-ml-1944763646"></a>
 ### disableQuickEdit
@@ -91,7 +109,7 @@ function disableQuickEdit()
 Prevents accidental mouse selection from suspending a Windows console server. Redirected standard input and service processes have no console and are treated as already safe; a real console-mode update reports failures.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L106)
 
 <a id="constant-constant-minisql-client-console-enable-echo-input-const-enable-echo-input-4-src-minisql-client-console-ml-1739088817"></a>
 ### ENABLE_ECHO_INPUT
@@ -103,7 +121,7 @@ const ENABLE_ECHO_INPUT = 4
 Defines the enable echo input constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L27)
 
 <a id="constant-constant-minisql-client-console-enable-extended-flags-const-enable-extended-flags-128-src-minisql-client-console-ml-174759396"></a>
 ### ENABLE_EXTENDED_FLAGS
@@ -115,7 +133,7 @@ const ENABLE_EXTENDED_FLAGS = 128
 Defines the enable extended flags constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L31)
 
 <a id="constant-constant-minisql-client-console-enable-quick-edit-mode-const-enable-quick-edit-mode-64-src-minisql-client-console-ml-248695477"></a>
 ### ENABLE_QUICK_EDIT_MODE
@@ -127,7 +145,7 @@ const ENABLE_QUICK_EDIT_MODE = 64
 Defines the enable quick edit mode constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L29)
 
 <a id="function-function-minisql-client-console-executemeta-function-executemeta-activeclient-line-src-minisql-client-console-ml-1983556331"></a>
 ### executeMeta
@@ -144,7 +162,7 @@ Executes meta using the supplied inputs. Requires arguments that satisfy the val
 | `line` | `dynamic` | — | line value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L657)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L716)
 
 <a id="function-function-minisql-client-console-executeonce-function-executeonce-activeclient-sqltext-src-minisql-client-console-ml-337902070"></a>
 ### executeOnce
@@ -161,7 +179,7 @@ Executes once using the supplied inputs. Returns the computed value or operation
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L136)
 
 <a id="function-function-minisql-client-console-executestatements-function-executestatements-activeclient-statements-src-minisql-client-console-ml-1846893909"></a>
 ### executeStatements
@@ -178,7 +196,7 @@ Executes statements using the supplied inputs. Requires arguments that satisfy t
 | `statements` | `dynamic` | — | statements value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L554)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L611)
 
 <a id="function-function-minisql-client-console-fail-function-fail-code-operation-message-src-minisql-client-console-ml-7739793"></a>
 ### fail
@@ -196,7 +214,7 @@ Performs the fail operation for the minisql client console module. Returns its r
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L99)
 
 <a id="extern_function-extern-function-minisql-client-console-getconsolemode-extern-function-getconsolemode-handle-as-ptr-mode-as-bytes-from-kernel32-dll-symbol-getconsolemode-returns-bool-src-minisql-client-console-ml-707164896"></a>
 ### GetConsoleMode
@@ -215,7 +233,7 @@ Reads console-mode flags into `mode` and returns false on a Win32 error.
 
 **Returns:** Native bool result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L58)
 
 <a id="extern_function-extern-function-minisql-client-console-getstdhandle-extern-function-getstdhandle-kind-as-i32-from-kernel32-dll-symbol-getstdhandle-returns-ptr-src-minisql-client-console-ml-53103385"></a>
 ### GetStdHandle
@@ -233,7 +251,7 @@ Returns the Windows standard-stream handle identified by `kind`; failure uses an
 
 **Returns:** Native ptr result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L53)
 
 <a id="constant-constant-minisql-client-console-invalid-argument-const-invalid-argument-9001-src-minisql-client-console-ml-715297279"></a>
 ### INVALID_ARGUMENT
@@ -245,7 +263,7 @@ const INVALID_ARGUMENT = 9001
 Defines the invalid argument constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L19)
 
 <a id="constant-constant-minisql-client-console-io-failure-const-io-failure-9005-src-minisql-client-console-ml-1581845903"></a>
 ### IO_FAILURE
@@ -257,7 +275,7 @@ const IO_FAILURE = 9005
 Defines the io failure constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L21)
 
 <a id="function-function-minisql-client-console-isidentifierbyte-function-isidentifierbyte-value-first-src-minisql-client-console-ml-930599029"></a>
 ### isIdentifierByte
@@ -274,7 +292,7 @@ Returns whether the supplied value satisfies the identifier byte condition. Retu
 | `first` | `dynamic` | — | first value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L609)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L668)
 
 <a id="function-function-minisql-client-console-isimplemented-function-isimplemented-src-minisql-client-console-ml-1986708534"></a>
 ### isImplemented
@@ -286,7 +304,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql client console module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L764)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L826)
 
 <a id="function-function-minisql-client-console-ismetacommand-function-ismetacommand-text-src-minisql-client-console-ml-594018787"></a>
 ### isMetaCommand
@@ -302,7 +320,7 @@ Returns whether the supplied value satisfies the meta command condition. Require
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L127)
 
 <a id="function-function-minisql-client-console-issafemetaidentifier-function-issafemetaidentifier-value-src-minisql-client-console-ml-1475470437"></a>
 ### isSafeMetaIdentifier
@@ -318,7 +336,7 @@ Returns whether the supplied value satisfies the safe meta identifier condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L621)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L680)
 
 <a id="function-function-minisql-client-console-isscriptcomment-function-isscriptcomment-line-src-minisql-client-console-ml-983739572"></a>
 ### isScriptComment
@@ -334,7 +352,7 @@ Returns whether the supplied value satisfies the script comment condition. Requi
 | `line` | `dynamic` | — | line value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L358)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L361)
 
 <a id="function-function-minisql-client-console-issqlbatch-function-issqlbatch-value-src-minisql-client-console-ml-2056054537"></a>
 ### isSqlBatch
@@ -350,7 +368,7 @@ Returns whether the supplied value satisfies the SQL batch condition. Returns th
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L399)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L402)
 
 <a id="function-function-minisql-client-console-iswhitespacebyte-function-iswhitespacebyte-value-src-minisql-client-console-ml-1287863277"></a>
 ### isWhitespaceByte
@@ -366,7 +384,7 @@ Returns whether the supplied value satisfies the whitespace byte condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L407)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L410)
 
 <a id="constant-constant-minisql-client-console-max-password-utf16-units-const-max-password-utf16-units-1024-src-minisql-client-console-ml-1968761610"></a>
 ### MAX_PASSWORD_UTF16_UNITS
@@ -378,7 +396,7 @@ const MAX_PASSWORD_UTF16_UNITS = 1024
 Defines the max password utf16 units constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L37)
 
 <a id="function-function-minisql-client-console-openauthenticatedprompt-function-openauthenticatedprompt-address-port-username-src-minisql-client-console-ml-1386038845"></a>
 ### openAuthenticatedPrompt
@@ -396,7 +414,7 @@ Opens authenticated prompt using the supplied inputs. Requires arguments that sa
 | `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L266)
 
 <a id="function-function-minisql-client-console-opentlsauthenticatedprompt-function-opentlsauthenticatedprompt-address-port-servername-username-src-minisql-client-console-ml-443851539"></a>
 ### openTlsAuthenticatedPrompt
@@ -415,7 +433,7 @@ Prompts for a password and opens native TLS using Windows certificate trust.
 | `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L280)
 
 <a id="function-function-minisql-client-console-opentlspinnedauthenticatedprompt-function-opentlspinnedauthenticatedprompt-address-port-servername-pintext-username-src-minisql-client-console-ml-454610769"></a>
 ### openTlsPinnedAuthenticatedPrompt
@@ -435,7 +453,7 @@ Prompts for a password and opens native TLS using an exact leaf SHA-256 pin.
 | `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L292)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L295)
 
 <a id="function-function-minisql-client-console-printqueryresponse-function-printqueryresponse-response-src-minisql-client-console-ml-1181906627"></a>
 ### printQueryResponse
@@ -451,7 +469,7 @@ Prints query response using the supplied inputs. Requires arguments that satisfy
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L541)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L598)
 
 <a id="function-function-minisql-client-console-printshellhelp-function-printshellhelp-src-minisql-client-console-ml-1097463758"></a>
 ### printShellHelp
@@ -463,7 +481,7 @@ function printShellHelp()
 Prints shell help using the supplied inputs. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L636)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L695)
 
 <a id="function-function-minisql-client-console-rawtext-function-rawtext-source-offset-count-src-minisql-client-console-ml-1468995475"></a>
 ### rawText
@@ -481,7 +499,7 @@ Implements raw text for this module. Requires arguments that satisfy the validat
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L418)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L421)
 
 <a id="extern_function-extern-function-minisql-client-console-readconsolew-extern-function-readconsolew-handle-as-ptr-buffer-as-bytes-count-as-u32-readout-as-bytes-control-as-ptr-from-kernel32-dll-symbol-readconsolew-returns-bool-src-minisql-client-console-ml-995591226"></a>
 ### ReadConsoleW
@@ -503,7 +521,7 @@ Reads UTF-16 console input into `buffer`, reporting the unit count through `read
 
 **Returns:** Native bool result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L71)
 
 <a id="function-function-minisql-client-console-readpassword-function-readpassword-prompt-src-minisql-client-console-ml-387799384"></a>
 ### readPassword
@@ -519,7 +537,7 @@ Reads password using the supplied inputs. Requires arguments that satisfy the va
 | `prompt` | `dynamic` | — | prompt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L196)
 
 <a id="function-function-minisql-client-console-readpasswordconfirmed-function-readpasswordconfirmed-prompt-confirmationprompt-src-minisql-client-console-ml-1456327181"></a>
 ### readPasswordConfirmed
@@ -536,7 +554,7 @@ Reads password confirmed using the supplied inputs. Requires arguments that sati
 | `confirmationPrompt` | `dynamic` | — | confirmationPrompt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L248)
 
 <a id="function-function-minisql-client-console-runscript-function-runscript-activeclient-path-src-minisql-client-console-ml-1344560780"></a>
 ### runScript
@@ -553,7 +571,7 @@ Runs script using the supplied inputs. Requires arguments that satisfy the valid
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L581)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L640)
 
 <a id="function-function-minisql-client-console-runshell-function-runshell-activeclient-prompt-src-minisql-client-console-ml-1448604231"></a>
 ### runShell
@@ -570,7 +588,7 @@ Runs shell using the supplied inputs. Requires arguments that satisfy the valida
 | `prompt` | `dynamic` | — | prompt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L693)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L752)
 
 <a id="function-function-minisql-client-console-scansqlbatch-function-scansqlbatch-text-finalinput-src-minisql-client-console-ml-1580539323"></a>
 ### scanSqlBatch
@@ -579,15 +597,33 @@ Runs shell using the supplied inputs. Requires arguments that satisfy the valida
 function scanSqlBatch(text, finalInput)
 ```
 
-Split complete SQL statements without treating semicolons inside quoted strings, quoted identifiers or comments as terminators. When finalInput is false, an incomplete suffix is returned for the interactive continuation prompt. When finalInput is true, a final statement may omit its semicolon. Scans SQL batch using the supplied inputs. Requires arguments that satisfy the validation performed below. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Splits a complete standalone script using the conventional initial delimiter.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text` | `dynamic` | — | Text consumed by the operation. |
-| `finalInput` | `dynamic` | — | finalInput value consumed by this operation. |
+| `text` | `dynamic` | — |  |
+| `finalInput` | `dynamic` | — |  |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L450)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L581)
+
+<a id="function-function-minisql-client-console-scansqlbatchwithdelimiter-function-scansqlbatchwithdelimiter-text-finalinput-delimiter-src-minisql-client-console-ml-29054974"></a>
+### scanSqlBatchWithDelimiter
+
+```ml
+function scanSqlBatchWithDelimiter(text, finalInput, delimiter)
+```
+
+Splits script statements while retaining quoted strings, comments, and compound bodies. DELIMITER is consumed here and never sent to the server. The returned delimiter must be passed to the next incremental scan so an interactive session retains it.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text` | `dynamic` | — |  |
+| `finalInput` | `dynamic` | — |  |
+| `delimiter` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L478)
 
 <a id="extern_function-extern-function-minisql-client-console-setconsolemode-extern-function-setconsolemode-handle-as-ptr-mode-as-u32-from-kernel32-dll-symbol-setconsolemode-returns-bool-src-minisql-client-console-ml-1497610401"></a>
 ### SetConsoleMode
@@ -606,7 +642,7 @@ Replaces console-mode flags and returns false on a Win32 error.
 
 **Returns:** Native bool result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L63)
 
 <a id="function-function-minisql-client-console-splitlines-function-splitlines-text-src-minisql-client-console-ml-76886627"></a>
 ### splitLines
@@ -622,7 +658,7 @@ Implements split lines for this module. Requires arguments that satisfy the vali
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L373)
 
 <a id="function-function-minisql-client-console-splitsqlstatements-function-splitsqlstatements-text-src-minisql-client-console-ml-463089859"></a>
 ### splitSqlStatements
@@ -638,9 +674,27 @@ Implements split SQL statements for this module. Returns the computed value or o
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L532)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L589)
 
 - [minisql.client.console.SqlBatch](Type-minisql-client-console-sqlbatch-2091586626.md) — struct
+<a id="function-function-minisql-client-console-sqlbytesmatch-function-sqlbytesmatch-source-offset-expected-src-minisql-client-console-ml-1850939188"></a>
+### sqlBytesMatch
+
+```ml
+function sqlBytesMatch(source, offset, expected)
+```
+
+Returns whether source contains the exact byte sequence at offset.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `source` | `dynamic` | — |  |
+| `offset` | `dynamic` | — |  |
+| `expected` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L444)
+
 <a id="function-function-minisql-client-console-startswithbytes-function-startswithbytes-text-first-second-src-minisql-client-console-ml-1583632311"></a>
 ### startsWithBytes
 
@@ -657,7 +711,7 @@ Implements starts with bytes for this module. Requires arguments that satisfy th
 | `second` | `dynamic` | — | second value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L328)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L331)
 
 <a id="function-function-minisql-client-console-startswithtext-function-startswithtext-text-prefix-src-minisql-client-console-ml-112134931"></a>
 ### startsWithText
@@ -674,7 +728,7 @@ Implements starts with text for this module. Requires arguments that satisfy the
 | `prefix` | `dynamic` | — | prefix value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L340)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L343)
 
 <a id="constant-constant-minisql-client-console-std-input-handle-const-std-input-handle-10-src-minisql-client-console-ml-1587103395"></a>
 ### STD_INPUT_HANDLE
@@ -686,7 +740,7 @@ const STD_INPUT_HANDLE = -10
 Defines the std input handle constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L23)
 
 <a id="constant-constant-minisql-client-console-std-output-handle-const-std-output-handle-11-src-minisql-client-console-ml-1849187272"></a>
 ### STD_OUTPUT_HANDLE
@@ -698,7 +752,7 @@ const STD_OUTPUT_HANDLE = -11
 Defines the std output handle constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L25)
 
 <a id="function-function-minisql-client-console-targetmilestone-function-targetmilestone-src-minisql-client-console-ml-1073307508"></a>
 ### targetMilestone
@@ -710,7 +764,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql client console module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L757)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L819)
 
 <a id="function-function-minisql-client-console-trimascii-function-trimascii-text-src-minisql-client-console-ml-1840217793"></a>
 ### trimAscii
@@ -726,7 +780,7 @@ Implements trim ascii for this module. Requires arguments that satisfy the valid
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L306)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L309)
 
 <a id="function-function-minisql-client-console-utf16passwordtoutf8-function-utf16passwordtoutf8-wide-units-src-minisql-client-console-ml-1891019474"></a>
 ### utf16PasswordToUtf8
@@ -743,7 +797,23 @@ Implements utf16 password to UTF-8 for this module. Requires arguments that sati
 | `units` | `dynamic` | — | units value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L173)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L176)
+
+<a id="function-function-minisql-client-console-validatesqldelimiter-function-validatesqldelimiter-delimiter-src-minisql-client-console-ml-1552766337"></a>
+### validateSqlDelimiter
+
+```ml
+function validateSqlDelimiter(delimiter)
+```
+
+Restricts delimiters to a short unambiguous token; quotes and backslashes are SQL syntax.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `delimiter` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L465)
 
 <a id="constant-constant-minisql-client-console-wc-err-invalid-chars-const-wc-err-invalid-chars-128-src-minisql-client-console-ml-1798620070"></a>
 ### WC_ERR_INVALID_CHARS
@@ -755,7 +825,7 @@ const WC_ERR_INVALID_CHARS = 128
 Defines the wc err invalid chars constant used by the minisql client console module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L35)
 
 <a id="extern_function-extern-function-minisql-client-console-widechartomultibyte-extern-function-widechartomultibyte-codepage-as-u32-flags-as-u32-widetext-as-bytes-widecount-as-i32-output-as-bytes-outputcount-as-i32-defaultchar-as-ptr-useddefault-as-ptr-from-kernel32-dll-symbol-widechartomultibyte-returns-i32-src-minisql-client-console-ml-1045535032"></a>
 ### WideCharToMultiByte
@@ -780,7 +850,7 @@ Converts UTF-16 units to the requested code page; returns bytes written or zero 
 
 **Returns:** Native i32 result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L90)
 
 <a id="function-function-minisql-client-console-wipepassword-function-wipepassword-passwordbytes-src-minisql-client-console-ml-723476118"></a>
 ### wipePassword
@@ -796,7 +866,7 @@ Implements wipe password for this module. Returns the computed value or operatio
 | `passwordBytes` | `dynamic` | — | passwordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L141)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L144)
 
 <a id="extern_function-extern-function-minisql-client-console-writeconsolew-extern-function-writeconsolew-handle-as-ptr-text-as-wstr-count-as-u32-writtenout-as-bytes-reserved-as-ptr-from-kernel32-dll-symbol-writeconsolew-returns-bool-src-minisql-client-console-ml-10162773"></a>
 ### WriteConsoleW
@@ -818,7 +888,7 @@ Writes UTF-16 console text and reports the unit count through `writtenOut`.
 
 **Returns:** Native bool result produced by the call.
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L79)
 
 <a id="function-function-minisql-client-console-writeprompt-function-writeprompt-outputhandle-prompt-src-minisql-client-console-ml-24564463"></a>
 ### writePrompt
@@ -835,4 +905,4 @@ Writes prompt using the supplied inputs. Requires arguments that satisfy the val
 | `prompt` | `dynamic` | — | prompt value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/console.ml#L154)

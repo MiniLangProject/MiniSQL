@@ -20,7 +20,7 @@ function componentName()
 Performs the componentName operation for the minisql sql token module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L149)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L157)
 
 <a id="function-function-minisql-sql-token-create-function-create-kind-text-value-offset-line-column-quoted-src-minisql-sql-token-ml-1033617707"></a>
 ### create
@@ -42,7 +42,7 @@ Creates create for the minisql sql token module. Requires arguments that satisfy
 | `quoted` | `dynamic` | — | quoted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L102)
 
 <a id="function-function-minisql-sql-token-describe-function-describe-value-src-minisql-sql-token-ml-1702861991"></a>
 ### describe
@@ -58,7 +58,7 @@ Implements describe for this module. Requires arguments that satisfy the validat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L143)
 
 <a id="function-function-minisql-sql-token-eof-function-eof-offset-line-column-src-minisql-sql-token-ml-430385607"></a>
 ### eof
@@ -76,7 +76,7 @@ Implements eof for this module. Returns the computed value or operation status. 
 | `column` | `dynamic` | — | column value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L116)
 
 <a id="function-function-minisql-sql-token-isimplemented-function-isimplemented-src-minisql-sql-token-ml-1204395352"></a>
 ### isImplemented
@@ -88,7 +88,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql sql token module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L171)
 
 <a id="function-function-minisql-sql-token-iskeyword-function-iskeyword-value-keyword-src-minisql-sql-token-ml-1692711242"></a>
 ### isKeyword
@@ -105,7 +105,7 @@ Returns whether the supplied value satisfies the keyword condition. Returns the 
 | `keyword` | `dynamic` | — | keyword value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L134)
 
 <a id="function-function-minisql-sql-token-iskind-function-iskind-value-kind-src-minisql-sql-token-ml-561094317"></a>
 ### isKind
@@ -122,7 +122,7 @@ Returns whether the supplied value satisfies the kind condition. Returns the com
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L117)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L125)
 
 <a id="function-function-minisql-sql-token-targetmilestone-function-targetmilestone-src-minisql-sql-token-ml-1626390678"></a>
 ### targetMilestone
@@ -134,7 +134,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql sql token module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L156)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L164)
 
 - [minisql.sql.token.Token](Type-minisql-sql-token-token-1789885460.md) — struct
 - [minisql.sql.token.TokenKind](Type-minisql-sql-token-tokenkind-351735398.md) — enum

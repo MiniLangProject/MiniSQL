@@ -9,10 +9,10 @@
 struct CreateProcedureStatement
 ```
 
-Represents a persisted single-statement stored procedure.
+Represents a persisted procedure with a single SQL or compound body.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L601)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L631)
 
 ## Members
 
@@ -23,10 +23,34 @@ Represents a persisted single-statement stored procedure.
 body
 ```
 
-Stores the procedure's DML body.
+Stores the procedure's SQL or procedural body.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L607)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L637)
+
+<a id="field-field-minisql-sql-ast-createprocedurestatement-characteristics-characteristics-src-minisql-sql-ast-ml-1944941777"></a>
+### characteristics
+
+```ml
+characteristics
+```
+
+Ordered [name, value] characteristic pairs explicitly supplied by the user.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L641)
+
+<a id="field-field-minisql-sql-ast-createprocedurestatement-ifnotexists-ifnotexists-src-minisql-sql-ast-ml-389823973"></a>
+### ifNotExists
+
+```ml
+ifNotExists
+```
+
+Allows creation to succeed when the procedure already exists.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L643)
 
 <a id="field-field-minisql-sql-ast-createprocedurestatement-name-name-src-minisql-sql-ast-ml-1407481323"></a>
 ### name
@@ -38,7 +62,7 @@ name
 Stores the qualified procedure name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L603)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L633)
 
 <a id="field-field-minisql-sql-ast-createprocedurestatement-parameters-parameters-src-minisql-sql-ast-ml-724145521"></a>
 ### parameters
@@ -50,7 +74,7 @@ parameters
 Contains ordered input parameters.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L605)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L635)
 
 <a id="field-field-minisql-sql-ast-createprocedurestatement-replace-replace-src-minisql-sql-ast-ml-1463890905"></a>
 ### replace
@@ -62,4 +86,4 @@ replace
 Indicates CREATE OR REPLACE behavior.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L609)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L639)

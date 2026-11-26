@@ -22,6 +22,8 @@ Reachable from entry: **yes**
 - `minisql/storage/heap_file.ml` as `heap_file` → [src/minisql/storage/heap_file.ml](File-src-minisql-storage-heap-file-ml-1771906446.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/storage/superblock.ml` as `superblock` → [src/minisql/storage/superblock.ml](File-src-minisql-storage-superblock-ml-1268029913.md)
+- `minisql/storage/table_header.ml` as `table_header` → [src/minisql/storage/table_header.ml](File-src-minisql-storage-table-header-ml-163902973.md)
+- `std/time.ml` as `time_api` → `../MiniLangCompilerML/std/time.ml` — external dependency
 
 ## Declarations
 
@@ -35,7 +37,7 @@ const ACTION_ALTER_TABLE = 4
 Defines the action alter table constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L84)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-create-index-const-action-create-index-2-src-minisql-catalog-schema-history-ml-1907281383"></a>
 ### ACTION_CREATE_INDEX
@@ -47,7 +49,7 @@ const ACTION_CREATE_INDEX = 2
 Defines the action create index constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L80)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-create-sequence-const-action-create-sequence-7-src-minisql-catalog-schema-history-ml-369253736"></a>
 ### ACTION_CREATE_SEQUENCE
@@ -59,7 +61,7 @@ const ACTION_CREATE_SEQUENCE = 7
 Defines the action create sequence constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L90)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-create-table-const-action-create-table-1-src-minisql-catalog-schema-history-ml-1827847154"></a>
 ### ACTION_CREATE_TABLE
@@ -71,7 +73,7 @@ const ACTION_CREATE_TABLE = 1
 Defines the action create table constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L78)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-create-trigger-const-action-create-trigger-9-src-minisql-catalog-schema-history-ml-363802594"></a>
 ### ACTION_CREATE_TRIGGER
@@ -83,7 +85,7 @@ const ACTION_CREATE_TRIGGER = 9
 Defines the action create trigger constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L94)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-create-view-const-action-create-view-5-src-minisql-catalog-schema-history-ml-1569238698"></a>
 ### ACTION_CREATE_VIEW
@@ -95,7 +97,7 @@ const ACTION_CREATE_VIEW = 5
 Defines the action create view constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L84)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L86)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-drop-sequence-const-action-drop-sequence-8-src-minisql-catalog-schema-history-ml-1949615451"></a>
 ### ACTION_DROP_SEQUENCE
@@ -107,7 +109,7 @@ const ACTION_DROP_SEQUENCE = 8
 Defines the action drop sequence constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L92)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-drop-table-const-action-drop-table-3-src-minisql-catalog-schema-history-ml-1405572232"></a>
 ### ACTION_DROP_TABLE
@@ -119,7 +121,7 @@ const ACTION_DROP_TABLE = 3
 Defines the action drop table constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L82)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-drop-trigger-const-action-drop-trigger-10-src-minisql-catalog-schema-history-ml-171001846"></a>
 ### ACTION_DROP_TRIGGER
@@ -131,7 +133,7 @@ const ACTION_DROP_TRIGGER = 10
 Defines the action drop trigger constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L96)
 
 <a id="constant-constant-minisql-catalog-schema-history-action-drop-view-const-action-drop-view-6-src-minisql-catalog-schema-history-ml-1187514445"></a>
 ### ACTION_DROP_VIEW
@@ -143,7 +145,7 @@ const ACTION_DROP_VIEW = 6
 Defines the action drop view constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L88)
 
 <a id="function-function-minisql-catalog-schema-history-advanceschemaversion-function-advanceschemaversion-table-tableschemavalue-src-minisql-catalog-schema-history-ml-240066914"></a>
 ### advanceSchemaVersion
@@ -160,7 +162,7 @@ Advances the schema generation shared by catalog metadata and schema rules.
 | `tableSchemaValue` | `dynamic` | — | Mutable persisted schema rules for the same table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1417)
 
 <a id="function-function-minisql-catalog-schema-history-allocateid-function-allocateid-preparedmetadata-src-minisql-catalog-schema-history-ml-635539272"></a>
 ### allocateId
@@ -176,7 +178,7 @@ Allocates the id. Inputs: `preparedMetadata`. Returns the produced value or prop
 | `preparedMetadata` | `dynamic` | — | preparedMetadata value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1040)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1145)
 
 <a id="function-function-minisql-catalog-schema-history-appendconstraint-function-appendconstraint-preparedmetadata-tablename-tableschemavalue-value-src-minisql-catalog-schema-history-ml-589798664"></a>
 ### appendConstraint
@@ -195,7 +197,7 @@ Appends the constraint. Inputs: `preparedMetadata`, `tableName`, `tableSchemaVal
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1097)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1202)
 
 <a id="function-function-minisql-catalog-schema-history-appendextensionvalue-function-appendextensionvalue-values-value-src-minisql-catalog-schema-history-ml-1830544303"></a>
 ### appendExtensionValue
@@ -212,7 +214,7 @@ Appends the extension value. Inputs: `values`, `value`. Returns the produced val
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2490)
 
 <a id="function-function-minisql-catalog-schema-history-applyalteraddcolumn-function-applyalteraddcolumn-prepared-table-tableschemavalue-statement-bound-src-minisql-catalog-schema-history-ml-622536432"></a>
 ### applyAlterAddColumn
@@ -232,7 +234,7 @@ Applies ALTER TABLE ADD COLUMN without mixing its invariants with other DDL acti
 | `bound` | `dynamic` | — | Bound type and expression information for the statement. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1324)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1429)
 
 <a id="function-function-minisql-catalog-schema-history-applyalteraddconstraint-function-applyalteraddconstraint-prepared-databasepath-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-1313811038"></a>
 ### applyAlterAddConstraint
@@ -252,7 +254,7 @@ Adds one table constraint and schedules any physical index it owns.
 | `statement` | `dynamic` | — | Parsed ADD CONSTRAINT action. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1533)
 
 <a id="function-function-minisql-catalog-schema-history-applyalterdefault-function-applyalterdefault-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-1761557673"></a>
 ### applyAlterDefault
@@ -270,7 +272,7 @@ Applies SET/DROP DEFAULT while preserving identity-column ownership.
 | `statement` | `dynamic` | — | Parsed default-changing action. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1552)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1657)
 
 <a id="function-function-minisql-catalog-schema-history-applyalterdropcolumn-function-applyalterdropcolumn-prepared-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-1224104796"></a>
 ### applyAlterDropColumn
@@ -289,7 +291,7 @@ Applies a metadata-only column drop after dependency and ownership validation.
 | `statement` | `dynamic` | — | Parsed DROP COLUMN action. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1514)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1619)
 
 <a id="function-function-minisql-catalog-schema-history-applyalterdropconstraint-function-applyalterdropconstraint-prepared-databasepath-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-427513902"></a>
 ### applyAlterDropConstraint
@@ -309,7 +311,7 @@ Removes a constraint only after proving that no foreign key depends on it.
 | `statement` | `dynamic` | — | Parsed DROP CONSTRAINT action. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1456)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1561)
 
 <a id="function-function-minisql-catalog-schema-history-applyalternullability-function-applyalternullability-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-1326797977"></a>
 ### applyAlterNullability
@@ -327,7 +329,7 @@ Applies SET/DROP NOT NULL to one existing column.
 | `statement` | `dynamic` | — | Parsed nullability-changing action. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1574)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1679)
 
 <a id="function-function-minisql-catalog-schema-history-applyalterrenamecolumn-function-applyalterrenamecolumn-prepared-table-tableschemavalue-statement-src-minisql-catalog-schema-history-ml-100829268"></a>
 ### applyAlterRenameColumn
@@ -346,7 +348,7 @@ Rewrites every catalog dependency affected by an ALTER TABLE RENAME COLUMN.
 | `statement` | `dynamic` | — | Parsed rename-column action and names. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1450)
 
 <a id="function-function-minisql-catalog-schema-history-applyalterrenametable-function-applyalterrenametable-prepared-table-statement-src-minisql-catalog-schema-history-ml-1092372472"></a>
 ### applyAlterRenameTable
@@ -364,7 +366,7 @@ Applies a table rename and updates incoming foreign-key references.
 | `statement` | `dynamic` | — | Parsed rename-table action and destination name. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1390)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1495)
 
 - [minisql.catalog.schema_history.BackupPlan](Type-minisql-catalog-schema-history-backupplan-347317938.md) — struct
 <a id="function-function-minisql-catalog-schema-history-begin-function-begin-database-src-minisql-catalog-schema-history-ml-1827025393"></a>
@@ -381,7 +383,7 @@ Begins the requested value. Inputs: `database`. Returns the produced value or pr
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1787)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1892)
 
 <a id="function-function-minisql-catalog-schema-history-beginmaintenance-function-beginmaintenance-databasepath-originalpath-temporarypath-backuppath-src-minisql-catalog-schema-history-ml-1608442015"></a>
 ### beginMaintenance
@@ -400,7 +402,7 @@ Begins the maintenance. Inputs: `databasePath`, `originalPath`, `temporaryPath`,
 | `backupPath` | `dynamic` | — | Path associated with backup. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2005)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2110)
 
 <a id="constant-constant-minisql-catalog-schema-history-binding-error-const-binding-error-9020-src-minisql-catalog-schema-history-ml-1096633624"></a>
 ### BINDING_ERROR
@@ -412,7 +414,7 @@ const BINDING_ERROR = 9020
 Defines the binding error constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L39)
 
 <a id="function-function-minisql-catalog-schema-history-buildaltertable-function-buildaltertable-prepared-databasepath-bound-src-minisql-catalog-schema-history-ml-532175697"></a>
 ### buildAlterTable
@@ -430,7 +432,7 @@ Dispatches ALTER TABLE to one action-specific handler.
 | `bound` | `dynamic` | — | Bound ALTER TABLE statement and resolved table metadata. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1585)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1690)
 
 <a id="function-function-minisql-catalog-schema-history-buildcreateindex-function-buildcreateindex-prepared-databasepath-bound-src-minisql-catalog-schema-history-ml-1036460549"></a>
 ### buildCreateIndex
@@ -448,7 +450,7 @@ Builds the create index. Inputs: `prepared`, `databasePath`, `bound`. Returns th
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1822)
 
 <a id="function-function-minisql-catalog-schema-history-buildcreatetable-function-buildcreatetable-prepared-databasepath-bound-src-minisql-catalog-schema-history-ml-273960813"></a>
 ### buildCreateTable
@@ -466,7 +468,7 @@ Builds the create table. Inputs: `prepared`, `databasePath`, `bound`. Returns th
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1606)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1711)
 
 <a id="function-function-minisql-catalog-schema-history-builddroptable-function-builddroptable-prepared-databasepath-bound-src-minisql-catalog-schema-history-ml-1771371165"></a>
 ### buildDropTable
@@ -484,7 +486,7 @@ Builds the drop table. Inputs: `prepared`, `databasePath`, `bound`. Returns the 
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1753)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1858)
 
 <a id="function-function-minisql-catalog-schema-history-bytesequal-function-bytesequal-left-right-src-minisql-catalog-schema-history-ml-445735181"></a>
 ### bytesEqual
@@ -501,7 +503,7 @@ Performs the bytesEqual operation for the minisql catalog schema history module.
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L486)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L591)
 
 <a id="function-function-minisql-catalog-schema-history-catalogtablebyid-function-catalogtablebyid-catalogstate-tableid-src-minisql-catalog-schema-history-ml-2058262789"></a>
 ### catalogTableById
@@ -518,7 +520,7 @@ Performs the catalog table by id operation for this module. Inputs: `catalogStat
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1215)
 
 <a id="function-function-minisql-catalog-schema-history-cleanupcommitted-function-cleanupcommitted-prepared-databasepath-src-minisql-catalog-schema-history-ml-2121321125"></a>
 ### cleanupCommitted
@@ -535,7 +537,7 @@ Performs the cleanup committed operation for this module. Inputs: `prepared`, `d
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2264)
 
 <a id="function-function-minisql-catalog-schema-history-clonecatalog-function-clonecatalog-value-src-minisql-catalog-schema-history-ml-516561281"></a>
 ### cloneCatalog
@@ -551,7 +553,7 @@ Clones the catalog. Inputs: `value`. Returns the produced value or propagates a 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L980)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1085)
 
 <a id="function-function-minisql-catalog-schema-history-clonemetadata-function-clonemetadata-value-src-minisql-catalog-schema-history-ml-814097517"></a>
 ### cloneMetadata
@@ -567,7 +569,7 @@ Clones the metadata. Inputs: `value`. Returns the produced value or propagates a
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L973)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1078)
 
 <a id="function-function-minisql-catalog-schema-history-clonestate-function-clonestate-value-src-minisql-catalog-schema-history-ml-195874509"></a>
 ### cloneState
@@ -583,7 +585,7 @@ Clones the state. Inputs: `value`. Returns the produced value or propagates a st
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L987)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1092)
 
 <a id="constant-constant-minisql-catalog-schema-history-closed-handle-const-closed-handle-9008-src-minisql-catalog-schema-history-ml-871512706"></a>
 ### CLOSED_HANDLE
@@ -595,7 +597,7 @@ const CLOSED_HANDLE = 9008
 Defines the closed handle constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L33)
 
 <a id="function-function-minisql-catalog-schema-history-columnexists-function-columnexists-table-name-src-minisql-catalog-schema-history-ml-1894755735"></a>
 ### columnExists
@@ -612,7 +614,7 @@ Performs the column exists operation for this module. Inputs: `table`, `name`. R
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1060)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1165)
 
 <a id="function-function-minisql-catalog-schema-history-columnindexbyname-function-columnindexbyname-table-name-src-minisql-catalog-schema-history-ml-928178735"></a>
 ### columnIndexByName
@@ -629,7 +631,7 @@ Performs the column index by name operation for this module. Inputs: `table`, `n
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1226)
 
 <a id="function-function-minisql-catalog-schema-history-columnrule-function-columnrule-columnname-defaultsql-identity-src-minisql-catalog-schema-history-ml-1788262704"></a>
 ### columnRule
@@ -647,7 +649,7 @@ Performs the column rule operation for this module. Inputs: `columnName`, `defau
 | `identity` | `dynamic` | — | identity value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L716)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L821)
 
 - [minisql.catalog.schema_history.ColumnRule](Type-minisql-catalog-schema-history-columnrule-1709278571.md) — struct
 <a id="function-function-minisql-catalog-schema-history-commit-function-commit-transaction-src-minisql-catalog-schema-history-ml-763934810"></a>
@@ -664,7 +666,7 @@ Commits the requested value. Inputs: `transaction`. Returns the operation result
 | `transaction` | `dynamic` | — | transaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2346)
 
 <a id="function-function-minisql-catalog-schema-history-commitinternal-function-commitinternal-transaction-stopphase-src-minisql-catalog-schema-history-ml-414010057"></a>
 ### commitInternal
@@ -681,7 +683,7 @@ Commits the internal. Inputs: `transaction`, `stopPhase`. Returns the operation 
 | `stopPhase` | `dynamic` | — | stopPhase value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2280)
 
 <a id="function-function-minisql-catalog-schema-history-commitstoppingafter-function-commitstoppingafter-transaction-phase-src-minisql-catalog-schema-history-ml-2096578427"></a>
 ### commitStoppingAfter
@@ -698,7 +700,7 @@ Commits the stopping after. Inputs: `transaction`, `phase`. Returns the operatio
 | `phase` | `dynamic` | — | phase value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2249)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2354)
 
 <a id="function-function-minisql-catalog-schema-history-componentname-function-componentname-src-minisql-catalog-schema-history-ml-664736376"></a>
 ### componentName
@@ -710,7 +712,7 @@ function componentName()
 Performs the componentName operation for the minisql catalog schema history module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2990)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3099)
 
 <a id="function-function-minisql-catalog-schema-history-constraint-function-constraint-name-kind-columns-expressionsql-referencetable-referencecolumns-ondelete-onupdate-indexid-indexname-src-minisql-catalog-schema-history-ml-49631237"></a>
 ### constraint
@@ -735,7 +737,7 @@ Performs the constraint operation for this module. Inputs: `name`, `kind`, `colu
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L838)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-check-const-constraint-check-3-src-minisql-catalog-schema-history-ml-1977665818"></a>
 ### CONSTRAINT_CHECK
@@ -747,7 +749,7 @@ const CONSTRAINT_CHECK = 3
 Defines the constraint check constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L71)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-foreign-key-const-constraint-foreign-key-4-src-minisql-catalog-schema-history-ml-1312147815"></a>
 ### CONSTRAINT_FOREIGN_KEY
@@ -759,7 +761,7 @@ const CONSTRAINT_FOREIGN_KEY = 4
 Defines the constraint foreign key constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L73)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-index-const-constraint-index-5-src-minisql-catalog-schema-history-ml-682014112"></a>
 ### CONSTRAINT_INDEX
@@ -771,7 +773,7 @@ const CONSTRAINT_INDEX = 5
 Defines the constraint index constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L73)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L75)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-primary-key-const-constraint-primary-key-1-src-minisql-catalog-schema-history-ml-808067456"></a>
 ### CONSTRAINT_PRIMARY_KEY
@@ -783,7 +785,7 @@ const CONSTRAINT_PRIMARY_KEY = 1
 Defines the constraint primary key constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L67)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-unique-const-constraint-unique-2-src-minisql-catalog-schema-history-ml-879364815"></a>
 ### CONSTRAINT_UNIQUE
@@ -795,7 +797,7 @@ const CONSTRAINT_UNIQUE = 2
 Defines the constraint unique constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L69)
 
 <a id="constant-constant-minisql-catalog-schema-history-constraint-violation-const-constraint-violation-9021-src-minisql-catalog-schema-history-ml-1173263779"></a>
 ### CONSTRAINT_VIOLATION
@@ -807,7 +809,7 @@ const CONSTRAINT_VIOLATION = 9021
 Defines the constraint violation constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L41)
 
 - [minisql.catalog.schema_history.ConstraintDefinition](Type-minisql-catalog-schema-history-constraintdefinition-1280359101.md) — struct
 <a id="function-function-minisql-catalog-schema-history-constraintfromast-function-constraintfromast-prepared-table-tableschemavalue-source-src-minisql-catalog-schema-history-ml-834402698"></a>
@@ -827,7 +829,7 @@ Performs the constraint from ast operation for this module. Inputs: `prepared`, 
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1403)
 
 <a id="function-function-minisql-catalog-schema-history-constraintnameexists-function-constraintnameexists-tableschemavalue-name-src-minisql-catalog-schema-history-ml-765994709"></a>
 ### constraintNameExists
@@ -844,7 +846,7 @@ Performs the constraint name exists operation for this module. Inputs: `tableSch
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1268)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1373)
 
 <a id="function-function-minisql-catalog-schema-history-constraintsfor-function-constraintsfor-databasepath-databaseid-tableid-src-minisql-catalog-schema-history-ml-2077175127"></a>
 ### constraintsFor
@@ -862,7 +864,7 @@ Performs the constraints for operation for this module. Inputs: `databasePath`, 
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2375)
 
 <a id="function-function-minisql-catalog-schema-history-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-catalog-schema-history-ml-181565095"></a>
 ### copyExact
@@ -882,7 +884,7 @@ Performs the copyExact operation for the minisql catalog schema history module. 
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L502)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L607)
 
 <a id="constant-constant-minisql-catalog-schema-history-corrupt-data-const-corrupt-data-9004-src-minisql-catalog-schema-history-ml-1770692676"></a>
 ### CORRUPT_DATA
@@ -894,7 +896,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L29)
 
 - [minisql.catalog.schema_history.CreateFilePlan](Type-minisql-catalog-schema-history-createfileplan-647574662.md) — struct
 <a id="function-function-minisql-catalog-schema-history-createplannedfiles-function-createplannedfiles-transaction-prepared-src-minisql-catalog-schema-history-ml-991839909"></a>
@@ -912,7 +914,7 @@ Creates the planned files. Inputs: `transaction`, `prepared`. Returns the produc
 | `prepared` | `dynamic` | — | prepared value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2231)
 
 <a id="function-function-minisql-catalog-schema-history-createstate-function-createstate-databaseid-src-minisql-catalog-schema-history-ml-1742306546"></a>
 ### createState
@@ -928,7 +930,7 @@ Creates the state. Inputs: `databaseId`. Returns the produced value or propagate
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L633)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L738)
 
 <a id="constant-constant-minisql-catalog-schema-history-ddl-state-const-ddl-state-9023-src-minisql-catalog-schema-history-ml-1800582437"></a>
 ### DDL_STATE
@@ -940,7 +942,7 @@ const DDL_STATE = 9023
 Defines the ddl state constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L43)
 
 - [minisql.catalog.schema_history.DdlAction](Type-minisql-catalog-schema-history-ddlaction-125467819.md) — struct
 - [minisql.catalog.schema_history.DdlJournal](Type-minisql-catalog-schema-history-ddljournal-1881557492.md) — struct
@@ -959,7 +961,7 @@ Keep the qualified public API schema_history.decode(...), while all internal cal
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L915)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1020)
 
 - [minisql.catalog.schema_history.DecodedExtensionEntry](Type-minisql-catalog-schema-history-decodedextensionentry-1880168724.md) — struct
 - [minisql.catalog.schema_history.DecodedString](Type-minisql-catalog-schema-history-decodedstring-1998070114.md) — struct
@@ -978,7 +980,7 @@ Decodes the extensions. Inputs: `encoded`, `databaseId`. Returns the produced va
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2582)
 
 <a id="function-function-minisql-catalog-schema-history-decodegeneratedextensionentry-function-decodegeneratedextensionentry-payload-offset-payloadlength-src-minisql-catalog-schema-history-ml-2042518695"></a>
 ### decodeGeneratedExtensionEntry
@@ -996,7 +998,7 @@ Decodes the generated extension entry. Inputs: `payload`, `offset`, `payloadLeng
 | `payloadLength` | `dynamic` | — | payloadLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2442)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2547)
 
 <a id="function-function-minisql-catalog-schema-history-decodejournal-function-decodejournal-encoded-src-minisql-catalog-schema-history-ml-734385418"></a>
 ### decodeJournal
@@ -1012,7 +1014,7 @@ Decodes the journal. Inputs: `encoded`. Returns the produced value or propagates
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1914)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2019)
 
 <a id="function-function-minisql-catalog-schema-history-decodemaintenance-function-decodemaintenance-encoded-src-minisql-catalog-schema-history-ml-338720562"></a>
 ### decodeMaintenance
@@ -1028,7 +1030,7 @@ Decodes the maintenance. Inputs: `encoded`. Returns the produced value or propag
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1977)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2082)
 
 <a id="function-function-minisql-catalog-schema-history-decodenative-function-decodenative-words-operation-name-src-minisql-catalog-schema-history-ml-2054156915"></a>
 ### decodeNative
@@ -1046,7 +1048,7 @@ Decodes native for the minisql catalog schema history workflow. Inputs: `words`,
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L840)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L945)
 
 <a id="function-function-minisql-catalog-schema-history-decodesequenceextensionentry-function-decodesequenceextensionentry-payload-offset-payloadlength-src-minisql-catalog-schema-history-ml-1944150447"></a>
 ### decodeSequenceExtensionEntry
@@ -1064,7 +1066,7 @@ Decodes the sequence extension entry. Inputs: `payload`, `offset`, `payloadLengt
 | `payloadLength` | `dynamic` | — | payloadLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2420)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2525)
 
 <a id="function-function-minisql-catalog-schema-history-decodestate-function-decodestate-encoded-src-minisql-catalog-schema-history-ml-676852886"></a>
 ### decodeState
@@ -1080,7 +1082,7 @@ Decodes the state. Inputs: `encoded`. Returns the produced value or propagates a
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L849)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L954)
 
 <a id="function-function-minisql-catalog-schema-history-decodetriggerextensionentry-function-decodetriggerextensionentry-payload-offset-payloadlength-src-minisql-catalog-schema-history-ml-508686413"></a>
 ### decodeTriggerExtensionEntry
@@ -1098,7 +1100,7 @@ Decodes the trigger extension entry. Inputs: `payload`, `offset`, `payloadLength
 | `payloadLength` | `dynamic` | — | payloadLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2563)
 
 <a id="function-function-minisql-catalog-schema-history-decodeviewextensionentry-function-decodeviewextensionentry-payload-offset-payloadlength-src-minisql-catalog-schema-history-ml-2051589179"></a>
 ### decodeViewExtensionEntry
@@ -1116,7 +1118,7 @@ Decodes the view extension entry. Inputs: `payload`, `offset`, `payloadLength`. 
 | `payloadLength` | `dynamic` | — | payloadLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2403)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2508)
 
 <a id="function-function-minisql-catalog-schema-history-deleteifexists-function-deleteifexists-path-src-minisql-catalog-schema-history-ml-975983113"></a>
 ### deleteIfExists
@@ -1132,7 +1134,7 @@ Deletes the if exists. Inputs: `path`. Returns the produced value or propagates 
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2071)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2176)
 
 <a id="function-function-minisql-catalog-schema-history-dropprocedure-function-dropprocedure-databasepath-databaseid-name-ifexists-src-minisql-catalog-schema-history-ml-1721012554"></a>
 ### dropProcedure
@@ -1151,7 +1153,7 @@ Drops a stored procedure without exposing its internal extension marker.
 | `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2807)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2916)
 
 <a id="function-function-minisql-catalog-schema-history-dropschema-function-dropschema-databasepath-databaseid-name-ifexists-src-minisql-catalog-schema-history-ml-1904935178"></a>
 ### dropSchema
@@ -1170,7 +1172,7 @@ Drops an empty user schema and rejects built-in or populated namespaces.
 | `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2709)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2818)
 
 <a id="function-function-minisql-catalog-schema-history-dropsequence-function-dropsequence-databasepath-databaseid-name-ifexists-src-minisql-catalog-schema-history-ml-447282826"></a>
 ### dropSequence
@@ -1189,7 +1191,7 @@ Drops the sequence. Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Re
 | `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2853)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2962)
 
 <a id="function-function-minisql-catalog-schema-history-droptrigger-function-droptrigger-databasepath-databaseid-name-ifexists-src-minisql-catalog-schema-history-ml-156717852"></a>
 ### dropTrigger
@@ -1208,7 +1210,7 @@ Drops the trigger. Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Ret
 | `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2952)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3061)
 
 <a id="function-function-minisql-catalog-schema-history-dropview-function-dropview-databasepath-databaseid-name-ifexists-src-minisql-catalog-schema-history-ml-667399654"></a>
 ### dropView
@@ -1227,7 +1229,7 @@ Drops the view. Inputs: `databasePath`, `databaseId`, `name`, `ifExists`. Return
 | `ifExists` | `dynamic` | — | ifExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2766)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2875)
 
 <a id="function-function-minisql-catalog-schema-history-encode-function-encode-state-src-minisql-catalog-schema-history-ml-565610641"></a>
 ### encode
@@ -1243,7 +1245,7 @@ Encodes encode for the minisql catalog schema history workflow. Inputs: `state`.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L786)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L891)
 
 <a id="function-function-minisql-catalog-schema-history-encodedconstraintsize-function-encodedconstraintsize-value-src-minisql-catalog-schema-history-ml-1166884589"></a>
 ### encodedConstraintSize
@@ -1259,7 +1261,7 @@ Encodes the d constraint size. Inputs: `value`. Returns the produced value or pr
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L765)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L870)
 
 <a id="function-function-minisql-catalog-schema-history-encodedrulesize-function-encodedrulesize-rule-src-minisql-catalog-schema-history-ml-338488940"></a>
 ### encodedRuleSize
@@ -1275,7 +1277,7 @@ Encodes the d rule size. Inputs: `rule`. Returns the produced value or propagate
 | `rule` | `dynamic` | — | rule value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L758)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L863)
 
 <a id="function-function-minisql-catalog-schema-history-encodedtablesize-function-encodedtablesize-table-src-minisql-catalog-schema-history-ml-1429407058"></a>
 ### encodedTableSize
@@ -1291,7 +1293,7 @@ Encodes the d table size. Inputs: `table`. Returns the produced value or propaga
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L772)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L877)
 
 <a id="function-function-minisql-catalog-schema-history-encodeextensions-function-encodeextensions-state-src-minisql-catalog-schema-history-ml-751778581"></a>
 ### encodeExtensions
@@ -1307,7 +1309,7 @@ Encodes the extensions. Inputs: `state`. Returns the produced value or propagate
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2409)
 
 <a id="function-function-minisql-catalog-schema-history-encodejournal-function-encodejournal-value-src-minisql-catalog-schema-history-ml-1359877259"></a>
 ### encodeJournal
@@ -1323,7 +1325,7 @@ Encodes the journal. Inputs: `value`. Returns the produced value or propagates a
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1885)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1990)
 
 <a id="function-function-minisql-catalog-schema-history-encodemaintenance-function-encodemaintenance-value-src-minisql-catalog-schema-history-ml-17575403"></a>
 ### encodeMaintenance
@@ -1339,7 +1341,7 @@ Encodes the maintenance. Inputs: `value`. Returns the produced value or propagat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1960)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2065)
 
 <a id="function-function-minisql-catalog-schema-history-ensurepreparedtableschema-function-ensurepreparedtableschema-prepared-table-src-minisql-catalog-schema-history-ml-1718250003"></a>
 ### ensurePreparedTableSchema
@@ -1356,7 +1358,7 @@ Ensures the prepared table schema. Inputs: `prepared`, `table`. Returns success 
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1384)
 
 <a id="function-function-minisql-catalog-schema-history-expressionreferencescolumn-function-expressionreferencescolumn-expression-columnname-src-minisql-catalog-schema-history-ml-530100237"></a>
 ### expressionReferencesColumn
@@ -1373,7 +1375,7 @@ Reports whether a persisted row expression refers to one unqualified column.
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1218)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1323)
 
 <a id="function-function-minisql-catalog-schema-history-expressionsqlreferencescolumn-function-expressionsqlreferencescolumn-sqltext-columnname-src-minisql-catalog-schema-history-ml-1069560452"></a>
 ### expressionSqlReferencesColumn
@@ -1390,7 +1392,7 @@ Parses canonical SQL before checking a partial-index column dependency.
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1340)
 
 <a id="constant-constant-minisql-catalog-schema-history-extension-kind-const-extension-kind-43-src-minisql-catalog-schema-history-ml-1328457636"></a>
 ### EXTENSION_KIND
@@ -1402,7 +1404,7 @@ const EXTENSION_KIND = 43
 Defines the extension kind constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L56)
 
 <a id="function-function-minisql-catalog-schema-history-extensionmagic-function-extensionmagic-src-minisql-catalog-schema-history-ml-1969914444"></a>
 ### extensionMagic
@@ -1414,7 +1416,7 @@ function extensionMagic()
 Performs the extension magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L386)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L491)
 
 <a id="function-function-minisql-catalog-schema-history-extensionpath-function-extensionpath-databasepath-src-minisql-catalog-schema-history-ml-1738073634"></a>
 ### extensionPath
@@ -1430,7 +1432,7 @@ Performs the extension path operation for this module. Inputs: `databasePath`. R
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L414)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L519)
 
 <a id="function-function-minisql-catalog-schema-history-extensionrecordsize-function-extensionrecordsize-state-src-minisql-catalog-schema-history-ml-1549843543"></a>
 ### extensionRecordSize
@@ -1446,7 +1448,7 @@ Performs the extension record size operation for this module. Inputs: `state`. R
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2284)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2389)
 
 <a id="function-function-minisql-catalog-schema-history-fail-function-fail-code-operation-message-src-minisql-catalog-schema-history-ml-1927139827"></a>
 ### fail
@@ -1464,7 +1466,7 @@ Performs the fail operation for the minisql catalog schema history module. Input
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L467)
 
 <a id="function-function-minisql-catalog-schema-history-findconstraint-function-findconstraint-tableschemavalue-name-src-minisql-catalog-schema-history-ml-1481441665"></a>
 ### findConstraint
@@ -1481,7 +1483,7 @@ Finds the constraint. Inputs: `tableSchemaValue`, `name`. Returns the produced v
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L962)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1067)
 
 <a id="function-function-minisql-catalog-schema-history-findprocedure-function-findprocedure-state-name-src-minisql-catalog-schema-history-ml-116056544"></a>
 ### findProcedure
@@ -1498,7 +1500,7 @@ Finds a persisted stored procedure by its SQL-visible name.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2787)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2896)
 
 <a id="function-function-minisql-catalog-schema-history-findsequence-function-findsequence-state-name-src-minisql-catalog-schema-history-ml-132602032"></a>
 ### findSequence
@@ -1515,7 +1517,7 @@ Finds the sequence. Inputs: `state`, `name`. Returns the produced value or propa
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2815)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2924)
 
 <a id="function-function-minisql-catalog-schema-history-findtableschema-function-findtableschema-state-tableid-src-minisql-catalog-schema-history-ml-2038658554"></a>
 ### findTableSchema
@@ -1532,7 +1534,7 @@ Finds the table schema. Inputs: `state`, `tableId`. Returns the produced value o
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L950)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1055)
 
 <a id="function-function-minisql-catalog-schema-history-findview-function-findview-state-name-src-minisql-catalog-schema-history-ml-705498328"></a>
 ### findView
@@ -1549,7 +1551,7 @@ Finds the view. Inputs: `state`, `name`. Returns the produced value or propagate
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2587)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2696)
 
 <a id="function-function-minisql-catalog-schema-history-finishmaintenance-function-finishmaintenance-databasepath-value-src-minisql-catalog-schema-history-ml-926727479"></a>
 ### finishMaintenance
@@ -1566,7 +1568,7 @@ Performs the finish maintenance operation for this module. Inputs: `databasePath
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2027)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2132)
 
 <a id="constant-constant-minisql-catalog-schema-history-format-version-const-format-version-1-src-minisql-catalog-schema-history-ml-912566412"></a>
 ### FORMAT_VERSION
@@ -1578,7 +1580,7 @@ const FORMAT_VERSION = 1
 Defines the format version constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L48)
 
 <a id="function-function-minisql-catalog-schema-history-generatedcolumndefinition-function-generatedcolumndefinition-tableid-columnname-expressionsql-stored-src-minisql-catalog-schema-history-ml-38611347"></a>
 ### generatedColumnDefinition
@@ -1597,7 +1599,7 @@ Performs the generated column definition operation for this module. Inputs: `tab
 | `stored` | `dynamic` | — | stored value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L691)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L796)
 
 - [minisql.catalog.schema_history.GeneratedColumnDefinition](Type-minisql-catalog-schema-history-generatedcolumndefinition-318283151.md) — struct
 <a id="function-function-minisql-catalog-schema-history-generatedconstraintname-function-generatedconstraintname-prefix-tablename-suffix-src-minisql-catalog-schema-history-ml-1293576214"></a>
@@ -1616,7 +1618,7 @@ Performs the generated constraint name operation for this module. Inputs: `prefi
 | `suffix` | `dynamic` | — | suffix value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1052)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1157)
 
 <a id="function-function-minisql-catalog-schema-history-generatedfortable-function-generatedfortable-state-tableid-src-minisql-catalog-schema-history-ml-3719838"></a>
 ### generatedForTable
@@ -1633,7 +1635,7 @@ Performs the generated for table operation for this module. Inputs: `state`, `ta
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2899)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3008)
 
 <a id="function-function-minisql-catalog-schema-history-indexexpressionkey-function-indexexpressionkey-sqltext-src-minisql-catalog-schema-history-ml-1101182671"></a>
 ### indexExpressionKey
@@ -1649,7 +1651,7 @@ Encodes a canonical expression in the backwards-compatible index key array.
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1152)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1257)
 
 <a id="function-function-minisql-catalog-schema-history-indexexpressionprefix-function-indexexpressionprefix-src-minisql-catalog-schema-history-ml-1241826704"></a>
 ### indexExpressionPrefix
@@ -1661,7 +1663,7 @@ function indexExpressionPrefix()
 Returns a binary catalog marker that cannot collide with a SQL identifier accepted from normal text input. Keeping the marker out of the schema format itself preserves v1 compatibility for older column-only index histories.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1251)
 
 <a id="function-function-minisql-catalog-schema-history-indexexpressionsql-function-indexexpressionsql-value-src-minisql-catalog-schema-history-ml-1094178581"></a>
 ### indexExpressionSql
@@ -1677,7 +1679,7 @@ Returns canonical SQL from an expression key or an empty string otherwise.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1272)
 
 <a id="function-function-minisql-catalog-schema-history-indexfilepath-function-indexfilepath-databasepath-indexid-src-minisql-catalog-schema-history-ml-628284249"></a>
 ### indexFilePath
@@ -1694,7 +1696,7 @@ Performs the index file path operation for this module. Inputs: `databasePath`, 
 | `indexId` | `dynamic` | — | Identifier of index. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L422)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L527)
 
 <a id="function-function-minisql-catalog-schema-history-indexkeydisplay-function-indexkeydisplay-value-src-minisql-catalog-schema-history-ml-881995883"></a>
 ### indexKeyDisplay
@@ -1710,7 +1712,7 @@ Returns the user-facing key text without the internal compatibility marker.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1280)
 
 <a id="constant-constant-minisql-catalog-schema-history-invalid-argument-const-invalid-argument-9001-src-minisql-catalog-schema-history-ml-142196997"></a>
 ### INVALID_ARGUMENT
@@ -1722,7 +1724,7 @@ const INVALID_ARGUMENT = 9001
 Durable schema/constraint sidecar and transactional DDL journal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L25)
 
 <a id="constant-constant-minisql-catalog-schema-history-io-failure-const-io-failure-9005-src-minisql-catalog-schema-history-ml-769628925"></a>
 ### IO_FAILURE
@@ -1734,7 +1736,7 @@ const IO_FAILURE = 9005
 Defines the io failure constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L31)
 
 <a id="function-function-minisql-catalog-schema-history-isconstraintdefinition-function-isconstraintdefinition-value-src-minisql-catalog-schema-history-ml-1245699325"></a>
 ### isConstraintDefinition
@@ -1750,7 +1752,7 @@ Evaluates whether the supplied input satisfies the constraint definition predica
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L436)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L541)
 
 <a id="function-function-minisql-catalog-schema-history-isddltransaction-function-isddltransaction-value-src-minisql-catalog-schema-history-ml-1315201869"></a>
 ### isDdlTransaction
@@ -1766,7 +1768,7 @@ Evaluates whether the supplied input satisfies the ddl transaction predicate. In
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L450)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L555)
 
 <a id="function-function-minisql-catalog-schema-history-isgeneratedcolumndefinition-function-isgeneratedcolumndefinition-value-src-minisql-catalog-schema-history-ml-1967682737"></a>
 ### isGeneratedColumnDefinition
@@ -1782,7 +1784,7 @@ Evaluates whether the supplied input satisfies the generated column definition p
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L471)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L576)
 
 <a id="function-function-minisql-catalog-schema-history-isimplemented-function-isimplemented-src-minisql-catalog-schema-history-ml-689189792"></a>
 ### isImplemented
@@ -1794,7 +1796,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql catalog schema history module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3002)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3111)
 
 <a id="function-function-minisql-catalog-schema-history-isindexexpressionkey-function-isindexexpressionkey-value-src-minisql-catalog-schema-history-ml-269773501"></a>
 ### isIndexExpressionKey
@@ -1810,7 +1812,7 @@ Reports whether one persisted index key is a canonical expression marker.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1264)
 
 <a id="function-function-minisql-catalog-schema-history-isinternalextensionviewname-function-isinternalextensionviewname-name-src-minisql-catalog-schema-history-ml-1984832653"></a>
 ### isInternalExtensionViewName
@@ -1826,7 +1828,7 @@ Returns whether a view extension entry is internal rather than SQL-visible.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2641)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2750)
 
 <a id="function-function-minisql-catalog-schema-history-ismaintenancejournal-function-ismaintenancejournal-value-src-minisql-catalog-schema-history-ml-1031052765"></a>
 ### isMaintenanceJournal
@@ -1842,7 +1844,7 @@ Evaluates whether the supplied input satisfies the maintenance journal predicate
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1953)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2058)
 
 <a id="function-function-minisql-catalog-schema-history-isproceduremarkername-function-isproceduremarkername-name-src-minisql-catalog-schema-history-ml-1918470261"></a>
 ### isProcedureMarkerName
@@ -1858,7 +1860,7 @@ Returns whether a view extension entry stores procedure metadata.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2620)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2729)
 
 <a id="function-function-minisql-catalog-schema-history-isschemamarkername-function-isschemamarkername-name-src-minisql-catalog-schema-history-ml-2111421029"></a>
 ### isSchemaMarkerName
@@ -1874,7 +1876,7 @@ Returns whether a persisted view entry is an internal schema marker.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2711)
 
 <a id="function-function-minisql-catalog-schema-history-isschemastate-function-isschemastate-value-src-minisql-catalog-schema-history-ml-379350653"></a>
 ### isSchemaState
@@ -1890,7 +1892,7 @@ Evaluates whether the supplied input satisfies the schema state predicate. Input
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L429)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L534)
 
 <a id="function-function-minisql-catalog-schema-history-issequencedefinition-function-issequencedefinition-value-src-minisql-catalog-schema-history-ml-2068515321"></a>
 ### isSequenceDefinition
@@ -1906,7 +1908,7 @@ Evaluates whether the supplied input satisfies the sequence definition predicate
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L464)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L569)
 
 <a id="function-function-minisql-catalog-schema-history-istableschema-function-istableschema-value-src-minisql-catalog-schema-history-ml-1706714715"></a>
 ### isTableSchema
@@ -1922,7 +1924,7 @@ Evaluates whether the supplied input satisfies the table schema predicate. Input
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L443)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L548)
 
 <a id="function-function-minisql-catalog-schema-history-istriggerdefinition-function-istriggerdefinition-value-src-minisql-catalog-schema-history-ml-2128594211"></a>
 ### isTriggerDefinition
@@ -1938,7 +1940,7 @@ Evaluates whether the supplied input satisfies the trigger definition predicate.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L478)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L583)
 
 <a id="function-function-minisql-catalog-schema-history-isviewdefinition-function-isviewdefinition-value-src-minisql-catalog-schema-history-ml-345997677"></a>
 ### isViewDefinition
@@ -1954,7 +1956,7 @@ Evaluates whether the supplied input satisfies the view definition predicate. In
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L457)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L562)
 
 <a id="constant-constant-minisql-catalog-schema-history-journal-committed-const-journal-committed-2-src-minisql-catalog-schema-history-ml-675296683"></a>
 ### JOURNAL_COMMITTED
@@ -1966,7 +1968,7 @@ const JOURNAL_COMMITTED = 2
 Defines the journal committed constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L60)
 
 <a id="constant-constant-minisql-catalog-schema-history-journal-kind-const-journal-kind-41-src-minisql-catalog-schema-history-ml-1156185174"></a>
 ### JOURNAL_KIND
@@ -1978,7 +1980,7 @@ const JOURNAL_KIND = 41
 Defines the journal kind constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L52)
 
 <a id="constant-constant-minisql-catalog-schema-history-journal-prepared-const-journal-prepared-1-src-minisql-catalog-schema-history-ml-1872826398"></a>
 ### JOURNAL_PREPARED
@@ -1990,7 +1992,7 @@ const JOURNAL_PREPARED = 1
 Defines the journal prepared constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L58)
 
 <a id="function-function-minisql-catalog-schema-history-journalarraysize-function-journalarraysize-values-src-minisql-catalog-schema-history-ml-1785157758"></a>
 ### journalArraySize
@@ -2006,7 +2008,7 @@ Performs the journal array size operation for this module. Inputs: `values`. Ret
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1874)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1979)
 
 <a id="function-function-minisql-catalog-schema-history-journalmagic-function-journalmagic-src-minisql-catalog-schema-history-ml-1754591632"></a>
 ### journalMagic
@@ -2018,7 +2020,7 @@ function journalMagic()
 Returns a fresh copy of the DDL-journal magic bytes. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L374)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L479)
 
 <a id="function-function-minisql-catalog-schema-history-journalpath-function-journalpath-databasepath-src-minisql-catalog-schema-history-ml-1605021578"></a>
 ### journalPath
@@ -2034,7 +2036,7 @@ Performs the journal path operation for this module. Inputs: `databasePath`. Ret
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L400)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L505)
 
 <a id="function-function-minisql-catalog-schema-history-loadextensionsinto-function-loadextensionsinto-databasepath-state-src-minisql-catalog-schema-history-ml-136851931"></a>
 ### loadExtensionsInto
@@ -2051,7 +2053,7 @@ Loads the extensions into. Inputs: `databasePath`, `state`. Returns the produced
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2554)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2659)
 
 <a id="function-function-minisql-catalog-schema-history-loadorcreate-function-loadorcreate-databasepath-databaseid-src-minisql-catalog-schema-history-ml-21699014"></a>
 ### loadOrCreate
@@ -2068,7 +2070,7 @@ Loads the or create. Inputs: `databasePath`, `databaseId`. Returns the produced 
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L933)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1038)
 
 <a id="constant-constant-minisql-catalog-schema-history-maintenance-committed-const-maintenance-committed-2-src-minisql-catalog-schema-history-ml-1096663643"></a>
 ### MAINTENANCE_COMMITTED
@@ -2080,7 +2082,7 @@ const MAINTENANCE_COMMITTED = 2
 Defines the maintenance committed constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L64)
 
 <a id="constant-constant-minisql-catalog-schema-history-maintenance-kind-const-maintenance-kind-42-src-minisql-catalog-schema-history-ml-1624590903"></a>
 ### MAINTENANCE_KIND
@@ -2092,7 +2094,7 @@ const MAINTENANCE_KIND = 42
 Defines the maintenance kind constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L54)
 
 <a id="constant-constant-minisql-catalog-schema-history-maintenance-prepared-const-maintenance-prepared-1-src-minisql-catalog-schema-history-ml-164984646"></a>
 ### MAINTENANCE_PREPARED
@@ -2104,7 +2106,7 @@ const MAINTENANCE_PREPARED = 1
 Defines the maintenance prepared constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L62)
 
 - [minisql.catalog.schema_history.MaintenanceJournal](Type-minisql-catalog-schema-history-maintenancejournal-1976737073.md) — struct
 <a id="function-function-minisql-catalog-schema-history-maintenancemagic-function-maintenancemagic-src-minisql-catalog-schema-history-ml-1839027448"></a>
@@ -2117,7 +2119,7 @@ function maintenanceMagic()
 Returns a fresh copy of the maintenance-journal magic bytes. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L380)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L485)
 
 <a id="function-function-minisql-catalog-schema-history-maintenancepath-function-maintenancepath-databasepath-src-minisql-catalog-schema-history-ml-289429938"></a>
 ### maintenancePath
@@ -2133,7 +2135,7 @@ Performs the maintenance path operation for this module. Inputs: `databasePath`.
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L407)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L512)
 
 <a id="function-function-minisql-catalog-schema-history-markmaintenancecommitted-function-markmaintenancecommitted-databasepath-value-src-minisql-catalog-schema-history-ml-1494544011"></a>
 ### markMaintenanceCommitted
@@ -2150,7 +2152,7 @@ Marks the maintenance committed. Inputs: `databasePath`, `value`. Returns the pr
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2016)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2121)
 
 <a id="function-function-minisql-catalog-schema-history-nextextensionid-function-nextextensionid-state-src-minisql-catalog-schema-history-ml-71319231"></a>
 ### nextExtensionId
@@ -2159,14 +2161,14 @@ Marks the maintenance committed. Inputs: `databasePath`, `value`. Returns the pr
 function nextExtensionId(state)
 ```
 
-Performs the next extension id operation for this module. Inputs: `state`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Allocates an extension identifier above the persisted generation high-water mark. The caller increments and persists the generation with the new definition. Dropping the highest live object must never allow its identifier to be reused: procedure grants may still refer to that identifier after interrupted cleanup. Existing larger identifiers raise the high-water mark before allocation.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2569)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2677)
 
 <a id="function-function-minisql-catalog-schema-history-nextsequence-function-nextsequence-databasepath-databaseid-name-src-minisql-catalog-schema-history-ml-1473937519"></a>
 ### nextSequence
@@ -2184,7 +2186,7 @@ Performs the next sequence operation for this module. Inputs: `databasePath`, `d
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2876)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2985)
 
 <a id="constant-constant-minisql-catalog-schema-history-object-exists-const-object-exists-9013-src-minisql-catalog-schema-history-ml-1250456358"></a>
 ### OBJECT_EXISTS
@@ -2196,7 +2198,7 @@ const OBJECT_EXISTS = 9013
 Defines the object exists constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L35)
 
 <a id="constant-constant-minisql-catalog-schema-history-object-not-found-const-object-not-found-9014-src-minisql-catalog-schema-history-ml-1052094797"></a>
 ### OBJECT_NOT_FOUND
@@ -2208,7 +2210,7 @@ const OBJECT_NOT_FOUND = 9014
 Defines the object not found constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L37)
 
 <a id="function-function-minisql-catalog-schema-history-objectinschema-function-objectinschema-objectname-schemaname-src-minisql-catalog-schema-history-ml-1130142132"></a>
 ### objectInSchema
@@ -2225,7 +2227,7 @@ Returns true when an object name starts with the exact `schema.` prefix.
 | `schemaName` | `dynamic` | — | schemaName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2648)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2757)
 
 <a id="function-function-minisql-catalog-schema-history-prepare-function-prepare-transaction-src-minisql-catalog-schema-history-ml-795164268"></a>
 ### prepare
@@ -2241,9 +2243,21 @@ Performs the prepare operation for this module. Inputs: `transaction`. Returns t
 | `transaction` | `dynamic` | — | transaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1850)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1955)
 
 - [minisql.catalog.schema_history.PreparedDdl](Type-minisql-catalog-schema-history-preparedddl-1982290018.md) — struct
+<a id="constant-constant-minisql-catalog-schema-history-procedure-context-v1-const-procedure-context-v1-minisql-routine-context-v1-src-minisql-catalog-schema-history-ml-1539190837"></a>
+### PROCEDURE_CONTEXT_V1
+
+```ml
+const PROCEDURE_CONTEXT_V1 = "__minisql_routine_context_v1__"
+```
+
+Tags optional creation-time execution context following the V2 identity.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L118)
+
 <a id="constant-constant-minisql-catalog-schema-history-procedure-marker-prefix-const-procedure-marker-prefix-minisql-procedure-src-minisql-catalog-schema-history-ml-1810854528"></a>
 ### PROCEDURE_MARKER_PREFIX
 
@@ -2254,7 +2268,19 @@ const PROCEDURE_MARKER_PREFIX = "__minisql_procedure__"
 Defines the procedure marker prefix constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L114)
+
+<a id="constant-constant-minisql-catalog-schema-history-procedure-metadata-v2-const-procedure-metadata-v2-minisql-routine-metadata-v2-src-minisql-catalog-schema-history-ml-2059182868"></a>
+### PROCEDURE_METADATA_V2
+
+```ml
+const PROCEDURE_METADATA_V2 = "__minisql_routine_metadata_v2__"
+```
+
+Marks canonical procedure SQL and the durable definer identity.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L116)
 
 <a id="function-function-minisql-catalog-schema-history-proceduremarkername-function-proceduremarkername-name-src-minisql-catalog-schema-history-ml-781738053"></a>
 ### procedureMarkerName
@@ -2270,7 +2296,7 @@ Encodes a stored procedure in the durable extension namespace.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2614)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2723)
 
 <a id="function-function-minisql-catalog-schema-history-procedureobjectname-function-procedureobjectname-markername-src-minisql-catalog-schema-history-ml-1296164969"></a>
 ### procedureObjectName
@@ -2286,7 +2312,7 @@ Decodes the SQL-visible procedure name from an internal marker.
 | `markerName` | `dynamic` | — | markerName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2632)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2741)
 
 <a id="function-function-minisql-catalog-schema-history-publishfilemoves-function-publishfilemoves-prepared-src-minisql-catalog-schema-history-ml-1652662439"></a>
 ### publishFileMoves
@@ -2302,7 +2328,7 @@ Performs the publish file moves operation for this module. Inputs: `prepared`. R
 | `prepared` | `dynamic` | — | prepared value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2248)
 
 <a id="function-function-minisql-catalog-schema-history-putprocedure-function-putprocedure-databasepath-databaseid-name-bodysql-parameternames-replace-src-minisql-catalog-schema-history-ml-663289078"></a>
 ### putProcedure
@@ -2323,7 +2349,7 @@ Creates or replaces a stored procedure body and ordered parameter names.
 | `replace` | `dynamic` | — | replace value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2798)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2907)
 
 <a id="function-function-minisql-catalog-schema-history-putschema-function-putschema-databasepath-databaseid-name-ifnotexists-src-minisql-catalog-schema-history-ml-807590599"></a>
 ### putSchema
@@ -2342,7 +2368,7 @@ Creates a durable empty schema namespace using the extension sidecar.
 | `ifNotExists` | `dynamic` | — | ifNotExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2690)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2799)
 
 <a id="function-function-minisql-catalog-schema-history-putsequence-function-putsequence-databasepath-databaseid-name-startvalue-incrementvalue-minimumvalue-maximumvalue-cycle-ifnotexists-src-minisql-catalog-schema-history-ml-1507368614"></a>
 ### putSequence
@@ -2366,7 +2392,7 @@ Performs the put sequence operation for this module. Inputs: `databasePath`, `da
 | `ifNotExists` | `dynamic` | — | ifNotExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2833)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2942)
 
 <a id="function-function-minisql-catalog-schema-history-puttrigger-function-puttrigger-databasepath-databaseid-name-tableid-timing-eventtype-targetcolumn-expressionsql-ifnotexists-src-minisql-catalog-schema-history-ml-290308971"></a>
 ### putTrigger
@@ -2390,7 +2416,7 @@ Performs the put trigger operation for this module. Inputs: `databasePath`, `dat
 | `ifNotExists` | `dynamic` | — | ifNotExists value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2931)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3040)
 
 <a id="function-function-minisql-catalog-schema-history-putview-function-putview-databasepath-databaseid-name-sqltext-columnnames-replace-src-minisql-catalog-schema-history-ml-2093970288"></a>
 ### putView
@@ -2411,7 +2437,7 @@ Performs the put view operation for this module. Inputs: `databasePath`, `databa
 | `replace` | `dynamic` | — | replace value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2744)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2853)
 
 <a id="function-function-minisql-catalog-schema-history-readstring-function-readstring-source-offset-operation-src-minisql-catalog-schema-history-ml-1354809399"></a>
 ### readString
@@ -2429,7 +2455,7 @@ Reads the string. Inputs: `source`, `offset`, `operation`. Returns the produced 
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L575)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L680)
 
 <a id="function-function-minisql-catalog-schema-history-readstringarray-function-readstringarray-source-offset-operation-src-minisql-catalog-schema-history-ml-2027827683"></a>
 ### readStringArray
@@ -2447,7 +2473,7 @@ Reads the string array. Inputs: `source`, `offset`, `operation`. Returns the pro
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L615)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L720)
 
 <a id="function-function-minisql-catalog-schema-history-readwhole-function-readwhole-path-src-minisql-catalog-schema-history-ml-23506959"></a>
 ### readWhole
@@ -2463,7 +2489,7 @@ Reads whole for the minisql catalog schema history workflow. Inputs: `path`. Ret
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L513)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L618)
 
 <a id="function-function-minisql-catalog-schema-history-recovermaintenance-function-recovermaintenance-databasepath-src-minisql-catalog-schema-history-ml-1834837990"></a>
 ### recoverMaintenance
@@ -2479,7 +2505,7 @@ Recovers the maintenance. Inputs: `databasePath`. Returns the produced value or 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2038)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2143)
 
 <a id="function-function-minisql-catalog-schema-history-recoverpending-function-recoverpending-databasepath-src-minisql-catalog-schema-history-ml-1515618586"></a>
 ### recoverPending
@@ -2495,7 +2521,7 @@ Recovers the pending. Inputs: `databasePath`. Returns the produced value or prop
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2079)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2184)
 
 <a id="function-function-minisql-catalog-schema-history-removeat-function-removeat-values-index-src-minisql-catalog-schema-history-ml-2096332720"></a>
 ### removeAt
@@ -2512,7 +2538,7 @@ Removes the at. Inputs: `values`, `index`. Returns the produced value or propaga
 | `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1001)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1106)
 
 <a id="function-function-minisql-catalog-schema-history-renameexpression-function-renameexpression-expression-oldname-newname-src-minisql-catalog-schema-history-ml-1259643271"></a>
 ### renameExpression
@@ -2530,7 +2556,7 @@ Performs the rename expression operation for this module. Inputs: `expression`, 
 | `newName` | `dynamic` | — | newName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1290)
 
 <a id="function-function-minisql-catalog-schema-history-renameexpressionsql-function-renameexpressionsql-sqltext-oldname-newname-src-minisql-catalog-schema-history-ml-87506314"></a>
 ### renameExpressionSql
@@ -2548,7 +2574,7 @@ Performs the rename expression sql operation for this module. Inputs: `sqlText`,
 | `newName` | `dynamic` | — | newName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1315)
 
 <a id="function-function-minisql-catalog-schema-history-rollback-function-rollback-transaction-src-minisql-catalog-schema-history-ml-1116760466"></a>
 ### rollback
@@ -2564,7 +2590,85 @@ Rolls back the requested value. Inputs: `transaction`. Returns the operation res
 | `transaction` | `dynamic` | — | transaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2363)
+
+<a id="function-function-minisql-catalog-schema-history-routineattribute-function-routineattribute-procedure-key-src-minisql-catalog-schema-history-ml-496304680"></a>
+### routineAttribute
+
+```ml
+function routineAttribute(procedure, key)
+```
+
+Returns one known persisted attribute, or void when legacy context is absent.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `procedure` | `dynamic` | — | Persisted procedure ViewDefinition or void. |
+| `key` | `dynamic` | — | Exact lower-case attribute name. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L181)
+
+<a id="function-function-minisql-catalog-schema-history-routineattributes-function-routineattributes-procedure-src-minisql-catalog-schema-history-ml-533635435"></a>
+### routineAttributes
+
+```ml
+function routineAttributes(procedure)
+```
+
+Reads the optional context suffix, preserving older records without context.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `procedure` | `dynamic` | — | Persisted procedure ViewDefinition, or void for a new object. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L163)
+
+<a id="function-function-minisql-catalog-schema-history-routinemetadata-function-routinemetadata-definerid-attributes-src-minisql-catalog-schema-history-ml-1030605313"></a>
+### routineMetadata
+
+```ml
+function routineMetadata(definerId, attributes)
+```
+
+Encodes attributes after the unchanged canonical-SQL/definer prefix. Existing V2 readers retain the same identity and ignore the added suffix.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `definerId` | `dynamic` | — | Durable identifier of the existing security principal. |
+| `attributes` | `dynamic` | — | Validated flat key/value pairs; absent keys remain unknown. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L155)
+
+<a id="function-function-minisql-catalog-schema-history-routinenowmicros-function-routinenowmicros-src-minisql-catalog-schema-history-ml-1102226748"></a>
+### routineNowMicros
+
+```ml
+function routineNowMicros()
+```
+
+Captures an actual UTC wall-clock time in storage-compatible microseconds. Clock failure aborts DDL instead of persisting a fabricated creation time.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L193)
+
+<a id="function-function-minisql-catalog-schema-history-routinetimestamptext-function-routinetimestamptext-timestamp-src-minisql-catalog-schema-history-ml-896913238"></a>
+### routineTimestampText
+
+```ml
+function routineTimestampText(timestamp)
+```
+
+Formats a persisted timestamp for human-readable SHOW output in UTC.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `timestamp` | `dynamic` | — | Decimal epoch microseconds previously validated by the reader. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L201)
 
 <a id="function-function-minisql-catalog-schema-history-samestringarray-function-samestringarray-left-right-src-minisql-catalog-schema-history-ml-1268397001"></a>
 ### sameStringArray
@@ -2581,7 +2685,7 @@ Compares the string array. Inputs: `left`, `right`. Returns a boolean result; in
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1349)
 
 <a id="function-function-minisql-catalog-schema-history-save-function-save-databasepath-state-src-minisql-catalog-schema-history-ml-966313371"></a>
 ### save
@@ -2598,7 +2702,7 @@ Persists the requested value. Inputs: `databasePath`, `state`. Returns the opera
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L923)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1028)
 
 <a id="function-function-minisql-catalog-schema-history-saveextensions-function-saveextensions-databasepath-state-src-minisql-catalog-schema-history-ml-455435523"></a>
 ### saveExtensions
@@ -2615,7 +2719,7 @@ Persists the extensions. Inputs: `databasePath`, `state`. Returns the operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2546)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2651)
 
 <a id="constant-constant-minisql-catalog-schema-history-schema-extension-version-const-schema-extension-version-1-src-minisql-catalog-schema-history-ml-75287456"></a>
 ### SCHEMA_EXTENSION_VERSION
@@ -2627,7 +2731,7 @@ const SCHEMA_EXTENSION_VERSION = 1
 Defines the schema extension version constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L99)
 
 <a id="constant-constant-minisql-catalog-schema-history-schema-kind-const-schema-kind-40-src-minisql-catalog-schema-history-ml-798957299"></a>
 ### SCHEMA_KIND
@@ -2639,7 +2743,7 @@ const SCHEMA_KIND = 40
 Defines the schema kind constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L50)
 
 <a id="constant-constant-minisql-catalog-schema-history-schema-marker-prefix-const-schema-marker-prefix-minisql-schema-src-minisql-catalog-schema-history-ml-616612560"></a>
 ### SCHEMA_MARKER_PREFIX
@@ -2651,7 +2755,7 @@ const SCHEMA_MARKER_PREFIX = "__minisql_schema__"
 Defines the schema marker prefix constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L112)
 
 <a id="function-function-minisql-catalog-schema-history-schemaexists-function-schemaexists-state-name-src-minisql-catalog-schema-history-ml-1532157176"></a>
 ### schemaExists
@@ -2668,7 +2772,7 @@ Returns whether a schema is built in or durably registered.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2662)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2771)
 
 <a id="function-function-minisql-catalog-schema-history-schemamagic-function-schemamagic-src-minisql-catalog-schema-history-ml-181071584"></a>
 ### schemaMagic
@@ -2680,7 +2784,7 @@ function schemaMagic()
 Returns a fresh copy of the schema-history magic bytes. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L368)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L473)
 
 <a id="function-function-minisql-catalog-schema-history-schemamarkername-function-schemamarkername-name-src-minisql-catalog-schema-history-ml-1982527125"></a>
 ### schemaMarkerName
@@ -2696,7 +2800,7 @@ Encodes a durable schema namespace as an internal extension entry.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2596)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2705)
 
 <a id="function-function-minisql-catalog-schema-history-schemanames-function-schemanames-state-src-minisql-catalog-schema-history-ml-129074303"></a>
 ### schemaNames
@@ -2712,7 +2816,7 @@ Returns all SQL-visible schemas while hiding internal persistence markers.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2778)
 
 <a id="function-function-minisql-catalog-schema-history-schemapath-function-schemapath-databasepath-src-minisql-catalog-schema-history-ml-1562993022"></a>
 ### schemaPath
@@ -2728,7 +2832,7 @@ Performs the schema path operation for this module. Inputs: `databasePath`. Retu
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L393)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L498)
 
 - [minisql.catalog.schema_history.SchemaState](Type-minisql-catalog-schema-history-schemastate-2077837205.md) — struct
 <a id="function-function-minisql-catalog-schema-history-sequencedefinition-function-sequencedefinition-sequenceid-name-startvalue-incrementvalue-minimumvalue-maximumvalue-lastvalue-hasvalue-cycle-ownedtableid-ownedcolumnname-src-minisql-catalog-schema-history-ml-763756256"></a>
@@ -2755,7 +2859,7 @@ Performs the sequence definition operation for this module. Inputs: `sequenceId`
 | `ownedColumnName` | `dynamic` | — | ownedColumnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L673)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L778)
 
 - [minisql.catalog.schema_history.SequenceDefinition](Type-minisql-catalog-schema-history-sequencedefinition-289005439.md) — struct
 <a id="function-function-minisql-catalog-schema-history-settriggerenabled-function-settriggerenabled-databasepath-databaseid-name-enabled-src-minisql-catalog-schema-history-ml-1992888298"></a>
@@ -2775,7 +2879,7 @@ Persists the enabled state of an existing trigger definition.
 | `enabled` | `dynamic` | — | enabled value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2975)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3084)
 
 <a id="function-function-minisql-catalog-schema-history-stagealtertable-function-stagealtertable-transaction-bound-src-minisql-catalog-schema-history-ml-651373284"></a>
 ### stageAlterTable
@@ -2792,7 +2896,7 @@ Performs the stage alter table operation for this module. Inputs: `transaction`,
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1840)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1945)
 
 <a id="function-function-minisql-catalog-schema-history-stagecreateindex-function-stagecreateindex-transaction-bound-src-minisql-catalog-schema-history-ml-851636556"></a>
 ### stageCreateIndex
@@ -2809,7 +2913,7 @@ Performs the stage create index operation for this module. Inputs: `transaction`
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1818)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1923)
 
 <a id="function-function-minisql-catalog-schema-history-stagecreatetable-function-stagecreatetable-transaction-bound-src-minisql-catalog-schema-history-ml-1218282108"></a>
 ### stageCreateTable
@@ -2826,7 +2930,7 @@ Performs the stage create table operation for this module. Inputs: `transaction`
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1807)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1912)
 
 <a id="function-function-minisql-catalog-schema-history-stagedroptable-function-stagedroptable-transaction-bound-src-minisql-catalog-schema-history-ml-1399106308"></a>
 ### stageDropTable
@@ -2843,7 +2947,7 @@ Performs the stage drop table operation for this module. Inputs: `transaction`, 
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1829)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1934)
 
 <a id="function-function-minisql-catalog-schema-history-stringarraycontains-function-stringarraycontains-values-name-src-minisql-catalog-schema-history-ml-1383850081"></a>
 ### stringArrayContains
@@ -2860,7 +2964,7 @@ Returns whether the supplied string array contains an exact identifier.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1362)
 
 <a id="function-function-minisql-catalog-schema-history-stringarrayreplace-function-stringarrayreplace-values-oldvalue-newvalue-src-minisql-catalog-schema-history-ml-534027893"></a>
 ### stringArrayReplace
@@ -2878,7 +2982,7 @@ Performs the string array replace operation for this module. Inputs: `values`, `
 | `newValue` | `dynamic` | — | newValue value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1240)
 
 <a id="function-function-minisql-catalog-schema-history-stringarraysize-function-stringarraysize-values-src-minisql-catalog-schema-history-ml-2066238572"></a>
 ### stringArraySize
@@ -2894,7 +2998,7 @@ Performs the string array size operation for this module. Inputs: `values`. Retu
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L587)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L692)
 
 <a id="function-function-minisql-catalog-schema-history-stringsize-function-stringsize-value-src-minisql-catalog-schema-history-ml-1161967177"></a>
 ### stringSize
@@ -2910,7 +3014,7 @@ Performs the string size operation for this module. Inputs: `value`. Returns the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L551)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L656)
 
 <a id="function-function-minisql-catalog-schema-history-tableindexbyname-function-tableindexbyname-catalogstate-name-src-minisql-catalog-schema-history-ml-1894979721"></a>
 ### tableIndexByName
@@ -2927,7 +3031,7 @@ Performs the table index by name operation for this module. Inputs: `catalogStat
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1015)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1120)
 
 <a id="function-function-minisql-catalog-schema-history-tableschema-function-tableschema-tableid-schemaversion-columnrules-constraints-src-minisql-catalog-schema-history-ml-845118965"></a>
 ### tableSchema
@@ -2946,7 +3050,7 @@ Performs the table schema operation for this module. Inputs: `tableId`, `schemaV
 | `constraints` | `dynamic` | — | constraints value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L750)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L855)
 
 - [minisql.catalog.schema_history.TableSchema](Type-minisql-catalog-schema-history-tableschema-1050598738.md) — struct
 <a id="function-function-minisql-catalog-schema-history-tableschemaindex-function-tableschemaindex-state-tableid-src-minisql-catalog-schema-history-ml-1672876886"></a>
@@ -2964,7 +3068,7 @@ Performs the table schema index operation for this module. Inputs: `state`, `tab
 | `tableId` | `dynamic` | — | Identifier of table. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1028)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1133)
 
 <a id="function-function-minisql-catalog-schema-history-targetmilestone-function-targetmilestone-src-minisql-catalog-schema-history-ml-443838158"></a>
 ### targetMilestone
@@ -2976,7 +3080,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql catalog schema history module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2996)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3105)
 
 <a id="constant-constant-minisql-catalog-schema-history-trigger-after-const-trigger-after-2-src-minisql-catalog-schema-history-ml-556739647"></a>
 ### TRIGGER_AFTER
@@ -2988,7 +3092,7 @@ const TRIGGER_AFTER = 2
 Defines the trigger after constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L103)
 
 <a id="constant-constant-minisql-catalog-schema-history-trigger-before-const-trigger-before-1-src-minisql-catalog-schema-history-ml-279513344"></a>
 ### TRIGGER_BEFORE
@@ -3000,7 +3104,7 @@ const TRIGGER_BEFORE = 1
 Defines the trigger before constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L101)
 
 <a id="constant-constant-minisql-catalog-schema-history-trigger-delete-const-trigger-delete-3-src-minisql-catalog-schema-history-ml-1892343402"></a>
 ### TRIGGER_DELETE
@@ -3012,7 +3116,7 @@ const TRIGGER_DELETE = 3
 Defines the trigger delete constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L109)
 
 <a id="constant-constant-minisql-catalog-schema-history-trigger-insert-const-trigger-insert-1-src-minisql-catalog-schema-history-ml-1621379136"></a>
 ### TRIGGER_INSERT
@@ -3024,7 +3128,7 @@ const TRIGGER_INSERT = 1
 Defines the trigger insert constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L105)
 
 <a id="constant-constant-minisql-catalog-schema-history-trigger-update-const-trigger-update-2-src-minisql-catalog-schema-history-ml-1310310741"></a>
 ### TRIGGER_UPDATE
@@ -3036,7 +3140,7 @@ const TRIGGER_UPDATE = 2
 Defines the trigger update constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L107)
 
 <a id="function-function-minisql-catalog-schema-history-triggerdefinition-function-triggerdefinition-triggerid-name-tableid-timing-eventtype-targetcolumn-expressionsql-enabled-src-minisql-catalog-schema-history-ml-761749909"></a>
 ### triggerDefinition
@@ -3059,7 +3163,7 @@ Performs the trigger definition operation for this module. Inputs: `triggerId`, 
 | `enabled` | `dynamic` | — | enabled value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L706)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L811)
 
 - [minisql.catalog.schema_history.TriggerDefinition](Type-minisql-catalog-schema-history-triggerdefinition-702458084.md) — struct
 <a id="function-function-minisql-catalog-schema-history-triggersfortable-function-triggersfortable-state-tableid-eventtype-src-minisql-catalog-schema-history-ml-1492755244"></a>
@@ -3078,7 +3182,7 @@ Performs the triggers for table operation for this module. Inputs: `state`, `tab
 | `eventType` | `dynamic` | — | eventType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2912)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L3021)
 
 <a id="function-function-minisql-catalog-schema-history-uniqueconstraintforcolumns-function-uniqueconstraintforcolumns-tableschemavalue-columns-src-minisql-catalog-schema-history-ml-59753531"></a>
 ### uniqueConstraintForColumns
@@ -3095,7 +3199,7 @@ Performs the unique constraint for columns operation for this module. Inputs: `t
 | `columns` | `dynamic` | — | columns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1071)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1176)
 
 <a id="constant-constant-minisql-catalog-schema-history-unsupported-format-const-unsupported-format-9003-src-minisql-catalog-schema-history-ml-1330699959"></a>
 ### UNSUPPORTED_FORMAT
@@ -3107,7 +3211,7 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L27)
 
 <a id="constant-constant-minisql-catalog-schema-history-unsupported-sql-const-unsupported-sql-9025-src-minisql-catalog-schema-history-ml-1035658615"></a>
 ### UNSUPPORTED_SQL
@@ -3119,7 +3223,7 @@ const UNSUPPORTED_SQL = 9025
 Defines the unsupported sql constant used by the minisql catalog schema history module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L45)
 
 <a id="function-function-minisql-catalog-schema-history-validatealterdropcolumndependencies-function-validatealterdropcolumndependencies-prepared-table-columnname-src-minisql-catalog-schema-history-ml-1055870048"></a>
 ### validateAlterDropColumnDependencies
@@ -3137,7 +3241,7 @@ Rejects a column drop while any schema object still depends on that column.
 | `columnName` | `dynamic` | — | Exact column name being checked. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1487)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1592)
 
 <a id="function-function-minisql-catalog-schema-history-validatealterforeignkey-function-validatealterforeignkey-prepared-table-source-src-minisql-catalog-schema-history-ml-548672482"></a>
 ### validateAlterForeignKey
@@ -3155,7 +3259,24 @@ Validates the relational side of a new foreign-key constraint.
 | `source` | `dynamic` | — | Parsed foreign-key constraint definition. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1406)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1511)
+
+<a id="function-function-minisql-catalog-schema-history-validateroutineattributes-function-validateroutineattributes-attributes-code-src-minisql-catalog-schema-history-ml-1170369734"></a>
+### validateRoutineAttributes
+
+```ml
+function validateRoutineAttributes(attributes, code)
+```
+
+Validates the optional routine attributes without inventing legacy values. Keys are unique and timestamps are nonnegative decimal UTC epoch microseconds.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `attributes` | `dynamic` | — | Flat key/value string pairs following the context marker. |
+| `code` | `dynamic` | — | Error classification for caller input or corrupt persisted data. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L124)
 
 <a id="function-function-minisql-catalog-schema-history-validatetransaction-function-validatetransaction-transaction-operation-src-minisql-catalog-schema-history-ml-2056680627"></a>
 ### validateTransaction
@@ -3172,7 +3293,7 @@ Validates the transaction. Inputs: `transaction`, `operation`. Returns success a
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1797)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1902)
 
 <a id="function-function-minisql-catalog-schema-history-viewdefinition-function-viewdefinition-viewid-name-sqltext-columnnames-src-minisql-catalog-schema-history-ml-627527808"></a>
 ### viewDefinition
@@ -3191,7 +3312,7 @@ Performs the view definition operation for this module. Inputs: `viewId`, `name`
 | `columnNames` | `dynamic` | — | columnNames value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L655)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L760)
 
 - [minisql.catalog.schema_history.ViewDefinition](Type-minisql-catalog-schema-history-viewdefinition-1769625371.md) — struct
 <a id="function-function-minisql-catalog-schema-history-writeatomic-function-writeatomic-path-data-src-minisql-catalog-schema-history-ml-140307765"></a>
@@ -3209,7 +3330,7 @@ Writes the atomic. Inputs: `path`, `data`. Returns the operation result and prop
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L540)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L645)
 
 <a id="function-function-minisql-catalog-schema-history-writejournal-function-writejournal-databasepath-value-src-minisql-catalog-schema-history-ml-1604940859"></a>
 ### writeJournal
@@ -3226,7 +3347,7 @@ Writes the journal. Inputs: `databasePath`, `value`. Returns the operation resul
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1945)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2050)
 
 <a id="function-function-minisql-catalog-schema-history-writemaintenance-function-writemaintenance-databasepath-value-src-minisql-catalog-schema-history-ml-1805491219"></a>
 ### writeMaintenance
@@ -3243,7 +3364,7 @@ Writes the maintenance. Inputs: `databasePath`, `value`. Returns the operation r
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L1994)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L2099)
 
 <a id="function-function-minisql-catalog-schema-history-writestring-function-writestring-output-offset-value-src-minisql-catalog-schema-history-ml-476662019"></a>
 ### writeString
@@ -3261,7 +3382,7 @@ Writes the string. Inputs: `output`, `offset`, `value`. Returns the operation re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L562)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L667)
 
 <a id="function-function-minisql-catalog-schema-history-writestringarray-function-writestringarray-output-offset-values-src-minisql-catalog-schema-history-ml-502389460"></a>
 ### writeStringArray
@@ -3279,7 +3400,7 @@ Writes the string array. Inputs: `output`, `offset`, `values`. Returns the opera
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L601)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L706)
 
 <a id="function-function-minisql-catalog-schema-history-writewhole-function-writewhole-path-data-src-minisql-catalog-schema-history-ml-1467431125"></a>
 ### writeWhole
@@ -3296,4 +3417,4 @@ Writes the whole. Inputs: `path`, `data`. Returns the operation result and propa
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L526)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L631)

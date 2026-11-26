@@ -20,7 +20,7 @@ function componentName()
 Performs the componentName operation for the minisql protocol constants module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L85)
 
 <a id="constant-constant-minisql-protocol-constants-default-result-batch-rows-const-default-result-batch-rows-512-src-minisql-protocol-constants-ml-2071445395"></a>
 ### DEFAULT_RESULT_BATCH_ROWS
@@ -34,6 +34,18 @@ Defines the default result batch rows constant used by the minisql protocol cons
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L24)
 
+<a id="constant-constant-minisql-protocol-constants-flag-metadata-const-flag-metadata-8-src-minisql-protocol-constants-ml-589368827"></a>
+### FLAG_METADATA
+
+```ml
+const FLAG_METADATA = 8
+```
+
+Opt-in results-v2 metadata trailer on one request/response, negotiated by HELLO.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L32)
+
 <a id="constant-constant-minisql-protocol-constants-flag-more-const-flag-more-2-src-minisql-protocol-constants-ml-1665571505"></a>
 ### FLAG_MORE
 
@@ -45,6 +57,18 @@ Indicates that another response frame with the same request identifier follows.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L28)
+
+<a id="constant-constant-minisql-protocol-constants-flag-result-start-const-flag-result-start-4-src-minisql-protocol-constants-ml-2131371983"></a>
+### FLAG_RESULT_START
+
+```ml
+const FLAG_RESULT_START = 4
+```
+
+Marks the first frame of a separate result in one CALL response stream.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L30)
 
 <a id="constant-constant-minisql-protocol-constants-flag-secure-const-flag-secure-1-src-minisql-protocol-constants-ml-397117812"></a>
 ### FLAG_SECURE
@@ -92,7 +116,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql protocol constants module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L99)
 
 <a id="function-function-minisql-protocol-constants-knowntype-function-knowntype-value-src-minisql-protocol-constants-ml-863333081"></a>
 ### knownType
@@ -108,7 +132,7 @@ Implements known type for this module. Returns the computed value or operation s
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L78)
 
 <a id="constant-constant-minisql-protocol-constants-max-columns-const-max-columns-1024-src-minisql-protocol-constants-ml-1223641142"></a>
 ### MAX_COLUMNS
@@ -156,7 +180,7 @@ const MAX_SECURE_PLAINTEXT_BYTES = MAX_PAYLOAD_BYTES - SECURE_OVERHEAD_BYTES
 Defines the max secure plaintext bytes constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L36)
 
 <a id="constant-constant-minisql-protocol-constants-protocol-magic-const-protocol-magic-msql-src-minisql-protocol-constants-ml-1531342008"></a>
 ### PROTOCOL_MAGIC
@@ -192,7 +216,7 @@ const SECURE_OVERHEAD_BYTES = 24
 Defines the secure overhead bytes constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L34)
 
 <a id="constant-constant-minisql-protocol-constants-status-command-const-status-command-1-src-minisql-protocol-constants-ml-998580638"></a>
 ### STATUS_COMMAND
@@ -204,7 +228,7 @@ const STATUS_COMMAND = 1
 Defines the status command constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L66)
 
 <a id="constant-constant-minisql-protocol-constants-status-error-const-status-error-3-src-minisql-protocol-constants-ml-667005958"></a>
 ### STATUS_ERROR
@@ -216,7 +240,19 @@ const STATUS_ERROR = 3
 Defines the status error constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L70)
+
+<a id="constant-constant-minisql-protocol-constants-status-multiple-const-status-multiple-4-src-minisql-protocol-constants-ml-1106025411"></a>
+### STATUS_MULTIPLE
+
+```ml
+const STATUS_MULTIPLE = 4
+```
+
+Client-only aggregate status; never serialized in a protocol payload.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L72)
 
 <a id="constant-constant-minisql-protocol-constants-status-rows-const-status-rows-2-src-minisql-protocol-constants-ml-2046826845"></a>
 ### STATUS_ROWS
@@ -228,7 +264,7 @@ const STATUS_ROWS = 2
 Defines the status rows constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L64)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L68)
 
 <a id="constant-constant-minisql-protocol-constants-target-result-frame-bytes-const-target-result-frame-bytes-1048576-secure-overhead-bytes-src-minisql-protocol-constants-ml-1795813315"></a>
 ### TARGET_RESULT_FRAME_BYTES
@@ -240,7 +276,7 @@ const TARGET_RESULT_FRAME_BYTES = 1048576 - SECURE_OVERHEAD_BYTES
 Preferred response payload size used for backpressure-friendly batching.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L38)
 
 <a id="function-function-minisql-protocol-constants-targetmilestone-function-targetmilestone-src-minisql-protocol-constants-ml-1084465700"></a>
 ### targetMilestone
@@ -252,7 +288,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql protocol constants module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L92)
 
 <a id="constant-constant-minisql-protocol-constants-type-auth-begin-const-type-auth-begin-5-src-minisql-protocol-constants-ml-1380817360"></a>
 ### TYPE_AUTH_BEGIN
@@ -264,7 +300,7 @@ const TYPE_AUTH_BEGIN = 5
 Defines the type auth begin constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L49)
 
 <a id="constant-constant-minisql-protocol-constants-type-auth-challenge-const-type-auth-challenge-6-src-minisql-protocol-constants-ml-1564149625"></a>
 ### TYPE_AUTH_CHALLENGE
@@ -276,7 +312,7 @@ const TYPE_AUTH_CHALLENGE = 6
 Defines the type auth challenge constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L47)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L51)
 
 <a id="constant-constant-minisql-protocol-constants-type-auth-ok-const-type-auth-ok-8-src-minisql-protocol-constants-ml-813839781"></a>
 ### TYPE_AUTH_OK
@@ -288,7 +324,7 @@ const TYPE_AUTH_OK = 8
 Defines the type auth ok constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L51)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L55)
 
 <a id="constant-constant-minisql-protocol-constants-type-auth-proof-const-type-auth-proof-7-src-minisql-protocol-constants-ml-295309054"></a>
 ### TYPE_AUTH_PROOF
@@ -300,7 +336,7 @@ const TYPE_AUTH_PROOF = 7
 Defines the type auth proof constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L53)
 
 <a id="constant-constant-minisql-protocol-constants-type-cancel-const-type-cancel-9-src-minisql-protocol-constants-ml-696391004"></a>
 ### TYPE_CANCEL
@@ -312,7 +348,7 @@ const TYPE_CANCEL = 9
 Administrative request that cooperatively cancels another session's query.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L57)
 
 <a id="constant-constant-minisql-protocol-constants-type-close-const-type-close-4-src-minisql-protocol-constants-ml-1516115895"></a>
 ### TYPE_CLOSE
@@ -324,7 +360,7 @@ const TYPE_CLOSE = 4
 Defines the type close constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L47)
 
 <a id="constant-constant-minisql-protocol-constants-type-error-const-type-error-102-src-minisql-protocol-constants-ml-383791990"></a>
 ### TYPE_ERROR
@@ -336,7 +372,7 @@ const TYPE_ERROR = 102
 Defines the type error constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L63)
 
 <a id="constant-constant-minisql-protocol-constants-type-hello-const-type-hello-1-src-minisql-protocol-constants-ml-487702100"></a>
 ### TYPE_HELLO
@@ -348,7 +384,7 @@ const TYPE_HELLO = 1
 Defines the type hello constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L41)
 
 <a id="constant-constant-minisql-protocol-constants-type-ping-const-type-ping-3-src-minisql-protocol-constants-ml-1271965598"></a>
 ### TYPE_PING
@@ -360,7 +396,7 @@ const TYPE_PING = 3
 Defines the type ping constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L45)
 
 <a id="constant-constant-minisql-protocol-constants-type-pong-const-type-pong-101-src-minisql-protocol-constants-ml-1972033923"></a>
 ### TYPE_PONG
@@ -372,7 +408,7 @@ const TYPE_PONG = 101
 Defines the type pong constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L61)
 
 <a id="constant-constant-minisql-protocol-constants-type-query-const-type-query-2-src-minisql-protocol-constants-ml-512817589"></a>
 ### TYPE_QUERY
@@ -384,7 +420,7 @@ const TYPE_QUERY = 2
 Defines the type query constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L43)
 
 <a id="constant-constant-minisql-protocol-constants-type-response-const-type-response-100-src-minisql-protocol-constants-ml-1293345052"></a>
 ### TYPE_RESPONSE
@@ -396,4 +432,4 @@ const TYPE_RESPONSE = 100
 Defines the type response constant used by the minisql protocol constants module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/constants.ml#L59)

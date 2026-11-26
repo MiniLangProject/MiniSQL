@@ -12,7 +12,7 @@ struct TriggerDefinition
 Defines the trigger definition record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L316)
 
 ## Members
 
@@ -26,7 +26,7 @@ enabled
 Enabled field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L227)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L332)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-eventtype-eventtype-src-minisql-catalog-schema-history-ml-414509784"></a>
 ### eventType
@@ -38,7 +38,7 @@ eventType
 Event type field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L221)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L326)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-expressionsql-expressionsql-src-minisql-catalog-schema-history-ml-1794677672"></a>
 ### expressionSql
@@ -50,7 +50,7 @@ expressionSql
 Expression sql field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L330)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-name-name-src-minisql-catalog-schema-history-ml-389678762"></a>
 ### name
@@ -62,7 +62,7 @@ name
 Name field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L320)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-tableid-tableid-src-minisql-catalog-schema-history-ml-989436268"></a>
 ### tableId
@@ -74,7 +74,7 @@ tableId
 Table id field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L322)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-targetcolumn-targetcolumn-src-minisql-catalog-schema-history-ml-1396379406"></a>
 ### targetColumn
@@ -86,7 +86,7 @@ targetColumn
 Target column field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L328)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-timing-timing-src-minisql-catalog-schema-history-ml-816551640"></a>
 ### timing
@@ -98,7 +98,7 @@ timing
 Timing field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L324)
 
 <a id="field-field-minisql-catalog-schema-history-triggerdefinition-triggerid-triggerid-src-minisql-catalog-schema-history-ml-2010672984"></a>
 ### triggerId
@@ -110,4 +110,4 @@ triggerId
 Trigger id field of the trigger definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L318)

@@ -12,7 +12,7 @@ struct InsertStatement
 Groups the insert statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L647)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L681)
 
 ## Members
 
@@ -26,7 +26,7 @@ columns
 Contains the ordered columns collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L651)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L685)
 
 <a id="field-field-minisql-sql-ast-insertstatement-conflictaction-conflictaction-src-minisql-sql-ast-ml-690966337"></a>
 ### conflictAction
@@ -38,7 +38,7 @@ conflictAction
 Stores the conflict action associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L659)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L693)
 
 <a id="field-field-minisql-sql-ast-insertstatement-conflictassignments-conflictassignments-src-minisql-sql-ast-ml-662122753"></a>
 ### conflictAssignments
@@ -50,7 +50,7 @@ conflictAssignments
 Stores the conflict assignments associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L661)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L695)
 
 <a id="field-field-minisql-sql-ast-insertstatement-conflicttarget-conflicttarget-src-minisql-sql-ast-ml-1247351491"></a>
 ### conflictTarget
@@ -62,7 +62,7 @@ conflictTarget
 Stores the conflict target associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L657)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L691)
 
 <a id="field-field-minisql-sql-ast-insertstatement-conflictwhere-conflictwhere-src-minisql-sql-ast-ml-944006317"></a>
 ### conflictWhere
@@ -74,7 +74,7 @@ conflictWhere
 Stores the conflict where associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L663)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L697)
 
 <a id="field-field-minisql-sql-ast-insertstatement-returning-returning-src-minisql-sql-ast-ml-1537359085"></a>
 ### returning
@@ -86,7 +86,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L699)
 
 <a id="field-field-minisql-sql-ast-insertstatement-rows-rows-src-minisql-sql-ast-ml-1771621047"></a>
 ### rows
@@ -98,7 +98,7 @@ rows
 Contains the ordered rows collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L653)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L687)
 
 <a id="field-field-minisql-sql-ast-insertstatement-sourcequery-sourcequery-src-minisql-sql-ast-ml-1817797461"></a>
 ### sourceQuery
@@ -110,7 +110,7 @@ sourceQuery
 Stores the source query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L655)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L689)
 
 <a id="field-field-minisql-sql-ast-insertstatement-tablename-tablename-src-minisql-sql-ast-ml-1172104853"></a>
 ### tableName
@@ -122,4 +122,4 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L649)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L683)

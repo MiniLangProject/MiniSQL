@@ -12,7 +12,7 @@ struct BackupPlan
 Defines the backup plan record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L388)
 
 ## Members
 
@@ -26,7 +26,7 @@ backupPath
 Backup path field of the backup plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L392)
 
 <a id="field-field-minisql-catalog-schema-history-backupplan-originalpath-originalpath-src-minisql-catalog-schema-history-ml-646635194"></a>
 ### originalPath
@@ -38,4 +38,4 @@ originalPath
 Original path field of the backup plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L285)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L390)

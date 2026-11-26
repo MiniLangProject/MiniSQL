@@ -12,7 +12,7 @@ struct ClientSlot
 Owns one accepted connection and its attached session for the lifetime of a worker-pool job. Only that worker mutates the slot.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L195)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L196)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeSession
 Database session attached to the listener's shared ManagedDatabase.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L200)
 
 <a id="field-field-minisql-server-listener-clientslot-client-client-src-minisql-server-listener-ml-1493927052"></a>
 ### client
@@ -38,7 +38,7 @@ client
 Framed protocol connection used for request polling and response writes.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L198)
 
 <a id="field-field-minisql-server-listener-clientslot-closed-closed-src-minisql-server-listener-ml-437203206"></a>
 ### closed
@@ -50,7 +50,7 @@ closed
 Prevents duplicate session and socket cleanup.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L203)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L204)
 
 <a id="field-field-minisql-server-listener-clientslot-handled-handled-src-minisql-server-listener-ml-1030531110"></a>
 ### handled
@@ -62,7 +62,7 @@ handled
 Number of responses successfully sent for this client.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L202)
 
 <a id="field-field-minisql-server-listener-clientslot-lastactivity-lastactivity-src-minisql-server-listener-ml-1303876244"></a>
 ### lastActivity
@@ -74,7 +74,7 @@ lastActivity
 Monotonic timestamp used to enforce listener idle limits.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L209)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L210)
 
 <a id="field-field-minisql-server-listener-clientslot-peerendpoint-peerendpoint-src-minisql-server-listener-ml-176030788"></a>
 ### peerEndpoint
@@ -86,7 +86,7 @@ peerEndpoint
 Human-readable remote endpoint captured before worker ownership transfer.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L212)
 
 <a id="field-field-minisql-server-listener-clientslot-pendingrequest-pendingrequest-src-minisql-server-listener-ml-1232462790"></a>
 ### pendingRequest
@@ -98,7 +98,7 @@ pendingRequest
 Request retained while its logical database lock is unavailable.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L205)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L206)
 
 <a id="field-field-minisql-server-listener-clientslot-waitstarted-waitstarted-src-minisql-server-listener-ml-1209722518"></a>
 ### waitStarted
@@ -110,4 +110,4 @@ waitStarted
 Monotonic timestamp at which the pending lock wait began.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L208)

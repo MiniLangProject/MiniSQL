@@ -12,7 +12,7 @@ struct QueryResult
 Groups the query result state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L94)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L99)
 
 ## Members
 
@@ -26,7 +26,7 @@ affectedRows
 Stores the affected rows associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L109)
 
 <a id="field-field-minisql-executor-executor-queryresult-columns-columns-src-minisql-executor-executor-ml-1103037130"></a>
 ### columns
@@ -38,7 +38,7 @@ columns
 Contains the ordered columns collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L105)
 
 <a id="field-field-minisql-executor-executor-queryresult-command-command-src-minisql-executor-executor-ml-829433250"></a>
 ### command
@@ -50,7 +50,7 @@ command
 Stores the command associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L98)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L103)
 
 <a id="field-field-minisql-executor-executor-queryresult-kind-kind-src-minisql-executor-executor-ml-742760770"></a>
 ### kind
@@ -62,7 +62,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L101)
 
 <a id="field-field-minisql-executor-executor-queryresult-message-message-src-minisql-executor-executor-ml-1404619346"></a>
 ### message
@@ -74,7 +74,7 @@ message
 Stores the message associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L111)
 
 <a id="field-field-minisql-executor-executor-queryresult-rows-rows-src-minisql-executor-executor-ml-1330731392"></a>
 ### rows
@@ -86,4 +86,4 @@ rows
 Contains the ordered rows collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L107)

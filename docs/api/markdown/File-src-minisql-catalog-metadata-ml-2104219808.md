@@ -11,6 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
+- `minisql/common/format_version.ml` as `format_version` → [src/minisql/common/format_version.ml](File-src-minisql-common-format-version-ml-1671630705.md)
 - `minisql/storage/checksum.ml` as `checksum` → [src/minisql/storage/checksum.ml](File-src-minisql-storage-checksum-ml-273339408.md)
 
 ## Declarations
@@ -25,7 +26,7 @@ const CATALOG_FORMAT_VERSION = 1
 Defines the catalog format version constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L22)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L23)
 
 <a id="constant-constant-minisql-catalog-metadata-catalog-kind-const-catalog-kind-2-src-minisql-catalog-metadata-ml-407196559"></a>
 ### CATALOG_KIND
@@ -37,7 +38,7 @@ const CATALOG_KIND = 2
 Defines the catalog kind constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L27)
 
 <a id="function-function-minisql-catalog-metadata-catalogmagic-function-catalogmagic-src-minisql-catalog-metadata-ml-1777944932"></a>
 ### catalogMagic
@@ -49,7 +50,7 @@ function catalogMagic()
 Performs the catalog magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L135)
 
 - [minisql.catalog.metadata.CatalogState](Type-minisql-catalog-metadata-catalogstate-859167128.md) — struct
 - [minisql.catalog.metadata.ColumnMetadata](Type-minisql-catalog-metadata-columnmetadata-1108114983.md) — struct
@@ -63,7 +64,7 @@ function componentName()
 Performs the componentName operation for the minisql catalog metadata module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L906)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L924)
 
 <a id="function-function-minisql-catalog-metadata-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-catalog-metadata-ml-269281601"></a>
 ### copyExact
@@ -83,7 +84,7 @@ Performs the copyExact operation for the minisql catalog metadata module. Inputs
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L146)
 
 <a id="constant-constant-minisql-catalog-metadata-corrupt-data-const-corrupt-data-9004-src-minisql-catalog-metadata-ml-401580248"></a>
 ### CORRUPT_DATA
@@ -95,7 +96,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L18)
 
 <a id="function-function-minisql-catalog-metadata-createcatalog-function-createcatalog-databaseid-nextobjectid-src-minisql-catalog-metadata-ml-1619316875"></a>
 ### createCatalog
@@ -112,7 +113,7 @@ Creates the catalog. Inputs: `databaseId`, `nextObjectId`. Returns the produced 
 | `nextObjectId` | `dynamic` | — | Identifier of next object. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L320)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L322)
 
 <a id="function-function-minisql-catalog-metadata-createcolumn-function-createcolumn-columnid-name-typecode-nullable-maxlength-precision-scale-src-minisql-catalog-metadata-ml-547273112"></a>
 ### createColumn
@@ -134,7 +135,7 @@ Creates the column. Inputs: `columnId`, `name`, `typeCode`, `nullable`, `maxLeng
 | `scale` | `dynamic` | — | scale value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L289)
 
 <a id="function-function-minisql-catalog-metadata-createdatabase-function-createdatabase-name-databaseid-pagesize-walsegmentbytes-databaseformatversion-tablefileformatversion-indexfileformatversion-walformatversion-rowformatversion-src-minisql-catalog-metadata-ml-1330469217"></a>
 ### createDatabase
@@ -158,7 +159,7 @@ Creates the database. Inputs: `name`, `databaseId`, `pageSize`, `walSegmentBytes
 | `rowFormatVersion` | `dynamic` | — | rowFormatVersion value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L198)
 
 <a id="function-function-minisql-catalog-metadata-createprincipal-function-createprincipal-principalid-name-principalkind-enabled-canlogin-superuser-builtin-salt-iterations-verifier-src-minisql-catalog-metadata-ml-719134777"></a>
 ### createPrincipal
@@ -183,7 +184,7 @@ Creates the principal. Inputs: `principalId`, `name`, `principalKind`, `enabled`
 | `verifier` | `dynamic` | — | verifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L638)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L652)
 
 <a id="function-function-minisql-catalog-metadata-createprivilegegrant-function-createprivilegegrant-granteeid-grantorid-objecttype-objectid-privilege-grantoption-src-minisql-catalog-metadata-ml-29425238"></a>
 ### createPrivilegeGrant
@@ -204,7 +205,7 @@ Creates the privilege grant. Inputs: `granteeId`, `grantorId`, `objectType`, `ob
 | `grantOption` | `dynamic` | — | grantOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L708)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L725)
 
 <a id="function-function-minisql-catalog-metadata-createrolemembership-function-createrolemembership-roleid-memberid-grantorid-adminoption-src-minisql-catalog-metadata-ml-613764946"></a>
 ### createRoleMembership
@@ -223,7 +224,7 @@ Creates the role membership. Inputs: `roleId`, `memberId`, `grantorId`, `adminOp
 | `adminOption` | `dynamic` | — | adminOption value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L670)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L684)
 
 <a id="function-function-minisql-catalog-metadata-createsecurity-function-createsecurity-databaseid-src-minisql-catalog-metadata-ml-1807895268"></a>
 ### createSecurity
@@ -239,7 +240,7 @@ Creates the security. Inputs: `databaseId`. Returns the produced value or propag
 | `databaseId` | `dynamic` | — | Identifier of database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L722)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L740)
 
 <a id="function-function-minisql-catalog-metadata-createtable-function-createtable-tableid-name-schemaversion-columns-src-minisql-catalog-metadata-ml-171398742"></a>
 ### createTable
@@ -258,19 +259,19 @@ Creates the table. Inputs: `tableId`, `name`, `schemaVersion`, `columns`. Return
 | `columns` | `dynamic` | — | columns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L305)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L307)
 
-<a id="constant-constant-minisql-catalog-metadata-database-format-version-const-database-format-version-1-src-minisql-catalog-metadata-ml-278093756"></a>
+<a id="constant-constant-minisql-catalog-metadata-database-format-version-const-database-format-version-format-version-database-src-minisql-catalog-metadata-ml-2135799832"></a>
 ### DATABASE_FORMAT_VERSION
 
 ```ml
-const DATABASE_FORMAT_VERSION = 1
+const DATABASE_FORMAT_VERSION = format_version.DATABASE
 ```
 
 Defines the database format version constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L21)
 
 <a id="constant-constant-minisql-catalog-metadata-database-kind-const-database-kind-1-src-minisql-catalog-metadata-ml-1469795556"></a>
 ### DATABASE_KIND
@@ -282,7 +283,7 @@ const DATABASE_KIND = 1
 Defines the database kind constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L25)
 
 <a id="function-function-minisql-catalog-metadata-databasemagic-function-databasemagic-src-minisql-catalog-metadata-ml-744548052"></a>
 ### databaseMagic
@@ -294,7 +295,7 @@ function databaseMagic()
 Performs the database magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L129)
 
 - [minisql.catalog.metadata.DatabaseMetadata](Type-minisql-catalog-metadata-databasemetadata-982737264.md) — struct
 <a id="function-function-minisql-catalog-metadata-decodecatalog-function-decodecatalog-encoded-src-minisql-catalog-metadata-ml-2032227764"></a>
@@ -311,7 +312,7 @@ Decodes the catalog. Inputs: `encoded`. Returns the produced value or propagates
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L403)
 
 <a id="function-function-minisql-catalog-metadata-decodedatabase-function-decodedatabase-encoded-src-minisql-catalog-metadata-ml-1083821150"></a>
 ### decodeDatabase
@@ -327,7 +328,7 @@ Decodes the database. Inputs: `encoded`. Returns the produced value or propagate
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L254)
 
 <a id="function-function-minisql-catalog-metadata-decodenative-function-decodenative-words-operation-name-src-minisql-catalog-metadata-ml-1213217795"></a>
 ### decodeNative
@@ -345,7 +346,7 @@ Decodes native for the minisql catalog metadata workflow. Inputs: `words`, `oper
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L246)
 
 <a id="function-function-minisql-catalog-metadata-decodesecurity-function-decodesecurity-encoded-src-minisql-catalog-metadata-ml-2035380910"></a>
 ### decodeSecurity
@@ -361,7 +362,7 @@ Decodes the security. Inputs: `encoded`. Returns the produced value or propagate
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L821)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L839)
 
 <a id="function-function-minisql-catalog-metadata-encodecatalog-function-encodecatalog-catalog-src-minisql-catalog-metadata-ml-200282927"></a>
 ### encodeCatalog
@@ -377,7 +378,7 @@ Encodes the catalog. Inputs: `catalog`. Returns the produced value or propagates
 | `catalog` | `dynamic` | — | catalog value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L340)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L342)
 
 <a id="function-function-minisql-catalog-metadata-encodedatabase-function-encodedatabase-value-src-minisql-catalog-metadata-ml-1676417943"></a>
 ### encodeDatabase
@@ -393,7 +394,7 @@ Encodes the database. Inputs: `value`. Returns the produced value or propagates 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L212)
 
 <a id="function-function-minisql-catalog-metadata-encodedtablesize-function-encodedtablesize-table-src-minisql-catalog-metadata-ml-1579679928"></a>
 ### encodedTableSize
@@ -409,7 +410,7 @@ Encodes the d table size. Inputs: `table`. Returns the produced value or propaga
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L329)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L331)
 
 <a id="function-function-minisql-catalog-metadata-encodesecurity-function-encodesecurity-state-src-minisql-catalog-metadata-ml-108350591"></a>
 ### encodeSecurity
@@ -425,7 +426,7 @@ Encodes the security. Inputs: `state`. Returns the produced value or propagates 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L739)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L757)
 
 <a id="function-function-minisql-catalog-metadata-fail-function-fail-code-operation-message-src-minisql-catalog-metadata-ml-942437783"></a>
 ### fail
@@ -443,7 +444,7 @@ Performs the fail operation for the minisql catalog metadata module. Inputs: `co
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L123)
 
 <a id="constant-constant-minisql-catalog-metadata-invalid-argument-const-invalid-argument-9001-src-minisql-catalog-metadata-ml-1794613597"></a>
 ### INVALID_ARGUMENT
@@ -455,7 +456,7 @@ const INVALID_ARGUMENT = 9001
 Versioned catalog metadata codecs. Decoders validate kind, version, bounds,
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L13)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L14)
 
 <a id="function-function-minisql-catalog-metadata-iscatalogstate-function-iscatalogstate-value-src-minisql-catalog-metadata-ml-432863031"></a>
 ### isCatalogState
@@ -471,7 +472,7 @@ Evaluates whether the supplied input satisfies the catalog state predicate. Inpu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L107)
 
 <a id="function-function-minisql-catalog-metadata-iscolumnmetadata-function-iscolumnmetadata-value-src-minisql-catalog-metadata-ml-2011794655"></a>
 ### isColumnMetadata
@@ -487,7 +488,7 @@ Evaluates whether the supplied input satisfies the column metadata predicate. In
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L113)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L114)
 
 <a id="function-function-minisql-catalog-metadata-isimplemented-function-isimplemented-src-minisql-catalog-metadata-ml-793295028"></a>
 ### isImplemented
@@ -499,7 +500,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql catalog metadata module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L918)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L936)
 
 <a id="function-function-minisql-catalog-metadata-isprincipalmetadata-function-isprincipalmetadata-value-src-minisql-catalog-metadata-ml-395950837"></a>
 ### isPrincipalMetadata
@@ -515,7 +516,7 @@ Evaluates whether the supplied input satisfies the principal metadata predicate.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L584)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L598)
 
 <a id="function-function-minisql-catalog-metadata-isprivilegegrant-function-isprivilegegrant-value-src-minisql-catalog-metadata-ml-381527227"></a>
 ### isPrivilegeGrant
@@ -531,7 +532,7 @@ Evaluates whether the supplied input satisfies the privilege grant predicate. In
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L598)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L612)
 
 <a id="function-function-minisql-catalog-metadata-isrolemembership-function-isrolemembership-value-src-minisql-catalog-metadata-ml-1991883659"></a>
 ### isRoleMembership
@@ -547,7 +548,7 @@ Evaluates whether the supplied input satisfies the role membership predicate. In
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L591)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L605)
 
 <a id="function-function-minisql-catalog-metadata-issecuritystate-function-issecuritystate-value-src-minisql-catalog-metadata-ml-1278516393"></a>
 ### isSecurityState
@@ -563,7 +564,7 @@ Evaluates whether the supplied input satisfies the security state predicate. Inp
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L605)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L619)
 
 <a id="function-function-minisql-catalog-metadata-istablemetadata-function-istablemetadata-value-src-minisql-catalog-metadata-ml-180201009"></a>
 ### isTableMetadata
@@ -579,7 +580,7 @@ Evaluates whether the supplied input satisfies the table metadata predicate. Inp
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L100)
 
 <a id="constant-constant-minisql-catalog-metadata-membership-bytes-const-membership-bytes-32-src-minisql-catalog-metadata-ml-1676643668"></a>
 ### MEMBERSHIP_BYTES
@@ -591,7 +592,7 @@ const MEMBERSHIP_BYTES = 32
 Defines the membership bytes constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L497)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L511)
 
 <a id="constant-constant-minisql-catalog-metadata-object-database-const-object-database-1-src-minisql-catalog-metadata-ml-972562504"></a>
 ### OBJECT_DATABASE
@@ -603,7 +604,19 @@ const OBJECT_DATABASE = 1
 Defines the object database constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L463)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L465)
+
+<a id="constant-constant-minisql-catalog-metadata-object-procedure-const-object-procedure-3-src-minisql-catalog-metadata-ml-1870743646"></a>
+### OBJECT_PROCEDURE
+
+```ml
+const OBJECT_PROCEDURE = 3
+```
+
+Identifies a persisted stored procedure by its extension view identifier.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L469)
 
 <a id="constant-constant-minisql-catalog-metadata-object-table-const-object-table-2-src-minisql-catalog-metadata-ml-270961631"></a>
 ### OBJECT_TABLE
@@ -615,7 +628,7 @@ const OBJECT_TABLE = 2
 Defines the object table constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L465)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L467)
 
 <a id="constant-constant-minisql-catalog-metadata-principal-admin-id-const-principal-admin-id-1-src-minisql-catalog-metadata-ml-572958034"></a>
 ### PRINCIPAL_ADMIN_ID
@@ -627,7 +640,7 @@ const PRINCIPAL_ADMIN_ID = 1
 Defines the principal admin id constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L460)
 
 <a id="constant-constant-minisql-catalog-metadata-principal-header-bytes-const-principal-header-bytes-24-src-minisql-catalog-metadata-ml-1598207063"></a>
 ### PRINCIPAL_HEADER_BYTES
@@ -639,7 +652,7 @@ const PRINCIPAL_HEADER_BYTES = 24
 Defines the principal header bytes constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L495)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L509)
 
 <a id="constant-constant-minisql-catalog-metadata-principal-public-id-const-principal-public-id-2-src-minisql-catalog-metadata-ml-627966197"></a>
 ### PRINCIPAL_PUBLIC_ID
@@ -651,7 +664,7 @@ const PRINCIPAL_PUBLIC_ID = 2
 Defines the principal public id constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L460)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L462)
 
 <a id="constant-constant-minisql-catalog-metadata-principal-role-const-principal-role-2-src-minisql-catalog-metadata-ml-504593165"></a>
 ### PRINCIPAL_ROLE
@@ -663,7 +676,7 @@ const PRINCIPAL_ROLE = 2
 Defines the principal role constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L456)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L458)
 
 <a id="constant-constant-minisql-catalog-metadata-principal-user-const-principal-user-1-src-minisql-catalog-metadata-ml-1166974974"></a>
 ### PRINCIPAL_USER
@@ -675,7 +688,7 @@ const PRINCIPAL_USER = 1
 Defines the principal user constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L454)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L456)
 
 <a id="function-function-minisql-catalog-metadata-principalencodedsize-function-principalencodedsize-principal-src-minisql-catalog-metadata-ml-1437467230"></a>
 ### principalEncodedSize
@@ -691,7 +704,7 @@ Performs the principal encoded size operation for this module. Inputs: `principa
 | `principal` | `dynamic` | — | principal value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L732)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L750)
 
 - [minisql.catalog.metadata.PrincipalMetadata](Type-minisql-catalog-metadata-principalmetadata-1691173151.md) — struct
 <a id="constant-constant-minisql-catalog-metadata-privilege-admin-const-privilege-admin-4-src-minisql-catalog-metadata-ml-1071156723"></a>
@@ -704,7 +717,7 @@ const PRIVILEGE_ADMIN = 4
 Defines the privilege admin constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L474)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L478)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-alter-const-privilege-alter-16-src-minisql-catalog-metadata-ml-1230377320"></a>
 ### PRIVILEGE_ALTER
@@ -716,7 +729,19 @@ const PRIVILEGE_ALTER = 16
 Defines the privilege alter constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L488)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L492)
+
+<a id="constant-constant-minisql-catalog-metadata-privilege-alter-routine-const-privilege-alter-routine-21-src-minisql-catalog-metadata-ml-239880754"></a>
+### PRIVILEGE_ALTER_ROUTINE
+
+```ml
+const PRIVILEGE_ALTER_ROUTINE = 21
+```
+
+Permits alteration or removal of a procedure, or every database procedure.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L500)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-connect-const-privilege-connect-1-src-minisql-catalog-metadata-ml-596488064"></a>
 ### PRIVILEGE_CONNECT
@@ -728,7 +753,7 @@ const PRIVILEGE_CONNECT = 1
 Defines the privilege connect constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L468)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L472)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-create-const-privilege-create-2-src-minisql-catalog-metadata-ml-346611787"></a>
 ### PRIVILEGE_CREATE
@@ -740,7 +765,19 @@ const PRIVILEGE_CREATE = 2
 Defines the privilege create constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L470)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L474)
+
+<a id="constant-constant-minisql-catalog-metadata-privilege-create-routine-const-privilege-create-routine-22-src-minisql-catalog-metadata-ml-1619751783"></a>
+### PRIVILEGE_CREATE_ROUTINE
+
+```ml
+const PRIVILEGE_CREATE_ROUTINE = 22
+```
+
+Permits creation of procedures in a database; never applies to one procedure.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L502)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-delete-const-privilege-delete-13-src-minisql-catalog-metadata-ml-1426713823"></a>
 ### PRIVILEGE_DELETE
@@ -752,7 +789,7 @@ const PRIVILEGE_DELETE = 13
 Defines the privilege delete constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L482)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L486)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-drop-const-privilege-drop-17-src-minisql-catalog-metadata-ml-1625824287"></a>
 ### PRIVILEGE_DROP
@@ -764,7 +801,19 @@ const PRIVILEGE_DROP = 17
 Defines the privilege drop constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L494)
+
+<a id="constant-constant-minisql-catalog-metadata-privilege-execute-const-privilege-execute-20-src-minisql-catalog-metadata-ml-1505012925"></a>
+### PRIVILEGE_EXECUTE
+
+```ml
+const PRIVILEGE_EXECUTE = 20
+```
+
+Permits execution of a procedure, or every procedure in a database.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L498)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-grant-bytes-const-privilege-grant-bytes-40-src-minisql-catalog-metadata-ml-666941591"></a>
 ### PRIVILEGE_GRANT_BYTES
@@ -776,7 +825,7 @@ const PRIVILEGE_GRANT_BYTES = 40
 Defines the privilege grant bytes constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L499)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L513)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-index-const-privilege-index-15-src-minisql-catalog-metadata-ml-1752643405"></a>
 ### PRIVILEGE_INDEX
@@ -788,7 +837,7 @@ const PRIVILEGE_INDEX = 15
 Defines the privilege index constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L486)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L490)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-insert-const-privilege-insert-11-src-minisql-catalog-metadata-ml-1211999113"></a>
 ### PRIVILEGE_INSERT
@@ -800,7 +849,7 @@ const PRIVILEGE_INSERT = 11
 Defines the privilege insert constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L478)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L482)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-maintain-const-privilege-maintain-3-src-minisql-catalog-metadata-ml-996348006"></a>
 ### PRIVILEGE_MAINTAIN
@@ -812,7 +861,7 @@ const PRIVILEGE_MAINTAIN = 3
 Defines the privilege maintain constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L472)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L476)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-owner-const-privilege-owner-18-src-minisql-catalog-metadata-ml-1623454086"></a>
 ### PRIVILEGE_OWNER
@@ -824,7 +873,7 @@ const PRIVILEGE_OWNER = 18
 Defines the privilege owner constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L492)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L496)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-references-const-privilege-references-14-src-minisql-catalog-metadata-ml-119502128"></a>
 ### PRIVILEGE_REFERENCES
@@ -836,7 +885,7 @@ const PRIVILEGE_REFERENCES = 14
 Defines the privilege references constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L484)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L488)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-select-const-privilege-select-10-src-minisql-catalog-metadata-ml-1793953028"></a>
 ### PRIVILEGE_SELECT
@@ -848,7 +897,31 @@ const PRIVILEGE_SELECT = 10
 Defines the privilege select constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L476)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L480)
+
+<a id="constant-constant-minisql-catalog-metadata-privilege-set-any-definer-const-privilege-set-any-definer-24-src-minisql-catalog-metadata-ml-1631781557"></a>
+### PRIVILEGE_SET_ANY_DEFINER
+
+```ml
+const PRIVILEGE_SET_ANY_DEFINER = 24
+```
+
+Permits selecting another existing user as a routine's security definer.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L506)
+
+<a id="constant-constant-minisql-catalog-metadata-privilege-show-routine-const-privilege-show-routine-23-src-minisql-catalog-metadata-ml-128454890"></a>
+### PRIVILEGE_SHOW_ROUTINE
+
+```ml
+const PRIVILEGE_SHOW_ROUTINE = 23
+```
+
+Permits reading every routine definition without authorizing execution.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L504)
 
 <a id="constant-constant-minisql-catalog-metadata-privilege-update-const-privilege-update-12-src-minisql-catalog-metadata-ml-1691325448"></a>
 ### PRIVILEGE_UPDATE
@@ -860,7 +933,7 @@ const PRIVILEGE_UPDATE = 12
 Defines the privilege update constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L480)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L484)
 
 - [minisql.catalog.metadata.PrivilegeGrant](Type-minisql-catalog-metadata-privilegegrant-539883459.md) — struct
 <a id="function-function-minisql-catalog-metadata-requirerange-function-requirerange-payload-offset-count-operation-src-minisql-catalog-metadata-ml-1176764591"></a>
@@ -880,7 +953,7 @@ Performs the require range operation for this module. Inputs: `payload`, `offset
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L391)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L393)
 
 - [minisql.catalog.metadata.RoleMembership](Type-minisql-catalog-metadata-rolemembership-247159248.md) — struct
 <a id="constant-constant-minisql-catalog-metadata-security-extended-counts-flag-const-security-extended-counts-flag-1-src-minisql-catalog-metadata-ml-376133828"></a>
@@ -893,7 +966,7 @@ const SECURITY_EXTENDED_COUNTS_FLAG = 1
 Defines the security extended counts flag constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L505)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L519)
 
 <a id="constant-constant-minisql-catalog-metadata-security-format-version-const-security-format-version-1-src-minisql-catalog-metadata-ml-1103571876"></a>
 ### SECURITY_FORMAT_VERSION
@@ -905,7 +978,7 @@ const SECURITY_FORMAT_VERSION = 1
 M21 security catalog. The sidecar is a CRC-protected, self-identifying
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L449)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L451)
 
 <a id="constant-constant-minisql-catalog-metadata-security-header-bytes-const-security-header-bytes-48-src-minisql-catalog-metadata-ml-364671191"></a>
 ### SECURITY_HEADER_BYTES
@@ -917,7 +990,7 @@ const SECURITY_HEADER_BYTES = 48
 Defines the security header bytes constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L503)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L517)
 
 <a id="constant-constant-minisql-catalog-metadata-security-kind-const-security-kind-70-src-minisql-catalog-metadata-ml-248554276"></a>
 ### SECURITY_KIND
@@ -929,7 +1002,7 @@ const SECURITY_KIND = 70
 Defines the security kind constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L451)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L453)
 
 <a id="constant-constant-minisql-catalog-metadata-security-legacy-header-bytes-const-security-legacy-header-bytes-40-src-minisql-catalog-metadata-ml-1687848729"></a>
 ### SECURITY_LEGACY_HEADER_BYTES
@@ -941,7 +1014,7 @@ const SECURITY_LEGACY_HEADER_BYTES = 40
 Defines the security legacy header bytes constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L501)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L515)
 
 <a id="function-function-minisql-catalog-metadata-securitymagic-function-securitymagic-src-minisql-catalog-metadata-ml-440814434"></a>
 ### securityMagic
@@ -953,7 +1026,7 @@ function securityMagic()
 Performs the security magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L577)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L591)
 
 - [minisql.catalog.metadata.SecurityState](Type-minisql-catalog-metadata-securitystate-575353923.md) — struct
 - [minisql.catalog.metadata.TableMetadata](Type-minisql-catalog-metadata-tablemetadata-1410088233.md) — struct
@@ -967,7 +1040,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql catalog metadata module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L912)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L930)
 
 <a id="constant-constant-minisql-catalog-metadata-unsupported-format-const-unsupported-format-9003-src-minisql-catalog-metadata-ml-1456727271"></a>
 ### UNSUPPORTED_FORMAT
@@ -979,7 +1052,7 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql catalog metadata module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L16)
 
 <a id="function-function-minisql-catalog-metadata-validatedatabaseid-function-validatedatabaseid-value-operation-src-minisql-catalog-metadata-ml-119144518"></a>
 ### validateDatabaseId
@@ -996,7 +1069,7 @@ Validates database id for the minisql catalog metadata workflow. Inputs: `value`
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L182)
 
 <a id="function-function-minisql-catalog-metadata-validateid-function-validateid-value-operation-name-src-minisql-catalog-metadata-ml-1849710967"></a>
 ### validateId
@@ -1014,7 +1087,7 @@ Validates the id. Inputs: `value`, `operation`, `name`. Returns success after al
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L159)
 
 <a id="function-function-minisql-catalog-metadata-validatename-function-validatename-value-operation-name-src-minisql-catalog-metadata-ml-1613074843"></a>
 ### validateName
@@ -1032,7 +1105,7 @@ Validates the name. Inputs: `value`, `operation`, `name`. Returns success after 
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L171)
 
 <a id="function-function-minisql-catalog-metadata-validatesecurityname-function-validatesecurityname-value-operation-src-minisql-catalog-metadata-ml-880736414"></a>
 ### validateSecurityName
@@ -1049,7 +1122,7 @@ Validates the security name. Inputs: `value`, `operation`. Returns success after
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L627)
 
 <a id="function-function-minisql-catalog-metadata-validobjecttype-function-validobjecttype-value-src-minisql-catalog-metadata-ml-426449761"></a>
 ### validObjectType
@@ -1065,7 +1138,7 @@ Performs the valid object type operation for this module. Inputs: `value`. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L682)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L696)
 
 <a id="function-function-minisql-catalog-metadata-validprivilege-function-validprivilege-objecttype-privilege-src-minisql-catalog-metadata-ml-821741098"></a>
 ### validPrivilege
@@ -1082,4 +1155,4 @@ Performs the valid privilege operation for this module. Inputs: `objectType`, `p
 | `privilege` | `dynamic` | — | privilege value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L690)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L704)

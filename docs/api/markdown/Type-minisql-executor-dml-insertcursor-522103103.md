@@ -12,7 +12,7 @@ struct InsertCursor
 Tracks the last heap page considered by a statement-local bulk insert.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L87)
 
 ## Members
 
@@ -26,7 +26,7 @@ allocationBatch
 Maximum number of empty heap pages reserved by one durability barrier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L89)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L91)
 
 <a id="field-field-minisql-executor-dml-insertcursor-pagenumber-pagenumber-src-minisql-executor-dml-ml-1700220258"></a>
 ### pageNumber
@@ -38,7 +38,7 @@ pageNumber
 First page that can still have capacity during the current insert batch.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L87)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L89)
 
 <a id="field-field-minisql-executor-dml-insertcursor-remainingrows-remainingrows-src-minisql-executor-dml-ml-1952287014"></a>
 ### remainingRows
@@ -50,4 +50,4 @@ remainingRows
 Rows not yet staged, used to avoid reserving unused tail pages.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L91)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L93)

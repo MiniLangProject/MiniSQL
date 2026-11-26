@@ -12,7 +12,7 @@ struct RevokePrivilegeStatement
 Groups the revoke privilege statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L865)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L899)
 
 ## Members
 
@@ -26,7 +26,7 @@ cascade
 Stores the cascade associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L875)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L909)
 
 <a id="field-field-minisql-sql-ast-revokeprivilegestatement-granteename-granteename-src-minisql-sql-ast-ml-1894741981"></a>
 ### granteeName
@@ -38,7 +38,7 @@ granteeName
 Stores the grantee name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L873)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L907)
 
 <a id="field-field-minisql-sql-ast-revokeprivilegestatement-objectname-objectname-src-minisql-sql-ast-ml-1762416741"></a>
 ### objectName
@@ -50,7 +50,7 @@ objectName
 Stores the object name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L871)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L905)
 
 <a id="field-field-minisql-sql-ast-revokeprivilegestatement-objecttype-objecttype-src-minisql-sql-ast-ml-548653179"></a>
 ### objectType
@@ -62,7 +62,7 @@ objectType
 Stores the object type associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L869)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L903)
 
 <a id="field-field-minisql-sql-ast-revokeprivilegestatement-privileges-privileges-src-minisql-sql-ast-ml-1283017825"></a>
 ### privileges
@@ -74,4 +74,4 @@ privileges
 Contains the ordered privileges collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L867)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L901)

@@ -11,6 +11,7 @@ Reachable from entry: **yes**
 ## Imports
 
 - `minisql/common/logger.ml` as `logger` → [src/minisql/common/logger.ml](File-src-minisql-common-logger-ml-1571638233.md)
+- `minisql/executor/executor.ml` as `executor` → [src/minisql/executor/executor.ml](File-src-minisql-executor-executor-ml-1548110730.md)
 - `minisql/platform/clock.ml` as `clock` → [src/minisql/platform/clock.ml](File-src-minisql-platform-clock-ml-2055787141.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/platform/network.ml` as `network` → [src/minisql/platform/network.ml](File-src-minisql-platform-network-ml-77221021.md)
@@ -39,7 +40,7 @@ Gives the SHUTDOWN caller one bounded opportunity to perform the protocol CLOSE 
 | `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L264)
 
 - [minisql.server.listener.ClientSlot](Type-minisql-server-listener-clientslot-439851312.md) — struct
 <a id="function-function-minisql-server-listener-closeslot-function-closeslot-slot-src-minisql-server-listener-ml-1548163610"></a>
@@ -56,7 +57,7 @@ Closes slot using the supplied inputs. Requires arguments that satisfy the valid
 | `slot` | `dynamic` | — | slot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L220)
 
 <a id="function-function-minisql-server-listener-componentname-function-componentname-src-minisql-server-listener-ml-1095946470"></a>
 ### componentName
@@ -68,7 +69,7 @@ function componentName()
 Performs the componentName operation for the minisql server listener module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1287)
 
 <a id="function-function-minisql-server-listener-concurrentclientdone-function-concurrentclientdone-state-src-minisql-server-listener-ml-858711585"></a>
 ### concurrentClientDone
@@ -84,7 +85,7 @@ Implements concurrent client done for this module. Returns the computed value or
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L407)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L412)
 
 - [minisql.server.listener.ConcurrentClientTask](Type-minisql-server-listener-concurrentclienttask-1848172356.md) — struct
 <a id="function-function-minisql-server-listener-concurrentfinishrequest-function-concurrentfinishrequest-state-successful-src-minisql-server-listener-ml-1596887873"></a>
@@ -102,7 +103,7 @@ Completes one reservation, optionally adding it to the successful count. Updates
 | `successful` | `dynamic` | — | successful value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L432)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L437)
 
 <a id="function-function-minisql-server-listener-concurrentregisterclient-function-concurrentregisterclient-state-src-minisql-server-listener-ml-582389233"></a>
 ### concurrentRegisterClient
@@ -118,7 +119,7 @@ Implements concurrent register client for this module. Returns the computed valu
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L395)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L400)
 
 <a id="function-function-minisql-server-listener-concurrentrequeststop-function-concurrentrequeststop-state-src-minisql-server-listener-ml-287466629"></a>
 ### concurrentRequestStop
@@ -134,7 +135,7 @@ Implements concurrent request stop for this module. Returns the computed value o
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L461)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L466)
 
 <a id="function-function-minisql-server-listener-concurrentreserverequest-function-concurrentreserverequest-state-src-minisql-server-listener-ml-1490817329"></a>
 ### concurrentReserveRequest
@@ -150,7 +151,7 @@ Atomically reserves capacity under the global request limit. Returns false after
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L419)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L424)
 
 - [minisql.server.listener.ConcurrentServerState](Type-minisql-server-listener-concurrentserverstate-1147309930.md) — struct
 <a id="function-function-minisql-server-listener-concurrentsetfailure-function-concurrentsetfailure-state-failure-src-minisql-server-listener-ml-1303256127"></a>
@@ -168,7 +169,7 @@ Implements concurrent set failure for this module. Requires arguments that satis
 | `failure` | `dynamic` | — | failure value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L447)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L452)
 
 <a id="function-function-minisql-server-listener-concurrentshouldstop-function-concurrentshouldstop-state-src-minisql-server-listener-ml-1099758081"></a>
 ### concurrentShouldStop
@@ -184,7 +185,7 @@ Implements concurrent should stop for this module. Requires arguments that satis
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L390)
 
 <a id="function-function-minisql-server-listener-concurrentstatesnapshot-function-concurrentstatesnapshot-state-src-minisql-server-listener-ml-415078553"></a>
 ### concurrentStateSnapshot
@@ -200,7 +201,7 @@ Copies all shared counters and stop state while holding `guard` briefly. Returns
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L373)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L378)
 
 <a id="function-function-minisql-server-listener-createconcurrentserverstate-function-createconcurrentserverstate-maximumrequests-src-minisql-server-listener-ml-714943598"></a>
 ### createConcurrentServerState
@@ -216,7 +217,7 @@ Creates concurrent server state using the supplied inputs. Returns the computed 
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L366)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L371)
 
 <a id="function-function-minisql-server-listener-errormessagefor-function-errormessagefor-request-code-text-src-minisql-server-listener-ml-143550635"></a>
 ### errorMessageFor
@@ -234,7 +235,7 @@ Creates an error for message for using the supplied inputs. Returns the computed
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L284)
 
 <a id="function-function-minisql-server-listener-fail-function-fail-operation-message-src-minisql-server-listener-ml-1300106574"></a>
 ### fail
@@ -251,7 +252,7 @@ Performs the fail operation for the minisql server listener module. Returns its 
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L35)
 
 <a id="constant-constant-minisql-server-listener-invalid-argument-const-invalid-argument-9001-src-minisql-server-listener-ml-1802158173"></a>
 ### INVALID_ARGUMENT
@@ -263,7 +264,7 @@ const INVALID_ARGUMENT = 9001
 Defines the invalid argument constant used by the minisql server listener module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L28)
 
 <a id="function-function-minisql-server-listener-isimplemented-function-isimplemented-src-minisql-server-listener-ml-2104579838"></a>
 ### isImplemented
@@ -275,7 +276,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql server listener module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1296)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1301)
 
 <a id="function-function-minisql-server-listener-openprepareddatabase-function-openprepareddatabase-databasepath-standby-src-minisql-server-listener-ml-2006530887"></a>
 ### openPreparedDatabase
@@ -292,7 +293,7 @@ Preserves the legacy server API with the documented 64 MiB WAL threshold.
 | `standby` | `dynamic` | — | standby value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L657)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L662)
 
 <a id="function-function-minisql-server-listener-openprepareddatabasewithcheckpoint-function-openprepareddatabasewithcheckpoint-databasepath-standby-checkpointwalbytes-src-minisql-server-listener-ml-1402623102"></a>
 ### openPreparedDatabaseWithCheckpoint
@@ -310,7 +311,7 @@ Opens and completes recovery/index preparation before a TCP listener becomes vis
 | `checkpointWalBytes` | `dynamic` | — | checkpointWalBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L604)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L609)
 
 <a id="function-function-minisql-server-listener-openprepareddatabasewithoperationallimits-function-openprepareddatabasewithoperationallimits-databasepath-standby-checkpointwalbytes-bufferpoolbytes-querymemorybytes-maxstatementbytes-maxframebytes-maxresultrows-maxresultbytes-idletimeoutms-querytimeoutms-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-listener-ml-357069532"></a>
 ### openPreparedDatabaseWithOperationalLimits
@@ -339,7 +340,7 @@ Opens, prepares, and applies the hard per-connection operational limits.
 | `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L644)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L649)
 
 <a id="function-function-minisql-server-listener-openprepareddatabasewithruntime-function-openprepareddatabasewithruntime-databasepath-standby-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-1956214053"></a>
 ### openPreparedDatabaseWithRuntime
@@ -359,7 +360,7 @@ Opens and prepares a shared database using storage and query-memory budgets.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L614)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L619)
 
 <a id="function-function-minisql-server-listener-processrequest-function-processrequest-slot-request-lockwaitms-src-minisql-server-listener-ml-928178639"></a>
 ### processRequest
@@ -377,7 +378,7 @@ Executes or retries one request without blocking the worker on a logical lock. R
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L295)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L296)
 
 <a id="function-function-minisql-server-listener-publishready-function-publishready-listener-readypath-operation-src-minisql-server-listener-ml-1503363331"></a>
 ### publishReady
@@ -395,7 +396,7 @@ Implements publish ready for this module. Requires arguments that satisfy the va
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L147)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L148)
 
 <a id="function-function-minisql-server-listener-reapconcurrentjobs-function-reapconcurrentjobs-jobs-src-minisql-server-listener-ml-1355286390"></a>
 ### reapConcurrentJobs
@@ -411,7 +412,7 @@ Disposes completed pool jobs and returns the still-running handles. The returned
 | `jobs` | `dynamic` | — | jobs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L471)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L476)
 
 <a id="function-function-minisql-server-listener-responseerrorcode-function-responseerrorcode-response-src-minisql-server-listener-ml-32113225"></a>
 ### responseErrorCode
@@ -427,7 +428,7 @@ Implements response error code for this module. Requires arguments that satisfy 
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L238)
 
 <a id="function-function-minisql-server-listener-sendresponse-function-sendresponse-client-response-src-minisql-server-listener-ml-1209454466"></a>
 ### sendResponse
@@ -444,7 +445,7 @@ Sends either an ordinary response or a bounded sequence of result frames.
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L252)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentaddress-function-serveauthenticatedconcurrentaddress-databasepath-address-port-maximumclients-maximumrequests-src-minisql-server-listener-ml-996198353"></a>
 ### serveAuthenticatedConcurrentAddress
@@ -464,7 +465,7 @@ Serves authenticated concurrent address using the supplied inputs. Returns the c
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1033)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1038)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentaddresswithlockwait-function-serveauthenticatedconcurrentaddresswithlockwait-databasepath-address-port-maximumclients-maximumrequests-lockwaitms-src-minisql-server-listener-ml-1363533411"></a>
 ### serveAuthenticatedConcurrentAddressWithLockWait
@@ -485,7 +486,7 @@ Serves authenticated address clients with a configured logical-lock timeout.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1051)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1056)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentaddresswithoperationallimits-function-serveauthenticatedconcurrentaddresswithoperationallimits-databasepath-address-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-maxstatementbytes-maxframebytes-maxresultrows-maxresultbytes-idletimeoutms-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-listener-ml-1195493277"></a>
 ### serveAuthenticatedConcurrentAddressWithOperationalLimits
@@ -517,7 +518,7 @@ Serves authenticated clients with the complete configured operational limit set.
 | `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1106)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentaddresswithreadyfile-function-serveauthenticatedconcurrentaddresswithreadyfile-databasepath-address-port-maximumclients-maximumrequests-readypath-src-minisql-server-listener-ml-1561631427"></a>
 ### serveAuthenticatedConcurrentAddressWithReadyFile
@@ -538,7 +539,7 @@ Serves authenticated concurrent address with ready file using the supplied input
 | `readyPath` | `dynamic` | — | Path associated with ready. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1125)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentaddresswithruntime-function-serveauthenticatedconcurrentaddresswithruntime-databasepath-address-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-1401893599"></a>
 ### serveAuthenticatedConcurrentAddressWithRuntime
@@ -562,7 +563,7 @@ Serves authenticated address clients with configured lock and WAL thresholds.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1072)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1077)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentloopback-function-serveauthenticatedconcurrentloopback-databasepath-port-maximumclients-maximumrequests-src-minisql-server-listener-ml-153728181"></a>
 ### serveAuthenticatedConcurrentLoopback
@@ -581,7 +582,7 @@ Serves authenticated concurrent loopback using the supplied inputs. Returns the 
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L893)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L898)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedconcurrentloopbackwithlockwait-function-serveauthenticatedconcurrentloopbackwithlockwait-databasepath-port-maximumclients-maximumrequests-lockwaitms-src-minisql-server-listener-ml-979005055"></a>
 ### serveAuthenticatedConcurrentLoopbackWithLockWait
@@ -601,7 +602,7 @@ Serves authenticated loopback clients with a configured logical-lock timeout.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L910)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L915)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedone-function-serveauthenticatedone-databasepath-port-maximumrequests-src-minisql-server-listener-ml-1216111595"></a>
 ### serveAuthenticatedOne
@@ -619,7 +620,7 @@ Serves authenticated one using the supplied inputs. Returns the computed value o
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L135)
 
 <a id="function-function-minisql-server-listener-serveauthenticatedonewithreadyfile-function-serveauthenticatedonewithreadyfile-databasepath-port-maximumrequests-readypath-src-minisql-server-listener-ml-2138161131"></a>
 ### serveAuthenticatedOneWithReadyFile
@@ -638,7 +639,7 @@ Serves authenticated one with ready file using the supplied inputs. Requires arg
 | `readyPath` | `dynamic` | — | Path associated with ready. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L185)
 
 <a id="function-function-minisql-server-listener-serveconcurrentclient-function-serveconcurrentclient-task-src-minisql-server-listener-ml-886277037"></a>
 ### serveConcurrentClient
@@ -654,7 +655,7 @@ One long-lived pool job owns exactly one client connection. Slow or idle peers t
 | `task` | `dynamic` | — | task value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L486)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L491)
 
 <a id="function-function-minisql-server-listener-serveconcurrentlistenermode-function-serveconcurrentlistenermode-databasepath-listener-maximumclients-maximumrequests-secure-idlelimitms-standby-tlscredential-lockwaitms-src-minisql-server-listener-ml-1506576995"></a>
 ### serveConcurrentListenerMode
@@ -678,7 +679,7 @@ Preserves the lower-level API for callers that already created a listener. Publi
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L776)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L781)
 
 <a id="function-function-minisql-server-listener-serveconcurrentloopback-function-serveconcurrentloopback-databasepath-port-maximumclients-maximumrequests-src-minisql-server-listener-ml-1799788139"></a>
 ### serveConcurrentLoopback
@@ -697,7 +698,7 @@ Serves concurrent loopback using the supplied inputs. Returns the computed value
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L789)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L794)
 
 <a id="function-function-minisql-server-listener-serveconcurrentloopbackfenced-function-serveconcurrentloopbackfenced-databasepath-port-maximumclients-maximumrequests-leasepath-epoch-nodeid-clockskewms-src-minisql-server-listener-ml-1624226772"></a>
 ### serveConcurrentLoopbackFenced
@@ -720,7 +721,7 @@ Serves a writable loopback primary whose authority is continuously proven by the
 | `clockSkewMs` | `dynamic` | — | clockSkewMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L810)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L815)
 
 <a id="function-function-minisql-server-listener-serveconcurrentloopbackwithlockwait-function-serveconcurrentloopbackwithlockwait-databasepath-port-maximumclients-maximumrequests-lockwaitms-src-minisql-server-listener-ml-539832333"></a>
 ### serveConcurrentLoopbackWithLockWait
@@ -740,7 +741,7 @@ Serves trusted loopback clients with a configured logical-lock timeout.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L829)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L834)
 
 <a id="function-function-minisql-server-listener-serveconcurrentloopbackwithoperationallimits-function-serveconcurrentloopbackwithoperationallimits-databasepath-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-maxstatementbytes-maxframebytes-maxresultrows-maxresultbytes-idletimeoutms-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-listener-ml-1106365667"></a>
 ### serveConcurrentLoopbackWithOperationalLimits
@@ -771,7 +772,7 @@ Serves trusted clients with storage, memory, protocol, result, and idle limits.
 | `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L877)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L882)
 
 <a id="function-function-minisql-server-listener-serveconcurrentloopbackwithruntime-function-serveconcurrentloopbackwithruntime-databasepath-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-1969342677"></a>
 ### serveConcurrentLoopbackWithRuntime
@@ -794,7 +795,7 @@ Serves trusted loopback clients with configured lock and WAL thresholds.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L849)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L854)
 
 <a id="function-function-minisql-server-listener-serveconcurrentwithreadyfile-function-serveconcurrentwithreadyfile-databasepath-port-maximumclients-maximumrequests-readypath-secure-src-minisql-server-listener-ml-1858569812"></a>
 ### serveConcurrentWithReadyFile
@@ -815,7 +816,7 @@ Serves concurrent with ready file using the supplied inputs. Requires arguments 
 | `secure` | `dynamic` | — | secure value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L931)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L936)
 
 <a id="function-function-minisql-server-listener-servelistener-function-servelistener-databasepath-listener-maximumrequests-src-minisql-server-listener-ml-1440013588"></a>
 ### serveListener
@@ -833,7 +834,7 @@ Serves listener using the supplied inputs. Returns the computed value or operati
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L103)
 
 <a id="function-function-minisql-server-listener-servelistenermode-function-servelistenermode-databasepath-listener-maximumrequests-secure-src-minisql-server-listener-ml-1394185959"></a>
 ### serveListenerMode
@@ -852,7 +853,7 @@ Serves listener mode using the supplied inputs. Requires arguments that satisfy 
 | `secure` | `dynamic` | — | secure value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L60)
 
 <a id="function-function-minisql-server-listener-serveone-function-serveone-databasepath-port-maximumrequests-src-minisql-server-listener-ml-1672208043"></a>
 ### serveOne
@@ -870,7 +871,7 @@ Serves one using the supplied inputs. Returns the computed value or operation st
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L123)
 
 <a id="function-function-minisql-server-listener-serveonewithreadyfile-function-serveonewithreadyfile-databasepath-port-maximumrequests-readypath-src-minisql-server-listener-ml-1626392243"></a>
 ### serveOneWithReadyFile
@@ -889,7 +890,7 @@ Serves one with ready file using the supplied inputs. Requires arguments that sa
 | `readyPath` | `dynamic` | — | Path associated with ready. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L166)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L167)
 
 <a id="function-function-minisql-server-listener-servepreparedconcurrentlistenermode-function-servepreparedconcurrentlistenermode-databasepath-listener-shared-maximumclients-maximumrequests-secure-idlelimitms-standby-tlscredential-lockwaitms-src-minisql-server-listener-ml-1730038272"></a>
 ### servePreparedConcurrentListenerMode
@@ -914,7 +915,7 @@ Accepts clients into a bounded native thread pool backed by one already prepared
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L673)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L678)
 
 <a id="function-function-minisql-server-listener-servesecurelistener-function-servesecurelistener-databasepath-listener-maximumrequests-src-minisql-server-listener-ml-1164085490"></a>
 ### serveSecureListener
@@ -932,7 +933,7 @@ Serves secure listener using the supplied inputs. Returns the computed value or 
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L113)
 
 <a id="function-function-minisql-server-listener-servestandbyconcurrentloopback-function-servestandbyconcurrentloopback-databasepath-port-maximumclients-maximumrequests-src-minisql-server-listener-ml-275762745"></a>
 ### serveStandbyConcurrentLoopback
@@ -951,7 +952,7 @@ Serves standby concurrent loopback using the supplied inputs. Returns the comput
 | `maximumRequests` | `dynamic` | — | maximumRequests value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L951)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L956)
 
 <a id="function-function-minisql-server-listener-servestandbyconcurrentloopbackwithlockwait-function-servestandbyconcurrentloopbackwithlockwait-databasepath-port-maximumclients-maximumrequests-lockwaitms-src-minisql-server-listener-ml-857778835"></a>
 ### serveStandbyConcurrentLoopbackWithLockWait
@@ -971,7 +972,7 @@ Serves a standby listener with a configured logical-lock timeout.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L968)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L973)
 
 <a id="function-function-minisql-server-listener-servestandbyconcurrentloopbackwithoperationallimits-function-servestandbyconcurrentloopbackwithoperationallimits-databasepath-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-maxstatementbytes-maxframebytes-maxresultrows-maxresultbytes-idletimeoutms-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-listener-ml-1003432879"></a>
 ### serveStandbyConcurrentLoopbackWithOperationalLimits
@@ -1002,7 +1003,7 @@ Serves a standby with the complete configured operational limit set.
 | `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1016)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1021)
 
 <a id="function-function-minisql-server-listener-servestandbyconcurrentloopbackwithruntime-function-servestandbyconcurrentloopbackwithruntime-databasepath-port-maximumclients-maximumrequests-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-1937032829"></a>
 ### serveStandbyConcurrentLoopbackWithRuntime
@@ -1025,7 +1026,7 @@ Serves a standby with configured lock and WAL thresholds.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L988)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L993)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddress-function-servetlsconcurrentaddress-databasepath-address-port-maximumclients-maximumrequests-certificatereference-src-minisql-server-listener-ml-1139541889"></a>
 ### serveTlsConcurrentAddress
@@ -1046,7 +1047,7 @@ Serves native TLS using a store or PFX certificate and environment PFX secret.
 | `certificateReference` | `dynamic` | — | certificateReference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1256)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithlockwait-function-servetlsconcurrentaddresswithlockwait-databasepath-address-port-maximumclients-maximumrequests-certificatereference-lockwaitms-src-minisql-server-listener-ml-507981171"></a>
 ### serveTlsConcurrentAddressWithLockWait
@@ -1068,7 +1069,7 @@ Serves native TLS with a configured logical-lock timeout.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1268)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithoperationallimits-function-servetlsconcurrentaddresswithoperationallimits-databasepath-address-port-maximumclients-maximumrequests-certificatereference-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-maxstatementbytes-maxframebytes-maxresultrows-maxresultbytes-idletimeoutms-processmemorybytes-temporarystoragebytes-slowqueryms-src-minisql-server-listener-ml-1928671805"></a>
 ### serveTlsConcurrentAddressWithOperationalLimits
@@ -1101,7 +1102,7 @@ Serves native TLS with the complete configured operational limit set.
 | `slowQueryMs` | `dynamic` | — | slowQueryMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1221)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithpassword-function-servetlsconcurrentaddresswithpassword-databasepath-address-port-maximumclients-maximumrequests-certificatereference-passwordbytes-readypath-src-minisql-server-listener-ml-2092201995"></a>
 ### serveTlsConcurrentAddressWithPassword
@@ -1124,7 +1125,7 @@ Serves TLS with the legacy five-second logical-lock timeout.
 | `readyPath` | `dynamic` | — | Path associated with ready. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1245)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithpasswordandlockwait-function-servetlsconcurrentaddresswithpasswordandlockwait-databasepath-address-port-maximumclients-maximumrequests-certificatereference-passwordbytes-readypath-lockwaitms-src-minisql-server-listener-ml-10653037"></a>
 ### serveTlsConcurrentAddressWithPasswordAndLockWait
@@ -1148,7 +1149,7 @@ Serves TLS with the legacy 64 MiB automatic checkpoint threshold.
 | `lockWaitMs` | `dynamic` | — | lockWaitMs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1183)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithpasswordruntime-function-servetlsconcurrentaddresswithpasswordruntime-databasepath-address-port-maximumclients-maximumrequests-certificatereference-passwordbytes-readypath-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-871044935"></a>
 ### serveTlsConcurrentAddressWithPasswordRuntime
@@ -1175,7 +1176,7 @@ Serves concurrent authenticated sessions over native TLS 1.3 and Schannel.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1151)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithreadyfile-function-servetlsconcurrentaddresswithreadyfile-databasepath-address-port-maximumclients-maximumrequests-certificatereference-readypath-src-minisql-server-listener-ml-716711391"></a>
 ### serveTlsConcurrentAddressWithReadyFile
@@ -1197,7 +1198,7 @@ Publishes a readiness marker only after the native TLS credential and listener e
 | `readyPath` | `dynamic` | — | Path associated with ready. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1280)
 
 <a id="function-function-minisql-server-listener-servetlsconcurrentaddresswithruntime-function-servetlsconcurrentaddresswithruntime-databasepath-address-port-maximumclients-maximumrequests-certificatereference-lockwaitms-checkpointwalbytes-bufferpoolbytes-querymemorybytes-src-minisql-server-listener-ml-38723683"></a>
 ### serveTlsConcurrentAddressWithRuntime
@@ -1222,7 +1223,7 @@ Serves TLS with configured lock and WAL thresholds.
 | `queryMemoryBytes` | `dynamic` | — | queryMemoryBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1198)
 
 <a id="function-function-minisql-server-listener-targetmilestone-function-targetmilestone-src-minisql-server-listener-ml-1020463664"></a>
 ### targetMilestone
@@ -1234,7 +1235,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql server listener module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1289)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L1294)
 
 <a id="function-function-minisql-server-listener-validatearguments-function-validatearguments-databasepath-maximumrequests-operation-src-minisql-server-listener-ml-823693957"></a>
 ### validateArguments
@@ -1252,4 +1253,4 @@ Validates arguments using the supplied inputs. Requires arguments that satisfy t
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L46)

@@ -19,12 +19,12 @@ These MiniLang source files are reachable through imports but are outside the co
 | 0 | `std.fmt` | `../MiniLangCompilerML/std/fmt.ml` |
 | 0 | `std.fs` | `../MiniLangCompilerML/std/fs.ml` |
 | 1 | `std.io.file` | `../MiniLangCompilerML/std/io/file.ml` |
-| 1 | `std.math` | `../MiniLangCompilerML/std/math.ml` |
+| 3 | `std.math` | `../MiniLangCompilerML/std/math.ml` |
 | 0 | `std.path` | `../MiniLangCompilerML/std/path.ml` |
 | 0 | `std.platform` | `../MiniLangCompilerML/std/platform.ml` |
-| 1 | `std.string` | `../MiniLangCompilerML/std/string.ml` |
+| 4 | `std.string` | `../MiniLangCompilerML/std/string.ml` |
 | 2 | `std.string_builder` | `../MiniLangCompilerML/std/string_builder.ml` |
 | 5 | `std.threading` | `../MiniLangCompilerML/std/threading.ml` |
-| 5 | `std.time` | `../MiniLangCompilerML/std/time.ml` |
+| 6 | `std.time` | `../MiniLangCompilerML/std/time.ml` |
 | 1 | `std.tls._openssl` | `../MiniLangCompilerML/std/tls/_openssl.ml` |
 | 1 | `std.uuid` | `../MiniLangCompilerML/std/uuid.ml` |

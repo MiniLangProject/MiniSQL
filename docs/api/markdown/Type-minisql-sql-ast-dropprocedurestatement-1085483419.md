@@ -12,7 +12,7 @@ struct DropProcedureStatement
 Represents removal of a stored procedure.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L647)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Indicates whether a missing procedure is accepted.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L617)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L651)
 
 <a id="field-field-minisql-sql-ast-dropprocedurestatement-name-name-src-minisql-sql-ast-ml-1952902680"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the qualified procedure name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L615)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L649)

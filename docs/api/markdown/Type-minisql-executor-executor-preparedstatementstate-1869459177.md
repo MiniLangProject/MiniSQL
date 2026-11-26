@@ -12,7 +12,7 @@ struct PreparedStatementState
 Groups the prepared statement state state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L115)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L117)
 
 <a id="field-field-minisql-executor-executor-preparedstatementstate-parametercount-parametercount-src-minisql-executor-executor-ml-2056574584"></a>
 ### parameterCount
@@ -38,7 +38,7 @@ parameterCount
 Tracks the parameter count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L121)
 
 <a id="field-field-minisql-executor-executor-preparedstatementstate-schemageneration-schemageneration-src-minisql-executor-executor-ml-289547626"></a>
 ### schemaGeneration
@@ -50,7 +50,19 @@ schemaGeneration
 Stores the schema generation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L123)
+
+<a id="field-field-minisql-executor-executor-preparedstatementstate-schemaname-schemaname-src-minisql-executor-executor-ml-323317744"></a>
+### schemaName
+
+```ml
+schemaName
+```
+
+Schema captured by PREPARE; independent of the lifetime of its creating routine.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L125)
 
 <a id="field-field-minisql-executor-executor-preparedstatementstate-statement-statement-src-minisql-executor-executor-ml-1080257260"></a>
 ### statement
@@ -62,4 +74,4 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/executor.ml#L119)

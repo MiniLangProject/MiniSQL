@@ -76,6 +76,30 @@ Stores the message associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L42)
 
+<a id="field-field-minisql-protocol-messages-response-metadata-metadata-src-minisql-protocol-messages-ml-825523322"></a>
+### metadata
+
+```ml
+metadata
+```
+
+Optional negotiated metadata; absent on legacy responses.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L48)
+
+<a id="field-field-minisql-protocol-messages-response-resultstart-resultstart-src-minisql-protocol-messages-ml-1458594508"></a>
+### resultStart
+
+```ml
+resultStart
+```
+
+Client/server framing metadata; true at a new result boundary, not encoded in the payload.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L46)
+
 <a id="field-field-minisql-protocol-messages-response-rows-rows-src-minisql-protocol-messages-ml-1427345386"></a>
 ### rows
 

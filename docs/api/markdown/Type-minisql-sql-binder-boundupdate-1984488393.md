@@ -12,7 +12,7 @@ struct BoundUpdate
 Groups the bound update state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L184)
 
 ## Members
 
@@ -26,7 +26,7 @@ assignments
 Contains the ordered assignments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L190)
 
 <a id="field-field-minisql-sql-binder-boundupdate-returning-returning-src-minisql-sql-binder-ml-1424102378"></a>
 ### returning
@@ -38,7 +38,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L192)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L194)
 
 <a id="field-field-minisql-sql-binder-boundupdate-statement-statement-src-minisql-sql-binder-ml-988365342"></a>
 ### statement
@@ -50,7 +50,7 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L186)
 
 <a id="field-field-minisql-sql-binder-boundupdate-table-table-src-minisql-sql-binder-ml-1667891206"></a>
 ### table
@@ -62,7 +62,7 @@ table
 Stores the table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L188)
 
 <a id="field-field-minisql-sql-binder-boundupdate-whereexpression-whereexpression-src-minisql-sql-binder-ml-842348522"></a>
 ### whereExpression
@@ -74,4 +74,4 @@ whereExpression
 Stores the where expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/binder.ml#L192)

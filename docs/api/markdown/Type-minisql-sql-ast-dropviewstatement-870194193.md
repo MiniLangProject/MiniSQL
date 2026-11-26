@@ -12,7 +12,7 @@ struct DropViewStatement
 Groups the drop view statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L525)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L533)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Stores the if exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L529)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L537)
 
 <a id="field-field-minisql-sql-ast-dropviewstatement-name-name-src-minisql-sql-ast-ml-2046175798"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L527)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L535)

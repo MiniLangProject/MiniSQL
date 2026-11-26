@@ -12,7 +12,7 @@ struct RowId
 Defines the row id record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L43)
 
 ## Members
 
@@ -26,7 +26,7 @@ generation
 Generation field of the row id.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L49)
 
 <a id="field-field-minisql-storage-heap-file-rowid-pagenumber-pagenumber-src-minisql-storage-heap-file-ml-368752116"></a>
 ### pageNumber
@@ -38,7 +38,7 @@ pageNumber
 Page number field of the row id.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L45)
 
 <a id="field-field-minisql-storage-heap-file-rowid-slotid-slotid-src-minisql-storage-heap-file-ml-1436094322"></a>
 ### slotId
@@ -50,4 +50,4 @@ slotId
 Slot id field of the row id.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/heap_file.ml#L47)

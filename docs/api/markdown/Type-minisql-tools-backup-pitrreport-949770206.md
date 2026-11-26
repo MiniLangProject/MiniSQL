@@ -12,7 +12,7 @@ struct PitrReport
 Groups the point-in-time recovery report state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L805)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L806)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L807)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L808)
 
 <a id="field-field-minisql-tools-backup-pitrreport-path-path-src-minisql-tools-backup-ml-510848606"></a>
 ### path
@@ -38,7 +38,7 @@ path
 Stores the filesystem path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L811)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L812)
 
 <a id="field-field-minisql-tools-backup-pitrreport-targetlsn-targetlsn-src-minisql-tools-backup-ml-1104534376"></a>
 ### targetLsn
@@ -50,4 +50,4 @@ targetLsn
 Stores the target LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L809)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L810)

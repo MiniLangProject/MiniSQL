@@ -12,7 +12,7 @@ struct SlotEntry
 Defines the slot entry record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L39)
 
 ## Members
 
@@ -26,7 +26,7 @@ dataLength
 Data length field of the slot entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L43)
 
 <a id="field-field-minisql-storage-slotted-page-slotentry-dataoffset-dataoffset-src-minisql-storage-slotted-page-ml-765923517"></a>
 ### dataOffset
@@ -38,7 +38,7 @@ dataOffset
 Data offset field of the slot entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L41)
 
 <a id="field-field-minisql-storage-slotted-page-slotentry-flags-flags-src-minisql-storage-slotted-page-ml-11023759"></a>
 ### flags
@@ -50,7 +50,7 @@ flags
 Flags field of the slot entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L45)
 
 <a id="field-field-minisql-storage-slotted-page-slotentry-generation-generation-src-minisql-storage-slotted-page-ml-37074095"></a>
 ### generation
@@ -62,4 +62,4 @@ generation
 Generation field of the slot entry.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L47)

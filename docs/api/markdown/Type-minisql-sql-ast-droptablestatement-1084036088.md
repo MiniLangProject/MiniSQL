@@ -12,7 +12,7 @@ struct DropTableStatement
 Groups the drop table statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L491)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L499)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Stores the if exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L495)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L503)
 
 <a id="field-field-minisql-sql-ast-droptablestatement-name-name-src-minisql-sql-ast-ml-544803981"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L493)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L501)

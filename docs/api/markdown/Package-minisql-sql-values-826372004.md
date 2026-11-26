@@ -25,6 +25,7 @@
 - [`minisql.sql.values.doubleValue`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-doublevalue-function-doublevalue-value-src-minisql-sql-values-ml-229372831) — function
 - [`minisql.sql.values.fail`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-fail-function-fail-code-operation-message-src-minisql-sql-values-ml-1110428499) — function
 - [`minisql.sql.values.floatingNumberFromText`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-floatingnumberfromtext-function-floatingnumberfromtext-textvalue-src-minisql-sql-values-ml-374337904) — function
+- [`minisql.sql.values.floatingSignedZero`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-floatingsignedzero-function-floatingsignedzero-textvalue-number-src-minisql-sql-values-ml-235691307) — function
 - [`minisql.sql.values.floatingTextPart`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-floatingtextpart-function-floatingtextpart-raw-startoffset-endoffset-operation-src-minisql-sql-values-ml-278412966) — function
 - [`minisql.sql.values.fromLiteral`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-fromliteral-function-fromliteral-expression-src-minisql-sql-values-ml-1833035212) — function
 - [`minisql.sql.values.fromStorage`](File-src-minisql-sql-values-ml-1302895578.md#function-function-minisql-sql-values-fromstorage-function-fromstorage-typekind-raw-src-minisql-sql-values-ml-699002542) — function

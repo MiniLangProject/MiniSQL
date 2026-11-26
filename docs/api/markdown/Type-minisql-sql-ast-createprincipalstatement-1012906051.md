@@ -12,7 +12,7 @@ struct CreatePrincipalStatement
 Groups the create principal statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L801)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L835)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L805)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L839)
 
 <a id="field-field-minisql-sql-ast-createprincipalstatement-password-password-src-minisql-sql-ast-ml-1566588192"></a>
 ### password
@@ -38,7 +38,7 @@ password
 Stores the password associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L807)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L841)
 
 <a id="field-field-minisql-sql-ast-createprincipalstatement-principalkind-principalkind-src-minisql-sql-ast-ml-2111284274"></a>
 ### principalKind
@@ -50,4 +50,4 @@ principalKind
 Stores the principal kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L803)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L837)

@@ -26,6 +26,7 @@ Reachable from entry: **yes**
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/storage/row_codec.ml` as `row_codec` → [src/minisql/storage/row_codec.ml](File-src-minisql-storage-row-codec-ml-756043630.md)
 - `minisql/storage/slotted_page.ml` as `slotted_page` → [src/minisql/storage/slotted_page.ml](File-src-minisql-storage-slotted-page-ml-1299577846.md)
+- `minisql/storage/table_header.ml` as `table_header` → [src/minisql/storage/table_header.ml](File-src-minisql-storage-table-header-ml-163902973.md)
 - `minisql/transaction/transaction.ml` as `transaction` → [src/minisql/transaction/transaction.ml](File-src-minisql-transaction-transaction-ml-1157597470.md)
 - `std/ds/list.ml` as `list` → `../MiniLangCompilerML/std/ds/list.ml` — external dependency
 
@@ -45,7 +46,7 @@ Materializes every live row. The range implementation is shared with LIMIT/OFFSE
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L734)
 
 <a id="function-function-minisql-executor-scan-allrange-function-allrange-reader-offset-limit-src-minisql-executor-scan-ml-1030094279"></a>
 ### allRange
@@ -63,7 +64,7 @@ Scans a physical live-row range and materializes all columns.
 | `limit` | `dynamic` | — | limit value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L725)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L726)
 
 <a id="function-function-minisql-executor-scan-allrangecolumns-function-allrangecolumns-reader-offset-limit-requiredcolumns-src-minisql-executor-scan-ml-22107379"></a>
 ### allRangeColumns
@@ -82,7 +83,7 @@ Implements all for this module. Returns its result or propagates a structured er
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L682)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L683)
 
 <a id="function-function-minisql-executor-scan-appendarrayvalue-function-appendarrayvalue-source-item-operation-src-minisql-executor-scan-ml-1359553943"></a>
 ### appendArrayValue
@@ -100,7 +101,7 @@ Appends array value using the supplied inputs. Requires arguments that satisfy t
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L182)
 
 <a id="function-function-minisql-executor-scan-close-function-close-reader-src-minisql-executor-scan-ml-954116435"></a>
 ### close
@@ -116,7 +117,7 @@ Closes close owned by the minisql executor scan module. Returns the computed val
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L786)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L787)
 
 <a id="constant-constant-minisql-executor-scan-closed-handle-const-closed-handle-9008-src-minisql-executor-scan-ml-1663484046"></a>
 ### CLOSED_HANDLE
@@ -128,7 +129,7 @@ const CLOSED_HANDLE = 9008
 Defines the closed handle constant used by the minisql executor scan module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L35)
 
 <a id="function-function-minisql-executor-scan-componentname-function-componentname-src-minisql-executor-scan-ml-819702012"></a>
 ### componentName
@@ -140,7 +141,7 @@ function componentName()
 Performs the componentName operation for the minisql executor scan module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1050)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1051)
 
 <a id="constant-constant-minisql-executor-scan-corrupt-data-const-corrupt-data-9004-src-minisql-executor-scan-ml-657144412"></a>
 ### CORRUPT_DATA
@@ -152,7 +153,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql executor scan module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L33)
 
 <a id="function-function-minisql-executor-scan-count-function-count-reader-src-minisql-executor-scan-ml-1511357421"></a>
 ### count
@@ -168,7 +169,7 @@ Counts count using the supplied inputs. Returns the computed value or operation 
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L778)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L779)
 
 <a id="function-function-minisql-executor-scan-countliverows-function-countliverows-reader-src-minisql-executor-scan-ml-1756127831"></a>
 ### countLiveRows
@@ -184,7 +185,7 @@ Counts live slots without decoding row values. Every heap page still passes thro
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L597)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L598)
 
 <a id="function-function-minisql-executor-scan-counttablerowscached-function-counttablerowscached-databasepath-table-pagetransaction-readcache-src-minisql-executor-scan-ml-1783841415"></a>
 ### countTableRowsCached
@@ -203,7 +204,7 @@ Opens a short-lived cached reader and returns only its number of visible rows.
 | `readCache` | `dynamic` | — | readCache value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L886)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L887)
 
 <a id="function-function-minisql-executor-scan-counttablerowscachedcontrolled-function-counttablerowscachedcontrolled-database-sessionid-table-pagetransaction-src-minisql-executor-scan-ml-1449762363"></a>
 ### countTableRowsCachedControlled
@@ -222,7 +223,7 @@ Counts live rows through a cancellation-aware cached reader.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L910)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L911)
 
 <a id="function-function-minisql-executor-scan-decoderecord-function-decoderecord-reader-encoded-src-minisql-executor-scan-ml-1652294131"></a>
 ### decodeRecord
@@ -239,7 +240,7 @@ Decodes record using the supplied inputs. Requires arguments that satisfy the va
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L421)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L422)
 
 <a id="function-function-minisql-executor-scan-decoderecordcolumns-function-decoderecordcolumns-reader-encoded-requiredcolumns-src-minisql-executor-scan-ml-1481976597"></a>
 ### decodeRecordColumns
@@ -257,7 +258,7 @@ Decodes one record while materializing only columns required by the query. Unuse
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L455)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L456)
 
 <a id="function-function-minisql-executor-scan-evaluatedefault-function-evaluatedefault-rule-column-src-minisql-executor-scan-ml-79353412"></a>
 ### evaluateDefault
@@ -274,7 +275,7 @@ Evaluates default using the supplied inputs. Returns the computed value or opera
 | `column` | `dynamic` | — | column value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L359)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L360)
 
 <a id="function-function-minisql-executor-scan-evaluategenerated-function-evaluategenerated-reader-generated-column-currentvalues-src-minisql-executor-scan-ml-300642721"></a>
 ### evaluateGenerated
@@ -293,7 +294,7 @@ Evaluates generated using the supplied inputs. Returns the computed value or ope
 | `currentValues` | `dynamic` | — | currentValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L386)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L387)
 
 <a id="function-function-minisql-executor-scan-fail-function-fail-code-operation-message-src-minisql-executor-scan-ml-1355913017"></a>
 ### fail
@@ -311,7 +312,7 @@ Performs the fail operation for the minisql executor scan module. Returns its re
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L121)
 
 <a id="function-function-minisql-executor-scan-findcolumnrule-function-findcolumnrule-reader-columnname-src-minisql-executor-scan-ml-583773510"></a>
 ### findColumnRule
@@ -328,7 +329,7 @@ Finds column rule using the supplied inputs. Returns the computed value or opera
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L346)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L347)
 
 <a id="function-function-minisql-executor-scan-findgenerated-function-findgenerated-reader-columnname-src-minisql-executor-scan-ml-780411406"></a>
 ### findGenerated
@@ -345,7 +346,7 @@ Finds generated using the supplied inputs. Returns the computed value or operati
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L372)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L373)
 
 <a id="function-function-minisql-executor-scan-heappagecount-function-heappagecount-reader-src-minisql-executor-scan-ml-493310815"></a>
 ### heapPageCount
@@ -361,7 +362,7 @@ Returns the number of physical heap pages advertised by the persistent page dire
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L500)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L501)
 
 <a id="constant-constant-minisql-executor-scan-invalid-argument-const-invalid-argument-9001-src-minisql-executor-scan-ml-430350263"></a>
 ### INVALID_ARGUMENT
@@ -373,7 +374,7 @@ const INVALID_ARGUMENT = 9001
 Transaction-aware sequential table scan for the first executable SQL engine.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L31)
 
 <a id="function-function-minisql-executor-scan-isimplemented-function-isimplemented-src-minisql-executor-scan-ml-632356148"></a>
 ### isImplemented
@@ -385,7 +386,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql executor scan module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1064)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1065)
 
 <a id="function-function-minisql-executor-scan-isrowbatch-function-isrowbatch-value-src-minisql-executor-scan-ml-1876253729"></a>
 ### isRowBatch
@@ -401,7 +402,7 @@ Reports whether a value is a bounded RowBatch.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L171)
 
 <a id="function-function-minisql-executor-scan-isrowreference-function-isrowreference-value-src-minisql-executor-scan-ml-1568702825"></a>
 ### isRowReference
@@ -417,7 +418,7 @@ Returns whether the supplied value satisfies the row reference condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L129)
 
 <a id="function-function-minisql-executor-scan-isscannedrow-function-isscannedrow-value-src-minisql-executor-scan-ml-1985865513"></a>
 ### isScannedRow
@@ -433,7 +434,7 @@ Returns whether the supplied value satisfies the scanned row condition. Returns 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L137)
 
 <a id="function-function-minisql-executor-scan-istablereader-function-istablereader-value-src-minisql-executor-scan-ml-1991443535"></a>
 ### isTableReader
@@ -449,7 +450,7 @@ Returns whether the supplied value satisfies the table reader condition. Returns
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L145)
 
 <a id="function-function-minisql-executor-scan-istablerowcursor-function-istablerowcursor-value-src-minisql-executor-scan-ml-686045957"></a>
 ### isTableRowCursor
@@ -465,7 +466,7 @@ Returns whether value is a forward-only table row cursor.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L165)
 
 <a id="function-function-minisql-executor-scan-materializestoredvalue-function-materializestoredvalue-reader-index-raw-src-minisql-executor-scan-ml-103340357"></a>
 ### materializeStoredValue
@@ -483,7 +484,7 @@ Implements materialize stored value for this module. Requires arguments that sat
 | `raw` | `dynamic` | — | raw value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L400)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L401)
 
 <a id="function-function-minisql-executor-scan-nextbatch-function-nextbatch-cursor-maximumrows-src-minisql-executor-scan-ml-1362770243"></a>
 ### nextBatch
@@ -500,7 +501,7 @@ Reads at most maximumRows from a forward-only cursor. A void result denotes end-
 | `maximumRows` | `dynamic` | — | maximumRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L563)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L564)
 
 <a id="function-function-minisql-executor-scan-nextrow-function-nextrow-cursor-src-minisql-executor-scan-ml-867047600"></a>
 ### nextRow
@@ -516,7 +517,7 @@ Returns the next live row or void at end-of-table. Advancing before returning ma
 | `cursor` | `dynamic` | — | cursor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L524)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L525)
 
 <a id="function-function-minisql-executor-scan-open-function-open-databasepath-table-pagetransaction-src-minisql-executor-scan-ml-209158055"></a>
 ### open
@@ -534,7 +535,7 @@ Opens a table without a shared cache for storage tools and direct tests.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L258)
 
 <a id="function-function-minisql-executor-scan-opencached-function-opencached-databasepath-table-pagetransaction-readcache-src-minisql-executor-scan-ml-577048327"></a>
 ### openCached
@@ -553,7 +554,7 @@ Opens cached for the minisql executor scan module. Requires arguments that satis
 | `readCache` | `dynamic` | — | readCache value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L216)
 
 <a id="function-function-minisql-executor-scan-opencachedwithschema-function-opencachedwithschema-databasepath-table-pagetransaction-readcache-state-src-minisql-executor-scan-ml-1213062928"></a>
 ### openCachedWithSchema
@@ -573,7 +574,7 @@ Opens a table using a database-owned immutable schema snapshot. Managed query ex
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L240)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L241)
 
 <a id="function-function-minisql-executor-scan-opencursor-function-opencursor-reader-requiredcolumns-src-minisql-executor-scan-ml-1819011973"></a>
 ### openCursor
@@ -590,7 +591,7 @@ Creates a forward-only cursor over live rows. Heap-page discovery uses the persi
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L490)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L491)
 
 <a id="function-function-minisql-executor-scan-opencursorrange-function-opencursorrange-reader-requiredcolumns-firstpageindex-endpageindex-src-minisql-executor-scan-ml-344540850"></a>
 ### openCursorRange
@@ -609,7 +610,7 @@ Creates a cursor over the half-open physical heap-page range [first, end). The r
 | `endPageIndex` | `dynamic` | — | Zero-based index of end page. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L513)
 
 <a id="function-function-minisql-executor-scan-openexisting-function-openexisting-databasepath-file-table-pagetransaction-src-minisql-executor-scan-ml-38941281"></a>
 ### openExisting
@@ -628,7 +629,7 @@ Opens a caller-owned file without a shared cache.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L307)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L308)
 
 <a id="function-function-minisql-executor-scan-openexistingcached-function-openexistingcached-databasepath-file-table-pagetransaction-readcache-src-minisql-executor-scan-ml-264606529"></a>
 ### openExistingCached
@@ -648,7 +649,7 @@ Opens existing using the supplied inputs. Requires arguments that satisfy the va
 | `readCache` | `dynamic` | — | readCache value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L270)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L271)
 
 <a id="function-function-minisql-executor-scan-openexistingcachedwithschema-function-openexistingcachedwithschema-databasepath-file-table-pagetransaction-readcache-state-src-minisql-executor-scan-ml-340189126"></a>
 ### openExistingCachedWithSchema
@@ -669,7 +670,7 @@ Creates a non-owning reader over a persistent database-owned table handle and an
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L290)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L291)
 
 <a id="function-function-minisql-executor-scan-readreference-function-readreference-reader-reference-src-minisql-executor-scan-ml-171632130"></a>
 ### readReference
@@ -686,7 +687,7 @@ Reads reference using the supplied inputs. Requires arguments that satisfy the v
 | `reference` | `dynamic` | — | reference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L743)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L744)
 
 <a id="function-function-minisql-executor-scan-readtablereference-function-readtablereference-databasepath-table-pagetransaction-reference-src-minisql-executor-scan-ml-1677603376"></a>
 ### readTableReference
@@ -705,7 +706,7 @@ Reads table reference using the supplied inputs. Requires arguments that satisfy
 | `reference` | `dynamic` | — | reference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L765)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L766)
 
 - [minisql.executor.scan.RowBatch](Type-minisql-executor-scan-rowbatch-2084287350.md) — struct
 - [minisql.executor.scan.RowReference](Type-minisql-executor-scan-rowreference-1672305503.md) — struct
@@ -725,7 +726,7 @@ Decodes at most `maximumRows` uniformly spaced live rows while visiting each hea
 | `maximumRows` | `dynamic` | — | maximumRows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L622)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L623)
 
 <a id="function-function-minisql-executor-scan-sampletablerowscached-function-sampletablerowscached-databasepath-table-populationrows-maximumrows-readcache-src-minisql-executor-scan-ml-913397277"></a>
 ### sampleTableRowsCached
@@ -745,7 +746,7 @@ Opens one cached reader for the bounded ANALYZE sampling pass.
 | `readCache` | `dynamic` | — | readCache value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L927)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L928)
 
 <a id="function-function-minisql-executor-scan-scanexisting-function-scanexisting-databasepath-file-table-pagetransaction-src-minisql-executor-scan-ml-2136488773"></a>
 ### scanExisting
@@ -764,7 +765,7 @@ Scans existing using the supplied inputs. Requires arguments that satisfy the va
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L944)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L945)
 
 <a id="function-function-minisql-executor-scan-scanexistingrange-function-scanexistingrange-databasepath-file-table-pagetransaction-offset-limit-src-minisql-executor-scan-ml-229230199"></a>
 ### scanExistingRange
@@ -785,7 +786,7 @@ Applies a bounded range scan to a caller-owned paged file.
 | `limit` | `dynamic` | — | limit value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L960)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L961)
 
 <a id="function-function-minisql-executor-scan-scanexistingrangecolumns-function-scanexistingrangecolumns-databasepath-file-table-pagetransaction-offset-limit-requiredcolumns-src-minisql-executor-scan-ml-44459591"></a>
 ### scanExistingRangeColumns
@@ -807,7 +808,7 @@ Applies both range and column pushdown to a caller-owned paged file.
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L977)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L978)
 
 - [minisql.executor.scan.ScannedRow](Type-minisql-executor-scan-scannedrow-207394362.md) — struct
 <a id="function-function-minisql-executor-scan-scantable-function-scantable-databasepath-table-pagetransaction-src-minisql-executor-scan-ml-1795761341"></a>
@@ -826,7 +827,7 @@ Scans table using the supplied inputs. Requires arguments that satisfy the valid
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L800)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L801)
 
 <a id="function-function-minisql-executor-scan-scantablerange-function-scantablerange-databasepath-table-pagetransaction-offset-limit-src-minisql-executor-scan-ml-439919659"></a>
 ### scanTableRange
@@ -846,7 +847,7 @@ Scans only a physical live-row range and stops as soon as the requested number o
 | `limit` | `dynamic` | — | limit value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L817)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L818)
 
 <a id="function-function-minisql-executor-scan-scantablerangecolumns-function-scantablerangecolumns-databasepath-table-pagetransaction-offset-limit-requiredcolumns-src-minisql-executor-scan-ml-515902911"></a>
 ### scanTableRangeColumns
@@ -867,7 +868,7 @@ Scans a range while fetching only columns referenced by the bound query.
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L833)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L834)
 
 <a id="function-function-minisql-executor-scan-scantablerangecolumnscached-function-scantablerangecolumnscached-databasepath-table-pagetransaction-offset-limit-requiredcolumns-readcache-src-minisql-executor-scan-ml-1314396771"></a>
 ### scanTableRangeColumnsCached
@@ -889,7 +890,7 @@ Uses the database-owned concurrent page cache together with range and projection
 | `readCache` | `dynamic` | — | readCache value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L852)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L853)
 
 <a id="function-function-minisql-executor-scan-scantablerangecolumnscachedcontrolled-function-scantablerangecolumnscachedcontrolled-database-sessionid-table-pagetransaction-offset-limit-requiredcolumns-src-minisql-executor-scan-ml-1832411095"></a>
 ### scanTableRangeColumnsCachedControlled
@@ -911,7 +912,7 @@ Controlled cached scan used by network sessions. The ordinary helper stays avail
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L870)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L871)
 
 <a id="function-function-minisql-executor-scan-scanusing-function-scanusing-databasepath-table-pagetransaction-existingfile-src-minisql-executor-scan-ml-973964814"></a>
 ### scanUsing
@@ -930,7 +931,7 @@ Scans using using the supplied inputs. Returns the computed value or operation s
 | `existingFile` | `dynamic` | — | existingFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L993)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L994)
 
 <a id="function-function-minisql-executor-scan-scanusingcolumns-function-scanusingcolumns-databasepath-table-pagetransaction-existingfile-requiredcolumns-src-minisql-executor-scan-ml-1078569520"></a>
 ### scanUsingColumns
@@ -950,7 +951,7 @@ Scans all rows but materializes only the supplied table-column mask.
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1041)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1042)
 
 <a id="function-function-minisql-executor-scan-scanusingcontrolled-function-scanusingcontrolled-database-sessionid-table-pagetransaction-existingfile-src-minisql-executor-scan-ml-993140070"></a>
 ### scanUsingControlled
@@ -970,7 +971,7 @@ Controlled full scan over either a caller-owned table file or a short-lived read
 | `existingFile` | `dynamic` | — | existingFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1006)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1007)
 
 <a id="function-function-minisql-executor-scan-scanusingrange-function-scanusingrange-databasepath-table-pagetransaction-existingfile-offset-limit-src-minisql-executor-scan-ml-292086858"></a>
 ### scanUsingRange
@@ -991,7 +992,7 @@ Selects the bounded scan implementation for an optional caller-owned file.
 | `limit` | `dynamic` | — | limit value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1029)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1030)
 
 <a id="function-function-minisql-executor-scan-schemafortable-function-schemafortable-table-src-minisql-executor-scan-ml-1613192384"></a>
 ### schemaForTable
@@ -1007,7 +1008,7 @@ Implements schema for table for this module. Returns the computed value or opera
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L198)
 
 <a id="function-function-minisql-executor-scan-setexecutioncontrol-function-setexecutioncontrol-reader-database-sessionid-src-minisql-executor-scan-ml-1107792349"></a>
 ### setExecutionControl
@@ -1025,7 +1026,7 @@ Attaches statement cancellation and deadline state to a reader. Polling is delib
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L155)
 
 - [minisql.executor.scan.TableReader](Type-minisql-executor-scan-tablereader-1730172293.md) — struct
 - [minisql.executor.scan.TableRowCursor](Type-minisql-executor-scan-tablerowcursor-1183228132.md) — struct
@@ -1039,7 +1040,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql executor scan module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1057)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L1058)
 
 <a id="constant-constant-minisql-executor-scan-unsupported-sql-const-unsupported-sql-9025-src-minisql-executor-scan-ml-1896278037"></a>
 ### UNSUPPORTED_SQL
@@ -1051,7 +1052,7 @@ const UNSUPPORTED_SQL = 9025
 Defines the unsupported sql constant used by the minisql executor scan module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L37)
 
 <a id="function-function-minisql-executor-scan-validateopen-function-validateopen-reader-operation-src-minisql-executor-scan-ml-605199568"></a>
 ### validateOpen
@@ -1068,7 +1069,7 @@ Validates open for the minisql executor scan workflow. Requires arguments that s
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L317)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L318)
 
 <a id="function-function-minisql-executor-scan-verifyandcount-function-verifyandcount-reader-src-minisql-executor-scan-ml-602296475"></a>
 ### verifyAndCount
@@ -1084,7 +1085,7 @@ Fully decodes and validates every live row while retaining only one row. This in
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L580)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L581)
 
 <a id="function-function-minisql-executor-scan-verifytable-function-verifytable-databasepath-table-pagetransaction-src-minisql-executor-scan-ml-1632023669"></a>
 ### verifyTable
@@ -1102,7 +1103,7 @@ Opens, streams, and closes one table for the offline consistency checker.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L666)
 
 <a id="function-function-minisql-executor-scan-visiblepage-function-visiblepage-reader-pagenumber-src-minisql-executor-scan-ml-1748001171"></a>
 ### visiblePage
@@ -1119,4 +1120,4 @@ Implements visible page for this module. Requires arguments that satisfy the val
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L330)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/scan.ml#L331)

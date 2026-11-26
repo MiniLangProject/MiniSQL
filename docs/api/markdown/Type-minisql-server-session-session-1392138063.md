@@ -88,6 +88,18 @@ Stores the engine associated with this value.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L45)
 
+<a id="field-field-minisql-server-session-session-extendedresults-extendedresults-src-minisql-server-session-ml-684108927"></a>
+### extendedResults
+
+```ml
+extendedResults
+```
+
+True only after the peer explicitly negotiates structured results-v2 metadata.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L81)
+
 <a id="field-field-minisql-server-session-session-lastactivity-lastactivity-src-minisql-server-session-ml-1261204437"></a>
 ### lastActivity
 

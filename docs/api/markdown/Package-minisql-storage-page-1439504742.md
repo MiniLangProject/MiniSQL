@@ -41,6 +41,7 @@
 - [`minisql.storage.page.TYPE_GENERIC`](File-src-minisql-storage-page-ml-792931788.md#constant-constant-minisql-storage-page-type-generic-const-type-generic-255-src-minisql-storage-page-ml-2000011725) — constant
 - [`minisql.storage.page.TYPE_HEAP`](File-src-minisql-storage-page-ml-792931788.md#constant-constant-minisql-storage-page-type-heap-const-type-heap-1-src-minisql-storage-page-ml-1734479264) — constant
 - [`minisql.storage.page.TYPE_OVERFLOW`](File-src-minisql-storage-page-ml-792931788.md#constant-constant-minisql-storage-page-type-overflow-const-type-overflow-2-src-minisql-storage-page-ml-1788757645) — constant
+- [`minisql.storage.page.TYPE_TABLE_META`](File-src-minisql-storage-page-ml-792931788.md#constant-constant-minisql-storage-page-type-table-meta-const-type-table-meta-6-src-minisql-storage-page-ml-1459505541) — constant
 - [`minisql.storage.page.UNSUPPORTED_FORMAT`](File-src-minisql-storage-page-ml-792931788.md#constant-constant-minisql-storage-page-unsupported-format-const-unsupported-format-9003-src-minisql-storage-page-ml-1070137087) — constant
 - [`minisql.storage.page.validateHeader`](File-src-minisql-storage-page-ml-792931788.md#function-function-minisql-storage-page-validateheader-function-validateheader-header-pagesize-operation-src-minisql-storage-page-ml-1805710224) — function
 - [`minisql.storage.page.validateNativeId`](File-src-minisql-storage-page-ml-792931788.md#function-function-minisql-storage-page-validatenativeid-function-validatenativeid-value-operation-name-src-minisql-storage-page-ml-1435170287) — function

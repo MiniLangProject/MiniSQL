@@ -12,7 +12,7 @@ struct CreateFilePlan
 Defines the create file plan record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L269)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L374)
 
 ## Members
 
@@ -26,7 +26,7 @@ fileId
 File id field of the create file plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L277)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L382)
 
 <a id="field-field-minisql-catalog-schema-history-createfileplan-filekind-filekind-src-minisql-catalog-schema-history-ml-846776866"></a>
 ### fileKind
@@ -38,7 +38,7 @@ fileKind
 File kind field of the create file plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L380)
 
 <a id="field-field-minisql-catalog-schema-history-createfileplan-finalpath-finalpath-src-minisql-catalog-schema-history-ml-508604742"></a>
 ### finalPath
@@ -50,7 +50,7 @@ finalPath
 Final path field of the create file plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L273)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L378)
 
 <a id="field-field-minisql-catalog-schema-history-createfileplan-temporarypath-temporarypath-src-minisql-catalog-schema-history-ml-1413021734"></a>
 ### temporaryPath
@@ -62,7 +62,7 @@ temporaryPath
 Temporary path field of the create file plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L376)
 
 <a id="field-field-minisql-catalog-schema-history-createfileplan-unique-unique-src-minisql-catalog-schema-history-ml-243624104"></a>
 ### unique
@@ -74,4 +74,4 @@ unique
 Unique field of the create file plan.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L279)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L384)

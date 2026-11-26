@@ -12,7 +12,7 @@ struct SelectStatement
 Groups the select statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L767)
 
 ## Members
 
@@ -26,7 +26,7 @@ ctes
 Stores the ctes associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L759)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L793)
 
 <a id="field-field-minisql-sql-ast-selectstatement-distinct-distinct-src-minisql-sql-ast-ml-1132310256"></a>
 ### distinct
@@ -38,7 +38,7 @@ distinct
 Indicates whether the distinct condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L735)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L769)
 
 <a id="field-field-minisql-sql-ast-selectstatement-groupby-groupby-src-minisql-sql-ast-ml-285701808"></a>
 ### groupBy
@@ -50,7 +50,7 @@ groupBy
 Stores the group by associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L747)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L781)
 
 <a id="field-field-minisql-sql-ast-selectstatement-havingexpression-havingexpression-src-minisql-sql-ast-ml-1555709162"></a>
 ### havingExpression
@@ -62,7 +62,7 @@ havingExpression
 Stores the having expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L749)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L783)
 
 <a id="field-field-minisql-sql-ast-selectstatement-items-items-src-minisql-sql-ast-ml-1526436700"></a>
 ### items
@@ -74,7 +74,7 @@ items
 Tracks the items numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L737)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L771)
 
 <a id="field-field-minisql-sql-ast-selectstatement-joins-joins-src-minisql-sql-ast-ml-1694666240"></a>
 ### joins
@@ -86,7 +86,7 @@ joins
 Contains the ordered joins collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L743)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L777)
 
 <a id="field-field-minisql-sql-ast-selectstatement-limit-limit-src-minisql-sql-ast-ml-619447220"></a>
 ### limit
@@ -98,7 +98,7 @@ limit
 Tracks the limit numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L755)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L789)
 
 <a id="field-field-minisql-sql-ast-selectstatement-offset-offset-src-minisql-sql-ast-ml-1901059442"></a>
 ### offset
@@ -110,7 +110,7 @@ offset
 Tracks the offset numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L757)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L791)
 
 <a id="field-field-minisql-sql-ast-selectstatement-orderby-orderby-src-minisql-sql-ast-ml-925151280"></a>
 ### orderBy
@@ -122,7 +122,7 @@ orderBy
 Contains the ordered order by collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L753)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L787)
 
 <a id="field-field-minisql-sql-ast-selectstatement-setoperations-setoperations-src-minisql-sql-ast-ml-310619312"></a>
 ### setOperations
@@ -134,7 +134,7 @@ setOperations
 Stores the set operations associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L751)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L785)
 
 <a id="field-field-minisql-sql-ast-selectstatement-tablealias-tablealias-src-minisql-sql-ast-ml-1019113920"></a>
 ### tableAlias
@@ -146,7 +146,7 @@ tableAlias
 Stores the table alias associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L741)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L775)
 
 <a id="field-field-minisql-sql-ast-selectstatement-tablename-tablename-src-minisql-sql-ast-ml-432128992"></a>
 ### tableName
@@ -158,7 +158,7 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L739)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L773)
 
 <a id="field-field-minisql-sql-ast-selectstatement-whereexpression-whereexpression-src-minisql-sql-ast-ml-1656176104"></a>
 ### whereExpression
@@ -170,4 +170,4 @@ whereExpression
 Stores the where expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L745)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L779)

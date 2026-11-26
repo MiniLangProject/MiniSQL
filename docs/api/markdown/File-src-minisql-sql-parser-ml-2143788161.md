@@ -93,7 +93,7 @@ function componentName()
 Performs the componentName operation for the minisql sql parser module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1775)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2290)
 
 <a id="function-function-minisql-sql-parser-current-function-current-state-src-minisql-sql-parser-ml-1810443483"></a>
 ### current
@@ -175,6 +175,22 @@ Defines the invalid argument constant used by the minisql sql parser module.
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L15)
 
+<a id="function-function-minisql-sql-parser-isconditioninformationitem-function-isconditioninformationitem-name-src-minisql-sql-parser-ml-1419505877"></a>
+### isConditionInformationItem
+
+```ml
+function isConditionInformationItem(name)
+```
+
+Lists condition information names accepted by SIGNAL and GET DIAGNOSTICS.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L959)
+
 <a id="function-function-minisql-sql-parser-isfunctionnametoken-function-isfunctionnametoken-value-src-minisql-sql-parser-ml-1403514569"></a>
 ### isFunctionNameToken
 
@@ -217,7 +233,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql sql parser module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1789)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2304)
 
 <a id="function-function-minisql-sql-parser-istriggerrowqualifiertoken-function-istriggerrowqualifiertoken-value-src-minisql-sql-parser-ml-482427069"></a>
 ### isTriggerRowQualifierToken
@@ -317,7 +333,7 @@ Maps binary operators to increasing binding strength; zero means non-operator. T
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1480)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1994)
 
 <a id="function-function-minisql-sql-parser-operatortext-function-operatortext-value-src-minisql-sql-parser-ml-181559717"></a>
 ### operatorText
@@ -333,7 +349,7 @@ Implements operator text for this module. Returns the computed value or operatio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1494)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2008)
 
 <a id="function-function-minisql-sql-parser-parsealter-function-parsealter-state-src-minisql-sql-parser-ml-184766817"></a>
 ### parseAlter
@@ -349,7 +365,7 @@ Parses alter using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L537)
 
 <a id="function-function-minisql-sql-parser-parsealtertable-function-parsealtertable-state-src-minisql-sql-parser-ml-2032474239"></a>
 ### parseAlterTable
@@ -365,7 +381,7 @@ Parses alter table using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L467)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L486)
 
 <a id="function-function-minisql-sql-parser-parseassignments-function-parseassignments-state-src-minisql-sql-parser-ml-915825669"></a>
 ### parseAssignments
@@ -381,7 +397,7 @@ Parses assignments using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L891)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1298)
 
 <a id="function-function-minisql-sql-parser-parsebegin-function-parsebegin-state-src-minisql-sql-parser-ml-165773645"></a>
 ### parseBegin
@@ -397,7 +413,7 @@ Parses begin using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1765)
 
 <a id="function-function-minisql-sql-parser-parsecall-function-parsecall-state-src-minisql-sql-parser-ml-308565695"></a>
 ### parseCall
@@ -406,14 +422,14 @@ Parses begin using the supplied inputs. Returns the computed value or operation 
 function parseCall(state)
 ```
 
-Parses CALL with positional constant argument expressions.
+Parses CALL with positional arguments, allowing omitted parentheses for zero arguments.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1393)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1902)
 
 <a id="function-function-minisql-sql-parser-parsecaseexpression-function-parsecaseexpression-state-src-minisql-sql-parser-ml-1164052659"></a>
 ### parseCaseExpression
@@ -429,7 +445,7 @@ Parses case expression using the supplied inputs. Requires arguments that satisf
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1504)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2018)
 
 <a id="function-function-minisql-sql-parser-parsecastexpression-function-parsecastexpression-state-src-minisql-sql-parser-ml-798906017"></a>
 ### parseCastExpression
@@ -445,7 +461,7 @@ Parses cast expression using the supplied inputs. Returns the computed value or 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1527)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2041)
 
 <a id="function-function-minisql-sql-parser-parsecolumndefinition-function-parsecolumndefinition-state-src-minisql-sql-parser-ml-655854205"></a>
 ### parseColumnDefinition
@@ -461,7 +477,7 @@ Parses column definition using the supplied inputs. Returns the computed value o
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L319)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L338)
 
 <a id="function-function-minisql-sql-parser-parsecreate-function-parsecreate-state-src-minisql-sql-parser-ml-345218999"></a>
 ### parseCreate
@@ -477,7 +493,7 @@ Parses create using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L812)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1205)
 
 <a id="function-function-minisql-sql-parser-parsecreateindex-function-parsecreateindex-state-unique-src-minisql-sql-parser-ml-1169847716"></a>
 ### parseCreateIndex
@@ -494,7 +510,7 @@ Parses create index using the supplied inputs. Returns the computed value or ope
 | `unique` | `dynamic` | — | unique value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L688)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L720)
 
 <a id="function-function-minisql-sql-parser-parsecreateprincipal-function-parsecreateprincipal-state-principalkind-src-minisql-sql-parser-ml-223417505"></a>
 ### parseCreatePrincipal
@@ -511,7 +527,7 @@ Parses create principal using the supplied inputs. Returns the computed value or
 | `principalKind` | `dynamic` | — | principalKind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L452)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L471)
 
 <a id="function-function-minisql-sql-parser-parsecreateprocedure-function-parsecreateprocedure-state-replace-src-minisql-sql-parser-ml-1644414057"></a>
 ### parseCreateProcedure
@@ -520,15 +536,15 @@ Parses create principal using the supplied inputs. Returns the computed value or
 function parseCreateProcedure(state, replace)
 ```
 
-Parses a stored procedure with typed positional inputs and one DML body statement.
+Parses MySQL parameter directions and a compound or single SQL routine body.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
-| `replace` | `dynamic` | — | replace value consumed by this operation. |
+| `state` | `dynamic` | — |  |
+| `replace` | `dynamic` | — |  |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L723)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1101)
 
 <a id="function-function-minisql-sql-parser-parsecreateschema-function-parsecreateschema-state-src-minisql-sql-parser-ml-1562481933"></a>
 ### parseCreateSchema
@@ -544,7 +560,7 @@ Parses CREATE SCHEMA with optional idempotent creation semantics.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L665)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L697)
 
 <a id="function-function-minisql-sql-parser-parsecreatesequence-function-parsecreatesequence-state-src-minisql-sql-parser-ml-782151369"></a>
 ### parseCreateSequence
@@ -560,7 +576,7 @@ Parses create sequence using the supplied inputs. Returns the computed value or 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L746)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1139)
 
 <a id="function-function-minisql-sql-parser-parsecreatetable-function-parsecreatetable-state-src-minisql-sql-parser-ml-767416413"></a>
 ### parseCreateTable
@@ -576,7 +592,7 @@ Parses create table using the supplied inputs. Returns the computed value or ope
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L641)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L673)
 
 <a id="function-function-minisql-sql-parser-parsecreatetrigger-function-parsecreatetrigger-state-src-minisql-sql-parser-ml-1250658305"></a>
 ### parseCreateTrigger
@@ -592,7 +608,7 @@ Parses create trigger using the supplied inputs. Returns the computed value or o
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L785)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1178)
 
 <a id="function-function-minisql-sql-parser-parsecreateview-function-parsecreateview-state-replace-src-minisql-sql-parser-ml-1509415117"></a>
 ### parseCreateView
@@ -609,7 +625,7 @@ Parses create view using the supplied inputs. Returns the computed value or oper
 | `replace` | `dynamic` | — | replace value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L707)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L739)
 
 <a id="function-function-minisql-sql-parser-parsedeallocate-function-parsedeallocate-state-src-minisql-sql-parser-ml-1976083431"></a>
 ### parseDeallocate
@@ -625,7 +641,7 @@ Parses deallocate using the supplied inputs. Returns the computed value or opera
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1411)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1920)
 
 <a id="function-function-minisql-sql-parser-parsedelete-function-parsedelete-state-src-minisql-sql-parser-ml-1551249053"></a>
 ### parseDelete
@@ -641,7 +657,7 @@ Parses delete using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L969)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1376)
 
 <a id="function-function-minisql-sql-parser-parsedescribe-function-parsedescribe-state-src-minisql-sql-parser-ml-1337118013"></a>
 ### parseDescribe
@@ -657,7 +673,23 @@ Parses describe using the supplied inputs. Returns the computed value or operati
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1014)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1463)
+
+<a id="function-function-minisql-sql-parser-parsediagnosticitem-function-parsediagnosticitem-state-src-minisql-sql-parser-ml-595755667"></a>
+### parseDiagnosticItem
+
+```ml
+function parseDiagnosticItem(state)
+```
+
+Returns an unquoted diagnostic identifier in canonical uppercase form.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L951)
 
 <a id="function-function-minisql-sql-parser-parsedrop-function-parsedrop-state-src-minisql-sql-parser-ml-900100933"></a>
 ### parseDrop
@@ -673,7 +705,7 @@ Parses drop using the supplied inputs. Returns the computed value or operation s
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L836)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1243)
 
 <a id="function-function-minisql-sql-parser-parseexecuteprepared-function-parseexecuteprepared-state-src-minisql-sql-parser-ml-1014197913"></a>
 ### parseExecutePrepared
@@ -689,7 +721,7 @@ Parses execute prepared using the supplied inputs. Returns the computed value or
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1379)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1888)
 
 <a id="function-function-minisql-sql-parser-parseexpression-function-parseexpression-state-minimumprecedence-src-minisql-sql-parser-ml-1891708655"></a>
 ### parseExpression
@@ -706,7 +738,7 @@ Parses a binary expression with precedence climbing and left associativity. Unar
 | `minimumPrecedence` | `dynamic` | — | minimumPrecedence value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2232)
 
 <a id="function-function-minisql-sql-parser-parseexpressiontext-function-parseexpressiontext-source-src-minisql-sql-parser-ml-1621736567"></a>
 ### parseExpressionText
@@ -722,7 +754,7 @@ Parses expression text using the supplied inputs. Returns the computed value or 
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1762)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2277)
 
 <a id="function-function-minisql-sql-parser-parsegrant-function-parsegrant-state-src-minisql-sql-parser-ml-869061341"></a>
 ### parseGrant
@@ -738,7 +770,7 @@ Parses grant using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L570)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L596)
 
 <a id="function-function-minisql-sql-parser-parseidentifier-function-parseidentifier-state-description-src-minisql-sql-parser-ml-1519662343"></a>
 ### parseIdentifier
@@ -804,7 +836,7 @@ Parses the parenthesized expression list used by CREATE INDEX keys.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L673)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L705)
 
 <a id="function-function-minisql-sql-parser-parseinsert-function-parseinsert-state-src-minisql-sql-parser-ml-1062368913"></a>
 ### parseInsert
@@ -820,7 +852,7 @@ Parses insert using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L907)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1314)
 
 <a id="function-function-minisql-sql-parser-parseintegervalue-function-parseintegervalue-state-description-src-minisql-sql-parser-ml-1304910103"></a>
 ### parseIntegerValue
@@ -853,7 +885,7 @@ Parses join clause using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1097)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1546)
 
 <a id="function-function-minisql-sql-parser-parsemerge-function-parsemerge-state-src-minisql-sql-parser-ml-460496321"></a>
 ### parseMerge
@@ -869,7 +901,7 @@ Parses the core SQL MERGE form with table source, matched update/delete, and ins
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1301)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1792)
 
 <a id="function-function-minisql-sql-parser-parseobjectname-function-parseobjectname-state-description-src-minisql-sql-parser-ml-1805546373"></a>
 ### parseObjectName
@@ -902,7 +934,7 @@ Parses order item using the supplied inputs. Returns the computed value or opera
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1037)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1486)
 
 <a id="function-function-minisql-sql-parser-parsepasswordliteral-function-parsepasswordliteral-state-src-minisql-sql-parser-ml-459925117"></a>
 ### parsePasswordLiteral
@@ -935,7 +967,7 @@ Parses predicate tail using the supplied inputs. Returns the computed value or o
 | `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1643)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2158)
 
 <a id="function-function-minisql-sql-parser-parseprepare-function-parseprepare-state-src-minisql-sql-parser-ml-799376733"></a>
 ### parsePrepare
@@ -951,7 +983,7 @@ Parses prepare using the supplied inputs. Returns the computed value or operatio
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1361)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1864)
 
 <a id="function-function-minisql-sql-parser-parseprimary-function-parseprimary-state-src-minisql-sql-parser-ml-1720555453"></a>
 ### parsePrimary
@@ -967,7 +999,7 @@ Parses primary using the supplied inputs. Returns the computed value or operatio
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1541)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2055)
 
 <a id="function-function-minisql-sql-parser-parseprincipalname-function-parseprincipalname-state-description-src-minisql-sql-parser-ml-1131152435"></a>
 ### parsePrincipalName
@@ -1000,7 +1032,7 @@ Parses privilege list using the supplied inputs. Returns the computed value or o
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L554)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L580)
 
 <a id="function-function-minisql-sql-parser-parsereferentialaction-function-parsereferentialaction-state-src-minisql-sql-parser-ml-1519990733"></a>
 ### parseReferentialAction
@@ -1016,7 +1048,7 @@ Parses referential action using the supplied inputs. Returns the computed value 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L307)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L326)
 
 <a id="function-function-minisql-sql-parser-parsereturning-function-parsereturning-state-src-minisql-sql-parser-ml-1749622157"></a>
 ### parseReturning
@@ -1032,7 +1064,7 @@ Parses returning using the supplied inputs. Returns the computed value or operat
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L877)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1284)
 
 <a id="function-function-minisql-sql-parser-parserevoke-function-parserevoke-state-src-minisql-sql-parser-ml-1933001427"></a>
 ### parseRevoke
@@ -1048,7 +1080,7 @@ Parses revoke using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L642)
 
 <a id="function-function-minisql-sql-parser-parserevokebehavior-function-parserevokebehavior-state-src-minisql-sql-parser-ml-15461451"></a>
 ### parseRevokeBehavior
@@ -1064,7 +1096,285 @@ Parses revoke behavior using the supplied inputs. Returns the computed value or 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L631)
+
+<a id="function-function-minisql-sql-parser-parseroutineblock-function-parseroutineblock-state-label-src-minisql-sql-parser-ml-718702687"></a>
+### parseRoutineBlock
+
+```ml
+function parseRoutineBlock(state, label)
+```
+
+Parses a block with SQL declaration ordering and an optional label.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `label` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L861)
+
+<a id="function-function-minisql-sql-parser-parseroutinecase-function-parseroutinecase-state-src-minisql-sql-parser-ml-635413897"></a>
+### parseRoutineCase
+
+```ml
+function parseRoutineCase(state)
+```
+
+Preserves a simple CASE selector separately so the runtime evaluates it once.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L902)
+
+<a id="function-function-minisql-sql-parser-parseroutinecharacteristics-function-parseroutinecharacteristics-state-src-minisql-sql-parser-ml-1985003399"></a>
+### parseRoutineCharacteristics
+
+```ml
+function parseRoutineCharacteristics(state)
+```
+
+Parses characteristic pairs without conflating unspecified values with defaults.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1070)
+
+<a id="function-function-minisql-sql-parser-parseroutineclosinglabel-function-parseroutineclosinglabel-state-label-src-minisql-sql-parser-ml-1288177819"></a>
+### parseRoutineClosingLabel
+
+```ml
+function parseRoutineClosingLabel(state, label)
+```
+
+Validates an optional closing label against the opening label.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `label` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L852)
+
+<a id="function-function-minisql-sql-parser-parseroutinecondition-function-parseroutinecondition-state-handler-src-minisql-sql-parser-ml-385172825"></a>
+### parseRoutineCondition
+
+```ml
+function parseRoutineCondition(state, handler)
+```
+
+Parses a handler condition or a named/SQLSTATE signal condition.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `handler` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L788)
+
+<a id="function-function-minisql-sql-parser-parseroutinedeclare-function-parseroutinedeclare-state-src-minisql-sql-parser-ml-255592811"></a>
+### parseRoutineDeclare
+
+```ml
+function parseRoutineDeclare(state)
+```
+
+Parses a declaration; ordering is checked by its enclosing BEGIN block.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L802)
+
+<a id="function-function-minisql-sql-parser-parseroutinedefiner-function-parseroutinedefiner-state-src-minisql-sql-parser-ml-972204733"></a>
+### parseRoutineDefiner
+
+```ml
+function parseRoutineDefiner(state)
+```
+
+Parses an account name, preserving host qualification without inventing users.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1053)
+
+<a id="function-function-minisql-sql-parser-parseroutinediagnostics-function-parseroutinediagnostics-state-src-minisql-sql-parser-ml-1304744203"></a>
+### parseRoutineDiagnostics
+
+```ml
+function parseRoutineDiagnostics(state)
+```
+
+Parses statement or condition diagnostics into ordered target/item pairs.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L985)
+
+<a id="function-function-minisql-sql-parser-parseroutineif-function-parseroutineif-state-src-minisql-sql-parser-ml-1839239453"></a>
+### parseRoutineIf
+
+```ml
+function parseRoutineIf(state)
+```
+
+Parses IF and all ELSEIF/ELSE branches into parallel branch arrays.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L881)
+
+<a id="function-function-minisql-sql-parser-parseroutineloop-function-parseroutineloop-state-kind-label-src-minisql-sql-parser-ml-1878034041"></a>
+### parseRoutineLoop
+
+```ml
+function parseRoutineLoop(state, kind, label)
+```
+
+Parses a labeled WHILE, REPEAT, or LOOP and matching end marker.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `kind` | `dynamic` | — |  |
+| `label` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L923)
+
+<a id="function-function-minisql-sql-parser-parseroutineset-function-parseroutineset-state-src-minisql-sql-parser-ml-82669775"></a>
+### parseRoutineSet
+
+```ml
+function parseRoutineSet(state)
+```
+
+Parses SET's left-to-right assignments, preserving local/session destinations.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L935)
+
+<a id="function-function-minisql-sql-parser-parseroutinesignal-function-parseroutinesignal-state-kind-src-minisql-sql-parser-ml-350506887"></a>
+### parseRoutineSignal
+
+```ml
+function parseRoutineSignal(state, kind)
+```
+
+Parses SIGNAL/RESIGNAL with optional condition-information assignments.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `kind` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L964)
+
+<a id="function-function-minisql-sql-parser-parseroutinestatement-function-parseroutinestatement-state-src-minisql-sql-parser-ml-586744153"></a>
+### parseRoutineStatement
+
+```ml
+function parseRoutineStatement(state)
+```
+
+Parses one stored-program statement, leaving its terminator to its container.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1008)
+
+<a id="function-function-minisql-sql-parser-parseroutinestatements-function-parseroutinestatements-state-src-minisql-sql-parser-ml-1723436649"></a>
+### parseRoutineStatements
+
+```ml
+function parseRoutineStatements(state)
+```
+
+Parses statements up to a branch/loop terminator, consuming inner semicolons.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L840)
+
+<a id="function-function-minisql-sql-parser-parseroutinetarget-function-parseroutinetarget-state-src-minisql-sql-parser-ml-1832957205"></a>
+### parseRoutineTarget
+
+```ml
+function parseRoutineTarget(state)
+```
+
+Returns a canonical variable target, keeping session-variable @ prefixes.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L758)
+
+<a id="function-function-minisql-sql-parser-parseroutinetargets-function-parseroutinetargets-state-src-minisql-sql-parser-ml-715904223"></a>
+### parseRoutineTargets
+
+```ml
+function parseRoutineTargets(state)
+```
+
+Parses a nonempty comma-separated list of writable variable names.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L766)
+
+<a id="function-function-minisql-sql-parser-parseroutinetypename-function-parseroutinetypename-state-src-minisql-sql-parser-ml-744372733"></a>
+### parseRoutineTypeName
+
+```ml
+function parseRoutineTypeName(state)
+```
+
+Retains explicit character attributes on routine declarations for validation against the stored routine context; ordinary column/CAST grammar stays intact.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L305)
 
 - [minisql.sql.parser.ParserState](Type-minisql-sql-parser-parserstate-824999695.md) — struct
 <a id="function-function-minisql-sql-parser-parseselect-function-parseselect-state-src-minisql-sql-parser-ml-131685571"></a>
@@ -1081,7 +1391,7 @@ Parses select using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1650)
 
 <a id="function-function-minisql-sql-parser-parseselectcore-function-parseselectcore-state-src-minisql-sql-parser-ml-1726657285"></a>
 ### parseSelectCore
@@ -1097,7 +1407,24 @@ Parses select core using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1592)
+
+<a id="function-function-minisql-sql-parser-parseselectcoretargets-function-parseselectcoretargets-state-allowinto-src-minisql-sql-parser-ml-153023936"></a>
+### parseSelectCoreTargets
+
+```ml
+function parseSelectCoreTargets(state, allowInto)
+```
+
+Parses the SELECT core and optional procedure INTO destinations.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `allowInto` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1597)
 
 <a id="function-function-minisql-sql-parser-parseselectitem-function-parseselectitem-state-src-minisql-sql-parser-ml-1233371773"></a>
 ### parseSelectItem
@@ -1113,7 +1440,58 @@ Parses select item using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1022)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1471)
+
+<a id="function-function-minisql-sql-parser-parseselectlimit-function-parseselectlimit-state-description-src-minisql-sql-parser-ml-291340279"></a>
+### parseSelectLimit
+
+```ml
+function parseSelectLimit(state, description)
+```
+
+Retains variable/parameter LIMIT operands for session-aware execution binding.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `description` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1655)
+
+<a id="function-function-minisql-sql-parser-parseselecttargets-function-parseselecttargets-state-allowinto-src-minisql-sql-parser-ml-947037092"></a>
+### parseSelectTargets
+
+```ml
+function parseSelectTargets(state, allowInto)
+```
+
+Parses a complete SELECT, retaining early or final INTO destinations.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `allowInto` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1661)
+
+<a id="function-function-minisql-sql-parser-parseselecttargetstatement-function-parseselecttargetstatement-state-withclause-src-minisql-sql-parser-ml-1225811882"></a>
+### parseSelectTargetStatement
+
+```ml
+function parseSelectTargetStatement(state, withClause)
+```
+
+Wraps only SELECTs with INTO, leaving ordinary SELECT AST contracts intact.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `withClause` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1042)
 
 <a id="function-function-minisql-sql-parser-parseshow-function-parseshow-state-src-minisql-sql-parser-ml-2141513113"></a>
 ### parseShow
@@ -1129,7 +1507,7 @@ Parses show using the supplied inputs. Returns the computed value or operation s
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L999)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1406)
 
 <a id="function-function-minisql-sql-parser-parsesql-function-parsesql-source-src-minisql-sql-parser-ml-1887707447"></a>
 ### parseSql
@@ -1145,7 +1523,23 @@ Parses SQL using the supplied inputs. Returns the computed value or operation st
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1754)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2269)
+
+<a id="function-function-minisql-sql-parser-parsesqlstate-function-parsesqlstate-state-src-minisql-sql-parser-ml-772726757"></a>
+### parseSqlstate
+
+```ml
+function parseSqlstate(state)
+```
+
+Validates a SQLSTATE and retains its canonical five-character value.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L775)
 
 <a id="function-function-minisql-sql-parser-parsestatement-function-parsestatement-state-src-minisql-sql-parser-ml-697443873"></a>
 ### parseStatement
@@ -1161,7 +1555,7 @@ Parses statement using the supplied inputs. Returns the computed value or operat
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1420)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1929)
 
 <a id="function-function-minisql-sql-parser-parsetablealias-function-parsetablealias-state-src-minisql-sql-parser-ml-1426797263"></a>
 ### parseTableAlias
@@ -1177,7 +1571,7 @@ Parses table alias using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1058)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1507)
 
 <a id="function-function-minisql-sql-parser-parsetableconstraint-function-parsetableconstraint-state-src-minisql-sql-parser-ml-1048842061"></a>
 ### parseTableConstraint
@@ -1193,7 +1587,7 @@ Parses table constraint using the supplied inputs. Returns the computed value or
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L401)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L420)
 
 <a id="function-function-minisql-sql-parser-parsetablesource-function-parsetablesource-state-description-src-minisql-sql-parser-ml-1900678295"></a>
 ### parseTableSource
@@ -1210,7 +1604,7 @@ Parses either a catalog/CTE name or a parenthesized SELECT source. Derived table
 | `description` | `dynamic` | — | description value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1073)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1522)
 
 <a id="function-function-minisql-sql-parser-parsetokens-function-parsetokens-tokens-src-minisql-sql-parser-ml-1550899676"></a>
 ### parseTokens
@@ -1226,7 +1620,7 @@ Parses a complete token stream into ordered statement AST nodes. Empty statement
 | `tokens` | `dynamic` | — | tokens value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2248)
 
 <a id="function-function-minisql-sql-parser-parsetruncate-function-parsetruncate-state-src-minisql-sql-parser-ml-1311540655"></a>
 ### parseTruncate
@@ -1242,7 +1636,7 @@ Parses truncate using the supplied inputs. Returns the computed value or operati
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L981)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1388)
 
 <a id="function-function-minisql-sql-parser-parsetypename-function-parsetypename-state-src-minisql-sql-parser-ml-752638909"></a>
 ### parseTypeName
@@ -1274,7 +1668,7 @@ Parses unary using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1705)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2220)
 
 <a id="function-function-minisql-sql-parser-parseupdate-function-parseupdate-state-src-minisql-sql-parser-ml-1003819037"></a>
 ### parseUpdate
@@ -1290,7 +1684,7 @@ Parses update using the supplied inputs. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L956)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1363)
 
 <a id="function-function-minisql-sql-parser-parsewithselect-function-parsewithselect-state-src-minisql-sql-parser-ml-1831116375"></a>
 ### parseWithSelect
@@ -1306,7 +1700,24 @@ Parses with select using the supplied inputs. Returns the computed value or oper
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1243)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1728)
+
+<a id="function-function-minisql-sql-parser-parsewithselecttargets-function-parsewithselecttargets-state-allowinto-src-minisql-sql-parser-ml-487972068"></a>
+### parseWithSelectTargets
+
+```ml
+function parseWithSelectTargets(state, allowInto)
+```
+
+Retains INTO targets on the outer SELECT while CTE bodies remain queries.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+| `allowInto` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1733)
 
 <a id="function-function-minisql-sql-parser-preparablestatement-function-preparablestatement-statement-src-minisql-sql-parser-ml-1538119331"></a>
 ### preparableStatement
@@ -1322,7 +1733,7 @@ Implements preparable statement for this module. Returns the computed value or o
 | `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1353)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1844)
 
 <a id="function-function-minisql-sql-parser-previous-function-previous-state-src-minisql-sql-parser-ml-552479361"></a>
 ### previous
@@ -1354,7 +1765,24 @@ Implements privilege name for this module. Returns the computed value or operati
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L541)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L566)
+
+<a id="function-function-minisql-sql-parser-routinenode-function-routinenode-kind-name-src-minisql-sql-parser-ml-1019605903"></a>
+### routineNode
+
+```ml
+function routineNode(kind, name)
+```
+
+Builds a procedural AST node with empty optional collections.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `kind` | `dynamic` | — |  |
+| `name` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L753)
 
 <a id="constant-constant-minisql-sql-parser-sql-syntax-const-sql-syntax-9019-src-minisql-sql-parser-ml-1533729826"></a>
 ### SQL_SYNTAX
@@ -1382,7 +1810,7 @@ Implements starts join for this module. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1584)
 
 <a id="function-function-minisql-sql-parser-startstableconstraint-function-startstableconstraint-state-src-minisql-sql-parser-ml-370278397"></a>
 ### startsTableConstraint
@@ -1398,7 +1826,7 @@ Implements starts table constraint for this module. Returns the computed value o
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L443)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L462)
 
 <a id="function-function-minisql-sql-parser-targetmilestone-function-targetmilestone-src-minisql-sql-parser-ml-790413730"></a>
 ### targetMilestone
@@ -1410,4 +1838,4 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql sql parser module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L1782)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/parser.ml#L2297)

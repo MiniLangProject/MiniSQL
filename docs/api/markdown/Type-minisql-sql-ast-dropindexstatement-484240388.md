@@ -12,7 +12,7 @@ struct DropIndexStatement
 Represents removal of one explicitly-created index by its database-wide name.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L483)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L491)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Allows the command to succeed without mutation when the index is absent.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L487)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L495)
 
 <a id="field-field-minisql-sql-ast-dropindexstatement-name-name-src-minisql-sql-ast-ml-133884873"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the index name selected for removal.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L485)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L493)

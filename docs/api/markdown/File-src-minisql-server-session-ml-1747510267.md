@@ -40,7 +40,7 @@ Implements abort for concurrency for this module. Requires arguments that satisf
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L467)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L522)
 
 <a id="function-function-minisql-server-session-abortforconcurrencytimeout-function-abortforconcurrencytimeout-session-src-minisql-server-session-ml-457748604"></a>
 ### abortForConcurrencyTimeout
@@ -56,7 +56,7 @@ Aborts a logical lock wait at the absolute statement deadline while keeping the 
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L480)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L535)
 
 <a id="function-function-minisql-server-session-abortforconcurrencyunlocked-function-abortforconcurrencyunlocked-session-src-minisql-server-session-ml-1891618318"></a>
 ### abortForConcurrencyUnlocked
@@ -72,7 +72,7 @@ Aborts an ordinary lock conflict without assigning a terminal control code.
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L513)
 
 <a id="function-function-minisql-server-session-abortforconcurrencyunlockedwithcode-function-abortforconcurrencyunlockedwithcode-session-errorcode-src-minisql-server-session-ml-1113907299"></a>
 ### abortForConcurrencyUnlockedWithCode
@@ -89,7 +89,7 @@ Implements abort for concurrency unlocked for this module. Returns the computed 
 | `errorCode` | `dynamic` | — | errorCode value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L449)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L504)
 
 <a id="function-function-minisql-server-session-activatetransport-function-activatetransport-session-connection-src-minisql-server-session-ml-389783568"></a>
 ### activateTransport
@@ -106,7 +106,7 @@ Implements activate transport for this module. Returns the computed value or ope
 | `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L495)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L550)
 
 <a id="constant-constant-minisql-server-session-auth-handshake-timeout-ms-const-auth-handshake-timeout-ms-30000-src-minisql-server-session-ml-2048339666"></a>
 ### AUTH_HANDSHAKE_TIMEOUT_MS
@@ -158,7 +158,7 @@ Implements authentication backoff for this module. Returns the computed value or
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L366)
 
 <a id="function-function-minisql-server-session-authenticationerror-function-authenticationerror-request-src-minisql-server-session-ml-299570499"></a>
 ### authenticationError
@@ -174,7 +174,7 @@ Implements authentication error for this module. Returns the computed value or o
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L329)
 
 <a id="function-function-minisql-server-session-begintrackedstatement-function-begintrackedstatement-session-sqltext-src-minisql-server-session-ml-2095483383"></a>
 ### beginTrackedStatement
@@ -191,7 +191,7 @@ Begins metrics tracking exactly once across cooperative lock-wait retries.
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L211)
 
 <a id="function-function-minisql-server-session-clearpending-function-clearpending-session-src-minisql-server-session-ml-317951976"></a>
 ### clearPending
@@ -207,7 +207,7 @@ Implements clear pending for this module. Requires arguments that satisfy the va
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L338)
 
 <a id="function-function-minisql-server-session-close-function-close-session-src-minisql-server-session-ml-2020995104"></a>
 ### close
@@ -223,7 +223,7 @@ Closes close owned by the minisql server session module. Requires arguments that
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L761)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L931)
 
 <a id="constant-constant-minisql-server-session-closed-handle-const-closed-handle-9008-src-minisql-server-session-ml-282785756"></a>
 ### CLOSED_HANDLE
@@ -251,7 +251,7 @@ Closes unlocked using the supplied inputs. Requires arguments that satisfy the v
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L740)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L910)
 
 <a id="function-function-minisql-server-session-componentname-function-componentname-src-minisql-server-session-ml-741138814"></a>
 ### componentName
@@ -263,7 +263,7 @@ function componentName()
 Performs the componentName operation for the minisql server session module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L775)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L945)
 
 <a id="function-function-minisql-server-session-createsession-function-createsession-engine-secure-authenticated-src-minisql-server-session-ml-1417614346"></a>
 ### createSession
@@ -281,7 +281,7 @@ Creates session using the supplied inputs. Returns the computed value or operati
 | `authenticated` | `dynamic` | — | authenticated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L106)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L126)
 
 <a id="function-function-minisql-server-session-executeparsedquery-function-executeparsedquery-session-request-statement-src-minisql-server-session-ml-445262782"></a>
 ### executeParsedQuery
@@ -290,16 +290,35 @@ Creates session using the supplied inputs. Returns the computed value or operati
 function executeParsedQuery(session, request, statement)
 ```
 
-Executes an already parsed statement through the ordinary materializing API. Keeping this tail separate lets the network streaming path reuse parsing, authorization errors, and the exact fallback response contract.
+Executes a parsed statement, preserving CALL result boundaries and response limits. Shared by materialized queries and the streaming SELECT fallback.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `dynamic` | — | session value consumed by this operation. |
-| `request` | `dynamic` | — | request value consumed by this operation. |
-| `statement` | `dynamic` | — | statement value consumed by this operation. |
+| `session` | `dynamic` | — | Session owning the engine and resource budget. |
+| `request` | `dynamic` | — | Request whose identifier is repeated in every result frame. |
+| `statement` | `dynamic` | — | Parsed SQL statement. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L548)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L613)
+
+<a id="function-function-minisql-server-session-executeparsedquerystreaming-function-executeparsedquerystreaming-session-request-statement-connection-src-minisql-server-session-ml-1329006718"></a>
+### executeParsedQueryStreaming
+
+```ml
+function executeParsedQueryStreaming(session, request, statement, connection)
+```
+
+Executes CALL/EXECUTE with bounded row callbacks and a final command/error. Ordinary statements retain their existing response contract through this fallback.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `session` | `dynamic` | — |  |
+| `request` | `dynamic` | — |  |
+| `statement` | `dynamic` | — |  |
+| `connection` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L696)
 
 <a id="function-function-minisql-server-session-fail-function-fail-code-operation-message-src-minisql-server-session-ml-204771837"></a>
 ### fail
@@ -317,7 +336,7 @@ Performs the fail operation for the minisql server session module. Returns its r
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L108)
 
 <a id="function-function-minisql-server-session-fakeauthenticationmaterial-function-fakeauthenticationmaterial-session-username-src-minisql-server-session-ml-423765460"></a>
 ### fakeAuthenticationMaterial
@@ -334,7 +353,7 @@ Implements fake authentication material for this module. Returns the computed va
 | `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L353)
 
 <a id="function-function-minisql-server-session-finishtrackedstatement-function-finishtrackedstatement-session-success-rowcount-src-minisql-server-session-ml-1813534610"></a>
 ### finishTrackedStatement
@@ -352,7 +371,7 @@ Compatibility helper for ordinary outcomes without a production-control code.
 | `rowCount` | `dynamic` | — | Number of row to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L245)
 
 <a id="function-function-minisql-server-session-finishtrackedstatementwithcode-function-finishtrackedstatementwithcode-session-success-rowcount-errorcode-src-minisql-server-session-ml-1416617713"></a>
 ### finishTrackedStatementWithCode
@@ -371,7 +390,7 @@ Completes metrics, latency, budget and slow-query tracking.
 | `errorCode` | `dynamic` | — | errorCode value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L208)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L228)
 
 <a id="function-function-minisql-server-session-handle-function-handle-session-request-src-minisql-server-session-ml-2109157213"></a>
 ### handle
@@ -388,7 +407,7 @@ Handles handle using the supplied inputs. Requires arguments that satisfy the va
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L708)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L878)
 
 <a id="function-function-minisql-server-session-handleauthbegin-function-handleauthbegin-session-request-src-minisql-server-session-ml-884902019"></a>
 ### handleAuthBegin
@@ -405,7 +424,7 @@ Handles auth begin using the supplied inputs. Requires arguments that satisfy th
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L324)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L379)
 
 <a id="function-function-minisql-server-session-handleauthproof-function-handleauthproof-session-request-src-minisql-server-session-ml-1548115417"></a>
 ### handleAuthProof
@@ -422,7 +441,7 @@ Handles auth proof using the supplied inputs. Requires arguments that satisfy th
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L366)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L421)
 
 <a id="function-function-minisql-server-session-handlequery-function-handlequery-session-request-src-minisql-server-session-ml-1104137733"></a>
 ### handleQuery
@@ -439,7 +458,7 @@ Handles query using the supplied inputs. Requires arguments that satisfy the val
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L522)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L577)
 
 <a id="function-function-minisql-server-session-handlequerystreaming-function-handlequerystreaming-session-request-connection-src-minisql-server-session-ml-1029757729"></a>
 ### handleQueryStreaming
@@ -457,7 +476,7 @@ Streams an eligible non-blocking SELECT directly to one connection. One protocol
 | `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L585)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L749)
 
 <a id="function-function-minisql-server-session-handletoconnection-function-handletoconnection-session-request-connection-src-minisql-server-session-ml-938755029"></a>
 ### handleToConnection
@@ -475,7 +494,7 @@ Handles a request and, for eligible SELECTs, writes response batches directly to
 | `connection` | `dynamic` | — | connection value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L656)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L823)
 
 <a id="function-function-minisql-server-session-handleunlocked-function-handleunlocked-session-request-src-minisql-server-session-ml-377561681"></a>
 ### handleUnlocked
@@ -492,7 +511,7 @@ Handles unlocked using the supplied inputs. Returns the computed value or operat
 | `request` | `dynamic` | — | request value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L667)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L835)
 
 <a id="function-function-minisql-server-session-idletimeoutmilliseconds-function-idletimeoutmilliseconds-src-minisql-server-session-ml-992711920"></a>
 ### idleTimeoutMilliseconds
@@ -504,7 +523,7 @@ function idleTimeoutMilliseconds()
 Implements idle timeout milliseconds for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L204)
 
 <a id="constant-constant-minisql-server-session-invalid-argument-const-invalid-argument-9001-src-minisql-server-session-ml-339201751"></a>
 ### INVALID_ARGUMENT
@@ -544,7 +563,7 @@ Returns whether the supplied value satisfies the expired condition. Returns the 
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L174)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L194)
 
 <a id="function-function-minisql-server-session-isimplemented-function-isimplemented-src-minisql-server-session-ml-13960526"></a>
 ### isImplemented
@@ -556,7 +575,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql server session module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L789)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L959)
 
 <a id="function-function-minisql-server-session-issession-function-issession-value-src-minisql-server-session-ml-231845499"></a>
 ### isSession
@@ -572,7 +591,7 @@ Returns whether the supplied value satisfies the session condition. Returns the 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L116)
 
 <a id="function-function-minisql-server-session-open-function-open-databasepath-src-minisql-server-session-ml-796287388"></a>
 ### open
@@ -588,7 +607,7 @@ Opens open for the minisql server session module. Returns the computed value or 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L139)
 
 <a id="function-function-minisql-server-session-openattached-function-openattached-database-src-minisql-server-session-ml-145125113"></a>
 ### openAttached
@@ -604,7 +623,7 @@ Opens attached using the supplied inputs. Requires arguments that satisfy the va
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L136)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L156)
 
 <a id="function-function-minisql-server-session-opensecure-function-opensecure-databasepath-src-minisql-server-session-ml-1470657552"></a>
 ### openSecure
@@ -620,7 +639,7 @@ Opens secure using the supplied inputs. Returns the computed value or operation 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L147)
 
 <a id="function-function-minisql-server-session-opensecureattached-function-opensecureattached-database-src-minisql-server-session-ml-175869969"></a>
 ### openSecureAttached
@@ -636,7 +655,7 @@ Opens secure attached using the supplied inputs. Requires arguments that satisfy
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L174)
 
 <a id="function-function-minisql-server-session-prepareattacheddatabase-function-prepareattacheddatabase-database-src-minisql-server-session-ml-949997861"></a>
 ### prepareAttachedDatabase
@@ -652,7 +671,7 @@ Completes process-local database preparation before the listener advertises read
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L165)
 
 <a id="function-function-minisql-server-session-responsemessage-function-responsemessage-request-response-src-minisql-server-session-ml-687556610"></a>
 ### responseMessage
@@ -669,7 +688,7 @@ Implements response message for this module. Returns the computed value or opera
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L266)
 
 <a id="function-function-minisql-server-session-responsemessages-function-responsemessages-request-responses-src-minisql-server-session-ml-1323401663"></a>
 ### responseMessages
@@ -686,8 +705,25 @@ Encodes bounded result batches and marks every non-final frame for the client.
 | `responses` | `dynamic` | — | responses value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L279)
 
+<a id="function-function-minisql-server-session-resultrowcount-function-resultrowcount-result-src-minisql-server-session-ml-1910133741"></a>
+### resultRowCount
+
+```ml
+function resultRowCount(result)
+```
+
+Counts all rows exposed by a CALL, including nested result collections.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `result` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L598)
+
+- [minisql.server.session.RoutineStream](Type-minisql-server-session-routinestream-1452558387.md) — struct
 - [minisql.server.session.Session](Type-minisql-server-session-session-1392138063.md) — struct
 <a id="constant-constant-minisql-server-session-session-idle-timeout-ms-const-session-idle-timeout-ms-300000-src-minisql-server-session-ml-610933758"></a>
 ### SESSION_IDLE_TIMEOUT_MS
@@ -715,7 +751,43 @@ Implements session identifier for this module. Returns the computed value or ope
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L439)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L494)
+
+<a id="function-function-minisql-server-session-sqlerrorresponse-function-sqlerrorresponse-session-nativeerror-replacearea-false-src-minisql-server-session-ml-661925656"></a>
+### sqlErrorResponse
+
+```ml
+function sqlErrorResponse(session, nativeError, replaceArea = false)
+```
+
+Builds an SQL error without overloading native retry codes with SQLSTATE data.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `session` | `dynamic` | — |  |
+| `nativeError` | `dynamic` | — |  |
+| `replaceArea` | `dynamic` | <code>false</code> |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L320)
+
+<a id="function-function-minisql-server-session-statementmetadata-function-statementmetadata-session-response-nativeerror-src-minisql-server-session-ml-1450150480"></a>
+### statementMetadata
+
+```ml
+function statementMetadata(session, response, nativeError)
+```
+
+Adds structured conditions and committed CALL outputs to a terminal response.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `session` | `dynamic` | — |  |
+| `response` | `dynamic` | — |  |
+| `nativeError` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L296)
 
 <a id="constant-constant-minisql-server-session-stream-result-rows-const-stream-result-rows-64-src-minisql-server-session-ml-1585799353"></a>
 ### STREAM_RESULT_ROWS
@@ -729,6 +801,24 @@ A server cursor retains at most this many arbitrarily wide SQL rows before
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L40)
 
+<a id="function-function-minisql-server-session-streamroutineresult-function-streamroutineresult-context-result-resultstart-src-minisql-server-session-ml-36890235"></a>
+### streamRoutineResult
+
+```ml
+function streamRoutineResult(context, result, resultStart)
+```
+
+Writes one routine batch immediately; a void batch marks a completed result. Errors propagate to the executor so no further routine statements can run.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `context` | `dynamic` | — |  |
+| `result` | `dynamic` | — |  |
+| `resultStart` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L671)
+
 <a id="function-function-minisql-server-session-targetmilestone-function-targetmilestone-src-minisql-server-session-ml-9333716"></a>
 ### targetMilestone
 
@@ -739,7 +829,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql server session module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L782)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L952)
 
 <a id="function-function-minisql-server-session-touch-function-touch-session-src-minisql-server-session-ml-205469174"></a>
 ### touch
@@ -755,7 +845,7 @@ Implements touch for this module. Returns the computed value or operation status
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L184)
 
 <a id="function-function-minisql-server-session-transportready-function-transportready-session-src-minisql-server-session-ml-1451047244"></a>
 ### transportReady
@@ -771,7 +861,7 @@ Implements transport ready for this module. Returns the computed value or operat
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L430)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L485)
 
 <a id="constant-constant-minisql-server-session-unsupported-sql-const-unsupported-sql-9025-src-minisql-server-session-ml-2134370741"></a>
 ### UNSUPPORTED_SQL
@@ -800,7 +890,7 @@ Validates open for the minisql server session workflow. Requires arguments that 
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L255)
 
 <a id="function-function-minisql-server-session-waitingforconcurrency-function-waitingforconcurrency-session-src-minisql-server-session-ml-1804305174"></a>
 ### waitingForConcurrency
@@ -816,4 +906,4 @@ Returns whether this session still has a logical lock blocker. The check is side
 | `session` | `dynamic` | — | session value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/session.ml#L566)

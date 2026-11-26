@@ -26,6 +26,7 @@ Reachable from entry: **no**
 - `minisql/storage/btree.ml` as `btree` → [src/minisql/storage/btree.ml](File-src-minisql-storage-btree-ml-1474397187.md)
 - `minisql/storage/checksum.ml` as `checksum` → [src/minisql/storage/checksum.ml](File-src-minisql-storage-checksum-ml-273339408.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
+- `minisql/storage/table_header.ml` as `table_header` → [src/minisql/storage/table_header.ml](File-src-minisql-storage-table-header-ml-163902973.md)
 - `minisql/transaction/checkpoint.ml` as `checkpoint` → [src/minisql/transaction/checkpoint.ml](File-src-minisql-transaction-checkpoint-ml-1306482346.md)
 - `minisql/transaction/wal.ml` as `wal` → [src/minisql/transaction/wal.ml](File-src-minisql-transaction-wal-ml-860713478.md)
 - `std/crypto/aes_gcm.ml` as `aes_gcm` → `../MiniLangCompilerML/std/crypto/aes_gcm.ml` — external dependency
@@ -48,7 +49,7 @@ Adds capture using the supplied inputs. Requires arguments that satisfy the vali
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L334)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L335)
 
 <a id="constant-constant-minisql-tools-backup-archive-format-version-const-archive-format-version-1-src-minisql-tools-backup-ml-828499186"></a>
 ### ARCHIVE_FORMAT_VERSION
@@ -60,7 +61,7 @@ const ARCHIVE_FORMAT_VERSION = 1
 M31 offline WAL archive and point-in-time recovery. Archive generations store
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L760)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L761)
 
 <a id="constant-constant-minisql-tools-backup-archive-kind-const-archive-kind-80-src-minisql-tools-backup-ml-1435095023"></a>
 ### ARCHIVE_KIND
@@ -72,7 +73,7 @@ const ARCHIVE_KIND = 80
 Defines the archive kind constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L762)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L763)
 
 <a id="function-function-minisql-tools-backup-archiveinit-function-archiveinit-databasepath-archivepath-src-minisql-tools-backup-ml-1706029799"></a>
 ### archiveInit
@@ -89,7 +90,7 @@ Implements archive init for this module. Requires arguments that satisfy the val
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1087)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1088)
 
 <a id="function-function-minisql-tools-backup-archivemagic-function-archivemagic-src-minisql-tools-backup-ml-1272736660"></a>
 ### archiveMagic
@@ -101,7 +102,7 @@ function archiveMagic()
 Implements archive magic for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L879)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L880)
 
 - [minisql.tools.backup.ArchiveManifest](Type-minisql-tools-backup-archivemanifest-1020964600.md) — struct
 <a id="function-function-minisql-tools-backup-archivemanifestpath-function-archivemanifestpath-archivepath-src-minisql-tools-backup-ml-1026152941"></a>
@@ -118,7 +119,7 @@ Implements archive manifest path for this module. Returns the computed value or 
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L887)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L888)
 
 - [minisql.tools.backup.ArchiveReport](Type-minisql-tools-backup-archivereport-574164319.md) — struct
 <a id="function-function-minisql-tools-backup-archivewal-function-archivewal-databasepath-archivepath-src-minisql-tools-backup-ml-182739375"></a>
@@ -136,7 +137,7 @@ Implements archive WAL for this module. Requires arguments that satisfy the vali
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1194)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1195)
 
 <a id="function-function-minisql-tools-backup-archivewaldirectory-function-archivewaldirectory-archivepath-src-minisql-tools-backup-ml-321637523"></a>
 ### archiveWalDirectory
@@ -152,7 +153,7 @@ Implements archive WAL directory for this module. Returns the computed value or 
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L895)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L896)
 
 <a id="function-function-minisql-tools-backup-archivewallive-function-archivewallive-databasepath-archivepath-src-minisql-tools-backup-ml-1178948391"></a>
 ### archiveWalLive
@@ -169,7 +170,7 @@ Implements archive WAL live for this module. Returns the computed value or opera
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1171)
 
 <a id="function-function-minisql-tools-backup-archivewalname-function-archivewalname-generation-src-minisql-tools-backup-ml-181544718"></a>
 ### archiveWalName
@@ -185,7 +186,7 @@ Implements archive WAL name for this module. Returns the computed value or opera
 | `generation` | `dynamic` | — | generation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L903)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L904)
 
 <a id="function-function-minisql-tools-backup-archivewalpath-function-archivewalpath-archivepath-manifest-src-minisql-tools-backup-ml-1321738674"></a>
 ### archiveWalPath
@@ -202,7 +203,7 @@ Implements archive WAL path for this module. Returns the computed value or opera
 | `manifest` | `dynamic` | — | manifest value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1038)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1039)
 
 <a id="function-function-minisql-tools-backup-backupaad-function-backupaad-relativepath-src-minisql-tools-backup-ml-331299653"></a>
 ### backupAad
@@ -218,7 +219,7 @@ Creates domain-separated AAD bound to one backup-relative path.
 | `relativePath` | `dynamic` | — | Path associated with relative. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L594)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L595)
 
 - [minisql.tools.backup.BackupEntry](Type-minisql-tools-backup-backupentry-1021434965.md) — struct
 <a id="function-function-minisql-tools-backup-backupentrylength-function-backupentrylength-manifest-relativepath-src-minisql-tools-backup-ml-421024386"></a>
@@ -236,7 +237,7 @@ Implements backup entry length for this module. Returns the computed value or op
 | `relativePath` | `dynamic` | — | Path associated with relative. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1014)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1015)
 
 - [minisql.tools.backup.BackupManifest](Type-minisql-tools-backup-backupmanifest-1611147358.md) — struct
 - [minisql.tools.backup.BackupReport](Type-minisql-tools-backup-backupreport-371133205.md) — struct
@@ -255,7 +256,7 @@ Performs the bytesEqual operation for the minisql tools backup module. Requires 
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L171)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L172)
 
 <a id="function-function-minisql-tools-backup-capturedatabase-function-capturedatabase-database-src-minisql-tools-backup-ml-1602180609"></a>
 ### captureDatabase
@@ -271,7 +272,7 @@ Implements capture database for this module. Requires arguments that satisfy the
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L379)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L380)
 
 - [minisql.tools.backup.CapturedFile](Type-minisql-tools-backup-capturedfile-230458989.md) — struct
 <a id="function-function-minisql-tools-backup-capturepath-function-capturepath-files-databasepath-relativepath-required-src-minisql-tools-backup-ml-2112230037"></a>
@@ -291,7 +292,7 @@ Implements capture path for this module. Returns the computed value or operation
 | `required` | `dynamic` | — | required value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L351)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L352)
 
 <a id="function-function-minisql-tools-backup-componentname-function-componentname-src-minisql-tools-backup-ml-302176928"></a>
 ### componentName
@@ -303,7 +304,7 @@ function componentName()
 Performs the componentName operation for the minisql tools backup module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1463)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1464)
 
 <a id="function-function-minisql-tools-backup-containsint-function-containsint-values-expected-src-minisql-tools-backup-ml-1632169662"></a>
 ### containsInt
@@ -320,7 +321,7 @@ Returns whether the supplied value satisfies the int condition. Returns the comp
 | `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L202)
 
 <a id="function-function-minisql-tools-backup-copyexact-function-copyexact-destination-destinationoffset-source-sourceoffset-count-src-minisql-tools-backup-ml-248683967"></a>
 ### copyExact
@@ -340,7 +341,7 @@ Implements copy exact for this module. Returns the computed value or operation s
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L189)
 
 <a id="constant-constant-minisql-tools-backup-corrupt-data-const-corrupt-data-9004-src-minisql-tools-backup-ml-251256304"></a>
 ### CORRUPT_DATA
@@ -352,7 +353,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L36)
 
 <a id="function-function-minisql-tools-backup-createlayout-function-createlayout-root-src-minisql-tools-backup-ml-893508368"></a>
 ### createLayout
@@ -368,7 +369,7 @@ Creates layout using the supplied inputs. Returns the computed value or operatio
 | `root` | `dynamic` | — | root value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L260)
 
 <a id="function-function-minisql-tools-backup-decodearchivemanifest-function-decodearchivemanifest-source-src-minisql-tools-backup-ml-285892889"></a>
 ### decodeArchiveManifest
@@ -384,7 +385,7 @@ Decodes archive manifest using the supplied inputs. Returns the computed value o
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L975)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L976)
 
 <a id="function-function-minisql-tools-backup-decodemanifest-function-decodemanifest-source-src-minisql-tools-backup-ml-955461535"></a>
 ### decodeManifest
@@ -400,7 +401,7 @@ Decodes manifest using the supplied inputs. Returns its result or propagates a s
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L486)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L487)
 
 <a id="function-function-minisql-tools-backup-decodestandbystate-function-decodestandbystate-source-src-minisql-tools-backup-ml-1229626383"></a>
 ### decodeStandbyState
@@ -416,7 +417,7 @@ Decodes standby state using the supplied inputs. Returns the computed value or o
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1329)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1330)
 
 <a id="function-function-minisql-tools-backup-decryptbackupdata-function-decryptbackupdata-key-relativepath-encoded-src-minisql-tools-backup-ml-1097415852"></a>
 ### decryptBackupData
@@ -434,7 +435,7 @@ Authenticates and decrypts one captured backup file.
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L617)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L618)
 
 <a id="function-function-minisql-tools-backup-encodearchivemanifest-function-encodearchivemanifest-manifest-src-minisql-tools-backup-ml-1260606537"></a>
 ### encodeArchiveManifest
@@ -450,7 +451,7 @@ Encodes archive manifest using the supplied inputs. Requires arguments that sati
 | `manifest` | `dynamic` | — | manifest value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L945)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L946)
 
 <a id="function-function-minisql-tools-backup-encodemanifest-function-encodemanifest-manifest-src-minisql-tools-backup-ml-1234638131"></a>
 ### encodeManifest
@@ -466,7 +467,7 @@ Encodes manifest using the supplied inputs. Requires arguments that satisfy the 
 | `manifest` | `dynamic` | — | manifest value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L451)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L452)
 
 <a id="function-function-minisql-tools-backup-encodestandbystate-function-encodestandbystate-state-src-minisql-tools-backup-ml-1362597349"></a>
 ### encodeStandbyState
@@ -482,7 +483,7 @@ Encodes standby state using the supplied inputs. Requires arguments that satisfy
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1311)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1312)
 
 <a id="function-function-minisql-tools-backup-encryptbackupdata-function-encryptbackupdata-key-relativepath-plaintext-src-minisql-tools-backup-ml-1022597223"></a>
 ### encryptBackupData
@@ -500,7 +501,7 @@ Encrypts one captured backup file independently.
 | `plaintext` | `dynamic` | — | plaintext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L603)
 
 <a id="function-function-minisql-tools-backup-ensuredirectory-function-ensuredirectory-path-src-minisql-tools-backup-ml-855005447"></a>
 ### ensureDirectory
@@ -516,7 +517,7 @@ Ensures directory using the supplied inputs. Returns the computed value or opera
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L234)
 
 <a id="function-function-minisql-tools-backup-fail-function-fail-code-operation-message-src-minisql-tools-backup-ml-1136335015"></a>
 ### fail
@@ -534,7 +535,7 @@ Performs the fail operation for the minisql tools backup module. Returns its res
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L131)
 
 <a id="constant-constant-minisql-tools-backup-format-version-const-format-version-1-src-minisql-tools-backup-ml-53108972"></a>
 ### FORMAT_VERSION
@@ -546,7 +547,7 @@ const FORMAT_VERSION = 1
 Defines the format version constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L41)
 
 <a id="function-function-minisql-tools-backup-indexids-function-indexids-state-src-minisql-tools-backup-ml-1849379677"></a>
 ### indexIds
@@ -562,7 +563,7 @@ Implements index ids for this module. Returns the computed value or operation st
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L364)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L365)
 
 <a id="constant-constant-minisql-tools-backup-invalid-argument-const-invalid-argument-9001-src-minisql-tools-backup-ml-2019599101"></a>
 ### INVALID_ARGUMENT
@@ -574,7 +575,7 @@ const INVALID_ARGUMENT = 9001
 M20 verified directory backup. A backup is a self-contained directory with
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L32)
 
 <a id="function-function-minisql-tools-backup-isarchivemanifest-function-isarchivemanifest-value-src-minisql-tools-backup-ml-1624956835"></a>
 ### isArchiveManifest
@@ -590,7 +591,7 @@ Returns whether the supplied value satisfies the archive manifest condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L840)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L841)
 
 <a id="function-function-minisql-tools-backup-isarchivereport-function-isarchivereport-value-src-minisql-tools-backup-ml-392014977"></a>
 ### isArchiveReport
@@ -606,7 +607,7 @@ Returns whether the supplied value satisfies the archive report condition. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L848)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L849)
 
 <a id="function-function-minisql-tools-backup-isbackupmanifest-function-isbackupmanifest-value-src-minisql-tools-backup-ml-1851346601"></a>
 ### isBackupManifest
@@ -622,7 +623,7 @@ Returns whether the supplied value satisfies the backup manifest condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L139)
 
 <a id="function-function-minisql-tools-backup-isbackupreport-function-isbackupreport-value-src-minisql-tools-backup-ml-226614049"></a>
 ### isBackupReport
@@ -638,7 +639,7 @@ Returns whether the supplied value satisfies the backup report condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L147)
 
 <a id="function-function-minisql-tools-backup-isimplemented-function-isimplemented-src-minisql-tools-backup-ml-1956394640"></a>
 ### isImplemented
@@ -650,7 +651,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql tools backup module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1477)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1478)
 
 <a id="function-function-minisql-tools-backup-ispitrreport-function-ispitrreport-value-src-minisql-tools-backup-ml-539689693"></a>
 ### isPitrReport
@@ -666,7 +667,7 @@ Returns whether the supplied value satisfies the point-in-time recovery report c
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L856)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L857)
 
 <a id="function-function-minisql-tools-backup-isrestorereport-function-isrestorereport-value-src-minisql-tools-backup-ml-2105247993"></a>
 ### isRestoreReport
@@ -682,7 +683,7 @@ Returns whether the supplied value satisfies the restore report condition. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L154)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L155)
 
 <a id="function-function-minisql-tools-backup-isstandbyreport-function-isstandbyreport-value-src-minisql-tools-backup-ml-1504452719"></a>
 ### isStandbyReport
@@ -698,7 +699,7 @@ Returns whether the supplied value satisfies the standby report condition. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L872)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L873)
 
 <a id="function-function-minisql-tools-backup-isstandbystate-function-isstandbystate-value-src-minisql-tools-backup-ml-1313417777"></a>
 ### isStandbyState
@@ -714,7 +715,7 @@ Returns whether the supplied value satisfies the standby state condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L864)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L865)
 
 <a id="function-function-minisql-tools-backup-livewalpath-function-livewalpath-databasepath-src-minisql-tools-backup-ml-275085540"></a>
 ### liveWalPath
@@ -730,7 +731,7 @@ Implements live WAL path for this module. Requires arguments that satisfy the va
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1135)
 
 <a id="function-function-minisql-tools-backup-m0selftestline-function-m0selftestline-src-minisql-tools-backup-ml-2042363976"></a>
 ### m0SelfTestLine
@@ -742,7 +743,7 @@ function m0SelfTestLine()
 Performs the m0SelfTestLine operation for the minisql tools backup module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1449)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1450)
 
 <a id="constant-constant-minisql-tools-backup-manifest-kind-const-manifest-kind-60-src-minisql-tools-backup-ml-280252713"></a>
 ### MANIFEST_KIND
@@ -754,7 +755,7 @@ const MANIFEST_KIND = 60
 Defines the manifest kind constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L43)
 
 <a id="function-function-minisql-tools-backup-manifestfromfiles-function-manifestfromfiles-databaseid-pagesize-files-src-minisql-tools-backup-ml-641542261"></a>
 ### manifestFromFiles
@@ -772,7 +773,7 @@ Implements manifest from files for this module. Returns its result or propagates
 | `files` | `dynamic` | — | files value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L435)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L436)
 
 <a id="function-function-minisql-tools-backup-manifestmagic-function-manifestmagic-src-minisql-tools-backup-ml-2137322480"></a>
 ### manifestMagic
@@ -784,7 +785,7 @@ function manifestMagic()
 Implements manifest magic for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L161)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L162)
 
 <a id="function-function-minisql-tools-backup-materializestandby-function-materializestandby-archivepath-databasepath-src-minisql-tools-backup-ml-811618635"></a>
 ### materializeStandby
@@ -801,7 +802,7 @@ Implements materialize standby for this module. Requires arguments that satisfy 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1366)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1367)
 
 <a id="constant-constant-minisql-tools-backup-max-archive-generations-const-max-archive-generations-4294967295-src-minisql-tools-backup-ml-2132066168"></a>
 ### MAX_ARCHIVE_GENERATIONS
@@ -813,7 +814,7 @@ const MAX_ARCHIVE_GENERATIONS = 4294967295
 Archive generations use an on-disk U32. M48 live shipping may run for a
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L768)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L769)
 
 <a id="constant-constant-minisql-tools-backup-max-file-bytes-const-max-file-bytes-4294967295-src-minisql-tools-backup-ml-728368892"></a>
 ### MAX_FILE_BYTES
@@ -825,7 +826,7 @@ const MAX_FILE_BYTES = 4294967295
 Backup v1 encodes file lengths as U64 and entry counts as U32. Snapshot and
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L47)
 
 <a id="constant-constant-minisql-tools-backup-max-file-count-const-max-file-count-4294967295-src-minisql-tools-backup-ml-1829748272"></a>
 ### MAX_FILE_COUNT
@@ -837,7 +838,7 @@ const MAX_FILE_COUNT = 4294967295
 Defines the max file count constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L51)
 
 <a id="constant-constant-minisql-tools-backup-max-path-bytes-const-max-path-bytes-240-src-minisql-tools-backup-ml-149356933"></a>
 ### MAX_PATH_BYTES
@@ -849,7 +850,7 @@ const MAX_PATH_BYTES = 240
 Defines the max path bytes constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L45)
 
 <a id="constant-constant-minisql-tools-backup-max-total-bytes-const-max-total-bytes-1152921504606846975-src-minisql-tools-backup-ml-1879201580"></a>
 ### MAX_TOTAL_BYTES
@@ -861,7 +862,7 @@ const MAX_TOTAL_BYTES = 1152921504606846975
 Defines the max total bytes constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L49)
 
 <a id="function-function-minisql-tools-backup-movepathreliably-function-movepathreliably-source-destination-replaceexisting-src-minisql-tools-backup-ml-738649356"></a>
 ### movePathReliably
@@ -879,7 +880,7 @@ Publishes a staged file or directory despite short-lived Windows scanner or inde
 | `replaceExisting` | `dynamic` | — | replaceExisting value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L246)
 
 <a id="constant-constant-minisql-tools-backup-object-exists-const-object-exists-9013-src-minisql-tools-backup-ml-1971002162"></a>
 ### OBJECT_EXISTS
@@ -891,7 +892,7 @@ const OBJECT_EXISTS = 9013
 Defines the object exists constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L38)
 
 <a id="function-function-minisql-tools-backup-overwritewhole-function-overwritewhole-path-data-src-minisql-tools-backup-ml-607497545"></a>
 ### overwriteWhole
@@ -908,7 +909,7 @@ Implements overwrite whole for this module. Requires arguments that satisfy the 
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L913)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L914)
 
 - [minisql.tools.backup.PitrReport](Type-minisql-tools-backup-pitrreport-949770206.md) — struct
 <a id="function-function-minisql-tools-backup-prefixmatches-function-prefixmatches-previous-current-src-minisql-tools-backup-ml-1543387970"></a>
@@ -926,7 +927,7 @@ Implements prefix matches for this module. Returns the computed value or operati
 | `current` | `dynamic` | — | current value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1121)
 
 <a id="function-function-minisql-tools-backup-promotestandby-function-promotestandby-databasepath-src-minisql-tools-backup-ml-1852820714"></a>
 ### promoteStandby
@@ -942,7 +943,7 @@ Implements promote standby for this module. Requires arguments that satisfy the 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1423)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1424)
 
 <a id="function-function-minisql-tools-backup-readarchivemanifest-function-readarchivemanifest-archivepath-src-minisql-tools-backup-ml-1214907131"></a>
 ### readArchiveManifest
@@ -958,7 +959,7 @@ Reads archive manifest using the supplied inputs. Returns the computed value or 
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1003)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1004)
 
 <a id="function-function-minisql-tools-backup-readhandle-function-readhandle-handle-maxbytes-operation-src-minisql-tools-backup-ml-1029672802"></a>
 ### readHandle
@@ -976,7 +977,7 @@ Reads handle using the supplied inputs. Returns the computed value or operation 
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L276)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L277)
 
 <a id="function-function-minisql-tools-backup-readmanifest-function-readmanifest-backuppath-src-minisql-tools-backup-ml-391514703"></a>
 ### readManifest
@@ -992,7 +993,7 @@ Reads manifest using the supplied inputs. Returns the computed value or operatio
 | `backupPath` | `dynamic` | — | Path associated with backup. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L719)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L720)
 
 <a id="function-function-minisql-tools-backup-readstandbystate-function-readstandbystate-databasepath-src-minisql-tools-backup-ml-1015451342"></a>
 ### readStandbyState
@@ -1008,7 +1009,7 @@ Reads standby state using the supplied inputs. Returns the computed value or ope
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1346)
 
 <a id="function-function-minisql-tools-backup-readwhole-function-readwhole-path-maxbytes-src-minisql-tools-backup-ml-119353600"></a>
 ### readWhole
@@ -1025,7 +1026,7 @@ Reads whole using the supplied inputs. Requires arguments that satisfy the valid
 | `maxBytes` | `dynamic` | — | maxBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L292)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L293)
 
 <a id="function-function-minisql-tools-backup-refreshstandby-function-refreshstandby-archivepath-databasepath-src-minisql-tools-backup-ml-412727603"></a>
 ### refreshStandby
@@ -1042,7 +1043,7 @@ Implements refresh standby for this module. Requires arguments that satisfy the 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1387)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1388)
 
 <a id="function-function-minisql-tools-backup-repairrecoveredindexes-function-repairrecoveredindexes-database-required-operation-src-minisql-tools-backup-ml-1399968009"></a>
 ### repairRecoveredIndexes
@@ -1060,7 +1061,7 @@ WAL archives contain authoritative table-page images, while B+ tree files remain
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L59)
 
 <a id="function-function-minisql-tools-backup-replacewholeatomic-function-replacewholeatomic-path-data-src-minisql-tools-backup-ml-259514697"></a>
 ### replaceWholeAtomic
@@ -1077,7 +1078,7 @@ Implements replace whole atomic for this module. Returns the computed value or o
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L932)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L933)
 
 <a id="function-function-minisql-tools-backup-restore-function-restore-backuppath-databasepath-src-minisql-tools-backup-ml-321429073"></a>
 ### restore
@@ -1094,7 +1095,7 @@ Implements restore for this module. Requires arguments that satisfy the validati
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L731)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L732)
 
 <a id="function-function-minisql-tools-backup-restoreencrypted-function-restoreencrypted-backuppath-databasepath-keyfilepath-src-minisql-tools-backup-ml-308789863"></a>
 ### restoreEncrypted
@@ -1112,7 +1113,7 @@ Restores and validates an encrypted backup before atomic publication.
 | `keyFilePath` | `dynamic` | — | Path associated with key file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L680)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L681)
 
 <a id="function-function-minisql-tools-backup-restorelatest-function-restorelatest-archivepath-databasepath-src-minisql-tools-backup-ml-1735680365"></a>
 ### restoreLatest
@@ -1129,7 +1130,7 @@ Implements restore latest for this module. Returns the computed value or operati
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1278)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1279)
 
 - [minisql.tools.backup.RestoreReport](Type-minisql-tools-backup-restorereport-1235503011.md) — struct
 <a id="function-function-minisql-tools-backup-restoretolsn-function-restoretolsn-archivepath-databasepath-targetlsn-src-minisql-tools-backup-ml-227964921"></a>
@@ -1148,7 +1149,7 @@ Implements restore to LSN for this module. Requires arguments that satisfy the v
 | `targetLsn` | `dynamic` | — | targetLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1245)
 
 <a id="function-function-minisql-tools-backup-run-function-run-databasepath-backuppath-src-minisql-tools-backup-ml-1458970659"></a>
 ### run
@@ -1165,7 +1166,7 @@ Runs run for the minisql tools backup workflow. Requires arguments that satisfy 
 | `backupPath` | `dynamic` | — | Path associated with backup. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L579)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L580)
 
 <a id="function-function-minisql-tools-backup-runencrypted-function-runencrypted-databasepath-backuppath-keyfilepath-src-minisql-tools-backup-ml-1084426691"></a>
 ### runEncrypted
@@ -1183,7 +1184,7 @@ Opens a database and creates a verified encrypted backup export.
 | `keyFilePath` | `dynamic` | — | Path associated with key file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L662)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L663)
 
 <a id="function-function-minisql-tools-backup-runopen-function-runopen-database-backuppath-src-minisql-tools-backup-ml-244007794"></a>
 ### runOpen
@@ -1200,7 +1201,7 @@ Runs open using the supplied inputs. Requires arguments that satisfy the validat
 | `backupPath` | `dynamic` | — | Path associated with backup. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L558)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L559)
 
 <a id="function-function-minisql-tools-backup-runopenencrypted-function-runopenencrypted-database-backuppath-key-provider-src-minisql-tools-backup-ml-439077384"></a>
 ### runOpenEncrypted
@@ -1219,7 +1220,7 @@ Captures and publishes an encrypted backup from an open database.
 | `provider` | `dynamic` | — | provider value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L629)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L630)
 
 <a id="function-function-minisql-tools-backup-snapshotdurablewallive-function-snapshotdurablewallive-databasepath-src-minisql-tools-backup-ml-949565154"></a>
 ### snapshotDurableWalLive
@@ -1235,7 +1236,7 @@ Implements snapshot durable WAL live for this module. Requires arguments that sa
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1144)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1145)
 
 <a id="function-function-minisql-tools-backup-snapshotwal-function-snapshotwal-database-src-minisql-tools-backup-ml-616823259"></a>
 ### snapshotWal
@@ -1251,7 +1252,7 @@ Implements snapshot WAL for this module. Returns the computed value or operation
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1025)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1026)
 
 <a id="constant-constant-minisql-tools-backup-standby-format-version-const-standby-format-version-1-src-minisql-tools-backup-ml-1474826772"></a>
 ### STANDBY_FORMAT_VERSION
@@ -1263,7 +1264,7 @@ const STANDBY_FORMAT_VERSION = 1
 Defines the standby format version constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L764)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L765)
 
 <a id="constant-constant-minisql-tools-backup-standby-kind-const-standby-kind-81-src-minisql-tools-backup-ml-1484241170"></a>
 ### STANDBY_KIND
@@ -1275,7 +1276,7 @@ const STANDBY_KIND = 81
 Defines the standby kind constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L766)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L767)
 
 <a id="function-function-minisql-tools-backup-standbymagic-function-standbymagic-src-minisql-tools-backup-ml-834893560"></a>
 ### standbyMagic
@@ -1287,7 +1288,7 @@ function standbyMagic()
 Implements standby magic for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1286)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1287)
 
 <a id="function-function-minisql-tools-backup-standbypromotedpath-function-standbypromotedpath-databasepath-src-minisql-tools-backup-ml-1651985182"></a>
 ### standbyPromotedPath
@@ -1303,7 +1304,7 @@ Implements standby promoted path for this module. Returns the computed value or 
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1302)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1303)
 
 - [minisql.tools.backup.StandbyReport](Type-minisql-tools-backup-standbyreport-1489782280.md) — struct
 - [minisql.tools.backup.StandbyState](Type-minisql-tools-backup-standbystate-1928784087.md) — struct
@@ -1321,7 +1322,7 @@ Implements standby state path for this module. Returns the computed value or ope
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1294)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1295)
 
 <a id="function-function-minisql-tools-backup-standbystatus-function-standbystatus-databasepath-src-minisql-tools-backup-ml-402635228"></a>
 ### standbyStatus
@@ -1337,7 +1338,7 @@ Implements standby status for this module. Returns the computed value or operati
 | `databasePath` | `dynamic` | — | Path associated with database. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1442)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1443)
 
 <a id="function-function-minisql-tools-backup-targetmilestone-function-targetmilestone-src-minisql-tools-backup-ml-1164184786"></a>
 ### targetMilestone
@@ -1349,7 +1350,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql tools backup module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1470)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1471)
 
 <a id="constant-constant-minisql-tools-backup-unsupported-format-const-unsupported-format-9003-src-minisql-tools-backup-ml-466346591"></a>
 ### UNSUPPORTED_FORMAT
@@ -1361,7 +1362,7 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql tools backup module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L34)
 
 <a id="function-function-minisql-tools-backup-validaterelativepath-function-validaterelativepath-relativepath-operation-src-minisql-tools-backup-ml-22637890"></a>
 ### validateRelativePath
@@ -1378,7 +1379,7 @@ Validates relative path using the supplied inputs. Requires arguments that satis
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L214)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L215)
 
 <a id="function-function-minisql-tools-backup-verifyarchive-function-verifyarchive-archivepath-src-minisql-tools-backup-ml-1451850835"></a>
 ### verifyArchive
@@ -1394,7 +1395,7 @@ Verifies archive using the supplied inputs. Requires arguments that satisfy the 
 | `archivePath` | `dynamic` | — | Path associated with archive. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1068)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1069)
 
 <a id="function-function-minisql-tools-backup-verifybackupfiles-function-verifybackupfiles-backuppath-manifest-src-minisql-tools-backup-ml-1167208972"></a>
 ### verifyBackupFiles
@@ -1411,7 +1412,7 @@ Verifies backup files using the supplied inputs. Returns the computed value or o
 | `manifest` | `dynamic` | — | manifest value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L538)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L539)
 
 <a id="function-function-minisql-tools-backup-verifywalsnapshot-function-verifywalsnapshot-manifest-walbytes-src-minisql-tools-backup-ml-2059858408"></a>
 ### verifyWalSnapshot
@@ -1428,7 +1429,7 @@ Verifies WAL snapshot using the supplied inputs. Requires arguments that satisfy
 | `walBytes` | `dynamic` | — | walBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1048)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1049)
 
 <a id="function-function-minisql-tools-backup-versionline-function-versionline-src-minisql-tools-backup-ml-157854552"></a>
 ### versionLine
@@ -1440,7 +1441,7 @@ function versionLine()
 Performs the versionLine operation for the minisql tools backup module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1456)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1457)
 
 <a id="function-function-minisql-tools-backup-walprefixat-function-walprefixat-walbytes-targetlsn-src-minisql-tools-backup-ml-210293209"></a>
 ### walPrefixAt
@@ -1457,7 +1458,7 @@ Implements WAL prefix at for this module. Requires arguments that satisfy the va
 | `targetLsn` | `dynamic` | — | targetLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1223)
 
 <a id="function-function-minisql-tools-backup-writecapturedfiles-function-writecapturedfiles-root-files-src-minisql-tools-backup-ml-158876291"></a>
 ### writeCapturedFiles
@@ -1474,7 +1475,7 @@ Writes captured files using the supplied inputs. Returns the computed value or o
 | `files` | `dynamic` | — | files value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L525)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L526)
 
 <a id="function-function-minisql-tools-backup-writestandbystate-function-writestandbystate-databasepath-state-src-minisql-tools-backup-ml-2099569541"></a>
 ### writeStandbyState
@@ -1491,7 +1492,7 @@ Writes standby state using the supplied inputs. Returns the computed value or op
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1356)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L1357)
 
 <a id="function-function-minisql-tools-backup-writewhole-function-writewhole-path-data-src-minisql-tools-backup-ml-999603721"></a>
 ### writeWhole
@@ -1508,4 +1509,4 @@ Writes whole using the supplied inputs. Requires arguments that satisfy the vali
 | `data` | `dynamic` | — | Input data consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L313)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L314)

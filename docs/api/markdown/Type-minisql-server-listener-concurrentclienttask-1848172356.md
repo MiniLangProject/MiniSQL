@@ -12,7 +12,7 @@ struct ConcurrentClientTask
 Immutable argument bundle submitted to one thread-pool worker.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L351)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L356)
 
 ## Members
 
@@ -26,7 +26,7 @@ lockWaitMs
 Maximum logical-lock retry duration in milliseconds.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L357)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L362)
 
 <a id="field-field-minisql-server-listener-concurrentclienttask-slot-slot-src-minisql-server-listener-ml-1332172506"></a>
 ### slot
@@ -38,7 +38,7 @@ slot
 Connection/session pair exclusively owned by the worker.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L353)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L358)
 
 <a id="field-field-minisql-server-listener-concurrentclienttask-state-state-src-minisql-server-listener-ml-1148592402"></a>
 ### state
@@ -50,7 +50,7 @@ state
 Shared, guard-protected server accounting.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L355)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L360)
 
 <a id="field-field-minisql-server-listener-concurrentclienttask-tlscredential-tlscredential-src-minisql-server-listener-ml-189930822"></a>
 ### tlsCredential
@@ -62,4 +62,4 @@ tlsCredential
 Shared inbound Schannel credential, or void for a non-TLS listener.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L359)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/server/listener.ml#L364)

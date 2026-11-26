@@ -12,7 +12,7 @@ struct CommonTableExpression
 Groups the common table expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L721)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L755)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnNames
 Stores the column names associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L727)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L761)
 
 <a id="field-field-minisql-sql-ast-commontableexpression-name-name-src-minisql-sql-ast-ml-2127395038"></a>
 ### name
@@ -38,7 +38,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L723)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L757)
 
 <a id="field-field-minisql-sql-ast-commontableexpression-query-query-src-minisql-sql-ast-ml-781073148"></a>
 ### query
@@ -50,7 +50,7 @@ query
 Stores the query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L725)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L759)
 
 <a id="field-field-minisql-sql-ast-commontableexpression-recursive-recursive-src-minisql-sql-ast-ml-994502916"></a>
 ### recursive
@@ -62,4 +62,4 @@ recursive
 Indicates whether this CTE may reference its own working table.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L729)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L763)

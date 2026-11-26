@@ -12,7 +12,7 @@ struct Client
 Groups the client state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L26)
 
 ## Members
 
@@ -26,7 +26,7 @@ activeQuery
 Forward-only query cursor currently owning the protocol response stream.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L38)
 
 <a id="field-field-minisql-client-client-client-authenticated-authenticated-src-minisql-client-client-ml-1277780000"></a>
 ### authenticated
@@ -38,7 +38,7 @@ authenticated
 Indicates whether the authenticated condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L34)
 
 <a id="field-field-minisql-client-client-client-closed-closed-src-minisql-client-client-ml-559592872"></a>
 ### closed
@@ -50,7 +50,7 @@ closed
 Indicates whether the closed condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L32)
 
 <a id="field-field-minisql-client-client-client-connection-connection-src-minisql-client-client-ml-1662967272"></a>
 ### connection
@@ -62,7 +62,19 @@ connection
 Stores the connection associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L28)
+
+<a id="field-field-minisql-client-client-client-extendedresults-extendedresults-src-minisql-client-client-ml-1056103752"></a>
+### extendedResults
+
+```ml
+extendedResults
+```
+
+True after the peer acknowledges exact NULL/type/condition metadata.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L40)
 
 <a id="field-field-minisql-client-client-client-nextrequestid-nextrequestid-src-minisql-client-client-ml-198977112"></a>
 ### nextRequestId
@@ -74,7 +86,7 @@ nextRequestId
 Tracks the next request identifier numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L30)
 
 <a id="field-field-minisql-client-client-client-username-username-src-minisql-client-client-ml-951122664"></a>
 ### username
@@ -86,4 +98,4 @@ username
 Stores the username associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/client/client.ml#L36)

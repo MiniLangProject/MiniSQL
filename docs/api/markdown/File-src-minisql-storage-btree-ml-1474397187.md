@@ -12,6 +12,7 @@ Reachable from entry: **yes**
 
 - `minisql/common/byte_ops.ml` as `byte_ops` → [src/minisql/common/byte_ops.ml](File-src-minisql-common-byte-ops-ml-400961654.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
+- `minisql/common/format_version.ml` as `format_version` → [src/minisql/common/format_version.ml](File-src-minisql-common-format-version-ml-1671630705.md)
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/storage/superblock.ml` as `superblock` → [src/minisql/storage/superblock.ml](File-src-minisql-storage-superblock-ml-1268029913.md)
@@ -33,7 +34,7 @@ Performs the all entries operation for this module. Inputs: `tree`. Returns the 
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L798)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L959)
 
 <a id="function-function-minisql-storage-btree-auditleafchain-function-auditleafchain-tree-src-minisql-storage-btree-ml-1222439520"></a>
 ### auditLeafChain
@@ -49,7 +50,7 @@ Walks the active leaf generation one page at a time. Only the previous entry rem
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L828)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L989)
 
 <a id="function-function-minisql-storage-btree-auditnode-function-auditnode-tree-pagenumber-expectedlevel-state-src-minisql-storage-btree-ml-282196879"></a>
 ### auditNode
@@ -68,7 +69,7 @@ Performs the audit node operation for this module. Inputs: `tree`, `pageNumber`,
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1284)
 
 - [minisql.storage.btree.BTree](Type-minisql-storage-btree-btree-129466497.md) — struct
 - [minisql.storage.btree.BTreeAudit](Type-minisql-storage-btree-btreeaudit-1014624468.md) — struct
@@ -91,7 +92,7 @@ Performs the bulk load operation for this module. Inputs: `tree`, `values`. Retu
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L788)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L949)
 
 <a id="function-function-minisql-storage-btree-bytesequal-function-bytesequal-left-right-src-minisql-storage-btree-ml-638325327"></a>
 ### bytesEqual
@@ -108,7 +109,7 @@ Performs the bytesEqual operation for the minisql storage btree module. Inputs: 
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L177)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L179)
 
 <a id="function-function-minisql-storage-btree-choosemeta-function-choosemeta-first-second-src-minisql-storage-btree-ml-1493140172"></a>
 ### chooseMeta
@@ -125,7 +126,7 @@ Performs the choose meta operation for this module. Inputs: `first`, `second`. R
 | `second` | `dynamic` | — | second value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L383)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L543)
 
 <a id="function-function-minisql-storage-btree-chunkentries-function-chunkentries-values-pagesize-src-minisql-storage-btree-ml-1560533940"></a>
 ### chunkEntries
@@ -142,7 +143,7 @@ Performs the chunk entries operation for this module. Inputs: `values`, `pageSiz
 | `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L677)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L838)
 
 <a id="function-function-minisql-storage-btree-close-function-close-tree-src-minisql-storage-btree-ml-1598693584"></a>
 ### close
@@ -158,7 +159,7 @@ Closes close owned by the minisql storage btree module. Inputs: `tree`. Returns 
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1192)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1356)
 
 <a id="constant-constant-minisql-storage-btree-closed-handle-const-closed-handle-9008-src-minisql-storage-btree-ml-861742094"></a>
 ### CLOSED_HANDLE
@@ -170,7 +171,7 @@ const CLOSED_HANDLE = 9008
 Defines the closed handle constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L25)
 
 <a id="function-function-minisql-storage-btree-commitsorted-function-commitsorted-tree-values-src-minisql-storage-btree-ml-1889270466"></a>
 ### commitSorted
@@ -187,7 +188,28 @@ Commits the sorted. Inputs: `tree`, `values`. Returns the operation result and p
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L733)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L894)
+
+<a id="function-function-minisql-storage-btree-comparebyteparts-function-comparebyteparts-left-leftstart-leftend-right-rightstart-rightend-src-minisql-storage-btree-ml-1910615299"></a>
+### compareByteParts
+
+```ml
+function compareByteParts(left, leftStart, leftEnd, right, rightStart, rightEnd)
+```
+
+Compares already-validated escaped byte components without allocating slices. The 00 FF escape and 00 00 terminator preserve bytewise text/binary ordering.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `left` | `dynamic` | — | Left key. |
+| `leftStart` | `dynamic` | — | Left component payload offset. |
+| `leftEnd` | `dynamic` | — | Offset after the left component. |
+| `right` | `dynamic` | — | Right key. |
+| `rightStart` | `dynamic` | — | Right component payload offset. |
+| `rightEnd` | `dynamic` | — | Offset after the right component. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L300)
 
 <a id="function-function-minisql-storage-btree-compareentries-function-compareentries-left-right-src-minisql-storage-btree-ml-813618475"></a>
 ### compareEntries
@@ -204,7 +226,7 @@ Compares the entries. Inputs: `left`, `right`. Returns the produced value or pro
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L199)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L357)
 
 <a id="function-function-minisql-storage-btree-comparekeys-function-comparekeys-left-right-src-minisql-storage-btree-ml-1219268477"></a>
 ### compareKeys
@@ -213,15 +235,35 @@ Compares the entries. Inputs: `left`, `right`. Returns the produced value or pro
 function compareKeys(left, right)
 ```
 
-Compares the keys. Inputs: `left`, `right`. Returns the produced value or propagates a structured error from validation or delegated operations.
+Compares SQL components semantically while preserving the raw-key API. A component prefix sorts before its extensions. Raw keys precede typed keys in mixed trees so the ordering remains transitive across the two domains.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `left` | `dynamic` | — | left value consumed by this operation. |
-| `right` | `dynamic` | — | right value consumed by this operation. |
+| `left` | `dynamic` | — | Left raw or typed key. |
+| `right` | `dynamic` | — | Right raw or typed key. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L317)
+
+<a id="function-function-minisql-storage-btree-comparenumericpart-function-comparenumericpart-left-leftoffset-right-rightoffset-floating-src-minisql-storage-btree-ml-906014174"></a>
+### compareNumericPart
+
+```ml
+function compareNumericPart(left, leftOffset, right, rightOffset, floating)
+```
+
+Compares two same-tag numeric components directly from their LE words. Signed integers compare signed high words then unsigned low words. Finite binary64 values compare magnitude words, reversed for negatives; both zero signs compare equal. This avoids a lossy scalar conversion for INT64 limits.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `left` | `dynamic` | — | Left key. |
+| `leftOffset` | `dynamic` | — | Left numeric payload offset. |
+| `right` | `dynamic` | — | Right key. |
+| `rightOffset` | `dynamic` | — | Right numeric payload offset. |
+| `floating` | `dynamic` | — | Whether the payload is finite IEEE-754 binary64. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L260)
 
 <a id="function-function-minisql-storage-btree-componentname-function-componentname-src-minisql-storage-btree-ml-1535933160"></a>
 ### componentName
@@ -233,7 +275,7 @@ function componentName()
 Performs the componentName operation for the minisql storage btree module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1365)
 
 <a id="function-function-minisql-storage-btree-containsentry-function-containsentry-tree-expected-src-minisql-storage-btree-ml-699816718"></a>
 ### containsEntry
@@ -250,7 +292,7 @@ Tests one complete key/value entry without building allEntries(). At most one le
 | `expected` | `dynamic` | — | expected value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L896)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1057)
 
 <a id="function-function-minisql-storage-btree-copyentry-function-copyentry-value-src-minisql-storage-btree-ml-962533537"></a>
 ### copyEntry
@@ -266,7 +308,7 @@ Copies the entry. Inputs: `value`. Returns the produced value or propagates a st
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L379)
 
 <a id="constant-constant-minisql-storage-btree-corrupt-data-const-corrupt-data-9004-src-minisql-storage-btree-ml-656652144"></a>
 ### CORRUPT_DATA
@@ -278,7 +320,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L23)
 
 <a id="function-function-minisql-storage-btree-count-function-count-tree-src-minisql-storage-btree-ml-1558978018"></a>
 ### count
@@ -294,7 +336,7 @@ Counts the requested value. Inputs: `tree`. Returns the produced value or propag
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1332)
 
 <a id="function-function-minisql-storage-btree-create-function-create-path-pagesize-fileid-databaseid-unique-src-minisql-storage-btree-ml-428455165"></a>
 ### create
@@ -314,7 +356,7 @@ Creates create for the minisql storage btree module. Inputs: `path`, `pageSize`,
 | `unique` | `dynamic` | — | unique value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L407)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L567)
 
 <a id="function-function-minisql-storage-btree-decodeinternal-function-decodeinternal-tree-pagenumber-src-minisql-storage-btree-ml-1010670406"></a>
 ### decodeInternal
@@ -331,7 +373,7 @@ Decodes one internal node without retaining positioned-read setup.
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L830)
 
 <a id="function-function-minisql-storage-btree-decodeinternalwithcontext-function-decodeinternalwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-1660257631"></a>
 ### decodeInternalWithContext
@@ -349,7 +391,7 @@ Decodes the internal. Inputs: `tree`, `pageNumber`. Returns the produced value o
 | `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L631)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L791)
 
 <a id="function-function-minisql-storage-btree-decodeleaf-function-decodeleaf-tree-pagenumber-src-minisql-storage-btree-ml-1860519834"></a>
 ### decodeLeaf
@@ -366,7 +408,7 @@ Decodes one leaf without retaining positioned-read setup across calls.
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L584)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L744)
 
 <a id="function-function-minisql-storage-btree-decodeleafwithcontext-function-decodeleafwithcontext-tree-pagenumber-readcontext-src-minisql-storage-btree-ml-162776037"></a>
 ### decodeLeafWithContext
@@ -384,7 +426,7 @@ Decodes the leaf. Inputs: `tree`, `pageNumber`. Returns the produced value or pr
 | `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L551)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L711)
 
 <a id="function-function-minisql-storage-btree-decodemetapage-function-decodemetapage-treefile-pagenumber-src-minisql-storage-btree-ml-18858320"></a>
 ### decodeMetaPage
@@ -401,7 +443,7 @@ Decodes the meta page. Inputs: `treeFile`, `pageNumber`. Returns the produced va
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L354)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L514)
 
 <a id="function-function-minisql-storage-btree-decodenative-function-decodenative-words-operation-name-src-minisql-storage-btree-ml-1514441641"></a>
 ### decodeNative
@@ -419,7 +461,7 @@ Decodes native for the minisql storage btree workflow. Inputs: `words`, `operati
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L344)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L504)
 
 <a id="function-function-minisql-storage-btree-encodeinternal-function-encodeinternal-tree-pagenumber-level-descriptors-src-minisql-storage-btree-ml-1408795798"></a>
 ### encodeInternal
@@ -438,7 +480,7 @@ Encodes the internal. Inputs: `tree`, `pageNumber`, `level`, `descriptors`. Retu
 | `descriptors` | `dynamic` | — | descriptors value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L594)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L754)
 
 <a id="function-function-minisql-storage-btree-encodeleaf-function-encodeleaf-tree-pagenumber-previouspage-nextpage-values-src-minisql-storage-btree-ml-1082243172"></a>
 ### encodeLeaf
@@ -458,7 +500,7 @@ Encodes the leaf. Inputs: `tree`, `pageNumber`, `previousPage`, `nextPage`, `val
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L672)
 
 <a id="function-function-minisql-storage-btree-encodemetapage-function-encodemetapage-treefile-pagenumber-generation-unique-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1472260786"></a>
 ### encodeMetaPage
@@ -482,7 +524,7 @@ Encodes the meta page. Inputs: `treeFile`, `pageNumber`, `generation`, `unique`,
 | `entryCount` | `dynamic` | — | Number of entry to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L307)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L467)
 
 <a id="function-function-minisql-storage-btree-entry-function-entry-key-value-src-minisql-storage-btree-ml-4224476"></a>
 ### entry
@@ -499,7 +541,7 @@ Performs the entry operation for this module. Inputs: `key`, `value`. Returns th
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L369)
 
 <a id="function-function-minisql-storage-btree-fail-function-fail-code-operation-message-src-minisql-storage-btree-ml-2143870441"></a>
 ### fail
@@ -517,7 +559,7 @@ Performs the fail operation for the minisql storage btree module. Inputs: `code`
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L153)
 
 <a id="function-function-minisql-storage-btree-find-function-find-tree-key-src-minisql-storage-btree-ml-1108622593"></a>
 ### find
@@ -534,7 +576,7 @@ Finds values without retaining positioned-read setup across page reads.
 | `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1025)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1187)
 
 <a id="function-function-minisql-storage-btree-findwithcontext-function-findwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-1627758102"></a>
 ### findWithContext
@@ -552,7 +594,7 @@ Finds the requested value. Inputs: `tree`, `key`. Returns the produced value or 
 | `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L983)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1144)
 
 <a id="constant-constant-minisql-storage-btree-flag-meta-const-flag-meta-32768-src-minisql-storage-btree-ml-409131251"></a>
 ### FLAG_META
@@ -564,7 +606,7 @@ const FLAG_META = 32768
 Defines the flag meta constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L56)
 
 <a id="constant-constant-minisql-storage-btree-flag-unique-const-flag-unique-1-src-minisql-storage-btree-ml-1767315518"></a>
 ### FLAG_UNIQUE
@@ -576,19 +618,19 @@ const FLAG_UNIQUE = 1
 Defines the flag unique constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L54)
 
-<a id="constant-constant-minisql-storage-btree-format-version-const-format-version-1-src-minisql-storage-btree-ml-140704084"></a>
+<a id="constant-constant-minisql-storage-btree-format-version-const-format-version-format-version-index-src-minisql-storage-btree-ml-248236697"></a>
 ### FORMAT_VERSION
 
 ```ml
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = format_version.INDEX
 ```
 
 Defines the format version constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L32)
 
 <a id="function-function-minisql-storage-btree-height-function-height-tree-src-minisql-storage-btree-ml-1211433548"></a>
 ### height
@@ -604,7 +646,7 @@ Performs the height operation for this module. Inputs: `tree`. Returns the produ
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1176)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1340)
 
 <a id="function-function-minisql-storage-btree-insert-function-insert-tree-key-value-src-minisql-storage-btree-ml-738273672"></a>
 ### insert
@@ -622,7 +664,7 @@ Performs the insert operation for the minisql storage btree module. Inputs: `tre
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L935)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1096)
 
 <a id="constant-constant-minisql-storage-btree-internal-data-offset-const-internal-data-offset-88-src-minisql-storage-btree-ml-1408411819"></a>
 ### INTERNAL_DATA_OFFSET
@@ -634,7 +676,7 @@ const INTERNAL_DATA_OFFSET = 88
 Defines the internal data offset constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L44)
 
 <a id="function-function-minisql-storage-btree-internalmagic-function-internalmagic-src-minisql-storage-btree-ml-2134122928"></a>
 ### internalMagic
@@ -646,7 +688,7 @@ function internalMagic()
 Performs the internal magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L169)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L171)
 
 <a id="constant-constant-minisql-storage-btree-invalid-argument-const-invalid-argument-9001-src-minisql-storage-btree-ml-1551839931"></a>
 ### INVALID_ARGUMENT
@@ -655,10 +697,10 @@ Performs the internal magic operation for this module. Takes no caller-supplied 
 const INVALID_ARGUMENT = 9001
 ```
 
-Persistent B+ tree v1.
+Persistent B+ tree v2. SQL keys use typed little-endian components; raw keys retain byte ordering and leaf values always retain byte ordering.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L19)
 
 <a id="function-function-minisql-storage-btree-isimplemented-function-isimplemented-src-minisql-storage-btree-ml-1883775896"></a>
 ### isImplemented
@@ -670,7 +712,23 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql storage btree module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1377)
+
+<a id="function-function-minisql-storage-btree-issqlkey-function-issqlkey-encoded-src-minisql-storage-btree-ml-312641052"></a>
+### isSqlKey
+
+```ml
+function isSqlKey(encoded)
+```
+
+Identifies typed keys without interpreting arbitrary raw B+ tree bytes. An unsupported version inside the reserved family is never read as raw.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `encoded` | `dynamic` | — | Encoded key bytes. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L197)
 
 <a id="function-function-minisql-storage-btree-isunique-function-isunique-tree-src-minisql-storage-btree-ml-721780756"></a>
 ### isUnique
@@ -686,7 +744,7 @@ Evaluates whether the supplied input satisfies the unique predicate. Inputs: `tr
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1348)
 
 <a id="constant-constant-minisql-storage-btree-leaf-data-offset-const-leaf-data-offset-96-src-minisql-storage-btree-ml-446659412"></a>
 ### LEAF_DATA_OFFSET
@@ -698,7 +756,7 @@ const LEAF_DATA_OFFSET = 96
 Defines the leaf data offset constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L42)
 
 <a id="function-function-minisql-storage-btree-leafmagic-function-leafmagic-src-minisql-storage-btree-ml-1666210738"></a>
 ### leafMagic
@@ -710,7 +768,7 @@ function leafMagic()
 Performs the leaf magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L165)
 
 <a id="function-function-minisql-storage-btree-locateleaf-function-locateleaf-tree-key-src-minisql-storage-btree-ml-1847517933"></a>
 ### locateLeaf
@@ -727,7 +785,7 @@ Locates one leaf without a reusable positioned-read context.
 | `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L886)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1047)
 
 <a id="function-function-minisql-storage-btree-locateleafwithcontext-function-locateleafwithcontext-tree-key-readcontext-src-minisql-storage-btree-ml-2141609176"></a>
 ### locateLeafWithContext
@@ -745,7 +803,7 @@ Descends through separator keys to the leaf that owns the rightmost range beginn
 | `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L863)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1024)
 
 <a id="constant-constant-minisql-storage-btree-max-internal-children-const-max-internal-children-12-src-minisql-storage-btree-ml-1653419868"></a>
 ### MAX_INTERNAL_CHILDREN
@@ -757,7 +815,7 @@ const MAX_INTERNAL_CHILDREN = 12
 Defines the max internal children constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L52)
 
 <a id="constant-constant-minisql-storage-btree-max-key-bytes-const-max-key-bytes-256-src-minisql-storage-btree-ml-1803503068"></a>
 ### MAX_KEY_BYTES
@@ -769,7 +827,7 @@ const MAX_KEY_BYTES = 256
 Defines the max key bytes constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L46)
 
 <a id="constant-constant-minisql-storage-btree-max-leaf-entries-const-max-leaf-entries-10-src-minisql-storage-btree-ml-412124260"></a>
 ### MAX_LEAF_ENTRIES
@@ -781,7 +839,7 @@ const MAX_LEAF_ENTRIES = 10
 Defines the max leaf entries constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L50)
 
 <a id="constant-constant-minisql-storage-btree-max-value-bytes-const-max-value-bytes-3584-src-minisql-storage-btree-ml-819686281"></a>
 ### MAX_VALUE_BYTES
@@ -793,7 +851,7 @@ const MAX_VALUE_BYTES = 3584
 A leaf value may use the space remaining on the minimum supported 4 KiB
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L48)
 
 <a id="function-function-minisql-storage-btree-mergesorted-function-mergesorted-left-right-src-minisql-storage-btree-ml-1557720837"></a>
 ### mergeSorted
@@ -810,7 +868,7 @@ Merges the sorted. Inputs: `left`, `right`. Returns the produced value or propag
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L228)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L388)
 
 <a id="constant-constant-minisql-storage-btree-meta-data-offset-const-meta-data-offset-64-src-minisql-storage-btree-ml-1032112221"></a>
 ### META_DATA_OFFSET
@@ -822,7 +880,7 @@ const META_DATA_OFFSET = 64
 Defines the meta data offset constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L38)
 
 <a id="constant-constant-minisql-storage-btree-meta-data-size-const-meta-data-size-64-src-minisql-storage-btree-ml-1910557789"></a>
 ### META_DATA_SIZE
@@ -834,7 +892,7 @@ const META_DATA_SIZE = 64
 Defines the meta data size constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L40)
 
 <a id="constant-constant-minisql-storage-btree-meta-page-a-const-meta-page-a-0-src-minisql-storage-btree-ml-2145884863"></a>
 ### META_PAGE_A
@@ -846,7 +904,7 @@ const META_PAGE_A = 0
 Defines the meta page a constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L34)
 
 <a id="constant-constant-minisql-storage-btree-meta-page-b-const-meta-page-b-1-src-minisql-storage-btree-ml-1502617810"></a>
 ### META_PAGE_B
@@ -858,7 +916,7 @@ const META_PAGE_B = 1
 Defines the meta page b constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L36)
 
 <a id="function-function-minisql-storage-btree-metamagic-function-metamagic-src-minisql-storage-btree-ml-1414963488"></a>
 ### metaMagic
@@ -870,7 +928,7 @@ function metaMagic()
 Performs the meta magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L159)
 
 - [minisql.storage.btree.NodeDescriptor](Type-minisql-storage-btree-nodedescriptor-1027824740.md) — struct
 <a id="constant-constant-minisql-storage-btree-object-exists-const-object-exists-9013-src-minisql-storage-btree-ml-1911349022"></a>
@@ -883,7 +941,7 @@ const OBJECT_EXISTS = 9013
 Defines the object exists constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L27)
 
 <a id="constant-constant-minisql-storage-btree-object-not-found-const-object-not-found-9014-src-minisql-storage-btree-ml-608342987"></a>
 ### OBJECT_NOT_FOUND
@@ -895,7 +953,7 @@ const OBJECT_NOT_FOUND = 9014
 Defines the object not found constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L29)
 
 <a id="function-function-minisql-storage-btree-open-function-open-path-src-minisql-storage-btree-ml-1067946583"></a>
 ### open
@@ -911,7 +969,7 @@ Opens open for the minisql storage btree module. Inputs: `path`. Returns the pro
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L451)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L611)
 
 <a id="function-function-minisql-storage-btree-openreadonly-function-openreadonly-path-src-minisql-storage-btree-ml-1734688875"></a>
 ### openReadOnly
@@ -927,7 +985,7 @@ Opens the read only. Inputs: `path`. Returns the produced value or propagates a 
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L458)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L618)
 
 <a id="function-function-minisql-storage-btree-openreadonlyforlookup-function-openreadonlyforlookup-path-src-minisql-storage-btree-ml-655027473"></a>
 ### openReadOnlyForLookup
@@ -943,7 +1001,7 @@ Opens a read-only tree for an ordinary lookup without auditing unrelated branche
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L469)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L629)
 
 <a id="function-function-minisql-storage-btree-openreadonlyformanagedlookup-function-openreadonlyformanagedlookup-path-src-minisql-storage-btree-ml-1037068571"></a>
 ### openReadOnlyForManagedLookup
@@ -959,7 +1017,7 @@ ManagedDatabase cache variant of openReadOnlyForLookup. The owning database lock
 | `path` | `dynamic` | — | Path of the file or directory used by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L483)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L643)
 
 <a id="function-function-minisql-storage-btree-opentreefile-function-opentreefile-treefile-src-minisql-storage-btree-ml-1086454918"></a>
 ### openTreeFile
@@ -975,7 +1033,7 @@ Opens the tree file. Inputs: `treeFile`. Returns the produced value or propagate
 | `treeFile` | `dynamic` | — | treeFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L420)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L580)
 
 <a id="function-function-minisql-storage-btree-publish-function-publish-tree-rootpage-firstleaf-lastleaf-height-entrycount-src-minisql-storage-btree-ml-1410154387"></a>
 ### publish
@@ -996,7 +1054,7 @@ Performs the publish operation for this module. Inputs: `tree`, `rootPage`, `fir
 | `entryCount` | `dynamic` | — | Number of entry to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L878)
 
 <a id="function-function-minisql-storage-btree-range-function-range-tree-lower-lowerinclusive-upper-upperinclusive-maximum-src-minisql-storage-btree-ml-1143369316"></a>
 ### range
@@ -1017,7 +1075,7 @@ Scans a range without retaining positioned-read setup across page reads.
 | `maximum` | `dynamic` | — | maximum value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1266)
 
 <a id="function-function-minisql-storage-btree-rangewithcontext-function-rangewithcontext-tree-lower-lowerinclusive-upper-upperinclusive-maximum-readcontext-src-minisql-storage-btree-ml-1940410515"></a>
 ### rangeWithContext
@@ -1039,7 +1097,7 @@ Performs the range operation for this module. Inputs: `tree`, `lower`, `lowerInc
 | `readContext` | `dynamic` | — | readContext value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1038)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1200)
 
 <a id="function-function-minisql-storage-btree-remove-function-remove-tree-key-value-src-minisql-storage-btree-ml-159743392"></a>
 ### remove
@@ -1057,7 +1115,7 @@ Removes remove from the state managed by the minisql storage btree module. Input
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L960)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1121)
 
 <a id="function-function-minisql-storage-btree-slicearray-function-slicearray-values-offset-count-src-minisql-storage-btree-ml-1176188886"></a>
 ### sliceArray
@@ -1075,7 +1133,7 @@ Performs the slice array operation for this module. Inputs: `values`, `offset`, 
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L700)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L861)
 
 <a id="function-function-minisql-storage-btree-sortentries-function-sortentries-values-src-minisql-storage-btree-ml-446483214"></a>
 ### sortEntries
@@ -1091,7 +1149,36 @@ Orders the entries. Inputs: `values`. Returns the produced value or propagates a
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L259)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L419)
+
+<a id="function-function-minisql-storage-btree-sqlkeyprefix-function-sqlkeyprefix-src-minisql-storage-btree-ml-1823546664"></a>
+### sqlKeyPrefix
+
+```ml
+function sqlKeyPrefix()
+```
+
+Returns the reserved SQL-key family marker and its byte-sized version. Raw B+ tree clients may use any key outside the reserved ASCII MSK prefix.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L190)
+
+<a id="function-function-minisql-storage-btree-sqlpartend-function-sqlpartend-encoded-cursor-src-minisql-storage-btree-ml-458224986"></a>
+### sqlPartEnd
+
+```ml
+function sqlPartEnd(encoded, cursor)
+```
+
+Validates one self-delimiting component and returns the next byte offset. No slices or temporary SQL values are allocated on the comparator path.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `encoded` | `dynamic` | — | Encoded SQL key. |
+| `cursor` | `dynamic` | — | Offset of the component tag. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L209)
 
 <a id="function-function-minisql-storage-btree-targetmilestone-function-targetmilestone-src-minisql-storage-btree-ml-1921177446"></a>
 ### targetMilestone
@@ -1103,7 +1190,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql storage btree module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1371)
 
 <a id="constant-constant-minisql-storage-btree-unsupported-format-const-unsupported-format-9003-src-minisql-storage-btree-ml-1338510201"></a>
 ### UNSUPPORTED_FORMAT
@@ -1115,7 +1202,23 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql storage btree module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L21)
+
+<a id="function-function-minisql-storage-btree-validatekey-function-validatekey-encoded-src-minisql-storage-btree-ml-1499477774"></a>
+### validateKey
+
+```ml
+function validateKey(encoded)
+```
+
+Validates the complete typed representation at storage and lookup boundaries.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `encoded` | `dynamic` | — | Raw or SQL key bytes. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L240)
 
 <a id="function-function-minisql-storage-btree-validateopen-function-validateopen-tree-operation-src-minisql-storage-btree-ml-2077186735"></a>
 ### validateOpen
@@ -1132,7 +1235,7 @@ Validates open for the minisql storage btree workflow. Inputs: `tree`, `operatio
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L498)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L658)
 
 <a id="function-function-minisql-storage-btree-validatesorted-function-validatesorted-values-unique-operation-src-minisql-storage-btree-ml-1382432732"></a>
 ### validateSorted
@@ -1150,7 +1253,7 @@ Validates the sorted. Inputs: `values`, `unique`, `operation`. Returns success a
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L440)
 
 <a id="function-function-minisql-storage-btree-verify-function-verify-tree-src-minisql-storage-btree-ml-1625814372"></a>
 ### verify
@@ -1166,7 +1269,7 @@ Performs the verify operation for the minisql storage btree module. Inputs: `tre
 | `tree` | `dynamic` | — | tree value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1317)
 
 <a id="function-function-minisql-storage-btree-visitcontains-function-visitcontains-state-pagenumber-src-minisql-storage-btree-ml-2078111669"></a>
 ### visitContains
@@ -1183,6 +1286,6 @@ Performs the visit contains operation for this module. Inputs: `state`, `pageNum
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/btree.ml#L1274)
 
 - [minisql.storage.btree.VisitState](Type-minisql-storage-btree-visitstate-1033435189.md) — struct

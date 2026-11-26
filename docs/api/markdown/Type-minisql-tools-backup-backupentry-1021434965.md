@@ -12,7 +12,7 @@ struct BackupEntry
 Groups the backup entry state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L77)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L78)
 
 ## Members
 
@@ -26,7 +26,7 @@ checksum
 Stores the checksum associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L84)
 
 <a id="field-field-minisql-tools-backup-backupentry-length-length-src-minisql-tools-backup-ml-1999580947"></a>
 ### length
@@ -38,7 +38,7 @@ length
 Tracks the length numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L82)
 
 <a id="field-field-minisql-tools-backup-backupentry-relativepath-relativepath-src-minisql-tools-backup-ml-1252524825"></a>
 ### relativePath
@@ -50,4 +50,4 @@ relativePath
 Stores the filesystem relative path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L79)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L80)

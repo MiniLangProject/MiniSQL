@@ -9,7 +9,7 @@
 ## Symbols
 
 - [`minisql.common.version.componentName`](File-src-minisql-common-version-ml-937202265.md#function-function-minisql-common-version-componentname-function-componentname-src-minisql-common-version-ml-2055549426) — function
-- [`minisql.common.version.DATABASE_FORMAT_VERSION`](File-src-minisql-common-version-ml-937202265.md#constant-constant-minisql-common-version-database-format-version-const-database-format-version-1-src-minisql-common-version-ml-560453636) — constant
+- [`minisql.common.version.DATABASE_FORMAT_VERSION`](File-src-minisql-common-version-ml-937202265.md#constant-constant-minisql-common-version-database-format-version-const-database-format-version-format-version-database-src-minisql-common-version-ml-376256368) — constant
 - [`minisql.common.version.isImplemented`](File-src-minisql-common-version-ml-937202265.md#function-function-minisql-common-version-isimplemented-function-isimplemented-src-minisql-common-version-ml-1254648010) — function
 - [`minisql.common.version.MILESTONE`](File-src-minisql-common-version-ml-937202265.md#constant-constant-minisql-common-version-milestone-const-milestone-m50-src-minisql-common-version-ml-930485285) — constant
 - [`minisql.common.version.milestone`](File-src-minisql-common-version-ml-937202265.md#function-function-minisql-common-version-milestone-function-milestone-src-minisql-common-version-ml-1024844054) — function

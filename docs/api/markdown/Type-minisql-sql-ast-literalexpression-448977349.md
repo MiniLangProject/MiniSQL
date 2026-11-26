@@ -12,7 +12,7 @@ struct LiteralExpression
 Groups the literal expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L151)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L159)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L153)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L161)
 
 <a id="field-field-minisql-sql-ast-literalexpression-literalkind-literalkind-src-minisql-sql-ast-ml-911604744"></a>
 ### literalKind
@@ -38,7 +38,7 @@ literalKind
 Stores the literal kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L163)
 
 <a id="field-field-minisql-sql-ast-literalexpression-value-value-src-minisql-sql-ast-ml-1033178768"></a>
 ### value
@@ -50,4 +50,4 @@ value
 Stores the value associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L157)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L165)

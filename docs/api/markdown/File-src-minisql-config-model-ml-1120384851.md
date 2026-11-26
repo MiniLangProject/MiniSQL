@@ -8,6 +8,10 @@ Package: [`minisql.config.model`](Package-minisql-config-model-2080962645.md)
 
 Reachable from entry: **yes**
 
+## Imports
+
+- `minisql/common/format_version.ml` as `format_version` → [src/minisql/common/format_version.ml](File-src-minisql-common-format-version-ml-1671630705.md)
+
 ## Declarations
 
 - [minisql.config.model.BinlogConfig](Type-minisql-config-model-binlogconfig-577007902.md) — struct
@@ -21,7 +25,7 @@ function componentName()
 Performs the componentName operation for the minisql config model module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L225)
 
 - [minisql.config.model.DatabaseDefaults](Type-minisql-config-model-databasedefaults-704930438.md) — struct
 <a id="function-function-minisql-config-model-defaultconfig-function-defaultconfig-dataroot-src-minisql-config-model-ml-198024192"></a>
@@ -38,7 +42,7 @@ Implements default config for this module. Returns the computed value or operati
 | `dataRoot` | `dynamic` | — | dataRoot value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L255)
 
 <a id="function-function-minisql-config-model-defaultdatabasesettings-function-defaultdatabasesettings-pagesize-src-minisql-config-model-ml-1333476822"></a>
 ### defaultDatabaseSettings
@@ -54,7 +58,7 @@ Implements default database settings for this module. Returns the computed value
 | `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L247)
 
 <a id="function-function-minisql-config-model-isbinlogconfig-function-isbinlogconfig-value-src-minisql-config-model-ml-1676898991"></a>
 ### isBinlogConfig
@@ -70,7 +74,7 @@ Returns whether the supplied value is a binlog configuration. Inputs: `value`. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L188)
 
 <a id="function-function-minisql-config-model-isdatabasedefaults-function-isdatabasedefaults-value-src-minisql-config-model-ml-731134279"></a>
 ### isDatabaseDefaults
@@ -86,7 +90,7 @@ Returns whether the supplied value satisfies the database defaults condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L200)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L202)
 
 <a id="function-function-minisql-config-model-isimplemented-function-isimplemented-src-minisql-config-model-ml-996830778"></a>
 ### isImplemented
@@ -98,7 +102,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql config model module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L239)
 
 <a id="function-function-minisql-config-model-isloggingconfig-function-isloggingconfig-value-src-minisql-config-model-ml-2083258201"></a>
 ### isLoggingConfig
@@ -114,7 +118,7 @@ Returns whether the supplied value is a logger configuration. Inputs: `value`. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L181)
 
 <a id="function-function-minisql-config-model-isminisqlconfig-function-isminisqlconfig-value-src-minisql-config-model-ml-2114353501"></a>
 ### isMiniSqlConfig
@@ -130,7 +134,7 @@ Returns whether the supplied value satisfies the mini SQL config condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L218)
 
 <a id="function-function-minisql-config-model-ispathsconfig-function-ispathsconfig-value-src-minisql-config-model-ml-266010427"></a>
 ### isPathsConfig
@@ -146,7 +150,7 @@ Returns whether the supplied value satisfies the paths config condition. Returns
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L156)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L158)
 
 <a id="function-function-minisql-config-model-isruntimeconfig-function-isruntimeconfig-value-src-minisql-config-model-ml-3333103"></a>
 ### isRuntimeConfig
@@ -162,7 +166,7 @@ Returns whether the supplied value satisfies the runtime config condition. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L172)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L174)
 
 <a id="function-function-minisql-config-model-issafetyconfig-function-issafetyconfig-value-src-minisql-config-model-ml-1092988699"></a>
 ### isSafetyConfig
@@ -178,7 +182,7 @@ Returns whether the supplied value satisfies the safety config condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L208)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L210)
 
 <a id="function-function-minisql-config-model-isserverconfig-function-isserverconfig-value-src-minisql-config-model-ml-1219571259"></a>
 ### isServerConfig
@@ -194,7 +198,7 @@ Returns whether the supplied value satisfies the server config condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L164)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L166)
 
 <a id="function-function-minisql-config-model-istlsconfig-function-istlsconfig-value-src-minisql-config-model-ml-1134747821"></a>
 ### isTlsConfig
@@ -210,7 +214,7 @@ Returns whether the supplied value is a native TLS configuration.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L192)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L194)
 
 - [minisql.config.model.LoggingConfig](Type-minisql-config-model-loggingconfig-1700021644.md) — struct
 - [minisql.config.model.MiniSqlConfig](Type-minisql-config-model-minisqlconfig-1246526844.md) — struct
@@ -228,6 +232,6 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql config model module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/config/model.ml#L232)
 
 - [minisql.config.model.TlsConfig](Type-minisql-config-model-tlsconfig-1694670536.md) — struct

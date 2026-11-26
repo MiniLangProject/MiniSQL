@@ -12,7 +12,7 @@ struct SelectItem
 Groups the select item state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L403)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L411)
 
 ## Members
 
@@ -26,7 +26,7 @@ alias
 Stores the alias associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L407)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L415)
 
 <a id="field-field-minisql-sql-ast-selectitem-expression-expression-src-minisql-sql-ast-ml-709609402"></a>
 ### expression
@@ -38,4 +38,4 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L405)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L413)

@@ -12,7 +12,7 @@ struct CreateViewStatement
 Groups the create view statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L515)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L523)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L517)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L525)
 
 <a id="field-field-minisql-sql-ast-createviewstatement-query-query-src-minisql-sql-ast-ml-1287746365"></a>
 ### query
@@ -38,7 +38,7 @@ query
 Stores the query associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L519)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L527)
 
 <a id="field-field-minisql-sql-ast-createviewstatement-replace-replace-src-minisql-sql-ast-ml-1337962329"></a>
 ### replace
@@ -50,4 +50,4 @@ replace
 Stores the replace associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L521)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L529)

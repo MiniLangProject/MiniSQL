@@ -65,7 +65,7 @@ function componentName()
 Performs the componentName operation for the minisql sql lexer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L377)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L401)
 
 <a id="function-function-minisql-sql-lexer-current-function-current-state-src-minisql-sql-lexer-ml-1392062601"></a>
 ### current
@@ -170,7 +170,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql sql lexer module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L391)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L415)
 
 <a id="function-function-minisql-sql-lexer-iswhitespace-function-iswhitespace-value-src-minisql-sql-lexer-ml-545372067"></a>
 ### isWhitespace
@@ -254,7 +254,7 @@ Reads number using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L280)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L281)
 
 <a id="function-function-minisql-sql-lexer-readquotedidentifier-function-readquotedidentifier-state-src-minisql-sql-lexer-ml-1335996291"></a>
 ### readQuotedIdentifier
@@ -286,7 +286,23 @@ Reads string using the supplied inputs. Returns the computed value or operation 
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L242)
+
+<a id="function-function-minisql-sql-lexer-readuservariable-function-readuservariable-state-src-minisql-sql-lexer-ml-427140275"></a>
+### readUserVariable
+
+```ml
+function readUserVariable(state)
+```
+
+Reads a session variable as one token, retaining @ for expression resolution. A bare @ before an account-host string is returned separately for DEFINER.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `state` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L314)
 
 <a id="function-function-minisql-sql-lexer-skipignored-function-skipignored-state-src-minisql-sql-lexer-ml-1910730313"></a>
 ### skipIgnored
@@ -330,7 +346,7 @@ Implements symbol token for this module. Returns the computed value or operation
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L315)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L336)
 
 <a id="function-function-minisql-sql-lexer-targetmilestone-function-targetmilestone-src-minisql-sql-lexer-ml-1713377632"></a>
 ### targetMilestone
@@ -342,7 +358,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql sql lexer module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L384)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L408)
 
 <a id="function-function-minisql-sql-lexer-tokenizesql-function-tokenizesql-source-src-minisql-sql-lexer-ml-2095317789"></a>
 ### tokenizeSql
@@ -358,4 +374,4 @@ Tokenizes SQL using the supplied inputs. Requires arguments that satisfy the val
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L349)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/lexer.ml#L373)

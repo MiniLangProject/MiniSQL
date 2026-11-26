@@ -8,6 +8,7 @@
 
 ## Symbols
 
+- [`minisql.storage.slotted_page.allocationSize`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-allocationsize-function-allocationsize-recordlength-src-minisql-storage-slotted-page-ml-666308823) — function
 - [`minisql.storage.slotted_page.compact`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-compact-function-compact-pagebytes-src-minisql-storage-slotted-page-ml-396206152) — function
 - [`minisql.storage.slotted_page.componentName`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-componentname-function-componentname-src-minisql-storage-slotted-page-ml-1734353156) — function
 - [`minisql.storage.slotted_page.CORRUPT_DATA`](File-src-minisql-storage-slotted-page-ml-1299577846.md#constant-constant-minisql-storage-slotted-page-corrupt-data-const-corrupt-data-9004-src-minisql-storage-slotted-page-ml-452190524) — constant
@@ -30,6 +31,7 @@
 - [`minisql.storage.slotted_page.read`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-read-function-read-pagebytes-slotid-src-minisql-storage-slotted-page-ml-642326629) — function
 - [`minisql.storage.slotted_page.readGeneration`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-readgeneration-function-readgeneration-pagebytes-slotid-generation-src-minisql-storage-slotted-page-ml-610956027) — function
 - [`minisql.storage.slotted_page.rebuild`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-rebuild-function-rebuild-pagebytes-replacementslot-replacement-replacementflags-deletereplacement-src-minisql-storage-slotted-page-ml-2044350824) — function
+- [`minisql.storage.slotted_page.RECORD_ALIGNMENT`](File-src-minisql-storage-slotted-page-ml-1299577846.md#constant-constant-minisql-storage-slotted-page-record-alignment-const-record-alignment-8-src-minisql-storage-slotted-page-ml-643460967) — constant
 - [`minisql.storage.slotted_page.remove`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-remove-function-remove-pagebytes-slotid-src-minisql-storage-slotted-page-ml-89433613) — function
 - [`minisql.storage.slotted_page.ROW_NOT_FOUND`](File-src-minisql-storage-slotted-page-ml-1299577846.md#constant-constant-minisql-storage-slotted-page-row-not-found-const-row-not-found-9016-src-minisql-storage-slotted-page-ml-1541783725) — constant
 - [`minisql.storage.slotted_page.setFlags`](File-src-minisql-storage-slotted-page-ml-1299577846.md#function-function-minisql-storage-slotted-page-setflags-function-setflags-pagebytes-slotid-slotflags-src-minisql-storage-slotted-page-ml-340195934) — function

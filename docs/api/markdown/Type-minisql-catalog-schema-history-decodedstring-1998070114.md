@@ -12,7 +12,7 @@ struct DecodedString
 Defines the decoded string record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L339)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L444)
 
 ## Members
 
@@ -26,7 +26,7 @@ nextOffset
 Next offset field of the decoded string.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L343)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L448)
 
 <a id="field-field-minisql-catalog-schema-history-decodedstring-value-value-src-minisql-catalog-schema-history-ml-1313601190"></a>
 ### value
@@ -38,4 +38,4 @@ value
 Value field of the decoded string.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L446)

@@ -12,7 +12,7 @@ struct SchemaState
 Defines the schema state record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L336)
 
 ## Members
 
@@ -26,7 +26,7 @@ databaseId
 Database id field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L233)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L338)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-generatedcolumns-generatedcolumns-src-minisql-catalog-schema-history-ml-963492045"></a>
 ### generatedColumns
@@ -38,7 +38,7 @@ generatedColumns
 Generated columns field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L243)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L348)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-generation-generation-src-minisql-catalog-schema-history-ml-1258214957"></a>
 ### generation
@@ -50,7 +50,7 @@ generation
 Generation field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L235)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L340)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-sequences-sequences-src-minisql-catalog-schema-history-ml-515335053"></a>
 ### sequences
@@ -62,7 +62,7 @@ sequences
 Sequences field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L241)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L346)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-tables-tables-src-minisql-catalog-schema-history-ml-942074227"></a>
 ### tables
@@ -74,7 +74,7 @@ tables
 Tables field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L237)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L342)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-triggers-triggers-src-minisql-catalog-schema-history-ml-324201587"></a>
 ### triggers
@@ -86,7 +86,7 @@ triggers
 Triggers field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L245)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L350)
 
 <a id="field-field-minisql-catalog-schema-history-schemastate-views-views-src-minisql-catalog-schema-history-ml-832361037"></a>
 ### views
@@ -98,4 +98,4 @@ views
 Views field of the schema state.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L239)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L344)

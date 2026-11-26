@@ -12,7 +12,7 @@ struct ConstraintDefinition
 Defines the constraint definition record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L230)
 
 ## Members
 
@@ -26,7 +26,7 @@ columns
 Columns field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L131)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L236)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-expressionsql-expressionsql-src-minisql-catalog-schema-history-ml-351261597"></a>
 ### expressionSql
@@ -38,7 +38,7 @@ expressionSql
 CHECK expression or partial-index predicate in canonical SQL form.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L133)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L238)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-indexid-indexid-src-minisql-catalog-schema-history-ml-390854701"></a>
 ### indexId
@@ -50,7 +50,7 @@ indexId
 Index id field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L143)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L248)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-indexname-indexname-src-minisql-catalog-schema-history-ml-928553921"></a>
 ### indexName
@@ -62,7 +62,7 @@ indexName
 Index name field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L145)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L250)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-kind-kind-src-minisql-catalog-schema-history-ml-1138764009"></a>
 ### kind
@@ -74,7 +74,7 @@ kind
 Kind field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L234)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-name-name-src-minisql-catalog-schema-history-ml-80180315"></a>
 ### name
@@ -86,7 +86,7 @@ name
 Name field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L127)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L232)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-ondelete-ondelete-src-minisql-catalog-schema-history-ml-220422001"></a>
 ### onDelete
@@ -98,7 +98,7 @@ onDelete
 On delete field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L139)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L244)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-onupdate-onupdate-src-minisql-catalog-schema-history-ml-286768861"></a>
 ### onUpdate
@@ -110,7 +110,7 @@ onUpdate
 On update field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L141)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L246)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-referencecolumns-referencecolumns-src-minisql-catalog-schema-history-ml-1652126317"></a>
 ### referenceColumns
@@ -122,7 +122,7 @@ referenceColumns
 Referenced columns for foreign keys. For index-backed local constraints,
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L242)
 
 <a id="field-field-minisql-catalog-schema-history-constraintdefinition-referencetable-referencetable-src-minisql-catalog-schema-history-ml-2046781919"></a>
 ### referenceTable
@@ -134,4 +134,4 @@ referenceTable
 Reference table field of the constraint definition.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L135)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/schema_history.ml#L240)

@@ -16,6 +16,42 @@ Enumerates the supported token kind variants used by this module.
 
 ## Members
 
+<a id="enum_variant-enum-variant-minisql-sql-token-tokenkind-assign-assign-26-src-minisql-sql-token-ml-23816182"></a>
+### Assign
+
+```ml
+Assign = 26
+```
+
+MySQL SET assignment operator :=.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L68)
+
+<a id="enum_variant-enum-variant-minisql-sql-token-tokenkind-at-at-27-src-minisql-sql-token-ml-580678479"></a>
+### At
+
+```ml
+At = 27
+```
+
+Separates an account name and host in a DEFINER.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L70)
+
+<a id="enum_variant-enum-variant-minisql-sql-token-tokenkind-colon-colon-24-src-minisql-sql-token-ml-1917529354"></a>
+### Colon
+
+```ml
+Colon = 24
+```
+
+Separates a block or loop label from its statement.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L64)
+
 <a id="enum_variant-enum-variant-minisql-sql-token-tokenkind-comma-comma-6-src-minisql-sql-token-ml-707158406"></a>
 ### Comma
 
@@ -303,3 +339,15 @@ Represents the string literal variant.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L26)
+
+<a id="enum_variant-enum-variant-minisql-sql-token-tokenkind-uservariable-uservariable-25-src-minisql-sql-token-ml-1819988049"></a>
+### UserVariable
+
+```ml
+UserVariable = 25
+```
+
+Identifies a session variable including its @ prefix.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L66)

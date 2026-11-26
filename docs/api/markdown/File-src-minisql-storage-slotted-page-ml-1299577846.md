@@ -15,6 +15,22 @@ Reachable from entry: **yes**
 
 ## Declarations
 
+<a id="function-function-minisql-storage-slotted-page-allocationsize-function-allocationsize-recordlength-src-minisql-storage-slotted-page-ml-666308823"></a>
+### allocationSize
+
+```ml
+function allocationSize(recordLength)
+```
+
+Returns physical storage charged for a body, excluding its directory entry.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `recordLength` | `dynamic` | — | Logical body length in bytes. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L77)
+
 <a id="function-function-minisql-storage-slotted-page-compact-function-compact-pagebytes-src-minisql-storage-slotted-page-ml-396206152"></a>
 ### compact
 
@@ -29,7 +45,7 @@ Performs the compact operation for this module. Inputs: `pageBytes`. Returns the
 | `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L340)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L352)
 
 <a id="function-function-minisql-storage-slotted-page-componentname-function-componentname-src-minisql-storage-slotted-page-ml-1734353156"></a>
 ### componentName
@@ -41,7 +57,7 @@ function componentName()
 Performs the componentName operation for the minisql storage slotted page module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L447)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L459)
 
 <a id="constant-constant-minisql-storage-slotted-page-corrupt-data-const-corrupt-data-9004-src-minisql-storage-slotted-page-ml-452190524"></a>
 ### CORRUPT_DATA
@@ -71,7 +87,7 @@ Creates create for the minisql storage slotted page module. Inputs: `pageSize`, 
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L64)
 
 <a id="function-function-minisql-storage-slotted-page-entry-function-entry-pagebytes-slotid-src-minisql-storage-slotted-page-ml-1397706437"></a>
 ### entry
@@ -88,7 +104,7 @@ Performs the entry operation for this module. Inputs: `pageBytes`, `slotId`. Ret
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L197)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L209)
 
 <a id="function-function-minisql-storage-slotted-page-entryflags-function-entryflags-pagebytes-slotid-src-minisql-storage-slotted-page-ml-132371629"></a>
 ### entryFlags
@@ -105,7 +121,7 @@ Performs the entry flags operation for this module. Inputs: `pageBytes`, `slotId
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L219)
 
 <a id="function-function-minisql-storage-slotted-page-entrygeneration-function-entrygeneration-pagebytes-slotid-src-minisql-storage-slotted-page-ml-326943125"></a>
 ### entryGeneration
@@ -122,7 +138,7 @@ Performs the entry generation operation for this module. Inputs: `pageBytes`, `s
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L227)
 
 <a id="function-function-minisql-storage-slotted-page-fail-function-fail-code-operation-message-src-minisql-storage-slotted-page-ml-689668219"></a>
 ### fail
@@ -140,7 +156,7 @@ Performs the fail operation for the minisql storage slotted page module. Inputs:
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L55)
 
 <a id="function-function-minisql-storage-slotted-page-finddeleted-function-finddeleted-pagebytes-header-src-minisql-storage-slotted-page-ml-170390069"></a>
 ### findDeleted
@@ -157,7 +173,7 @@ Finds the deleted. Inputs: `pageBytes`, `header`. Returns the produced value or 
 | `header` | `dynamic` | — | header value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L262)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L274)
 
 <a id="function-function-minisql-storage-slotted-page-freebytes-function-freebytes-pagebytes-src-minisql-storage-slotted-page-ml-15890068"></a>
 ### freeBytes
@@ -173,7 +189,7 @@ Releases the bytes. Inputs: `pageBytes`. Returns the produced value or propagate
 | `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L253)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L265)
 
 <a id="function-function-minisql-storage-slotted-page-insert-function-insert-pagebytes-recordbytes-src-minisql-storage-slotted-page-ml-217612346"></a>
 ### insert
@@ -190,7 +206,7 @@ Performs the insert operation for the minisql storage slotted page module. Input
 | `recordBytes` | `dynamic` | — | recordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L397)
 
 <a id="function-function-minisql-storage-slotted-page-insertwithflags-function-insertwithflags-pagebytes-recordbytes-slotflags-src-minisql-storage-slotted-page-ml-76260359"></a>
 ### insertWithFlags
@@ -208,7 +224,7 @@ Inserts the with flags. Inputs: `pageBytes`, `recordBytes`, `slotFlags`. Returns
 | `slotFlags` | `dynamic` | — | slotFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L349)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L361)
 
 <a id="constant-constant-minisql-storage-slotted-page-invalid-argument-const-invalid-argument-9001-src-minisql-storage-slotted-page-ml-1157750917"></a>
 ### INVALID_ARGUMENT
@@ -217,7 +233,7 @@ Inserts the with flags. Inputs: `pageBytes`, `recordBytes`, `slotFlags`. Returns
 const INVALID_ARGUMENT = 9001
 ```
 
-Slotted-page format v1. The slot directory grows from the beginning of the
+Slotted-page format v2 places record allocations on eight-byte boundaries.
 
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L13)
@@ -237,7 +253,7 @@ Evaluates whether the supplied input satisfies the deleted predicate. Inputs: `p
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L223)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L235)
 
 <a id="function-function-minisql-storage-slotted-page-isimplemented-function-isimplemented-src-minisql-storage-slotted-page-ml-1346163100"></a>
 ### isImplemented
@@ -249,7 +265,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql storage slotted page module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L459)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L471)
 
 <a id="function-function-minisql-storage-slotted-page-liveslotcount-function-liveslotcount-pagebytes-src-minisql-storage-slotted-page-ml-680545728"></a>
 ### liveSlotCount
@@ -265,7 +281,7 @@ Performs the live slot count operation for this module. Inputs: `pageBytes`. Ret
 | `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L194)
 
 <a id="function-function-minisql-storage-slotted-page-nextgeneration-function-nextgeneration-generation-src-minisql-storage-slotted-page-ml-115433590"></a>
 ### nextGeneration
@@ -281,7 +297,7 @@ Performs the next generation operation for this module. Inputs: `generation`. Re
 | `generation` | `dynamic` | — | generation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L91)
 
 <a id="constant-constant-minisql-storage-slotted-page-page-full-const-page-full-9015-src-minisql-storage-slotted-page-ml-1329631020"></a>
 ### PAGE_FULL
@@ -310,7 +326,7 @@ Performs the raw entry operation for this module. Inputs: `pageBytes`, `slotId`.
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L96)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L104)
 
 <a id="function-function-minisql-storage-slotted-page-read-function-read-pagebytes-slotid-src-minisql-storage-slotted-page-ml-642326629"></a>
 ### read
@@ -327,7 +343,7 @@ Reads read for the minisql storage slotted page workflow. Inputs: `pageBytes`, `
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L231)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L243)
 
 <a id="function-function-minisql-storage-slotted-page-readgeneration-function-readgeneration-pagebytes-slotid-generation-src-minisql-storage-slotted-page-ml-610956027"></a>
 ### readGeneration
@@ -345,7 +361,7 @@ Reads the generation. Inputs: `pageBytes`, `slotId`, `generation`. Returns the p
 | `generation` | `dynamic` | — | generation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L254)
 
 <a id="function-function-minisql-storage-slotted-page-rebuild-function-rebuild-pagebytes-replacementslot-replacement-replacementflags-deletereplacement-src-minisql-storage-slotted-page-ml-2044350824"></a>
 ### rebuild
@@ -365,7 +381,19 @@ Rebuilds a compact copy. replacementSlot=-1 means pure compaction. Mutation of p
 | `deleteReplacement` | `dynamic` | — | deleteReplacement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L294)
+
+<a id="constant-constant-minisql-storage-slotted-page-record-alignment-const-record-alignment-8-src-minisql-storage-slotted-page-ml-643460967"></a>
+### RECORD_ALIGNMENT
+
+```ml
+const RECORD_ALIGNMENT = 8
+```
+
+Every body owns its rounded-up allocation; bytes after its logical end are zero.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L26)
 
 <a id="function-function-minisql-storage-slotted-page-remove-function-remove-pagebytes-slotid-src-minisql-storage-slotted-page-ml-89433613"></a>
 ### remove
@@ -382,7 +410,7 @@ Removes remove from the state managed by the minisql storage slotted page module
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L434)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L446)
 
 <a id="constant-constant-minisql-storage-slotted-page-row-not-found-const-row-not-found-9016-src-minisql-storage-slotted-page-ml-1541783725"></a>
 ### ROW_NOT_FOUND
@@ -412,7 +440,7 @@ Updates the flags. Inputs: `pageBytes`, `slotId`, `slotFlags`. Returns the opera
 | `slotFlags` | `dynamic` | — | slotFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L424)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L436)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-flag-deleted-const-slot-flag-deleted-1-src-minisql-storage-slotted-page-ml-1692538648"></a>
 ### SLOT_FLAG_DELETED
@@ -424,7 +452,7 @@ const SLOT_FLAG_DELETED = 1
 Defines the slot flag deleted constant used by the minisql storage slotted page module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L28)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L30)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-flag-forward-internal-const-slot-flag-forward-internal-3-src-minisql-storage-slotted-page-ml-45772718"></a>
 ### SLOT_FLAG_FORWARD_INTERNAL
@@ -436,7 +464,7 @@ const SLOT_FLAG_FORWARD_INTERNAL = 3
 Defines the slot flag forward internal constant used by the minisql storage slotted page module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L32)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L34)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-flag-forward-root-const-slot-flag-forward-root-2-src-minisql-storage-slotted-page-ml-59710931"></a>
 ### SLOT_FLAG_FORWARD_ROOT
@@ -448,7 +476,7 @@ const SLOT_FLAG_FORWARD_ROOT = 2
 Defines the slot flag forward root constant used by the minisql storage slotted page module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L32)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-flag-live-const-slot-flag-live-0-src-minisql-storage-slotted-page-ml-723647285"></a>
 ### SLOT_FLAG_LIVE
@@ -460,7 +488,7 @@ const SLOT_FLAG_LIVE = 0
 Defines the slot flag live constant used by the minisql storage slotted page module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L26)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L28)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-flag-moved-const-slot-flag-moved-4-src-minisql-storage-slotted-page-ml-517499071"></a>
 ### SLOT_FLAG_MOVED
@@ -472,7 +500,7 @@ const SLOT_FLAG_MOVED = 4
 Defines the slot flag moved constant used by the minisql storage slotted page module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L34)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L36)
 
 <a id="constant-constant-minisql-storage-slotted-page-slot-size-const-slot-size-8-src-minisql-storage-slotted-page-ml-2049082295"></a>
 ### SLOT_SIZE
@@ -500,7 +528,7 @@ Performs the slot count operation for this module. Inputs: `pageBytes`. Returns 
 | `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L187)
 
 - [minisql.storage.slotted_page.SlotEntry](Type-minisql-storage-slotted-page-slotentry-717930366.md) — struct
 <a id="function-function-minisql-storage-slotted-page-slotoffset-function-slotoffset-slotid-src-minisql-storage-slotted-page-ml-1080260691"></a>
@@ -517,7 +545,7 @@ Performs the slotOffset operation for the minisql storage slotted page module. I
 | `slotId` | `dynamic` | — | Identifier of slot. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L71)
 
 <a id="constant-constant-minisql-storage-slotted-page-stale-reference-const-stale-reference-9018-src-minisql-storage-slotted-page-ml-736418087"></a>
 ### STALE_REFERENCE
@@ -541,7 +569,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql storage slotted page module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L453)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L465)
 
 <a id="function-function-minisql-storage-slotted-page-update-function-update-pagebytes-slotid-recordbytes-src-minisql-storage-slotted-page-ml-568776087"></a>
 ### update
@@ -559,7 +587,7 @@ Updates the requested value. Inputs: `pageBytes`, `slotId`, `recordBytes`. Retur
 | `recordBytes` | `dynamic` | — | recordBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L425)
 
 <a id="function-function-minisql-storage-slotted-page-updatewithflags-function-updatewithflags-pagebytes-slotid-recordbytes-slotflags-src-minisql-storage-slotted-page-ml-1853420048"></a>
 ### updateWithFlags
@@ -578,7 +606,7 @@ Updates the with flags. Inputs: `pageBytes`, `slotId`, `recordBytes`, `slotFlags
 | `slotFlags` | `dynamic` | — | slotFlags value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L395)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L407)
 
 <a id="function-function-minisql-storage-slotted-page-validate-function-validate-pagebytes-operation-src-minisql-storage-slotted-page-ml-1234155001"></a>
 ### validate
@@ -595,7 +623,7 @@ Validates validate for the minisql storage slotted page workflow. Inputs: `pageB
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L145)
 
 <a id="function-function-minisql-storage-slotted-page-validateslot-function-validateslot-header-slotid-operation-src-minisql-storage-slotted-page-ml-1512466467"></a>
 ### validateSlot
@@ -613,7 +641,7 @@ Validates the slot. Inputs: `header`, `slotId`, `operation`. Returns success aft
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L134)
 
 <a id="function-function-minisql-storage-slotted-page-validflags-function-validflags-flags-src-minisql-storage-slotted-page-ml-227709657"></a>
 ### validFlags
@@ -629,7 +657,7 @@ Performs the valid flags operation for this module. Inputs: `flags`. Returns the
 | `flags` | `dynamic` | — | Bit flags controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L84)
 
 <a id="function-function-minisql-storage-slotted-page-writeentry-function-writeentry-pagebytes-slotid-entry-src-minisql-storage-slotted-page-ml-1049029423"></a>
 ### writeEntry
@@ -647,4 +675,4 @@ Writes the entry. Inputs: `pageBytes`, `slotId`, `entry`. Returns the operation 
 | `entry` | `dynamic` | — | entry value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L111)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/slotted_page.ml#L119)

@@ -12,7 +12,7 @@ struct OverflowReplacement
 Defines the overflow replacement record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L59)
 
 ## Members
 
@@ -26,7 +26,7 @@ completed
 Completed field of the overflow replacement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L62)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L65)
 
 <a id="field-field-minisql-storage-overflow-overflowreplacement-newpointer-newpointer-src-minisql-storage-overflow-ml-1575463865"></a>
 ### newPointer
@@ -38,7 +38,7 @@ newPointer
 New pointer field of the overflow replacement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L60)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L63)
 
 <a id="field-field-minisql-storage-overflow-overflowreplacement-oldpointer-oldpointer-src-minisql-storage-overflow-ml-1489045711"></a>
 ### oldPointer
@@ -50,4 +50,4 @@ oldPointer
 Old pointer field of the overflow replacement.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L61)

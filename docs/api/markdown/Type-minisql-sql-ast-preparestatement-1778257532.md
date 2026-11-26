@@ -12,7 +12,7 @@ struct PrepareStatement
 Groups the prepare statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L893)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L927)
 
 ## Members
 
@@ -26,7 +26,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L895)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L929)
 
 <a id="field-field-minisql-sql-ast-preparestatement-parametercount-parametercount-src-minisql-sql-ast-ml-195067451"></a>
 ### parameterCount
@@ -38,7 +38,7 @@ parameterCount
 Tracks the parameter count numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L899)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L933)
 
 <a id="field-field-minisql-sql-ast-preparestatement-statement-statement-src-minisql-sql-ast-ml-63007639"></a>
 ### statement
@@ -50,4 +50,4 @@ statement
 Stores the statement associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L897)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L931)

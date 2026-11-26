@@ -26,6 +26,7 @@
 - [`minisql.sql.lexer.readNumber`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-readnumber-function-readnumber-state-src-minisql-sql-lexer-ml-838656239) — function
 - [`minisql.sql.lexer.readQuotedIdentifier`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-readquotedidentifier-function-readquotedidentifier-state-src-minisql-sql-lexer-ml-1335996291) — function
 - [`minisql.sql.lexer.readString`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-readstring-function-readstring-state-src-minisql-sql-lexer-ml-1223701547) — function
+- [`minisql.sql.lexer.readUserVariable`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-readuservariable-function-readuservariable-state-src-minisql-sql-lexer-ml-427140275) — function
 - [`minisql.sql.lexer.skipIgnored`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-skipignored-function-skipignored-state-src-minisql-sql-lexer-ml-1910730313) — function
 - [`minisql.sql.lexer.SQL_SYNTAX`](File-src-minisql-sql-lexer-ml-462120544.md#constant-constant-minisql-sql-lexer-sql-syntax-const-sql-syntax-9019-src-minisql-sql-lexer-ml-84339536) — constant
 - [`minisql.sql.lexer.symbolToken`](File-src-minisql-sql-lexer-ml-462120544.md#function-function-minisql-sql-lexer-symboltoken-function-symboltoken-state-src-minisql-sql-lexer-ml-1120007953) — function

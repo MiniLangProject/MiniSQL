@@ -8,6 +8,10 @@ Package: [`minisql.common.version`](Package-minisql-common-version-1506281327.md
 
 Reachable from entry: **yes**
 
+## Imports
+
+- `minisql/common/format_version.ml` as `format_version` → [src/minisql/common/format_version.ml](File-src-minisql-common-format-version-ml-1671630705.md)
+
 ## Declarations
 
 <a id="function-function-minisql-common-version-componentname-function-componentname-src-minisql-common-version-ml-2055549426"></a>
@@ -20,19 +24,19 @@ function componentName()
 Performs the componentName operation for the minisql common version module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L49)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L51)
 
-<a id="constant-constant-minisql-common-version-database-format-version-const-database-format-version-1-src-minisql-common-version-ml-560453636"></a>
+<a id="constant-constant-minisql-common-version-database-format-version-const-database-format-version-format-version-database-src-minisql-common-version-ml-376256368"></a>
 ### DATABASE_FORMAT_VERSION
 
 ```ml
-const DATABASE_FORMAT_VERSION = 1
+const DATABASE_FORMAT_VERSION = format_version.DATABASE
 ```
 
 Defines the database format version constant used by the minisql common version module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L22)
 
 <a id="function-function-minisql-common-version-isimplemented-function-isimplemented-src-minisql-common-version-ml-1254648010"></a>
 ### isImplemented
@@ -44,7 +48,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql common version module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L63)
 
 <a id="constant-constant-minisql-common-version-milestone-const-milestone-m50-src-minisql-common-version-ml-930485285"></a>
 ### MILESTONE
@@ -56,7 +60,7 @@ const MILESTONE = "M50"
 Defines the milestone constant used by the minisql common version module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L14)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L16)
 
 <a id="function-function-minisql-common-version-milestone-function-milestone-src-minisql-common-version-ml-1024844054"></a>
 ### milestone
@@ -68,7 +72,7 @@ function milestone()
 Performs the milestone operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L38)
 
 <a id="constant-constant-minisql-common-version-product-name-const-product-name-minisql-src-minisql-common-version-ml-1126804216"></a>
 ### PRODUCT_NAME
@@ -80,7 +84,7 @@ const PRODUCT_NAME = "MiniSQL"
 Central product, wire-protocol, and database-format identity. Persisted and
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L10)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L12)
 
 <a id="constant-constant-minisql-common-version-product-version-const-product-version-1-1-1-src-minisql-common-version-ml-1670925334"></a>
 ### PRODUCT_VERSION
@@ -92,7 +96,7 @@ const PRODUCT_VERSION = "1.1.1"
 Defines the product version constant used by the minisql common version module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L12)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L14)
 
 <a id="function-function-minisql-common-version-productname-function-productname-src-minisql-common-version-ml-1991432874"></a>
 ### productName
@@ -104,7 +108,7 @@ function productName()
 Performs the product name operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L24)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L26)
 
 <a id="function-function-minisql-common-version-productversion-function-productversion-src-minisql-common-version-ml-294304962"></a>
 ### productVersion
@@ -116,7 +120,7 @@ function productVersion()
 Performs the product version operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L30)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L32)
 
 <a id="constant-constant-minisql-common-version-revision-const-revision-m48-m50r3-src-minisql-common-version-ml-398308410"></a>
 ### REVISION
@@ -128,7 +132,7 @@ const REVISION = "M48-M50R3"
 Defines the revision constant used by the minisql common version module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L16)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L18)
 
 <a id="function-function-minisql-common-version-targetmilestone-function-targetmilestone-src-minisql-common-version-ml-414952808"></a>
 ### targetMilestone
@@ -140,7 +144,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql common version module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L55)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L57)
 
 <a id="function-function-minisql-common-version-versionline-function-versionline-component-src-minisql-common-version-ml-881349033"></a>
 ### versionLine
@@ -156,7 +160,7 @@ Performs the version line operation for this module. Inputs: `component`. Return
 | `component` | `dynamic` | — | component value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L45)
 
 <a id="constant-constant-minisql-common-version-wire-protocol-version-const-wire-protocol-version-1-src-minisql-common-version-ml-1744636000"></a>
 ### WIRE_PROTOCOL_VERSION
@@ -168,4 +172,4 @@ const WIRE_PROTOCOL_VERSION = 1
 Defines the wire protocol version constant used by the minisql common version module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/common/version.ml#L20)

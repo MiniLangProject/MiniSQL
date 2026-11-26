@@ -12,7 +12,7 @@ struct DropTriggerStatement
 Groups the drop trigger statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L577)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L585)
 
 ## Members
 
@@ -26,7 +26,7 @@ ifExists
 Stores the if exists associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L581)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L589)
 
 <a id="field-field-minisql-sql-ast-droptriggerstatement-name-name-src-minisql-sql-ast-ml-1702643357"></a>
 ### name
@@ -38,4 +38,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L579)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L587)

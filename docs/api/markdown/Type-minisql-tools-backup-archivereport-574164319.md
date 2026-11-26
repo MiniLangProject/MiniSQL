@@ -12,7 +12,7 @@ struct ArchiveReport
 Groups the archive report state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L791)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L792)
 
 ## Members
 
@@ -26,7 +26,7 @@ baseEndLsn
 Stores the base end LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L797)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L798)
 
 <a id="field-field-minisql-tools-backup-archivereport-databaseid-databaseid-src-minisql-tools-backup-ml-1643351721"></a>
 ### databaseId
@@ -38,7 +38,7 @@ databaseId
 Identifies the database identifier.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L793)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L794)
 
 <a id="field-field-minisql-tools-backup-archivereport-generation-generation-src-minisql-tools-backup-ml-1428073161"></a>
 ### generation
@@ -50,7 +50,7 @@ generation
 Stores the generation associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L795)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L796)
 
 <a id="field-field-minisql-tools-backup-archivereport-latestendlsn-latestendlsn-src-minisql-tools-backup-ml-1304053935"></a>
 ### latestEndLsn
@@ -62,7 +62,7 @@ latestEndLsn
 Stores the latest end LSN associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L799)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L800)
 
 <a id="field-field-minisql-tools-backup-archivereport-path-path-src-minisql-tools-backup-ml-1846323711"></a>
 ### path
@@ -74,4 +74,4 @@ path
 Stores the filesystem path.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L801)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/tools/backup.ml#L802)

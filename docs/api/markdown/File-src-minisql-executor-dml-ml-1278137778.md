@@ -14,6 +14,7 @@ Reachable from entry: **yes**
 - `minisql/catalog/metadata.ml` as `metadata` → [src/minisql/catalog/metadata.ml](File-src-minisql-catalog-metadata-ml-2104219808.md)
 - `minisql/catalog/schema_history.ml` as `schema_history` → [src/minisql/catalog/schema_history.ml](File-src-minisql-catalog-schema-history-ml-67428687.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
+- `minisql/common/float_codec.ml` as `float_codec` → [src/minisql/common/float_codec.ml](File-src-minisql-common-float-codec-ml-1746004680.md)
 - `minisql/executor/scan.ml` as `scan` → [src/minisql/executor/scan.ml](File-src-minisql-executor-scan-ml-657274302.md)
 - `minisql/platform/file.ml` as `file_api` → [src/minisql/platform/file.ml](File-src-minisql-platform-file-ml-1202576533.md)
 - `minisql/server/database_manager.ml` as `database_manager` → [src/minisql/server/database_manager.ml](File-src-minisql-server-database-manager-ml-965836460.md)
@@ -30,6 +31,7 @@ Reachable from entry: **yes**
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/storage/row_codec.ml` as `row_codec` → [src/minisql/storage/row_codec.ml](File-src-minisql-storage-row-codec-ml-756043630.md)
 - `minisql/storage/slotted_page.ml` as `slotted_page` → [src/minisql/storage/slotted_page.ml](File-src-minisql-storage-slotted-page-ml-1299577846.md)
+- `minisql/storage/table_header.ml` as `table_header` → [src/minisql/storage/table_header.ml](File-src-minisql-storage-table-header-ml-163902973.md)
 - `minisql/transaction/checkpoint.ml` as `checkpoint` → [src/minisql/transaction/checkpoint.ml](File-src-minisql-transaction-checkpoint-ml-1306482346.md)
 - `minisql/transaction/transaction.ml` as `transaction` → [src/minisql/transaction/transaction.ml](File-src-minisql-transaction-transaction-ml-1157597470.md)
 - `minisql/transaction/wal.ml` as `wal` → [src/minisql/transaction/wal.ml](File-src-minisql-transaction-wal-ml-860713478.md)
@@ -52,7 +54,7 @@ Appends key bytes using the supplied inputs. Requires arguments that satisfy the
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1336)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1338)
 
 <a id="function-function-minisql-executor-dml-applygenerated-function-applygenerated-database-table-row-src-minisql-executor-dml-ml-887687433"></a>
 ### applyGenerated
@@ -70,7 +72,7 @@ Applies generated using the supplied inputs. Returns the computed value or opera
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L421)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L423)
 
 <a id="function-function-minisql-executor-dml-applyinsertedindexes-function-applyinsertedindexes-database-table-result-src-minisql-executor-dml-ml-2143230300"></a>
 ### applyInsertedIndexes
@@ -88,7 +90,7 @@ Applies an insert-only statement delta to every derived index without rescanning
 | `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1759)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1772)
 
 <a id="function-function-minisql-executor-dml-bindconstraintkeyexpressions-function-bindconstraintkeyexpressions-table-constraint-src-minisql-executor-dml-ml-1460149331"></a>
 ### bindConstraintKeyExpressions
@@ -105,7 +107,7 @@ Implements constraint key for this module. Returns the computed value or operati
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L530)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L532)
 
 <a id="function-function-minisql-executor-dml-bindindexpredicate-function-bindindexpredicate-table-constraint-src-minisql-executor-dml-ml-1384344211"></a>
 ### bindIndexPredicate
@@ -122,7 +124,7 @@ Binds the canonical predicate stored for a partial index once per operation.
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L613)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L615)
 
 <a id="constant-constant-minisql-executor-dml-binding-error-const-binding-error-9020-src-minisql-executor-dml-ml-1939517166"></a>
 ### BINDING_ERROR
@@ -134,7 +136,7 @@ const BINDING_ERROR = 9020
 Defines the binding error constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L54)
 
 <a id="function-function-minisql-executor-dml-buildindexentries-function-buildindexentries-database-table-constraint-pagetransaction-src-minisql-executor-dml-ml-598833077"></a>
 ### buildIndexEntries
@@ -153,7 +155,7 @@ Builds index entries using the supplied inputs. Returns its result or propagates
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1683)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1696)
 
 <a id="function-function-minisql-executor-dml-clearindexesdirty-function-clearindexesdirty-database-src-minisql-executor-dml-ml-2085325219"></a>
 ### clearIndexesDirty
@@ -169,7 +171,7 @@ Implements clear indexes dirty for this module. Returns the computed value or op
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1941)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1954)
 
 <a id="constant-constant-minisql-executor-dml-closed-handle-const-closed-handle-9008-src-minisql-executor-dml-ml-903959996"></a>
 ### CLOSED_HANDLE
@@ -181,7 +183,7 @@ const CLOSED_HANDLE = 9008
 Defines the closed handle constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L40)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L42)
 
 <a id="function-function-minisql-executor-dml-closepersistenttablereader-function-closepersistenttablereader-opened-src-minisql-executor-dml-ml-2144301729"></a>
 ### closePersistentTableReader
@@ -197,7 +199,7 @@ Closes a non-owning reader and then releases its persistent table lease.
 | `opened` | `dynamic` | — | opened value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2010)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2023)
 
 <a id="function-function-minisql-executor-dml-closepublishedfiles-function-closepublishedfiles-files-src-minisql-executor-dml-ml-1913372913"></a>
 ### closePublishedFiles
@@ -213,7 +215,7 @@ Closes published files using the supplied inputs. Requires arguments that satisf
 | `files` | `dynamic` | — | files value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1236)
 
 <a id="function-function-minisql-executor-dml-closereadonlyindex-function-closereadonlyindex-lease-src-minisql-executor-dml-ml-1261107268"></a>
 ### closeReadOnlyIndex
@@ -229,7 +231,7 @@ Releases a persistent index lease without closing its database-owned tree.
 | `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1672)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1685)
 
 <a id="function-function-minisql-executor-dml-comparisonliteralforboundkey-function-comparisonliteralforboundkey-expression-keyexpression-src-minisql-executor-dml-ml-10738667"></a>
 ### comparisonLiteralForBoundKey
@@ -246,7 +248,7 @@ Finds a literal comparison against one exact bound functional-index key.
 | `keyExpression` | `dynamic` | — | keyExpression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2264)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2276)
 
 <a id="function-function-minisql-executor-dml-comparisonliteralforcolumn-function-comparisonliteralforcolumn-expression-columnindex-src-minisql-executor-dml-ml-1103021578"></a>
 ### comparisonLiteralForColumn
@@ -263,7 +265,7 @@ Finds and normalizes a comparison between one bound column and a literal.
 | `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2325)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2336)
 
 <a id="function-function-minisql-executor-dml-componentname-function-componentname-src-minisql-executor-dml-ml-1688155174"></a>
 ### componentName
@@ -294,7 +296,7 @@ Preserves the legacy composite-index API for unplanned callers.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2200)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2212)
 
 - [minisql.executor.dml.ConflictMatch](Type-minisql-executor-dml-conflictmatch-1662340147.md) — struct
 <a id="function-function-minisql-executor-dml-conflictupdate-function-conflictupdate-database-bound-excludedrow-match-pagetransaction-file-rowschema-src-minisql-executor-dml-ml-422734056"></a>
@@ -317,7 +319,7 @@ Implements conflict update for this module. Requires arguments that satisfy the 
 | `rowSchema` | `dynamic` | — | rowSchema value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L972)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L974)
 
 <a id="constant-constant-minisql-executor-dml-constraint-violation-const-constraint-violation-9021-src-minisql-executor-dml-ml-1276392313"></a>
 ### CONSTRAINT_VIOLATION
@@ -329,7 +331,7 @@ const CONSTRAINT_VIOLATION = 9021
 Defines the constraint violation constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L56)
 
 <a id="function-function-minisql-executor-dml-constraintcolumnmask-function-constraintcolumnmask-table-constraints-src-minisql-executor-dml-ml-988944358"></a>
 ### constraintColumnMask
@@ -346,7 +348,7 @@ Builds a table-width mask for local constraint key columns.
 | `constraints` | `dynamic` | — | constraints value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L175)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L177)
 
 <a id="function-function-minisql-executor-dml-constraintforindexname-function-constraintforindexname-database-table-indexname-src-minisql-executor-dml-ml-198303772"></a>
 ### constraintForIndexName
@@ -364,7 +366,7 @@ Finds the exact persistent index selected by the physical plan.
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2254)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2266)
 
 <a id="function-function-minisql-executor-dml-constraintforsinglecolumn-function-constraintforsinglecolumn-database-table-columnindex-src-minisql-executor-dml-ml-1334959703"></a>
 ### constraintForSingleColumn
@@ -382,7 +384,7 @@ Retains the original first-match lookup used by joins and compatibility diagnost
 | `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1989)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2002)
 
 <a id="function-function-minisql-executor-dml-constraintkey-function-constraintkey-row-table-constraint-src-minisql-executor-dml-ml-489494019"></a>
 ### constraintKey
@@ -400,7 +402,7 @@ Resolves key metadata for compatibility callers outside index hot loops.
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L567)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L569)
 
 <a id="function-function-minisql-executor-dml-constraintkeybound-function-constraintkeybound-row-table-constraint-boundkeys-src-minisql-executor-dml-ml-763744741"></a>
 ### constraintKeyBound
@@ -419,7 +421,7 @@ Evaluates persisted expression keys and reads ordinary column keys.
 | `boundKeys` | `dynamic` | — | boundKeys value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L547)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L549)
 
 <a id="constant-constant-minisql-executor-dml-corrupt-data-const-corrupt-data-9004-src-minisql-executor-dml-ml-717406690"></a>
 ### CORRUPT_DATA
@@ -431,7 +433,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L38)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L40)
 
 <a id="function-function-minisql-executor-dml-coveredrowsfromindexentries-function-coveredrowsfromindexentries-table-constraint-entries-src-minisql-executor-dml-ml-1402107087"></a>
 ### coveredRowsFromIndexEntries
@@ -449,7 +451,7 @@ Converts B+-tree entries into heap-shaped rows without opening the heap.
 | `entries` | `dynamic` | — | entries value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1598)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1611)
 
 <a id="function-function-minisql-executor-dml-decodecoveredindexkey-function-decodecoveredindexkey-table-constraint-encoded-src-minisql-executor-dml-ml-2102704429"></a>
 ### decodeCoveredIndexKey
@@ -458,7 +460,7 @@ Converts B+-tree entries into heap-shaped rows without opening the heap.
 function decodeCoveredIndexKey(table, constraint, encoded)
 ```
 
-Reconstructs table-typed SQL values from an index key. Non-key positions are typed NULL placeholders and are safe because the optimizer proves they are not referenced before selecting an index-only plan. Floating encodings retain their textual ordering representation and therefore conservatively fall back.
+Reconstructs table-typed SQL values from an index key. Non-key positions are typed NULL placeholders and are safe because the optimizer proves they are not referenced before selecting an index-only plan.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -467,7 +469,7 @@ Reconstructs table-typed SQL values from an index key. Non-key positions are typ
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1532)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1546)
 
 <a id="function-function-minisql-executor-dml-decodeescapedkeybytes-function-decodeescapedkeybytes-encoded-startoffset-src-minisql-executor-dml-ml-1128136087"></a>
 ### decodeEscapedKeyBytes
@@ -484,7 +486,7 @@ Decodes one zero-escaped variable-width key component and returns its bytes plus
 | `startOffset` | `dynamic` | — | startOffset value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1468)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1476)
 
 <a id="function-function-minisql-executor-dml-decodeincludedindexvalues-function-decodeincludedindexvalues-table-constraint-encoded-output-src-minisql-executor-dml-ml-1789853140"></a>
 ### decodeIncludedIndexValues
@@ -493,7 +495,7 @@ Decodes one zero-escaped variable-width key component and returns its bytes plus
 function decodeIncludedIndexValues(table, constraint, encoded, output)
 ```
 
-Merges a validated MSI v1 payload into the table-width row reconstructed from the key. Missing legacy payloads return void and trigger a safe fallback.
+Merges a validated MSI v2 payload into the table-width reconstructed row.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -503,7 +505,7 @@ Merges a validated MSI v1 payload into the table-width row reconstructed from th
 | `output` | `dynamic` | — | Output collection or buffer populated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1577)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1591)
 
 <a id="function-function-minisql-executor-dml-decodeindexpart-function-decodeindexpart-column-encoded-cursor-operation-src-minisql-executor-dml-ml-1901313465"></a>
 ### decodeIndexPart
@@ -512,7 +514,7 @@ Merges a validated MSI v1 payload into the table-width row reconstructed from th
 function decodeIndexPart(column, encoded, cursor, operation)
 ```
 
-Decodes one self-delimiting typed value shared by ordered keys and INCLUDE payloads. Floating-point key text is not reversible and deliberately returns void, which makes execution fall back to a heap-backed index scan.
+Decodes one self-delimiting v2 value shared by SQL keys and INCLUDE payloads. Binary64 values are decoded directly without a text conversion or fallback.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -522,7 +524,7 @@ Decodes one self-delimiting typed value shared by ordered keys and INCLUDE paylo
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1495)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1502)
 
 <a id="function-function-minisql-executor-dml-decoderowreference-function-decoderowreference-tableid-encoded-src-minisql-executor-dml-ml-1556452753"></a>
 ### decodeRowReference
@@ -539,7 +541,7 @@ Decodes row reference using the supplied inputs. Requires arguments that satisfy
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1441)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1450)
 
 <a id="function-function-minisql-executor-dml-delete-function-delete-database-sessionid-bound-pagetransaction-src-minisql-executor-dml-ml-1485158123"></a>
 ### delete
@@ -558,7 +560,7 @@ Deletes delete using the supplied inputs. Requires arguments that satisfy the va
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1170)
 
 <a id="function-function-minisql-executor-dml-deleteinner-function-deleteinner-database-sessionid-bound-pagetransaction-file-src-minisql-executor-dml-ml-1613313591"></a>
 ### deleteInner
@@ -578,7 +580,7 @@ Deletes inner using the supplied inputs. Returns the computed value or operation
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1144)
 
 - [minisql.executor.dml.DmlResult](Type-minisql-executor-dml-dmlresult-1024633164.md) — struct
 <a id="constant-constant-minisql-executor-dml-duplicate-key-const-duplicate-key-9022-src-minisql-executor-dml-ml-576496888"></a>
@@ -591,7 +593,7 @@ const DUPLICATE_KEY = 9022
 Defines the duplicate key constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L58)
 
 <a id="function-function-minisql-executor-dml-encodeconstrainthashkey-function-encodeconstrainthashkey-keyvalues-src-minisql-executor-dml-ml-982140813"></a>
 ### encodeConstraintHashKey
@@ -607,7 +609,7 @@ Encodes an exact composite constraint key without the physical B+ tree size ceil
 | `keyValues` | `dynamic` | — | keyValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1408)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1417)
 
 <a id="function-function-minisql-executor-dml-encodeindexentryvalue-function-encodeindexentryvalue-table-constraint-rowvalues-reference-src-minisql-executor-dml-ml-705597344"></a>
 ### encodeIndexEntryValue
@@ -616,7 +618,7 @@ Encodes an exact composite constraint key without the physical B+ tree size ceil
 function encodeIndexEntryValue(table, constraint, rowValues, reference)
 ```
 
-Encodes a leaf value as a stable row-reference prefix followed, when needed, by the MSI v1 marker and self-delimiting typed INCLUDE values.
+Encodes a leaf value as a stable row-reference prefix followed, when needed, by the MSI v2 marker and self-delimiting typed INCLUDE values.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -626,7 +628,7 @@ Encodes a leaf value as a stable row-reference prefix followed, when needed, by 
 | `reference` | `dynamic` | — | reference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1558)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1573)
 
 <a id="function-function-minisql-executor-dml-encodeindexkey-function-encodeindexkey-keyvalues-src-minisql-executor-dml-ml-1247495285"></a>
 ### encodeIndexKey
@@ -642,7 +644,7 @@ Encodes index key using the supplied inputs. Requires arguments that satisfy the
 | `keyValues` | `dynamic` | — | keyValues value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1394)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1403)
 
 <a id="function-function-minisql-executor-dml-encoderowreference-function-encoderowreference-tableid-reference-src-minisql-executor-dml-ml-1220422780"></a>
 ### encodeRowReference
@@ -659,7 +661,7 @@ Encodes row reference using the supplied inputs. Requires arguments that satisfy
 | `reference` | `dynamic` | — | reference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1425)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1434)
 
 <a id="function-function-minisql-executor-dml-ensureindexes-function-ensureindexes-database-src-minisql-executor-dml-ml-1773297009"></a>
 ### ensureIndexes
@@ -675,7 +677,7 @@ Ensures indexes using the supplied inputs. Requires arguments that satisfy the v
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1952)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1965)
 
 <a id="function-function-minisql-executor-dml-equalityindexrows-function-equalityindexrows-database-table-columnindex-literalvalue-pagetransaction-src-minisql-executor-dml-ml-326846904"></a>
 ### equalityIndexRows
@@ -695,7 +697,7 @@ Preserves the legacy equality-index API for join probes and older callers.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2081)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2094)
 
 <a id="function-function-minisql-executor-dml-equalityliteralforcolumn-function-equalityliteralforcolumn-expression-columnindex-src-minisql-executor-dml-ml-1902618230"></a>
 ### equalityLiteralForColumn
@@ -712,7 +714,7 @@ Implements equality literal for column for this module. Returns the computed val
 | `columnIndex` | `dynamic` | — | Zero-based index of column. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2137)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2149)
 
 <a id="function-function-minisql-executor-dml-escapedkeybytes-function-escapedkeybytes-source-src-minisql-executor-dml-ml-1727842647"></a>
 ### escapedKeyBytes
@@ -728,7 +730,7 @@ Implements escaped key bytes for this module. Requires arguments that satisfy th
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1346)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1348)
 
 <a id="function-function-minisql-executor-dml-evaluateconstantsql-function-evaluateconstantsql-sqltext-src-minisql-executor-dml-ml-252531841"></a>
 ### evaluateConstantSql
@@ -744,7 +746,7 @@ Evaluates constant SQL using the supplied inputs. Returns the computed value or 
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L450)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L452)
 
 <a id="function-function-minisql-executor-dml-evaluatereturning-function-evaluatereturning-returningitems-row-src-minisql-executor-dml-ml-1212356130"></a>
 ### evaluateReturning
@@ -761,7 +763,7 @@ Evaluates returning using the supplied inputs. Returns the computed value or ope
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L909)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L911)
 
 <a id="function-function-minisql-executor-dml-fail-function-fail-code-operation-message-src-minisql-executor-dml-ml-778088365"></a>
 ### fail
@@ -779,7 +781,7 @@ Performs the fail operation for the minisql executor dml module. Returns its res
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L100)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L102)
 
 <a id="function-function-minisql-executor-dml-fileforchange-function-fileforchange-database-fileid-src-minisql-executor-dml-ml-65550298"></a>
 ### fileForChange
@@ -796,7 +798,7 @@ Implements file for change for this module. Returns the computed value or operat
 | `fileId` | `dynamic` | — | Identifier of file. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1224)
 
 <a id="function-function-minisql-executor-dml-findconflict-function-findconflict-database-bound-row-pagetransaction-file-src-minisql-executor-dml-ml-29488854"></a>
 ### findConflict
@@ -816,7 +818,7 @@ Finds conflict using the supplied inputs. Requires arguments that satisfy the va
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L943)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L945)
 
 <a id="function-function-minisql-executor-dml-findgenerated-function-findgenerated-database-table-columnname-src-minisql-executor-dml-ml-949430744"></a>
 ### findGenerated
@@ -834,7 +836,7 @@ Finds generated using the supplied inputs. Returns the computed value or operati
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L408)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L410)
 
 <a id="function-function-minisql-executor-dml-findrule-function-findrule-tableschemavalue-columnname-src-minisql-executor-dml-ml-312643881"></a>
 ### findRule
@@ -851,7 +853,7 @@ Finds rule using the supplied inputs. Returns the computed value or operation st
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L438)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L440)
 
 <a id="function-function-minisql-executor-dml-generatedcolumns-function-generatedcolumns-database-table-src-minisql-executor-dml-ml-1875473215"></a>
 ### generatedColumns
@@ -868,7 +870,7 @@ Implements generated columns for this module. Returns the computed value or oper
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L398)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L400)
 
 <a id="function-function-minisql-executor-dml-hasidentitycolumn-function-hasidentitycolumn-database-table-src-minisql-executor-dml-ml-29494139"></a>
 ### hasIdentityColumn
@@ -885,7 +887,7 @@ Returns whether identity allocation requires sequential visibility of rows inser
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L750)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L752)
 
 <a id="function-function-minisql-executor-dml-indexaccessdescription-function-indexaccessdescription-database-bound-src-minisql-executor-dml-ml-1112743319"></a>
 ### indexAccessDescription
@@ -919,7 +921,7 @@ Extends a key mask with non-key values persisted in covering-index leaves.
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L207)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L209)
 
 <a id="function-function-minisql-executor-dml-indexdirtypath-function-indexdirtypath-database-src-minisql-executor-dml-ml-1438789533"></a>
 ### indexDirtyPath
@@ -935,7 +937,7 @@ Implements index dirty path for this module. Returns the computed value or opera
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1897)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1910)
 
 <a id="function-function-minisql-executor-dml-indexedconstraints-function-indexedconstraints-database-table-src-minisql-executor-dml-ml-1042846335"></a>
 ### indexedConstraints
@@ -952,7 +954,7 @@ Implements indexed constraints for this module. Returns the computed value or op
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1615)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1628)
 
 <a id="function-function-minisql-executor-dml-indexesneedrepair-function-indexesneedrepair-database-src-minisql-executor-dml-ml-1746326027"></a>
 ### indexesNeedRepair
@@ -968,7 +970,7 @@ Implements indexes need repair for this module. Returns the computed value or op
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1905)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1918)
 
 <a id="function-function-minisql-executor-dml-indexfilesmissing-function-indexfilesmissing-database-src-minisql-executor-dml-ml-1701460627"></a>
 ### indexFilesMissing
@@ -984,7 +986,7 @@ Detects missing derived index files without scanning any table heap. A clean dir
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1913)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1926)
 
 <a id="function-function-minisql-executor-dml-indexkeypart-function-indexkeypart-value-src-minisql-executor-dml-ml-774872045"></a>
 ### indexKeyPart
@@ -993,14 +995,14 @@ Detects missing derived index files without scanning any table heap. A clean dir
 function indexKeyPart(value)
 ```
 
-Implements index key part for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Preserves the stored value's binary64 representation for index-only reads. The B+ tree comparator equates zero signs; only ephemeral constraint hash keys canonicalize zero, because byte hashing has no numeric comparator.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `value` | `dynamic` | — | SQL key component. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1365)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1393)
 
 <a id="function-function-minisql-executor-dml-indexpath-function-indexpath-database-constraint-src-minisql-executor-dml-ml-268600574"></a>
 ### indexPath
@@ -1017,7 +1019,7 @@ Implements index path for this module. Returns the computed value or operation s
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1638)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1651)
 
 <a id="function-function-minisql-executor-dml-indexpredicatepasses-function-indexpredicatepasses-boundpredicate-row-src-minisql-executor-dml-ml-146017255"></a>
 ### indexPredicatePasses
@@ -1034,7 +1036,7 @@ SQL WHERE semantics admit only TRUE; FALSE and UNKNOWN omit the row.
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L621)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L623)
 
 <a id="function-function-minisql-executor-dml-indexrowsforbound-function-indexrowsforbound-database-bound-pagetransaction-src-minisql-executor-dml-ml-1459630994"></a>
 ### indexRowsForBound
@@ -1054,6 +1056,22 @@ Returns index candidates for one bound, single-table SELECT or void when the que
 
 [View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2546)
 
+<a id="function-function-minisql-executor-dml-indexvaluepart-function-indexvaluepart-value-src-minisql-executor-dml-ml-538043981"></a>
+### indexValuePart
+
+```ml
+function indexValuePart(value)
+```
+
+Encodes one typed index component with plain little-endian numeric payloads. INCLUDE values preserve binary64 signed zero exactly like stored rows.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `dynamic` | — | SQL value consumed by the operation. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1366)
+
 <a id="function-function-minisql-executor-dml-initialrow-function-initialrow-database-bound-boundrow-pagetransaction-file-src-minisql-executor-dml-ml-658145592"></a>
 ### initialRow
 
@@ -1072,7 +1090,7 @@ Implements initial row for this module. Requires arguments that satisfy the vali
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L489)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L491)
 
 <a id="function-function-minisql-executor-dml-insert-function-insert-database-sessionid-bound-pagetransaction-src-minisql-executor-dml-ml-128613687"></a>
 ### insert
@@ -1091,7 +1109,7 @@ Inserts insert using the supplied inputs. Requires arguments that satisfy the va
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1057)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1059)
 
 <a id="function-function-minisql-executor-dml-insertbatchwithoutconflict-function-insertbatchwithoutconflict-database-sessionid-bound-pagetransaction-file-src-minisql-executor-dml-ml-840144085"></a>
 ### insertBatchWithoutConflict
@@ -1111,7 +1129,7 @@ Inserts a conflict-free batch using fixed-size result buffers and one unique sna
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L767)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L769)
 
 - [minisql.executor.dml.InsertCursor](Type-minisql-executor-dml-insertcursor-522103103.md) — struct
 <a id="function-function-minisql-executor-dml-insertinner-function-insertinner-database-sessionid-bound-pagetransaction-file-src-minisql-executor-dml-ml-792131871"></a>
@@ -1132,7 +1150,7 @@ Inserts inner using the supplied inputs. Requires arguments that satisfy the val
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1013)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1015)
 
 <a id="constant-constant-minisql-executor-dml-invalid-argument-const-invalid-argument-9001-src-minisql-executor-dml-ml-875183267"></a>
 ### INVALID_ARGUMENT
@@ -1144,7 +1162,7 @@ const INVALID_ARGUMENT = 9001
 Basic transactional DML. Every changed heap page is private until the WAL
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L36)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L38)
 
 <a id="function-function-minisql-executor-dml-isconflictmatch-function-isconflictmatch-value-src-minisql-executor-dml-ml-259305499"></a>
 ### isConflictMatch
@@ -1160,7 +1178,7 @@ Returns whether the supplied value satisfies the conflict match condition. Retur
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L118)
 
 <a id="function-function-minisql-executor-dml-isdmlresult-function-isdmlresult-value-src-minisql-executor-dml-ml-470707937"></a>
 ### isDmlResult
@@ -1176,7 +1194,7 @@ Returns whether the supplied value satisfies the DML result condition. Returns t
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L110)
 
 <a id="function-function-minisql-executor-dml-isimplemented-function-isimplemented-src-minisql-executor-dml-ml-1038395294"></a>
 ### isImplemented
@@ -1204,7 +1222,7 @@ Returns whether the supplied value satisfies the unique index constraint conditi
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1629)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1642)
 
 <a id="function-function-minisql-executor-dml-joinindexrows-function-joinindexrows-database-source-condition-leftrow-pagetransaction-src-minisql-executor-dml-ml-515356791"></a>
 ### joinIndexRows
@@ -1240,7 +1258,7 @@ Implements key has null for this module. Returns the computed value or operation
 | `key` | `dynamic` | — | key value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L575)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L577)
 
 <a id="function-function-minisql-executor-dml-keysequal-function-keysequal-left-right-src-minisql-executor-dml-ml-1657984465"></a>
 ### keysEqual
@@ -1257,7 +1275,7 @@ Implements keys equal for this module. Returns the computed value or operation s
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L587)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L589)
 
 <a id="function-function-minisql-executor-dml-markindexesdirty-function-markindexesdirty-database-src-minisql-executor-dml-ml-1402963441"></a>
 ### markIndexesDirty
@@ -1273,7 +1291,7 @@ Implements mark indexes dirty for this module. Returns the computed value or ope
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1926)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1939)
 
 <a id="function-function-minisql-executor-dml-namedcompositeequalityindexrows-function-namedcompositeequalityindexrows-database-table-expression-pagetransaction-indexname-src-minisql-executor-dml-ml-729593695"></a>
 ### namedCompositeEqualityIndexRows
@@ -1293,7 +1311,7 @@ Executes a complete equality probe against a named composite index, or the first
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2170)
 
 <a id="function-function-minisql-executor-dml-namedconstraintforsinglecolumn-function-namedconstraintforsinglecolumn-database-table-columnindex-indexname-src-minisql-executor-dml-ml-597243968"></a>
 ### namedConstraintForSingleColumn
@@ -1312,7 +1330,7 @@ Finds a single-column index, optionally requiring the optimizer's stable catalog
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1973)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1986)
 
 <a id="function-function-minisql-executor-dml-namedequalityindexrows-function-namedequalityindexrows-database-table-columnindex-literalvalue-pagetransaction-indexname-src-minisql-executor-dml-ml-496592575"></a>
 ### namedEqualityIndexRows
@@ -1333,7 +1351,7 @@ Executes an equality lookup through one explicitly named single-column index, or
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2057)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2070)
 
 <a id="function-function-minisql-executor-dml-namedexpressionindexrows-function-namedexpressionindexrows-database-table-expression-pagetransaction-indexname-src-minisql-executor-dml-ml-360173989"></a>
 ### namedExpressionIndexRows
@@ -1353,7 +1371,7 @@ Executes an equality/range probe against one named expression index.
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2287)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2299)
 
 <a id="function-function-minisql-executor-dml-namedrangeindexrows-function-namedrangeindexrows-database-table-columnindex-literalvalue-operatorvalue-pagetransaction-indexname-src-minisql-executor-dml-ml-805901488"></a>
 ### namedRangeIndexRows
@@ -1375,7 +1393,7 @@ Executes a range lookup through one explicitly named single-column index, or thr
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2094)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2107)
 
 <a id="function-function-minisql-executor-dml-namedsingleindexrows-function-namedsingleindexrows-database-table-expression-pagetransaction-indexname-src-minisql-executor-dml-ml-82418613"></a>
 ### namedSingleIndexRows
@@ -1395,7 +1413,7 @@ Implements index rows for bound for this module. Requires arguments that satisfy
 | `indexName` | `dynamic` | — | indexName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2228)
 
 <a id="function-function-minisql-executor-dml-nextidentity-function-nextidentity-database-table-columnindex-pagetransaction-file-src-minisql-executor-dml-ml-328549124"></a>
 ### nextIdentity
@@ -1415,7 +1433,7 @@ Implements next identity for this module. Returns the computed value or operatio
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L464)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L466)
 
 <a id="constant-constant-minisql-executor-dml-object-not-found-const-object-not-found-9014-src-minisql-executor-dml-ml-332094735"></a>
 ### OBJECT_NOT_FOUND
@@ -1427,7 +1445,7 @@ const OBJECT_NOT_FOUND = 9014
 Defines the object not found constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L46)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L48)
 
 <a id="function-function-minisql-executor-dml-openpersistenttablereader-function-openpersistenttablereader-database-table-pagetransaction-src-minisql-executor-dml-ml-1585215262"></a>
 ### openPersistentTableReader
@@ -1445,7 +1463,7 @@ Acquires a persistent table handle and creates a non-owning reader over it. The 
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1999)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2012)
 
 <a id="function-function-minisql-executor-dml-openreadonlyindex-function-openreadonlyindex-database-constraint-operation-src-minisql-executor-dml-ml-2102244551"></a>
 ### openReadOnlyIndex
@@ -1463,7 +1481,7 @@ Opens an index for a read plan while retaining the concrete path in errors. This
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1648)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1661)
 
 <a id="constant-constant-minisql-executor-dml-page-full-const-page-full-9015-src-minisql-executor-dml-ml-1841809338"></a>
 ### PAGE_FULL
@@ -1475,7 +1493,7 @@ const PAGE_FULL = 9015
 Defines the page full constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L50)
 
 <a id="function-function-minisql-executor-dml-plannedcombinedindexrowsforbound-function-plannedcombinedindexrowsforbound-database-bound-pagetransaction-indexnames-unionmode-src-minisql-executor-dml-ml-1208720618"></a>
 ### plannedCombinedIndexRowsForBound
@@ -1514,7 +1532,7 @@ Reads B+-tree entries for the exact equality/range shape accepted by the optimiz
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2349)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2360)
 
 <a id="function-function-minisql-executor-dml-plannedindexonlyrowsforbound-function-plannedindexonlyrowsforbound-database-bound-pagetransaction-indexname-src-minisql-executor-dml-ml-1128358803"></a>
 ### plannedIndexOnlyRowsForBound
@@ -1588,7 +1606,7 @@ Implements publish committed for this module. Requires arguments that satisfy th
 | `commitLsn` | `dynamic` | — | commitLsn value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1263)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1265)
 
 <a id="function-function-minisql-executor-dml-rangeindexrows-function-rangeindexrows-database-table-columnindex-literalvalue-operatorvalue-pagetransaction-src-minisql-executor-dml-ml-2111149529"></a>
 ### rangeIndexRows
@@ -1609,7 +1627,7 @@ Preserves the legacy range-index API for callers without a physical plan.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2140)
 
 <a id="constant-constant-minisql-executor-dml-read-only-violation-const-read-only-violation-9012-src-minisql-executor-dml-ml-2101287639"></a>
 ### READ_ONLY_VIOLATION
@@ -1621,7 +1639,7 @@ const READ_ONLY_VIOLATION = 9012
 Defines the read only violation constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L44)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L46)
 
 <a id="function-function-minisql-executor-dml-readonlyindexcontext-function-readonlyindexcontext-lease-src-minisql-executor-dml-ml-458194440"></a>
 ### readOnlyIndexContext
@@ -1637,7 +1655,7 @@ Returns the event context amortized across this index probe's page reads.
 | `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1666)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1679)
 
 <a id="function-function-minisql-executor-dml-readonlyindextree-function-readonlyindextree-lease-src-minisql-executor-dml-ml-1726122316"></a>
 ### readOnlyIndexTree
@@ -1653,7 +1671,7 @@ Returns the immutable BTree owned by one active database handle lease.
 | `lease` | `dynamic` | — | lease value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1660)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1673)
 
 <a id="function-function-minisql-executor-dml-rebuildallindexes-function-rebuildallindexes-database-src-minisql-executor-dml-ml-733084177"></a>
 ### rebuildAllIndexes
@@ -1669,7 +1687,7 @@ Implements rebuild all indexes for this module. Returns the computed value or op
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1807)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1820)
 
 <a id="function-function-minisql-executor-dml-rebuildindex-function-rebuildindex-database-table-constraint-src-minisql-executor-dml-ml-1266760974"></a>
 ### rebuildIndex
@@ -1687,7 +1705,7 @@ Implements rebuild index for this module. Requires arguments that satisfy the va
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1716)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1729)
 
 <a id="function-function-minisql-executor-dml-rebuildindexesfortable-function-rebuildindexesfortable-database-table-src-minisql-executor-dml-ml-1976300691"></a>
 ### rebuildIndexesForTable
@@ -1704,7 +1722,7 @@ Implements rebuild indexes for table for this module. Returns the computed value
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1743)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1756)
 
 <a id="function-function-minisql-executor-dml-reindex-function-reindex-database-name-src-minisql-executor-dml-ml-1832943030"></a>
 ### reindex
@@ -1794,7 +1812,7 @@ Implements rows from index entries for this module. Requires arguments that sati
 | `entries` | `dynamic` | — | entries value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2027)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2040)
 
 <a id="function-function-minisql-executor-dml-rowsfromreferences-function-rowsfromreferences-database-table-pagetransaction-references-src-minisql-executor-dml-ml-1497789068"></a>
 ### rowsFromReferences
@@ -1830,7 +1848,7 @@ Implements same reference for this module. Returns the computed value or operati
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L125)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L127)
 
 <a id="function-function-minisql-executor-dml-samerowreference-function-samerowreference-left-right-src-minisql-executor-dml-ml-1051269909"></a>
 ### sameRowReference
@@ -1866,7 +1884,7 @@ Scans rows using the supplied inputs. Requires arguments that satisfy the valida
 | `existingFile` | `dynamic` | — | existingFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L157)
 
 <a id="function-function-minisql-executor-dml-scanrowscolumns-function-scanrowscolumns-database-table-pagetransaction-existingfile-requiredcolumns-src-minisql-executor-dml-ml-1325847411"></a>
 ### scanRowsColumns
@@ -1886,7 +1904,7 @@ Scans rows while retaining only columns needed by a constraint check.
 | `requiredColumns` | `dynamic` | — | requiredColumns value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L168)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L170)
 
 <a id="function-function-minisql-executor-dml-schemastate-function-schemastate-database-src-minisql-executor-dml-ml-908090397"></a>
 ### schemaState
@@ -1902,7 +1920,7 @@ Implements schema state for this module. Returns the computed value or operation
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L389)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L391)
 
 <a id="function-function-minisql-executor-dml-singleindexrows-function-singleindexrows-database-table-expression-pagetransaction-src-minisql-executor-dml-ml-104732678"></a>
 ### singleIndexRows
@@ -1921,7 +1939,7 @@ Finds the first executable single-column predicate for legacy callers.
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L2258)
 
 <a id="function-function-minisql-executor-dml-stagedelete-function-stagedelete-pagetransaction-file-table-reference-src-minisql-executor-dml-ml-2073075574"></a>
 ### stageDelete
@@ -1940,7 +1958,7 @@ Implements stage delete for this module. Returns its result or propagates a stru
 | `reference` | `dynamic` | — | reference value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L341)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L343)
 
 <a id="function-function-minisql-executor-dml-stageinsert-function-stageinsert-pagetransaction-file-table-encodedrow-src-minisql-executor-dml-ml-58867153"></a>
 ### stageInsert
@@ -1959,7 +1977,7 @@ Implements stage insert for this module. Requires arguments that satisfy the val
 | `encodedRow` | `dynamic` | — | encodedRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L251)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L253)
 
 <a id="function-function-minisql-executor-dml-stageinsertwithcursor-function-stageinsertwithcursor-pagetransaction-file-table-encodedrow-cursor-src-minisql-executor-dml-ml-162834203"></a>
 ### stageInsertWithCursor
@@ -1979,7 +1997,7 @@ Stages one row while advancing a statement-local heap cursor. Pages before the c
 | `cursor` | `dynamic` | — | cursor value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L283)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L285)
 
 <a id="function-function-minisql-executor-dml-stageupdate-function-stageupdate-pagetransaction-file-table-reference-encodedrow-src-minisql-executor-dml-ml-1779609644"></a>
 ### stageUpdate
@@ -1999,7 +2017,7 @@ Implements stage update for this module. Requires arguments that satisfy the val
 | `encodedRow` | `dynamic` | — | encodedRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L360)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L362)
 
 <a id="function-function-minisql-executor-dml-storagerow-function-storagerow-rowschema-table-sqlvalues-file-ownerid-src-minisql-executor-dml-ml-1691746571"></a>
 ### storageRow
@@ -2019,7 +2037,7 @@ Implements storage row for this module. Returns the computed value or operation 
 | `ownerId` | `dynamic` | — | Identifier of owner. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L227)
 
 <a id="function-function-minisql-executor-dml-tableschemastate-function-tableschemastate-database-table-src-minisql-executor-dml-ml-716044179"></a>
 ### tableSchemaState
@@ -2036,7 +2054,7 @@ Implements table schema state for this module. Returns the computed value or ope
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L381)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L383)
 
 <a id="function-function-minisql-executor-dml-targetmilestone-function-targetmilestone-src-minisql-executor-dml-ml-2010450604"></a>
 ### targetMilestone
@@ -2060,7 +2078,7 @@ const TRANSACTION_STATE = 9011
 Defines the transaction state constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L42)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L44)
 
 <a id="function-function-minisql-executor-dml-truncate-function-truncate-database-sessionid-bound-pagetransaction-src-minisql-executor-dml-ml-1652057047"></a>
 ### truncate
@@ -2079,7 +2097,7 @@ Implements truncate for this module. Requires arguments that satisfy the validat
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1188)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1190)
 
 <a id="constant-constant-minisql-executor-dml-type-mismatch-const-type-mismatch-9017-src-minisql-executor-dml-ml-1967723360"></a>
 ### TYPE_MISMATCH
@@ -2091,7 +2109,7 @@ const TYPE_MISMATCH = 9017
 Defines the type mismatch constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L52)
 
 <a id="function-function-minisql-executor-dml-uniqueconstraints-function-uniqueconstraints-database-table-src-minisql-executor-dml-ml-309730813"></a>
 ### uniqueConstraints
@@ -2108,7 +2126,7 @@ Implements unique constraints for this module. Returns the computed value or ope
 | `table` | `dynamic` | — | table value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L924)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L926)
 
 <a id="constant-constant-minisql-executor-dml-unsupported-sql-const-unsupported-sql-9025-src-minisql-executor-dml-ml-1214782421"></a>
 ### UNSUPPORTED_SQL
@@ -2120,7 +2138,7 @@ const UNSUPPORTED_SQL = 9025
 Defines the unsupported sql constant used by the minisql executor dml module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L60)
 
 <a id="function-function-minisql-executor-dml-update-function-update-database-sessionid-bound-pagetransaction-src-minisql-executor-dml-ml-629996283"></a>
 ### update
@@ -2139,7 +2157,7 @@ Implements update for this module. Requires arguments that satisfy the validatio
 | `pageTransaction` | `dynamic` | — | pageTransaction value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1124)
 
 <a id="function-function-minisql-executor-dml-updateinner-function-updateinner-database-sessionid-bound-pagetransaction-file-src-minisql-executor-dml-ml-900909655"></a>
 ### updateInner
@@ -2159,7 +2177,7 @@ Implements update inner for this module. Requires arguments that satisfy the val
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1078)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1080)
 
 <a id="function-function-minisql-executor-dml-vacuum-function-vacuum-database-tablename-src-minisql-executor-dml-ml-326428534"></a>
 ### vacuum
@@ -2230,7 +2248,7 @@ Validates check using the supplied inputs. Returns the computed value or operati
 | `row` | `dynamic` | — | row value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L603)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L605)
 
 <a id="function-function-minisql-executor-dml-validatedeletereferences-function-validatedeletereferences-database-table-row-pagetransaction-file-src-minisql-executor-dml-ml-1466109574"></a>
 ### validateDeleteReferences
@@ -2250,7 +2268,7 @@ Validates delete references using the supplied inputs. Requires arguments that s
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L872)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L874)
 
 <a id="function-function-minisql-executor-dml-validateexistingconstraint-function-validateexistingconstraint-database-bound-src-minisql-executor-dml-ml-781926743"></a>
 ### validateExistingConstraint
@@ -2267,7 +2285,7 @@ Validates existing constraint using the supplied inputs. Requires arguments that
 | `bound` | `dynamic` | — | bound value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L826)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L828)
 
 <a id="function-function-minisql-executor-dml-validateforeignkey-function-validateforeignkey-database-table-constraint-row-pagetransaction-file-src-minisql-executor-dml-ml-423621895"></a>
 ### validateForeignKey
@@ -2288,7 +2306,7 @@ Validates foreign key using the supplied inputs. Returns the computed value or o
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L661)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L663)
 
 <a id="function-function-minisql-executor-dml-validateindexentryvalueshape-function-validateindexentryvalueshape-constraint-encoded-src-minisql-executor-dml-ml-592518047"></a>
 ### validateIndexEntryValueShape
@@ -2297,7 +2315,7 @@ Validates foreign key using the supplied inputs. Returns the computed value or o
 function validateIndexEntryValueShape(constraint, encoded)
 ```
 
-Validates the leaf-value shape before a heap-backed scan consumes only its row-reference prefix. Full payload decoding remains exclusive to index-only scans, while ordinary legacy values still require an exact 12-byte length.
+Validates the leaf-value shape before a heap-backed scan consumes only its row-reference prefix. Full payload decoding remains exclusive to index-only scans, while values without INCLUDE require an exact 12-byte length.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -2305,7 +2323,7 @@ Validates the leaf-value shape before a heap-backed scan consumes only its row-r
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1454)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1462)
 
 <a id="function-function-minisql-executor-dml-validaterow-function-validaterow-database-table-row-pagetransaction-excludedreference-file-src-minisql-executor-dml-ml-1099341395"></a>
 ### validateRow
@@ -2326,7 +2344,7 @@ Validates row using the supplied inputs. Requires arguments that satisfy the val
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L689)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L691)
 
 <a id="function-function-minisql-executor-dml-validateunique-function-validateunique-database-table-constraint-row-pagetransaction-excludedreference-file-src-minisql-executor-dml-ml-2067003224"></a>
 ### validateUnique
@@ -2348,7 +2366,7 @@ Validates unique using the supplied inputs. Returns the computed value or operat
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L636)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L638)
 
 <a id="function-function-minisql-executor-dml-validateuniquebatch-function-validateuniquebatch-database-table-rows-pagetransaction-file-src-minisql-executor-dml-ml-251254079"></a>
 ### validateUniqueBatch
@@ -2368,7 +2386,7 @@ Validates all unique keys for a statement from one stable table snapshot. Precom
 | `file` | `dynamic` | — | file value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L719)
 
 <a id="function-function-minisql-executor-dml-verifyallindexes-function-verifyallindexes-database-src-minisql-executor-dml-ml-1339064481"></a>
 ### verifyAllIndexes
@@ -2384,7 +2402,7 @@ Verifies all indexes using the supplied inputs. Returns the computed value or op
 | `database` | `dynamic` | — | database value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1882)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1895)
 
 <a id="function-function-minisql-executor-dml-verifyindex-function-verifyindex-database-table-constraint-src-minisql-executor-dml-ml-687328344"></a>
 ### verifyIndex
@@ -2402,7 +2420,7 @@ Verifies one index while guaranteeing that both read-only handles are closed on 
 | `constraint` | `dynamic` | — | constraint value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1863)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1876)
 
 <a id="function-function-minisql-executor-dml-verifyindexstreaming-function-verifyindexstreaming-database-table-constraint-tree-reader-src-minisql-executor-dml-ml-125543123"></a>
 ### verifyIndexStreaming
@@ -2422,7 +2440,7 @@ Compares one derived index with the heap through forward-only row reads and loga
 | `reader` | `dynamic` | — | reader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1824)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1837)
 
 <a id="function-function-minisql-executor-dml-visiblepage-function-visiblepage-pagetransaction-file-tableid-pagenumber-src-minisql-executor-dml-ml-1079008686"></a>
 ### visiblePage
@@ -2441,7 +2459,7 @@ Implements visible page for this module. Requires arguments that satisfy the val
 | `pageNumber` | `dynamic` | — | pageNumber value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L139)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L141)
 
 <a id="function-function-minisql-executor-dml-writepublicationbatch-function-writepublicationbatch-file-firstpagenumber-images-src-minisql-executor-dml-ml-723910868"></a>
 ### writePublicationBatch
@@ -2459,7 +2477,7 @@ Writes one consecutive publication batch. Keeping batches below 512 KiB amortize
 | `images` | `dynamic` | — | images value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1249)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/executor/dml.ml#L1251)
 
 <a id="function-function-minisql-executor-dml-writerowstoheap-function-writerowstoheap-path-pagesize-databaseid-table-rows-src-minisql-executor-dml-ml-1437275314"></a>
 ### writeRowsToHeap

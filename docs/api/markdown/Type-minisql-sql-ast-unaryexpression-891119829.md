@@ -12,7 +12,7 @@ struct UnaryExpression
 Groups the unary expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L179)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L187)
 
 ## Members
 
@@ -26,7 +26,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L181)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L189)
 
 <a id="field-field-minisql-sql-ast-unaryexpression-operand-operand-src-minisql-sql-ast-ml-1818806724"></a>
 ### operand
@@ -38,7 +38,7 @@ operand
 Stores the operand associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L185)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L193)
 
 <a id="field-field-minisql-sql-ast-unaryexpression-operatorvalue-operatorvalue-src-minisql-sql-ast-ml-1081552436"></a>
 ### operatorValue
@@ -50,4 +50,4 @@ operatorValue
 Stores the operator associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L183)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L191)

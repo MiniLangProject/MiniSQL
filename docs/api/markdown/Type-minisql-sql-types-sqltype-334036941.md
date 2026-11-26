@@ -16,6 +16,30 @@ Groups the SQL type state and preserves the field relationships documented below
 
 ## Members
 
+<a id="field-field-minisql-sql-types-sqltype-characterset-characterset-src-minisql-sql-types-ml-1411606693"></a>
+### characterSet
+
+```ml
+characterSet
+```
+
+Explicit routine character set; empty preserves the database default.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L71)
+
+<a id="field-field-minisql-sql-types-sqltype-collation-collation-src-minisql-sql-types-ml-1461270931"></a>
+### collation
+
+```ml
+collation
+```
+
+Explicit routine collation; only implemented binary comparisons are accepted.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L73)
+
 <a id="field-field-minisql-sql-types-sqltype-kind-kind-src-minisql-sql-types-ml-1166329403"></a>
 ### kind
 

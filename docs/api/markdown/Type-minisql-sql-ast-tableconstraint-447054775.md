@@ -12,7 +12,7 @@ struct TableConstraint
 Groups the table constraint state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L383)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L391)
 
 ## Members
 
@@ -26,7 +26,7 @@ columns
 Contains the ordered columns collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L389)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L397)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-expression-expression-src-minisql-sql-ast-ml-397560126"></a>
 ### expression
@@ -38,7 +38,7 @@ expression
 Stores the expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L391)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L399)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-kind-kind-src-minisql-sql-ast-ml-1535399466"></a>
 ### kind
@@ -50,7 +50,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L385)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L393)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-name-name-src-minisql-sql-ast-ml-371539700"></a>
 ### name
@@ -62,7 +62,7 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L387)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L395)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-ondelete-ondelete-src-minisql-sql-ast-ml-539929682"></a>
 ### onDelete
@@ -74,7 +74,7 @@ onDelete
 Stores the on delete associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L397)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L405)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-onupdate-onupdate-src-minisql-sql-ast-ml-211146630"></a>
 ### onUpdate
@@ -86,7 +86,7 @@ onUpdate
 Stores the on update associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L399)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L407)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-referencescolumns-referencescolumns-src-minisql-sql-ast-ml-818277374"></a>
 ### referencesColumns
@@ -98,7 +98,7 @@ referencesColumns
 Stores the references columns associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L395)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L403)
 
 <a id="field-field-minisql-sql-ast-tableconstraint-referencestable-referencestable-src-minisql-sql-ast-ml-873819014"></a>
 ### referencesTable
@@ -110,4 +110,4 @@ referencesTable
 Stores the references table associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L393)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L401)

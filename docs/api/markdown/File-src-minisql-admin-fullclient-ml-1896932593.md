@@ -51,7 +51,7 @@ Returns the currently selected structured result tab.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1805)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1822)
 
 <a id="function-function-minisql-admin-fullclient-addresulttab-function-addresulttab-state-sqltext-view-responses-elapsedmilliseconds-src-minisql-admin-fullclient-ml-646778377"></a>
 ### addResultTab
@@ -122,7 +122,7 @@ Begins an explicit MiniSQL transaction.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L971)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L988)
 
 - [minisql.admin.fullclient.Bookmark](Type-minisql-admin-fullclient-bookmark-736301461.md) — struct
 <a id="function-function-minisql-admin-fullclient-bookmarklines-function-bookmarklines-bookmarks-src-minisql-admin-fullclient-ml-89519503"></a>
@@ -156,7 +156,7 @@ Returns SQL for a bookmark and substitutes the selected table where required.
 | `label` | `dynamic` | — | label value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1846)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1863)
 
 <a id="function-function-minisql-admin-fullclient-byteoffsetforutf16-function-byteoffsetforutf16-text-wantedunits-src-minisql-admin-fullclient-ml-255482271"></a>
 ### byteOffsetForUtf16
@@ -189,7 +189,7 @@ Clears result tabs while preserving SQL history.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1835)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1852)
 
 <a id="function-function-minisql-admin-fullclient-clipboardfield-function-clipboardfield-value-src-minisql-admin-fullclient-ml-603651133"></a>
 ### clipboardField
@@ -205,7 +205,7 @@ Escapes tabs, line endings, and backslashes for lossless clipboard TSV.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1601)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1618)
 
 <a id="function-function-minisql-admin-fullclient-close-function-close-state-src-minisql-admin-fullclient-ml-528213897"></a>
 ### close
@@ -238,7 +238,7 @@ Closes one result page and keeps the nearest surviving page selected.
 | `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1813)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1830)
 
 <a id="function-function-minisql-admin-fullclient-columnmetadata-function-columnmetadata-details-columnname-src-minisql-admin-fullclient-ml-869187535"></a>
 ### columnMetadata
@@ -255,7 +255,7 @@ Finds one DESCRIBE row by exact column name.
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1061)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1078)
 
 <a id="function-function-minisql-admin-fullclient-committransaction-function-committransaction-state-src-minisql-admin-fullclient-ml-1152326531"></a>
 ### commitTransaction
@@ -271,7 +271,7 @@ Commits the current explicit MiniSQL transaction.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L977)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L994)
 
 <a id="function-function-minisql-admin-fullclient-componentname-function-componentname-src-minisql-admin-fullclient-ml-176825148"></a>
 ### componentName
@@ -283,7 +283,7 @@ function componentName()
 Performs the componentName operation for the minisql admin fullclient module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1874)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1891)
 
 - [minisql.admin.fullclient.ConnectionProfile](Type-minisql-admin-fullclient-connectionprofile-100413438.md) — struct
 <a id="function-function-minisql-admin-fullclient-containstext-function-containstext-values-wanted-src-minisql-admin-fullclient-ml-1313396471"></a>
@@ -301,7 +301,7 @@ Returns whether an array contains an exact string.
 | `wanted` | `dynamic` | — | wanted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1005)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1022)
 
 <a id="function-function-minisql-admin-fullclient-createdatabrowseoptions-function-createdatabrowseoptions-filtertext-sortcolumn-ascending-page-pagesize-src-minisql-admin-fullclient-ml-544639304"></a>
 ### createDataBrowseOptions
@@ -321,7 +321,7 @@ Constructs validated table-browser paging, filter, and ordering options.
 | `pageSize` | `dynamic` | — | pageSize value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1196)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1213)
 
 <a id="function-function-minisql-admin-fullclient-createprofile-function-createprofile-name-address-port-servername-databasename-username-tls-pinsha256-trustedlocal-src-minisql-admin-fullclient-ml-51625135"></a>
 ### createProfile
@@ -361,7 +361,7 @@ Escapes one cell for RFC 4180-compatible UTF-8 CSV output.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1569)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1586)
 
 <a id="function-function-minisql-admin-fullclient-currentstatementsql-function-currentstatementsql-text-caretoffset-src-minisql-admin-fullclient-ml-89388937"></a>
 ### currentStatementSql
@@ -396,7 +396,7 @@ Finds a named preview column so key values can be read from a selected row.
 | `columnName` | `dynamic` | — | columnName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1072)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1089)
 
 <a id="function-function-minisql-admin-fullclient-datacountsql-function-datacountsql-tablename-options-src-minisql-admin-fullclient-ml-907346689"></a>
 ### dataCountSql
@@ -413,7 +413,7 @@ Builds the matching filtered row-count query used by pagination controls.
 | `options` | `dynamic` | — | Options controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1236)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1253)
 
 <a id="function-function-minisql-admin-fullclient-dataeditorvalues-function-dataeditorvalues-details-rowindex-duplicate-src-minisql-admin-fullclient-ml-821475761"></a>
 ### dataEditorValues
@@ -431,7 +431,7 @@ Creates initial editor values for a new, copied, or existing preview row.
 | `duplicate` | `dynamic` | — | duplicate value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1363)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1380)
 
 <a id="function-function-minisql-admin-fullclient-datagridwithchanges-function-datagridwithchanges-details-changes-src-minisql-admin-fullclient-ml-621112343"></a>
 ### dataGridWithChanges
@@ -448,7 +448,7 @@ Builds an optimistic Data-page grid with explicit pending-change markers.
 | `changes` | `dynamic` | — | changes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1525)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1542)
 
 <a id="function-function-minisql-admin-fullclient-datarowpredicate-function-datarowpredicate-details-originalrow-src-minisql-admin-fullclient-ml-1174623581"></a>
 ### dataRowPredicate
@@ -465,7 +465,7 @@ Builds the stable key predicate used by UPDATE and DELETE from original row valu
 | `originalRow` | `dynamic` | — | originalRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1392)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1409)
 
 <a id="function-function-minisql-admin-fullclient-dataselectsql-function-dataselectsql-tablename-options-src-minisql-admin-fullclient-ml-1885093673"></a>
 ### dataSelectSql
@@ -482,7 +482,7 @@ Builds the bounded SELECT used by the editable table browser.
 | `options` | `dynamic` | — | Options controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1234)
 
 <a id="function-function-minisql-admin-fullclient-ddlfromdescribe-function-ddlfromdescribe-tablename-response-src-minisql-admin-fullclient-ml-1990013888"></a>
 ### ddlFromDescribe
@@ -499,7 +499,7 @@ Converts validated DESCRIBE metadata into a readable CREATE TABLE preview.
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1015)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1032)
 
 <a id="function-function-minisql-admin-fullclient-decodeclipboardfield-function-decodeclipboardfield-raw-src-minisql-admin-fullclient-ml-1994729800"></a>
 ### decodeClipboardField
@@ -515,7 +515,7 @@ Decodes one escaped clipboard field without interpreting SQL syntax.
 | `raw` | `dynamic` | — | raw value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1643)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1660)
 
 <a id="constant-constant-minisql-admin-fullclient-default-data-page-size-const-default-data-page-size-100-src-minisql-admin-fullclient-ml-730053340"></a>
 ### DEFAULT_DATA_PAGE_SIZE
@@ -551,7 +551,7 @@ function defaultDataBrowseOptions()
 Returns the default first-page data-browser options.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1227)
 
 <a id="function-function-minisql-admin-fullclient-deletedatasql-function-deletedatasql-details-originalrow-src-minisql-admin-fullclient-ml-677883943"></a>
 ### deleteDataSql
@@ -568,7 +568,7 @@ Generates a key-constrained DELETE statement for a selected preview row.
 | `originalRow` | `dynamic` | — | originalRow value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1475)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1492)
 
 <a id="function-function-minisql-admin-fullclient-describetable-function-describetable-state-tablename-src-minisql-admin-fullclient-ml-1205151902"></a>
 ### describeTable
@@ -585,7 +585,7 @@ Loads the default first page while preserving the original public API.
 | `tableName` | `dynamic` | — | tableName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1763)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1780)
 
 <a id="function-function-minisql-admin-fullclient-describetableview-function-describetableview-state-tablename-options-src-minisql-admin-fullclient-ml-1909196036"></a>
 ### describeTableView
@@ -603,7 +603,7 @@ Loads a filtered, ordered, and paginated set of detail pages for one table.
 | `options` | `dynamic` | — | Options controlling the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1736)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1753)
 
 - [minisql.admin.fullclient.DetailGrid](Type-minisql-admin-fullclient-detailgrid-555760296.md) — struct
 <a id="function-function-minisql-admin-fullclient-detailgridbyname-function-detailgridbyname-state-name-src-minisql-admin-fullclient-ml-173644232"></a>
@@ -621,7 +621,7 @@ Returns the structured object-detail grid for a page or void for textual pages.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1048)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1065)
 
 <a id="function-function-minisql-admin-fullclient-detailgridfromresponse-function-detailgridfromresponse-response-src-minisql-admin-fullclient-ml-1962316985"></a>
 ### detailGridFromResponse
@@ -637,7 +637,7 @@ Converts one successful row response into a native-grid model without formatting
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1040)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1057)
 
 <a id="function-function-minisql-admin-fullclient-detailtablines-function-detailtablines-state-src-minisql-admin-fullclient-ml-2104202377"></a>
 ### detailTabLines
@@ -653,7 +653,7 @@ Returns names of the object-detail notebook pages.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1769)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1786)
 
 <a id="function-function-minisql-admin-fullclient-detailtextbyname-function-detailtextbyname-state-name-src-minisql-admin-fullclient-ml-890373564"></a>
 ### detailTextByName
@@ -670,7 +670,7 @@ Returns the selected detail-page text by its tab label.
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1777)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1794)
 
 <a id="function-function-minisql-admin-fullclient-editablekeycolumns-function-editablekeycolumns-details-src-minisql-admin-fullclient-ml-1487520508"></a>
 ### editableKeyColumns
@@ -686,7 +686,7 @@ Selects a primary key, or the first unique key, for safe single-row mutations.
 | `details` | `dynamic` | — | details value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1339)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1356)
 
 <a id="function-function-minisql-admin-fullclient-editorsqlforexecution-function-editorsqlforexecution-text-selectionstart-selectionend-wholescript-src-minisql-admin-fullclient-ml-1929292220"></a>
 ### editorSqlForExecution
@@ -723,7 +723,7 @@ Converts one row-editor value into a type-aware SQL literal.
 | `allowDefault` | `dynamic` | — | allowDefault value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1146)
 
 <a id="function-function-minisql-admin-fullclient-editorvaluefromdata-function-editorvaluefromdata-metadatarow-value-src-minisql-admin-fullclient-ml-642855600"></a>
 ### editorValueFromData
@@ -740,7 +740,7 @@ Converts one preview value back into the explicit row-editor sentinel form.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1354)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1371)
 
 <a id="function-function-minisql-admin-fullclient-emptyqueryview-function-emptyqueryview-src-minisql-admin-fullclient-ml-2083799764"></a>
 ### emptyQueryView
@@ -813,7 +813,7 @@ Executes a generated mutation batch atomically, using a savepoint inside an exis
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L885)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L902)
 
 <a id="function-function-minisql-admin-fullclient-executesql-function-executesql-state-sqltext-src-minisql-admin-fullclient-ml-1954448488"></a>
 ### executeSql
@@ -847,7 +847,7 @@ Executes EXPLAIN for the editor selection.
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L946)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L963)
 
 <a id="function-function-minisql-admin-fullclient-fail-function-fail-operation-message-src-minisql-admin-fullclient-ml-1395488320"></a>
 ### fail
@@ -881,7 +881,7 @@ Filters redacted worksheet history case-insensitively for the sidebar search box
 | `searchText` | `dynamic` | — | searchText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1703)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1720)
 
 - [minisql.admin.fullclient.FullClientState](Type-minisql-admin-fullclient-fullclientstate-729553152.md) — struct
 <a id="function-function-minisql-admin-fullclient-gridclipboardtext-function-gridclipboardtext-grid-selectedrows-includeheader-src-minisql-admin-fullclient-ml-414241811"></a>
@@ -900,7 +900,7 @@ Serializes selected grid rows as escaped tab-separated clipboard text.
 | `includeHeader` | `dynamic` | — | includeHeader value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1621)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1638)
 
 <a id="function-function-minisql-admin-fullclient-gridcsv-function-gridcsv-grid-src-minisql-admin-fullclient-ml-473494056"></a>
 ### gridCsv
@@ -916,7 +916,7 @@ Serializes a structured grid as deterministic CRLF-terminated CSV.
 | `grid` | `dynamic` | — | Identifier of gr. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1584)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1601)
 
 <a id="function-function-minisql-admin-fullclient-historysql-function-historysql-sqltext-src-minisql-admin-fullclient-ml-147719435"></a>
 ### historySql
@@ -949,7 +949,7 @@ Generates an INSERT statement while omitting identity/default sentinel fields.
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1416)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1433)
 
 <a id="constant-constant-minisql-admin-fullclient-invalid-argument-const-invalid-argument-9001-src-minisql-admin-fullclient-ml-1857669857"></a>
 ### INVALID_ARGUMENT
@@ -973,7 +973,7 @@ function isImplemented()
 Reports that the workbench model is implemented.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1884)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1901)
 
 <a id="function-function-minisql-admin-fullclient-issensitivesql-function-issensitivesql-sqltext-src-minisql-admin-fullclient-ml-626425691"></a>
 ### isSensitiveSql
@@ -1091,7 +1091,7 @@ Creates a sequentially named independent SQL worksheet.
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1717)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1734)
 
 <a id="function-function-minisql-admin-fullclient-numericcolumntype-function-numericcolumntype-typetext-src-minisql-admin-fullclient-ml-1673098235"></a>
 ### numericColumnType
@@ -1107,7 +1107,7 @@ Returns whether a DESCRIBE type must be emitted as an unquoted numeric literal.
 | `typeText` | `dynamic` | — | typeText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1084)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1101)
 
 <a id="function-function-minisql-admin-fullclient-numericeditorvalue-function-numericeditorvalue-value-src-minisql-admin-fullclient-ml-56401961"></a>
 ### numericEditorValue
@@ -1123,7 +1123,7 @@ Performs a conservative lexical check before passing a numeric literal to MiniSQ
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1092)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1109)
 
 <a id="function-function-minisql-admin-fullclient-openprofile-function-openprofile-profile-passwordbytes-src-minisql-admin-fullclient-ml-1723806739"></a>
 ### openProfile
@@ -1173,7 +1173,7 @@ Parses escaped TSV clipboard rows into a rectangular array.
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1686)
 
 <a id="function-function-minisql-admin-fullclient-pendingdatachange-function-pendingdatachange-kind-sqltext-rowindex-values-src-minisql-admin-fullclient-ml-1131535285"></a>
 ### pendingDataChange
@@ -1192,7 +1192,7 @@ Creates one validated pending row change for preview and deferred application.
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1488)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1505)
 
 - [minisql.admin.fullclient.PendingDataChange](Type-minisql-admin-fullclient-pendingdatachange-2071346960.md) — struct
 <a id="function-function-minisql-admin-fullclient-pendingdatasql-function-pendingdatasql-changes-src-minisql-admin-fullclient-ml-1784552505"></a>
@@ -1209,7 +1209,7 @@ Joins pending statements into the exact SQL preview submitted by Apply Changes.
 | `changes` | `dynamic` | — | changes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1556)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1573)
 
 <a id="function-function-minisql-admin-fullclient-previeweditorvalue-function-previeweditorvalue-value-src-minisql-admin-fullclient-ml-508934853"></a>
 ### previewEditorValue
@@ -1225,7 +1225,7 @@ Converts editor sentinels into the text shown by the optimistic data grid.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1499)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1516)
 
 <a id="function-function-minisql-admin-fullclient-previewrowfromvalues-function-previewrowfromvalues-details-values-src-minisql-admin-fullclient-ml-2136424298"></a>
 ### previewRowFromValues
@@ -1242,7 +1242,7 @@ Aligns DESCRIBE-ordered editor values with SELECT result-column order.
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1508)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1525)
 
 <a id="function-function-minisql-admin-fullclient-queryfortable-function-queryfortable-state-tablename-src-minisql-admin-fullclient-ml-1942406862"></a>
 ### queryForTable
@@ -1259,7 +1259,7 @@ Returns a SELECT template for the selected table.
 | `tableName` | `dynamic` | — | tableName value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1867)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1884)
 
 <a id="function-function-minisql-admin-fullclient-queryone-function-queryone-state-sqltext-src-minisql-admin-fullclient-ml-1735480708"></a>
 ### queryOne
@@ -1293,7 +1293,7 @@ Quotes a comma-separated identifier list for CREATE INDEX generation.
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1252)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1269)
 
 <a id="function-function-minisql-admin-fullclient-quotedidentifier-function-quotedidentifier-value-src-minisql-admin-fullclient-ml-484319457"></a>
 ### quotedIdentifier
@@ -1357,7 +1357,7 @@ Refreshes the object browser from SHOW TABLES without creating a result tab.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L989)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1006)
 
 <a id="function-function-minisql-admin-fullclient-renderresponse-function-renderresponse-response-src-minisql-admin-fullclient-ml-1422798917"></a>
 ### renderResponse
@@ -1407,7 +1407,7 @@ Returns compact result-tab labels including status, rows, and elapsed time.
 | `tabs` | `dynamic` | — | tabs value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1790)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1807)
 
 <a id="function-function-minisql-admin-fullclient-rollbacktransaction-function-rollbacktransaction-state-src-minisql-admin-fullclient-ml-97778449"></a>
 ### rollbackTransaction
@@ -1423,7 +1423,7 @@ Rolls back the current explicit MiniSQL transaction.
 | `state` | `dynamic` | — | Mutable state inspected or updated by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L983)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1000)
 
 <a id="function-function-minisql-admin-fullclient-schemaactionlines-function-schemaactionlines-src-minisql-admin-fullclient-ml-1308653676"></a>
 ### schemaActionLines
@@ -1435,7 +1435,7 @@ function schemaActionLines()
 Returns the schema-designer actions in stable native-list order.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1263)
 
 <a id="function-function-minisql-admin-fullclient-schemaeditorsql-function-schemaeditorsql-action-tablename-objectname-definition-optiontext-src-minisql-admin-fullclient-ml-1808676032"></a>
 ### schemaEditorSql
@@ -1455,7 +1455,7 @@ Generates one previewable schema mutation from the structured designer fields.
 | `optionText` | `dynamic` | — | optionText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1271)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1288)
 
 <a id="function-function-minisql-admin-fullclient-splitindexcolumns-function-splitindexcolumns-text-src-minisql-admin-fullclient-ml-462366051"></a>
 ### splitIndexColumns
@@ -1471,7 +1471,7 @@ Splits the SHOW INDEXES comma-separated key column list into trimmed identifiers
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1155)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1172)
 
 <a id="constant-constant-minisql-admin-fullclient-sql-style-comment-const-sql-style-comment-4-src-minisql-admin-fullclient-ml-1549272917"></a>
 ### SQL_STYLE_COMMENT
@@ -1595,7 +1595,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql admin fullclient module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1879)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1896)
 
 <a id="function-function-minisql-admin-fullclient-textcontains-function-textcontains-text-wanted-src-minisql-admin-fullclient-ml-1916470088"></a>
 ### textContains
@@ -1648,7 +1648,7 @@ Executes a transaction-control statement and updates toolbar state.
 | `activeAfter` | `dynamic` | — | activeAfter value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L962)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L979)
 
 <a id="function-function-minisql-admin-fullclient-updatedatasql-function-updatedatasql-details-originalrow-values-src-minisql-admin-fullclient-ml-1552837669"></a>
 ### updateDataSql
@@ -1666,7 +1666,7 @@ Generates a key-constrained UPDATE statement for a selected preview row.
 | `values` | `dynamic` | — | values value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1444)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1461)
 
 <a id="function-function-minisql-admin-fullclient-utf16length-function-utf16length-text-src-minisql-admin-fullclient-ml-200871601"></a>
 ### utf16Length
@@ -1717,7 +1717,7 @@ Rejects statement separators and SQL comments from a user-entered SQL fragment.
 | `allowEmpty` | `dynamic` | — | allowEmpty value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1178)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1195)
 
 - [minisql.admin.fullclient.Worksheet](Type-minisql-admin-fullclient-worksheet-1254434151.md) — struct
 <a id="function-function-minisql-admin-fullclient-worksheetlines-function-worksheetlines-worksheets-src-minisql-admin-fullclient-ml-356885119"></a>
@@ -1734,4 +1734,4 @@ Returns stable worksheet labels for the native tab strip.
 | `worksheets` | `dynamic` | — | worksheets value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1724)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/admin/fullclient.ml#L1741)

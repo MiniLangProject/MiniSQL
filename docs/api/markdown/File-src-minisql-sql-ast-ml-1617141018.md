@@ -8,6 +8,10 @@ Package: [`minisql.sql.ast`](Package-minisql-sql-ast-313758762.md)
 
 Reachable from entry: **yes**
 
+## Imports
+
+- `minisql/sql/dialect.ml` as `dialect` → [src/minisql/sql/dialect.ml](File-src-minisql-sql-dialect-ml-1642253820.md)
+
 ## Declarations
 
 <a id="constant-constant-minisql-sql-ast-alter-table-add-column-const-alter-table-add-column-1-src-minisql-sql-ast-ml-1778310820"></a>
@@ -20,7 +24,7 @@ const ALTER_TABLE_ADD_COLUMN = 1
 Defines the alter table add column constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L110)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L114)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-add-constraint-const-alter-table-add-constraint-4-src-minisql-sql-ast-ml-748055927"></a>
 ### ALTER_TABLE_ADD_CONSTRAINT
@@ -32,7 +36,7 @@ const ALTER_TABLE_ADD_CONSTRAINT = 4
 Defines the alter table add constraint constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L116)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L120)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-drop-column-const-alter-table-drop-column-6-src-minisql-sql-ast-ml-2135584673"></a>
 ### ALTER_TABLE_DROP_COLUMN
@@ -44,7 +48,7 @@ const ALTER_TABLE_DROP_COLUMN = 6
 Defines the alter table drop column constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L120)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L124)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-drop-constraint-const-alter-table-drop-constraint-5-src-minisql-sql-ast-ml-1699572130"></a>
 ### ALTER_TABLE_DROP_CONSTRAINT
@@ -56,7 +60,7 @@ const ALTER_TABLE_DROP_CONSTRAINT = 5
 Defines the alter table drop constraint constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L118)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L122)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-drop-default-const-alter-table-drop-default-8-src-minisql-sql-ast-ml-1868763959"></a>
 ### ALTER_TABLE_DROP_DEFAULT
@@ -68,7 +72,7 @@ const ALTER_TABLE_DROP_DEFAULT = 8
 Defines the alter table drop default constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L124)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L128)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-drop-not-null-const-alter-table-drop-not-null-10-src-minisql-sql-ast-ml-1302119716"></a>
 ### ALTER_TABLE_DROP_NOT_NULL
@@ -80,7 +84,7 @@ const ALTER_TABLE_DROP_NOT_NULL = 10
 Defines the alter table drop not null constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L132)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-rename-column-const-alter-table-rename-column-2-src-minisql-sql-ast-ml-1545450233"></a>
 ### ALTER_TABLE_RENAME_COLUMN
@@ -92,7 +96,7 @@ const ALTER_TABLE_RENAME_COLUMN = 2
 Defines the alter table rename column constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L112)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L116)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-rename-table-const-alter-table-rename-table-3-src-minisql-sql-ast-ml-1021059132"></a>
 ### ALTER_TABLE_RENAME_TABLE
@@ -104,7 +108,7 @@ const ALTER_TABLE_RENAME_TABLE = 3
 Defines the alter table rename table constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L118)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-set-default-const-alter-table-set-default-7-src-minisql-sql-ast-ml-993683288"></a>
 ### ALTER_TABLE_SET_DEFAULT
@@ -116,7 +120,7 @@ const ALTER_TABLE_SET_DEFAULT = 7
 Defines the alter table set default constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L122)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L126)
 
 <a id="constant-constant-minisql-sql-ast-alter-table-set-not-null-const-alter-table-set-not-null-9-src-minisql-sql-ast-ml-471830140"></a>
 ### ALTER_TABLE_SET_NOT_NULL
@@ -128,7 +132,7 @@ const ALTER_TABLE_SET_NOT_NULL = 9
 Defines the alter table set not null constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L126)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L130)
 
 <a id="constant-constant-minisql-sql-ast-alter-user-disable-const-alter-user-disable-3-src-minisql-sql-ast-ml-309882380"></a>
 ### ALTER_USER_DISABLE
@@ -140,7 +144,7 @@ const ALTER_USER_DISABLE = 3
 Defines the alter user disable constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L105)
 
 <a id="constant-constant-minisql-sql-ast-alter-user-enable-const-alter-user-enable-2-src-minisql-sql-ast-ml-598432337"></a>
 ### ALTER_USER_ENABLE
@@ -152,7 +156,7 @@ const ALTER_USER_ENABLE = 2
 Defines the alter user enable constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L101)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L103)
 
 <a id="constant-constant-minisql-sql-ast-alter-user-password-const-alter-user-password-1-src-minisql-sql-ast-ml-425343302"></a>
 ### ALTER_USER_PASSWORD
@@ -164,7 +168,7 @@ const ALTER_USER_PASSWORD = 1
 Defines the alter user password constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L99)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L101)
 
 - [minisql.sql.ast.AlterTableStatement](Type-minisql-sql-ast-altertablestatement-1207466245.md) — struct
 - [minisql.sql.ast.AlterTriggerStatement](Type-minisql-sql-ast-altertriggerstatement-43120821.md) — struct
@@ -189,7 +193,7 @@ Implements between expression for this module. Requires arguments that satisfy t
 | `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1158)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1192)
 
 - [minisql.sql.ast.BetweenExpression](Type-minisql-sql-ast-betweenexpression-1728802310.md) — struct
 <a id="function-function-minisql-sql-ast-binaryexpression-function-binaryexpression-operatorvalue-left-right-src-minisql-sql-ast-ml-1850423608"></a>
@@ -208,7 +212,7 @@ Implements binary expression for this module. Returns the computed value or oper
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1064)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1098)
 
 - [minisql.sql.ast.BinaryExpression](Type-minisql-sql-ast-binaryexpression-2105074591.md) — struct
 <a id="function-function-minisql-sql-ast-booleanliteral-function-booleanliteral-value-src-minisql-sql-ast-ml-1072649271"></a>
@@ -225,7 +229,7 @@ Implements boolean literal for this module. Returns the computed value or operat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L997)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1031)
 
 - [minisql.sql.ast.CallStatement](Type-minisql-sql-ast-callstatement-75468089.md) — struct
 <a id="function-function-minisql-sql-ast-casebranch-function-casebranch-condition-result-src-minisql-sql-ast-ml-1393747230"></a>
@@ -243,7 +247,7 @@ Implements case branch for this module. Returns its result or propagates a struc
 | `result` | `dynamic` | — | Result object populated or inspected by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1138)
 
 - [minisql.sql.ast.CaseBranch](Type-minisql-sql-ast-casebranch-776387952.md) — struct
 <a id="function-function-minisql-sql-ast-caseexpression-function-caseexpression-branches-elseexpression-src-minisql-sql-ast-ml-1204552305"></a>
@@ -261,7 +265,7 @@ Implements case expression for this module. Requires arguments that satisfy the 
 | `elseExpression` | `dynamic` | — | elseExpression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1115)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1149)
 
 - [minisql.sql.ast.CaseExpression](Type-minisql-sql-ast-caseexpression-1743911362.md) — struct
 <a id="function-function-minisql-sql-ast-castexpression-function-castexpression-operand-targettype-src-minisql-sql-ast-ml-1440532198"></a>
@@ -279,7 +283,7 @@ Casts expression using the supplied inputs. Requires arguments that satisfy the 
 | `targetType` | `dynamic` | — | targetType value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1130)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1164)
 
 - [minisql.sql.ast.CastExpression](Type-minisql-sql-ast-castexpression-2078216309.md) — struct
 - [minisql.sql.ast.ColumnDefinition](Type-minisql-sql-ast-columndefinition-1472993879.md) — struct
@@ -298,7 +302,7 @@ Implements column expression for this module. Returns the computed value or oper
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1037)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1071)
 
 - [minisql.sql.ast.ColumnExpression](Type-minisql-sql-ast-columnexpression-575958076.md) — struct
 - [minisql.sql.ast.CommitStatement](Type-minisql-sql-ast-commitstatement-21949002.md) — struct
@@ -313,7 +317,7 @@ function componentName()
 Performs the componentName operation for the minisql sql ast module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2184)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2708)
 
 <a id="constant-constant-minisql-sql-ast-conflict-do-nothing-const-conflict-do-nothing-1-src-minisql-sql-ast-ml-1809960086"></a>
 ### CONFLICT_DO_NOTHING
@@ -325,7 +329,7 @@ const CONFLICT_DO_NOTHING = 1
 Defines the conflict do nothing constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L92)
 
 <a id="constant-constant-minisql-sql-ast-conflict-do-update-const-conflict-do-update-2-src-minisql-sql-ast-ml-637920611"></a>
 ### CONFLICT_DO_UPDATE
@@ -337,7 +341,7 @@ const CONFLICT_DO_UPDATE = 2
 Defines the conflict do update constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L92)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L94)
 
 <a id="constant-constant-minisql-sql-ast-conflict-none-const-conflict-none-0-src-minisql-sql-ast-ml-302954547"></a>
 ### CONFLICT_NONE
@@ -349,7 +353,7 @@ const CONFLICT_NONE = 0
 Defines the conflict none constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L88)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L90)
 
 <a id="constant-constant-minisql-sql-ast-constraint-check-const-constraint-check-3-src-minisql-sql-ast-ml-45991294"></a>
 ### CONSTRAINT_CHECK
@@ -361,7 +365,7 @@ const CONSTRAINT_CHECK = 3
 Defines the constraint check constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L67)
 
 <a id="constant-constant-minisql-sql-ast-constraint-foreign-key-const-constraint-foreign-key-4-src-minisql-sql-ast-ml-1279655877"></a>
 ### CONSTRAINT_FOREIGN_KEY
@@ -373,7 +377,7 @@ const CONSTRAINT_FOREIGN_KEY = 4
 Defines the constraint foreign key constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L69)
 
 <a id="constant-constant-minisql-sql-ast-constraint-primary-key-const-constraint-primary-key-1-src-minisql-sql-ast-ml-756796660"></a>
 ### CONSTRAINT_PRIMARY_KEY
@@ -385,7 +389,7 @@ const CONSTRAINT_PRIMARY_KEY = 1
 Defines the constraint primary key constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L63)
 
 <a id="constant-constant-minisql-sql-ast-constraint-unique-const-constraint-unique-2-src-minisql-sql-ast-ml-1283438001"></a>
 ### CONSTRAINT_UNIQUE
@@ -397,7 +401,7 @@ const CONSTRAINT_UNIQUE = 2
 Defines the constraint unique constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L65)
 
 <a id="function-function-minisql-sql-ast-containstypedliteral-function-containstypedliteral-expression-src-minisql-sql-ast-ml-130976936"></a>
 ### containsTypedLiteral
@@ -413,7 +417,7 @@ Reports whether an expression tree embeds an executor-created typed literal. The
 | `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1850)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1933)
 
 - [minisql.sql.ast.CreateIndexStatement](Type-minisql-sql-ast-createindexstatement-753864273.md) — struct
 - [minisql.sql.ast.CreatePrincipalStatement](Type-minisql-sql-ast-createprincipalstatement-1012906051.md) — struct
@@ -433,7 +437,7 @@ function currentTimestampLiteral()
 Implements current timestamp literal for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1028)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1062)
 
 <a id="constant-constant-minisql-sql-ast-dcl-object-database-const-dcl-object-database-1-src-minisql-sql-ast-ml-1001638022"></a>
 ### DCL_OBJECT_DATABASE
@@ -445,7 +449,19 @@ const DCL_OBJECT_DATABASE = 1
 Defines the dcl object database constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L107)
+
+<a id="constant-constant-minisql-sql-ast-dcl-object-procedure-const-dcl-object-procedure-3-src-minisql-sql-ast-ml-1505698876"></a>
+### DCL_OBJECT_PROCEDURE
+
+```ml
+const DCL_OBJECT_PROCEDURE = 3
+```
+
+Identifies a durable stored procedure privilege target.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L111)
 
 <a id="constant-constant-minisql-sql-ast-dcl-object-table-const-dcl-object-table-2-src-minisql-sql-ast-ml-1324006183"></a>
 ### DCL_OBJECT_TABLE
@@ -457,7 +473,7 @@ const DCL_OBJECT_TABLE = 2
 Defines the dcl object table constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L107)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L109)
 
 - [minisql.sql.ast.DeallocateStatement](Type-minisql-sql-ast-deallocatestatement-405953281.md) — struct
 - [minisql.sql.ast.DeleteStatement](Type-minisql-sql-ast-deletestatement-22603708.md) — struct
@@ -485,7 +501,7 @@ Implements exists expression for this module. Requires arguments that satisfy th
 | `query` | `dynamic` | — | query value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1200)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1234)
 
 - [minisql.sql.ast.ExistsExpression](Type-minisql-sql-ast-existsexpression-1619432718.md) — struct
 - [minisql.sql.ast.ExplainStatement](Type-minisql-sql-ast-explainstatement-986742952.md) — struct
@@ -499,7 +515,7 @@ const EXPR_BETWEEN = 12
 Defines the expr between constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L35)
 
 <a id="constant-constant-minisql-sql-ast-expr-binary-const-expr-binary-5-src-minisql-sql-ast-ml-1768543946"></a>
 ### EXPR_BINARY
@@ -511,7 +527,7 @@ const EXPR_BINARY = 5
 Defines the expr binary constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L19)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L21)
 
 <a id="constant-constant-minisql-sql-ast-expr-case-const-expr-case-9-src-minisql-sql-ast-ml-2138060814"></a>
 ### EXPR_CASE
@@ -523,7 +539,7 @@ const EXPR_CASE = 9
 Defines the expr case constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L29)
 
 <a id="constant-constant-minisql-sql-ast-expr-cast-const-expr-cast-10-src-minisql-sql-ast-ml-1185759452"></a>
 ### EXPR_CAST
@@ -535,7 +551,7 @@ const EXPR_CAST = 10
 Defines the expr cast constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L31)
 
 <a id="constant-constant-minisql-sql-ast-expr-column-const-expr-column-2-src-minisql-sql-ast-ml-431444901"></a>
 ### EXPR_COLUMN
@@ -547,7 +563,7 @@ const EXPR_COLUMN = 2
 Defines the expr column constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L13)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L15)
 
 <a id="constant-constant-minisql-sql-ast-expr-exists-const-expr-exists-16-src-minisql-sql-ast-ml-187168498"></a>
 ### EXPR_EXISTS
@@ -559,7 +575,7 @@ const EXPR_EXISTS = 16
 Defines the expr exists constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L41)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L43)
 
 <a id="constant-constant-minisql-sql-ast-expr-function-const-expr-function-7-src-minisql-sql-ast-ml-495752116"></a>
 ### EXPR_FUNCTION
@@ -571,7 +587,7 @@ const EXPR_FUNCTION = 7
 Defines the expr function constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L25)
 
 <a id="constant-constant-minisql-sql-ast-expr-in-const-expr-in-11-src-minisql-sql-ast-ml-550090581"></a>
 ### EXPR_IN
@@ -583,7 +599,7 @@ const EXPR_IN = 11
 Defines the expr in constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L33)
 
 <a id="constant-constant-minisql-sql-ast-expr-in-subquery-const-expr-in-subquery-17-src-minisql-sql-ast-ml-934093477"></a>
 ### EXPR_IN_SUBQUERY
@@ -595,7 +611,7 @@ const EXPR_IN_SUBQUERY = 17
 Defines the expr in subquery constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L43)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L45)
 
 <a id="constant-constant-minisql-sql-ast-expr-is-null-const-expr-is-null-6-src-minisql-sql-ast-ml-1206827371"></a>
 ### EXPR_IS_NULL
@@ -607,7 +623,7 @@ const EXPR_IS_NULL = 6
 Defines the expr is null constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L21)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L23)
 
 <a id="constant-constant-minisql-sql-ast-expr-literal-const-expr-literal-1-src-minisql-sql-ast-ml-1477254926"></a>
 ### EXPR_LITERAL
@@ -619,7 +635,7 @@ const EXPR_LITERAL = 1
 Syntax tree for the MiniSQL SQL front end. The AST contains no catalog
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L11)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L13)
 
 <a id="constant-constant-minisql-sql-ast-expr-parameter-const-expr-parameter-8-src-minisql-sql-ast-ml-2001258351"></a>
 ### EXPR_PARAMETER
@@ -631,7 +647,7 @@ const EXPR_PARAMETER = 8
 Defines the expr parameter constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L27)
 
 <a id="constant-constant-minisql-sql-ast-expr-star-const-expr-star-3-src-minisql-sql-ast-ml-1803018760"></a>
 ### EXPR_STAR
@@ -643,7 +659,7 @@ const EXPR_STAR = 3
 Defines the expr star constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L15)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L17)
 
 <a id="constant-constant-minisql-sql-ast-expr-subquery-const-expr-subquery-15-src-minisql-sql-ast-ml-2032410593"></a>
 ### EXPR_SUBQUERY
@@ -655,7 +671,7 @@ const EXPR_SUBQUERY = 15
 Defines the expr subquery constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L41)
 
 <a id="constant-constant-minisql-sql-ast-expr-truth-test-const-expr-truth-test-13-src-minisql-sql-ast-ml-1521756191"></a>
 ### EXPR_TRUTH_TEST
@@ -667,7 +683,7 @@ const EXPR_TRUTH_TEST = 13
 Defines the expr truth test constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L37)
 
 <a id="constant-constant-minisql-sql-ast-expr-typed-literal-const-expr-typed-literal-14-src-minisql-sql-ast-ml-1231478462"></a>
 ### EXPR_TYPED_LITERAL
@@ -679,7 +695,7 @@ const EXPR_TYPED_LITERAL = 14
 Defines the expr typed literal constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L39)
 
 <a id="constant-constant-minisql-sql-ast-expr-unary-const-expr-unary-4-src-minisql-sql-ast-ml-2036428755"></a>
 ### EXPR_UNARY
@@ -691,7 +707,7 @@ const EXPR_UNARY = 4
 Defines the expr unary constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L17)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L19)
 
 <a id="constant-constant-minisql-sql-ast-expr-window-const-expr-window-18-src-minisql-sql-ast-ml-1046385016"></a>
 ### EXPR_WINDOW
@@ -703,7 +719,7 @@ const EXPR_WINDOW = 18
 Defines the expr window constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L45)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L47)
 
 <a id="function-function-minisql-sql-ast-expressionkind-function-expressionkind-value-src-minisql-sql-ast-ml-1121485895"></a>
 ### expressionKind
@@ -719,7 +735,7 @@ Implements expression kind for this module. Returns the computed value or operat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1788)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1827)
 
 <a id="function-function-minisql-sql-ast-floatliteral-function-floatliteral-value-src-minisql-sql-ast-ml-1293074239"></a>
 ### floatLiteral
@@ -735,7 +751,71 @@ Implements float literal for this module. Returns the computed value or operatio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1013)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1047)
+
+<a id="function-function-minisql-sql-ast-formataltertable-function-formataltertable-statement-src-minisql-sql-ast-ml-1455480111"></a>
+### formatAlterTable
+
+```ml
+function formatAlterTable(statement)
+```
+
+Formats the table ALTER forms accepted by the parser without losing operands.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `statement` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2462)
+
+<a id="function-function-minisql-sql-ast-formatassignments-function-formatassignments-assignments-src-minisql-sql-ast-ml-1118340218"></a>
+### formatAssignments
+
+```ml
+function formatAssignments(assignments)
+```
+
+Formats UPDATE assignments without dropping any target expression.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `assignments` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2358)
+
+<a id="function-function-minisql-sql-ast-formatcolumndefinition-function-formatcolumndefinition-column-src-minisql-sql-ast-ml-1191462220"></a>
+### formatColumnDefinition
+
+```ml
+function formatColumnDefinition(column)
+```
+
+Retains type, constraints and generated/default expressions in column DDL.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `column` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2393)
+
+<a id="function-function-minisql-sql-ast-formatdclstatement-function-formatdclstatement-statement-src-minisql-sql-ast-ml-1209123111"></a>
+### formatDclStatement
+
+```ml
+function formatDclStatement(statement)
+```
+
+Formats complete DCL AST nodes used in persisted procedure bodies.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `statement` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2421)
 
 <a id="function-function-minisql-sql-ast-formatexpression-function-formatexpression-expression-src-minisql-sql-ast-ml-1266422964"></a>
 ### formatExpression
@@ -751,7 +831,23 @@ Formats expression using the supplied inputs. Requires arguments that satisfy th
 | `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1925)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2008)
+
+<a id="function-function-minisql-sql-ast-formatexpressionlist-function-formatexpressionlist-items-src-minisql-sql-ast-ml-1640283370"></a>
+### formatExpressionList
+
+```ml
+function formatExpressionList(items)
+```
+
+Formats ordered expression operands used by CALL, EXECUTE and VALUES.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2213)
 
 <a id="function-function-minisql-sql-ast-formatfunction-function-formatfunction-expression-src-minisql-sql-ast-ml-1027802040"></a>
 ### formatFunction
@@ -767,7 +863,55 @@ Formats function using the supplied inputs. Returns the computed value or operat
 | `expression` | `dynamic` | — | expression value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1834)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1917)
+
+<a id="function-function-minisql-sql-ast-formatidentifier-function-formatidentifier-name-src-minisql-sql-ast-ml-921794945"></a>
+### formatIdentifier
+
+```ml
+function formatIdentifier(name)
+```
+
+Quotes identifiers only when needed to preserve their spelling or grammar.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1853)
+
+<a id="function-function-minisql-sql-ast-formatidentifierlist-function-formatidentifierlist-names-src-minisql-sql-ast-ml-1454049054"></a>
+### formatIdentifierList
+
+```ml
+function formatIdentifierList(names)
+```
+
+Formats comma-separated identifiers, preserving quoted variable/object names.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `names` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1882)
+
+<a id="function-function-minisql-sql-ast-formatobjectname-function-formatobjectname-name-src-minisql-sql-ast-ml-638353169"></a>
+### formatObjectName
+
+```ml
+function formatObjectName(name)
+```
+
+Serializes the canonical dotted representation of a qualified object/variable.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1871)
 
 <a id="function-function-minisql-sql-ast-formatorderitem-function-formatorderitem-item-src-minisql-sql-ast-ml-411761525"></a>
 ### formatOrderItem
@@ -783,7 +927,103 @@ Formats order item using the supplied inputs. Returns the computed value or oper
 | `item` | `dynamic` | — | item value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2034)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2118)
+
+<a id="function-function-minisql-sql-ast-formatprivilegetarget-function-formatprivilegetarget-statement-src-minisql-sql-ast-ml-710618297"></a>
+### formatPrivilegeTarget
+
+```ml
+function formatPrivilegeTarget(statement)
+```
+
+Serializes database, table and procedure privilege destinations.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `statement` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2414)
+
+<a id="function-function-minisql-sql-ast-formatreturning-function-formatreturning-items-src-minisql-sql-ast-ml-773237900"></a>
+### formatReturning
+
+```ml
+function formatReturning(items)
+```
+
+Preserves a DML RETURNING list in durable procedure definitions.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `items` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2370)
+
+<a id="function-function-minisql-sql-ast-formatroutinebody-function-formatroutinebody-statements-src-minisql-sql-ast-ml-1885583146"></a>
+### formatRoutineBody
+
+```ml
+function formatRoutineBody(statements)
+```
+
+Formats a nested statement sequence with its required inner semicolons.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `statements` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2225)
+
+<a id="function-function-minisql-sql-ast-formatroutinecharacteristics-function-formatroutinecharacteristics-characteristics-src-minisql-sql-ast-ml-723831644"></a>
+### formatRoutineCharacteristics
+
+```ml
+function formatRoutineCharacteristics(characteristics)
+```
+
+Serializes persisted routine characteristics, excluding the CREATE prefix definer.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `characteristics` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2241)
+
+<a id="function-function-minisql-sql-ast-formatroutinecondition-function-formatroutinecondition-condition-src-minisql-sql-ast-ml-734438323"></a>
+### formatRoutineCondition
+
+```ml
+function formatRoutineCondition(condition)
+```
+
+Reconstructs SQLSTATE, numeric, named, or class condition syntax.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `condition` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2234)
+
+<a id="function-function-minisql-sql-ast-formatroutinestatement-function-formatroutinestatement-statement-src-minisql-sql-ast-ml-596618663"></a>
+### formatRoutineStatement
+
+```ml
+function formatRoutineStatement(statement)
+```
+
+Serializes procedural nodes into SQL that recreates identical control flow.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `statement` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2256)
 
 <a id="function-function-minisql-sql-ast-formatselect-function-formatselect-statement-src-minisql-sql-ast-ml-6754827"></a>
 ### formatSelect
@@ -799,7 +1039,7 @@ Formats select using the supplied inputs. Requires arguments that satisfy the va
 | `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2048)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2132)
 
 <a id="function-function-minisql-sql-ast-formatselectitem-function-formatselectitem-item-src-minisql-sql-ast-ml-991865245"></a>
 ### formatSelectItem
@@ -815,7 +1055,7 @@ Formats select item using the supplied inputs. Requires arguments that satisfy t
 | `item` | `dynamic` | — | item value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2024)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2108)
 
 <a id="function-function-minisql-sql-ast-formatstatement-function-formatstatement-statement-src-minisql-sql-ast-ml-80462947"></a>
 ### formatStatement
@@ -831,7 +1071,23 @@ Formats statement using the supplied inputs. Requires arguments that satisfy the
 | `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2121)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2484)
+
+<a id="function-function-minisql-sql-ast-formattableconstraint-function-formattableconstraint-constraint-src-minisql-sql-ast-ml-452238573"></a>
+### formatTableConstraint
+
+```ml
+function formatTableConstraint(constraint)
+```
+
+Serializes every supported table-constraint variant for routine DDL bodies.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `constraint` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2383)
 
 <a id="function-function-minisql-sql-ast-formattypename-function-formattypename-value-src-minisql-sql-ast-ml-373050403"></a>
 ### formatTypeName
@@ -847,7 +1103,7 @@ Formats type name using the supplied inputs. Requires arguments that satisfy the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1818)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1898)
 
 <a id="function-function-minisql-sql-ast-functionexpression-function-functionexpression-name-arguments-distinct-src-minisql-sql-ast-ml-1847368411"></a>
 ### functionExpression
@@ -865,7 +1121,7 @@ Implements function expression for this module. Requires arguments that satisfy 
 | `distinct` | `dynamic` | — | distinct value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1084)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1118)
 
 - [minisql.sql.ast.FunctionExpression](Type-minisql-sql-ast-functionexpression-265046054.md) — struct
 - [minisql.sql.ast.GrantPrivilegeStatement](Type-minisql-sql-ast-grantprivilegestatement-1897004374.md) — struct
@@ -885,7 +1141,7 @@ Implements identifier for this module. Requires arguments that satisfy the valid
 | `quoted` | `dynamic` | — | quoted value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L970)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1004)
 
 - [minisql.sql.ast.Identifier](Type-minisql-sql-ast-identifier-1450494079.md) — struct
 <a id="function-function-minisql-sql-ast-inexpression-function-inexpression-operand-candidates-negated-src-minisql-sql-ast-ml-726454145"></a>
@@ -904,7 +1160,7 @@ Implements in expression for this module. Requires arguments that satisfy the va
 | `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1142)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1176)
 
 - [minisql.sql.ast.InExpression](Type-minisql-sql-ast-inexpression-61062901.md) — struct
 - [minisql.sql.ast.InsertStatement](Type-minisql-sql-ast-insertstatement-82690842.md) — struct
@@ -924,7 +1180,7 @@ Implements in subquery expression for this module. Requires arguments that satis
 | `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1212)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1246)
 
 - [minisql.sql.ast.InSubqueryExpression](Type-minisql-sql-ast-insubqueryexpression-227257907.md) — struct
 <a id="function-function-minisql-sql-ast-integerliteral-function-integerliteral-value-src-minisql-sql-ast-ml-1098082051"></a>
@@ -941,7 +1197,7 @@ Implements integer literal for this module. Returns the computed value or operat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1005)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1039)
 
 <a id="function-function-minisql-sql-ast-isaltertablestatement-function-isaltertablestatement-value-src-minisql-sql-ast-ml-40030561"></a>
 ### isAlterTableStatement
@@ -957,7 +1213,7 @@ Returns whether the supplied value satisfies the alter table statement condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1508)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1547)
 
 <a id="function-function-minisql-sql-ast-isaltertriggerstatement-function-isaltertriggerstatement-value-src-minisql-sql-ast-ml-1785774413"></a>
 ### isAlterTriggerStatement
@@ -973,7 +1229,7 @@ Returns whether the supplied statement changes trigger activation.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1482)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1516)
 
 <a id="function-function-minisql-sql-ast-isalteruserstatement-function-isalteruserstatement-value-src-minisql-sql-ast-ml-1572440867"></a>
 ### isAlterUserStatement
@@ -989,7 +1245,7 @@ Returns whether the supplied value satisfies the alter user statement condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1618)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1657)
 
 <a id="function-function-minisql-sql-ast-isanalyzestatement-function-isanalyzestatement-value-src-minisql-sql-ast-ml-1349273419"></a>
 ### isAnalyzeStatement
@@ -1005,7 +1261,7 @@ Returns whether the supplied value satisfies the analyze statement condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1674)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1713)
 
 <a id="function-function-minisql-sql-ast-isbeginstatement-function-isbeginstatement-value-src-minisql-sql-ast-ml-1779121671"></a>
 ### isBeginStatement
@@ -1021,7 +1277,7 @@ Returns whether the supplied value satisfies the begin statement condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1562)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1601)
 
 <a id="function-function-minisql-sql-ast-isbetweenexpression-function-isbetweenexpression-value-src-minisql-sql-ast-ml-971709295"></a>
 ### isBetweenExpression
@@ -1037,7 +1293,7 @@ Returns whether the supplied value satisfies the between expression condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1314)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1348)
 
 <a id="function-function-minisql-sql-ast-isbinaryexpression-function-isbinaryexpression-value-src-minisql-sql-ast-ml-658454799"></a>
 ### isBinaryExpression
@@ -1053,7 +1309,7 @@ Returns whether the supplied value satisfies the binary expression condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1258)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1292)
 
 <a id="function-function-minisql-sql-ast-iscallstatement-function-iscallstatement-value-src-minisql-sql-ast-ml-925352525"></a>
 ### isCallStatement
@@ -1069,7 +1325,7 @@ Returns whether the supplied statement invokes a stored procedure.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1500)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1539)
 
 <a id="function-function-minisql-sql-ast-iscaseexpression-function-iscaseexpression-value-src-minisql-sql-ast-ml-452753343"></a>
 ### isCaseExpression
@@ -1085,7 +1341,7 @@ Returns whether the supplied value satisfies the case expression condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1290)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1324)
 
 <a id="function-function-minisql-sql-ast-iscastexpression-function-iscastexpression-value-src-minisql-sql-ast-ml-2104106315"></a>
 ### isCastExpression
@@ -1101,7 +1357,7 @@ Returns whether the supplied value satisfies the cast expression condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1298)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1332)
 
 <a id="function-function-minisql-sql-ast-iscolumnexpression-function-iscolumnexpression-value-src-minisql-sql-ast-ml-725954983"></a>
 ### isColumnExpression
@@ -1117,7 +1373,7 @@ Returns whether the supplied value satisfies the column expression condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1234)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1268)
 
 <a id="function-function-minisql-sql-ast-iscommitstatement-function-iscommitstatement-value-src-minisql-sql-ast-ml-1007195319"></a>
 ### isCommitStatement
@@ -1133,7 +1389,7 @@ Returns whether the supplied value satisfies the commit statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1570)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1609)
 
 <a id="function-function-minisql-sql-ast-iscreateindexstatement-function-iscreateindexstatement-value-src-minisql-sql-ast-ml-855787659"></a>
 ### isCreateIndexStatement
@@ -1149,7 +1405,7 @@ Returns whether the supplied value satisfies the create index statement conditio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1402)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1436)
 
 <a id="function-function-minisql-sql-ast-iscreateprincipalstatement-function-iscreateprincipalstatement-value-src-minisql-sql-ast-ml-1766834055"></a>
 ### isCreatePrincipalStatement
@@ -1165,7 +1421,7 @@ Returns whether the supplied value satisfies the create principal statement cond
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1610)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1649)
 
 <a id="function-function-minisql-sql-ast-iscreateprocedurestatement-function-iscreateprocedurestatement-value-src-minisql-sql-ast-ml-1418620063"></a>
 ### isCreateProcedureStatement
@@ -1174,14 +1430,14 @@ Returns whether the supplied value satisfies the create principal statement cond
 function isCreateProcedureStatement(value)
 ```
 
-Returns whether the supplied statement creates a stored procedure.
+Returns whether this statement creates a durable stored procedure.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+| `value` | `dynamic` | — |  |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1488)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1527)
 
 <a id="function-function-minisql-sql-ast-iscreateschemastatement-function-iscreateschemastatement-value-src-minisql-sql-ast-ml-1191023427"></a>
 ### isCreateSchemaStatement
@@ -1197,7 +1453,7 @@ Returns whether the supplied statement creates a schema namespace.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1422)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1456)
 
 <a id="function-function-minisql-sql-ast-iscreatesequencestatement-function-iscreatesequencestatement-value-src-minisql-sql-ast-ml-80805695"></a>
 ### isCreateSequenceStatement
@@ -1213,7 +1469,7 @@ Returns whether the supplied value satisfies the create sequence statement condi
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1452)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1486)
 
 <a id="function-function-minisql-sql-ast-iscreatetablestatement-function-iscreatetablestatement-value-src-minisql-sql-ast-ml-136028519"></a>
 ### isCreateTableStatement
@@ -1229,7 +1485,7 @@ Returns whether the supplied value satisfies the create table statement conditio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1394)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1428)
 
 <a id="function-function-minisql-sql-ast-iscreatetriggerstatement-function-iscreatetriggerstatement-value-src-minisql-sql-ast-ml-1541768999"></a>
 ### isCreateTriggerStatement
@@ -1245,7 +1501,7 @@ Returns whether the supplied value satisfies the create trigger statement condit
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1468)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1502)
 
 <a id="function-function-minisql-sql-ast-iscreateviewstatement-function-iscreateviewstatement-value-src-minisql-sql-ast-ml-877572039"></a>
 ### isCreateViewStatement
@@ -1261,7 +1517,7 @@ Returns whether the supplied value satisfies the create view statement condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1436)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1470)
 
 <a id="function-function-minisql-sql-ast-isdclstatement-function-isdclstatement-value-src-minisql-sql-ast-ml-1846374635"></a>
 ### isDclStatement
@@ -1277,7 +1533,7 @@ Returns whether the supplied value satisfies the dcl statement condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1666)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1705)
 
 <a id="function-function-minisql-sql-ast-isdeallocatestatement-function-isdeallocatestatement-value-src-minisql-sql-ast-ml-312609217"></a>
 ### isDeallocateStatement
@@ -1293,7 +1549,7 @@ Returns whether the supplied value satisfies the deallocate statement condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1706)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1745)
 
 <a id="function-function-minisql-sql-ast-isdeletestatement-function-isdeletestatement-value-src-minisql-sql-ast-ml-1308345747"></a>
 ### isDeleteStatement
@@ -1309,7 +1565,7 @@ Returns whether the supplied value satisfies the delete statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1532)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1571)
 
 <a id="function-function-minisql-sql-ast-isdescribetablestatement-function-isdescribetablestatement-value-src-minisql-sql-ast-ml-461964515"></a>
 ### isDescribeTableStatement
@@ -1325,7 +1581,7 @@ Returns whether the supplied value satisfies the describe table statement condit
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1756)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1795)
 
 <a id="function-function-minisql-sql-ast-isdropindexstatement-function-isdropindexstatement-value-src-minisql-sql-ast-ml-1569565691"></a>
 ### isDropIndexStatement
@@ -1341,7 +1597,7 @@ Returns whether the supplied value is a DROP INDEX statement.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1408)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1442)
 
 <a id="function-function-minisql-sql-ast-isdropprincipalstatement-function-isdropprincipalstatement-value-src-minisql-sql-ast-ml-1899354143"></a>
 ### isDropPrincipalStatement
@@ -1357,7 +1613,7 @@ Returns whether the supplied value satisfies the drop principal statement condit
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1626)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1665)
 
 <a id="function-function-minisql-sql-ast-isdropprocedurestatement-function-isdropprocedurestatement-value-src-minisql-sql-ast-ml-629218479"></a>
 ### isDropProcedureStatement
@@ -1373,7 +1629,7 @@ Returns whether the supplied statement drops a stored procedure.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1494)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1533)
 
 <a id="function-function-minisql-sql-ast-isdropschemastatement-function-isdropschemastatement-value-src-minisql-sql-ast-ml-543771925"></a>
 ### isDropSchemaStatement
@@ -1389,7 +1645,7 @@ Returns whether the supplied statement drops a schema namespace.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1428)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1462)
 
 <a id="function-function-minisql-sql-ast-isdropsequencestatement-function-isdropsequencestatement-value-src-minisql-sql-ast-ml-1607171893"></a>
 ### isDropSequenceStatement
@@ -1405,7 +1661,7 @@ Returns whether the supplied value satisfies the drop sequence statement conditi
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1460)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1494)
 
 <a id="function-function-minisql-sql-ast-isdroptablestatement-function-isdroptablestatement-value-src-minisql-sql-ast-ml-2016014587"></a>
 ### isDropTableStatement
@@ -1421,7 +1677,7 @@ Returns whether the supplied value satisfies the drop table statement condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1416)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1450)
 
 <a id="function-function-minisql-sql-ast-isdroptriggerstatement-function-isdroptriggerstatement-value-src-minisql-sql-ast-ml-1033522071"></a>
 ### isDropTriggerStatement
@@ -1437,7 +1693,7 @@ Returns whether the supplied value satisfies the drop trigger statement conditio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1476)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1510)
 
 <a id="function-function-minisql-sql-ast-isdropviewstatement-function-isdropviewstatement-value-src-minisql-sql-ast-ml-1623435317"></a>
 ### isDropViewStatement
@@ -1453,7 +1709,7 @@ Returns whether the supplied value satisfies the drop view statement condition. 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1444)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1478)
 
 <a id="function-function-minisql-sql-ast-isexecutepreparedstatement-function-isexecutepreparedstatement-value-src-minisql-sql-ast-ml-84640663"></a>
 ### isExecutePreparedStatement
@@ -1469,7 +1725,7 @@ Returns whether the supplied value satisfies the execute prepared statement cond
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1698)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1737)
 
 <a id="function-function-minisql-sql-ast-isexistsexpression-function-isexistsexpression-value-src-minisql-sql-ast-ml-1174377679"></a>
 ### isExistsExpression
@@ -1485,7 +1741,7 @@ Returns whether the supplied value satisfies the exists expression condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1346)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1380)
 
 <a id="function-function-minisql-sql-ast-isexplainstatement-function-isexplainstatement-value-src-minisql-sql-ast-ml-62051"></a>
 ### isExplainStatement
@@ -1501,7 +1757,7 @@ Returns whether the supplied value satisfies the explain statement condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1682)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1721)
 
 <a id="function-function-minisql-sql-ast-isexpression-function-isexpression-value-src-minisql-sql-ast-ml-1506136751"></a>
 ### isExpression
@@ -1517,7 +1773,7 @@ Returns whether the supplied value satisfies the expression condition. Returns t
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1386)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1420)
 
 <a id="function-function-minisql-sql-ast-isfunctionexpression-function-isfunctionexpression-value-src-minisql-sql-ast-ml-2079687999"></a>
 ### isFunctionExpression
@@ -1533,7 +1789,7 @@ Returns whether the supplied value satisfies the function expression condition. 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1274)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1308)
 
 <a id="function-function-minisql-sql-ast-isgrantprivilegestatement-function-isgrantprivilegestatement-value-src-minisql-sql-ast-ml-478556831"></a>
 ### isGrantPrivilegeStatement
@@ -1549,7 +1805,7 @@ Returns whether the supplied value satisfies the grant privilege statement condi
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1650)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1689)
 
 <a id="function-function-minisql-sql-ast-isgrantrolestatement-function-isgrantrolestatement-value-src-minisql-sql-ast-ml-425039319"></a>
 ### isGrantRoleStatement
@@ -1565,7 +1821,7 @@ Returns whether the supplied value satisfies the grant role statement condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1634)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1673)
 
 <a id="function-function-minisql-sql-ast-isimplemented-function-isimplemented-src-minisql-sql-ast-ml-1131863410"></a>
 ### isImplemented
@@ -1577,7 +1833,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql sql ast module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2198)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2722)
 
 <a id="function-function-minisql-sql-ast-isinexpression-function-isinexpression-value-src-minisql-sql-ast-ml-708072071"></a>
 ### isInExpression
@@ -1593,7 +1849,7 @@ Returns whether the supplied value satisfies the in expression condition. Return
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1306)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1340)
 
 <a id="function-function-minisql-sql-ast-isinsertstatement-function-isinsertstatement-value-src-minisql-sql-ast-ml-1488085327"></a>
 ### isInsertStatement
@@ -1609,7 +1865,7 @@ Returns whether the supplied value satisfies the insert statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1516)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1555)
 
 <a id="function-function-minisql-sql-ast-isinsubqueryexpression-function-isinsubqueryexpression-value-src-minisql-sql-ast-ml-560259391"></a>
 ### isInSubqueryExpression
@@ -1625,7 +1881,7 @@ Returns whether the supplied value satisfies the in subquery expression conditio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1354)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1388)
 
 <a id="function-function-minisql-sql-ast-isisnullexpression-function-isisnullexpression-value-src-minisql-sql-ast-ml-330420399"></a>
 ### isIsNullExpression
@@ -1641,7 +1897,7 @@ Returns whether the supplied value satisfies the is null expression condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1266)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1300)
 
 <a id="function-function-minisql-sql-ast-isliteralexpression-function-isliteralexpression-value-src-minisql-sql-ast-ml-2077538641"></a>
 ### isLiteralExpression
@@ -1657,7 +1913,7 @@ Returns whether the supplied value satisfies the literal expression condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1404)
 
 <a id="function-function-minisql-sql-ast-ismergestatement-function-ismergestatement-value-src-minisql-sql-ast-ml-2075433311"></a>
 ### isMergeStatement
@@ -1673,7 +1929,7 @@ Returns whether the supplied statement is a MERGE operation.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1538)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1577)
 
 <a id="function-function-minisql-sql-ast-ismetadatastatement-function-ismetadatastatement-value-src-minisql-sql-ast-ml-1591023695"></a>
 ### isMetadataStatement
@@ -1689,7 +1945,7 @@ Returns whether the supplied value satisfies the metadata statement condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1772)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1811)
 
 <a id="function-function-minisql-sql-ast-isnullexpression-function-isnullexpression-operand-negated-src-minisql-sql-ast-ml-684138563"></a>
 ### isNullExpression
@@ -1706,7 +1962,7 @@ Returns whether the supplied value satisfies the null expression condition. Retu
 | `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1073)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1107)
 
 - [minisql.sql.ast.IsNullExpression](Type-minisql-sql-ast-isnullexpression-2095182023.md) — struct
 <a id="function-function-minisql-sql-ast-isparameterexpression-function-isparameterexpression-value-src-minisql-sql-ast-ml-1004730265"></a>
@@ -1723,7 +1979,7 @@ Returns whether the supplied value satisfies the parameter expression condition.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1282)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1316)
 
 <a id="function-function-minisql-sql-ast-ispreparestatement-function-ispreparestatement-value-src-minisql-sql-ast-ml-1267735935"></a>
 ### isPrepareStatement
@@ -1739,7 +1995,7 @@ Returns whether the supplied value satisfies the prepare statement condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1690)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1729)
 
 <a id="function-function-minisql-sql-ast-isreindexstatement-function-isreindexstatement-value-src-minisql-sql-ast-ml-1222517071"></a>
 ### isReindexStatement
@@ -1755,7 +2011,7 @@ Returns whether the supplied value satisfies the reindex statement condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1722)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1761)
 
 <a id="function-function-minisql-sql-ast-isreleasesavepointstatement-function-isreleasesavepointstatement-value-src-minisql-sql-ast-ml-1725768273"></a>
 ### isReleaseSavepointStatement
@@ -1771,7 +2027,7 @@ Returns whether the supplied value satisfies the release savepoint statement con
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1602)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1641)
 
 <a id="function-function-minisql-sql-ast-isrevokeprivilegestatement-function-isrevokeprivilegestatement-value-src-minisql-sql-ast-ml-2142603711"></a>
 ### isRevokePrivilegeStatement
@@ -1787,7 +2043,7 @@ Returns whether the supplied value satisfies the revoke privilege statement cond
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1658)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1697)
 
 <a id="function-function-minisql-sql-ast-isrevokerolestatement-function-isrevokerolestatement-value-src-minisql-sql-ast-ml-1322661157"></a>
 ### isRevokeRoleStatement
@@ -1803,7 +2059,7 @@ Returns whether the supplied value satisfies the revoke role statement condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1642)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1681)
 
 <a id="function-function-minisql-sql-ast-isrollbackstatement-function-isrollbackstatement-value-src-minisql-sql-ast-ml-1624031173"></a>
 ### isRollbackStatement
@@ -1819,7 +2075,7 @@ Returns whether the supplied value satisfies the rollback statement condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1578)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1617)
 
 <a id="function-function-minisql-sql-ast-isrollbacktostatement-function-isrollbacktostatement-value-src-minisql-sql-ast-ml-570894687"></a>
 ### isRollbackToStatement
@@ -1835,7 +2091,23 @@ Returns whether the supplied value satisfies the rollback to statement condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1594)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1633)
+
+<a id="function-function-minisql-sql-ast-isroutinestatement-function-isroutinestatement-value-src-minisql-sql-ast-ml-185321179"></a>
+### isRoutineStatement
+
+```ml
+function isRoutineStatement(value)
+```
+
+Returns whether the supplied statement creates a stored procedure.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `dynamic` | — | Value consumed or transformed by the operation. |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1522)
 
 <a id="function-function-minisql-sql-ast-issavepointstatement-function-issavepointstatement-value-src-minisql-sql-ast-ml-1804164543"></a>
 ### isSavepointStatement
@@ -1851,7 +2123,7 @@ Returns whether the supplied value satisfies the savepoint statement condition. 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1586)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1625)
 
 <a id="function-function-minisql-sql-ast-isselectstatement-function-isselectstatement-value-src-minisql-sql-ast-ml-783638533"></a>
 ### isSelectStatement
@@ -1867,7 +2139,7 @@ Returns whether the supplied value satisfies the select statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1554)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1593)
 
 <a id="function-function-minisql-sql-ast-isshowindexesstatement-function-isshowindexesstatement-value-src-minisql-sql-ast-ml-1977591419"></a>
 ### isShowIndexesStatement
@@ -1883,7 +2155,7 @@ Returns whether the supplied value satisfies the show indexes statement conditio
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1764)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1803)
 
 <a id="function-function-minisql-sql-ast-isshowprocessliststatement-function-isshowprocessliststatement-value-src-minisql-sql-ast-ml-1400655311"></a>
 ### isShowProcesslistStatement
@@ -1899,7 +2171,7 @@ Returns whether the value is a SHOW PROCESSLIST statement.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1742)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1781)
 
 <a id="function-function-minisql-sql-ast-isshowstatusstatement-function-isshowstatusstatement-value-src-minisql-sql-ast-ml-60956175"></a>
 ### isShowStatusStatement
@@ -1915,7 +2187,7 @@ Returns whether the value is a SHOW STATUS statement.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1736)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1775)
 
 <a id="function-function-minisql-sql-ast-isshowtablesstatement-function-isshowtablesstatement-value-src-minisql-sql-ast-ml-252622253"></a>
 ### isShowTablesStatement
@@ -1931,7 +2203,7 @@ Returns whether the supplied value satisfies the show tables statement condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1730)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1769)
 
 <a id="function-function-minisql-sql-ast-isshutdownstatement-function-isshutdownstatement-value-src-minisql-sql-ast-ml-1210487925"></a>
 ### isShutdownStatement
@@ -1947,7 +2219,7 @@ Returns whether the value is a cooperative SHUTDOWN statement.
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1748)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1787)
 
 <a id="function-function-minisql-sql-ast-isstarexpression-function-isstarexpression-value-src-minisql-sql-ast-ml-789824527"></a>
 ### isStarExpression
@@ -1963,7 +2235,7 @@ Returns whether the supplied value satisfies the star expression condition. Retu
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1242)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1276)
 
 <a id="function-function-minisql-sql-ast-isstatement-function-isstatement-value-src-minisql-sql-ast-ml-1552680413"></a>
 ### isStatement
@@ -1979,7 +2251,7 @@ Returns whether the supplied value satisfies the statement condition. Returns th
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1780)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1819)
 
 <a id="function-function-minisql-sql-ast-issubqueryexpression-function-issubqueryexpression-value-src-minisql-sql-ast-ml-1774571415"></a>
 ### isSubqueryExpression
@@ -1995,7 +2267,7 @@ Returns whether the supplied value satisfies the subquery expression condition. 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1338)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1372)
 
 <a id="function-function-minisql-sql-ast-istruncatestatement-function-istruncatestatement-value-src-minisql-sql-ast-ml-1091081009"></a>
 ### isTruncateStatement
@@ -2011,7 +2283,7 @@ Returns whether the supplied value satisfies the truncate statement condition. R
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1546)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1585)
 
 <a id="function-function-minisql-sql-ast-istruthtestexpression-function-istruthtestexpression-value-src-minisql-sql-ast-ml-688710733"></a>
 ### isTruthTestExpression
@@ -2027,7 +2299,7 @@ Returns whether the supplied value satisfies the truth test expression condition
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1322)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1356)
 
 <a id="function-function-minisql-sql-ast-istypedliteralexpression-function-istypedliteralexpression-value-src-minisql-sql-ast-ml-298192903"></a>
 ### isTypedLiteralExpression
@@ -2043,7 +2315,7 @@ Returns whether the supplied value satisfies the typed literal expression condit
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1330)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1364)
 
 <a id="function-function-minisql-sql-ast-istypename-function-istypename-value-src-minisql-sql-ast-ml-1342898399"></a>
 ### isTypeName
@@ -2059,7 +2331,7 @@ Returns whether the supplied value satisfies the type name condition. Returns th
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1378)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1412)
 
 <a id="function-function-minisql-sql-ast-isunaryexpression-function-isunaryexpression-value-src-minisql-sql-ast-ml-519270105"></a>
 ### isUnaryExpression
@@ -2075,7 +2347,7 @@ Returns whether the supplied value satisfies the unary expression condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1250)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1284)
 
 <a id="function-function-minisql-sql-ast-isupdatestatement-function-isupdatestatement-value-src-minisql-sql-ast-ml-639806879"></a>
 ### isUpdateStatement
@@ -2091,7 +2363,7 @@ Returns whether the supplied value satisfies the update statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1524)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1563)
 
 <a id="function-function-minisql-sql-ast-isvacuumstatement-function-isvacuumstatement-value-src-minisql-sql-ast-ml-339430435"></a>
 ### isVacuumStatement
@@ -2107,7 +2379,7 @@ Returns whether the supplied value satisfies the vacuum statement condition. Ret
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1714)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1753)
 
 <a id="function-function-minisql-sql-ast-iswindowexpression-function-iswindowexpression-value-src-minisql-sql-ast-ml-679986831"></a>
 ### isWindowExpression
@@ -2123,7 +2395,7 @@ Returns whether the supplied value satisfies the window expression condition. Re
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1362)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1396)
 
 <a id="constant-constant-minisql-sql-ast-join-cross-const-join-cross-3-src-minisql-sql-ast-ml-613966380"></a>
 ### JOIN_CROSS
@@ -2135,7 +2407,7 @@ const JOIN_CROSS = 3
 Defines the join cross constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L76)
 
 <a id="constant-constant-minisql-sql-ast-join-full-const-join-full-5-src-minisql-sql-ast-ml-848614714"></a>
 ### JOIN_FULL
@@ -2147,7 +2419,7 @@ const JOIN_FULL = 5
 Defines the join full constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L80)
 
 <a id="constant-constant-minisql-sql-ast-join-inner-const-join-inner-1-src-minisql-sql-ast-ml-2076055438"></a>
 ### JOIN_INNER
@@ -2159,7 +2431,7 @@ const JOIN_INNER = 1
 Defines the join inner constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L72)
 
 <a id="constant-constant-minisql-sql-ast-join-left-const-join-left-2-src-minisql-sql-ast-ml-2103469841"></a>
 ### JOIN_LEFT
@@ -2171,7 +2443,7 @@ const JOIN_LEFT = 2
 Defines the join left constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L74)
 
 <a id="constant-constant-minisql-sql-ast-join-right-const-join-right-4-src-minisql-sql-ast-ml-108989295"></a>
 ### JOIN_RIGHT
@@ -2183,9 +2455,25 @@ const JOIN_RIGHT = 4
 Defines the join right constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L78)
 
 - [minisql.sql.ast.JoinClause](Type-minisql-sql-ast-joinclause-1638359089.md) — struct
+<a id="function-function-minisql-sql-ast-joinsqlnames-function-joinsqlnames-names-src-minisql-sql-ast-ml-1923748778"></a>
+### joinSqlNames
+
+```ml
+function joinSqlNames(names)
+```
+
+Joins strings in source order without depending on a host string library.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `names` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2201)
+
 <a id="constant-constant-minisql-sql-ast-literal-boolean-const-literal-boolean-1-src-minisql-sql-ast-ml-1262259626"></a>
 ### LITERAL_BOOLEAN
 
@@ -2196,7 +2484,7 @@ const LITERAL_BOOLEAN = 1
 Defines the literal boolean constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L50)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L52)
 
 <a id="constant-constant-minisql-sql-ast-literal-current-timestamp-const-literal-current-timestamp-5-src-minisql-sql-ast-ml-97134642"></a>
 ### LITERAL_CURRENT_TIMESTAMP
@@ -2208,7 +2496,7 @@ const LITERAL_CURRENT_TIMESTAMP = 5
 Defines the literal current timestamp constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L58)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L60)
 
 <a id="constant-constant-minisql-sql-ast-literal-float-const-literal-float-3-src-minisql-sql-ast-ml-1768707520"></a>
 ### LITERAL_FLOAT
@@ -2220,7 +2508,7 @@ const LITERAL_FLOAT = 3
 Defines the literal float constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L54)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L56)
 
 <a id="constant-constant-minisql-sql-ast-literal-integer-const-literal-integer-2-src-minisql-sql-ast-ml-1423009949"></a>
 ### LITERAL_INTEGER
@@ -2232,7 +2520,7 @@ const LITERAL_INTEGER = 2
 Defines the literal integer constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L52)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L54)
 
 <a id="constant-constant-minisql-sql-ast-literal-null-const-literal-null-0-src-minisql-sql-ast-ml-759703635"></a>
 ### LITERAL_NULL
@@ -2244,7 +2532,7 @@ const LITERAL_NULL = 0
 Defines the literal null constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L48)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L50)
 
 <a id="constant-constant-minisql-sql-ast-literal-string-const-literal-string-4-src-minisql-sql-ast-ml-339188319"></a>
 ### LITERAL_STRING
@@ -2256,7 +2544,7 @@ const LITERAL_STRING = 4
 Defines the literal string constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L56)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L58)
 
 - [minisql.sql.ast.LiteralExpression](Type-minisql-sql-ast-literalexpression-448977349.md) — struct
 - [minisql.sql.ast.MergeStatement](Type-minisql-sql-ast-mergestatement-1457176461.md) — struct
@@ -2270,7 +2558,7 @@ function nullLiteral()
 Implements null literal for this module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L989)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1023)
 
 - [minisql.sql.ast.OrderItem](Type-minisql-sql-ast-orderitem-984479387.md) — struct
 <a id="function-function-minisql-sql-ast-parameterexpression-function-parameterexpression-index-src-minisql-sql-ast-ml-5113052"></a>
@@ -2287,7 +2575,7 @@ Implements parameter expression for this module. Requires arguments that satisfy
 | `index` | `dynamic` | — | Zero-based index of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1094)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1128)
 
 - [minisql.sql.ast.ParameterExpression](Type-minisql-sql-ast-parameterexpression-1507623205.md) — struct
 - [minisql.sql.ast.PrepareStatement](Type-minisql-sql-ast-preparestatement-1778257532.md) — struct
@@ -2301,7 +2589,7 @@ const PRINCIPAL_ROLE = 2
 Defines the principal role constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L97)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L99)
 
 <a id="constant-constant-minisql-sql-ast-principal-user-const-principal-user-1-src-minisql-sql-ast-ml-1383993452"></a>
 ### PRINCIPAL_USER
@@ -2313,7 +2601,7 @@ const PRINCIPAL_USER = 1
 Defines the principal user constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L97)
 
 - [minisql.sql.ast.ProcedureParameter](Type-minisql-sql-ast-procedureparameter-789045828.md) — struct
 <a id="function-function-minisql-sql-ast-quotestring-function-quotestring-value-src-minisql-sql-ast-ml-821514609"></a>
@@ -2330,7 +2618,7 @@ Implements quote string for this module. Returns the computed value or operation
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1797)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1836)
 
 - [minisql.sql.ast.ReindexStatement](Type-minisql-sql-ast-reindexstatement-511857896.md) — struct
 - [minisql.sql.ast.ReleaseSavepointStatement](Type-minisql-sql-ast-releasesavepointstatement-2050402499.md) — struct
@@ -2338,6 +2626,7 @@ Implements quote string for this module. Returns the computed value or operation
 - [minisql.sql.ast.RevokeRoleStatement](Type-minisql-sql-ast-revokerolestatement-1352488811.md) — struct
 - [minisql.sql.ast.RollbackStatement](Type-minisql-sql-ast-rollbackstatement-2101230197.md) — struct
 - [minisql.sql.ast.RollbackToStatement](Type-minisql-sql-ast-rollbacktostatement-1467636930.md) — struct
+- [minisql.sql.ast.RoutineStatement](Type-minisql-sql-ast-routinestatement-88012873.md) — struct
 - [minisql.sql.ast.SavepointStatement](Type-minisql-sql-ast-savepointstatement-414718614.md) — struct
 <a id="function-function-minisql-sql-ast-selectcontainstypedliteral-function-selectcontainstypedliteral-statement-src-minisql-sql-ast-ml-1099606839"></a>
 ### selectContainsTypedLiteral
@@ -2353,7 +2642,7 @@ Reports whether any clause of a SELECT embeds a typed literal.
 | `statement` | `dynamic` | — | statement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1895)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1978)
 
 - [minisql.sql.ast.SelectItem](Type-minisql-sql-ast-selectitem-408226539.md) — struct
 - [minisql.sql.ast.SelectStatement](Type-minisql-sql-ast-selectstatement-1712428273.md) — struct
@@ -2367,7 +2656,7 @@ const SET_EXCEPT = 3
 Defines the set except constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L85)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L87)
 
 <a id="constant-constant-minisql-sql-ast-set-intersect-const-set-intersect-2-src-minisql-sql-ast-ml-356781633"></a>
 ### SET_INTERSECT
@@ -2379,7 +2668,7 @@ const SET_INTERSECT = 2
 Defines the set intersect constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L83)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L85)
 
 <a id="constant-constant-minisql-sql-ast-set-union-const-set-union-1-src-minisql-sql-ast-ml-1306524342"></a>
 ### SET_UNION
@@ -2391,7 +2680,7 @@ const SET_UNION = 1
 Defines the set union constant used by the minisql sql ast module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L83)
 
 - [minisql.sql.ast.SetOperation](Type-minisql-sql-ast-setoperation-2110454621.md) — struct
 - [minisql.sql.ast.ShowIndexesStatement](Type-minisql-sql-ast-showindexesstatement-1449874336.md) — struct
@@ -2413,7 +2702,7 @@ Implements star expression for this module. Returns the computed value or operat
 | `qualifier` | `dynamic` | — | qualifier value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1045)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1079)
 
 - [minisql.sql.ast.StarExpression](Type-minisql-sql-ast-starexpression-1721844166.md) — struct
 <a id="function-function-minisql-sql-ast-stringliteral-function-stringliteral-value-src-minisql-sql-ast-ml-1314624707"></a>
@@ -2430,7 +2719,7 @@ Implements string literal for this module. Returns the computed value or operati
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1021)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1055)
 
 <a id="function-function-minisql-sql-ast-subqueryexpression-function-subqueryexpression-query-src-minisql-sql-ast-ml-855390986"></a>
 ### subqueryExpression
@@ -2446,7 +2735,7 @@ Implements subquery expression for this module. Requires arguments that satisfy 
 | `query` | `dynamic` | — | query value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1190)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1224)
 
 - [minisql.sql.ast.SubqueryExpression](Type-minisql-sql-ast-subqueryexpression-63020784.md) — struct
 - [minisql.sql.ast.TableConstraint](Type-minisql-sql-ast-tableconstraint-447054775.md) — struct
@@ -2460,7 +2749,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql sql ast module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2191)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L2715)
 
 - [minisql.sql.ast.TruncateStatement](Type-minisql-sql-ast-truncatestatement-1200600839.md) — struct
 <a id="function-function-minisql-sql-ast-truthtestexpression-function-truthtestexpression-operand-expected-negated-src-minisql-sql-ast-ml-1025641925"></a>
@@ -2479,7 +2768,7 @@ Implements truth test expression for this module. Requires arguments that satisf
 | `negated` | `dynamic` | — | negated value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1170)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1204)
 
 - [minisql.sql.ast.TruthTestExpression](Type-minisql-sql-ast-truthtestexpression-635200043.md) — struct
 <a id="function-function-minisql-sql-ast-typedliteralexpression-function-typedliteralexpression-value-src-minisql-sql-ast-ml-1769096843"></a>
@@ -2496,7 +2785,7 @@ Implements typed literal expression for this module. Requires arguments that sat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1180)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1214)
 
 - [minisql.sql.ast.TypedLiteralExpression](Type-minisql-sql-ast-typedliteralexpression-180514753.md) — struct
 <a id="function-function-minisql-sql-ast-typename-function-typename-name-length-precision-scale-src-minisql-sql-ast-ml-1310543883"></a>
@@ -2516,7 +2805,7 @@ Implements type name for this module. Returns the computed value or operation st
 | `scale` | `dynamic` | — | scale value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L982)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1016)
 
 - [minisql.sql.ast.TypeName](Type-minisql-sql-ast-typename-1736152255.md) — struct
 <a id="function-function-minisql-sql-ast-unaryexpression-function-unaryexpression-operatorvalue-operand-src-minisql-sql-ast-ml-175154014"></a>
@@ -2534,7 +2823,7 @@ Implements unary expression for this module. Returns the computed value or opera
 | `operand` | `dynamic` | — | operand value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1054)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1088)
 
 - [minisql.sql.ast.UnaryExpression](Type-minisql-sql-ast-unaryexpression-891119829.md) — struct
 - [minisql.sql.ast.UpdateStatement](Type-minisql-sql-ast-updatestatement-1226840494.md) — struct
@@ -2556,6 +2845,6 @@ Implements window expression for this module. Requires arguments that satisfy th
 | `orderBy` | `dynamic` | — | orderBy value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1225)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L1259)
 
 - [minisql.sql.ast.WindowExpression](Type-minisql-sql-ast-windowexpression-949346098.md) — struct

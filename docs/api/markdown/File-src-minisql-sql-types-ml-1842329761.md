@@ -41,7 +41,7 @@ Returns whether the supplied value satisfies the assign condition. Requires argu
 | `target` | `dynamic` | — | target value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L304)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L332)
 
 <a id="function-function-minisql-sql-types-commonnumeric-function-commonnumeric-left-right-src-minisql-sql-types-ml-829139855"></a>
 ### commonNumeric
@@ -58,7 +58,7 @@ Implements common numeric for this module. Requires arguments that satisfy the v
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L281)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L309)
 
 <a id="function-function-minisql-sql-types-comparable-function-comparable-left-right-src-minisql-sql-types-ml-386719523"></a>
 ### comparable
@@ -75,7 +75,7 @@ Implements comparable for this module. Requires arguments that satisfy the valid
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L326)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L354)
 
 <a id="function-function-minisql-sql-types-componentname-function-componentname-src-minisql-sql-types-ml-338189600"></a>
 ### componentName
@@ -87,7 +87,7 @@ function componentName()
 Performs the componentName operation for the minisql sql types module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L338)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L366)
 
 <a id="function-function-minisql-sql-types-create-function-create-kind-length-precision-scale-nullable-src-minisql-sql-types-ml-715572705"></a>
 ### create
@@ -107,7 +107,7 @@ Creates create for the minisql sql types module. Requires arguments that satisfy
 | `nullable` | `dynamic` | — | nullable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L108)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L112)
 
 <a id="function-function-minisql-sql-types-fail-function-fail-code-operation-message-src-minisql-sql-types-ml-159536105"></a>
 ### fail
@@ -125,7 +125,7 @@ Performs the fail operation for the minisql sql types module. Returns its result
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L82)
 
 <a id="function-function-minisql-sql-types-fromcolumn-function-fromcolumn-column-src-minisql-sql-types-ml-1350218350"></a>
 ### fromColumn
@@ -141,7 +141,7 @@ Implements from column for this module. Requires arguments that satisfy the vali
 | `column` | `dynamic` | — | column value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L204)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L232)
 
 <a id="function-function-minisql-sql-types-fromtypename-function-fromtypename-typename-nullable-src-minisql-sql-types-ml-842400726"></a>
 ### fromTypeName
@@ -158,7 +158,7 @@ Implements from type name for this module. Returns the computed value or operati
 | `nullable` | `dynamic` | — | nullable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L170)
 
 <a id="constant-constant-minisql-sql-types-invalid-argument-const-invalid-argument-9001-src-minisql-sql-types-ml-1119706683"></a>
 ### INVALID_ARGUMENT
@@ -186,7 +186,7 @@ Returns whether the supplied value satisfies the binary kind condition. Returns 
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L246)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L274)
 
 <a id="function-function-minisql-sql-types-isimplemented-function-isimplemented-src-minisql-sql-types-ml-1804958216"></a>
 ### isImplemented
@@ -198,7 +198,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql sql types module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L352)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L380)
 
 <a id="function-function-minisql-sql-types-isintegralkind-function-isintegralkind-kind-src-minisql-sql-types-ml-1163157310"></a>
 ### isIntegralKind
@@ -214,7 +214,7 @@ Returns whether the supplied value satisfies the integral kind condition. Return
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L230)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L258)
 
 <a id="function-function-minisql-sql-types-isnumeric-function-isnumeric-value-src-minisql-sql-types-ml-1826020421"></a>
 ### isNumeric
@@ -230,7 +230,7 @@ Returns whether the supplied value satisfies the numeric condition. Returns the 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L241)
 
 <a id="function-function-minisql-sql-types-isnumerickind-function-isnumerickind-kind-src-minisql-sql-types-ml-2017142596"></a>
 ### isNumericKind
@@ -246,7 +246,7 @@ Returns whether the supplied value satisfies the numeric kind condition. Returns
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L222)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L250)
 
 <a id="function-function-minisql-sql-types-issqltype-function-issqltype-value-src-minisql-sql-types-ml-1425719963"></a>
 ### isSqlType
@@ -262,7 +262,7 @@ Returns whether the supplied value satisfies the SQL type condition. Returns the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L86)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L90)
 
 <a id="function-function-minisql-sql-types-istextkind-function-istextkind-kind-src-minisql-sql-types-ml-1055756910"></a>
 ### isTextKind
@@ -278,7 +278,7 @@ Returns whether the supplied value satisfies the text kind condition. Returns th
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L238)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L266)
 
 <a id="function-function-minisql-sql-types-kindname-function-kindname-kind-src-minisql-sql-types-ml-117751850"></a>
 ### kindName
@@ -294,7 +294,7 @@ Implements kind name for this module. Returns the computed value or operation st
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L138)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L145)
 
 <a id="function-function-minisql-sql-types-numericrank-function-numericrank-kind-src-minisql-sql-types-ml-555960800"></a>
 ### numericRank
@@ -310,7 +310,7 @@ Implements numeric rank for this module. Returns the computed value or operation
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L265)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L293)
 
 <a id="function-function-minisql-sql-types-samebase-function-samebase-left-right-src-minisql-sql-types-ml-2034679663"></a>
 ### sameBase
@@ -327,7 +327,7 @@ Implements same base for this module. Requires arguments that satisfy the valida
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L256)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L284)
 
 - [minisql.sql.types.SqlType](Type-minisql-sql-types-sqltype-334036941.md) — struct
 - [minisql.sql.types.SqlTypeKind](Type-minisql-sql-types-sqltypekind-84723867.md) — enum
@@ -341,7 +341,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql sql types module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L345)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L373)
 
 <a id="constant-constant-minisql-sql-types-type-mismatch-const-type-mismatch-9017-src-minisql-sql-types-ml-1291332290"></a>
 ### TYPE_MISMATCH
@@ -369,7 +369,7 @@ Implements valid kind for this module. Requires arguments that satisfy the valid
 | `kind` | `dynamic` | — | kind value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L95)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L99)
 
 <a id="function-function-minisql-sql-types-withnullable-function-withnullable-value-nullable-src-minisql-sql-types-ml-1301055790"></a>
 ### withNullable
@@ -386,4 +386,4 @@ Implements with nullable for this module. Requires arguments that satisfy the va
 | `nullable` | `dynamic` | — | nullable value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L129)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/types.ml#L133)

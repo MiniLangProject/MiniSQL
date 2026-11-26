@@ -15,6 +15,23 @@ Reachable from entry: **yes**
 
 ## Declarations
 
+<a id="function-function-minisql-protocol-messages-appendrows-function-appendrows-target-source-src-minisql-protocol-messages-ml-1263671216"></a>
+### appendRows
+
+```ml
+function appendRows(target, source)
+```
+
+Appends compatible continuation rows while preserving row-major NULL positions.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `target` | `dynamic` | — |  |
+| `source` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L568)
+
 <a id="function-function-minisql-protocol-messages-authbegin-function-authbegin-requestid-username-src-minisql-protocol-messages-ml-861127374"></a>
 ### authBegin
 
@@ -30,7 +47,7 @@ Implements auth begin for this module. Requires arguments that satisfy the valid
 | `username` | `dynamic` | — | username value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L114)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L166)
 
 <a id="function-function-minisql-protocol-messages-authchallenge-function-authchallenge-requestid-iterations-salt-nonce-scheme-src-minisql-protocol-messages-ml-728051046"></a>
 ### authChallenge
@@ -50,7 +67,7 @@ Implements auth challenge for this module. Requires arguments that satisfy the v
 | `scheme` | `dynamic` | — | scheme value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L146)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L198)
 
 <a id="function-function-minisql-protocol-messages-authok-function-authok-requestid-serverproof-src-minisql-protocol-messages-ml-1072171503"></a>
 ### authOk
@@ -67,7 +84,7 @@ Implements auth ok for this module. Requires arguments that satisfy the validati
 | `serverProof` | `dynamic` | — | serverProof value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L245)
 
 <a id="function-function-minisql-protocol-messages-authproof-function-authproof-requestid-proof-src-minisql-protocol-messages-ml-2129408958"></a>
 ### authProof
@@ -84,7 +101,7 @@ Implements auth proof for this module. Requires arguments that satisfy the valid
 | `proof` | `dynamic` | — | proof value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L182)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L234)
 
 <a id="function-function-minisql-protocol-messages-cancelrequest-function-cancelrequest-requestid-sessionid-src-minisql-protocol-messages-ml-599710079"></a>
 ### cancelRequest
@@ -101,7 +118,7 @@ Creates an administrative cancellation request for one active session.
 | `sessionId` | `dynamic` | — | Identifier of session. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L269)
 
 <a id="function-function-minisql-protocol-messages-closerequest-function-closerequest-requestid-src-minisql-protocol-messages-ml-29415648"></a>
 ### closeRequest
@@ -117,7 +134,7 @@ Closes request using the supplied inputs. Returns the computed value or operatio
 | `requestId` | `dynamic` | — | Identifier of request. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L210)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L262)
 
 <a id="function-function-minisql-protocol-messages-commandresponse-function-commandresponse-command-affectedrows-message-src-minisql-protocol-messages-ml-1660127651"></a>
 ### commandResponse
@@ -135,7 +152,7 @@ Implements command response for this module. Returns the computed value or opera
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L239)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L291)
 
 <a id="function-function-minisql-protocol-messages-componentname-function-componentname-src-minisql-protocol-messages-ml-1860101052"></a>
 ### componentName
@@ -147,8 +164,9 @@ function componentName()
 Performs the componentName operation for the minisql protocol messages module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L413)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L642)
 
+- [minisql.protocol.messages.Condition](Type-minisql-protocol-messages-condition-1979092481.md) — struct
 <a id="constant-constant-minisql-protocol-messages-corrupt-data-const-corrupt-data-9004-src-minisql-protocol-messages-ml-1538552720"></a>
 ### CORRUPT_DATA
 
@@ -178,7 +196,7 @@ Creates create for the minisql protocol messages module. Requires arguments that
 | `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L81)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L128)
 
 <a id="function-function-minisql-protocol-messages-decodeauthbegin-function-decodeauthbegin-payload-src-minisql-protocol-messages-ml-1797547444"></a>
 ### decodeAuthBegin
@@ -194,7 +212,7 @@ Decodes auth begin using the supplied inputs. Requires arguments that satisfy th
 | `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L128)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L180)
 
 <a id="function-function-minisql-protocol-messages-decodeauthchallenge-function-decodeauthchallenge-payload-src-minisql-protocol-messages-ml-940584592"></a>
 ### decodeAuthChallenge
@@ -210,7 +228,7 @@ Decodes auth challenge using the supplied inputs. Requires arguments that satisf
 | `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L163)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L215)
 
 <a id="function-function-minisql-protocol-messages-decodecancelrequest-function-decodecancelrequest-payload-src-minisql-protocol-messages-ml-316471780"></a>
 ### decodeCancelRequest
@@ -226,7 +244,26 @@ Decodes and validates an administrative cancellation target.
 | `payload` | `dynamic` | — | payload value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L226)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L278)
+
+<a id="function-function-minisql-protocol-messages-decodemetadata-function-decodemetadata-source-cursor-columncount-rowcount-src-minisql-protocol-messages-ml-1632874019"></a>
+### decodeMetadata
+
+```ml
+function decodeMetadata(source, cursor, columnCount, rowCount)
+```
+
+Decodes bounded metadata after the ordinary v1 response fields.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `source` | `dynamic` | — |  |
+| `cursor` | `dynamic` | — |  |
+| `columnCount` | `dynamic` | — |  |
+| `rowCount` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L508)
 
 <a id="function-function-minisql-protocol-messages-decoderesponse-function-decoderesponse-source-src-minisql-protocol-messages-ml-1712650805"></a>
 ### decodeResponse
@@ -242,7 +279,7 @@ Decodes response using the supplied inputs. Requires arguments that satisfy the 
 | `source` | `dynamic` | — | source value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L370)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L595)
 
 <a id="function-function-minisql-protocol-messages-encoderesponse-function-encoderesponse-response-src-minisql-protocol-messages-ml-1522164307"></a>
 ### encodeResponse
@@ -258,7 +295,23 @@ Encodes response using the supplied inputs. Requires arguments that satisfy the 
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L330)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L395)
+
+<a id="function-function-minisql-protocol-messages-encoderesponseextended-function-encoderesponseextended-response-src-minisql-protocol-messages-ml-908667587"></a>
+### encodeResponseExtended
+
+```ml
+function encodeResponseExtended(response)
+```
+
+Encodes the opt-in trailer; legacy encodeResponse remains byte-for-byte stable.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `response` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L459)
 
 <a id="function-function-minisql-protocol-messages-errorresponse-function-errorresponse-code-message-src-minisql-protocol-messages-ml-459743622"></a>
 ### errorResponse
@@ -267,15 +320,15 @@ Encodes response using the supplied inputs. Requires arguments that satisfy the 
 function errorResponse(code, message)
 ```
 
-Creates an error for response using the supplied inputs. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
+Creates a protocol error response without changing the wire payload shape.
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `code` | `dynamic` | — | code value consumed by this operation. |
-| `message` | `dynamic` | — | Human-readable message associated with the operation. |
+| `code` | `dynamic` | — |  |
+| `message` | `dynamic` | — |  |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L322)
 
 <a id="function-function-minisql-protocol-messages-fail-function-fail-code-operation-message-src-minisql-protocol-messages-ml-2129809533"></a>
 ### fail
@@ -293,7 +346,7 @@ Performs the fail operation for the minisql protocol messages module. Returns it
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L53)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L100)
 
 <a id="function-function-minisql-protocol-messages-fieldsize-function-fieldsize-value-src-minisql-protocol-messages-ml-899695487"></a>
 ### fieldSize
@@ -309,7 +362,7 @@ Implements field size for this module. Returns the computed value or operation s
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L340)
 
 <a id="function-function-minisql-protocol-messages-hello-function-hello-requestid-src-minisql-protocol-messages-ml-556219208"></a>
 ### hello
@@ -325,7 +378,39 @@ Implements hello for this module. Returns the computed value or operation status
 | `requestId` | `dynamic` | — | Identifier of request. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L93)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L140)
+
+<a id="function-function-minisql-protocol-messages-helloextended-function-helloextended-requestid-src-minisql-protocol-messages-ml-1385299558"></a>
+### helloExtended
+
+```ml
+function helloExtended(requestId)
+```
+
+Requests the optional structured-result extension while retaining protocol v1.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `requestId` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L145)
+
+<a id="function-function-minisql-protocol-messages-individualresponses-function-individualresponses-response-src-minisql-protocol-messages-ml-1797182561"></a>
+### individualResponses
+
+```ml
+function individualResponses(response)
+```
+
+Returns the individual responses of one command or stored procedure call.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `response` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L311)
 
 <a id="constant-constant-minisql-protocol-messages-invalid-argument-const-invalid-argument-9001-src-minisql-protocol-messages-ml-749605079"></a>
 ### INVALID_ARGUMENT
@@ -349,7 +434,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql protocol messages module. Returns the computed value or operation status. Does not modify its inputs.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L427)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L656)
 
 <a id="function-function-minisql-protocol-messages-ismessage-function-ismessage-value-src-minisql-protocol-messages-ml-1923200535"></a>
 ### isMessage
@@ -365,7 +450,25 @@ Returns whether the supplied value satisfies the message condition. Returns the 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L108)
+
+<a id="function-function-minisql-protocol-messages-isnullcell-function-isnullcell-response-rowindex-columnindex-src-minisql-protocol-messages-ml-156954183"></a>
+### isNullCell
+
+```ml
+function isNullCell(response, rowIndex, columnIndex)
+```
+
+Tests SQL NULL explicitly for negotiated responses, with legacy token fallback.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `response` | `dynamic` | — |  |
+| `rowIndex` | `dynamic` | — |  |
+| `columnIndex` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L561)
 
 <a id="function-function-minisql-protocol-messages-isresponse-function-isresponse-value-src-minisql-protocol-messages-ml-1298240945"></a>
 ### isResponse
@@ -381,9 +484,54 @@ Returns whether the supplied value satisfies the response condition. Returns the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L116)
 
 - [minisql.protocol.messages.Message](Type-minisql-protocol-messages-message-1836948963.md) — struct
+<a id="function-function-minisql-protocol-messages-multipleresponse-function-multipleresponse-responses-src-minisql-protocol-messages-ml-257067632"></a>
+### multipleResponse
+
+```ml
+function multipleResponse(responses)
+```
+
+Collects separate responses without conflating equal-schema result sets. The aggregate is client-only; its rows contain Response objects, not SQL cells.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `responses` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L306)
+
+<a id="function-function-minisql-protocol-messages-newmetadata-function-newmetadata-src-minisql-protocol-messages-ml-975516698"></a>
+### newMetadata
+
+```ml
+function newMetadata()
+```
+
+Creates an empty metadata trailer without enabling it for legacy peers.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L90)
+
+<a id="function-function-minisql-protocol-messages-normalizedmetadata-function-normalizedmetadata-response-src-minisql-protocol-messages-ml-1088719447"></a>
+### normalizedMetadata
+
+```ml
+function normalizedMetadata(response)
+```
+
+Returns metadata with an explicit all-non-NULL bitmap for manually built rows.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `response` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L431)
+
+- [minisql.protocol.messages.OutputParameter](Type-minisql-protocol-messages-outputparameter-461318444.md) — struct
 <a id="function-function-minisql-protocol-messages-ping-function-ping-requestid-src-minisql-protocol-messages-ml-2129148192"></a>
 ### ping
 
@@ -398,7 +546,7 @@ Implements ping for this module. Returns the computed value or operation status.
 | `requestId` | `dynamic` | — | Identifier of request. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L202)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L254)
 
 <a id="function-function-minisql-protocol-messages-query-function-query-requestid-sqltext-src-minisql-protocol-messages-ml-1391583963"></a>
 ### query
@@ -415,7 +563,7 @@ Implements query for this module. Requires arguments that satisfy the validation
 | `sqlText` | `dynamic` | — | sqlText value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L103)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L155)
 
 <a id="function-function-minisql-protocol-messages-readfield-function-readfield-source-offset-src-minisql-protocol-messages-ml-95227374"></a>
 ### readField
@@ -432,7 +580,7 @@ Reads field using the supplied inputs. Requires arguments that satisfy the valid
 | `offset` | `dynamic` | — | Zero-based offset at which processing starts. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L299)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L364)
 
 - [minisql.protocol.messages.Response](Type-minisql-protocol-messages-response-2017586083.md) — struct
 <a id="function-function-minisql-protocol-messages-responsepayloadsize-function-responsepayloadsize-response-src-minisql-protocol-messages-ml-2029113107"></a>
@@ -449,8 +597,9 @@ Implements response payload size for this module. Returns the computed value or 
 | `response` | `dynamic` | — | response value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L312)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L377)
 
+- [minisql.protocol.messages.ResultMetadata](Type-minisql-protocol-messages-resultmetadata-2137251912.md) — struct
 <a id="function-function-minisql-protocol-messages-rowresponse-function-rowresponse-columns-rows-src-minisql-protocol-messages-ml-2121890052"></a>
 ### rowResponse
 
@@ -466,7 +615,7 @@ Implements row response for this module. Returns the computed value or operation
 | `rows` | `dynamic` | — | rows value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L248)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L300)
 
 <a id="function-function-minisql-protocol-messages-stringbytes-function-stringbytes-value-src-minisql-protocol-messages-ml-1925143493"></a>
 ### stringBytes
@@ -482,7 +631,7 @@ Implements string bytes for this module. Requires arguments that satisfy the val
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L266)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L331)
 
 <a id="function-function-minisql-protocol-messages-targetmilestone-function-targetmilestone-src-minisql-protocol-messages-ml-545061446"></a>
 ### targetMilestone
@@ -494,7 +643,23 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql protocol messages module. Returns the computed value or operation status. Any side effects are limited to the explicitly invoked dependencies.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L420)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L649)
+
+<a id="function-function-minisql-protocol-messages-validsqlstate-function-validsqlstate-value-src-minisql-protocol-messages-ml-1361652467"></a>
+### validSqlState
+
+```ml
+function validSqlState(value)
+```
+
+Validates an exact SQLSTATE without accepting malformed server metadata.
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `dynamic` | — |  |
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L450)
 
 <a id="function-function-minisql-protocol-messages-writefield-function-writefield-output-offset-value-src-minisql-protocol-messages-ml-87717419"></a>
 ### writeField
@@ -512,4 +677,4 @@ Writes field using the supplied inputs. Returns the computed value or operation 
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L286)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/protocol/messages.ml#L351)

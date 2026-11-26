@@ -12,7 +12,7 @@ struct ExternalValue
 Defines the external value record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L102)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L106)
 
 ## Members
 
@@ -26,4 +26,4 @@ encodedPointer
 Encoded pointer field of the external value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L104)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/row_codec.ml#L108)

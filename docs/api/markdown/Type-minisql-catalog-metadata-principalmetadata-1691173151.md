@@ -12,7 +12,7 @@ struct PrincipalMetadata
 Defines the principal metadata record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L508)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L522)
 
 ## Members
 
@@ -26,7 +26,7 @@ builtin
 Builtin field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L522)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L536)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-canlogin-canlogin-src-minisql-catalog-metadata-ml-1860491058"></a>
 ### canLogin
@@ -38,7 +38,7 @@ canLogin
 Can login field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L518)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L532)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-enabled-enabled-src-minisql-catalog-metadata-ml-714293052"></a>
 ### enabled
@@ -50,7 +50,7 @@ enabled
 Enabled field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L516)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L530)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-iterations-iterations-src-minisql-catalog-metadata-ml-2023237164"></a>
 ### iterations
@@ -62,7 +62,7 @@ iterations
 Iterations field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L526)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L540)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-name-name-src-minisql-catalog-metadata-ml-1789315778"></a>
 ### name
@@ -74,7 +74,7 @@ name
 Name field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L512)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L526)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-principalid-principalid-src-minisql-catalog-metadata-ml-667855544"></a>
 ### principalId
@@ -86,7 +86,7 @@ principalId
 Principal id field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L510)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L524)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-principalkind-principalkind-src-minisql-catalog-metadata-ml-1291048360"></a>
 ### principalKind
@@ -98,7 +98,7 @@ principalKind
 Principal kind field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L514)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L528)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-salt-salt-src-minisql-catalog-metadata-ml-798078092"></a>
 ### salt
@@ -110,7 +110,7 @@ salt
 Salt field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L524)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L538)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-superuser-superuser-src-minisql-catalog-metadata-ml-1680324172"></a>
 ### superuser
@@ -122,7 +122,7 @@ superuser
 Superuser field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L520)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L534)
 
 <a id="field-field-minisql-catalog-metadata-principalmetadata-verifier-verifier-src-minisql-catalog-metadata-ml-525008752"></a>
 ### verifier
@@ -134,4 +134,4 @@ verifier
 Verifier field of the principal metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L528)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L542)

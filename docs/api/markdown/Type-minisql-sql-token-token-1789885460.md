@@ -12,7 +12,7 @@ struct Token
 Groups the token state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L66)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L74)
 
 ## Members
 
@@ -26,7 +26,7 @@ column
 Stores the column associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L78)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L86)
 
 <a id="field-field-minisql-sql-token-token-kind-kind-src-minisql-sql-token-ml-1952145964"></a>
 ### kind
@@ -38,7 +38,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L68)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L76)
 
 <a id="field-field-minisql-sql-token-token-line-line-src-minisql-sql-token-ml-1110796844"></a>
 ### line
@@ -50,7 +50,7 @@ line
 Stores the line associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L84)
 
 <a id="field-field-minisql-sql-token-token-offset-offset-src-minisql-sql-token-ml-1513712030"></a>
 ### offset
@@ -62,7 +62,7 @@ offset
 Tracks the offset numeric value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L74)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L82)
 
 <a id="field-field-minisql-sql-token-token-quoted-quoted-src-minisql-sql-token-ml-884192308"></a>
 ### quoted
@@ -74,7 +74,7 @@ quoted
 Indicates whether the quoted condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L80)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L88)
 
 <a id="field-field-minisql-sql-token-token-text-text-src-minisql-sql-token-ml-316016390"></a>
 ### text
@@ -86,7 +86,7 @@ text
 Stores the text associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L78)
 
 <a id="field-field-minisql-sql-token-token-value-value-src-minisql-sql-token-ml-1548861640"></a>
 ### value
@@ -98,4 +98,4 @@ value
 Stores the value associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L72)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/token.ml#L80)

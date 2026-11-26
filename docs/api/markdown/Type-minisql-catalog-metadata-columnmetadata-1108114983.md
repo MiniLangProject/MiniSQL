@@ -12,7 +12,7 @@ struct ColumnMetadata
 Defines the column metadata record used by this module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L57)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L58)
 
 ## Members
 
@@ -26,7 +26,7 @@ columnId
 Column id field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L59)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L60)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-maxlength-maxlength-src-minisql-catalog-metadata-ml-1524269568"></a>
 ### maxLength
@@ -38,7 +38,7 @@ maxLength
 Max length field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L67)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L68)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-name-name-src-minisql-catalog-metadata-ml-1068659870"></a>
 ### name
@@ -50,7 +50,7 @@ name
 Name field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L61)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L62)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-nullable-nullable-src-minisql-catalog-metadata-ml-1799833534"></a>
 ### nullable
@@ -62,7 +62,7 @@ nullable
 Nullable field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L65)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L66)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-precision-precision-src-minisql-catalog-metadata-ml-1907565972"></a>
 ### precision
@@ -74,7 +74,7 @@ precision
 Precision field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L69)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L70)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-scale-scale-src-minisql-catalog-metadata-ml-1349772240"></a>
 ### scale
@@ -86,7 +86,7 @@ scale
 Scale field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L71)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L72)
 
 <a id="field-field-minisql-catalog-metadata-columnmetadata-typecode-typecode-src-minisql-catalog-metadata-ml-157901870"></a>
 ### typeCode
@@ -98,4 +98,4 @@ typeCode
 Type code field of the column metadata.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L63)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/catalog/metadata.ml#L64)

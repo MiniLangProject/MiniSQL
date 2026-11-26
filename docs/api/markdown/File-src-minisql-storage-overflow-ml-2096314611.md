@@ -12,6 +12,7 @@ Reachable from entry: **yes**
 
 - `minisql/common/crc32c.ml` as `crc32c` → [src/minisql/common/crc32c.ml](File-src-minisql-common-crc32c-ml-2102127649.md)
 - `minisql/common/endian.ml` as `endian` → [src/minisql/common/endian.ml](File-src-minisql-common-endian-ml-71280848.md)
+- `minisql/common/format_version.ml` as `format_version` → [src/minisql/common/format_version.ml](File-src-minisql-common-format-version-ml-1671630705.md)
 - `minisql/storage/page.ml` as `page` → [src/minisql/storage/page.ml](File-src-minisql-storage-page-ml-792931788.md)
 - `minisql/storage/paged_file.ml` as `paged_file` → [src/minisql/storage/paged_file.ml](File-src-minisql-storage-paged-file-ml-1675839025.md)
 - `minisql/storage/row_codec.ml` as `row_codec` → [src/minisql/storage/row_codec.ml](File-src-minisql-storage-row-codec-ml-756043630.md)
@@ -33,7 +34,7 @@ Performs the abort replace operation for this module. Inputs: `pagedFile`, `repl
 | `replacement` | `dynamic` | — | replacement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L494)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L504)
 
 <a id="function-function-minisql-storage-overflow-allocatepagenumbers-function-allocatepagenumbers-pagedfile-count-src-minisql-storage-overflow-ml-1767540990"></a>
 ### allocatePageNumbers
@@ -50,7 +51,7 @@ Allocates the page numbers. Inputs: `pagedFile`, `count`. Returns the produced v
 | `count` | `dynamic` | — | Number of items or units to process. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L292)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L302)
 
 <a id="function-function-minisql-storage-overflow-bytesequal-function-bytesequal-left-right-src-minisql-storage-overflow-ml-308644533"></a>
 ### bytesEqual
@@ -67,7 +68,7 @@ Performs the bytesEqual operation for the minisql storage overflow module. Input
 | `right` | `dynamic` | — | right value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L90)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L93)
 
 <a id="constant-constant-minisql-storage-overflow-chain-header-offset-const-chain-header-offset-64-src-minisql-storage-overflow-ml-1644255521"></a>
 ### CHAIN_HEADER_OFFSET
@@ -79,7 +80,7 @@ const CHAIN_HEADER_OFFSET = 64
 Defines the chain header offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L27)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L30)
 
 <a id="constant-constant-minisql-storage-overflow-chain-header-size-const-chain-header-size-40-src-minisql-storage-overflow-ml-1312042007"></a>
 ### CHAIN_HEADER_SIZE
@@ -91,7 +92,7 @@ const CHAIN_HEADER_SIZE = 40
 Defines the chain header size constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L29)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L32)
 
 <a id="constant-constant-minisql-storage-overflow-chunk-length-offset-const-chunk-length-offset-88-src-minisql-storage-overflow-ml-1930680579"></a>
 ### CHUNK_LENGTH_OFFSET
@@ -103,7 +104,7 @@ const CHUNK_LENGTH_OFFSET = 88
 Defines the chunk length offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L35)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L38)
 
 <a id="function-function-minisql-storage-overflow-chunkcapacity-function-chunkcapacity-pagedfile-src-minisql-storage-overflow-ml-138369749"></a>
 ### chunkCapacity
@@ -119,7 +120,7 @@ Performs the chunk capacity operation for this module. Inputs: `pagedFile`. Retu
 | `pagedFile` | `dynamic` | — | pagedFile value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L201)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L211)
 
 <a id="function-function-minisql-storage-overflow-commitreplace-function-commitreplace-pagedfile-replacement-src-minisql-storage-overflow-ml-247521497"></a>
 ### commitReplace
@@ -136,7 +137,7 @@ Commits the replace. Inputs: `pagedFile`, `replacement`. Returns the operation r
 | `replacement` | `dynamic` | — | replacement value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L480)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L490)
 
 <a id="function-function-minisql-storage-overflow-componentname-function-componentname-src-minisql-storage-overflow-ml-493640988"></a>
 ### componentName
@@ -148,7 +149,7 @@ function componentName()
 Performs the componentName operation for the minisql storage overflow module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L537)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L547)
 
 <a id="constant-constant-minisql-storage-overflow-corrupt-data-const-corrupt-data-9004-src-minisql-storage-overflow-ml-317644872"></a>
 ### CORRUPT_DATA
@@ -160,7 +161,7 @@ const CORRUPT_DATA = 9004
 Defines the corrupt data constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L20)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L21)
 
 <a id="function-function-minisql-storage-overflow-createpointer-function-createpointer-fileid-firstpage-totallength-ownerid-valuechecksum-src-minisql-storage-overflow-ml-136600320"></a>
 ### createPointer
@@ -180,7 +181,7 @@ Creates the pointer. Inputs: `fileId`, `firstPage`, `totalLength`, `ownerId`, `v
 | `valueChecksum` | `dynamic` | — | valueChecksum value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L119)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L122)
 
 <a id="constant-constant-minisql-storage-overflow-data-offset-const-data-offset-104-src-minisql-storage-overflow-ml-1229116102"></a>
 ### DATA_OFFSET
@@ -192,7 +193,7 @@ const DATA_OFFSET = 104
 Defines the data offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L31)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L34)
 
 <a id="function-function-minisql-storage-overflow-decodenative-function-decodenative-words-operation-name-src-minisql-storage-overflow-ml-1325354679"></a>
 ### decodeNative
@@ -210,7 +211,7 @@ Decodes native for the minisql storage overflow workflow. Inputs: `words`, `oper
 | `name` | `dynamic` | — | Name of the affected item. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L159)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L164)
 
 <a id="function-function-minisql-storage-overflow-decodenext-function-decodenext-pagebytes-src-minisql-storage-overflow-ml-748107312"></a>
 ### decodeNext
@@ -226,7 +227,7 @@ Decodes the next. Inputs: `pageBytes`. Returns the produced value or propagates 
 | `pageBytes` | `dynamic` | — | pageBytes value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L244)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L254)
 
 <a id="function-function-minisql-storage-overflow-decodepointer-function-decodepointer-encoded-src-minisql-storage-overflow-ml-875987966"></a>
 ### decodePointer
@@ -242,7 +243,7 @@ Decodes the pointer. Inputs: `encoded`. Returns the produced value or propagates
 | `encoded` | `dynamic` | — | encoded value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L167)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L172)
 
 <a id="function-function-minisql-storage-overflow-encodepage-function-encodepage-pagedfile-pagenumber-ownerid-nextpage-totallength-sequence-chunk-src-minisql-storage-overflow-ml-1327676373"></a>
 ### encodePage
@@ -264,7 +265,7 @@ Encodes the page. Inputs: `pagedFile`, `pageNumber`, `ownerId`, `nextPage`, `tot
 | `chunk` | `dynamic` | — | chunk value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L216)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L226)
 
 <a id="function-function-minisql-storage-overflow-encodepointer-function-encodepointer-pointer-src-minisql-storage-overflow-ml-962920583"></a>
 ### encodePointer
@@ -280,7 +281,7 @@ Encodes the pointer. Inputs: `pointer`. Returns the produced value or propagates
 | `pointer` | `dynamic` | — | pointer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L134)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L137)
 
 <a id="function-function-minisql-storage-overflow-fail-function-fail-code-operation-message-src-minisql-storage-overflow-ml-1049687223"></a>
 ### fail
@@ -298,19 +299,19 @@ Performs the fail operation for the minisql storage overflow module. Inputs: `co
 | `message` | `dynamic` | — | Human-readable message associated with the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L70)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L73)
 
-<a id="constant-constant-minisql-storage-overflow-format-version-const-format-version-1-src-minisql-storage-overflow-ml-1749092064"></a>
+<a id="constant-constant-minisql-storage-overflow-format-version-const-format-version-format-version-overflow-src-minisql-storage-overflow-ml-1054119003"></a>
 ### FORMAT_VERSION
 
 ```ml
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = format_version.OVERFLOW
 ```
 
 Defines the format version constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L23)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L24)
 
 <a id="function-function-minisql-storage-overflow-free-function-free-pagedfile-pointer-src-minisql-storage-overflow-ml-1300206016"></a>
 ### free
@@ -327,7 +328,7 @@ Performs the free operation for the minisql storage overflow module. Inputs: `pa
 | `pointer` | `dynamic` | — | pointer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L442)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L452)
 
 <a id="function-function-minisql-storage-overflow-fromexternal-function-fromexternal-value-src-minisql-storage-overflow-ml-1997172957"></a>
 ### fromExternal
@@ -343,7 +344,7 @@ Constructs the external. Inputs: `value`. Returns the produced value or propagat
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L193)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L203)
 
 <a id="constant-constant-minisql-storage-overflow-invalid-argument-const-invalid-argument-9001-src-minisql-storage-overflow-ml-667916541"></a>
 ### INVALID_ARGUMENT
@@ -352,10 +353,10 @@ Constructs the external. Inputs: `value`. Returns the produced value or propagat
 const INVALID_ARGUMENT = 9001
 ```
 
-Overflow-chain format v1 for large TEXT/BLOB values. Every chain page is a
+Overflow-chain format v2 uses U32 lengths and independently checksummed pointers.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L16)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L17)
 
 <a id="function-function-minisql-storage-overflow-isimplemented-function-isimplemented-src-minisql-storage-overflow-ml-779605716"></a>
 ### isImplemented
@@ -367,7 +368,7 @@ function isImplemented()
 Returns whether implemented satisfies the condition required by the minisql storage overflow module. Takes no caller-supplied inputs. Returns a boolean result; invalid input or delegated failures are reported as structured errors.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L549)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L559)
 
 <a id="constant-constant-minisql-storage-overflow-next-page-offset-const-next-page-offset-80-src-minisql-storage-overflow-ml-1610291567"></a>
 ### NEXT_PAGE_OFFSET
@@ -379,7 +380,7 @@ const NEXT_PAGE_OFFSET = 80
 Defines the next page offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L33)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L36)
 
 - [minisql.storage.overflow.OverflowPointer](Type-minisql-storage-overflow-overflowpointer-507137354.md) — struct
 - [minisql.storage.overflow.OverflowReplacement](Type-minisql-storage-overflow-overflowreplacement-1476181223.md) — struct
@@ -398,7 +399,7 @@ Performs the page count for length operation for this module. Inputs: `pagedFile
 | `length` | `dynamic` | — | length value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L275)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L285)
 
 <a id="function-function-minisql-storage-overflow-pagemagic-function-pagemagic-src-minisql-storage-overflow-ml-123890664"></a>
 ### pageMagic
@@ -410,7 +411,19 @@ function pageMagic()
 Performs the page magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L82)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L85)
+
+<a id="constant-constant-minisql-storage-overflow-pointer-checksum-offset-const-pointer-checksum-offset-44-src-minisql-storage-overflow-ml-1821846931"></a>
+### POINTER_CHECKSUM_OFFSET
+
+```ml
+const POINTER_CHECKSUM_OFFSET = 44
+```
+
+Stores the pointer checksum after the whole-value checksum; zero during CRC calculation.
+
+
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L28)
 
 <a id="constant-constant-minisql-storage-overflow-pointer-size-const-pointer-size-48-src-minisql-storage-overflow-ml-1732029711"></a>
 ### POINTER_SIZE
@@ -422,7 +435,7 @@ const POINTER_SIZE = 48
 Defines the pointer size constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L25)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L26)
 
 <a id="function-function-minisql-storage-overflow-pointermagic-function-pointermagic-src-minisql-storage-overflow-ml-331054636"></a>
 ### pointerMagic
@@ -434,7 +447,7 @@ function pointerMagic()
 Performs the pointer magic operation for this module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L76)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L79)
 
 <a id="function-function-minisql-storage-overflow-preparereplace-function-preparereplace-pagedfile-oldpointer-ownerid-newvalue-src-minisql-storage-overflow-ml-825443226"></a>
 ### prepareReplace
@@ -453,7 +466,7 @@ Performs the prepare replace operation for this module. Inputs: `pagedFile`, `ol
 | `newValue` | `dynamic` | — | newValue value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L468)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L478)
 
 <a id="function-function-minisql-storage-overflow-read-function-read-pagedfile-pointer-src-minisql-storage-overflow-ml-914711680"></a>
 ### read
@@ -470,7 +483,7 @@ Reads read for the minisql storage overflow workflow. Inputs: `pagedFile`, `poin
 | `pointer` | `dynamic` | — | pointer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L433)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L443)
 
 <a id="function-function-minisql-storage-overflow-readrange-function-readrange-pagedfile-pointer-requestedoffset-requestedlength-src-minisql-storage-overflow-ml-290782517"></a>
 ### readRange
@@ -489,7 +502,7 @@ Traverses and validates the complete chain while copying only the requested rang
 | `requestedLength` | `dynamic` | — | requestedLength value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L378)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L388)
 
 <a id="function-function-minisql-storage-overflow-readtext-function-readtext-pagedfile-pointer-src-minisql-storage-overflow-ml-451057656"></a>
 ### readText
@@ -506,7 +519,7 @@ Reads the text. Inputs: `pagedFile`, `pointer`. Returns the produced value or pr
 | `pointer` | `dynamic` | — | pointer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L529)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L539)
 
 <a id="function-function-minisql-storage-overflow-replace-function-replace-pagedfile-oldpointer-ownerid-newvalue-src-minisql-storage-overflow-ml-1714543266"></a>
 ### replace
@@ -525,7 +538,7 @@ Convenience helper with leak-safe semantics: write and return the new value, but
 | `newValue` | `dynamic` | — | newValue value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L511)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L521)
 
 <a id="constant-constant-minisql-storage-overflow-sequence-offset-const-sequence-offset-96-src-minisql-storage-overflow-ml-197451904"></a>
 ### SEQUENCE_OFFSET
@@ -537,7 +550,7 @@ const SEQUENCE_OFFSET = 96
 Defines the sequence offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L39)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L42)
 
 <a id="function-function-minisql-storage-overflow-storetext-function-storetext-pagedfile-ownerid-text-src-minisql-storage-overflow-ml-221721332"></a>
 ### storeText
@@ -555,7 +568,7 @@ Performs the store text operation for this module. Inputs: `pagedFile`, `ownerId
 | `text` | `dynamic` | — | Text consumed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L520)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L530)
 
 <a id="function-function-minisql-storage-overflow-targetmilestone-function-targetmilestone-src-minisql-storage-overflow-ml-1065735998"></a>
 ### targetMilestone
@@ -567,7 +580,7 @@ function targetMilestone()
 Performs the targetMilestone operation for the minisql storage overflow module. Takes no caller-supplied inputs. Returns the produced value or propagates a structured error from validation or delegated operations.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L543)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L553)
 
 <a id="function-function-minisql-storage-overflow-toexternal-function-toexternal-pointer-src-minisql-storage-overflow-ml-1073137437"></a>
 ### toExternal
@@ -583,7 +596,7 @@ Converts the external. Inputs: `pointer`. Returns the produced value or propagat
 | `pointer` | `dynamic` | — | pointer value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L186)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L196)
 
 <a id="constant-constant-minisql-storage-overflow-total-length-offset-const-total-length-offset-92-src-minisql-storage-overflow-ml-17356800"></a>
 ### TOTAL_LENGTH_OFFSET
@@ -595,7 +608,7 @@ const TOTAL_LENGTH_OFFSET = 92
 Defines the total length offset constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L37)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L40)
 
 <a id="constant-constant-minisql-storage-overflow-unsupported-format-const-unsupported-format-9003-src-minisql-storage-overflow-ml-1365635915"></a>
 ### UNSUPPORTED_FORMAT
@@ -607,7 +620,7 @@ const UNSUPPORTED_FORMAT = 9003
 Defines the unsupported format constant used by the minisql storage overflow module.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L18)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L19)
 
 <a id="function-function-minisql-storage-overflow-validatechainpage-function-validatechainpage-pagedfile-pagebytes-pointer-expectedpage-expectedsequence-src-minisql-storage-overflow-ml-1300362844"></a>
 ### validateChainPage
@@ -627,7 +640,7 @@ Validates the chain page. Inputs: `pagedFile`, `pageBytes`, `pointer`, `expected
 | `expectedSequence` | `dynamic` | — | expectedSequence value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L257)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L267)
 
 <a id="function-function-minisql-storage-overflow-validatenative-function-validatenative-value-operation-name-allowminusone-src-minisql-storage-overflow-ml-305923936"></a>
 ### validateNative
@@ -646,7 +659,7 @@ Validates native for the minisql storage overflow workflow. Inputs: `value`, `op
 | `allowMinusOne` | `dynamic` | — | allowMinusOne value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L105)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L108)
 
 <a id="function-function-minisql-storage-overflow-validatepointerforfile-function-validatepointerforfile-pagedfile-pointer-operation-src-minisql-storage-overflow-ml-939664329"></a>
 ### validatePointerForFile
@@ -664,7 +677,7 @@ Validates the pointer for file. Inputs: `pagedFile`, `pointer`, `operation`. Ret
 | `operation` | `dynamic` | — | operation value consumed by this operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L361)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L371)
 
 <a id="function-function-minisql-storage-overflow-write-function-write-pagedfile-ownerid-value-src-minisql-storage-overflow-ml-960735172"></a>
 ### write
@@ -682,4 +695,4 @@ Writes the requested value. Inputs: `pagedFile`, `ownerId`, `value`. Returns the
 | `value` | `dynamic` | — | Value consumed or transformed by the operation. |
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L332)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/storage/overflow.ml#L342)

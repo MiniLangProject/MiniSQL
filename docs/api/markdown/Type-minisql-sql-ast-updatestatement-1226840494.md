@@ -12,7 +12,7 @@ struct UpdateStatement
 Groups the update statement state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L669)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L703)
 
 ## Members
 
@@ -26,7 +26,7 @@ assignments
 Contains the ordered assignments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L673)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L707)
 
 <a id="field-field-minisql-sql-ast-updatestatement-returning-returning-src-minisql-sql-ast-ml-1725096141"></a>
 ### returning
@@ -38,7 +38,7 @@ returning
 Stores the returning associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L677)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L711)
 
 <a id="field-field-minisql-sql-ast-updatestatement-tablename-tablename-src-minisql-sql-ast-ml-1235354997"></a>
 ### tableName
@@ -50,7 +50,7 @@ tableName
 Stores the table name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L671)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L705)
 
 <a id="field-field-minisql-sql-ast-updatestatement-whereexpression-whereexpression-src-minisql-sql-ast-ml-558282981"></a>
 ### whereExpression
@@ -62,4 +62,4 @@ whereExpression
 Stores the where expression associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L675)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L709)

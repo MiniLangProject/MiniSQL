@@ -12,7 +12,7 @@ struct FunctionExpression
 Groups the function expression state and preserves the field relationships documented below.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L211)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L219)
 
 ## Members
 
@@ -26,7 +26,7 @@ arguments
 Contains the ordered arguments collection.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L217)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L225)
 
 <a id="field-field-minisql-sql-ast-functionexpression-distinct-distinct-src-minisql-sql-ast-ml-513386617"></a>
 ### distinct
@@ -38,7 +38,7 @@ distinct
 Indicates whether the distinct condition is active.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L219)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L227)
 
 <a id="field-field-minisql-sql-ast-functionexpression-kind-kind-src-minisql-sql-ast-ml-1231082073"></a>
 ### kind
@@ -50,7 +50,7 @@ kind
 Stores the kind associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L213)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L221)
 
 <a id="field-field-minisql-sql-ast-functionexpression-name-name-src-minisql-sql-ast-ml-1283624579"></a>
 ### name
@@ -62,4 +62,4 @@ name
 Stores the name associated with this value.
 
 
-[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L215)
+[View source](https://github.com/MiniLangProject/MiniSQL/blob/main/src/minisql/sql/ast.ml#L223)
